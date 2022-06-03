@@ -1284,7 +1284,7 @@ index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..c8d37184d8e882a4084a1bfef85faa33
  
      /**
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..8edd78adb042013bf702027f59455045d3b3e14f 100644
+index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..11af71edd7eaefb3cce3c2b59d390ff92e95ec64 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -32,8 +32,7 @@ public abstract class Command {
@@ -1340,7 +1340,7 @@ index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..8edd78adb042013bf702027f59455045
          return this;
      }
  
-@@ -399,6 +402,25 @@ public abstract class Command {
+@@ -399,13 +402,47 @@ public abstract class Command {
          this.usageMessage = (usage == null) ? "" : usage;
          return this;
      }
@@ -1366,6 +1366,43 @@ index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..8edd78adb042013bf702027f59455045
  
      public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message) {
          broadcastCommandMessage(source, message, true);
+     }
+ 
+     public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message, boolean sendToSource) {
+-        String result = source.getName() + ": " + message;
++        // Paper start
++        broadcastCommandMessage(source, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message), sendToSource);
++    }
++
++    public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull net.kyori.adventure.text.Component message) {
++        broadcastCommandMessage(source, message, true);
++    }
++
++    public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull net.kyori.adventure.text.Component message, boolean sendToSource) {
++        net.kyori.adventure.text.TextComponent.Builder result = net.kyori.adventure.text.Component.text()
++            .color(net.kyori.adventure.text.format.NamedTextColor.WHITE)
++            .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
++            .append(source.name())
++            .append(net.kyori.adventure.text.Component.text(": "))
++            .append(message);
++        // Paper end
+ 
+         if (source instanceof BlockCommandSender) {
+             BlockCommandSender blockCommandSender = (BlockCommandSender) source;
+@@ -424,7 +461,12 @@ public abstract class Command {
+         }
+ 
+         Set<Permissible> users = Bukkit.getPluginManager().getPermissionSubscriptions(Server.BROADCAST_CHANNEL_ADMINISTRATIVE);
+-        String colored = ChatColor.GRAY + "" + ChatColor.ITALIC + "[" + result + ChatColor.GRAY + ChatColor.ITALIC + "]";
++        // Paper start
++        net.kyori.adventure.text.TextComponent.Builder colored = net.kyori.adventure.text.Component.text()
++            .color(net.kyori.adventure.text.format.NamedTextColor.GRAY)
++            .decorate(net.kyori.adventure.text.format.TextDecoration.ITALIC)
++            .append(net.kyori.adventure.text.Component.text("["), result, net.kyori.adventure.text.Component.text("]"));
++        // Paper end
+ 
+         if (sendToSource && !(source instanceof ConsoleCommandSender)) {
+             source.sendMessage(message);
 diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
 index 284be63a125624a8ae43d2c164aede810ce6bfe5..22b654efdcc49d6dc6d52c9d6afa1c9dc7978e35 100644
 --- a/src/main/java/org/bukkit/command/CommandSender.java
@@ -3639,7 +3676,7 @@ index 94852d50e88d0594b84b581cd627174043629995..36bcbb3f3acedf7ebecbf6f6b358cf64
              throw new UnsupportedOperationException("Not supported yet.");
          }
 diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
-index 91eee1470f0969e9eef0753c0c700ae5354f1acc..69f68ca2d62c2cfe07a193776054c14c352a5942 100644
+index 2fbb0b7640dd9b9b0e70d4bc60fbb0310d5ec250..a19635c38705e6221ae25d58e976e483e7ed17e4 100644
 --- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
 +++ b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
 @@ -31,6 +31,24 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste

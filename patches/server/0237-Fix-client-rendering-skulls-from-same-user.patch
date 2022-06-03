@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 22 Nov 2016 00:40:42 -0500
+Subject: [PATCH] Fix client rendering skulls from same user
+
+See: https://github.com/PaperMC/Paper/issues/1304
+
+Changes the UUID sent to client to be based on either
+the texture payload, or random.
+
+This allows the client to render multiple skull textures from the same user,
+for when different skins were used when skull was made.
+
+diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+index 303b877bc467de7c046cc221d061fac841c1d9f3..896a4237f871d46cf39b0721e909c2cc3b5fc728 100644
+--- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
++++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+@@ -496,9 +496,18 @@ public class FriendlyByteBuf extends ByteBuf {
+             if (item.canBeDepleted() || item.shouldOverrideMultiplayerNbt()) {
+                 // Spigot start - filter
+                 stack = stack.copy();
+-                CraftItemStack.setItemMeta(stack, CraftItemStack.getItemMeta(stack));
++                // CraftItemStack.setItemMeta(stack, CraftItemStack.getItemMeta(stack)); // Paper - This is no longer needed due to NBT being supported
+                 // Spigot end
+                 nbttagcompound = stack.getTag();
++                // Paper start
++                if (nbttagcompound != null && nbttagcompound.contains("SkullOwner", 10)) {
++                    CompoundTag owner = nbttagcompound.getCompound("SkullOwner");
++                    if (owner.hasUUID("Id")) {
++                        nbttagcompound.putUUID("SkullOwnerOrig", owner.getUUID("Id"));
++                        net.minecraft.world.level.block.entity.SkullBlockEntity.sanitizeUUID(owner);
++                    }
++                }
++                // Paper end
+             }
+ 
+             this.writeNbt(nbttagcompound);
+@@ -518,7 +527,16 @@ public class FriendlyByteBuf extends ByteBuf {
+             itemstack.setTag(this.readNbt());
+             // CraftBukkit start
+             if (itemstack.getTag() != null) {
+-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                // Paper start - Fix skulls of same owner - restore orig ID since we changed it on send to client
++                if (itemstack.tag.contains("SkullOwnerOrig")) {
++                    CompoundTag owner = itemstack.tag.getCompound("SkullOwner");
++                    if (itemstack.tag.contains("SkullOwnerOrig")) {
++                        owner.tags.put("Id", itemstack.tag.tags.get("SkullOwnerOrig"));
++                        itemstack.tag.remove("SkullOwnerOrig");
++                    }
++                }
++                // Paper end
++                // CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
+             }
+             // CraftBukkit end
+             return itemstack;
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+index aec78b6079c3404d934d2b46bc0d2f9d2a871b6d..36d9308a11bde0a631de037cf1bcae1062eaa5d9 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+@@ -152,6 +152,7 @@ public class ClientboundLevelChunkPacketData {
+         static ClientboundLevelChunkPacketData.BlockEntityInfo create(BlockEntity blockEntity) {
+             CompoundTag compoundTag = blockEntity.getUpdateTag();
+             BlockPos blockPos = blockEntity.getBlockPos();
++            if (blockEntity instanceof net.minecraft.world.level.block.entity.SkullBlockEntity) { net.minecraft.world.level.block.entity.SkullBlockEntity.sanitizeTileEntityUUID(compoundTag); } // Paper
+             int i = SectionPos.sectionRelative(blockPos.getX()) << 4 | SectionPos.sectionRelative(blockPos.getZ());
+             return new ClientboundLevelChunkPacketData.BlockEntityInfo(i, blockPos.getY(), blockEntity.getType(), compoundTag.isEmpty() ? null : compoundTag);
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+index 2a49aa1d387949e33708f5f13261e5257ea4aa2f..e3efea8623c7d34915069a6b9b7da9f2b1694c28 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
+ import net.minecraft.Util;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.ListTag;
+ import net.minecraft.nbt.NbtUtils;
+ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+ import net.minecraft.server.players.GameProfileCache;
+@@ -93,9 +94,37 @@ public class SkullBlockEntity extends BlockEntity {
+ 
+     @Override
+     public ClientboundBlockEntityDataPacket getUpdatePacket() {
+-        return ClientboundBlockEntityDataPacket.create(this);
++        return ClientboundBlockEntityDataPacket.create(this, e -> sanitizeTileEntityUUID(e.getUpdateTag())); // Paper
+     }
+ 
++    // Paper start
++    public static CompoundTag sanitizeTileEntityUUID(CompoundTag cmp) {
++        CompoundTag owner = cmp.getCompound("Owner");
++        if (!owner.isEmpty()) {
++            sanitizeUUID(owner);
++        }
++        return cmp;
++    }
++
++    public static void sanitizeUUID(CompoundTag owner) {
++        CompoundTag properties = owner.getCompound("Properties");
++        ListTag list = null;
++        if (!properties.isEmpty()) {
++            list = properties.getList("textures", 10);
++        }
++
++        if (list != null && !list.isEmpty()) {
++            String textures = ((CompoundTag)list.get(0)).getString("Value");
++            if (textures != null && textures.length() > 3) {
++                UUID uuid = UUID.nameUUIDFromBytes(textures.getBytes());
++                owner.putUUID("Id", uuid);
++                return;
++            }
++        }
++        owner.putUUID("Id", UUID.randomUUID());
++    }
++    // Paper end
++
+     @Override
+     public CompoundTag getUpdateTag() {
+         return this.saveWithoutMetadata();

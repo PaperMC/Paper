@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Tue, 20 Sep 2016 00:58:01 +0000
+Subject: [PATCH] Configurable flying kick messages
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 77e1a4b9b0734734bbcf03b6adc1cf0552063d1f..2440e81ef23c3b8c91ca5bdf13347f13cb66f549 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -273,4 +273,11 @@ public class PaperConfig {
+         }
+         packetInSpamThreshold = getInt("settings.incoming-packet-spam-threshold", 300);
+     }
++
++    public static String flyingKickPlayerMessage = "Flying is not enabled on this server";
++    public static String flyingKickVehicleMessage = "Flying is not enabled on this server";
++    private static void flyingKickMessages() {
++        flyingKickPlayerMessage = getString("messages.kick.flying-player", flyingKickPlayerMessage);
++        flyingKickVehicleMessage = getString("messages.kick.flying-vehicle", flyingKickVehicleMessage);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8f0a93e16860bbd062718248b958b72d7c6db0ee..192b0fae5ef200efefeb9727a68c17e3ca962027 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -300,7 +300,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         if (this.clientIsFloating && !this.player.isSleeping() && !this.player.isPassenger()) {
+             if (++this.aboveGroundTickCount > 80) {
+                 ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked for floating too long!", this.player.getName().getString());
+-                this.disconnect(new TranslatableComponent("multiplayer.disconnect.flying"));
++                this.disconnect(com.destroystokyo.paper.PaperConfig.flyingKickPlayerMessage); // Paper - use configurable kick message
+                 return;
+             }
+         } else {
+@@ -319,7 +319,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             if (this.clientVehicleIsFloating && this.player.getRootVehicle().getControllingPassenger() == this.player) {
+                 if (++this.aboveGroundVehicleTickCount > 80) {
+                     ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked for floating a vehicle too long!", this.player.getName().getString());
+-                    this.disconnect(new TranslatableComponent("multiplayer.disconnect.flying"));
++                    this.disconnect(com.destroystokyo.paper.PaperConfig.flyingKickVehicleMessage); // Paper - use configurable kick message
+                     return;
+                 }
+             } else {

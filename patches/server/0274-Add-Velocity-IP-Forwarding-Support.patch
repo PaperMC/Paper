@@ -1,0 +1,239 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Steinborn <git@steinborn.me>
+Date: Mon, 8 Oct 2018 14:36:14 -0400
+Subject: [PATCH] Add Velocity IP Forwarding Support
+
+While Velocity supports BungeeCord-style IP forwarding, it is not secure. Users
+have a lot of problems setting up firewalls or setting up plugins like IPWhitelist.
+Further, the BungeeCord IP forwarding protocol still retains essentially its original
+form, when there is brand new support for custom login plugin messages in 1.13.
+
+Velocity's modern IP forwarding uses an HMAC-SHA256 code to ensure authenticity
+of messages, is packed into a binary format that is smaller than BungeeCord's
+forwarding, and is integrated into the Minecraft login process by using the 1.13
+login plugin message packet.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 51dd358137d37eb078aff036ccf12db7f01c469b..65df47283afc4aa1453fdd18e65e6f8cb3bd0c3f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -9,6 +9,7 @@ import java.io.IOException;
+ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
++import java.nio.charset.StandardCharsets;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+@@ -265,7 +266,7 @@ public class PaperConfig {
+     }
+ 
+     public static boolean isProxyOnlineMode() {
+-        return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode);
++        return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode) || (velocitySupport && velocityOnlineMode);
+     }
+ 
+     public static int packetInSpamThreshold = 300;
+@@ -348,6 +349,20 @@ public class PaperConfig {
+         tabSpamLimit = getInt("settings.spam-limiter.tab-spam-limit", tabSpamLimit);
+     }
+ 
++    public static boolean velocitySupport;
++    public static boolean velocityOnlineMode;
++    public static byte[] velocitySecretKey;
++    private static void velocitySupport() {
++        velocitySupport = getBoolean("settings.velocity-support.enabled", false);
++        velocityOnlineMode = getBoolean("settings.velocity-support.online-mode", false);
++        String secret = getString("settings.velocity-support.secret", "");
++        if (velocitySupport && secret.isEmpty()) {
++            fatal("Velocity support is enabled, but no secret key was specified. A secret key is required!");
++        } else {
++            velocitySecretKey = secret.getBytes(StandardCharsets.UTF_8);
++        }
++    }
++
+     public static boolean asyncChunks = false;
+     private static void asyncChunks() {
+         ConfigurationSection section;
+diff --git a/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..41d73aa91fb401612e087aa1b7278ba61d28bf3a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
+@@ -0,0 +1,66 @@
++package com.destroystokyo.paper.proxy;
++
++import com.destroystokyo.paper.PaperConfig;
++import com.google.common.net.InetAddresses;
++import com.mojang.authlib.GameProfile;
++import com.mojang.authlib.properties.Property;
++import java.net.InetAddress;
++import java.security.InvalidKeyException;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++
++import javax.crypto.Mac;
++import javax.crypto.spec.SecretKeySpec;
++import net.minecraft.network.FriendlyByteBuf;
++import net.minecraft.resources.ResourceLocation;
++
++public class VelocityProxy {
++    private static final int SUPPORTED_FORWARDING_VERSION = 1;
++    public static final ResourceLocation PLAYER_INFO_CHANNEL = new ResourceLocation("velocity", "player_info");
++
++    public static boolean checkIntegrity(final FriendlyByteBuf buf) {
++        final byte[] signature = new byte[32];
++        buf.readBytes(signature);
++
++        final byte[] data = new byte[buf.readableBytes()];
++        buf.getBytes(buf.readerIndex(), data);
++
++        try {
++            final Mac mac = Mac.getInstance("HmacSHA256");
++            mac.init(new SecretKeySpec(PaperConfig.velocitySecretKey, "HmacSHA256"));
++            final byte[] mySignature = mac.doFinal(data);
++            if (!MessageDigest.isEqual(signature, mySignature)) {
++                return false;
++            }
++        } catch (final InvalidKeyException | NoSuchAlgorithmException e) {
++            throw new AssertionError(e);
++        }
++
++        int version = buf.readVarInt();
++        if (version != SUPPORTED_FORWARDING_VERSION) {
++            throw new IllegalStateException("Unsupported forwarding version " + version + ", wanted " + SUPPORTED_FORWARDING_VERSION);
++        }
++
++        return true;
++    }
++
++    public static InetAddress readAddress(final FriendlyByteBuf buf) {
++        return InetAddresses.forString(buf.readUtf(Short.MAX_VALUE));
++    }
++
++    public static GameProfile createProfile(final FriendlyByteBuf buf) {
++        final GameProfile profile = new GameProfile(buf.readUUID(), buf.readUtf(16));
++        readProperties(buf, profile);
++        return profile;
++    }
++
++    private static void readProperties(final FriendlyByteBuf buf, final GameProfile profile) {
++        final int properties = buf.readVarInt();
++        for (int i1 = 0; i1 < properties; i1++) {
++            final String name = buf.readUtf(Short.MAX_VALUE);
++            final String value = buf.readUtf(Short.MAX_VALUE);
++            final String signature = buf.readBoolean() ? buf.readUtf(Short.MAX_VALUE) : null;
++            profile.getProperties().put(name, new Property(name, value, signature));
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 5ebc450432805d52457b9f8ff1e2b1981bdd78e6..4c06e62e967f28eb844d74237948834e61daeab0 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -17,6 +17,7 @@ import javax.crypto.Cipher;
+ import javax.crypto.SecretKey;
+ import net.minecraft.DefaultUncaughtExceptionHandler;
+ import net.minecraft.network.Connection;
++import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.TextComponent;
+ import net.minecraft.network.chat.TranslatableComponent;
+@@ -40,6 +41,7 @@ import org.bukkit.craftbukkit.util.Waitable;
+ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+ import org.bukkit.event.player.PlayerPreLoginEvent;
+ // CraftBukkit end
++import io.netty.buffer.Unpooled; // Paper
+ 
+ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener {
+ 
+@@ -58,6 +60,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+     @Nullable
+     private ServerPlayer delayedAcceptPlayer;
+     public String hostname = ""; // CraftBukkit - add field
++    private int velocityLoginMessageId = -1; // Paper - Velocity support
+ 
+     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
+         this.state = ServerLoginPacketListenerImpl.State.HELLO;
+@@ -231,6 +234,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+             this.state = ServerLoginPacketListenerImpl.State.KEY;
+             this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
+         } else {
++            // Paper start - Velocity support
++            if (com.destroystokyo.paper.PaperConfig.velocitySupport) {
++                this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
++                net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, new FriendlyByteBuf(Unpooled.EMPTY_BUFFER));
++                this.connection.send(packet1);
++                return;
++            }
++            // Paper end
+             // Spigot start
+             // Paper start - Cache authenticator threads
+             authenticatorPool.execute(new Runnable() {
+@@ -338,6 +349,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+     public class LoginHandler {
+ 
+         public void fireEvents() throws Exception {
++                            // Paper start - Velocity support
++                            if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && com.destroystokyo.paper.PaperConfig.velocitySupport) {
++                                disconnect("This server requires you to connect with Velocity.");
++                                return;
++                            }
++                            // Paper end
+                         String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
+                         java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
+                         java.util.UUID uniqueId = ServerLoginPacketListenerImpl.this.gameProfile.getId();
+@@ -385,6 +402,40 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+     // Spigot end
+ 
+     public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
++        // Paper start - Velocity support
++        if (com.destroystokyo.paper.PaperConfig.velocitySupport && packet.getTransactionId() == this.velocityLoginMessageId) {
++            FriendlyByteBuf buf = packet.getData();
++            if (buf == null) {
++                this.disconnect("This server requires you to connect with Velocity.");
++                return;
++            }
++
++            if (!com.destroystokyo.paper.proxy.VelocityProxy.checkIntegrity(buf)) {
++                this.disconnect("Unable to verify player details");
++                return;
++            }
++
++            java.net.SocketAddress listening = this.connection.getRemoteAddress();
++            int port = 0;
++            if (listening instanceof java.net.InetSocketAddress) {
++                port = ((java.net.InetSocketAddress) listening).getPort();
++            }
++            this.connection.address = new java.net.InetSocketAddress(com.destroystokyo.paper.proxy.VelocityProxy.readAddress(buf), port);
++
++            this.gameProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
++
++            // Proceed with login
++            authenticatorPool.execute(() -> {
++                try {
++                    new LoginHandler().fireEvents();
++                } catch (Exception ex) {
++                    disconnect("Failed to verify username!");
++                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameProfile.getName(), ex);
++                }
++            });
++            return;
++        }
++        // Paper end
+         this.disconnect(new TranslatableComponent("multiplayer.disconnect.unexpected_query_response"));
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 32e36ac1955ef02388a492c39c3a2698e229641b..b0f7f44569f119d9e16bc468124b69244c61bf87 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -760,7 +760,7 @@ public final class CraftServer implements Server {
+     @Override
+     public long getConnectionThrottle() {
+         // Spigot Start - Automatically set connection throttle for bungee configurations
+-        if (org.spigotmc.SpigotConfig.bungee) {
++        if (org.spigotmc.SpigotConfig.bungee || com.destroystokyo.paper.PaperConfig.velocitySupport) { // Paper - Velocity support
+             return -1;
+         } else {
+             return this.configuration.getInt("settings.connection-throttle");

@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: miclebrick <miclebrick@outlook.com>
+Date: Thu, 6 Dec 2018 19:52:50 -0500
+Subject: [PATCH] Cache block data strings
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 5edb1f4be4d0306a22827d1330a08251e5cb1fbe..e22ef9d02a64852f09a8d528a366817aceaf55dc 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2031,6 +2031,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.getPlayerList().reloadResources();
+             this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
+             this.structureManager.onResourceManagerReload(this.resources.resourceManager);
++            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
+         }, this);
+ 
+         if (this.isSameThread()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index 275401f9bf7a78e69766e0547c94c3a115a8896c..afc69b0077f180c3e7ace3db11aa0eccc602516f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -494,9 +494,39 @@ public class CraftBlockData implements BlockData {
+         Preconditions.checkState(CraftBlockData.MAP.put(nms, bukkit) == null, "Duplicate mapping %s->%s", nms, bukkit);
+     }
+ 
++    // Paper start - cache block data strings
++    private static Map<String, CraftBlockData> stringDataCache = new java.util.concurrent.ConcurrentHashMap<>();
++
++    static {
++        // cache all of the default states at startup, will not cache ones with the custom states inside of the
++        // brackets in a different order, though
++        reloadCache();
++    }
++
++    public static void reloadCache() {
++        stringDataCache.clear();
++        Block.BLOCK_STATE_REGISTRY.forEach(blockData -> stringDataCache.put(blockData.toString(), blockData.createCraftBlockData()));
++    }
++    // Paper end
++
+     public static CraftBlockData newData(Material material, String data) {
+         Preconditions.checkArgument(material == null || material.isBlock(), "Cannot get data for not block %s", material);
+ 
++        // Paper start - cache block data strings
++        if (material != null) {
++            Block block = CraftMagicNumbers.getBlock(material);
++            if (block != null) {
++                net.minecraft.resources.ResourceLocation key = Registry.BLOCK.getKey(block);
++                data = data == null ? key.toString() : key + data;
++            }
++        }
++
++        CraftBlockData cached = stringDataCache.computeIfAbsent(data, s -> createNewData(null, s));
++        return (CraftBlockData) cached.clone();
++    }
++
++    private static CraftBlockData createNewData(Material material, String data) {
++        // Paper end - cache block data strings
+         BlockState blockData;
+         Block block = CraftMagicNumbers.getBlock(material);
+         Map<Property<?>, Comparable<?>> parsed = null;

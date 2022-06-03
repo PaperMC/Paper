@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <jahnke.nassim@gmail.com>
+Date: Tue, 31 Aug 2021 17:05:27 +0200
+Subject: [PATCH] Configurable feature seeds
+
+Co-authored-by: Thonk <30448663+ExcessiveAmountsOfZombies@users.noreply.github.com>
+
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index 4092a227a540a1c5cfb95efcc2a36e049b9a979c..e2f60115370f19e935eb3b14d5de99aa4126c6b0 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -282,7 +282,7 @@ public class TimingsExport extends Thread {
+         JSONObject object = new JSONObject();
+         for (String key : config.getKeys(false)) {
+             String fullKey = (parentKey != null ? parentKey + "." + key : key);
+-            if (fullKey.equals("database") || fullKey.equals("settings.bungeecord-addresses") || TimingsManager.hiddenConfigs.contains(fullKey) || key.startsWith("seed-") || key.equals("worldeditregentempworld")) {
++            if (fullKey.equals("database") || fullKey.equals("settings.bungeecord-addresses") || TimingsManager.hiddenConfigs.contains(fullKey) || key.startsWith("seed-") || key.equals("worldeditregentempworld") || key.equals("feature-seeds")) {
+                 continue;
+             }
+             final Object val = config.get(key);
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index bd3a33e191ff2583ef7a658a0e198e11362b7e38..01f25f5b87b986075f3100ff930cf492bc28ccd9 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -994,6 +994,55 @@ public class PaperWorldConfig {
+         return table;
+     }
+ 
++    public it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<net.minecraft.resources.ResourceLocation> featureSeeds = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
++    private void featureSeeds() {
++        featureSeeds.defaultReturnValue(-1);
++        final boolean randomise = getBoolean("feature-seeds.generate-random-seeds-for-all", false);
++        final ConfigurationSection defaultSection = config.getConfigurationSection("world-settings.default.feature-seeds");
++        final ConfigurationSection section = config.getConfigurationSection("world-settings." + worldName + ".feature-seeds");
++        final net.minecraft.core.Registry<net.minecraft.world.level.levelgen.feature.ConfiguredFeature<?, ?>> registry
++            = net.minecraft.server.MinecraftServer.getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.CONFIGURED_FEATURE_REGISTRY);
++        if (section != null) {
++            loadFeatureSeeds(section, registry);
++        }
++
++        // Also use default set seeds if not already set per world
++        loadFeatureSeeds(defaultSection, registry);
++
++        if (randomise) {
++            final Map<String, Object> randomisedSeeds = new HashMap<>();
++            final java.util.Random random = new java.security.SecureRandom();
++            for (final net.minecraft.resources.ResourceLocation resourceLocation : registry.keySet()) {
++                if (featureSeeds.containsKey(resourceLocation)) {
++                    continue;
++                }
++
++                final long seed = random.nextLong();
++                randomisedSeeds.put("world-settings." + worldName + ".feature-seeds." + resourceLocation.getPath(), seed);
++                featureSeeds.put(resourceLocation, seed);
++            }
++            if (!randomisedSeeds.isEmpty()) {
++                config.addDefaults(randomisedSeeds);
++            }
++        }
++    }
++
++    private void loadFeatureSeeds(final ConfigurationSection section, final net.minecraft.core.Registry<net.minecraft.world.level.levelgen.feature.ConfiguredFeature<?, ?>> registry) {
++        for (final String key : section.getKeys(false)) {
++            if (!(section.get(key) instanceof Number)) {
++                continue;
++            }
++
++            final net.minecraft.resources.ResourceLocation location = new net.minecraft.resources.ResourceLocation(key);
++            if (!registry.containsKey(location)) {
++                logError("Invalid feature resource location: " + location);
++                continue;
++            }
++
++            featureSeeds.putIfAbsent(location, section.getLong(key));
++        }
++    }
++
+     public int getBehaviorTickRate(String typeName, String entityType, int def) {
+         return getIntOrDefault(behaviorTickRates, typeName, entityType, def);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index a3af8b892a01756addc8c24e0726b5a8a700cbba..d5930d8ced9566c5494bed3685cf2d536eef6d50 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -535,7 +535,7 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+             int j = list.size();
+ 
+             try {
+-                Registry<PlacedFeature> iregistry1 = generatoraccessseed.registryAccess().registryOrThrow(Registry.PLACED_FEATURE_REGISTRY);
++                Registry<PlacedFeature> iregistry1 = generatoraccessseed.registryAccess().registryOrThrow(Registry.PLACED_FEATURE_REGISTRY); // Paper - diff on change
+                 int k = Math.max(GenerationStep.Decoration.values().length, j);
+ 
+                 for (int l = 0; l < k; ++l) {
+@@ -608,7 +608,15 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+                                 return (String) optional.orElseGet(placedfeature::toString);
+                             };
+ 
+-                            seededrandom.setFeatureSeed(i, l1, l);
++                            // Paper start - change populationSeed used in random
++                            long featurePopulationSeed = i;
++                            final net.minecraft.resources.ResourceLocation location = iregistry1.getKey(placedfeature);
++                            final long configFeatureSeed = generatoraccessseed.getMinecraftWorld().paperConfig.featureSeeds.getLong(location);
++                            if (configFeatureSeed != -1) {
++                                featurePopulationSeed = seededrandom.setDecorationSeed(configFeatureSeed, blockposition.getX(), blockposition.getZ()); // See seededrandom.setDecorationSeed from above
++                            }
++                            seededrandom.setFeatureSeed(featurePopulationSeed, l1, l);
++                            // Paper end
+ 
+                             try {
+                                 generatoraccessseed.setCurrentlyGenerating(supplier1);

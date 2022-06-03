@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 7 Jul 2021 16:19:41 -0700
+Subject: [PATCH] Fixes kick event leave message not being sent
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index b88728889c2ebfc44bfa5032b1629817b4e7b45d..b49dd352f6d8d27ab97fd0d69cf4001039ae577e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -251,7 +251,6 @@ public class ServerPlayer extends Player {
+     public boolean supressTrackerForLogin = false; // Paper
+     public boolean didPlayerJoinEvent = false; // Paper
+     public Integer clientViewDistance;
+-    public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
+     // CraftBukkit end
+     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
+ 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 49f5596ba647ce4ec310880f0091e78735099980..62e24f0314689c14dad5fb216f110b48addb5da2 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -447,7 +447,6 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             // Do not kick the player
+             return;
+         }
+-        this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
+         // Send the possibly modified leave message
+         final Component ichatbasecomponent = PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
+         // CraftBukkit end
+@@ -456,7 +455,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), (future) -> {
+             this.connection.disconnect(ichatbasecomponent);
+         });
+-        this.onDisconnect(ichatbasecomponent); // CraftBukkit - fire quit instantly
++        this.onDisconnect(ichatbasecomponent, event.leaveMessage()); // CraftBukkit - fire quit instantly // Paper - use kick event leave message
+         this.connection.setReadOnly();
+         MinecraftServer minecraftserver = this.server;
+         Connection networkmanager = this.connection;
+@@ -1909,6 +1908,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+     @Override
+     public void onDisconnect(Component reason) {
++        // Paper start
++        this.onDisconnect(reason, null);
++    }
++    public void onDisconnect(Component reason, @Nullable net.kyori.adventure.text.Component quitMessage) {
++        // Paper end
+         // CraftBukkit start - Rarely it would send a disconnect line twice
+         if (this.processedDisconnect) {
+             return;
+@@ -1925,7 +1929,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+         this.player.disconnect();
+         // Paper start - Adventure
+-        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().remove(this.player);
++        quitMessage = quitMessage == null ? this.server.getPlayerList().remove(this.player) : this.server.getPlayerList().remove(this.player, quitMessage); // Paper - pass in quitMessage to fix kick message not being used
+         if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
+             this.server.getPlayerList().broadcastMessage(PaperAdventure.asVanilla(quitMessage), ChatType.SYSTEM, Util.NIL_UUID);
+             // Paper end
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 3198291eaf12f8da4c138a1963db09f60381b4b6..c6f2ef6b12c699651aaefff0d0dbc20877ea5584 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -591,6 +591,11 @@ public abstract class PlayerList {
+     }
+ 
+     public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer) { // Paper - return Component
++        // Paper start
++        return this.remove(entityplayer, net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
++    }
++    public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer, net.kyori.adventure.text.Component leaveMessage) {
++        // Paper end
+         ServerLevel worldserver = entityplayer.getLevel();
+ 
+         entityplayer.awardStat(Stats.LEAVE_GAME);
+@@ -601,7 +606,7 @@ public abstract class PlayerList {
+             entityplayer.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
+         }
+ 
+-        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())), entityplayer.quitReason); // Paper - quit reason
++        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), leaveMessage, entityplayer.quitReason); // Paper - quit reason
+         if (entityplayer.didPlayerJoinEvent) this.cserver.getPluginManager().callEvent(playerQuitEvent); // Paper - if we disconnected before join ever fired, don't fire quit
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
+ 

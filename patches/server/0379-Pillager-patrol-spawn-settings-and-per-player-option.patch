@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Phoenix616 <mail@moep.tv>
+Date: Sat, 1 Feb 2020 16:50:39 +0100
+Subject: [PATCH] Pillager patrol spawn settings and per player options
+
+This adds config options for defining the spawn chance, spawn delay and
+spawn start day as well as toggles for handling the spawn delay and
+start day per player. (Based on the time played statistic)
+When not per player it will use the Vanilla mechanic of one delay per
+world and the world age for the start day.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 8a78ae8481d0ede674eb9aa56b9c8d5de5f730e9..45770f3511bc2ed3da31bda195e8043a0fe29702 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -505,8 +505,18 @@ public class PaperWorldConfig {
+     }
+ 
+     public boolean disablePillagerPatrols = false;
++    public double patrolSpawnChance = 0.2;
++    public boolean patrolPerPlayerDelay = false;
++    public int patrolDelay = 12000;
++    public boolean patrolPerPlayerStart = false;
++    public int patrolStartDay = 5;
+     private void pillagerSettings() {
+         disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
++        patrolSpawnChance = getDouble("game-mechanics.pillager-patrols.spawn-chance", patrolSpawnChance);
++        patrolPerPlayerDelay = getBoolean("game-mechanics.pillager-patrols.spawn-delay.per-player", patrolPerPlayerDelay);
++        patrolDelay = getInt("game-mechanics.pillager-patrols.spawn-delay.ticks", patrolDelay);
++        patrolPerPlayerStart = getBoolean("game-mechanics.pillager-patrols.start.per-player", patrolPerPlayerStart);
++        patrolStartDay = getInt("game-mechanics.pillager-patrols.start.day", patrolStartDay);
+     }
+ 
+     public boolean generateFlatBedrock = false;
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index ba8f8b222e8951e0eea8642ecbb843fbf5146f5d..600a774a0cdad4b2582afb3c603734209dac24f7 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -222,6 +222,7 @@ public class ServerPlayer extends Player {
+     public boolean wonGame;
+     private int containerUpdateDelay; // Paper
+     public long loginTime; // Paper
++    public int patrolSpawnDelay; // Paper - per player patrol spawns
+     // Paper start - cancellable death event
+     public boolean queueHealthUpdatePacket = false;
+     public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
+index d5a701b2d684bbe18f985adb6bd62e9218d3a0a6..babdbd9c78ff71a12d7bb369603f139cec1602ff 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
+@@ -24,7 +24,7 @@ public class PatrolSpawner implements CustomSpawner {
+ 
+     @Override
+     public int tick(ServerLevel world, boolean spawnMonsters, boolean spawnAnimals) {
+-        if (world.paperConfig.disablePillagerPatrols) return 0; // Paper
++        if (world.paperConfig.disablePillagerPatrols || world.paperConfig.patrolSpawnChance == 0) return 0; // Paper
+         if (!spawnMonsters) {
+             return 0;
+         } else if (!world.getGameRules().getBoolean(GameRules.RULE_DO_PATROL_SPAWNING)) {
+@@ -32,23 +32,51 @@ public class PatrolSpawner implements CustomSpawner {
+         } else {
+             Random random = world.random;
+ 
+-            --this.nextTick;
+-            if (this.nextTick > 0) {
++            // Paper start - Patrol settings
++            // Random player selection moved up for per player spawning and configuration
++            int j = world.players().size();
++            if (j < 1) {
+                 return 0;
++            }
++
++            net.minecraft.server.level.ServerPlayer entityhuman = world.players().get(random.nextInt(j));
++            if (entityhuman.isSpectator()) {
++                return 0;
++            }
++
++            int patrolSpawnDelay;
++            if (world.paperConfig.patrolPerPlayerDelay) {
++                --entityhuman.patrolSpawnDelay;
++                patrolSpawnDelay = entityhuman.patrolSpawnDelay;
+             } else {
+-                this.nextTick += 12000 + random.nextInt(1200);
+-                long i = world.getDayTime() / 24000L;
++                this.nextTick--;
++                patrolSpawnDelay = this.nextTick;
++            }
++
++            if (patrolSpawnDelay > 0) {
++                return 0;
++            } else {
++                long days;
++                if (world.paperConfig.patrolPerPlayerStart) {
++                    days = entityhuman.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME)) / 24000L; // PLAY_ONE_MINUTE is actually counting in ticks, a misnomer by Mojang
++                } else {
++                    days = world.getDayTime() / 24000L;
++                }
++                if (world.paperConfig.patrolPerPlayerDelay) {
++                    entityhuman.patrolSpawnDelay += world.paperConfig.patrolDelay + random.nextInt(1200);
++                } else {
++                    this.nextTick += world.paperConfig.patrolDelay + random.nextInt(1200);
++                }
+ 
+-                if (i >= 5L && world.isDay()) {
+-                    if (random.nextInt(5) != 0) {
++                if (days >= world.paperConfig.patrolStartDay && world.isDay()) {
++                    if (random.nextDouble() >= world.paperConfig.patrolSpawnChance) {
++                        // Paper end
+                         return 0;
+                     } else {
+-                        int j = world.players().size();
+ 
+                         if (j < 1) {
+                             return 0;
+                         } else {
+-                            Player entityhuman = (Player) world.players().get(random.nextInt(j));
+ 
+                             if (entityhuman.isSpectator()) {
+                                 return 0;
