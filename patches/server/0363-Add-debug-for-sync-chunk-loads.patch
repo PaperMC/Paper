@@ -13,7 +13,7 @@ chunks, however it must be enabled by setting the startup flag
   /paper syncloadinfo clear
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index a85678da691debbd68cc07e799a6c397c22ae31d..03ba904f5ac018f7e99bfdb9a07295fd6ef9476c 100644
+index b5756d067b013ee78a55b97ad00375d15ecd483c..64c8ba212855dbdd7d2025126474644bd68c3ec0 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -1,11 +1,17 @@
@@ -34,7 +34,7 @@ index a85678da691debbd68cc07e799a6c397c22ae31d..03ba904f5ac018f7e99bfdb9a07295fd
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.ChunkHolder;
  import net.minecraft.server.level.ServerChunkCache;
-@@ -30,6 +36,9 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
+@@ -29,6 +35,9 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
  import org.bukkit.entity.Player;
  
  import java.io.File;
@@ -44,7 +44,14 @@ index a85678da691debbd68cc07e799a6c397c22ae31d..03ba904f5ac018f7e99bfdb9a07295fd
  import java.time.LocalDateTime;
  import java.time.format.DateTimeFormatter;
  import java.util.ArrayDeque;
-@@ -47,7 +56,7 @@ import java.util.stream.Collectors;
+@@ -47,13 +56,14 @@ import java.util.stream.Collectors;
+ import static net.kyori.adventure.text.Component.text;
+ import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
+ import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
+ import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
+ import static net.kyori.adventure.text.format.NamedTextColor.RED;
+ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
  
  public class PaperCommand extends Command {
      private static final String BASE_PERM = "bukkit.command.paper.";
@@ -53,7 +60,7 @@ index a85678da691debbd68cc07e799a6c397c22ae31d..03ba904f5ac018f7e99bfdb9a07295fd
  
      public PaperCommand(String name) {
          super(name);
-@@ -90,6 +99,11 @@ public class PaperCommand extends Command {
+@@ -96,6 +106,11 @@ public class PaperCommand extends Command {
                      return getListMatchingLast(sender, args, worldNames);
                  }
                  break;
@@ -65,7 +72,7 @@ index a85678da691debbd68cc07e799a6c397c22ae31d..03ba904f5ac018f7e99bfdb9a07295fd
          }
          return Collections.emptyList();
      }
-@@ -165,6 +179,9 @@ public class PaperCommand extends Command {
+@@ -171,6 +186,9 @@ public class PaperCommand extends Command {
              case "fixlight":
                  this.doFixLight(sender, args);
                  break;
@@ -75,26 +82,26 @@ index a85678da691debbd68cc07e799a6c397c22ae31d..03ba904f5ac018f7e99bfdb9a07295fd
              case "ver":
                  if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-@@ -182,6 +199,47 @@ public class PaperCommand extends Command {
+@@ -188,6 +206,47 @@ public class PaperCommand extends Command {
          return true;
      }
  
 +    private void doSyncLoadInfo(CommandSender sender, String[] args) {
 +        if (!SyncLoadFinder.ENABLED) {
-+            sender.sendMessage(ChatColor.RED + "This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.");
++            sender.sendMessage(text("This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.", RED));
 +            return;
 +        }
 +
 +        if (args.length > 1 && args[1].equals("clear")) {
 +            SyncLoadFinder.clear();
-+            sender.sendMessage(ChatColor.GRAY + "Sync load data cleared.");
++            sender.sendMessage(text("Sync load data cleared.", GRAY));
 +            return;
 +        }
 +
 +        File file = new File(new File(new File("."), "debug"),
 +            "sync-load-info" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
 +        file.getParentFile().mkdirs();
-+        sender.sendMessage(ChatColor.GREEN + "Writing sync load info to " + file.toString());
++        sender.sendMessage(text("Writing sync load info to " + file, GREEN));
 +
 +
 +        try {
@@ -113,9 +120,9 @@ index a85678da691debbd68cc07e799a6c397c22ae31d..03ba904f5ac018f7e99bfdb9a07295fd
 +            ) {
 +                out.print(fileData);
 +            }
-+            sender.sendMessage(ChatColor.GREEN + "Successfully written sync load information!");
++            sender.sendMessage(text("Successfully written sync load information!", GREEN));
 +        } catch (Throwable thr) {
-+            sender.sendMessage(ChatColor.RED + "Failed to write sync load information");
++            sender.sendMessage(text("Failed to write sync load information!", RED));
 +            thr.printStackTrace();
 +        }
 +    }
@@ -317,7 +324,7 @@ index dec6aab50cebdfe1d0c93d71a8579b78b0ef7b9d..8f1609bbb5670d3b4acccb2cb4b9238c
              chunkproviderserver_b.managedBlock(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 8c91e1de2bd9a42259be32322eb36d4979684edc..e0e6915320264da3fefb3f449f27efb8477e1e63 100644
+index 9e779490dfea57112ce088fd398892052b4d9d73..0a7dbafd938141b34dc66d0b4af26dba92a21c06 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -383,6 +383,12 @@ public class ServerLevel extends Level implements WorldGenLevel {

@@ -6,14 +6,14 @@ Subject: [PATCH] Add tick times API and /mspt command
 
 diff --git a/src/main/java/com/destroystokyo/paper/MSPTCommand.java b/src/main/java/com/destroystokyo/paper/MSPTCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d0211d4f39f9d6af1d751ac66342b42cc6d7ba6d
+index 0000000000000000000000000000000000000000..874f0c2a071994c2145848886caa385e0e0bfb9b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/MSPTCommand.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,99 @@
 +package com.destroystokyo.paper;
 +
++import net.kyori.adventure.text.Component;
 +import net.minecraft.server.MinecraftServer;
-+import org.bukkit.ChatColor;
 +import org.bukkit.Location;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
@@ -24,8 +24,16 @@ index 0000000000000000000000000000000000000000..d0211d4f39f9d6af1d751ac66342b42c
 +import java.util.Collections;
 +import java.util.List;
 +
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GOLD;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
++
 +public class MSPTCommand extends Command {
 +    private static final DecimalFormat DF = new DecimalFormat("########0.0");
++    private static final Component SLASH = text("/");
 +
 +    public MSPTCommand(String name) {
 +        super(name);
@@ -45,17 +53,44 @@ index 0000000000000000000000000000000000000000..d0211d4f39f9d6af1d751ac66342b42c
 +
 +        MinecraftServer server = MinecraftServer.getServer();
 +
-+        List<String> times = new ArrayList<>();
++        List<Component> times = new ArrayList<>();
 +        times.addAll(eval(server.tickTimes5s.getTimes()));
 +        times.addAll(eval(server.tickTimes10s.getTimes()));
 +        times.addAll(eval(server.tickTimes60s.getTimes()));
 +
-+        sender.sendMessage("§6Server tick times §e(§7avg§e/§7min§e/§7max§e)§6 from last 5s§7,§6 10s§7,§6 1m§e:");
-+        sender.sendMessage(String.format("§6◴ %s§7/%s§7/%s§e, %s§7/%s§7/%s§e, %s§7/%s§7/%s", times.toArray()));
++        sender.sendMessage(text().content("Server tick times ").color(GOLD)
++            .append(text().color(YELLOW)
++                .append(
++                    text("("),
++                    text("avg", GRAY),
++                    text("/"),
++                    text("min", GRAY),
++                    text("/"),
++                    text("max", GRAY),
++                    text(")")
++                )
++            ).append(
++                text(" from last 5s"),
++                text(",", GRAY),
++                text(" 10s"),
++                text(",", GRAY),
++                text(" 1m"),
++                text(":", YELLOW)
++            )
++        );
++        sender.sendMessage(text().content("◴ ").color(GOLD)
++            .append(text().color(GRAY)
++                .append(
++                    times.get(0), SLASH, times.get(1), SLASH, times.get(2), text(", ", YELLOW),
++                    times.get(3), SLASH, times.get(4), SLASH, times.get(5), text(", ", YELLOW),
++                    times.get(6), SLASH, times.get(7), SLASH, times.get(8)
++                )
++            )
++        );
 +        return true;
 +    }
 +
-+    private static List<String> eval(long[] times) {
++    private static List<Component> eval(long[] times) {
 +        long min = Integer.MAX_VALUE;
 +        long max = 0L;
 +        long total = 0L;
@@ -70,12 +105,12 @@ index 0000000000000000000000000000000000000000..d0211d4f39f9d6af1d751ac66342b42c
 +        return Arrays.asList(getColor(avgD), getColor(minD), getColor(maxD));
 +    }
 +
-+    private static String getColor(double avg) {
-+        return ChatColor.COLOR_CHAR + (avg >= 50 ? "c" : avg >= 40 ? "e" : "a") + DF.format(avg);
++    private static Component getColor(double avg) {
++        return text(DF.format(avg), avg >= 50 ? RED : avg >= 40 ? YELLOW : GREEN);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 2e7c3fe697ac29807107152ecd916dfe21625f0a..3b0fa01342fba7e05f061d398f2f072f3bde9b31 100644
+index 0be8f68c3e61f132ada9381e36b743dd7477eece..8158a00821727104a23958a76e19cd8b01cb4e5a 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -69,6 +69,7 @@ public class PaperConfig {
@@ -87,7 +122,7 @@ index 2e7c3fe697ac29807107152ecd916dfe21625f0a..3b0fa01342fba7e05f061d398f2f072f
          version = getInt("config-version", 27);
          set("config-version", 27);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 287014feb99c67083a959f2c09213d49ad5f743d..2e08855085a547151140bcb05dce9bc469d81ff6 100644
+index 632743678f8c65e078080fda7c8eeee9a2d5753c..03ebc2a0476aef9297cbbc7f358915703a469b02 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -244,6 +244,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -146,7 +181,7 @@ index 287014feb99c67083a959f2c09213d49ad5f743d..2e08855085a547151140bcb05dce9bc4
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a6e7a609344f693cd0f51cfc4b122f45e24d0050..8452e72f669b82acb46ef00a7cdbb4177926ebc9 100644
+index 3ff85d9d8518db712ca1d2977a5865daef86f021..e270d7786eb1eae8970ff2ed5896789e05ca6613 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2461,6 +2461,16 @@ public final class CraftServer implements Server {

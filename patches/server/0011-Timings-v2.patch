@@ -163,10 +163,10 @@ index 0000000000000000000000000000000000000000..b47b7dce26805badd422c1867733ff4b
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ee72086b2dee2bd6415803e77825b2b1cb83cd3d
+index 0000000000000000000000000000000000000000..4092a227a540a1c5cfb95efcc2a36e049b9a979c
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,383 @@
+@@ -0,0 +1,384 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -193,14 +193,15 @@ index 0000000000000000000000000000000000000000..ee72086b2dee2bd6415803e77825b2b1
 +package co.aikar.timings;
 +
 +import com.google.common.collect.Sets;
++import io.papermc.paper.adventure.PaperAdventure;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import net.minecraft.server.MinecraftServer;
 +import org.apache.commons.lang.StringUtils;
 +import org.bukkit.Bukkit;
-+import org.bukkit.ChatColor;
 +import org.bukkit.Material;
 +import org.bukkit.configuration.ConfigurationSection;
 +import org.bukkit.configuration.MemorySection;
-+import org.bukkit.craftbukkit.util.CraftChatMessage;
 +import org.bukkit.entity.EntityType;
 +import org.json.simple.JSONObject;
 +import org.json.simple.JSONValue;
@@ -230,6 +231,7 @@ index 0000000000000000000000000000000000000000..ee72086b2dee2bd6415803e77825b2b1
 +import static co.aikar.util.JSONUtil.toArray;
 +import static co.aikar.util.JSONUtil.toArrayMapper;
 +import static co.aikar.util.JSONUtil.toObjectMapper;
++import static net.kyori.adventure.text.Component.text;
 +
 +@SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
 +public class TimingsExport extends Thread {
@@ -260,17 +262,17 @@ index 0000000000000000000000000000000000000000..ee72086b2dee2bd6415803e77825b2b1
 +        long now = System.currentTimeMillis();
 +        final long lastReportDiff = now - lastReport;
 +        if (lastReportDiff < 60000) {
-+            listeners.sendMessage(ChatColor.RED + "Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)");
++            listeners.sendMessage(text("Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)", NamedTextColor.RED));
 +            listeners.done();
 +            return;
 +        }
 +        final long lastStartDiff = now - TimingsManager.timingStart;
 +        if (lastStartDiff < 180000) {
-+            listeners.sendMessage(ChatColor.RED + "Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)");
++            listeners.sendMessage(text("Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)", NamedTextColor.RED));
 +            listeners.done();
 +            return;
 +        }
-+        listeners.sendMessage(ChatColor.GREEN + "Preparing Timings Report...");
++        listeners.sendMessage(text("Preparing Timings Report...", NamedTextColor.GREEN));
 +        lastReport = now;
 +        Map parent = createObject(
 +            // Get some basic system details about the server
@@ -281,7 +283,7 @@ index 0000000000000000000000000000000000000000..ee72086b2dee2bd6415803e77825b2b1
 +            pair("online-mode", Bukkit.getServer().getOnlineMode()),
 +            pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000),
 +            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getPackRepository().getSelectedPacks(), pack -> {
-+                return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.getChatLink(true)));
++                return PlainTextComponentSerializer.plainText().serialize(PaperAdventure.asAdventure(pack.getChatLink(true)));
 +            }))
 +        );
 +        if (!TimingsManager.privacy) {
@@ -500,9 +502,8 @@ index 0000000000000000000000000000000000000000..ee72086b2dee2bd6415803e77825b2b1
 +            response = getResponse(con);
 +
 +            if (con.getResponseCode() != 302) {
-+                listeners.sendMessage(
-+                    ChatColor.RED + "Upload Error: " + con.getResponseCode() + ": " + con.getResponseMessage());
-+                listeners.sendMessage(ChatColor.RED + "Check your logs for more information");
++                listeners.sendMessage(text( "Upload Error: " + con.getResponseCode() + ": " + con.getResponseMessage(), NamedTextColor.RED));
++                listeners.sendMessage(text("Check your logs for more information", NamedTextColor.RED));
 +                if (response != null) {
 +                    Bukkit.getLogger().log(Level.SEVERE, response);
 +                }
@@ -510,13 +511,13 @@ index 0000000000000000000000000000000000000000..ee72086b2dee2bd6415803e77825b2b1
 +            }
 +
 +            timingsURL = con.getHeaderField("Location");
-+            listeners.sendMessage(ChatColor.GREEN + "View Timings Report: " + timingsURL);
++            listeners.sendMessage(text("View Timings Report: " + timingsURL, NamedTextColor.GREEN));
 +
 +            if (response != null && !response.isEmpty()) {
 +                Bukkit.getLogger().log(Level.INFO, "Timing Response: " + response);
 +            }
 +        } catch (IOException ex) {
-+            listeners.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
++            listeners.sendMessage(text("Error uploading timings, check your logs for more information", NamedTextColor.RED));
 +            if (response != null) {
 +                Bukkit.getLogger().log(Level.SEVERE, response);
 +            }
@@ -540,7 +541,7 @@ index 0000000000000000000000000000000000000000..ee72086b2dee2bd6415803e77825b2b1
 +            return bos.toString();
 +
 +        } catch (IOException ex) {
-+            listeners.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
++            listeners.sendMessage(text("Error uploading timings, check your logs for more information", NamedTextColor.RED));
 +            Bukkit.getLogger().log(Level.WARNING, con.getResponseMessage(), ex);
 +            return null;
 +        } finally {
@@ -1497,7 +1498,7 @@ index d790c37753f019b682fe00bea392359ba18bf204..8699a3bd63e2df83615ae39a6873d987
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index c94c62e7e32f55d322ddfed930e1aaa6c1343b29..d9244b1d0ac1ae52aa9692884260cce5e2bc74bb 100644
+index c2b768c949cbf8d5e1db5a99812eb31c47194e0e..c8e59de21c1fc217068f40fc5c4c87cbfa58d329 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -139,7 +139,7 @@ import org.bukkit.event.entity.EntityTeleportEvent;

@@ -32,7 +32,7 @@ https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528273&page=com.atlass
 https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528577&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-528577
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 006f2e900de3a665fa48cac877511277a900be62..2225f79b17862160701ae3670cda348cc2e45f0a 100644
+index d20fd81524518459635c1b78770de087ad178743..68f3f5ebd2188bf8280fc028f98ef8bb51622c26 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -6,13 +6,15 @@ import com.google.common.collect.ImmutableSet;
@@ -52,7 +52,15 @@ index 006f2e900de3a665fa48cac877511277a900be62..2225f79b17862160701ae3670cda348c
  import org.apache.commons.lang3.tuple.MutablePair;
  import org.apache.commons.lang3.tuple.Pair;
  import org.bukkit.Bukkit;
-@@ -41,7 +43,7 @@ import java.util.stream.Collectors;
+@@ -39,13 +41,15 @@ import java.util.Set;
+ import java.util.stream.Collectors;
+ 
+ import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
++import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
+ import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
+ import static net.kyori.adventure.text.format.NamedTextColor.RED;
+ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
  
  public class PaperCommand extends Command {
      private static final String BASE_PERM = "bukkit.command.paper.";
@@ -61,7 +69,7 @@ index 006f2e900de3a665fa48cac877511277a900be62..2225f79b17862160701ae3670cda348c
  
      public PaperCommand(String name) {
          super(name);
-@@ -69,6 +71,21 @@ public class PaperCommand extends Command {
+@@ -73,6 +77,21 @@ public class PaperCommand extends Command {
                  if (args.length == 3)
                      return getListMatchingLast(sender, args, EntityType.getEntityNameList().stream().map(ResourceLocation::toString).sorted().toArray(String[]::new));
                  break;
@@ -83,7 +91,7 @@ index 006f2e900de3a665fa48cac877511277a900be62..2225f79b17862160701ae3670cda348c
          }
          return Collections.emptyList();
      }
-@@ -135,6 +152,12 @@ public class PaperCommand extends Command {
+@@ -139,6 +158,12 @@ public class PaperCommand extends Command {
              case "reload":
                  doReload(sender);
                  break;
@@ -96,7 +104,7 @@ index 006f2e900de3a665fa48cac877511277a900be62..2225f79b17862160701ae3670cda348c
              case "ver":
                  if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-@@ -152,6 +175,114 @@ public class PaperCommand extends Command {
+@@ -156,6 +181,122 @@ public class PaperCommand extends Command {
          return true;
      }
  
@@ -109,7 +117,7 @@ index 006f2e900de3a665fa48cac877511277a900be62..2225f79b17862160701ae3670cda348c
 +            for (int i = 1; i < args.length; ++i) {
 +                org.bukkit.World world = Bukkit.getWorld(args[i]);
 +                if (world == null) {
-+                    sender.sendMessage(ChatColor.RED + "World '" + args[i] + "' is invalid");
++                    sender.sendMessage(text("World '" + args[i] + "' is invalid", RED));
 +                    return;
 +                }
 +                worlds.add(world);
@@ -162,22 +170,30 @@ index 006f2e900de3a665fa48cac877511277a900be62..2225f79b17862160701ae3670cda348c
 +            accumulatedTicking += ticking;
 +            accumulatedEntityTicking += entityTicking;
 +
-+            sender.sendMessage(ChatColor.BLUE + "Chunks in " + ChatColor.GREEN + bukkitWorld.getName() + ChatColor.DARK_AQUA + ":");
-+            sender.sendMessage(ChatColor.BLUE + "Total: " + ChatColor.DARK_AQUA + total + ChatColor.BLUE + " Inactive: " + ChatColor.DARK_AQUA
-+                               + inactive + ChatColor.BLUE + " Border: " + ChatColor.DARK_AQUA + border + ChatColor.BLUE + " Ticking: "
-+                               + ChatColor.DARK_AQUA + ticking + ChatColor.BLUE + " Entity: " + ChatColor.DARK_AQUA + entityTicking);
++            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.getName(), GREEN), text(":")));
++            sender.sendMessage(text().color(DARK_AQUA).append(
++                text("Total: ", BLUE), text(total),
++                text(" Inactive: ", BLUE), text(inactive),
++                text(" Border: ", BLUE), text(border),
++                text(" Ticking: ", BLUE), text(ticking),
++                text(" Entity: ", BLUE), text(entityTicking)
++            ));
 +        }
 +        if (worlds.size() > 1) {
-+            sender.sendMessage(ChatColor.BLUE + "Chunks in " + ChatColor.GREEN + "all listed worlds" + ChatColor.DARK_AQUA + ":");
-+            sender.sendMessage(ChatColor.BLUE + "Total: " + ChatColor.DARK_AQUA + accumulatedTotal + ChatColor.BLUE + " Inactive: " + ChatColor.DARK_AQUA
-+                               + accumulatedInactive + ChatColor.BLUE + " Border: " + ChatColor.DARK_AQUA + accumulatedBorder + ChatColor.BLUE + " Ticking: "
-+                               + ChatColor.DARK_AQUA + accumulatedTicking + ChatColor.BLUE + " Entity: " + ChatColor.DARK_AQUA + accumulatedEntityTicking);
++            sender.sendMessage(text().append(text("Chunks in ", BLUE), text("all listed worlds", GREEN), text(":", DARK_AQUA)));
++            sender.sendMessage(text().color(DARK_AQUA).append(
++                text("Total: ", BLUE), text(accumulatedTotal),
++                text(" Inactive: ", BLUE), text(accumulatedInactive),
++                text(" Border: ", BLUE), text(accumulatedBorder),
++                text(" Ticking: ", BLUE), text(accumulatedTicking),
++                text(" Entity: ", BLUE), text(accumulatedEntityTicking)
++            ));
 +        }
 +    }
 +
 +    private void doDebug(CommandSender sender, String[] args) {
 +        if (args.length < 2) {
-+            sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
++            sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
 +            return;
 +        }
 +
@@ -185,25 +201,25 @@ index 006f2e900de3a665fa48cac877511277a900be62..2225f79b17862160701ae3670cda348c
 +        switch (debugType) {
 +            case "chunks":
 +                if (args.length >= 3 && args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
-+                    sender.sendMessage(ChatColor.RED + "Use /paper debug chunks to dump loaded chunk information to a file");
++                    sender.sendMessage(text("Use /paper debug chunks [world] to dump loaded chunk information to a file", RED));
 +                    break;
 +                }
 +                File file = new File(new File(new File("."), "debug"),
 +                    "chunks-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
-+                sender.sendMessage(ChatColor.GREEN + "Writing chunk information dump to " + file.toString());
++                sender.sendMessage(text("Writing chunk information dump to " + file, GREEN));
 +                try {
 +                    MCUtil.dumpChunks(file);
-+                    sender.sendMessage(ChatColor.GREEN + "Successfully written chunk information!");
++                    sender.sendMessage(text("Successfully written chunk information!", GREEN));
 +                } catch (Throwable thr) {
 +                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
-+                    sender.sendMessage(ChatColor.RED + "Failed to dump chunk information, see console");
++                    sender.sendMessage(text("Failed to dump chunk information, see console", RED));
 +                }
 +
 +                break;
 +            case "help":
 +                // fall through to default
 +            default:
-+                sender.sendMessage(ChatColor.RED + "Use /paper debug [chunks] help for more information on a specific command");
++                sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
 +                return;
 +        }
 +    }

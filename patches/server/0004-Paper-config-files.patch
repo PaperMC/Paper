@@ -7,10 +7,10 @@ Loads each yml file for early init too so it can be used for early options
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762603e615b
+index 0000000000000000000000000000000000000000..97f9066f1be4db98b63744c99f764b96bcdda8d4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,285 @@
+@@ -0,0 +1,289 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Functions;
@@ -29,7 +29,6 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +import org.apache.commons.lang3.tuple.MutablePair;
 +import org.apache.commons.lang3.tuple.Pair;
 +import org.bukkit.Bukkit;
-+import org.bukkit.ChatColor;
 +import org.bukkit.Location;
 +import org.bukkit.World;
 +import org.bukkit.command.Command;
@@ -51,6 +50,11 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +import java.util.Map;
 +import java.util.Set;
 +import java.util.stream.Collectors;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 +
 +public class PaperCommand extends Command {
 +    private static final String BASE_PERM = "bukkit.command.paper.";
@@ -132,7 +136,7 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +        if (!testPermission(sender)) return true;
 +
 +        if (args.length == 0) {
-+            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++            sender.sendMessage(text("Usage: " + this.usageMessage, RED));
 +            return false;
 +        }
 +        if (SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ENGLISH))) {
@@ -158,7 +162,7 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +                }
 +                // else - fall through to default
 +            default:
-+                sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++                sender.sendMessage(text("Usage: " + this.usageMessage, RED));
 +                return false;
 +        }
 +
@@ -170,7 +174,7 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +     */
 +    private void listEntities(CommandSender sender, String[] args) {
 +        if (args.length < 2 || args[1].toLowerCase(Locale.ENGLISH).equals("help")) {
-+            sender.sendMessage(ChatColor.RED + "Use /paper entity [list] help for more information on a specific command.");
++            sender.sendMessage(text("Use /paper entity [list] help for more information on a specific command", RED));
 +            return;
 +        }
 +
@@ -179,7 +183,7 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +                String filter = "*";
 +                if (args.length > 2) {
 +                    if (args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
-+                        sender.sendMessage(ChatColor.RED + "Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.");
++                        sender.sendMessage(text("Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.", RED));
 +                        return;
 +                    }
 +                    filter = args[2];
@@ -190,8 +194,8 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +                        .collect(Collectors.toSet());
 +
 +                if (names.isEmpty()) {
-+                    sender.sendMessage(ChatColor.RED + "Invalid filter, does not match any entities. Use /paper entity list for a proper list");
-+                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
++                    sender.sendMessage(text("Invalid filter, does not match any entities. Use /paper entity list for a proper list", RED));
++                    sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
 +                    return;
 +                }
 +
@@ -201,17 +205,17 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +                } else if (sender instanceof Player) {
 +                    worldName = ((Player) sender).getWorld().getName();
 +                } else {
-+                    sender.sendMessage(ChatColor.RED + "Please specify the name of a world");
-+                    sender.sendMessage(ChatColor.RED + "To do so without a filter, specify '*' as the filter");
-+                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
++                    sender.sendMessage(text("Please specify the name of a world", RED));
++                    sender.sendMessage(text("To do so without a filter, specify '*' as the filter", RED));
++                    sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
 +                    return;
 +                }
 +
 +                Map<ResourceLocation, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
 +                World bukkitWorld = Bukkit.getWorld(worldName);
 +                if (bukkitWorld == null) {
-+                    sender.sendMessage(ChatColor.RED + "Could not load world for " + worldName + ". Please select a valid world.");
-+                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
++                    sender.sendMessage(text("Could not load world for " + worldName + ". Please select a valid world.", RED));
++                    sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
 +                    return;
 +                }
 +                ServerLevel world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
@@ -236,7 +240,7 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +                    Pair<Integer, Map<ChunkPos, Integer>> info = list.get(name);
 +                    int nonTicking = nonEntityTicking.getOrDefault(name, Integer.valueOf(0)).intValue();
 +                    if (info == null) {
-+                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        sender.sendMessage(text("No entities found.", RED));
 +                        return;
 +                    }
 +                    sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
@@ -251,7 +255,7 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +                            .collect(Collectors.toList());
 +
 +                    if (info == null || info.size() == 0) {
-+                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        sender.sendMessage(text("No entities found.", RED));
 +                        return;
 +                    }
 +
@@ -272,19 +276,19 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +        java.nio.file.Path dir = java.nio.file.Paths.get("./dumps");
 +        String name = "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now());
 +
-+        Command.broadcastCommandMessage(sender, ChatColor.YELLOW + "Writing JVM heap data...");
++        Command.broadcastCommandMessage(sender, text("Writing JVM heap data...", YELLOW));
 +
 +        java.nio.file.Path file = CraftServer.dumpHeap(dir, name);
 +        if (file != null) {
-+            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump saved to " + file);
++            Command.broadcastCommandMessage(sender, text("Heap dump saved to " + file, GREEN));
 +        } else {
-+            Command.broadcastCommandMessage(sender, ChatColor.RED + "Failed to write heap dump, see sever log for details");
++            Command.broadcastCommandMessage(sender, text("Failed to write heap dump, see server log for details", RED));
 +        }
 +    }
 +
 +    private void doReload(CommandSender sender) {
-+        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues.");
-+        Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
++        Command.broadcastCommandMessage(sender, text("Please note that this command is not supported and may cause issues.", RED));
++        Command.broadcastCommandMessage(sender, text("If you encounter any issues please use the /stop command to restart your server.", RED));
 +
 +        MinecraftServer console = MinecraftServer.getServer();
 +        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
@@ -293,7 +297,7 @@ index 0000000000000000000000000000000000000000..a7182a4c64980aa19b8493ac9c2bb762
 +        }
 +        console.server.reloadCount++;
 +
-+        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
++        Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
