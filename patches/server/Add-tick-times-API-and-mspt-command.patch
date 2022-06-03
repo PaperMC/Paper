@@ -12,8 +12,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper;
 +
++import net.kyori.adventure.text.Component;
 +import net.minecraft.server.MinecraftServer;
-+import org.bukkit.ChatColor;
 +import org.bukkit.Location;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
@@ -24,8 +24,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Collections;
 +import java.util.List;
 +
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GOLD;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
++
 +public class MSPTCommand extends Command {
 +    private static final DecimalFormat DF = new DecimalFormat("########0.0");
++    private static final Component SLASH = text("/");
 +
 +    public MSPTCommand(String name) {
 +        super(name);
@@ -45,17 +53,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        MinecraftServer server = MinecraftServer.getServer();
 +
-+        List<String> times = new ArrayList<>();
++        List<Component> times = new ArrayList<>();
 +        times.addAll(eval(server.tickTimes5s.getTimes()));
 +        times.addAll(eval(server.tickTimes10s.getTimes()));
 +        times.addAll(eval(server.tickTimes60s.getTimes()));
 +
-+        sender.sendMessage("§6Server tick times §e(§7avg§e/§7min§e/§7max§e)§6 from last 5s§7,§6 10s§7,§6 1m§e:");
-+        sender.sendMessage(String.format("§6◴ %s§7/%s§7/%s§e, %s§7/%s§7/%s§e, %s§7/%s§7/%s", times.toArray()));
++        sender.sendMessage(text().content("Server tick times ").color(GOLD)
++            .append(text().color(YELLOW)
++                .append(
++                    text("("),
++                    text("avg", GRAY),
++                    text("/"),
++                    text("min", GRAY),
++                    text("/"),
++                    text("max", GRAY),
++                    text(")")
++                )
++            ).append(
++                text(" from last 5s"),
++                text(",", GRAY),
++                text(" 10s"),
++                text(",", GRAY),
++                text(" 1m"),
++                text(":", YELLOW)
++            )
++        );
++        sender.sendMessage(text().content("◴ ").color(GOLD)
++            .append(text().color(GRAY)
++                .append(
++                    times.get(0), SLASH, times.get(1), SLASH, times.get(2), text(", ", YELLOW),
++                    times.get(3), SLASH, times.get(4), SLASH, times.get(5), text(", ", YELLOW),
++                    times.get(6), SLASH, times.get(7), SLASH, times.get(8)
++                )
++            )
++        );
 +        return true;
 +    }
 +
-+    private static List<String> eval(long[] times) {
++    private static List<Component> eval(long[] times) {
 +        long min = Integer.MAX_VALUE;
 +        long max = 0L;
 +        long total = 0L;
@@ -70,8 +105,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return Arrays.asList(getColor(avgD), getColor(minD), getColor(maxD));
 +    }
 +
-+    private static String getColor(double avg) {
-+        return ChatColor.COLOR_CHAR + (avg >= 50 ? "c" : avg >= 40 ? "e" : "a") + DF.format(avg);
++    private static Component getColor(double avg) {
++        return text(DF.format(avg), avg >= 50 ? RED : avg >= 40 ? YELLOW : GREEN);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
