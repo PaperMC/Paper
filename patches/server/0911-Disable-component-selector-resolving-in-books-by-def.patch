@@ -19,10 +19,10 @@ index fafbebbb5e8c1a381b673f97f1fa210687b52823..8379c6313f06ab3eeaf02bad41d8b835
 +    }
  }
 diff --git a/src/main/java/net/minecraft/world/item/WrittenBookItem.java b/src/main/java/net/minecraft/world/item/WrittenBookItem.java
-index 0600bfcc3a4f9043324c046b6c0d2b579ab151cb..01e09feb142ca3cc8875e796b0c3db2bb9559246 100644
+index 0600bfcc3a4f9043324c046b6c0d2b579ab151cb..26a9a15cc630113cd8d2c8287c6b0f1067ce53f0 100644
 --- a/src/main/java/net/minecraft/world/item/WrittenBookItem.java
 +++ b/src/main/java/net/minecraft/world/item/WrittenBookItem.java
-@@ -113,7 +113,7 @@ public class WrittenBookItem extends Item {
+@@ -113,25 +113,42 @@ public class WrittenBookItem extends Item {
  
      public static boolean resolveBookComponents(ItemStack book, @Nullable CommandSourceStack commandSource, @Nullable Player player) {
          CompoundTag compoundTag = book.getTag();
@@ -31,3 +31,40 @@ index 0600bfcc3a4f9043324c046b6c0d2b579ab151cb..01e09feb142ca3cc8875e796b0c3db2b
              compoundTag.putBoolean("resolved", true);
              if (!makeSureTagIsValid(compoundTag)) {
                  return false;
+             } else {
+                 ListTag listTag = compoundTag.getList("pages", 8);
++                // Paper start - backport length limit
++                ListTag newPages = new ListTag();
+ 
+                 for(int i = 0; i < listTag.size(); ++i) {
+-                    listTag.set(i, (Tag)StringTag.valueOf(resolvePage(commandSource, player, listTag.getString(i))));
++                    String resolvedPage = resolvePage(commandSource, player, listTag.getString(i));
++                    if (resolvedPage.length() > 32767) {
++                        return false;
++                    }
++
++                    newPages.add(i, StringTag.valueOf(resolvedPage));
+                 }
+ 
+                 if (compoundTag.contains("filtered_pages", 10)) {
+                     CompoundTag compoundTag2 = compoundTag.getCompound("filtered_pages");
++                    CompoundTag newFilteredPages = new CompoundTag();
+ 
+                     for(String string : compoundTag2.getAllKeys()) {
+-                        compoundTag2.putString(string, resolvePage(commandSource, player, compoundTag2.getString(string)));
++                        String resolvedPage = resolvePage(commandSource, player, compoundTag2.getString(string));
++                        if (resolvedPage.length() > 32767) {
++                            return false;
++                        }
++
++                        newFilteredPages.putString(string, resolvedPage);
+                     }
++
++                    compoundTag.put("filtered_pages", newFilteredPages);
+                 }
+ 
++                compoundTag.put("pages", newPages);
++                // Paper end
+                 return true;
+             }
+         } else {
