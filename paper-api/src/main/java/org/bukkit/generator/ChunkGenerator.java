@@ -73,11 +73,11 @@ public abstract class ChunkGenerator {
      *
      * @param worldInfo The world info of the world this chunk will be used for
      * @param random The random generator to use
-     * @param x The X-coordinate of the chunk
-     * @param z The Z-coordinate of the chunk
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
      * @param chunkData To modify
      */
-    public void generateNoise(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkData chunkData) {
+    public void generateNoise(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
     }
 
     /**
@@ -100,11 +100,11 @@ public abstract class ChunkGenerator {
      *
      * @param worldInfo The world info of the world this chunk will be used for
      * @param random The random generator to use
-     * @param x The X-coordinate of the chunk
-     * @param z The Z-coordinate of the chunk
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
      * @param chunkData To modify
      */
-    public void generateSurface(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkData chunkData) {
+    public void generateSurface(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
     }
 
     /**
@@ -127,11 +127,11 @@ public abstract class ChunkGenerator {
      *
      * @param worldInfo The world info of the world this chunk will be used for
      * @param random The random generator to use
-     * @param x The X-coordinate of the chunk
-     * @param z The Z-coordinate of the chunk
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
      * @param chunkData To modify
      */
-    public void generateBedrock(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkData chunkData) {
+    public void generateBedrock(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
     }
 
     /**
@@ -154,11 +154,11 @@ public abstract class ChunkGenerator {
      *
      * @param worldInfo The world info of the world this chunk will be used for
      * @param random The random generator to use
-     * @param x The X-coordinate of the chunk
-     * @param z The Z-coordinate of the chunk
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
      * @param chunkData To modify
      */
-    public void generateCaves(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkData chunkData) {
+    public void generateCaves(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
     }
 
     /**
@@ -289,12 +289,12 @@ public abstract class ChunkGenerator {
      *     generator
      * @return ChunkData containing the types for each block created by this
      *     generator
-     * @deprecated The generation is now split up
+     * @deprecated The generation is now split up and the new methods should be used, see {@link ChunkGenerator}
      */
     @NotNull
     @Deprecated
     public ChunkData generateChunkData(@NotNull World world, @NotNull Random random, int x, int z, @NotNull BiomeGrid biome) {
-        throw new UnsupportedOperationException("Custom generator " + getClass().getName() + " is missing required method generateChunkData");
+        throw new UnsupportedOperationException("Not implemented, no longer needed");
     }
 
     /**

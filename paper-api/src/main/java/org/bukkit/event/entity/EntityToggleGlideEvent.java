@@ -35,6 +35,12 @@ public class EntityToggleGlideEvent extends EntityEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    /**
+     * Returns true if the entity is now gliding or
+     * false if the entity stops gliding.
+     *
+     * @return new gliding state
+     */
     public boolean isGliding() {
         return isGliding;
     }

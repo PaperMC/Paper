@@ -29,6 +29,12 @@ public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    /**
+     * Returns true if the entity is now swims or
+     * false if the entity stops swimming.
+     *
+     * @return new swimming state
+     */
     public boolean isSwimming() {
         return isSwimming;
     }

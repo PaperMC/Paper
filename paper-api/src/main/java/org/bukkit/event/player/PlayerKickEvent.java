@@ -12,7 +12,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private String leaveMessage;
     private String kickReason;
-    private Boolean cancel;
+    private boolean cancel;
 
     public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final String kickReason, @NotNull final String leaveMessage) {
         super(playerKicked);

@@ -5,7 +5,10 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when a World is initializing
+ * Called when a World is initializing.
+ * <p>
+ * To get every world it is recommended to add following to the plugin.yml.
+ * <pre>load: STARTUP</pre>
  */
 public class WorldInitEvent extends WorldEvent {
     private static final HandlerList handlers = new HandlerList();

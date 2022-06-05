@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when a block is damaged by a player.
  * <p>
  * If a Block Damage event is cancelled, the block will not be damaged.
+ * @see BlockDamageAbortEvent
  */
 public class BlockDamageEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

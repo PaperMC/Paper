@@ -6,10 +6,10 @@ import org.bukkit.generator.BlockPopulator;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Thrown when a new chunk has finished being populated.
+ * Thrown when a newly generated chunk has finished being populated.
  * <p>
- * If your intent is to populate the chunk using this event, please see {@link
- * BlockPopulator}
+ * <b>Note:</b> Do not use this to generated blocks in a newly generated chunk.
+ * Use a {@link BlockPopulator} instead.
  */
 public class ChunkPopulateEvent extends ChunkEvent {
     private static final HandlerList handlers = new HandlerList();

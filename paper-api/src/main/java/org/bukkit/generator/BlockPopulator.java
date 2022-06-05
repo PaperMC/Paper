@@ -3,6 +3,7 @@ package org.bukkit.generator;
 import java.util.Random;
 import org.bukkit.Chunk;
 import org.bukkit.World;
+import org.bukkit.event.world.WorldInitEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -10,6 +11,13 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * For example, generating glowstone inside the nether or generating dungeons
  * full of treasure
+ * <p>
+ * A BlockPopulator can be used in combination with a custom {@link ChunkGenerator}
+ * by returning it in the method {@link ChunkGenerator#getDefaultPopulators(World)}
+ * or by adding it manually to the worlds populator list returned by {@link World#getPopulators()}.
+ * <p>
+ * When adding a BlockPopulator manually to a world it is recommended to do so during
+ * the {@link WorldInitEvent}.
  */
 public abstract class BlockPopulator {
 
@@ -54,10 +62,10 @@ public abstract class BlockPopulator {
      *
      * @param worldInfo The world info of the world to generate in
      * @param random The random generator to use
-     * @param x The X-coordinate of the chunk
-     * @param z The Z-coordinate of the chunk
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
      * @param limitedRegion The chunk region to populate
      */
-    public void populate(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull LimitedRegion limitedRegion) {
+    public void populate(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull LimitedRegion limitedRegion) {
     }
 }

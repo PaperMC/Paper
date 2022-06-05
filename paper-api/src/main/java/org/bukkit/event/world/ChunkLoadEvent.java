@@ -2,6 +2,7 @@ package org.bukkit.event.world;
 
 import org.bukkit.Chunk;
 import org.bukkit.event.HandlerList;
+import org.bukkit.generator.BlockPopulator;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -19,7 +20,8 @@ public class ChunkLoadEvent extends ChunkEvent {
     /**
      * Gets if this chunk was newly created or not.
      * <p>
-     * Note that if this chunk is new, it will not be populated at this time.
+     * <b>Note:</b> Do not use this to generated blocks in a newly generated chunk.
+     * Use a {@link BlockPopulator} instead.
      *
      * @return true if the chunk is new, otherwise false
      */

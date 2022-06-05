@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player stops damaging a Block.
+ * @see BlockDamageEvent
  */
 public class BlockDamageAbortEvent extends BlockEvent {
 
