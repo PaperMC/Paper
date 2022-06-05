@@ -20,50 +20,17 @@ index 1adbceadd5df96e17796561a40eb7b760493440e..c07257314e070d4423c4f53f58cb0962
      }
  
      public static boolean allowBlockPermanentBreakingExploits = false;
-diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..709f2a420ceaffe0101c676ec23e949e8d684465 100644
---- a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-+++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-@@ -1,5 +1,10 @@
- package com.destroystokyo.paper.console;
- 
-+import io.papermc.paper.console.HexFormattingConverter;
-+import net.kyori.adventure.audience.MessageType;
-+import net.kyori.adventure.identity.Identity;
-+import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
-@@ -10,8 +15,13 @@ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
- 
-     @Override
-     public void sendRawMessage(String message) {
--        // TerminalConsoleAppender supports color codes directly in log messages
--        LOGGER.info(message);
-+        final Component msg = LegacyComponentSerializer.legacySection().deserialize(message);
-+        this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
-+    }
-+
-+    @Override
-+    public void sendMessage(Identity identity, Component message, MessageType type) {
-+        LOGGER.info(HexFormattingConverter.SERIALIZER.serialize(message));
-     }
- 
- }
 diff --git a/src/main/java/io/papermc/paper/console/HexFormattingConverter.java b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ea83ee8762c126c449993a7497257b0bd8663452
+index 0000000000000000000000000000000000000000..384245c51a7234886e1e85b18b738a10b57e73b1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
-@@ -0,0 +1,212 @@
+@@ -0,0 +1,206 @@
 +package io.papermc.paper.console;
 +
 +import com.destroystokyo.paper.PaperConfig;
-+import io.papermc.paper.adventure.PaperAdventure;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.format.TextColor;
-+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.minecrell.terminalconsole.TerminalConsoleAppender;
 +import org.apache.logging.log4j.core.LogEvent;
 +import org.apache.logging.log4j.core.config.Configuration;
@@ -85,7 +52,7 @@ index 0000000000000000000000000000000000000000..ea83ee8762c126c449993a7497257b0b
 +
 +/**
 + * Modified version of <a href="https://github.com/Minecrell/TerminalConsoleAppender/blob/master/src/main/java/net/minecrell/terminalconsole/MinecraftFormattingConverter.java">
-+ * TerminalConsoleAppender's MinecraftFormattingConverter</a> to support hex color codes using the Adventure [char]#rrggbb format.
++ * TerminalConsoleAppender's MinecraftFormattingConverter</a> to support hex color codes using the md_5 &x&r&r&g&g&b&b format.
 + */
 +@Plugin(name = "paperMinecraftFormatting", category = PatternConverter.CATEGORY)
 +@ConverterKeys({"paperMinecraftFormatting"})
@@ -96,17 +63,12 @@ index 0000000000000000000000000000000000000000..ea83ee8762c126c449993a7497257b0b
 +
 +    private static final String ANSI_RESET = "\u001B[m";
 +
-+    private static final char COLOR_CHAR = 0x7f;
-+    public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-+        .hexColors()
-+        .flattener(PaperAdventure.FLATTENER)
-+        .character(HexFormattingConverter.COLOR_CHAR)
-+        .build();
++    private static final char COLOR_CHAR = '§';
 +    private static final String LOOKUP = "0123456789abcdefklmnor";
 +
 +    private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
 +    private static final Pattern NAMED_PATTERN = Pattern.compile(COLOR_CHAR + "[0-9a-fk-orA-FK-OR]");
-+    private static final Pattern RGB_PATTERN = Pattern.compile(COLOR_CHAR + "#([0-9a-fA-F]){6}");
++    private static final Pattern RGB_PATTERN = Pattern.compile(COLOR_CHAR + "x(" + COLOR_CHAR + "[0-9a-fA-F]){6}");
 +
 +    private static final String[] RGB_ANSI_CODES = new String[]{
 +        formatHexAnsi(NamedTextColor.BLACK),         // Black §0
@@ -193,7 +155,8 @@ index 0000000000000000000000000000000000000000..ea83ee8762c126c449993a7497257b0b
 +
 +    private static String convertRGBColors(final String input) {
 +        return RGB_PATTERN.matcher(input).replaceAll(result -> {
-+            final int hex = Integer.decode(result.group().substring(1));
++            final String s = '#' + result.group().replace(String.valueOf(COLOR_CHAR), "").substring(1);
++            final int hex = Integer.decode(s);
 +            return formatHexAnsi(hex);
 +        });
 +    }
@@ -269,19 +232,6 @@ index 0000000000000000000000000000000000000000..ea83ee8762c126c449993a7497257b0b
 +    }
 +
 +}
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3a73d834c3c8481ff3af3eee7634309f7abe60ab..2914355be3f6c45b2dbd7ceb0ea65c7f22255a6d 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1712,7 +1712,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
- 
-     @Override
-     public void sendMessage(Component message, UUID sender) {
--        MinecraftServer.LOGGER.info(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
-+        MinecraftServer.LOGGER.info(io.papermc.paper.console.HexFormattingConverter.SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
-     }
- 
-     public KeyPair getKeyPair() {
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
 index 1a05d23ff886b015fb9396f119822c678a47ec6f..2e421eaac80cf251b32e0bb504dd54a73edf4986 100644
 --- a/src/main/resources/log4j2.xml
