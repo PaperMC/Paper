@@ -64,8 +64,6 @@ public class Permission {
         if (children != null) {
             this.children.putAll(children);
         }
-
-        recalculatePermissibles();
     }
 
     /**
