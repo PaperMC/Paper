@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.entity.TileEntityBlastFurnace;
 import net.minecraft.world.level.block.entity.TileEntityBrewingStand;
 import net.minecraft.world.level.block.entity.TileEntityCampfire;
 import net.minecraft.world.level.block.entity.TileEntityChest;
+import net.minecraft.world.level.block.entity.TileEntityChestTrapped;
 import net.minecraft.world.level.block.entity.TileEntityCommand;
 import net.minecraft.world.level.block.entity.TileEntityComparator;
 import net.minecraft.world.level.block.entity.TileEntityConduit;
@@ -257,18 +258,12 @@ public final class CraftBlockStates {
                 ), CraftCampfire.class, CraftCampfire::new, TileEntityCampfire::new
         );
 
-        register(
-                Arrays.asList(
-                        Material.CHEST,
-                        Material.TRAPPED_CHEST
-                ), CraftChest.class, CraftChest::new, TileEntityChest::new
-        );
-
         register(Material.BARREL, CraftBarrel.class, CraftBarrel::new, TileEntityBarrel::new);
         register(Material.BEACON, CraftBeacon.class, CraftBeacon::new, TileEntityBeacon::new);
         register(Material.BELL, CraftBell.class, CraftBell::new, TileEntityBell::new);
         register(Material.BLAST_FURNACE, CraftBlastFurnace.class, CraftBlastFurnace::new, TileEntityBlastFurnace::new);
         register(Material.BREWING_STAND, CraftBrewingStand.class, CraftBrewingStand::new, TileEntityBrewingStand::new);
+        register(Material.CHEST, CraftChest.class, CraftChest::new, TileEntityChest::new);
         register(Material.COMPARATOR, CraftComparator.class, CraftComparator::new, TileEntityComparator::new);
         register(Material.CONDUIT, CraftConduit.class, CraftConduit::new, TileEntityConduit::new);
         register(Material.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new, TileEntityLightDetector::new);
@@ -288,6 +283,7 @@ public final class CraftBlockStates {
         register(Material.SMOKER, CraftSmoker.class, CraftSmoker::new, TileEntitySmoker::new);
         register(Material.SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new, TileEntityMobSpawner::new);
         register(Material.STRUCTURE_BLOCK, CraftStructureBlock.class, CraftStructureBlock::new, TileEntityStructure::new);
+        register(Material.TRAPPED_CHEST, CraftChest.class, CraftChest::new, TileEntityChestTrapped::new);
     }
 
     private static void register(Material blockType, BlockStateFactory<?> factory) {
@@ -322,6 +318,16 @@ public final class CraftBlockStates {
     public static Class<? extends CraftBlockState> getBlockStateType(Material material) {
         Preconditions.checkNotNull(material, "material is null");
         return getFactory(material).blockStateType;
+    }
+
+    public static TileEntity createNewTileEntity(Material material) {
+        BlockStateFactory<?> factory = getFactory(material);
+
+        if (factory instanceof BlockEntityStateFactory) {
+            return ((BlockEntityStateFactory<?, ?>) factory).createTileEntity(BlockPosition.ZERO, CraftMagicNumbers.getBlock(material).defaultBlockState());
+        }
+
+        return null;
     }
 
     public static BlockState getBlockState(Block block) {
@@ -371,7 +377,7 @@ public final class CraftBlockStates {
         return factory.createBlockState(world, blockPosition, blockData, tileEntity);
     }
 
-    private static boolean isTileEntityOptional(Material material) {
+    public static boolean isTileEntityOptional(Material material) {
         return material == Material.MOVING_PISTON;
     }
 
