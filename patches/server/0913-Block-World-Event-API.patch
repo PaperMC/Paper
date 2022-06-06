@@ -1,0 +1,221 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 5 Jun 2022 21:19:33 -0400
+Subject: [PATCH] Block/World Event API
+
+
+diff --git a/src/main/java/io/papermc/paper/block/event/PaperBlockEvent.java b/src/main/java/io/papermc/paper/block/event/PaperBlockEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6985c1783dc286818c7a82ded825e9f64f02de48
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/event/PaperBlockEvent.java
+@@ -0,0 +1,64 @@
++package io.papermc.paper.block.event;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.network.protocol.game.ClientboundBlockEventPacket;
++import net.minecraft.server.MCUtil;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
++import org.bukkit.Location;
++import org.bukkit.Material;
++import org.bukkit.block.BlockFace;
++import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.jetbrains.annotations.Nullable;
++
++public class PaperBlockEvent {
++
++    public static <T> int getData(ConfigurableBlockEvent<T> event, T data) {
++        Class<T> configurationClass = event.getConfigurationClass();
++        if (configurationClass == Boolean.class) {
++            return ((Boolean) data) ? 1 : 0;
++        } else if (configurationClass == Material.class) {
++            return Item.getId(CraftMagicNumbers.getItem((Material) data));
++        } else if (configurationClass == BlockState.class) {
++            return net.minecraft.world.level.block.Block.getId(((CraftBlockState) data).getHandle());
++        } else if (configurationClass == Integer.class) {
++            return (int) data;
++        } else if (configurationClass == BlockFace.class) {
++            BlockFace face = (BlockFace) data;
++            if (!face.isCartesian()) {
++                throw new IllegalArgumentException("Unsupported blockface provided!");
++            }
++
++            return CraftBlock.blockFaceToNotch(face).get3DDataValue();
++        }
++
++        throw new UnsupportedOperationException();
++    }
++
++    public static void playBlockEvent(BlockEvent event, @Nullable ServerPlayer player, ServerLevel level, Location location, int param1, int param2) {
++        if (player == null) {
++            BlockPos pos = MCUtil.toBlockPosition(location);
++            Block block = level.getBlockState(pos).getBlock();
++            if (!event.getApplicableMaterial().contains(CraftMagicNumbers.getMaterial(block))) {
++                // Should this be supported? Should we even check or is it best to ignore?
++                // Minecraft does a check already, but it's kind of nice to see which blocks are effected by it?
++                // Would this be better off in their own block classes? Opinions.
++                throw new IllegalStateException("Tried to execute a block event for an unsupported block.");
++            }
++
++            level.blockEvent(pos, block, param1, param2);
++        } else {
++            if (player.connection == null) {
++                return;
++            }
++
++            player.connection.send(new ClientboundBlockEventPacket(MCUtil.toBlockPosition(location), Blocks.AIR, param1, param2)); // Client doesn't use this block field
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/event/PaperWorldEvent.java b/src/main/java/io/papermc/paper/world/event/PaperWorldEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..aedcb1b294c1f9eece252547d4f1e95fc12f6d51
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/event/PaperWorldEvent.java
+@@ -0,0 +1,72 @@
++package io.papermc.paper.world.event;
++
++import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
++import net.minecraft.server.MCUtil;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.item.Item;
++import org.bukkit.Color;
++import org.bukkit.Location;
++import org.bukkit.Material;
++import org.bukkit.block.BlockFace;
++import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.jetbrains.annotations.Nullable;
++
++public class PaperWorldEvent {
++
++    public static <T> int getData(ConfigurableWorldEvent<T> event, T data) {
++        // Kinda yucky, it might be better to use type tokens.
++        if (event == io.papermc.paper.world.event.WorldEvents.PARTICLES_ELECTRIC_SPARK) {
++            if (data == null) {
++                return -1;
++            }
++
++            return switch (((org.bukkit.Axis) data)) {
++                case X -> 0;
++                case Y -> 1;
++                case Z -> 2;
++            };
++        }
++
++        Class<T> configurationClass = event.getConfigurationClass();
++        if (configurationClass == Boolean.class) {
++            return ((Boolean) data) ? 1 : 0;
++        } else if (configurationClass == Material.class) {
++            return Item.getId(CraftMagicNumbers.getItem((Material) data));
++        } else if (configurationClass == BlockState.class) {
++            return net.minecraft.world.level.block.Block.getId(((CraftBlockState) data).getHandle());
++        } else if (configurationClass == Integer.class) {
++            return (int) data;
++        } else if (configurationClass == Color.class) {
++            return ((Color) data).asRGB();
++        } else if (configurationClass == BlockFace.class) {
++            BlockFace face = (BlockFace) data;
++            if (!face.isCartesian()) {
++                throw new IllegalArgumentException("Unsupported blockface provided!");
++            }
++
++            return CraftBlock.blockFaceToNotch(face).get3DDataValue();
++        }
++
++        throw new UnsupportedOperationException();
++    }
++
++    public static void playWorldEvent(@Nullable ServerPlayer player, ServerLevel level, Location location, io.papermc.paper.world.event.WorldEvent event, int data) {
++        if (player == null) {
++            if (event.isGlobal()) {
++                level.globalLevelEvent(event.getId(), MCUtil.toBlockPosition(location), data);
++            } else {
++                level.levelEvent(event.getId(), MCUtil.toBlockPosition(location), data);
++            }
++        } else {
++            if (player.connection == null) {
++                return;
++            }
++
++            player.connection.send(new ClientboundLevelEventPacket(event.getId(), MCUtil.toBlockPosition(location), data, event.isGlobal())); // Support sending the event to an individual player.
++        }
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 15d740a605c7257bcc7117c7dfb3612b472ba664..b517e1397f7c84a90c8d9525388c8f183fff93f0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1415,6 +1415,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+             }
+         }
+     }
++    // Paper start
++    @Override
++    public void broadcastWorldEvent(Location location, io.papermc.paper.world.event.SimpleWorldEvent event) {
++        io.papermc.paper.world.event.PaperWorldEvent.playWorldEvent(null, this.getHandle(), location, event, 0);
++    }
++
++    @Override
++    public <T> void broadcastConfiguredWorldEvent(Location location, io.papermc.paper.world.event.ConfigurableWorldEvent<T> event, T data) {
++        io.papermc.paper.world.event.PaperWorldEvent.playWorldEvent(null, this.getHandle(), location, event, io.papermc.paper.world.event.PaperWorldEvent.getData(event, data));
++    }
++    @Override
++    public void broadcastBlockEvent(Location location, io.papermc.paper.block.event.SimpleBlockEvent event) {
++        io.papermc.paper.block.event.PaperBlockEvent.playBlockEvent(event, null, this.getHandle().getLevel(), location, event.getId(), 0);
++    }
++    @Override
++    public <T> void broadcastConfiguredBlockEvent(Location location, io.papermc.paper.block.event.ConfigurableBlockEvent<T> event, T data) {
++        io.papermc.paper.block.event.PaperBlockEvent.playBlockEvent(event, null, this.getHandle().getLevel(), location, event.getId(), io.papermc.paper.block.event.PaperBlockEvent.getData(event, data));
++    }
++    // Paper end
+ 
+     @Override
+     public FallingBlock spawnFallingBlock(Location location, MaterialData data) throws IllegalArgumentException {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index ce78e024244c14530270b8276e5b0fd853f0a110..865d3d1001ec817778b42ae6e8c1843afd3b9ffa 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -877,6 +877,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         int datavalue = CraftEffect.getDataValue(effect, data);
+         this.playEffect(loc, effect, datavalue);
+     }
++    // Paper start
++    @Override
++    public void sendWorldEvent(Location location, io.papermc.paper.world.event.SimpleWorldEvent event) {
++        io.papermc.paper.world.event.PaperWorldEvent.playWorldEvent(this.getHandle(), this.getHandle().getLevel(), location, event, 0);
++    }
++    @Override
++    public <T> void sendConfiguredWorldEvent(Location location, io.papermc.paper.world.event.ConfigurableWorldEvent<T> event, T data) {
++        io.papermc.paper.world.event.PaperWorldEvent.playWorldEvent(this.getHandle(), this.getHandle().getLevel(), location, event, io.papermc.paper.world.event.PaperWorldEvent.getData(event, data));
++    }
++    @Override
++    public void sendEntityEffect(@NotNull org.bukkit.entity.Entity entity, @NotNull org.bukkit.EntityEffect entityEffect) {
++        if (this.getHandle().connection == null) return;
++
++        if (entityEffect.getApplicable().isInstance(entity)) {
++            this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(((CraftEntity) entity).getHandle(), entityEffect.getData()));
++        }
++    }
++    @Override
++    public void sendBlockEvent(@NotNull Location location, @NotNull io.papermc.paper.block.event.SimpleBlockEvent event) {
++        io.papermc.paper.block.event.PaperBlockEvent.playBlockEvent(event, this.getHandle(), this.getHandle().getLevel(), location, event.getId(), 0);
++    }
++    @Override
++    public <T> void sendConfiguredBlockEvent(@NotNull Location location, @NotNull io.papermc.paper.block.event.ConfigurableBlockEvent<T> event, @org.jetbrains.annotations.Nullable T data) {
++        io.papermc.paper.block.event.PaperBlockEvent.playBlockEvent(event, this.getHandle(), this.getHandle().getLevel(), location, event.getId(), io.papermc.paper.block.event.PaperBlockEvent.getData(event, data));
++    }
++    // Paper end
+ 
+     @Override
+     public boolean breakBlock(Block block) {

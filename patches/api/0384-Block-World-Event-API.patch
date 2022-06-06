@@ -1,0 +1,773 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 5 Jun 2022 21:19:40 -0400
+Subject: [PATCH] Block/World Event API
+
+
+diff --git a/src/main/java/io/papermc/paper/block/event/BlockEvent.java b/src/main/java/io/papermc/paper/block/event/BlockEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d4e693581127862c35d1ece432458d2eeeaa6abd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/event/BlockEvent.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.block.event;
++
++import org.bukkit.Material;
++import org.jetbrains.annotations.ApiStatus;
++
++import java.util.Set;
++
++/**
++ * Represents an event that will cause
++ * an effect to occur for a block.
++ */
++public abstract class BlockEvent {
++
++    private final Set<Material> validMaterial;
++    private final int id;
++
++    BlockEvent(Set<Material> material, int id) {
++        this.validMaterial = material;
++        this.id = id;
++    }
++
++    @ApiStatus.Internal
++    public int getId() {
++        return this.id;
++    }
++
++    @ApiStatus.Internal
++    public Set<Material> getApplicableMaterial() {
++        return validMaterial;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/event/BlockEvents.java b/src/main/java/io/papermc/paper/block/event/BlockEvents.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b0551ab6f4187ea77ba186b769c4b66f655e5749
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/event/BlockEvents.java
+@@ -0,0 +1,51 @@
++ package io.papermc.paper.block.event;
++
++
++import org.bukkit.Material;
++import org.bukkit.block.BlockFace;
++
++import java.util.EnumSet;
++import java.util.Set;
++
++public final class BlockEvents {
++
++    public static final SimpleBlockEvent NOTE_BLOCK_PLAY = simple(Material.NOTE_BLOCK);
++    /**
++     * Causes the bell to ring in the provided direction.
++     */
++    public static final ConfigurableBlockEvent<BlockFace> BELL_RING = configuredEvent(Material.BELL, 1, BlockFace.class);
++    /**
++     * Sets the amount of players that are now viewing a chest.
++     * Numbers greater than 1 will cause the container to appear open, while 0 will close it.
++     */
++    public static final ConfigurableBlockEvent<Integer> CHEST_PLAYERS_OPEN = configuredEvent(EnumSet.of(Material.CHEST, Material.TRAPPED_CHEST), 1, Integer.class);
++    /**
++     * Sets the amount of players that are now viewing an ender chest.
++     * Numbers greater than 1 will cause the container to appear open, while 0 will close it.
++     */
++    public static final ConfigurableBlockEvent<Integer> ENDER_CHEST_OPEN = configuredEvent(Material.ENDER_CHEST, 1, Integer.class);
++    /**
++     * Sets the amount of players that are now viewing a shulker box.
++     * Numbers greater than 1 will cause the container to appear open, while 0 will close it.
++     */
++    public static final ConfigurableBlockEvent<Integer> SHULKER_BOX_OPEN = configuredEvent(Material.SHULKER_BOX, 1, Integer.class);
++    public static final SimpleBlockEvent DELAY_SPAWNER_SPAWN = simple(Material.SPAWNER);
++    public static final ConfigurableBlockEvent<BlockFace> PISTON_TRIGGER_EXTEND = configuredEvent(EnumSet.of(Material.PISTON, Material.STICKY_PISTON), 0, BlockFace.class);
++    public static final ConfigurableBlockEvent<BlockFace> PISTON_TRIGGER_CONTRACT = configuredEvent(EnumSet.of(Material.PISTON, Material.STICKY_PISTON), 1, BlockFace.class);
++    public static final ConfigurableBlockEvent<BlockFace> PISTON_TRIGGER_DROP = configuredEvent(EnumSet.of(Material.PISTON, Material.STICKY_PISTON), 2, BlockFace.class);
++
++    private static SimpleBlockEvent simple(Material material) {
++        return simple(EnumSet.of(material));
++    }
++    private static SimpleBlockEvent simple(Set<Material> material) {
++        return new SimpleBlockEvent(material, 0);
++    }
++
++    private static <T> ConfigurableBlockEvent<T> configuredEvent(Material material, int id, Class<T> clazz) {
++        return configuredEvent(Set.of(material), id, clazz);
++    }
++
++    private static <T> ConfigurableBlockEvent<T> configuredEvent(Set<Material> materials, int id, Class<T> clazz) {
++        return new ConfigurableBlockEvent<>(materials, id, clazz);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/event/ConfigurableBlockEvent.java b/src/main/java/io/papermc/paper/block/event/ConfigurableBlockEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..277f6cdd0cf956a753844f4fab99d7a342362c4e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/event/ConfigurableBlockEvent.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.block.event;
++
++import org.bukkit.Material;
++import org.jetbrains.annotations.ApiStatus;
++
++import java.util.Set;
++
++public class ConfigurableBlockEvent<T> extends BlockEvent {
++
++    private final Class<T> clazz;
++
++    ConfigurableBlockEvent(Set<Material> materials, int id, Class<T> clazz) {
++        super(materials, id);
++        this.clazz = clazz;
++    }
++
++    @ApiStatus.Internal
++    public Class<T> getConfigurationClass() {
++        return clazz;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/event/SimpleBlockEvent.java b/src/main/java/io/papermc/paper/block/event/SimpleBlockEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a75bf919b8606710d3eda93c3fc8e373a12af0ab
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/event/SimpleBlockEvent.java
+@@ -0,0 +1,12 @@
++package io.papermc.paper.block.event;
++
++import org.bukkit.Material;
++
++import java.util.Set;
++
++public class SimpleBlockEvent extends BlockEvent {
++
++    SimpleBlockEvent(Set<Material> materials, int id) {
++        super(materials, id);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/event/ConfigurableWorldEvent.java b/src/main/java/io/papermc/paper/world/event/ConfigurableWorldEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f3a0bde72d5e8b9edca46ea2f376359f8ae4b898
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/event/ConfigurableWorldEvent.java
+@@ -0,0 +1,18 @@
++package io.papermc.paper.world.event;
++
++import org.jetbrains.annotations.ApiStatus;
++
++public class ConfigurableWorldEvent<T> extends WorldEvent {
++
++    private final Class<T> clazz;
++
++    ConfigurableWorldEvent(int id, boolean isGlobal, Class<T> clazz) {
++        super(id, isGlobal);
++        this.clazz = clazz;
++    }
++
++    @ApiStatus.Internal
++    public Class<T> getConfigurationClass() {
++        return clazz;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/event/SculkChargeEventConfiguration.java b/src/main/java/io/papermc/paper/world/event/SculkChargeEventConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..379357a7ff1e08a49697c4c82097d0ca3f1ee980
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/event/SculkChargeEventConfiguration.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.world.event;
++
++import org.bukkit.block.BlockFace;
++import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Range;
++
++public record SculkChargeEventConfiguration(@Range(from = 0, to = 1000) int charge, @Nullable BlockFace... blockFaces) {
++
++    /**
++     * Gets the charge of this current sculk charge event.
++     */
++    @Override
++    public int charge() {
++        return this.charge;
++    }
++
++    /**
++     * Gets the block faces that this sculk charge effects.
++     */
++    @Nullable
++    public BlockFace[] blockFaces() {
++        return this.blockFaces;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/event/SimpleWorldEvent.java b/src/main/java/io/papermc/paper/world/event/SimpleWorldEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..543b040e93b3e1fe875ac79508ffb8fe69ddeb95
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/event/SimpleWorldEvent.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.world.event;
++
++public class SimpleWorldEvent extends WorldEvent {
++
++    SimpleWorldEvent(int id, boolean isGlobal) {
++        super(id, isGlobal);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/event/WorldEvent.java b/src/main/java/io/papermc/paper/world/event/WorldEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a99dbbc3a9cbf35189cb06ec35e42b89124c8bc0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/event/WorldEvent.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.world.event;
++
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Represents an event that will cause
++ * an effect to occur in the world.
++ */
++public abstract class WorldEvent {
++
++    private final int id;
++    private final boolean isGlobal;
++
++    WorldEvent(int id, boolean isGlobal) {
++        this.id = id;
++        this.isGlobal = isGlobal;
++    }
++
++    @ApiStatus.Internal
++    public int getId() {
++        return this.id;
++    }
++
++    /**
++     * Returns if the event is played globally
++     * to all players on the world.
++     * @return is global
++     */
++    public boolean isGlobal() {
++        return isGlobal;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/event/WorldEvents.java b/src/main/java/io/papermc/paper/world/event/WorldEvents.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3d32459e3d8cbd19eadb3b1b578a5d652961e30d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/event/WorldEvents.java
+@@ -0,0 +1,131 @@
++package io.papermc.paper.world.event;
++
++
++import org.bukkit.Axis;
++import org.bukkit.Color;
++import org.bukkit.Material;
++import org.bukkit.block.BlockFace;
++import org.bukkit.block.BlockState;
++import org.jetbrains.annotations.Nullable;
++
++public final class WorldEvents {
++
++    public static final SimpleWorldEvent SOUND_DISPENSER_DISPENSE = simple(1000);
++    public static final SimpleWorldEvent SOUND_DISPENSER_FAIL = simple(1001);
++    public static final SimpleWorldEvent SOUND_DISPENSER_PROJECTILE_LAUNCH = simple(1002);
++    public static final SimpleWorldEvent SOUND_ENDER_EYE_LAUNCH = simple(1003);
++    public static final SimpleWorldEvent SOUND_FIREWORK_SHOOT = simple(1004);
++    public static final SimpleWorldEvent SOUND_OPEN_IRON_DOOR = simple(1005);
++    public static final SimpleWorldEvent SOUND_OPEN_WOODEN_DOOR = simple(1006);
++    public static final SimpleWorldEvent SOUND_OPEN_WOODEN_TRAP_DOOR = simple(1007);
++    public static final SimpleWorldEvent SOUND_OPEN_FENCE_GATE = simple(1008);
++    /**
++     * True if it's an entity being extinguished and false if it is generic.
++     */
++    public static final ConfigurableWorldEvent<Boolean> SOUND_EXTINGUISH_FIRE = configured(1009, Boolean.class);
++    /**
++     * Plays the given record item or stops a record from playing if the given material is
++     * not a record.
++     */
++    public static final ConfigurableWorldEvent<Material> SOUND_PLAY_RECORDING = configured(1010, Material.class);
++    public static final SimpleWorldEvent SOUND_CLOSE_IRON_DOOR = simple(1011);
++    public static final SimpleWorldEvent SOUND_CLOSE_WOODEN_DOOR = simple(1012);
++    public static final SimpleWorldEvent SOUND_CLOSE_WOODEN_TRAP_DOOR = simple(1013);
++    public static final SimpleWorldEvent SOUND_CLOSE_FENCE_GATE = simple(1014);
++    public static final SimpleWorldEvent SOUND_GHAST_WARNING = simple(1015);
++    public static final SimpleWorldEvent SOUND_GHAST_FIREBALL = simple(1016);
++    public static final SimpleWorldEvent SOUND_DRAGON_FIREBALL = simple(1017);
++    public static final SimpleWorldEvent SOUND_BLAZE_FIREBALL = simple(1018);
++    public static final SimpleWorldEvent SOUND_ZOMBIE_WOODEN_DOOR = simple(1019);
++    public static final SimpleWorldEvent SOUND_ZOMBIE_IRON_DOOR = simple(1020);
++    public static final SimpleWorldEvent SOUND_ZOMBIE_DOOR_CRASH = simple(1021);
++    public static final SimpleWorldEvent SOUND_WITHER_BLOCK_BREAK = simple(1022);
++    public static final SimpleWorldEvent SOUND_WITHER_BOSS_SPAWN = simple(1023, true);
++    public static final SimpleWorldEvent SOUND_WITHER_BOSS_SHOOT = simple(1024);
++    public static final SimpleWorldEvent SOUND_BAT_LIFTOFF = simple(1025);
++    public static final SimpleWorldEvent SOUND_ZOMBIE_INFECTED = simple(1026);
++    public static final SimpleWorldEvent SOUND_ZOMBIE_CONVERTED = simple(1027);
++    public static final SimpleWorldEvent SOUND_DRAGON_DEATH = simple(1028, true);
++    public static final SimpleWorldEvent SOUND_ANVIL_BROKEN = simple(1029);
++    public static final SimpleWorldEvent SOUND_ANVIL_USED = simple(1030);
++    public static final SimpleWorldEvent SOUND_ANVIL_LAND = simple(1031);
++    public static final SimpleWorldEvent SOUND_PORTAL_TRAVEL = simple(1032);
++    public static final SimpleWorldEvent SOUND_CHORUS_GROW = simple(1033);
++    public static final SimpleWorldEvent SOUND_CHORUS_DEATH = simple(1034);
++    public static final SimpleWorldEvent SOUND_BREWING_STAND_BREW = simple(1035);
++    public static final SimpleWorldEvent SOUND_CLOSE_IRON_TRAP_DOOR = simple(1036);
++    public static final SimpleWorldEvent SOUND_OPEN_IRON_TRAP_DOOR = simple(1037);
++    public static final SimpleWorldEvent SOUND_END_PORTAL_SPAWN = simple(1038, true);
++    public static final SimpleWorldEvent SOUND_PHANTOM_BITE = simple(1039);
++    public static final SimpleWorldEvent SOUND_ZOMBIE_TO_DROWNED = simple(1040);
++    public static final SimpleWorldEvent SOUND_HUSK_TO_ZOMBIE = simple(1041);
++    public static final SimpleWorldEvent SOUND_GRINDSTONE_USED = simple(1042);
++    public static final SimpleWorldEvent SOUND_PAGE_TURN = simple(1043);
++    public static final SimpleWorldEvent SOUND_SMITHING_TABLE_USED = simple(1044);
++    public static final SimpleWorldEvent SOUND_POINTED_DRIPSTONE_LAND = simple(1045);
++    public static final SimpleWorldEvent SOUND_DRIP_LAVA_INTO_CAULDRON = simple(1046);
++    public static final SimpleWorldEvent SOUND_DRIP_WATER_INTO_CAULDRON = simple(1047);
++    public static final SimpleWorldEvent SOUND_SKELETON_TO_STRAY = simple(1048);
++    /**
++     * True if the event if a successful compost and else if it is not.
++     */
++    public static final ConfigurableWorldEvent<Boolean> COMPOSTER_FILL = configured(1500, Boolean.class);
++    public static final SimpleWorldEvent LAVA_FIZZ = simple(1501);
++    public static final SimpleWorldEvent REDSTONE_TORCH_BURNOUT = simple(1502);
++    public static final SimpleWorldEvent END_PORTAL_FRAME_FILL = simple(1503);
++    public static final SimpleWorldEvent DRIPSTONE_DRIP = simple(1504);
++    /**
++     * Number of particles, where 0 will default to 15.
++     */
++    public static final ConfigurableWorldEvent<Integer> PARTICLES_AND_SOUND_PLANT_GROWTH = configured(1505, Integer.class);
++    /**
++     * Direction in which the particles will move towards.
++     */
++    public static final ConfigurableWorldEvent<BlockFace> PARTICLES_SHOOT = configured(2000, BlockFace.class);
++    public static final ConfigurableWorldEvent<BlockState> PARTICLES_DESTROY_BLOCK = configured(2001, BlockState.class);
++    /**
++     * Color is the color of the particles that will be shown.
++     */
++    public static final ConfigurableWorldEvent<Color> PARTICLES_SPELL_POTION_SPLASH = configured(2002, Color.class);
++    public static final SimpleWorldEvent PARTICLES_EYE_OF_ENDER_DEATH = simple(2003);
++    public static final SimpleWorldEvent PARTICLES_MOBBLOCK_SPAWN = simple(2004);
++    public static final SimpleWorldEvent PARTICLES_PLANT_GROWTH = simple(2005);
++    /**
++     * True if an explosion sound should be played, false if not.
++     */
++    public static final ConfigurableWorldEvent<Boolean> PARTICLES_DRAGON_FIREBALL_SPLASH = configured(2006, Boolean.class);
++    /**
++     * Color is the color of the particles that will be shown.
++     */
++    public static final ConfigurableWorldEvent<Color> PARTICLES_INSTANT_POTION_SPLASH = configured(2007, Color.class);
++    public static final SimpleWorldEvent PARTICLES_DRAGON_BLOCK_BREAK = simple(2008);
++    public static final SimpleWorldEvent PARTICLES_WATER_EVAPORATING = simple(2009);
++    public static final SimpleWorldEvent ANIMATION_END_GATEWAY_SPAWN = simple(3000);
++    public static final SimpleWorldEvent ANIMATION_DRAGON_SUMMON_ROAR = simple(3001);
++    /**
++     * An axis to play the particles on, or null to play randomly on blockfaces.
++     */
++    // TODO: Type token?
++    public static final ConfigurableWorldEvent<@Nullable Axis> PARTICLES_ELECTRIC_SPARK = configured(3002, Axis.class);
++    public static final SimpleWorldEvent PARTICLES_AND_SOUND_WAX_ON = simple(3003);
++    public static final SimpleWorldEvent PARTICLES_WAX_OFF = simple(3004);
++    public static final SimpleWorldEvent PARTICLES_SCRAPE = simple(3005);
++    /**
++     * The configuration determines where particles will be played in this event.
++     */
++    public static final ConfigurableWorldEvent<SculkChargeEventConfiguration> PARTICLES_SCULK_CHARGE = configured(3006, SculkChargeEventConfiguration.class);
++    public static final SimpleWorldEvent PARTICLES_SCULK_SHRIEK = simple(3007);
++
++    private static SimpleWorldEvent simple(int id) {
++        return simple(id, false);
++    }
++
++    private static <T> ConfigurableWorldEvent<T> configured(int id, Class<T> clazz) {
++        return new ConfigurableWorldEvent<>(id, false, clazz);
++    }
++
++    private static SimpleWorldEvent simple(int id, boolean global) {
++        return new SimpleWorldEvent(id, global);
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/Effect.java b/src/main/java/org/bukkit/Effect.java
+index 5072c5ed2635f92a6d8048b6e019c8f36338b93c..1578ef4ef93d922e0897b796cc9c8f4fc5176ca6 100644
+--- a/src/main/java/org/bukkit/Effect.java
++++ b/src/main/java/org/bukkit/Effect.java
+@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * A list of effects that the server is able to send to players.
+  */
++@Deprecated(forRemoval = true) // Paper
+ public enum Effect {
+     /**
+      * An alternate click sound.
+@@ -479,5 +480,6 @@ public enum Effect {
+     /**
+      * Represents the type of an effect.
+      */
++    @Deprecated(forRemoval = true) // Paper
+     public enum Type { SOUND, VISUAL }
+ }
+diff --git a/src/main/java/org/bukkit/EntityEffect.java b/src/main/java/org/bukkit/EntityEffect.java
+index 96ab9a599a75d7e093bdbee2ee6b14ebe4b5ee14..728ab5b9512c8cee54a43e3a6e1fa720ac03442f 100644
+--- a/src/main/java/org/bukkit/EntityEffect.java
++++ b/src/main/java/org/bukkit/EntityEffect.java
+@@ -30,7 +30,7 @@ public enum EntityEffect {
+     /**
+      * Colored particles from a tipped arrow.
+      */
+-    ARROW_PARTICLES(0, TippedArrow.class),
++    ARROW_PARTICLES(0, org.bukkit.entity.Arrow.class), // Paper
+     /**
+      * Rabbit jumping.
+      */
+@@ -44,35 +44,70 @@ public enum EntityEffect {
+      * <p>
+      * <b>This will cause client-glitches!</b>
+      *
+-     * @deprecated although this effect may trigger other events on non-living
+-     * entities, it's only supported usage is on living ones.
+      */
+-    @Deprecated
+-    DEATH(3, Entity.class),
++    // @Deprecated - Paper start
++    DEATH(3, LivingEntity.class),
++    /**
++     * Used in snowballs and eggs.
++     */
++    PROJECTILE_CRACK(3, org.bukkit.entity.ThrowableProjectile.class),
++    // Paper end
+     // PAIL - SPIGOT-3641 duplicate
+     // GOLEM_ATTACK(4, IronGolem.class),
+     // 5 - unused
++    // Paper start
++    /**
++     * Starts an attack animation for certain entities.
++     * This is only used for entities like IronGolems, EvokerFangs, Ravagers and Hoglins.
++     */
++    ENTITY_ATTACK(4, Entity.class),
++    /**
++     * Unused.
++     */
++    ENTITY_ATTACK_STOP(5, Entity.class),
++    // Paper end
+     /**
+      * The smoke when taming a wolf fails.
+      */
++    @Deprecated(forRemoval = true) // Paper
+     WOLF_SMOKE(6, Tameable.class),
+     /**
+      * The hearts when taming a wolf succeeds.
+      */
++    @Deprecated(forRemoval = true) // Paper
+     WOLF_HEARTS(7, Wolf.class),
++    // Paper start
++    /**
++     * The smoke when taming an entity fails.
++     */
++    TAMING_FAILED(6, Tameable.class),
++    /**
++     * The hearts when taming an entity succeeds.
++     */
++    TAMING_SUCCEEDED(7, Tameable.class),
++    // Paper end
+     /**
+      * When a wolf shakes (after being wet).
+      */
+     WOLF_SHAKE(8, Wolf.class),
+-    // 9 - unused
++    // Paper start
++    /**
++     * When a player finishes using the item they are currently using.
++     */
++    USE_ITEM_COMPLETE(9, Player.class),
++    // Paper end
+     /**
+      * When an entity eats a LONG_GRASS block.
+-     *
+-     * @deprecated although this effect may trigger other events on non-living
+-     * entities, it's only supported usage is on living ones.
+      */
+-    @Deprecated
+-    SHEEP_EAT(10, Entity.class),
++    // Paper start
++    //@Deprecated
++    SHEEP_EAT(10, org.bukkit.entity.Sheep.class),
++
++    /**
++     * When a tnt minecart starts to explode.
++     */
++    TNT_MINECART_FUSE(10, org.bukkit.entity.minecart.ExplosiveMinecart.class),
++    // Paper end
+     /**
+      * When an Iron Golem gives a rose.
+      */
+@@ -117,7 +152,36 @@ public enum EntityEffect {
+      * Guardian plays the attack sound effect.
+      */
+     GUARDIAN_TARGET(21, Guardian.class),
+-    // 22-28 player internal flags
++    // Paper start
++    /**
++     * Enables the effect of the {@link GameRule#REDUCED_DEBUG_INFO} game rule.
++     */
++    REDUCED_DEBUG_INFO(22, Player.class),
++    /**
++     * Disables the effect of the {@link GameRule#REDUCED_DEBUG_INFO} game rule.
++     */
++    FULL_DEBUG_INFO(23, Player.class),
++    /**
++     * Sets the player's permission level to 0.
++     */
++    PERMISSION_LEVEL_ALL(24, Player.class),
++    /**
++     * Sets the player's permission level to 1.
++     */
++    PERMISSION_LEVEL_MODERATORS(25, Player.class),
++    /**
++     * Sets the player's permission level to 2, allowing them to see structure block outlines in creative mode and use the game mode gui switcher.
++     */
++    PERMISSION_LEVEL_GAMEMASTERS(26, Player.class),
++    /**
++     * Sets the player's permission level to 3.
++     */
++    PERMISSION_LEVEL_ADMINS(27, Player.class),
++    /**
++     * Sets the player's permission level to 4.
++     */
++    PERMISSION_LEVEL_OWNERS(28, Player.class),
++    // Paper end
+     /**
+      * Shield blocks attack.
+      */
+@@ -126,7 +190,12 @@ public enum EntityEffect {
+      * Shield breaks.
+      */
+     SHIELD_BREAK(30, LivingEntity.class),
+-    // 31 - unused
++    // Paper start
++    /**
++     * Reels in an entity.
++     */
++    FISHING_ROD_REEL_IN(31, org.bukkit.entity.FishHook.class),
++    // Paper end
+     /**
+      * Armor stand is hit.
+      */
+@@ -150,7 +219,14 @@ public enum EntityEffect {
+     /**
+      * Entity hurt due to explosion damage.
+      */
++    @Deprecated(forRemoval = true) // Paper
+     HURT_EXPLOSION(37, LivingEntity.class),
++    // Paper start
++    /**
++     * Entity hurt due to fire damage.
++     */
++    HURT_FIRE(37, LivingEntity.class),
++    // Paper end
+     /**
+      * Dolphin has been fed and is locating a structure.
+      */
+@@ -162,11 +238,23 @@ public enum EntityEffect {
+     /**
+      * Cat taming failed.
+      */
++    @Deprecated(forRemoval = true) // Paper
+     CAT_TAME_FAIL(40, Cat.class),
+     /**
+      * Cat taming succeeded.
+      */
++    @Deprecated(forRemoval = true) // Paper
+     CAT_TAME_SUCCESS(41, Cat.class),
++    // Paper start
++    /**
++     * Ocelot taming failed.
++     */
++    OCELOT_TAME_FAIL(40, org.bukkit.entity.Ocelot.class),
++    /**
++     * Ocelot taming succeeded.
++     */
++    OCELOT_TAME_SUCCESS(41, org.bukkit.entity.Ocelot.class),
++    // Paper end
+     /**
+      * Villager splashes particles during a raid.
+      */
+@@ -210,7 +298,44 @@ public enum EntityEffect {
+     /**
+      * Entity breaks item in boot slot
+      */
+-    BREAK_EQUIPMENT_BOOTS(52, LivingEntity.class);
++    // Paper start
++    BREAK_EQUIPMENT_BOOTS(52, LivingEntity.class),
++    /**
++     * Particles when an entity slides on the side of a honey block
++     */
++    HONEY_SLIDE(53, Entity.class),
++    /**
++     * Particles when a living entity jumps on a honey block
++     */
++    HONEY_JUMP(54, LivingEntity.class),
++    /**
++     * Swap items between both hands.
++     */
++    SWAP_HANDS(55, LivingEntity.class),
++    /**
++     * When a wolf stops shakeing (after being wet).
++     */
++    CANCEL_SHAKE_WETNESS(56, Wolf.class),
++    /**
++     * Entity hurt due to freezing damage.
++     */
++    HURT_FREEZE(57, LivingEntity.class),
++    /**
++     * Starts a goat's ram attack.
++     */
++    START_RAM(58, org.bukkit.entity.Goat.class),
++    /**
++     * End a goat's ram attack.
++     */
++    END_RAM(59, org.bukkit.entity.Goat.class),
++    /**
++     * Play poof particles for when a living entity dies.
++     */
++    POOF(60, LivingEntity.class),
++    ;
++    //TENDRILS_SHIVER(61, Warden.class),
++    //SONIC_CHARGE(62, Warden.class),
++    // Paper end
+ 
+     private final byte data;
+     private final Class<? extends Entity> applicable;
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index d4c60cf8404641fa8580cb0653e6f7a10baed865..86eed6895d77f1a295796c6f01d065cef6e86113 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -2319,6 +2319,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param effect the {@link Effect}
+      * @param data a data bit needed for some effects
+      */
++    @Deprecated // Paper
+     public void playEffect(@NotNull Location location, @NotNull Effect effect, int data);
+ 
+     /**
+@@ -2330,6 +2331,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param data a data bit needed for some effects
+      * @param radius the radius around the location
+      */
++    @Deprecated // Paper
+     public void playEffect(@NotNull Location location, @NotNull Effect effect, int data, int radius);
+ 
+     /**
+@@ -2342,6 +2344,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param effect the {@link Effect}
+      * @param data a data bit needed for some effects
+      */
++    @Deprecated // Paper
+     public <T> void playEffect(@NotNull Location location, @NotNull Effect effect, @Nullable T data);
+ 
+     /**
+@@ -2354,8 +2357,46 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param data a data bit needed for some effects
+      * @param radius the radius around the location
+      */
++    @Deprecated // Paper
+     public <T> void playEffect(@NotNull Location location, @NotNull Effect effect, @Nullable T data, int radius);
+ 
++    // Paper start
++    /**
++     * Plays an event that occurs in the world to all nearby players.
++     *
++     * @param location the location that the effect will occur
++     * @param event the world event
++     */
++    void broadcastWorldEvent(@NotNull Location location, @NotNull io.papermc.paper.world.event.SimpleWorldEvent event);
++
++    /**
++     * Plays a configured event that occurs in the world to all nearby players.
++     *
++     * @param location the location that the effect will occur
++     * @param event the configurable world event
++     * @param data data that the configured event requires
++     * @param <T> type of data
++     */
++    <T> void broadcastConfiguredWorldEvent(@NotNull Location location, @NotNull io.papermc.paper.world.event.ConfigurableWorldEvent<T> event, @Nullable T data);
++
++    /**
++     * Plays an event that occurs at a block to the player.
++     *
++     * @param location the location of the block that the event will occur at
++     * @param event the block event
++     */
++    void broadcastBlockEvent(@NotNull Location location, @NotNull io.papermc.paper.block.event.SimpleBlockEvent event);
++
++    /**
++     * Plays a configured event that occurs at a block to the player.
++     *
++     * @param location the location of the block that the event will occur at
++     * @param event the configurable block event
++     * @param data data that the configured event requires
++     * @param <T> type of data
++     */
++    <T> void broadcastConfiguredBlockEvent(@NotNull Location location, @NotNull io.papermc.paper.block.event.ConfigurableBlockEvent<T> event, @Nullable T data);
++    // Paper end
+     /**
+      * Get empty chunk snapshot (equivalent to all air blocks), optionally
+      * including valid biome data. Used for representing an ungenerated chunk,
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 6cd0b10d1dc4506cfb1e4db5e1260cb705566cec..0c37edbc94017d1f7b177cc67da6fe61e438febf 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -528,8 +528,55 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param effect the {@link Effect}
+      * @param data a data bit needed for some effects
+      */
++    @Deprecated // Paper
+     public <T> void playEffect(@NotNull Location loc, @NotNull Effect effect, @Nullable T data);
+ 
++    // Paper start
++    /**
++     * Plays an event that occurs in the world to the player.
++     *
++     * @param location the location that the effect will occur
++     * @param event the world event
++     */
++    void sendWorldEvent(@NotNull Location location, @NotNull io.papermc.paper.world.event.SimpleWorldEvent event);
++
++    /**
++     * Plays a configured event that occurs in the world to the player.
++     *
++     * @param location the location that the effect will occur
++     * @param event the configurable world event
++     * @param data data that the configured event requires
++     * @param <T> type of data
++     */
++    <T> void sendConfiguredWorldEvent(@NotNull Location location, @NotNull io.papermc.paper.world.event.ConfigurableWorldEvent<T> event, @Nullable T data);
++
++    /**
++     * Plays an effect for an entity for the player.
++     *
++     * @param entity entity
++     * @param entityEffect effect
++     */
++    void sendEntityEffect(@NotNull Entity entity, @NotNull org.bukkit.EntityEffect entityEffect);
++
++    /**
++     * Plays an event that occurs at a block to the player.
++     *
++     * @param location the location of the block that the event will occur at
++     * @param event the block event
++     */
++    void sendBlockEvent(@NotNull Location location, @NotNull io.papermc.paper.block.event.SimpleBlockEvent event);
++
++    /**
++     * Plays a configured event that occurs at a block to the player.
++     *
++     * @param location the location of the block that the event will occur at
++     * @param event the configurable block event
++     * @param data data that the configured event requires
++     * @param <T> type of data
++     */
++    <T> void sendConfiguredBlockEvent(@NotNull Location location, @NotNull io.papermc.paper.block.event.ConfigurableBlockEvent<T> event, @Nullable T data);
++    // Paper end
++
+     /**
+      * Force this player to break a Block using the item in their main hand.
+      *
