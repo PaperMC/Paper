@@ -13,18 +13,41 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
+             set("despawn-ranges.hard", null);
+         }
+ 
++        if (this.config.isSet("world-settings.default.treasure-maps-return-already-discovered") || this.config.isSet("world-settings." + worldName + ".treasure-maps-return-already-discovered")) {
++            set("treasure-maps-return-already-discovered", null);
++            needsSave = true;
++        }
++
+         if (needsSave) {
+             saveConfig();
+         }
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
              Bukkit.getLogger().warning("Spawn Egg and Armor Stand NBT filtering disabled, this is a potential security risk");
          }
      }
 +
 +    public boolean enableTreasureMaps = true;
-+    public boolean treasureMapsAlreadyDiscovered = false;
++    public boolean treasureMapsAlreadyDiscoveredVillager = false;
++    public Boolean treasureMapsAlreadyDiscoveredLootTable = null;
++    private Boolean getBooleanOrNull(String path, Boolean defaultValue) {
++        this.config.addDefault("world-settings.default." + path, defaultValue == null ? "default" : defaultValue);
++        final Object value = this.config.get("world-settings." + worldName + "." + path, this.config.get("world-settings.default." + path));
++        if (value instanceof Boolean bool) {
++            return bool;
++        }
++        return null;
++    }
 +    private void treasureMapsAlreadyDiscovered() {
 +        enableTreasureMaps = getBoolean("enable-treasure-maps", true);
-+        treasureMapsAlreadyDiscovered = getBoolean("treasure-maps-return-already-discovered", false);
-+        if (treasureMapsAlreadyDiscovered) {
-+            log("Treasure Maps will return already discovered locations");
++        if (getBoolean("treasure-maps-return-already-discovered", false, false)) {
++            treasureMapsAlreadyDiscoveredLootTable = true;
++            treasureMapsAlreadyDiscoveredVillager = true;
 +        }
++        treasureMapsAlreadyDiscoveredVillager = getBoolean("treasure-maps-find-already-discovered.villager-trade", treasureMapsAlreadyDiscoveredVillager);
++        treasureMapsAlreadyDiscoveredLootTable = getBooleanOrNull("treasure-maps-find-already-discovered.loot-tables", treasureMapsAlreadyDiscoveredLootTable);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
@@ -37,7 +60,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  ServerLevel serverLevel = (ServerLevel)entity.level;
 -                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, entity.blockPosition(), 100, true);
 +                if (!serverLevel.paperConfig.enableTreasureMaps) return null; // Paper
-+                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, entity.blockPosition(), 100, !serverLevel.paperConfig.treasureMapsAlreadyDiscovered); // Paper
++                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, entity.blockPosition(), 100, !serverLevel.paperConfig.treasureMapsAlreadyDiscoveredVillager); // Paper
                  if (blockPos != null) {
                      ItemStack itemStack = MapItem.create(serverLevel, blockPos.getX(), blockPos.getZ(), (byte)2, true, true);
                      MapItem.renderBiomePreviewMap(serverLevel, itemStack);
@@ -59,7 +82,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    return stack;
 +                }
 +                // Paper end
-+                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, new BlockPos(vec3), this.searchRadius, !serverLevel.paperConfig.treasureMapsAlreadyDiscovered && this.skipKnownStructures); // Paper
++                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, new BlockPos(vec3), this.searchRadius, serverLevel.paperConfig.treasureMapsAlreadyDiscoveredLootTable == null ? this.skipKnownStructures : serverLevel.paperConfig.treasureMapsAlreadyDiscoveredLootTable); // Paper
                  if (blockPos != null) {
                      ItemStack itemStack = MapItem.create(serverLevel, blockPos.getX(), blockPos.getZ(), this.zoom, true, true);
                      MapItem.renderBiomePreviewMap(serverLevel, itemStack);
