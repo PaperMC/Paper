@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Sun, 5 Jun 2022 21:19:33 -0400
-Subject: [PATCH] Block/World Event API
+Subject: [PATCH] Event/Effect API Improvements
 
 
 diff --git a/src/main/java/io/papermc/paper/block/event/PaperBlockEvent.java b/src/main/java/io/papermc/paper/block/event/PaperBlockEvent.java
@@ -76,10 +76,10 @@ index 0000000000000000000000000000000000000000..6985c1783dc286818c7a82ded825e9f6
 +}
 diff --git a/src/main/java/io/papermc/paper/world/event/PaperWorldEvent.java b/src/main/java/io/papermc/paper/world/event/PaperWorldEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aedcb1b294c1f9eece252547d4f1e95fc12f6d51
+index 0000000000000000000000000000000000000000..52769b41471f314ed7e2017c04ef7729bccf2317
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/event/PaperWorldEvent.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,87 @@
 +package io.papermc.paper.world.event;
 +
 +import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
@@ -87,6 +87,7 @@ index 0000000000000000000000000000000000000000..aedcb1b294c1f9eece252547d4f1e95f
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.world.item.Item;
++import net.minecraft.world.level.block.MultifaceBlock;
 +import org.bukkit.Color;
 +import org.bukkit.Location;
 +import org.bukkit.Material;
@@ -96,6 +97,9 @@ index 0000000000000000000000000000000000000000..aedcb1b294c1f9eece252547d4f1e95f
 +import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.jetbrains.annotations.Nullable;
++
++import java.util.Collection;
++import java.util.List;
 +
 +public class PaperWorldEvent {
 +
@@ -131,6 +135,17 @@ index 0000000000000000000000000000000000000000..aedcb1b294c1f9eece252547d4f1e95f
 +            }
 +
 +            return CraftBlock.blockFaceToNotch(face).get3DDataValue();
++        } else if (configurationClass == SculkChargeEventConfiguration.class) {
++            SculkChargeEventConfiguration chargeEventConfiguration = (SculkChargeEventConfiguration) data;
++            if (chargeEventConfiguration.charge() <= 0) {
++                return 0;
++            } else {
++                // SculkSpreader#updateCursors
++                int charge = (int)(Math.log1p((double) chargeEventConfiguration.charge()) / 2.3F) + 1;
++                Collection<BlockFace> faces = chargeEventConfiguration.blockFaces();
++
++                return (charge << 6) + /*MultifaceBlock.pack(faces)*/0;
++            }
 +        }
 +
 +        throw new UnsupportedOperationException();
