@@ -5,10 +5,10 @@ Subject: [PATCH] BoneMeal API
 
 
 diff --git a/src/main/java/net/minecraft/world/item/BoneMealItem.java b/src/main/java/net/minecraft/world/item/BoneMealItem.java
-index 2592d70f3c7802401f42d95a1fe0a5f6759914d3..374adf669a341386d7b3050a8121dd3b3cba3135 100644
+index 24f485b8004c2911e559e21f90410f24c72c334f..9dd7427c683d6f2a980843e5a8a4ef3ebc2f7d7b 100644
 --- a/src/main/java/net/minecraft/world/item/BoneMealItem.java
 +++ b/src/main/java/net/minecraft/world/item/BoneMealItem.java
-@@ -38,15 +38,17 @@ public class BoneMealItem extends Item {
+@@ -36,15 +36,17 @@ public class BoneMealItem extends Item {
          // CraftBukkit start - extract bonemeal application logic to separate, static method
          return BoneMealItem.applyBonemeal(context);
      }
@@ -29,7 +29,7 @@ index 2592d70f3c7802401f42d95a1fe0a5f6759914d3..374adf669a341386d7b3050a8121dd3b
                  world.levelEvent(1505, blockposition, 0);
              }
  
-@@ -56,7 +58,7 @@ public class BoneMealItem extends Item {
+@@ -54,7 +56,7 @@ public class BoneMealItem extends Item {
              boolean flag = iblockdata.isFaceSturdy(world, blockposition, itemactioncontext.getClickedFace());
  
              if (flag && BoneMealItem.growWaterPlant(itemactioncontext.getItemInHand(), world, blockposition1, itemactioncontext.getClickedFace())) {
@@ -39,10 +39,10 @@ index 2592d70f3c7802401f42d95a1fe0a5f6759914d3..374adf669a341386d7b3050a8121dd3b
                  }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index ac41bc23d2f7e16bbacdc9b33fcf6c0d706fa023..76508019a7d37f2573660efb6eb57779d01ed719 100644
+index 43244a479a112786539a905a22cb12e3cf55b2dd..64c95bd478597af0580fa03b78efcff164ea3053 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2154,5 +2154,39 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2321,5 +2321,43 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
          return this.adventure$pointers;
      }
@@ -50,22 +50,25 @@ index ac41bc23d2f7e16bbacdc9b33fcf6c0d706fa023..76508019a7d37f2573660efb6eb57779
 +    @Override
 +    public boolean applyBoneMeal(@org.jetbrains.annotations.NotNull Location location, org.bukkit.block.BlockFace face, boolean showParticles, @org.jetbrains.annotations.Nullable Predicate<BlockState> predicate) {
 +        BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-+        var context = new net.minecraft.world.item.context.UseOnContext(this.getHandle(), null, net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.Items.BONE_MEAL.getDefaultInstance(), new net.minecraft.world.phys.BlockHitResult(Vec3.ZERO, CraftBlock.blockFaceToNotch(face), pos, false));
++        net.minecraft.world.item.context.UseOnContext context = new net.minecraft.world.item.context.UseOnContext(this.getHandle(), null, net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.Items.BONE_MEAL.getDefaultInstance(), new net.minecraft.world.phys.BlockHitResult(Vec3.ZERO, CraftBlock.blockFaceToNotch(face), pos, false));
 +
++        // Save old capturing state
 +        boolean wasCapturingTrees = world.captureTreeGeneration;
 +        boolean wasCapturingBlockStates = world.captureBlockStates;
 +
-+        var capturedBlocks = world.capturedBlockStates;
-+        var capturedTileEntities = world.capturedTileEntities;
++        Map<BlockPos, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlocks = world.capturedBlockStates;
++        Map<BlockPos, net.minecraft.world.level.block.entity.BlockEntity> capturedTileEntities = world.capturedTileEntities;
 +
++        // Create new state, capture everything
 +        world.capturedBlockStates = new java.util.LinkedHashMap<>();
 +        world.capturedTileEntities = new java.util.LinkedHashMap<>();
 +
 +        world.captureTreeGeneration = true;
 +        world.captureBlockStates = true;
 +
-+        var result = net.minecraft.world.item.BoneMealItem.applyBonemeal(context, showParticles);
++        net.minecraft.world.InteractionResult result = net.minecraft.world.item.BoneMealItem.applyBonemeal(context, showParticles);
 +
++        // Revert back booleans
 +        world.captureTreeGeneration = wasCapturingTrees;
 +        world.captureBlockStates = wasCapturingBlockStates;
 +
@@ -75,6 +78,7 @@ index ac41bc23d2f7e16bbacdc9b33fcf6c0d706fa023..76508019a7d37f2573660efb6eb57779
 +            }
 +        }
 +
++        // Revertback maps
 +        world.capturedBlockStates = capturedBlocks;
 +        world.capturedTileEntities = capturedTileEntities;
 +
