@@ -5,20 +5,19 @@ Subject: [PATCH] Make targetSize more aggressive in the chunk unload queue
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index fb8d50dc14e1d23001e184b425bc6ac2f8b0f37e..f5cf71258732aa040443eb82e09ab28f130e4c79 100644
+index 8b11fbfe2805ad7e8ba84e6b7fdfafc054a248bd..943cad9a08d72b90b92f92ef90588501bbf158d5 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -226,8 +226,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -231,7 +231,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.entityMap = new Int2ObjectOpenHashMap();
          this.chunkTypeCache = new Long2ByteOpenHashMap();
          this.chunkSaveCooldowns = new Long2LongOpenHashMap();
 -        this.unloadQueue = Queues.newConcurrentLinkedQueue();
-         this.structureManager = structureManager;
 +        this.unloadQueue = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper - need constant-time size()
+         this.structureTemplateManager = structureTemplateManager;
          Path path = session.getDimensionPath(world.dimension());
  
-         this.storageName = path.getFileName().toString();
-@@ -564,7 +564,6 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -581,7 +581,6 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
          LongIterator longiterator = this.toDrop.iterator();
@@ -26,7 +25,7 @@ index fb8d50dc14e1d23001e184b425bc6ac2f8b0f37e..f5cf71258732aa040443eb82e09ab28f
          for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) {
              long j = longiterator.nextLong();
              ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
-@@ -577,7 +576,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -594,7 +593,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              }
          }
  
