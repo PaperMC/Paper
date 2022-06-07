@@ -781,7 +781,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
-         // CraftBukkit end
+ 
          MinecraftServer.LOGGER.info("Stopping server");
 +        MinecraftTimings.stopServer(); // Paper
          // CraftBukkit start
@@ -1050,33 +1050,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.google.common.collect.Queues;
  import com.google.common.collect.Sets;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-     private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> scheduleChunkLoad(ChunkPos pos) {
-         return CompletableFuture.supplyAsync(() -> {
--            try {
-+            try (Timing ignored = this.level.timings.chunkLoad.startTimingIfSync()) { // Paper
-                 this.level.getProfiler().incrementCounter("chunkLoad");
--                CompoundTag nbttagcompound = this.readChunk(pos);
-+                CompoundTag nbttagcompound; // Paper
-+                try (Timing ignored2 = this.level.timings.chunkIO.startTimingIfSync()) { // Paper start - timings
-+                    nbttagcompound = this.readChunk(pos);
-+                } // Paper end
- 
--                if (nbttagcompound != null) {
-+                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
-                     boolean flag = nbttagcompound.contains("Status", 8);
- 
-                     if (flag) {
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                     }
- 
-                     ChunkMap.LOGGER.error("Chunk file at {} is missing level data, skipping", pos);
--                }
-+                }} // Paper
-             } catch (ReportedException reportedexception) {
-                 Throwable throwable = reportedexception.getCause();
- 
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              ChunkStatus chunkstatus = ChunkHolder.getStatus(chunkHolder.getTicketLevel());
  
              return !chunkstatus.isOrAfter(ChunkStatus.FULL) ? ChunkHolder.UNLOADED_CHUNK : either.mapLeft((ichunkaccess) -> {
@@ -1223,14 +1196,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.google.common.collect.Lists;
  import com.mojang.datafixers.DataFixer;
  import com.mojang.datafixers.util.Pair;
-@@ -0,0 +0,0 @@ import net.minecraft.world.ticks.LevelTicks;
- import org.slf4j.Logger;
+@@ -0,0 +0,0 @@ import org.slf4j.Logger;
  import org.bukkit.Bukkit;
+ import org.bukkit.Location;
  import org.bukkit.WeatherType;
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
  import org.bukkit.craftbukkit.event.CraftEventFactory;
- import org.bukkit.craftbukkit.util.WorldUUID;
- import org.bukkit.event.entity.CreatureSpawnEvent;
+ import org.bukkit.craftbukkit.generator.CustomWorldChunkManager;
+ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
          this.updateSkyBrightness();
          this.tickTime();
@@ -1313,10 +1286,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
 +            try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) { // Paper
              if (progressListener != null) {
-                 progressListener.progressStartNoAbort(new TranslatableComponent("menu.savingLevel"));
+                 progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-                 progressListener.progressStage(new TranslatableComponent("menu.savingChunks"));
+                 progressListener.progressStage(Component.translatable("menu.savingChunks"));
              }
  
 +                timings.worldSaveChunks.startTiming(); // Paper
@@ -1330,45 +1303,37 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ import org.bukkit.inventory.CraftingInventory;
- import org.bukkit.inventory.EquipmentSlot;
- import org.bukkit.inventory.InventoryView;
- import org.bukkit.inventory.SmithingInventory;
-+import co.aikar.timings.MinecraftTimings; // Paper
- // CraftBukkit end
- 
- public class ServerGamePacketListenerImpl implements ServerPlayerConnection, ServerGamePacketListener {
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      // CraftBukkit end
  
      public void tick() {
 -        org.bukkit.craftbukkit.SpigotTimings.playerConnectionTimer.startTiming(); // Spigot
-         this.resetPosition();
-         this.player.xo = this.player.getX();
-         this.player.yo = this.player.getY();
+         if (this.ackBlockChangesUpTo > -1) {
+             this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
+             this.ackBlockChangesUpTo = -1;
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
-             this.disconnect(new TranslatableComponent("multiplayer.disconnect.idling"));
+             this.disconnect(Component.translatable("multiplayer.disconnect.idling"));
          }
 -        org.bukkit.craftbukkit.SpigotTimings.playerConnectionTimer.stopTiming(); // Spigot
  
+         this.chatPreviewThrottler.tick();
+     }
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      }
  
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-     // CraftBukkit end
- 
-     private void handleCommand(String input) {
+     private void handleCommand(String s) {
 -        org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.startTiming(); // Spigot
-+        MinecraftTimings.playerCommandTimer.startTiming(); // Paper
-         // CraftBukkit start - whole method
++        co.aikar.timings.MinecraftTimings.playerCommandTimer.startTiming(); // Paper
          if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
-         this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + input);
+         this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + s);
+ 
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          this.cserver.getPluginManager().callEvent(event);
  
          if (event.isCancelled()) {
 -            org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.stopTiming(); // Spigot
-+            MinecraftTimings.playerCommandTimer.stopTiming(); // Paper
++            co.aikar.timings.MinecraftTimings.playerCommandTimer.stopTiming(); // Paper
              return;
          }
  
@@ -1377,10 +1342,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          } finally {
 -            org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.stopTiming(); // Spigot
-+            MinecraftTimings.playerCommandTimer.stopTiming(); // Paper
++            co.aikar.timings.MinecraftTimings.playerCommandTimer.stopTiming(); // Paper
          }
-         // this.server.getCommands().performCommand(this.player.createCommandSourceStack(), s);
-         // CraftBukkit end
+     }
+     // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -1916,8 +1881,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-             packet.components = components;
-             CraftPlayer.this.getHandle().connection.send(packet);
+ 
+             CraftPlayer.this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(components, i));
          }
 +
 +        // Paper start
