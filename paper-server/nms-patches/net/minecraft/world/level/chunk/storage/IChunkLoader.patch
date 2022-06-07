@@ -1,10 +1,11 @@
 --- a/net/minecraft/world/level/chunk/storage/IChunkLoader.java
 +++ b/net/minecraft/world/level/chunk/storage/IChunkLoader.java
-@@ -18,6 +18,14 @@
+@@ -19,6 +19,15 @@
  import net.minecraft.world.level.levelgen.structure.PersistentStructureLegacy;
  import net.minecraft.world.level.storage.WorldPersistentData;
  
 +// CraftBukkit start
++import java.util.concurrent.ExecutionException;
 +import net.minecraft.server.level.ChunkProviderServer;
 +import net.minecraft.server.level.WorldServer;
 +import net.minecraft.world.level.GeneratorAccess;
@@ -15,13 +16,13 @@
  public class IChunkLoader implements AutoCloseable {
  
      public static final int LAST_MONOLYTH_STRUCTURE_DATA_VERSION = 1493;
-@@ -31,9 +39,48 @@
-         this.worker = new IOWorker(path, flag, "chunk");
+@@ -36,9 +45,53 @@
+         return this.worker.isOldChunkAround(chunkcoordintpair, i);
      }
  
 -    public NBTTagCompound upgradeChunkTag(ResourceKey<World> resourcekey, Supplier<WorldPersistentData> supplier, NBTTagCompound nbttagcompound, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional) {
 +    // CraftBukkit start
-+    private boolean check(ChunkProviderServer cps, int x, int z) throws IOException {
++    private boolean check(ChunkProviderServer cps, int x, int z) {
 +        ChunkCoordIntPair pos = new ChunkCoordIntPair(x, z);
 +        if (cps != null) {
 +            com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread");
@@ -30,7 +31,12 @@
 +            }
 +        }
 +
-+        NBTTagCompound nbt = read(pos);
++        NBTTagCompound nbt;
++        try {
++            nbt = read(pos).get().orElse(null);
++        } catch (InterruptedException | ExecutionException ex) {
++            throw new RuntimeException(ex);
++        }
 +        if (nbt != null) {
 +            NBTTagCompound level = nbt.getCompound("Level");
 +            if (level.getBoolean("TerrainPopulated")) {
@@ -46,7 +52,7 @@
 +        return false;
 +    }
 +
-+    public NBTTagCompound upgradeChunkTag(ResourceKey<WorldDimension> resourcekey, Supplier<WorldPersistentData> supplier, NBTTagCompound nbttagcompound, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional, ChunkCoordIntPair pos, @Nullable GeneratorAccess generatoraccess) throws IOException {
++    public NBTTagCompound upgradeChunkTag(ResourceKey<WorldDimension> resourcekey, Supplier<WorldPersistentData> supplier, NBTTagCompound nbttagcompound, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional, ChunkCoordIntPair pos, @Nullable GeneratorAccess generatoraccess) {
 +        // CraftBukkit end
          int i = getVersion(nbttagcompound);
  
@@ -65,8 +71,17 @@
          if (i < 1493) {
              nbttagcompound = GameProfileSerializer.update(this.fixerUpper, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
              if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
-@@ -55,7 +102,7 @@
+@@ -58,7 +111,7 @@
          return nbttagcompound;
+     }
+ 
+-    private PersistentStructureLegacy getLegacyStructureHandler(ResourceKey<World> resourcekey, Supplier<WorldPersistentData> supplier) {
++    private PersistentStructureLegacy getLegacyStructureHandler(ResourceKey<WorldDimension> resourcekey, Supplier<WorldPersistentData> supplier) { // CraftBukkit
+         PersistentStructureLegacy persistentstructurelegacy = this.legacyStructureHandler;
+ 
+         if (persistentstructurelegacy == null) {
+@@ -73,7 +126,7 @@
+         return persistentstructurelegacy;
      }
  
 -    public static void injectDatafixingContext(NBTTagCompound nbttagcompound, ResourceKey<World> resourcekey, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional) {

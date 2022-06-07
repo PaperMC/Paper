@@ -21,6 +21,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootContext;
@@ -76,7 +77,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
 
         LootTableInfo.Builder builder = new LootTableInfo.Builder(handle);
         if (random != null) {
-            builder = builder.withRandom(random);
+            builder = builder.withRandom(new RandomSourceWrapper(random));
         }
         setMaybe(builder, LootContextParameters.ORIGIN, new Vec3D(loc.getX(), loc.getY(), loc.getZ()));
         if (getHandle() != LootTable.EMPTY) {

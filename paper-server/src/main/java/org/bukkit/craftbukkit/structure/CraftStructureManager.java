@@ -16,7 +16,7 @@ import net.minecraft.nbt.NBTCompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructure;
-import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructureManager;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import org.apache.commons.lang3.Validate;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -25,9 +25,9 @@ import org.bukkit.structure.StructureManager;
 
 public class CraftStructureManager implements StructureManager {
 
-    private final DefinedStructureManager structureManager;
+    private final StructureTemplateManager structureManager;
 
-    public CraftStructureManager(DefinedStructureManager structureManager) {
+    public CraftStructureManager(StructureTemplateManager structureManager) {
         this.structureManager = structureManager;
     }
 
@@ -120,14 +120,14 @@ public class CraftStructureManager implements StructureManager {
         if (unregister) {
             structureManager.structureRepository.remove(key);
         }
-        Path path = structureManager.createAndValidatePathToStructure(key, ".nbt");
+        Path path = structureManager.getPathToGeneratedStructure(key, ".nbt");
         Files.deleteIfExists(path);
     }
 
     @Override
     public File getStructureFile(NamespacedKey structureKey) {
         MinecraftKey minecraftKey = createAndValidateMinecraftStructureKey(structureKey);
-        return structureManager.createAndValidatePathToStructure(minecraftKey, ".nbt").toFile();
+        return structureManager.getPathToGeneratedStructure(minecraftKey, ".nbt").toFile();
     }
 
     @Override

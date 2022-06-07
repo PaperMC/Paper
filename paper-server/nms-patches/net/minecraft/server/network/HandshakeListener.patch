@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/HandshakeListener.java
 +++ b/net/minecraft/server/network/HandshakeListener.java
-@@ -11,8 +11,17 @@
+@@ -10,8 +10,17 @@
  import net.minecraft.network.protocol.login.PacketLoginOutDisconnect;
  import net.minecraft.server.MinecraftServer;
  
@@ -15,10 +15,10 @@
 +    private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
 +    private static int throttleCounter = 0;
 +    // CraftBukkit end
-     private static final IChatBaseComponent IGNORE_STATUS_REASON = new ChatComponentText("Ignoring status request");
+     private static final IChatBaseComponent IGNORE_STATUS_REASON = IChatBaseComponent.literal("Ignoring status request");
      private final MinecraftServer server;
      private final NetworkManager connection;
-@@ -27,6 +36,40 @@
+@@ -26,6 +35,40 @@
          switch (packethandshakinginsetprotocol.getIntention()) {
              case LOGIN:
                  this.connection.setProtocol(EnumProtocol.LOGIN);
@@ -31,7 +31,7 @@
 +                    synchronized (throttleTracker) {
 +                        if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
 +                            throttleTracker.put(address, currentTime);
-+                            ChatMessage chatmessage = new ChatMessage("Connection throttled! Please wait before reconnecting.");
++                            IChatMutableComponent chatmessage = IChatBaseComponent.literal("Connection throttled! Please wait before reconnecting.");
 +                            this.connection.send(new PacketLoginOutDisconnect(chatmessage));
 +                            this.connection.disconnect(chatmessage);
 +                            return;
@@ -57,10 +57,10 @@
 +                }
 +                // CraftBukkit end
                  if (packethandshakinginsetprotocol.getProtocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
-                     ChatMessage chatmessage;
+                     IChatMutableComponent ichatmutablecomponent;
  
-@@ -40,6 +83,7 @@
-                     this.connection.disconnect(chatmessage);
+@@ -39,6 +82,7 @@
+                     this.connection.disconnect(ichatmutablecomponent);
                  } else {
                      this.connection.setListener(new LoginListener(this.server, this.connection));
 +                    ((LoginListener) this.connection.getPacketListener()).hostname = packethandshakinginsetprotocol.hostName + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname

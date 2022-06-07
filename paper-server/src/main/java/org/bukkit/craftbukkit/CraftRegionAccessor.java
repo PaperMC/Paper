@@ -12,6 +12,7 @@ import net.minecraft.core.EnumDirection;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.data.worldgen.features.TreeFeatures;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
 import net.minecraft.world.entity.EntityExperienceOrb;
 import net.minecraft.world.entity.EntityInsentient;
@@ -34,7 +35,6 @@ import net.minecraft.world.entity.projectile.EntityFireworks;
 import net.minecraft.world.entity.projectile.EntityPotion;
 import net.minecraft.world.entity.projectile.EntitySnowball;
 import net.minecraft.world.entity.projectile.EntityTippedArrow;
-import net.minecraft.world.entity.vehicle.EntityBoat;
 import net.minecraft.world.entity.vehicle.EntityMinecartChest;
 import net.minecraft.world.entity.vehicle.EntityMinecartCommandBlock;
 import net.minecraft.world.entity.vehicle.EntityMinecartFurnace;
@@ -65,10 +65,12 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.AbstractVillager;
+import org.bukkit.entity.Allay;
 import org.bukkit.entity.Ambient;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.ArmorStand;
@@ -79,6 +81,7 @@ import org.bukkit.entity.Blaze;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.CaveSpider;
+import org.bukkit.entity.ChestBoat;
 import org.bukkit.entity.ChestedHorse;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cod;
@@ -107,6 +110,7 @@ import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Fox;
+import org.bukkit.entity.Frog;
 import org.bukkit.entity.Ghast;
 import org.bukkit.entity.Giant;
 import org.bukkit.entity.GlowItemFrame;
@@ -166,6 +170,7 @@ import org.bukkit.entity.Squid;
 import org.bukkit.entity.Stray;
 import org.bukkit.entity.Strider;
 import org.bukkit.entity.TNTPrimed;
+import org.bukkit.entity.Tadpole;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
@@ -178,6 +183,7 @@ import org.bukkit.entity.Vex;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Vindicator;
 import org.bukkit.entity.WanderingTrader;
+import org.bukkit.entity.Warden;
 import org.bukkit.entity.Witch;
 import org.bukkit.entity.Wither;
 import org.bukkit.entity.WitherSkeleton;
@@ -293,7 +299,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType) {
         BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        return generateTree(getHandle(), getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, random, treeType);
+        return generateTree(getHandle(), getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
     }
 
     @Override
@@ -308,7 +314,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public boolean generateTree(Location location, Random random, TreeType treeType, Predicate<BlockState> predicate) {
         BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         BlockStateListPopulator populator = new BlockStateListPopulator(getHandle());
-        boolean result = generateTree(populator, getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, random, treeType);
+        boolean result = generateTree(populator, getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
         populator.refreshTiles();
 
         for (BlockState blockState : populator.getList()) {
@@ -320,7 +326,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         return result;
     }
 
-    public boolean generateTree(GeneratorAccessSeed access, ChunkGenerator chunkGenerator, BlockPosition pos, Random random, TreeType treeType) {
+    public boolean generateTree(GeneratorAccessSeed access, ChunkGenerator chunkGenerator, BlockPosition pos, RandomSource random, TreeType treeType) {
         Holder<?> gen;
         switch (treeType) {
             case BIG_TREE:
@@ -379,6 +385,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 break;
             case AZALEA:
                 gen = TreeFeatures.AZALEA_TREE;
+                break;
+            case MANGROVE:
+                gen = TreeFeatures.MANGROVE;
+                break;
+            case TALL_MANGROVE:
+                gen = TreeFeatures.TALL_MANGROVE;
                 break;
             case TREE:
             default:
@@ -555,7 +567,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         // order is important for some of these
         if (Boat.class.isAssignableFrom(clazz)) {
-            entity = new EntityBoat(world, x, y, z);
+            if (ChestBoat.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.CHEST_BOAT.create(world);
+            } else {
+                entity = EntityTypes.BOAT.create(world);
+            }
             entity.moveTo(x, y, z, yaw, pitch);
         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
             BlockPosition pos = new BlockPosition(x, y, z);
@@ -798,6 +814,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                     entity = EntityTypes.SALMON.create(world);
                 } else if (TropicalFish.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.TROPICAL_FISH.create(world);
+                } else if (Tadpole.class.isAssignableFrom(clazz)) {
+                    entity = EntityTypes.TADPOLE.create(world);
                 }
             } else if (Dolphin.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.DOLPHIN.create(world);
@@ -825,6 +843,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 entity = EntityTypes.AXOLOTL.create(world);
             } else if (Goat.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.GOAT.create(world);
+            } else if (Allay.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.ALLAY.create(world);
+            } else if (Frog.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.FROG.create(world);
+            } else if (Warden.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.WARDEN.create(world);
             }
 
             if (entity != null) {
@@ -881,7 +905,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 EnumDirection dir = CraftBlock.blockFaceToNotch(face).getOpposite();
                 if (Painting.class.isAssignableFrom(clazz)) {
                     if (isNormalWorld() && randomizeData) {
-                        entity = new EntityPainting(getHandle().getMinecraftWorld(), new BlockPosition(x, y, z), dir);
+                        entity = EntityPainting.create(world, pos, dir).orElse(null);
                     } else {
                         entity = new EntityPainting(EntityTypes.PAINTING, getHandle().getMinecraftWorld());
                         entity.absMoveTo(x, y, z, yaw, pitch);

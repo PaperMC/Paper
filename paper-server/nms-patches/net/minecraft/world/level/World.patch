@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/World.java
 +++ b/net/minecraft/world/level/World.java
-@@ -65,6 +65,31 @@
+@@ -67,6 +67,31 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.scores.Scoreboard;
  
@@ -31,12 +31,12 @@
 +
  public abstract class World implements GeneratorAccess, AutoCloseable {
  
-     public static final Codec<ResourceKey<World>> RESOURCE_KEY_CODEC = MinecraftKey.CODEC.xmap(ResourceKey.elementKey(IRegistry.DIMENSION_REGISTRY), ResourceKey::location);
-@@ -102,7 +127,43 @@
+     public static final Codec<ResourceKey<World>> RESOURCE_KEY_CODEC = ResourceKey.codec(IRegistry.DIMENSION_REGISTRY);
+@@ -108,7 +133,43 @@
      private final ResourceKey<World> dimension;
      private long subTickCount;
  
--    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i) {
+-    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j) {
 +    // CraftBukkit start Added the following
 +    private final CraftWorld world;
 +    public boolean pvpMode;
@@ -62,7 +62,7 @@
 +
 +    public abstract ResourceKey<WorldDimension> getTypeKey();
 +
-+    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
++    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
 +        this.generator = gen;
 +        this.world = new CraftWorld((WorldServer) this, gen, biomeProvider, env);
 +
@@ -77,25 +77,25 @@
          this.profiler = supplier;
          this.levelData = worlddatamutable;
          this.dimensionTypeRegistration = holder;
-@@ -113,12 +174,12 @@
+@@ -123,12 +184,12 @@
              this.worldBorder = new WorldBorder() {
                  @Override
                  public double getCenterX() {
--                    return super.getCenterX() / World.this.dimensionType.coordinateScale();
+-                    return super.getCenterX() / dimensionmanager.coordinateScale();
 +                    return super.getCenterX(); // CraftBukkit
                  }
  
                  @Override
                  public double getCenterZ() {
--                    return super.getCenterZ() / World.this.dimensionType.coordinateScale();
+-                    return super.getCenterZ() / dimensionmanager.coordinateScale();
 +                    return super.getCenterZ(); // CraftBukkit
                  }
              };
          } else {
-@@ -128,6 +189,42 @@
-         this.thread = Thread.currentThread();
+@@ -139,6 +200,42 @@
          this.biomeManager = new BiomeManager(this, i);
          this.isDebug = flag1;
+         this.neighborUpdater = new CollectingNeighborUpdater(this, j);
 +        // CraftBukkit start
 +        getWorldBorder().world = (WorldServer) this;
 +        // From PlayerList.setPlayerFileData
@@ -135,7 +135,7 @@
      }
  
      @Override
-@@ -185,6 +282,17 @@
+@@ -196,6 +293,17 @@
  
      @Override
      public boolean setBlock(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
@@ -153,7 +153,7 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -192,9 +300,24 @@
+@@ -203,9 +311,24 @@
          } else {
              Chunk chunk = this.getChunkAt(blockposition);
              Block block = iblockdata.getBlock();
@@ -179,7 +179,7 @@
                  return false;
              } else {
                  IBlockData iblockdata2 = this.getBlockState(blockposition);
-@@ -205,6 +328,7 @@
+@@ -216,6 +339,7 @@
                      this.getProfiler().pop();
                  }
  
@@ -187,7 +187,7 @@
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
-@@ -231,12 +355,69 @@
+@@ -242,12 +366,69 @@
  
                      this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
                  }
@@ -257,25 +257,7 @@
      public void onBlockStateChange(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
      @Override
-@@ -326,6 +507,17 @@
-             IBlockData iblockdata = this.getBlockState(blockposition);
- 
-             try {
-+                // CraftBukkit start
-+                CraftWorld world = ((WorldServer) this).getWorld();
-+                if (world != null) {
-+                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata), world.getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()));
-+                    this.getCraftServer().getPluginManager().callEvent(event);
-+
-+                    if (event.isCancelled()) {
-+                        return;
-+                    }
-+                }
-+                // CraftBukkit end
-                 iblockdata.neighborChanged(this, blockposition, block, blockposition1, false);
-             } catch (Throwable throwable) {
-                 CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception while updating neighbours");
-@@ -368,6 +560,14 @@
+@@ -333,6 +514,14 @@
  
      @Override
      public IBlockData getBlockState(BlockPosition blockposition) {
@@ -290,7 +272,7 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
-@@ -493,6 +693,16 @@
+@@ -470,6 +659,16 @@
      @Nullable
      @Override
      public TileEntity getBlockEntity(BlockPosition blockposition) {
@@ -307,7 +289,7 @@
          return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, Chunk.EnumTileEntityState.IMMEDIATE));
      }
  
-@@ -500,6 +710,12 @@
+@@ -477,6 +676,12 @@
          BlockPosition blockposition = tileentity.getBlockPos();
  
          if (!this.isOutsideBuildHeight(blockposition)) {
@@ -320,7 +302,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(tileentity);
          }
      }
-@@ -604,7 +820,7 @@
+@@ -595,7 +800,7 @@
  
                  for (int j = 0; j < i; ++j) {
                      EntityComplexPart entitycomplexpart = aentitycomplexpart[j];
@@ -329,18 +311,3 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          list.add(t0);
-@@ -932,6 +1148,14 @@
-     public abstract LevelEntityGetter<Entity> getEntities();
- 
-     protected void postGameEventInRadius(@Nullable Entity entity, GameEvent gameevent, BlockPosition blockposition, int i) {
-+        // CraftBukkit start
-+        GenericGameEvent event = new GenericGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(IRegistry.GAME_EVENT.getKey(gameevent))), new Location(this.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()), (entity == null) ? null : entity.getBukkitEntity(), i);
-+        getCraftServer().getPluginManager().callEvent(event);
-+        if (event.isCancelled()) {
-+            return;
-+        }
-+        i = event.getRadius();
-+        // CraftBukkit end
-         int j = SectionPosition.blockToSectionCoord(blockposition.getX() - i);
-         int k = SectionPosition.blockToSectionCoord(blockposition.getZ() - i);
-         int l = SectionPosition.blockToSectionCoord(blockposition.getX() + i);

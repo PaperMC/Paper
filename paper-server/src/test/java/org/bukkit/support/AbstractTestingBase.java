@@ -53,6 +53,6 @@ public abstract class AbstractTestingBase {
             }
         }
         INVALIDATED_MATERIALS = builder.build();
-        Assert.assertEquals("Expected 590 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", 590, INVALIDATED_MATERIALS.size());
+        Assert.assertEquals("Expected 592 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", 592, INVALIDATED_MATERIALS.size());
     }
 }

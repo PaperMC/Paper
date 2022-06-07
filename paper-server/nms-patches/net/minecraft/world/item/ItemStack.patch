@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -73,6 +73,40 @@
+@@ -71,6 +71,40 @@
  import net.minecraft.world.level.block.state.pattern.ShapeDetectorBlock;
  import org.slf4j.Logger;
  
@@ -41,7 +41,7 @@
  public final class ItemStack {
  
      public static final Codec<ItemStack> CODEC = RecordCodecBuilder.create((instance) -> {
-@@ -144,16 +178,30 @@
+@@ -146,16 +180,30 @@
          this.updateEmptyCacheFlag();
      }
  
@@ -74,7 +74,7 @@
              this.getItem().verifyTagAfterLoad(this.tag);
          }
  
-@@ -161,6 +209,11 @@
+@@ -163,6 +211,11 @@
              this.setDamageValue(this.getDamageValue());
          }
  
@@ -86,7 +86,7 @@
          this.updateEmptyCacheFlag();
      }
  
-@@ -202,7 +255,7 @@
+@@ -216,7 +269,7 @@
          return this.getItem().builtInRegistryHolder().tags();
      }
  
@@ -95,7 +95,7 @@
          EntityHuman entityhuman = itemactioncontext.getPlayer();
          BlockPosition blockposition = itemactioncontext.getClickedPos();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getLevel(), blockposition, false);
-@@ -210,12 +263,157 @@
+@@ -224,12 +277,157 @@
          if (entityhuman != null && !entityhuman.getAbilities().mayBuild && !this.hasAdventureModePlaceTagForBlock(itemactioncontext.getLevel().registryAccess().registryOrThrow(IRegistry.BLOCK_REGISTRY), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -207,7 +207,7 @@
 +                    // Special case juke boxes as they update their tile entity. Copied from ItemRecord.
 +                    // PAIL: checkme on updates.
 +                    if (this.item instanceof ItemRecord) {
-+                        ((BlockJukeBox) Blocks.JUKEBOX).setRecord(world, blockposition, world.getBlockState(blockposition), this);
++                        ((BlockJukeBox) Blocks.JUKEBOX).setRecord(entityhuman, world, blockposition, world.getBlockState(blockposition), this);
 +                        world.levelEvent((EntityHuman) null, 1010, blockposition, Item.getId(this.item));
 +                        this.shrink(1);
 +                        entityhuman.awardStat(StatisticList.PLAY_RECORD);
@@ -254,7 +254,7 @@
  
              return enuminteractionresult;
          }
-@@ -296,6 +494,21 @@
+@@ -310,6 +508,21 @@
                  }
  
                  i -= k;
@@ -276,7 +276,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -317,6 +530,11 @@
+@@ -331,6 +544,11 @@
                  if (this.hurt(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -288,7 +288,7 @@
  
                      this.shrink(1);
                      if (t0 instanceof EntityHuman) {
-@@ -472,6 +690,17 @@
+@@ -486,6 +704,17 @@
          return this.tag;
      }
  
@@ -306,7 +306,16 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -850,6 +1079,12 @@
+@@ -782,7 +1011,7 @@
+ 
+     private static Collection<IChatBaseComponent> expandBlockState(String s) {
+         try {
+-            return (Collection) ArgumentBlock.parseForTesting((IRegistry) IRegistry.BLOCK, s, true).map((argumentblock_a) -> {
++            return (Collection) ArgumentBlock.parseForTesting(IRegistry.BLOCK, s, true).map((argumentblock_a) -> { // CraftBukkit - decompile error
+                 return Lists.newArrayList(new IChatBaseComponent[]{argumentblock_a.blockState().getBlock().getName().withStyle(EnumChatFormat.DARK_GRAY)});
+             }, (argumentblock_b) -> {
+                 return (List) argumentblock_b.tag().stream().map((holder) -> {
+@@ -848,6 +1077,12 @@
      }
  
      public void setRepairCost(int i) {
@@ -319,7 +328,7 @@
          this.getOrCreateTag().putInt("RepairCost", i);
      }
  
-@@ -899,6 +1134,13 @@
+@@ -897,6 +1132,13 @@
          nbttaglist.add(nbttagcompound);
      }
  
@@ -331,5 +340,5 @@
 +    // CraftBukkit end
 +
      public IChatBaseComponent getDisplayName() {
-         IChatMutableComponent ichatmutablecomponent = (new ChatComponentText("")).append(this.getHoverName());
+         IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.empty().append(this.getHoverName());
  

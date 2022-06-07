@@ -20,7 +20,7 @@ public class CraftWorldInfo implements WorldInfo {
 
     public CraftWorldInfo(IWorldDataServer worldDataServer, Convertable.ConversionSession session, World.Environment environment, DimensionManager dimensionManager) {
         this.name = worldDataServer.getLevelName();
-        this.uuid = WorldUUID.getUUID(session.levelPath.toFile());
+        this.uuid = WorldUUID.getUUID(session.levelDirectory.path().toFile());
         this.environment = environment;
         this.seed = ((WorldDataServer) worldDataServer).worldGenSettings().seed();
         this.minHeight = dimensionManager.minY();

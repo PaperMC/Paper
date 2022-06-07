@@ -11,7 +11,9 @@ import javax.annotation.Nullable;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.level.GeneratorAccess;
+import net.minecraft.world.level.block.entity.SculkCatalystBlockEntity;
 import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
+import net.minecraft.world.level.block.entity.SculkShriekerBlockEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntityBanner;
 import net.minecraft.world.level.block.entity.TileEntityBarrel;
@@ -130,6 +132,8 @@ public final class CraftBlockStates {
                         Material.DARK_OAK_WALL_SIGN,
                         Material.JUNGLE_SIGN,
                         Material.JUNGLE_WALL_SIGN,
+                        Material.MANGROVE_SIGN,
+                        Material.MANGROVE_WALL_SIGN,
                         Material.OAK_SIGN,
                         Material.OAK_WALL_SIGN,
                         Material.SPRUCE_SIGN,
@@ -279,7 +283,9 @@ public final class CraftBlockStates {
         register(Material.JUKEBOX, CraftJukebox.class, CraftJukebox::new, TileEntityJukeBox::new);
         register(Material.LECTERN, CraftLectern.class, CraftLectern::new, TileEntityLectern::new);
         register(Material.MOVING_PISTON, CraftMovingPiston.class, CraftMovingPiston::new, TileEntityPiston::new);
+        register(Material.SCULK_CATALYST, CraftSculkCatalyst.class, CraftSculkCatalyst::new, SculkCatalystBlockEntity::new);
         register(Material.SCULK_SENSOR, CraftSculkSensor.class, CraftSculkSensor::new, SculkSensorBlockEntity::new);
+        register(Material.SCULK_SHRIEKER, CraftSculkShrieker.class, CraftSculkShrieker::new, SculkShriekerBlockEntity::new);
         register(Material.SMOKER, CraftSmoker.class, CraftSmoker::new, TileEntitySmoker::new);
         register(Material.SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new, TileEntityMobSpawner::new);
         register(Material.STRUCTURE_BLOCK, CraftStructureBlock.class, CraftStructureBlock::new, TileEntityStructure::new);

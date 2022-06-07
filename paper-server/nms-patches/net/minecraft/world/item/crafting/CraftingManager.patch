@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/crafting/CraftingManager.java
 +++ b/net/minecraft/world/item/crafting/CraftingManager.java
-@@ -32,11 +32,13 @@
+@@ -34,11 +34,13 @@
  import net.minecraft.world.level.World;
  import org.slf4j.Logger;
  
@@ -15,7 +15,7 @@
      private Map<MinecraftKey, IRecipe<?>> byName = ImmutableMap.of();
      private boolean hasErrors;
  
-@@ -46,7 +48,12 @@
+@@ -48,7 +50,12 @@
  
      protected void apply(Map<MinecraftKey, JsonElement> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
          this.hasErrors = false;
@@ -29,7 +29,7 @@
          Builder<MinecraftKey, IRecipe<?>> builder = ImmutableMap.builder();
          Iterator iterator = map.entrySet().iterator();
  
-@@ -57,8 +64,10 @@
+@@ -59,8 +66,10 @@
              try {
                  IRecipe<?> irecipe = fromJson(minecraftkey, ChatDeserializer.convertToJsonObject((JsonElement) entry.getValue(), "top element"));
  
@@ -42,7 +42,7 @@
                  })).put(minecraftkey, irecipe);
                  builder.put(minecraftkey, irecipe);
              } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
-@@ -67,20 +76,37 @@
+@@ -69,27 +78,44 @@
          }
  
          this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
@@ -72,27 +72,44 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> Optional<T> getRecipeFor(Recipes<T> recipes, C c0, World world) {
--        return this.byType(recipes).values().stream().flatMap((irecipe) -> {
+-        return this.byType(recipes).values().stream().filter((irecipe) -> {
 +        // CraftBukkit start
-+        Optional<T> recipe = this.byType(recipes).values().stream().flatMap((irecipe) -> {
-             return recipes.tryMatch(irecipe, world, c0).stream();
++        Optional<T> recipe = this.byType(recipes).values().stream().filter((irecipe) -> {
+             return irecipe.matches(c0, world);
          }).findFirst();
 +        c0.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
 +        // CraftBukkit end
 +        return recipe;
      }
  
-     public <C extends IInventory, T extends IRecipe<C>> List<T> getAllRecipesFor(Recipes<T> recipes) {
-@@ -98,7 +124,7 @@
+     public <C extends IInventory, T extends IRecipe<C>> Optional<Pair<MinecraftKey, T>> getRecipeFor(Recipes<T> recipes, C c0, World world, @Nullable MinecraftKey minecraftkey) {
+         Map<MinecraftKey, T> map = this.byType(recipes);
+ 
+         if (minecraftkey != null) {
+-            T t0 = (IRecipe) map.get(minecraftkey);
++            T t0 = map.get(minecraftkey); // CraftBukkit - decompile error
+ 
+             if (t0 != null && t0.matches(c0, world)) {
+                 return Optional.of(Pair.of(minecraftkey, t0));
+@@ -99,7 +125,7 @@
+         return map.entrySet().stream().filter((entry) -> {
+             return ((IRecipe) entry.getValue()).matches(c0, world);
+         }).findFirst().map((entry) -> {
+-            return Pair.of((MinecraftKey) entry.getKey(), (IRecipe) entry.getValue());
++            return Pair.of((MinecraftKey) entry.getKey(), entry.getValue()); // CraftBukkit - decompile error
+         });
      }
  
-     private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, IRecipe<C>> byType(Recipes<T> recipes) {
+@@ -116,7 +142,7 @@
+     }
+ 
+     private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, T> byType(Recipes<T> recipes) {
 -        return (Map) this.recipes.getOrDefault(recipes, Collections.emptyMap());
 +        return (Map) this.recipes.getOrDefault(recipes, new Object2ObjectLinkedOpenHashMap<>()); // CraftBukkit
      }
  
      public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> getRemainingItemsFor(Recipes<T> recipes, C c0, World world) {
-@@ -118,7 +144,7 @@
+@@ -136,7 +162,7 @@
      }
  
      public Optional<? extends IRecipe<?>> byKey(MinecraftKey minecraftkey) {
@@ -101,7 +118,7 @@
      }
  
      public Collection<IRecipe<?>> getRecipes() {
-@@ -143,12 +169,12 @@
+@@ -161,12 +187,12 @@
  
      public void replaceRecipes(Iterable<IRecipe<?>> iterable) {
          this.hasErrors = false;
@@ -116,7 +133,7 @@
              });
              MinecraftKey minecraftkey = irecipe.getId();
              IRecipe<?> irecipe1 = (IRecipe) map1.put(minecraftkey, irecipe);
-@@ -159,6 +185,26 @@
+@@ -177,8 +203,28 @@
              }
          });
          this.recipes = ImmutableMap.copyOf(map);
@@ -143,4 +160,15 @@
 +        this.byName = Maps.newHashMap();
      }
 +    // CraftBukkit end
- }
+ 
+     public static <C extends IInventory, T extends IRecipe<C>> CraftingManager.a<C, T> createCheck(final Recipes<T> recipes) {
+         return new CraftingManager.a<C, T>() {
+@@ -194,7 +240,7 @@
+                     Pair<MinecraftKey, T> pair = (Pair) optional.get();
+ 
+                     this.lastRecipe = (MinecraftKey) pair.getFirst();
+-                    return Optional.of((IRecipe) pair.getSecond());
++                    return Optional.of(pair.getSecond()); // CraftBukkit - decompile error
+                 } else {
+                     return Optional.empty();
+                 }

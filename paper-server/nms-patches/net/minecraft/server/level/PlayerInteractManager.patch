@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/level/PlayerInteractManager.java
 +++ b/net/minecraft/server/level/PlayerInteractManager.java
 @@ -26,6 +26,27 @@
- import net.minecraft.world.phys.MovingObjectPositionBlock;
+ import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -60,13 +60,14 @@
          IBlockData iblockdata;
  
          if (this.hasDelayedDestroy) {
-@@ -152,10 +180,32 @@
+@@ -142,11 +170,33 @@
  
              if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.START_DESTROY_BLOCK) {
                  if (!this.level.mayInteract(this.player, blockposition)) {
 +                    // CraftBukkit start - fire PlayerInteractEvent
 +                    CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, blockposition, enumdirection, this.player.getInventory().getSelected(), EnumHand.MAIN_HAND);
-                     this.player.connection.send(new PacketPlayOutBlockBreak(blockposition, this.level.getBlockState(blockposition), packetplayinblockdig_enumplayerdigtype, false, "may not interact"));
+                     this.player.connection.send(new PacketPlayOutBlockChange(blockposition, this.level.getBlockState(blockposition)));
+                     this.debugLogging(blockposition, false, j, "may not interact");
 +                    // Update any tile entity data for this block
 +                    TileEntity tileentity = level.getBlockEntity(blockposition);
 +                    if (tileentity != null) {
@@ -91,13 +92,13 @@
 +                // CraftBukkit end
 +
                  if (this.isCreative()) {
-                     this.destroyAndAck(blockposition, packetplayinblockdig_enumplayerdigtype, "creative destroy");
+                     this.destroyAndAck(blockposition, j, "creative destroy");
                      return;
-@@ -170,11 +220,43 @@
+@@ -162,11 +212,43 @@
                  float f = 1.0F;
  
-                 iblockdata1 = this.level.getBlockState(blockposition);
--                if (!iblockdata1.isAir()) {
+                 iblockdata = this.level.getBlockState(blockposition);
+-                if (!iblockdata.isAir()) {
 +                // CraftBukkit start - Swings at air do *NOT* exist.
 +                if (event.useInteractedBlock() == Event.Result.DENY) {
 +                    // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
@@ -110,9 +111,9 @@
 +                    } else if (data.getBlock() instanceof BlockTrapdoor) {
 +                        this.player.connection.send(new PacketPlayOutBlockChange(this.level, blockposition));
 +                    }
-+                } else if (!iblockdata1.isAir()) {
-                     iblockdata1.attack(this.level, blockposition, this.player);
-                     f = iblockdata1.getDestroyProgress(this.player, this.player.level, blockposition);
++                } else if (!iblockdata.isAir()) {
+                     iblockdata.attack(this.level, blockposition, this.player);
+                     f = iblockdata.getDestroyProgress(this.player, this.player.level, blockposition);
                  }
  
 +                if (event.useItemInHand() == Event.Result.DENY) {
@@ -135,35 +136,27 @@
 +                }
 +                // CraftBukkit end
 +
-                 if (!iblockdata1.isAir() && f >= 1.0F) {
-                     this.destroyAndAck(blockposition, packetplayinblockdig_enumplayerdigtype, "insta mine");
+                 if (!iblockdata.isAir() && f >= 1.0F) {
+                     this.destroyAndAck(blockposition, j, "insta mine");
                  } else {
-@@ -218,13 +300,15 @@
+@@ -211,13 +293,15 @@
              } else if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
                  if (!Objects.equals(this.destroyPos, blockposition)) {
 -                    PlayerInteractManager.LOGGER.warn("Mismatch in destroy block pos: {} {}", this.destroyPos, blockposition);
 +                    PlayerInteractManager.LOGGER.debug("Mismatch in destroy block pos: {} {}", this.destroyPos, blockposition); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
                      this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
-                     this.player.connection.send(new PacketPlayOutBlockBreak(this.destroyPos, this.level.getBlockState(this.destroyPos), packetplayinblockdig_enumplayerdigtype, true, "aborted mismatched destroying"));
+                     this.debugLogging(blockposition, true, j, "aborted mismatched destroying");
                  }
  
                  this.level.destroyBlockProgress(this.player.getId(), blockposition, -1);
-                 this.player.connection.send(new PacketPlayOutBlockBreak(blockposition, this.level.getBlockState(blockposition), packetplayinblockdig_enumplayerdigtype, true, "aborted destroying"));
+                 this.debugLogging(blockposition, true, j, "aborted destroying");
 +
 +                CraftEventFactory.callBlockDamageAbortEvent(this.player, blockposition, this.player.getInventory().getSelected()); // CraftBukkit
              }
  
          }
-@@ -234,17 +318,72 @@
-         if (this.destroyBlock(blockposition)) {
-             this.player.connection.send(new PacketPlayOutBlockBreak(blockposition, this.level.getBlockState(blockposition), packetplayinblockdig_enumplayerdigtype, true, s));
-         } else {
--            this.player.connection.send(new PacketPlayOutBlockBreak(blockposition, this.level.getBlockState(blockposition), packetplayinblockdig_enumplayerdigtype, false, s));
-+            this.player.connection.send(new PacketPlayOutBlockChange(this.level, blockposition)); // CraftBukkit - SPIGOT-5196
-         }
- 
-     }
+@@ -235,10 +319,65 @@
  
      public boolean destroyBlock(BlockPosition blockposition) {
          IBlockData iblockdata = this.level.getBlockState(blockposition);
@@ -195,7 +188,7 @@
 +            ItemStack itemstack = this.player.getItemBySlot(EnumItemSlot.MAINHAND);
 +
 +            if (nmsBlock != null && !event.isCancelled() && !this.isCreative() && this.player.hasCorrectToolForDrops(nmsBlock.defaultBlockState())) {
-+                event.setExpToDrop(nmsBlock.getExpDrop(nmsData, this.level, blockposition, itemstack));
++                event.setExpToDrop(nmsBlock.getExpDrop(nmsData, this.level, blockposition, itemstack, true));
 +            }
 +
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
@@ -230,7 +223,7 @@
              TileEntity tileentity = this.level.getBlockEntity(blockposition);
              Block block = iblockdata.getBlock();
  
-@@ -254,6 +393,10 @@
+@@ -248,6 +387,10 @@
              } else if (this.player.blockActionRestricted(this.level, blockposition, this.gameModeForPlayer)) {
                  return false;
              } else {
@@ -241,7 +234,7 @@
                  block.playerWillDestroy(this.level, blockposition, iblockdata, this.player);
                  boolean flag = this.level.removeBlock(blockposition, false);
  
-@@ -262,19 +405,32 @@
+@@ -256,19 +399,32 @@
                  }
  
                  if (this.isCreative()) {
@@ -277,7 +270,7 @@
              }
          }
      }
-@@ -316,12 +472,52 @@
+@@ -313,12 +469,52 @@
          }
      }
  
@@ -330,7 +323,7 @@
  
              if (itileinventory != null) {
                  entityplayer.openMenu(itileinventory);
-@@ -335,7 +531,7 @@
+@@ -332,7 +528,7 @@
              ItemStack itemstack1 = itemstack.copy();
  
              if (!flag1) {
@@ -339,7 +332,7 @@
  
                  if (enuminteractionresult.consumesAction()) {
                      CriterionTriggers.ITEM_USED_ON_BLOCK.trigger(entityplayer, blockposition, itemstack1);
-@@ -343,17 +539,17 @@
+@@ -340,17 +536,17 @@
                  }
              }
  
@@ -360,7 +353,7 @@
                  }
  
                  if (enuminteractionresult1.consumesAction()) {
-@@ -361,10 +557,10 @@
+@@ -358,10 +554,10 @@
                  }
  
                  return enuminteractionresult1;

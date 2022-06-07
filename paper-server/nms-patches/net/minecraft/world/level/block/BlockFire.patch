@@ -53,11 +53,11 @@
 @@ -149,7 +174,7 @@
              int i = (Integer) iblockdata.getValue(BlockFire.AGE);
  
-             if (!flag && worldserver.isRaining() && this.isNearRain(worldserver, blockposition) && random.nextFloat() < 0.2F + (float) i * 0.03F) {
+             if (!flag && worldserver.isRaining() && this.isNearRain(worldserver, blockposition) && randomsource.nextFloat() < 0.2F + (float) i * 0.03F) {
 -                worldserver.removeBlock(blockposition, false);
 +                fireExtinguished(worldserver, blockposition); // CraftBukkit - extinguished by rain
              } else {
-                 int j = Math.min(15, i + random.nextInt(3) / 2);
+                 int j = Math.min(15, i + randomsource.nextInt(3) / 2);
  
 @@ -163,14 +188,14 @@
                          BlockPosition blockposition1 = blockposition.below();
@@ -70,7 +70,7 @@
                          return;
                      }
  
-                     if (i == 15 && random.nextInt(4) == 0 && !this.canBurn(worldserver.getBlockState(blockposition.below()))) {
+                     if (i == 15 && randomsource.nextInt(4) == 0 && !this.canBurn(worldserver.getBlockState(blockposition.below()))) {
 -                        worldserver.removeBlock(blockposition, false);
 +                        fireExtinguished(worldserver, blockposition); // CraftBukkit
                          return;
@@ -80,26 +80,26 @@
                  boolean flag1 = worldserver.isHumidAt(blockposition);
                  int k = flag1 ? -50 : 0;
  
--                this.checkBurnOut(worldserver, blockposition.east(), 300 + k, random, i);
--                this.checkBurnOut(worldserver, blockposition.west(), 300 + k, random, i);
--                this.checkBurnOut(worldserver, blockposition.below(), 250 + k, random, i);
--                this.checkBurnOut(worldserver, blockposition.above(), 250 + k, random, i);
--                this.checkBurnOut(worldserver, blockposition.north(), 300 + k, random, i);
--                this.checkBurnOut(worldserver, blockposition.south(), 300 + k, random, i);
+-                this.checkBurnOut(worldserver, blockposition.east(), 300 + k, randomsource, i);
+-                this.checkBurnOut(worldserver, blockposition.west(), 300 + k, randomsource, i);
+-                this.checkBurnOut(worldserver, blockposition.below(), 250 + k, randomsource, i);
+-                this.checkBurnOut(worldserver, blockposition.above(), 250 + k, randomsource, i);
+-                this.checkBurnOut(worldserver, blockposition.north(), 300 + k, randomsource, i);
+-                this.checkBurnOut(worldserver, blockposition.south(), 300 + k, randomsource, i);
 +                // CraftBukkit start - add source blockposition to burn calls
-+                this.trySpread(worldserver, blockposition.east(), 300 + k, random, i, blockposition);
-+                this.trySpread(worldserver, blockposition.west(), 300 + k, random, i, blockposition);
-+                this.trySpread(worldserver, blockposition.below(), 250 + k, random, i, blockposition);
-+                this.trySpread(worldserver, blockposition.above(), 250 + k, random, i, blockposition);
-+                this.trySpread(worldserver, blockposition.north(), 300 + k, random, i, blockposition);
-+                this.trySpread(worldserver, blockposition.south(), 300 + k, random, i, blockposition);
++                this.trySpread(worldserver, blockposition.east(), 300 + k, randomsource, i, blockposition);
++                this.trySpread(worldserver, blockposition.west(), 300 + k, randomsource, i, blockposition);
++                this.trySpread(worldserver, blockposition.below(), 250 + k, randomsource, i, blockposition);
++                this.trySpread(worldserver, blockposition.above(), 250 + k, randomsource, i, blockposition);
++                this.trySpread(worldserver, blockposition.north(), 300 + k, randomsource, i, blockposition);
++                this.trySpread(worldserver, blockposition.south(), 300 + k, randomsource, i, blockposition);
 +                // CraftBukkit end
                  BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
  
                  for (int l = -1; l <= 1; ++l) {
 @@ -209,7 +236,15 @@
-                                     if (i2 > 0 && random.nextInt(k1) <= i2 && (!worldserver.isRaining() || !this.isNearRain(worldserver, blockposition_mutableblockposition))) {
-                                         int j2 = Math.min(15, i + random.nextInt(5) / 4);
+                                     if (i2 > 0 && randomsource.nextInt(k1) <= i2 && (!worldserver.isRaining() || !this.isNearRain(worldserver, blockposition_mutableblockposition))) {
+                                         int j2 = Math.min(15, i + randomsource.nextInt(5) / 4);
  
 -                                        worldserver.setBlock(blockposition_mutableblockposition, this.getStateWithAge(worldserver, blockposition_mutableblockposition, j2), 3);
 +                                        // CraftBukkit start - Call to stop spread of fire
@@ -115,14 +115,14 @@
                                  }
                              }
 @@ -233,12 +268,24 @@
-         return iblockdata.hasProperty(BlockProperties.WATERLOGGED) && (Boolean) iblockdata.getValue(BlockProperties.WATERLOGGED) ? 0 : this.flameOdds.getInt(iblockdata.getBlock());
+         return iblockdata.hasProperty(BlockProperties.WATERLOGGED) && (Boolean) iblockdata.getValue(BlockProperties.WATERLOGGED) ? 0 : this.igniteOdds.getInt(iblockdata.getBlock());
      }
  
--    private void checkBurnOut(World world, BlockPosition blockposition, int i, Random random, int j) {
-+    private void trySpread(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
-         int k = this.getBurnOdd(world.getBlockState(blockposition));
+-    private void checkBurnOut(World world, BlockPosition blockposition, int i, RandomSource randomsource, int j) {
++    private void trySpread(World world, BlockPosition blockposition, int i, RandomSource randomsource, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
+         int k = this.getBurnOdds(world.getBlockState(blockposition));
  
-         if (random.nextInt(i) < k) {
+         if (randomsource.nextInt(i) < k) {
              IBlockData iblockdata = world.getBlockState(blockposition);
  
 +            // CraftBukkit start
@@ -137,6 +137,6 @@
 +            }
 +            // CraftBukkit end
 +
-             if (random.nextInt(j + 10) < 5 && !world.isRainingAt(blockposition)) {
-                 int l = Math.min(j + random.nextInt(5) / 4, 15);
+             if (randomsource.nextInt(j + 10) < 5 && !world.isRainingAt(blockposition)) {
+                 int l = Math.min(j + randomsource.nextInt(5) / 4, 15);
  

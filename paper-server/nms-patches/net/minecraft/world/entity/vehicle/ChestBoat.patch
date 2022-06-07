@@ -1,0 +1,68 @@
+--- a/net/minecraft/world/entity/vehicle/ChestBoat.java
++++ b/net/minecraft/world/entity/vehicle/ChestBoat.java
+@@ -23,6 +23,13 @@
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.level.World;
+ import net.minecraft.world.level.gameevent.GameEvent;
++// CraftBukkit start
++import java.util.List;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.inventory.InventoryHolder;
++// CraftBukkit end
+ 
+ public class ChestBoat extends EntityBoat implements HasCustomInventoryScreen, ContainerEntity {
+ 
+@@ -215,4 +222,51 @@
+     public void clearItemStacks() {
+         this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
+     }
++
++    // CraftBukkit start
++    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    private int maxStack = MAX_STACK;
++
++    @Override
++    public List<ItemStack> getContents() {
++        return this.itemStacks;
++    }
++
++    @Override
++    public void onOpen(CraftHumanEntity who) {
++        transaction.add(who);
++    }
++
++    @Override
++    public void onClose(CraftHumanEntity who) {
++        transaction.remove(who);
++    }
++
++    @Override
++    public List<HumanEntity> getViewers() {
++        return transaction;
++    }
++
++    @Override
++    public InventoryHolder getOwner() {
++        org.bukkit.entity.Entity entity = getBukkitEntity();
++        if (entity instanceof InventoryHolder) return (InventoryHolder) entity;
++        return null;
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return maxStack;
++    }
++
++    @Override
++    public void setMaxStackSize(int size) {
++        maxStack = size;
++    }
++
++    @Override
++    public Location getLocation() {
++        return getBukkitEntity().getLocation();
++    }
++    // CraftBukkit end
+ }

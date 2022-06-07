@@ -480,6 +480,8 @@ public final class CraftItemStack extends ItemStack {
             case DARK_OAK_WALL_SIGN:
             case JUNGLE_SIGN:
             case JUNGLE_WALL_SIGN:
+            case MANGROVE_SIGN:
+            case MANGROVE_WALL_SIGN:
             case OAK_SIGN:
             case OAK_WALL_SIGN:
             case SPRUCE_SIGN:
@@ -526,6 +528,8 @@ public final class CraftItemStack extends ItemStack {
             case SMOKER:
             case BEEHIVE:
             case BEE_NEST:
+            case SCULK_CATALYST:
+            case SCULK_SHRIEKER:
             case SCULK_SENSOR:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             case TROPICAL_FISH_BUCKET:

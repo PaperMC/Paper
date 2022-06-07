@@ -42,7 +42,7 @@ import net.minecraft.nbt.NBTCompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
-import net.minecraft.network.chat.ChatComponentText;
+import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.item.ItemBlock;
 import org.apache.commons.lang.Validate;
@@ -1329,7 +1329,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     throw new IllegalArgumentException(addFrom + " cannot contain non-string " + object.getClass().getName());
                 }
 
-                addTo.add(CraftChatMessage.toJSON(new ChatComponentText("")));
+                addTo.add(CraftChatMessage.toJSON(IChatBaseComponent.empty()));
             } else {
                 String entry = object.toString();
 

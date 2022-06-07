@@ -1,16 +1,7 @@
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -261,7 +261,7 @@
- 
-                 while (iterator.hasNext()) {
-                     Holder<StructureFeature<?, ?>> holder = (Holder) iterator.next();
--                    Stream stream = set1.stream();
-+                    Stream<Holder<BiomeBase>> stream = set1.stream(); // CraftBukkit - decompile error
-                     HolderSet holderset1 = ((StructureFeature) holder.value()).biomes();
- 
-                     Objects.requireNonNull(holderset1);
-@@ -411,7 +411,7 @@
-         return null;
+@@ -414,7 +414,7 @@
+         }
      }
  
 -    public void applyBiomeDecoration(GeneratorAccessSeed generatoraccessseed, IChunkAccess ichunkaccess, StructureManager structuremanager) {
@@ -18,25 +9,25 @@
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
  
          if (!SharedConstants.debugVoidTerrain(chunkcoordintpair)) {
-@@ -427,7 +427,7 @@
-             Set<BiomeBase> set = new ObjectArraySet();
+@@ -436,7 +436,7 @@
  
-             if (this instanceof ChunkProviderFlat) {
--                Stream stream = this.biomeSource.possibleBiomes().stream().map(Holder::value);
-+                Stream<BiomeBase> stream = this.biomeSource.possibleBiomes().stream().map(Holder::value); // CraftBukkit - decompile error
+                 for (int k = 0; k < j; ++k) {
+                     ChunkSection chunksection = achunksection[k];
+-                    PalettedContainerRO palettedcontainerro = chunksection.getBiomes();
++                    PalettedContainerRO<Holder<BiomeBase>> palettedcontainerro = chunksection.getBiomes(); // CraftBukkit - decompile error
  
-                 Objects.requireNonNull(set);
-                 stream.forEach(set::add);
-@@ -467,7 +467,7 @@
-                             StructureFeature<?, ?> structurefeature = (StructureFeature) iterator.next();
+                     Objects.requireNonNull(set);
+                     palettedcontainerro.getAll(set::add);
+@@ -462,7 +462,7 @@
+                             Structure structure = (Structure) iterator.next();
  
                              seededrandom.setFeatureSeed(i, i1, l);
 -                            Supplier supplier = () -> {
 +                            Supplier<String> supplier = () -> { // CraftBukkit - decompile error
-                                 Optional optional = iregistry.getResourceKey(structurefeature).map(Object::toString);
+                                 Optional optional = iregistry.getResourceKey(structure).map(Object::toString);
  
-                                 Objects.requireNonNull(structurefeature);
-@@ -552,6 +552,33 @@
+                                 Objects.requireNonNull(structure);
+@@ -547,6 +547,33 @@
          }
      }
  
@@ -59,7 +50,7 @@
 +            for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
 +                SeededRandom seededrandom = new SeededRandom(new net.minecraft.world.level.levelgen.LegacyRandomSource(generatoraccessseed.getSeed()));
 +                seededrandom.setDecorationSeed(generatoraccessseed.getSeed(), x, z);
-+                populator.populate(world, seededrandom, x, z, limitedRegion);
++                populator.populate(world, new org.bukkit.craftbukkit.util.RandomSourceWrapper.RandomWrapper(seededrandom), x, z, limitedRegion);
 +            }
 +            limitedRegion.saveEntities();
 +            limitedRegion.breakLink();
@@ -67,6 +58,6 @@
 +        // CraftBukkit end
 +    }
 +
-     public boolean hasFeatureChunkInRange(ResourceKey<StructureSet> resourcekey, long i, int j, int k, int l) {
-         StructureSet structureset = (StructureSet) this.structureSets.get(resourcekey);
+     public boolean hasStructureChunkInRange(Holder<StructureSet> holder, RandomState randomstate, long i, int j, int k, int l) {
+         StructureSet structureset = (StructureSet) holder.value();
  

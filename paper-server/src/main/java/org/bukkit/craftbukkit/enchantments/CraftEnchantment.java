@@ -159,6 +159,8 @@ public class CraftEnchantment extends Enchantment {
             return "MENDING";
         case 37:
             return "VANISHING_CURSE";
+        case 38:
+            return "SWIFT_SNEAK";
         default:
             return "UNKNOWN_ENCHANT_" + IRegistry.ENCHANTMENT.getId(target);
         }

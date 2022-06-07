@@ -30,7 +30,7 @@
      @Override
      public void refreshDimensions() {
          double d0 = this.getX();
-@@ -160,14 +176,21 @@
+@@ -160,13 +176,20 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -44,17 +44,16 @@
          this.verifyEquippedItem(itemstack);
          switch (enumitemslot.getType()) {
              case HAND:
--                this.equipEventAndSound(itemstack);
-+                this.equipEventAndSound(itemstack, silent); // CraftBukkit
-                 this.handItems.set(enumitemslot.getIndex(), itemstack);
+-                this.onEquipItem(enumitemslot, (ItemStack) this.handItems.set(enumitemslot.getIndex(), itemstack), itemstack);
++                this.onEquipItem(enumitemslot, (ItemStack) this.handItems.set(enumitemslot.getIndex(), itemstack), itemstack, silent); // CraftBukkit
                  break;
              case ARMOR:
--                this.equipEventAndSound(itemstack);
-+                this.equipEventAndSound(itemstack, silent); // CraftBukkit
-                 this.armorItems.set(enumitemslot.getIndex(), itemstack);
+-                this.onEquipItem(enumitemslot, (ItemStack) this.armorItems.set(enumitemslot.getIndex(), itemstack), itemstack);
++                this.onEquipItem(enumitemslot, (ItemStack) this.armorItems.set(enumitemslot.getIndex(), itemstack), itemstack, silent); // CraftBukkit
          }
  
-@@ -404,6 +427,21 @@
+     }
+@@ -402,6 +425,21 @@
              return false;
          } else {
              ItemStack itemstack2;
@@ -76,7 +75,7 @@
  
              if (entityhuman.getAbilities().instabuild && itemstack1.isEmpty() && !itemstack.isEmpty()) {
                  itemstack2 = itemstack.copy();
-@@ -432,9 +470,19 @@
+@@ -430,9 +468,19 @@
      public boolean hurt(DamageSource damagesource, float f) {
          if (!this.level.isClientSide && !this.isRemoved()) {
              if (DamageSource.OUT_OF_WORLD.equals(damagesource)) {
@@ -97,7 +96,7 @@
                  if (damagesource.isExplosion()) {
                      this.brokenByAnything(damagesource);
                      this.kill();
-@@ -474,7 +522,7 @@
+@@ -472,7 +520,7 @@
                          } else {
                              this.brokenByPlayer(damagesource);
                              this.showBreakingParticles();
@@ -106,7 +105,7 @@
                          }
  
                          return true;
-@@ -535,13 +583,13 @@
+@@ -533,13 +581,13 @@
      }
  
      private void brokenByPlayer(DamageSource damagesource) {
@@ -122,7 +121,7 @@
  
          ItemStack itemstack;
          int i;
-@@ -549,7 +597,7 @@
+@@ -547,7 +595,7 @@
          for (i = 0; i < this.handItems.size(); ++i) {
              itemstack = (ItemStack) this.handItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -131,7 +130,7 @@
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -557,10 +605,11 @@
+@@ -555,10 +603,11 @@
          for (i = 0; i < this.armorItems.size(); ++i) {
              itemstack = (ItemStack) this.armorItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -144,13 +143,13 @@
  
      }
  
-@@ -661,8 +710,16 @@
+@@ -659,8 +708,16 @@
          return this.isSmall();
      }
  
 +    // CraftBukkit start
 +    @Override
-+    protected boolean shouldDropExperience() {
++    public boolean shouldDropExperience() {
 +        return true; // MC-157395, SPIGOT-5193 even baby (small) armor stands should drop
 +    }
 +    // CraftBukkit end
@@ -159,5 +158,5 @@
      public void kill() {
 +        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event
          this.remove(Entity.RemovalReason.KILLED);
+         this.gameEvent(GameEvent.ENTITY_DIE);
      }
- 

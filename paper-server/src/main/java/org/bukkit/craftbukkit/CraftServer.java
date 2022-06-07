@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -51,10 +50,10 @@ import net.minecraft.commands.CommandDispatcher;
 import net.minecraft.commands.CommandListenerWrapper;
 import net.minecraft.commands.arguments.ArgumentEntity;
 import net.minecraft.core.BlockPosition;
-import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerCommand;
 import net.minecraft.server.bossevents.BossBattleCustom;
 import net.minecraft.server.commands.CommandReload;
@@ -96,11 +95,8 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.MobSpawner;
 import net.minecraft.world.level.WorldSettings;
 import net.minecraft.world.level.biome.BiomeManager;
-import net.minecraft.world.level.biome.WorldChunkManager;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.dimension.WorldDimension;
-import net.minecraft.world.level.levelgen.ChunkGeneratorAbstract;
 import net.minecraft.world.level.levelgen.GeneratorSettings;
 import net.minecraft.world.level.levelgen.MobSpawnerPatrol;
 import net.minecraft.world.level.levelgen.MobSpawnerPhantom;
@@ -154,7 +150,6 @@ import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.generator.CraftWorldInfo;
-import org.bukkit.craftbukkit.generator.CustomWorldChunkManager;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
@@ -637,7 +632,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean getGenerateStructures() {
-        return this.getProperties().getWorldGenSettings(this.getServer().registryAccess()).generateFeatures();
+        return this.getProperties().getWorldGenSettings(this.getServer().registryAccess()).generateStructures();
     }
 
     @Override
@@ -665,17 +660,17 @@ public final class CraftServer implements Server {
 
     @Override
     public String getResourcePack() {
-        return this.getServer().getResourcePack();
+        return this.getServer().getServerResourcePack().map(MinecraftServer.ServerResourcePackInfo::url).orElse("");
     }
 
     @Override
     public String getResourcePackHash() {
-        return this.getServer().getResourcePackHash().toUpperCase(Locale.ROOT);
+        return this.getServer().getServerResourcePack().map(MinecraftServer.ServerResourcePackInfo::hash).orElse("").toUpperCase(Locale.ROOT);
     }
 
     @Override
     public String getResourcePackPrompt() {
-        return CraftChatMessage.fromComponent(this.getServer().getResourcePackPrompt());
+        return this.getServer().getServerResourcePack().map(MinecraftServer.ServerResourcePackInfo::prompt).map(CraftChatMessage::fromComponent).orElse("");
     }
 
     @Override
@@ -1037,7 +1032,7 @@ public final class CraftServer implements Server {
         if (worlddata == null) {
             DedicatedServerProperties.a properties = new DedicatedServerProperties.a(Objects.toString(creator.seed()), ChatDeserializer.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.generateStructures(), creator.type().name().toLowerCase(Locale.ROOT));
 
-            GeneratorSettings generatorsettings = GeneratorSettings.create(console.registryAccess(), properties);
+            GeneratorSettings generatorsettings = properties.create(console.registryAccess());
             worldSettings = new WorldSettings(name, EnumGamemode.byId(getDefaultGameMode().getValue()), hardcore, EnumDifficulty.EASY, false, new GameRules(), console.datapackconfiguration);
             worlddata = new WorldDataServer(worldSettings, generatorsettings, Lifecycle.stable());
         }
@@ -1054,27 +1049,10 @@ public final class CraftServer implements Server {
         List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(worlddata));
         IRegistry<WorldDimension> iregistry = worlddata.worldGenSettings().dimensions();
         WorldDimension worlddimension = (WorldDimension) iregistry.get(actualDimension);
-        Holder<DimensionManager> holder;
-        net.minecraft.world.level.chunk.ChunkGenerator chunkgenerator;
 
-        if (worlddimension == null) {
-            holder = console.registryHolder.registryOrThrow(IRegistry.DIMENSION_TYPE_REGISTRY).getOrCreateHolder(DimensionManager.OVERWORLD_LOCATION);
-            chunkgenerator = GeneratorSettings.makeDefaultOverworld(console.registryHolder, (new Random()).nextLong());
-        } else {
-            holder = worlddimension.typeHolder();
-            chunkgenerator = worlddimension.generator();
-        }
-
-        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), holder.value());
+        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.typeHolder().value());
         if (biomeProvider == null && generator != null) {
             biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
-        }
-
-        if (biomeProvider != null) {
-            WorldChunkManager worldChunkManager = new CustomWorldChunkManager(worldInfo, biomeProvider, console.registryHolder.ownedRegistryOrThrow(IRegistry.BIOME_REGISTRY));
-            if (chunkgenerator instanceof ChunkGeneratorAbstract cga) {
-                chunkgenerator = new ChunkGeneratorAbstract(cga.structureSets, cga.noises, worldChunkManager, cga.ringPlacementSeed, cga.settings);
-            }
         }
 
         ResourceKey<net.minecraft.world.level.World> worldKey;
@@ -1087,8 +1065,8 @@ public final class CraftServer implements Server {
             worldKey = ResourceKey.create(IRegistry.DIMENSION_REGISTRY, new MinecraftKey(name.toLowerCase(java.util.Locale.ENGLISH)));
         }
 
-        WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, holder, getServer().progressListenerFactory.create(11),
-                chunkgenerator, worlddata.worldGenSettings().isDebug(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator, biomeProvider);
+        WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, worlddimension, getServer().progressListenerFactory.create(11),
+                worlddata.worldGenSettings().isDebug(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator, biomeProvider);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
             return null;
@@ -1286,6 +1264,11 @@ public final class CraftServer implements Server {
             @Override
             public boolean stillValid(EntityHuman entityhuman) {
                 return false;
+            }
+
+            @Override
+            public net.minecraft.world.item.ItemStack quickMoveStack(EntityHuman entityhuman, int i) {
+                return net.minecraft.world.item.ItemStack.EMPTY;
             }
         };
         InventoryCrafting inventoryCrafting = new InventoryCrafting(container, 3, 3);

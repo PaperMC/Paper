@@ -285,7 +285,7 @@ public class CraftContainer extends Container {
 
     @Override
     public ItemStack quickMoveStack(EntityHuman entityhuman, int i) {
-        return (delegate != null) ? delegate.quickMoveStack(entityhuman, i) : super.quickMoveStack(entityhuman, i);
+        return (delegate != null) ? delegate.quickMoveStack(entityhuman, i) : ItemStack.EMPTY;
     }
 
     @Override

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/gameevent/vibrations/VibrationListener.java
 +++ b/net/minecraft/world/level/gameevent/vibrations/VibrationListener.java
-@@ -16,6 +16,13 @@
+@@ -28,6 +28,13 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.Vec3D;
  
@@ -14,18 +14,64 @@
  public class VibrationListener implements GameEventListener {
  
      protected final PositionSource listenerSource;
-@@ -65,7 +72,13 @@
-             } else {
-                 BlockPosition blockposition1 = (BlockPosition) optional.get();
+@@ -51,7 +58,7 @@
+             }), ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter((vibrationlistener) -> {
+                 return vibrationlistener.travelTimeInTicks;
+             })).apply(instance, (positionsource, integer, optional, ofloat, integer1) -> {
+-                return new VibrationListener(positionsource, integer, vibrationlistener_b, (VibrationListener.a) optional.orElse((Object) null), ofloat, integer1);
++                return new VibrationListener(positionsource, integer, vibrationlistener_b, (VibrationListener.a) optional.orElse(null), ofloat, integer1); // CraftBukkit - decompile error
+             });
+         });
+     }
+@@ -73,7 +80,7 @@
+                 --this.travelTimeInTicks;
+                 if (this.travelTimeInTicks <= 0) {
+                     this.travelTimeInTicks = 0;
+-                    this.config.onSignalReceive(worldserver, this, new BlockPosition(this.receivingEvent.pos), this.receivingEvent.gameEvent, (Entity) this.receivingEvent.getEntity(worldserver).orElse((Object) null), (Entity) this.receivingEvent.getProjectileOwner(worldserver).orElse((Object) null), this.receivingDistance);
++                    this.config.onSignalReceive(worldserver, this, new BlockPosition(this.receivingEvent.pos), this.receivingEvent.gameEvent, (Entity) this.receivingEvent.getEntity(worldserver).orElse(null), (Entity) this.receivingEvent.getProjectileOwner(worldserver).orElse(null), this.receivingDistance); // CraftBukkit - decompile error
+                     this.receivingEvent = null;
+                 }
+             }
+@@ -110,7 +117,14 @@
+                     Vec3D vec3d = gameevent_b.source();
+                     Vec3D vec3d1 = (Vec3D) optional.get();
  
--                if (!this.config.shouldListen(world, this, blockposition, gameevent, entity)) {
-+                // CraftBukkit start
-+                boolean defaultCancel = !this.config.shouldListen(world, this, blockposition, gameevent, entity);
-+                BlockReceiveGameEvent event = new BlockReceiveGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(IRegistry.GAME_EVENT.getKey(gameevent))), CraftBlock.at(world, blockposition1), (entity == null) ? null : entity.getBukkitEntity());
-+                event.setCancelled(defaultCancel);
-+                world.getCraftServer().getPluginManager().callEvent(event);
-+                if (event.isCancelled()) {
-+                    // CraftBukkit end
-                     return false;
-                 } else if (this.isOccluded(world, blockposition, blockposition1)) {
-                     return false;
+-                    if (!this.config.shouldListen(worldserver, this, new BlockPosition(vec3d), gameevent, gameevent_a)) {
++                    // CraftBukkit start
++                    boolean defaultCancel = !this.config.shouldListen(worldserver, this, new BlockPosition(vec3d), gameevent, gameevent_a);
++                    Entity entity = gameevent_a.sourceEntity();
++                    BlockReceiveGameEvent event = new BlockReceiveGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(IRegistry.GAME_EVENT.getKey(gameevent))), CraftBlock.at(worldserver, new BlockPosition(vec3d1)), (entity == null) ? null : entity.getBukkitEntity());
++                    event.setCancelled(defaultCancel);
++                    worldserver.getCraftServer().getPluginManager().callEvent(event);
++                    if (event.isCancelled()) {
++                        // CraftBukkit end
+                         return false;
+                     } else if (isOccluded(worldserver, vec3d, vec3d1)) {
+                         return false;
+@@ -206,7 +220,7 @@
+             }), ExtraCodecs.UUID.optionalFieldOf("projectile_owner").forGetter((vibrationlistener_a) -> {
+                 return Optional.ofNullable(vibrationlistener_a.projectileOwnerUuid());
+             })).apply(instance, (gameevent, ofloat, vec3d, optional, optional1) -> {
+-                return new VibrationListener.a(gameevent, ofloat, vec3d, (UUID) optional.orElse((Object) null), (UUID) optional1.orElse((Object) null));
++                return new VibrationListener.a(gameevent, ofloat, vec3d, (UUID) optional.orElse(null), (UUID) optional1.orElse(null)); // CraftBukkit - decompile error
+             });
+         });
+ 
+@@ -233,7 +247,7 @@
+ 
+         public Optional<Entity> getEntity(WorldServer worldserver) {
+             return Optional.ofNullable(this.entity).or(() -> {
+-                Optional optional = Optional.ofNullable(this.uuid);
++                Optional<UUID> optional = Optional.ofNullable(this.uuid); // CraftBukkit - decompile error
+ 
+                 Objects.requireNonNull(worldserver);
+                 return optional.map(worldserver::getEntity);
+@@ -246,7 +260,7 @@
+             }).map((entity) -> {
+                 return (IProjectile) entity;
+             }).map(IProjectile::getOwner).or(() -> {
+-                Optional optional = Optional.ofNullable(this.projectileOwnerUuid);
++                Optional<UUID> optional = Optional.ofNullable(this.projectileOwnerUuid); // CraftBukkit - decompile error
+ 
+                 Objects.requireNonNull(worldserver);
+                 return optional.map(worldserver::getEntity);

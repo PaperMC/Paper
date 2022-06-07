@@ -88,6 +88,8 @@ public class CraftPotionEffectType extends PotionEffectType {
             return "BAD_OMEN";
         case 32:
             return "HERO_OF_THE_VILLAGE";
+        case 33:
+            return "DARKNESS";
         default:
             return "UNKNOWN_EFFECT_TYPE_" + getId();
         }

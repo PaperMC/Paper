@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EnumBlockMirror;
@@ -22,6 +23,7 @@ import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.craftbukkit.CraftRegionAccessor;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.structure.Palette;
@@ -55,16 +57,17 @@ public class CraftStructure implements Structure {
             throw new IllegalArgumentException("Integrity must be between 0 and 1 inclusive. Was \"" + integrity + "\"");
         }
 
+        RandomSource randomSource = new RandomSourceWrapper(random);
         DefinedStructureInfo definedstructureinfo = new DefinedStructureInfo()
                 .setMirror(EnumBlockMirror.valueOf(mirror.name()))
                 .setRotation(EnumBlockRotation.valueOf(structureRotation.name()))
                 .setIgnoreEntities(!includeEntities)
                 .addProcessor(new DefinedStructureProcessorRotation(integrity))
-                .setRandom(random);
+                .setRandom(randomSource);
         definedstructureinfo.palette = palette;
 
         BlockPosition blockPosition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        structure.placeInWorld(((CraftRegionAccessor) regionAccessor).getHandle(), blockPosition, blockPosition, definedstructureinfo, random, 2);
+        structure.placeInWorld(((CraftRegionAccessor) regionAccessor).getHandle(), blockPosition, blockPosition, definedstructureinfo, randomSource, 2);
     }
 
     @Override

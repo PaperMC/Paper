@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/level/storage/Convertable.java
 +++ b/net/minecraft/world/level/storage/Convertable.java
-@@ -58,6 +58,10 @@
- import net.minecraft.world.level.levelgen.GeneratorSettings;
+@@ -61,6 +61,10 @@
+ import net.minecraft.world.level.levelgen.presets.WorldPresets;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -11,7 +11,7 @@
  public class Convertable {
  
      static final Logger LOGGER = LogUtils.getLogger();
-@@ -112,7 +116,7 @@
+@@ -114,7 +118,7 @@
      }
  
      private static DataPackConfiguration readDataPackConfig(Dynamic<?> dynamic) {
@@ -20,7 +20,7 @@
          Logger logger = Convertable.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -232,7 +236,11 @@
+@@ -241,7 +245,11 @@
                  WorldSettings worldsettings = WorldSettings.parse(dynamic, datapackconfiguration);
                  Lifecycle lifecycle1 = ((Lifecycle) pair.getSecond()).add(lifecycle);
  
@@ -31,9 +31,9 @@
 +                return worldDataServer;
 +                // CraftBukkit end
              } catch (Exception exception) {
-                 Convertable.LOGGER.error("Exception reading {}", file, exception);
+                 Convertable.LOGGER.error("Exception reading {}", path, exception);
                  return null;
-@@ -305,9 +313,23 @@
+@@ -314,9 +322,23 @@
          return this.backupDir;
      }
  
@@ -57,10 +57,10 @@
      }
 +    // CraftBukkit end
  
-     public class ConversionSession implements AutoCloseable {
+     public static record a(List<Convertable.b> levels) implements Iterable<Convertable.b> {
  
-@@ -315,8 +337,12 @@
-         public final Path levelPath;
+@@ -369,8 +391,12 @@
+         public final Convertable.b levelDirectory;
          private final String levelId;
          private final Map<SavedFile, Path> resources = Maps.newHashMap();
 +        // CraftBukkit start
@@ -71,14 +71,23 @@
 +            this.dimensionType = dimensionType;
 +            // CraftBukkit end
              this.levelId = s;
-             this.levelPath = Convertable.this.baseDir.resolve(s);
-             this.lock = SessionLock.create(this.levelPath);
-@@ -333,7 +359,7 @@
+             this.levelDirectory = new Convertable.b(Convertable.this.baseDir.resolve(s));
+             this.lock = SessionLock.create(this.levelDirectory.path());
+@@ -381,7 +407,7 @@
+         }
+ 
+         public Path getLevelPath(SavedFile savedfile) {
+-            Map map = this.resources;
++            Map<SavedFile, Path> map = this.resources; // CraftBukkit - decompile error
+             Convertable.b convertable_b = this.levelDirectory;
+ 
+             Objects.requireNonNull(this.levelDirectory);
+@@ -389,7 +415,7 @@
          }
  
          public Path getDimensionPath(ResourceKey<World> resourcekey) {
--            return DimensionManager.getStorageFolder(resourcekey, this.levelPath);
-+            return getStorageFolder(this.levelPath, this.dimensionType); // CraftBukkit
+-            return DimensionManager.getStorageFolder(resourcekey, this.levelDirectory.path());
++            return getStorageFolder(this.levelDirectory.path(), this.dimensionType); // CraftBukkit
          }
  
          private void checkLock() {

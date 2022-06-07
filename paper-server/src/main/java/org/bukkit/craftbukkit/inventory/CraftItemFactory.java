@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit.inventory;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.arguments.item.ArgumentParserItemStack;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.IRegistry;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.item.Item;
 import org.apache.commons.lang.Validate;
@@ -215,6 +217,8 @@ public final class CraftItemFactory implements ItemFactory {
         case DARK_OAK_WALL_SIGN:
         case JUNGLE_SIGN:
         case JUNGLE_WALL_SIGN:
+        case MANGROVE_SIGN:
+        case MANGROVE_WALL_SIGN:
         case OAK_SIGN:
         case OAK_WALL_SIGN:
         case SPRUCE_SIGN:
@@ -261,6 +265,8 @@ public final class CraftItemFactory implements ItemFactory {
         case SMOKER:
         case BEEHIVE:
         case BEE_NEST:
+        case SCULK_CATALYST:
+        case SCULK_SHRIEKER:
         case SCULK_SENSOR:
             return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
@@ -348,12 +354,12 @@ public final class CraftItemFactory implements ItemFactory {
     @Override
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
-            ArgumentParserItemStack arg = new ArgumentParserItemStack(new StringReader(input), false).parse(); // false = no tags
+            ArgumentParserItemStack.a arg = ArgumentParserItemStack.parseForItem(HolderLookup.forRegistry(IRegistry.ITEM), new StringReader(input));
 
-            Item item = arg.getItem();
+            Item item = arg.item().value();
             net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
 
-            NBTTagCompound nbt = arg.getNbt();
+            NBTTagCompound nbt = arg.nbt();
             if (nbt != null) {
                 nmsItemStack.setTag(nbt);
             }

@@ -1,11 +1,10 @@
 package org.bukkit.craftbukkit.projectiles;
 
-import java.util.Random;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.core.IPosition;
 import net.minecraft.core.SourceBlock;
 import net.minecraft.server.level.WorldServer;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.projectile.EntityArrow;
 import net.minecraft.world.entity.projectile.EntityEgg;
@@ -105,7 +104,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             double d0 = iposition.x() + (double) ((float) enumdirection.getStepX() * 0.3F);
             double d1 = iposition.y() + (double) ((float) enumdirection.getStepY() * 0.3F);
             double d2 = iposition.z() + (double) ((float) enumdirection.getStepZ() * 0.3F);
-            Random random = world.random;
+            RandomSource random = world.random;
             double d3 = random.nextGaussian() * 0.05D + (double) enumdirection.getStepX();
             double d4 = random.nextGaussian() * 0.05D + (double) enumdirection.getStepY();
             double d5 = random.nextGaussian() * 0.05D + (double) enumdirection.getStepZ();

@@ -1,11 +1,10 @@
 --- a/net/minecraft/server/network/LoginListener.java
 +++ b/net/minecraft/server/network/LoginListener.java
-@@ -36,6 +36,13 @@
+@@ -41,6 +41,12 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
-+import net.minecraft.network.chat.ChatComponentText;
 +import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 +import org.bukkit.event.player.PlayerPreLoginEvent;
@@ -14,42 +13,35 @@
  public class LoginListener implements PacketLoginInListener {
  
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
-@@ -52,6 +59,7 @@
-     private final String serverId;
-     @Nullable
+@@ -62,6 +68,7 @@
      private EntityPlayer delayedAcceptPlayer;
+     @Nullable
+     private ProfilePublicKey playerProfilePublicKey;
 +    public String hostname = ""; // CraftBukkit - add field
  
      public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
          this.state = LoginListener.EnumProtocolState.HELLO;
-@@ -80,6 +88,20 @@
+@@ -90,6 +97,13 @@
  
      }
  
 +    // CraftBukkit start
 +    @Deprecated
 +    public void disconnect(String s) {
-+        try {
-+            IChatBaseComponent ichatbasecomponent = new ChatComponentText(s);
-+            LoginListener.LOGGER.info("Disconnecting {}: {}", this.getUserName(), s);
-+            this.connection.send(new PacketLoginOutDisconnect(ichatbasecomponent));
-+            this.connection.disconnect(ichatbasecomponent);
-+        } catch (Exception exception) {
-+            LoginListener.LOGGER.error("Error whilst disconnecting player", exception);
-+        }
++        disconnect(IChatBaseComponent.literal(s));
 +    }
 +    // CraftBukkit end
 +
      @Override
      public NetworkManager getConnection() {
          return this.connection;
-@@ -101,10 +123,12 @@
+@@ -111,10 +125,12 @@
              this.gameProfile = this.createFakeProfile(this.gameProfile);
          }
  
 -        IChatBaseComponent ichatbasecomponent = this.server.getPlayerList().canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile);
 +        // CraftBukkit start - fire PlayerLoginEvent
-+        EntityPlayer s = this.server.getPlayerList().canPlayerLogin(this, this.gameProfile, hostname);
++        EntityPlayer s = this.server.getPlayerList().canPlayerLogin(this, this.gameProfile, this.playerProfilePublicKey, hostname);
  
 -        if (ichatbasecomponent != null) {
 -            this.disconnect(ichatbasecomponent);
@@ -59,16 +51,16 @@
          } else {
              this.state = LoginListener.EnumProtocolState.ACCEPTED;
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
-@@ -117,7 +141,7 @@
+@@ -127,7 +143,7 @@
              EntityPlayer entityplayer = this.server.getPlayerList().getPlayer(this.gameProfile.getId());
  
              try {
--                EntityPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile);
+-                EntityPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile, this.playerProfilePublicKey);
 +                EntityPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile, s); // CraftBukkit - add player reference
  
                  if (entityplayer != null) {
                      this.state = LoginListener.EnumProtocolState.DELAY_ACCEPT;
-@@ -199,6 +223,43 @@
+@@ -259,6 +275,43 @@
                  try {
                      LoginListener.this.gameProfile = LoginListener.this.server.getSessionService().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.getAddress());
                      if (LoginListener.this.gameProfile != null) {
@@ -112,8 +104,8 @@
                          LoginListener.LOGGER.info("UUID of player {} is {}", LoginListener.this.gameProfile.getName(), LoginListener.this.gameProfile.getId());
                          LoginListener.this.state = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
                      } else if (LoginListener.this.server.isSingleplayer()) {
-@@ -218,6 +279,11 @@
-                         LoginListener.this.disconnect(new ChatMessage("multiplayer.disconnect.authservers_down"));
+@@ -278,6 +331,11 @@
+                         LoginListener.this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.authservers_down"));
                          LoginListener.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }
 +                    // CraftBukkit start - catch all exceptions

@@ -14,18 +14,21 @@ import net.minecraft.core.particles.ParticleParamBlock;
 import net.minecraft.core.particles.ParticleParamItem;
 import net.minecraft.core.particles.ParticleParamRedstone;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.SculkChargeParticleOptions;
+import net.minecraft.core.particles.ShriekParticleOption;
 import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.gameevent.BlockPositionSource;
 import net.minecraft.world.level.gameevent.EntityPositionSource;
 import net.minecraft.world.level.gameevent.PositionSource;
-import net.minecraft.world.level.gameevent.vibrations.VibrationPath;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Vibration;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
@@ -124,6 +127,11 @@ public enum CraftParticle {
     ELECTRIC_SPARK("electric_spark"),
     SCRAPE("scrape"),
     BLOCK_MARKER("block_marker"),
+    SONIC_BOOM("sonic_boom"),
+    SCULK_SOUL("sculk_soul"),
+    SCULK_CHARGE("sculk_charge"),
+    SCULK_CHARGE_POP("sculk_charge_pop"),
+    SHRIEK("shriek"),
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK("block"),
     LEGACY_BLOCK_DUST("block"),
@@ -202,13 +210,19 @@ public enum CraftParticle {
                 Location destination = ((Vibration.Destination.BlockDestination) vibration.getDestination()).getLocation();
                 source = new BlockPositionSource(new BlockPosition(destination.getBlockX(), destination.getBlockY(), destination.getBlockZ()));
             } else if (vibration.getDestination() instanceof Vibration.Destination.EntityDestination) {
-                source = new EntityPositionSource(((Vibration.Destination.EntityDestination) vibration.getDestination()).getEntity().getEntityId());
+                Entity destination = ((CraftEntity) ((Vibration.Destination.EntityDestination) vibration.getDestination()).getEntity()).getHandle();
+                source = new EntityPositionSource(destination, destination.getEyeHeight());
             } else {
                 throw new IllegalArgumentException("Unknown vibration destination " + vibration.getDestination());
             }
 
-            VibrationPath path = new VibrationPath(new BlockPosition(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()), source, vibration.getArrivalTime());
-            return new VibrationParticleOption(path);
+            return new VibrationParticleOption(source, vibration.getArrivalTime());
+        }
+        if (particle.getDataType() == Float.class) {
+            return new SculkChargeParticleOptions((Float) obj);
+        }
+        if (particle.getDataType() == Integer.class) {
+            return new ShriekParticleOption((Integer) obj);
         }
         throw new IllegalArgumentException(particle.getDataType().toString());
     }

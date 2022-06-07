@@ -28,6 +28,10 @@ public class ParticleTest extends AbstractTestingBase {
                 data = new Vibration(new Location(null, 0, 0, 0), new Vibration.Destination.BlockDestination(new Location(null, 0, 0, 0)), 0);
             } else if (bukkit.getDataType() == BlockData.class) {
                 data = CraftBlockData.newData(Material.STONE, "");
+            } else if (bukkit.getDataType() == Float.class) {
+                data = 1.0F;
+            } else if (bukkit.getDataType() == Integer.class) {
+                data = 0;
             }
 
             Assert.assertNotNull("Missing Bukkit->NMS particle mapping for " + bukkit, CraftParticle.toNMS(bukkit, data));

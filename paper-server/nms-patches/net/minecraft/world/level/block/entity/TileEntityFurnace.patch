@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityFurnace.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityFurnace.java
-@@ -45,6 +45,20 @@
+@@ -46,6 +46,20 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.phys.Vec3D;
  
@@ -21,7 +21,16 @@
  public abstract class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeHolder, AutoRecipeOutput {
  
      protected static final int SLOT_INPUT = 0;
-@@ -184,6 +198,40 @@
+@@ -114,7 +128,7 @@
+             }
+         };
+         this.recipesUsed = new Object2IntOpenHashMap();
+-        this.quickCheck = CraftingManager.createCheck(recipes);
++        this.quickCheck = CraftingManager.createCheck((Recipes<RecipeCooking>) recipes); // CraftBukkit - decompile error // Eclipse fail
+     }
+ 
+     public static Map<Item, Integer> getFuel() {
+@@ -188,6 +202,40 @@
          return map;
      }
  
@@ -62,12 +71,16 @@
      private static boolean isNeverAFurnaceFuel(Item item) {
          return item.builtInRegistryHolder().is(TagsItem.NON_FLAMMABLE_WOOD);
      }
-@@ -267,13 +315,24 @@
-                 tileentityfurnace.cookingProgress = MathHelper.clamp(tileentityfurnace.cookingProgress - 2, (int) 0, tileentityfurnace.cookingTotalTime);
+@@ -276,7 +324,7 @@
+             IRecipe irecipe;
+ 
+             if (flag2) {
+-                irecipe = (IRecipe) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).orElse((Object) null);
++                irecipe = (IRecipe) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).orElse(null); // CraftBukkit - decompile error
+             } else {
+                 irecipe = null;
              }
-         } else {
--            IRecipe<?> irecipe = (IRecipe) world.getRecipeManager().getRecipeFor(tileentityfurnace.recipeType, tileentityfurnace, world).orElse((Object) null);
-+            IRecipe<?> irecipe = (IRecipe) world.getRecipeManager().getRecipeFor((Recipes<RecipeCooking>) tileentityfurnace.recipeType, tileentityfurnace, world).orElse(null); // CraftBukkit - decompile error // Eclipse fail
+@@ -284,9 +332,20 @@
              int i = tileentityfurnace.getMaxStackSize();
  
              if (!tileentityfurnace.isLit() && canBurn(irecipe, tileentityfurnace.items, i)) {
@@ -88,9 +101,9 @@
 +                if (tileentityfurnace.isLit() && furnaceBurnEvent.isBurning()) {
 +                    // CraftBukkit end
                      flag1 = true;
-                     if (!itemstack.isEmpty()) {
+                     if (flag3) {
                          Item item = itemstack.getItem();
-@@ -289,11 +348,23 @@
+@@ -302,11 +361,23 @@
              }
  
              if (tileentityfurnace.isLit() && canBurn(irecipe, tileentityfurnace.items, i)) {
@@ -109,13 +122,13 @@
                  ++tileentityfurnace.cookingProgress;
                  if (tileentityfurnace.cookingProgress == tileentityfurnace.cookingTotalTime) {
                      tileentityfurnace.cookingProgress = 0;
-                     tileentityfurnace.cookingTotalTime = getTotalCookTime(world, tileentityfurnace.recipeType, tileentityfurnace);
+                     tileentityfurnace.cookingTotalTime = getTotalCookTime(world, tileentityfurnace);
 -                    if (burn(irecipe, tileentityfurnace.items, i)) {
 +                    if (burn(tileentityfurnace.level, tileentityfurnace.worldPosition, irecipe, tileentityfurnace.items, i)) { // CraftBukkit
                          tileentityfurnace.setRecipeUsed(irecipe);
                      }
  
-@@ -332,17 +403,44 @@
+@@ -345,17 +416,44 @@
          }
      }
  
@@ -161,16 +174,16 @@
  
              if (itemstack.is(Blocks.WET_SPONGE.asItem()) && !((ItemStack) nonnulllist.get(1)).isEmpty() && ((ItemStack) nonnulllist.get(1)).is(Items.BUCKET)) {
                  nonnulllist.set(1, new ItemStack(Items.WATER_BUCKET));
-@@ -366,7 +464,7 @@
+@@ -379,7 +477,7 @@
      }
  
-     private static int getTotalCookTime(World world, Recipes<? extends RecipeCooking> recipes, IInventory iinventory) {
--        return (Integer) world.getRecipeManager().getRecipeFor(recipes, iinventory, world).map(RecipeCooking::getCookingTime).orElse(200);
-+        return (world != null) ? (Integer) world.getRecipeManager().getRecipeFor((Recipes<RecipeCooking>) recipes, iinventory, world).map(RecipeCooking::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
+     private static int getTotalCookTime(World world, TileEntityFurnace tileentityfurnace) {
+-        return (Integer) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).map(RecipeCooking::getCookingTime).orElse(200);
++        return (world != null) ? (Integer) tileentityfurnace.quickCheck.getRecipeFor(tileentityfurnace, world).map(RecipeCooking::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302
      }
  
      public static boolean isFuel(ItemStack itemstack) {
-@@ -485,14 +583,20 @@
+@@ -498,14 +596,20 @@
      @Override
      public void awardUsedRecipes(EntityHuman entityhuman) {}
  
@@ -193,7 +206,7 @@
          List<IRecipe<?>> list = Lists.newArrayList();
          ObjectIterator objectiterator = this.recipesUsed.object2IntEntrySet().iterator();
  
-@@ -501,14 +605,14 @@
+@@ -514,14 +618,14 @@
  
              worldserver.getRecipeManager().byKey((MinecraftKey) entry.getKey()).ifPresent((irecipe) -> {
                  list.add(irecipe);
@@ -210,7 +223,7 @@
          int j = MathHelper.floor((float) i * f);
          float f1 = MathHelper.frac((float) i * f);
  
-@@ -516,6 +620,17 @@
+@@ -529,6 +633,17 @@
              ++j;
          }
  

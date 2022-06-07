@@ -3,8 +3,6 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-import org.bukkit.block.data.type.BigDripleaf.Tilt;
-
 public final class CraftBigDripleaf extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.BigDripleaf, org.bukkit.block.data.type.Dripleaf, org.bukkit.block.data.Directional, org.bukkit.block.data.Waterlogged {
 
     public CraftBigDripleaf() {

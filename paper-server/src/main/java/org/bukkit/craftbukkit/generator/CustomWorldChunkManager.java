@@ -45,12 +45,6 @@ public class CustomWorldChunkManager extends WorldChunkManager {
     }
 
     @Override
-    public WorldChunkManager withSeed(long l) {
-        // TODO check method further
-        throw new UnsupportedOperationException("Cannot copy CustomWorldChunkManager");
-    }
-
-    @Override
     public Holder<BiomeBase> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
         Biome biome = biomeProvider.getBiome(worldInfo, x << 2, y << 2, z << 2);
         Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
