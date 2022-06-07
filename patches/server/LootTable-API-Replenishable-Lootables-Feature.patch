@@ -41,6 +41,75 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
  }
+diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.loottable;
++
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.vehicle.AbstractMinecartContainer;
++import net.minecraft.world.entity.vehicle.ContainerEntity;
++import net.minecraft.world.level.Level;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++
++public class PaperContainerEntityLootableInventory implements PaperLootableEntityInventory {
++
++    private final ContainerEntity entity;
++
++    public PaperContainerEntityLootableInventory(ContainerEntity entity) {
++        this.entity = entity;
++    }
++
++    @Override
++    public org.bukkit.loot.LootTable getLootTable() {
++        return entity.getLootTable() != null ? Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(entity.getLootTable())) : null;
++    }
++
++    @Override
++    public void setLootTable(org.bukkit.loot.LootTable table, long seed) {
++        setLootTable(table);
++        setSeed(seed);
++    }
++
++    @Override
++    public void setSeed(long seed) {
++        entity.setLootTableSeed(seed);
++    }
++
++    @Override
++    public long getSeed() {
++        return entity.getLootTableSeed();
++    }
++
++    @Override
++    public void setLootTable(org.bukkit.loot.LootTable table) {
++        entity.setLootTable((table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey()));
++    }
++
++    @Override
++    public PaperLootableInventoryData getLootableData() {
++        return entity.getLootableData();
++    }
++
++    @Override
++    public Entity getHandle() {
++        return entity.getEntity();
++    }
++
++    @Override
++    public LootableInventory getAPILootableInventory() {
++        return (LootableInventory) entity.getEntity().getBukkitEntity();
++    }
++
++    @Override
++    public Level getNMSWorld() {
++        return entity.getLevel();
++    }
++}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableBlockInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableBlockInventory.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -375,74 +444,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return lootedPlayers != null ? lootedPlayers.get(player) : null;
 +    }
 +}
-diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperMinecartLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperMinecartLootableInventory.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/loottable/PaperMinecartLootableInventory.java
-@@ -0,0 +0,0 @@
-+package com.destroystokyo.paper.loottable;
-+
-+import net.minecraft.world.entity.Entity;
-+import net.minecraft.world.entity.vehicle.AbstractMinecartContainer;
-+import net.minecraft.world.level.Level;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-+
-+public class PaperMinecartLootableInventory implements PaperLootableEntityInventory {
-+
-+    private AbstractMinecartContainer entity;
-+
-+    public PaperMinecartLootableInventory(AbstractMinecartContainer entity) {
-+        this.entity = entity;
-+    }
-+
-+    @Override
-+    public org.bukkit.loot.LootTable getLootTable() {
-+        return entity.lootTable != null ? Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(entity.lootTable)) : null;
-+    }
-+
-+    @Override
-+    public void setLootTable(org.bukkit.loot.LootTable table, long seed) {
-+        setLootTable(table);
-+        setSeed(seed);
-+    }
-+
-+    @Override
-+    public void setSeed(long seed) {
-+        entity.lootTableSeed = seed;
-+    }
-+
-+    @Override
-+    public long getSeed() {
-+        return entity.lootTableSeed;
-+    }
-+
-+    @Override
-+    public void setLootTable(org.bukkit.loot.LootTable table) {
-+        entity.lootTable = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
-+    }
-+
-+    @Override
-+    public PaperLootableInventoryData getLootableData() {
-+        return entity.lootableData;
-+    }
-+
-+    @Override
-+    public Entity getHandle() {
-+        return entity;
-+    }
-+
-+    @Override
-+    public LootableInventory getAPILootableInventory() {
-+        return (LootableInventory) entity.getBukkitEntity();
-+    }
-+
-+    @Override
-+    public Level getNMSWorld() {
-+        return entity.level;
-+    }
-+}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -531,13 +532,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
 @@ -0,0 +0,0 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
+     public ResourceLocation lootTable;
      public long lootTableSeed;
  
++    // Paper start
++    {
++        this.lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(new com.destroystokyo.paper.loottable.PaperContainerEntityLootableInventory(this));
++    }
++    @Override
++    public Entity getEntity() {
++        return this;
++    }
++
++    @Override
++    public com.destroystokyo.paper.loottable.PaperLootableInventoryData getLootableData() {
++        return this.lootableData;
++    }
++    // Paper end
      // CraftBukkit start
-+    { this.lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(new com.destroystokyo.paper.loottable.PaperMinecartLootableInventory(this)); } // Paper
      public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
      private int maxStack = MAX_STACK;
- 
 @@ -0,0 +0,0 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
      @Override
      protected void addAdditionalSaveData(CompoundTag nbt) {
@@ -572,6 +586,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.readChestVehicleSaveData(nbt);
      }
  
+@@ -0,0 +0,0 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
+         this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
+     }
+ 
++    // Paper start
++    {
++        this.lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(new com.destroystokyo.paper.loottable.PaperContainerEntityLootableInventory(this));
++    }
++    @Override
++    public Entity getEntity() {
++        return this;
++    }
++
++    @Override
++    public com.destroystokyo.paper.loottable.PaperLootableInventoryData getLootableData() {
++        return this.lootableData;
++    }
++    // Paper end
+     // CraftBukkit start
+     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+     private int maxStack = MAX_STACK;
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
@@ -594,6 +629,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ContainerHelper.loadAllItems(nbt, this.getItemStacks());
          }
  
+@@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
+     default boolean isChestVehicleStillValid(Player player) {
+         return !this.isRemoved() && this.position().closerThan(player.position(), 8.0D);
+     }
++    // Paper start
++    default Entity getEntity() {
++        throw new UnsupportedOperationException();
++    }
++
++    default com.destroystokyo.paper.loottable.PaperLootableInventoryData getLootableData() {
++        throw new UnsupportedOperationException();
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
@@ -678,6 +727,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public CraftLootable(World world, T tileEntity) {
          super(world, tileEntity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftChestBoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftChestBoat.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftChestBoat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftChestBoat.java
+@@ -0,0 +0,0 @@ import org.bukkit.entity.EntityType;
+ import org.bukkit.inventory.Inventory;
+ import org.bukkit.loot.LootTable;
+ 
+-public class CraftChestBoat extends CraftBoat implements org.bukkit.entity.ChestBoat {
+-
++public class CraftChestBoat extends CraftBoat implements org.bukkit.entity.ChestBoat, com.destroystokyo.paper.loottable.PaperLootableEntityInventory { // Paper
+     private final Inventory inventory;
+ 
+     public CraftChestBoat(CraftServer server, ChestBoat entity) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartChest.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartChest.java
