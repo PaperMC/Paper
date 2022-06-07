@@ -467,29 +467,18 @@ diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -0,0 +0,0 @@ import java.util.HashMap;
- import java.util.Iterator;
- import java.util.List;
- import java.util.Map;
-+
-+import com.destroystokyo.paper.event.server.ServerExceptionEvent;
-+import com.destroystokyo.paper.exception.ServerCommandException;
-+import com.destroystokyo.paper.exception.ServerTabCompleteException;
- import org.apache.commons.lang.Validate;
- import org.bukkit.Location;
- import org.bukkit.Server;
 @@ -0,0 +0,0 @@ public class SimpleCommandMap implements CommandMap {
              target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
              } // target.timings.stopTiming(); // Spigot // Paper
          } catch (CommandException ex) {
-+            server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerCommandException(ex, target, sender, args))); // Paper
++            server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
              //target.timings.stopTiming(); // Spigot // Paper
              throw ex;
          } catch (Throwable ex) {
              //target.timings.stopTiming(); // Spigot // Paper
 -            throw new CommandException("Unhandled exception executing '" + commandLine + "' in " + target, ex);
 +            String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
-+            server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerCommandException(ex, target, sender, args))); // Paper
++            server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
 +            throw new CommandException(msg, ex);
          }
  
@@ -500,7 +489,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } catch (Throwable ex) {
 -            throw new CommandException("Unhandled exception executing tab-completer for '" + cmdLine + "' in " + target, ex);
 +            String msg = "Unhandled exception executing tab-completer for '" + cmdLine + "' in " + target;
-+            server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerTabCompleteException(msg, ex, target, sender, args))); // Paper
++            server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerTabCompleteException(msg, ex, target, sender, args))); // Paper
 +            throw new CommandException(msg, ex);
          }
      }
@@ -509,17 +498,6 @@ diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -0,0 +0,0 @@ import java.util.WeakHashMap;
- import java.util.logging.Level;
- import java.util.regex.Matcher;
- import java.util.regex.Pattern;
-+
-+import com.destroystokyo.paper.event.server.ServerExceptionEvent;
-+import com.destroystokyo.paper.exception.ServerEventException;
-+import com.destroystokyo.paper.exception.ServerPluginEnableDisableException;
- import org.apache.commons.lang.Validate;
- import org.bukkit.Server;
- import org.bukkit.World;
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
              try {
                  plugin.getPluginLoader().enablePlugin(plugin);
@@ -580,7 +558,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
 +        server.getLogger().log(Level.SEVERE, msg, ex);
-+        callEvent(new ServerExceptionEvent(new ServerPluginEnableDisableException(msg, ex, plugin)));
++        callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
 +    }
 +    // Paper end
 +
@@ -595,8 +573,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper start - error reporting
 +                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
 +                server.getLogger().log(Level.SEVERE, msg, ex);
-+                if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
-+                    callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
++                if (!(event instanceof com.destroystokyo.paper.event.server.ServerExceptionEvent)) { // We don't want to cause an endless event loop
++                    callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
 +                }
 +                // Paper end
              }
