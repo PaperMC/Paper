@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Tue, 8 Mar 2016 18:28:43 -0800
+Subject: [PATCH] Don't nest if we don't need to when cerealising text
+ components
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
+index 75b5f37c54a4de7f4235e2e5246aeda8a605ef45..6ba9874037af30acaf585914990dc7988db7b2ea 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
+@@ -21,7 +21,15 @@ public record ClientboundSystemChatPacket(@org.jetbrains.annotations.Nullable ne
+     }
+ 
+     public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, int typeId) {
+-        this(null, net.md_5.bungee.chat.ComponentSerializer.toString(content), typeId);
++        this(null, garbageConversion(content), typeId); // Paper - don't nest if we don't need to so that we can preserve formatting
++    }
++
++    private static String garbageConversion(net.md_5.bungee.api.chat.BaseComponent[] content) {
++        if (content.length == 1) {
++            return net.md_5.bungee.chat.ComponentSerializer.toString(content[0]);
++        } else {
++            return net.md_5.bungee.chat.ComponentSerializer.toString(content);
++        }
+     }
+     // Spigot end
+     // Paper end
