@@ -24,10 +24,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          long l = minecraftserver.getWorldData().worldGenSettings().seed();
  
--        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), resourcekey, chunkgenerator, this, chunkgenerator.getBiomeSource(), l, datafixer);
-+        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), this.getTypeKey(), chunkgenerator, this, chunkgenerator.getBiomeSource(), l, datafixer); // Paper - Fix missing CB diff
-         this.structureFeatureManager = new StructureFeatureManager(this, this.serverLevelData.worldGenSettings(), this.structureCheck); // CraftBukkit
-         if (this.dimensionType().createDragonFight()) {
+-        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), resourcekey, chunkgenerator, this.chunkSource.randomState(), this, chunkgenerator.getBiomeSource(), l, datafixer);
++        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), this.getTypeKey(), chunkgenerator, this.chunkSource.randomState(), this, chunkgenerator.getBiomeSource(), l, datafixer); // Paper - Fix missing CB diff
+         this.structureManager = new StructureManager(this, this.serverLevelData.worldGenSettings(), this.structureCheck); // CraftBukkit
+         if (this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) {
              this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenSettings().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/Marker.java b/src/main/java/net/minecraft/world/entity/Marker.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -50,22 +50,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 @@ -0,0 +0,0 @@ public class StructureCheck {
      private final Registry<Biome> biomes;
-     private final Registry<ConfiguredStructureFeature<?, ?>> structureConfigs;
-     private final StructureManager structureManager;
+     private final Registry<Structure> structureConfigs;
+     private final StructureTemplateManager structureTemplateManager;
 -    private final ResourceKey<Level> dimension;
 +    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
      private final ChunkGenerator chunkGenerator;
+     private final RandomState randomState;
      private final LevelHeightAccessor heightAccessor;
-     private final BiomeSource biomeSource;
 @@ -0,0 +0,0 @@ public class StructureCheck {
-     private final Long2ObjectMap<Object2IntMap<ConfiguredStructureFeature<?, ?>>> loadedChunks = new Long2ObjectOpenHashMap<>();
-     private final Map<ConfiguredStructureFeature<?, ?>, Long2BooleanMap> featureChecks = new HashMap<>();
+     private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
+     private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
  
--    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureManager structureManager, ResourceKey<Level> worldKey, ChunkGenerator chunkGenerator, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) {
-+    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureManager structureManager, ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, ChunkGenerator chunkGenerator, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) { // Paper - fix missing CB diff
+-    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureTemplateManager structureTemplateManager, ResourceKey<Level> worldKey, ChunkGenerator chunkGenerator, RandomState noiseConfig, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) {
++    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureTemplateManager structureTemplateManager, ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, ChunkGenerator chunkGenerator, RandomState noiseConfig, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) { // Paper - fix missing CB diff
          this.storageAccess = chunkIoWorker;
          this.registryAccess = registryManager;
-         this.structureManager = structureManager;
+         this.structureTemplateManager = structureTemplateManager;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -82,20 +82,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        return new CraftLootTable(key, registry.get(lootTableKey));
 +        // Paper end
-     }
- 
-     @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
-+++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
-@@ -0,0 +0,0 @@ public class CustomWorldChunkManager extends BiomeSource {
- 
-     @Override
-     public BiomeSource withSeed(long seed) {
--        // TODO check method further
--        throw new UnsupportedOperationException("Cannot copy CustomWorldChunkManager");
-+        return this; // Paper - Since this doesn't take a seed, no need to throw UOE
      }
  
      @Override

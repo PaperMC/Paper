@@ -1062,7 +1062,7 @@ diff --git a/src/main/java/net/minecraft/ChatFormatting.java b/src/main/java/net
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/ChatFormatting.java
 +++ b/src/main/java/net/minecraft/ChatFormatting.java
-@@ -0,0 +0,0 @@ public enum ChatFormatting {
+@@ -0,0 +0,0 @@ public enum ChatFormatting implements StringRepresentable {
          return name == null ? null : FORMATTING_BY_NAME.get(cleanName(name));
      }
  
@@ -1100,9 +1100,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public java.util.Locale adventure$locale; // Paper
      public static final short MAX_STRING_LENGTH = 32767;
      public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
- 
+     private static final int PUBLIC_KEY_SIZE = 256;
 @@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
-         return Component.Serializer.fromJson(this.readUtf(262144));
+         }
      }
  
 +    // Paper start
@@ -1166,30 +1166,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              JsonObject jsonobject = new JsonObject();
  
              if (!ichatbasecomponent.getStyle().isEmpty()) {
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundChatPacket.java
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundChatPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundChatPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
- public class ClientboundChatPacket implements Packet<ClientGamePacketListener> {
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
+@@ -0,0 +0,0 @@ import net.minecraft.network.chat.PlayerChatMessage;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.util.Crypt;
  
-     private final Component message;
-+    public net.kyori.adventure.text.Component adventure$message; // Paper
-     public net.md_5.bungee.api.chat.BaseComponent[] components; // Spigot
-     private final ChatType type;
-     private final UUID sender;
-@@ -0,0 +0,0 @@ public class ClientboundChatPacket implements Packet<ClientGamePacketListener> {
+-public record ClientboundPlayerChatPacket(Component signedContent, Optional<Component> unsignedContent, int typeId, ChatSender sender, Instant timeStamp, Crypt.SaltSignaturePair saltSignature) implements Packet<ClientGamePacketListener> {
++// Paper start
++public record ClientboundPlayerChatPacket(@org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component adventure$message, Component signedContent, Optional<Component> unsignedContent, int typeId, ChatSender sender, Instant timeStamp, Crypt.SaltSignaturePair saltSignature) implements Packet<ClientGamePacketListener> {
+     private static final Duration MESSAGE_EXPIRES_AFTER = ServerboundChatPacket.MESSAGE_EXPIRES_AFTER.plus(Duration.ofMinutes(2L));
  
++    public ClientboundPlayerChatPacket(Component signedContent, Optional<Component> unsignedContent, int typeId, ChatSender sender, Instant timeStamp, Crypt.SaltSignaturePair saltSignature) {
++        this(null, signedContent, unsignedContent, typeId, sender, timeStamp, saltSignature);
++    }
++    // Paper end
++
+     public ClientboundPlayerChatPacket(FriendlyByteBuf buf) {
+         this(buf.readComponent(), buf.readOptional(FriendlyByteBuf::readComponent), buf.readVarInt(), new ChatSender(buf), buf.readInstant(), new Crypt.SaltSignaturePair(buf));
+     }
+@@ -0,0 +0,0 @@ public record ClientboundPlayerChatPacket(Component signedContent, Optional<Comp
      @Override
      public void write(FriendlyByteBuf buf) {
+         buf.writeComponent(this.signedContent);
 +        // Paper start
++        //TODO Proper API and writing signed contents
 +        if (this.adventure$message != null) {
++            buf.writeBoolean(true);
 +            buf.writeComponent(this.adventure$message);
-+        } else
++        } else {
+         buf.writeOptional(this.unsignedContent, FriendlyByteBuf::writeComponent);
++        }
 +        // Paper end
-         // Spigot start
-         if (this.components != null) {
-             buf.writeUtf(net.md_5.bungee.chat.ComponentSerializer.toString(components));
+         buf.writeVarInt(this.typeId);
+         this.sender.write(buf);
+         buf.writeInstant(this.timeStamp);
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
@@ -1260,6 +1273,52 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else
 +        // Paper end
          buf.writeComponent(this.text);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
+@@ -0,0 +0,0 @@ import net.minecraft.network.chat.ChatType;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.protocol.Packet;
+ 
++// Paper start
+ // Spigot start
+-public record ClientboundSystemChatPacket(String content, int typeId) implements Packet<ClientGamePacketListener> {
++public record ClientboundSystemChatPacket(@org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component adventure$message, String content, int typeId) implements Packet<ClientGamePacketListener> {
++
++    public ClientboundSystemChatPacket(String content, int typeId) {
++        this(null, content, typeId);
++    }
+ 
+     public ClientboundSystemChatPacket(Component content, int typeId) {
+-        this(Component.Serializer.toJson(content), typeId);
++        this(null, Component.Serializer.toJson(content), typeId);
+     }
+ 
+     public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, int typeId) {
+-        this(net.md_5.bungee.chat.ComponentSerializer.toString(content), typeId);
++        this(null, net.md_5.bungee.chat.ComponentSerializer.toString(content), typeId);
+     }
+     // Spigot end
++    // Paper end
+ 
+     public ClientboundSystemChatPacket(FriendlyByteBuf buf) {
+         this(buf.readComponent(), buf.readVarInt());
+@@ -0,0 +0,0 @@ public record ClientboundSystemChatPacket(String content, int typeId) implements
+ 
+     @Override
+     public void write(FriendlyByteBuf buf) {
+-        buf.writeUtf(this.content, 262144); // Spigot
++        // Paper start
++        if (adventure$message != null) {
++            buf.writeComponent(this.adventure$message);
++        } else {
++            buf.writeUtf(this.content, 262144); // Spigot
++        }
++        // Paper end
+         buf.writeVarInt(this.typeId);
      }
  
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java
@@ -1464,15 +1523,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
  
              for (int i = 0; i < signText.size(); ++i) {
--                TextFilter.FilteredText itextfilter_a = (TextFilter.FilteredText) signText.get(i);
-+                TextFilter.FilteredText currentLine = signText.get(i);
+                 FilteredText<Component> filteredtext = (signText.get(i)).map(Component::literal); // CraftBukkit - decompile error
  
                  if (this.player.isTextFilteringEnabled()) {
--                    lines[i] = ChatFormatting.stripFormatting(new TextComponent(ChatFormatting.stripFormatting(itextfilter_a.getFiltered())).getString());
-+                    lines.add(net.kyori.adventure.text.Component.text(currentLine.getFiltered()));
+-                    lines[i] = ChatFormatting.stripFormatting(filteredtext.filteredOrElse(CommonComponents.EMPTY).getString());
++                    lines.add(net.kyori.adventure.text.Component.text(filteredtext.filteredOrElse(CommonComponents.EMPTY).getString())); // Paper - adventure
                  } else {
--                    lines[i] = ChatFormatting.stripFormatting(new TextComponent(ChatFormatting.stripFormatting(itextfilter_a.getRaw())).getString());
-+                    lines.add(net.kyori.adventure.text.Component.text(currentLine.getRaw()));
+-                    lines[i] = ChatFormatting.stripFormatting(filteredtext.raw().getString());
++                    lines.add(net.kyori.adventure.text.Component.text(filteredtext.raw().getString())); // Paper - adventure
                  }
              }
              SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.player.getBukkitEntity(), lines);
@@ -1553,9 +1611,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          }
          // CraftBukkit start
-         chatmessage.withStyle(ChatFormatting.YELLOW);
--        String joinMessage = CraftChatMessage.fromComponent(chatmessage);
-+        Component joinMessage = chatmessage; // Paper - Adventure
+         ichatmutablecomponent.withStyle(ChatFormatting.YELLOW);
+-        String joinMessage = CraftChatMessage.fromComponent(ichatmutablecomponent);
++        Component joinMessage = ichatmutablecomponent; // Paper - Adventure
  
          playerconnection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
          this.players.add(player);
@@ -1564,7 +1622,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          player.containerMenu.transferTo(player.containerMenu, bukkitPlayer);
  
 -        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(bukkitPlayer, joinMessage);
-+        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(bukkitPlayer, PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
++        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(bukkitPlayer, PaperAdventure.asAdventure(ichatmutablecomponent)); // Paper - Adventure
          this.cserver.getPluginManager().callEvent(playerJoinEvent);
  
          if (!player.connection.connection.isConnected()) {
@@ -1576,11 +1634,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        if (joinMessage != null && joinMessage.length() > 0) {
 -            for (Component line : org.bukkit.craftbukkit.util.CraftChatMessage.fromString(joinMessage)) {
--                this.server.getPlayerList().broadcastAll(new ClientboundChatPacket(line, ChatType.SYSTEM, Util.NIL_UUID));
+-                this.server.getPlayerList().broadcastSystemMessage(line, ChatType.SYSTEM);
 -            }
 +        if (jm != null && !jm.equals(net.kyori.adventure.text.Component.empty())) { // Paper - Adventure
 +            joinMessage = PaperAdventure.asVanilla(jm); // Paper - Adventure
-+            this.server.getPlayerList().broadcastAll(new ClientboundChatPacket(joinMessage, ChatType.SYSTEM, Util.NIL_UUID)); // Paper - Adventure
++            this.server.getPlayerList().broadcastSystemMessage(joinMessage, ChatType.SYSTEM); // Paper - Adventure
          }
          // CraftBukkit end
  
@@ -1615,10 +1673,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              // return chatmessage;
--            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage));
-+            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
+-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(ichatmutablecomponent));
++            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(ichatmutablecomponent)); // Paper - Adventure
          } else if (!this.isWhiteListed(gameprofile)) {
-             chatmessage = new TranslatableComponent("multiplayer.disconnect.not_whitelisted");
+             ichatmutablecomponent = Component.translatable("multiplayer.disconnect.not_whitelisted");
 -            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot
 +            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure
          } else if (this.getIpBans().isBanned(socketaddress) && !this.getIpBans().get(socketaddress).hasExpired()) {
@@ -1628,10 +1686,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              // return chatmessage;
--            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage));
-+            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
+-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(ichatmutablecomponent));
++            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(ichatmutablecomponent)); // Paper - Adventure
          } else {
-             // return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile) ? new ChatMessage("multiplayer.disconnect.server_full") : null;
+             // return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile) ? IChatBaseComponent.translatable("multiplayer.disconnect.server_full") : null;
              if (this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile)) {
 -                event.disallow(PlayerLoginEvent.Result.KICK_FULL, org.spigotmc.SpigotConfig.serverFullMessage); // Spigot
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.serverFullMessage)); // Spigot // Paper - Adventure
@@ -2504,8 +2562,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private void updatePlayerListHeaderFooter() {
          if (this.getHandle().connection == null) return;
  
--        ClientboundTabListPacket packet = new ClientboundTabListPacket((this.playerListHeader == null) ? new TextComponent("") : this.playerListHeader, (this.playerListFooter == null) ? new TextComponent("") : this.playerListFooter);
-+        ClientboundTabListPacket packet = new ClientboundTabListPacket((this.playerListHeader == null) ? new TextComponent("") : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListHeader), (this.playerListFooter == null) ? new TextComponent("") : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListFooter));
+-        ClientboundTabListPacket packet = new ClientboundTabListPacket((this.playerListHeader == null) ? Component.empty() : this.playerListHeader, (this.playerListFooter == null) ? Component.empty() : this.playerListFooter);
++        ClientboundTabListPacket packet = new ClientboundTabListPacket((this.playerListHeader == null) ? Component.empty() : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListHeader), (this.playerListFooter == null) ? Component.empty() : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListFooter)); // Paper - adventure
          this.getHandle().connection.send(packet);
      }
  
@@ -3033,7 +3091,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        @Deprecated // Paper - Adventure
          public MinecraftMerchant(String title) {
              Validate.notNull(title, "Title cannot be null");
-             this.title = new TextComponent(title);
+             this.title = Component.literal(title);
          }
 +        // Paper start
 +        public MinecraftMerchant(net.kyori.adventure.text.Component title) {
