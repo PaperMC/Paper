@@ -519,7 +519,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-     };
+     }
      // Paper end
  
 +    public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
@@ -542,49 +542,58 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected void addAdditionalSaveData(CompoundTag nbt) {
          super.addAdditionalSaveData(nbt);
-+        this.lootableData.saveNbt(nbt); // Paper
-         if (this.lootTable != null) {
-             nbt.putString("LootTable", this.lootTable.toString());
-             if (this.lootTableSeed != 0L) {
-                 nbt.putLong("LootTableSeed", this.lootTableSeed);
-             }
--        } else {
-+        } if (true) { // Paper - Always save the items, Table may stick around
-             ContainerHelper.saveAllItems(nbt, this.itemStacks);
-         }
++        this.lootableData.loadNbt(nbt); // Paper
+         this.addChestVehicleSaveData(nbt);
+     }
  
-@@ -0,0 +0,0 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
      @Override
      protected void readAdditionalSaveData(CompoundTag nbt) {
          super.readAdditionalSaveData(nbt);
 +        this.lootableData.loadNbt(nbt); // Paper
-         this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-         if (nbt.contains("LootTable", 8)) {
-             this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
-             this.lootTableSeed = nbt.getLong("LootTableSeed");
--        } else {
-+        } if (true) { // Paper - always load the items, table may still remain
-             ContainerHelper.loadAllItems(nbt, this.itemStacks);
-         }
- 
-@@ -0,0 +0,0 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
+         this.readChestVehicleSaveData(nbt);
      }
  
-     public void unpackLootTable(@Nullable Player player) {
--        if (this.lootTable != null && this.level.getServer() != null) {
-+        if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
-             LootTable loottable = this.level.getServer().getLootTables().get(this.lootTable);
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
+@@ -0,0 +0,0 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
+     @Override
+     protected void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
++        this.lootableData.loadNbt(nbt); // Paper
+         this.addChestVehicleSaveData(nbt);
+     }
  
-             if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer) player, this.lootTable);
+     @Override
+     protected void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
++        this.lootableData.loadNbt(nbt); // Paper
+         this.readChestVehicleSaveData(nbt);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+@@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
+             if (this.getLootTableSeed() != 0L) {
+                 nbt.putLong("LootTableSeed", this.getLootTableSeed());
              }
+-        } else {
++        } else if (true) { // Paper - always load the items, table may still remain
+             ContainerHelper.saveAllItems(nbt, this.getItemStacks());
+         }
  
--            this.lootTable = null;
-+            //this.lootTable = null; // Paper
-+            this.lootableData.processRefill(player); // Paper
-             LootContext.Builder loottableinfo_builder = (new LootContext.Builder((ServerLevel) this.level)).withParameter(LootContextParams.ORIGIN, this.position()).withOptionalRandomSeed(this.lootTableSeed);
+@@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
+         if (nbt.contains("LootTable", 8)) {
+             this.setLootTable(new ResourceLocation(nbt.getString("LootTable")));
+             this.setLootTableSeed(nbt.getLong("LootTableSeed"));
+-        } else {
++        } else if (true) { // Paper - always load the items, table may still remain
+             ContainerHelper.loadAllItems(nbt, this.getItemStacks());
+         }
  
-             if (player != null) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java

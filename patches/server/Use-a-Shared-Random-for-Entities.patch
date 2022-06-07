@@ -9,13 +9,23 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.entity.EntityInLevelCallback;
+ import net.minecraft.world.level.gameevent.DynamicGameEventListener;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.levelgen.Heightmap;
++import net.minecraft.world.level.levelgen.PositionalRandomFactory;
+ import net.minecraft.world.level.material.Fluid;
+ import net.minecraft.world.level.material.FluidState;
+ import net.minecraft.world.level.material.PushReaction;
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
      }
  
 +    // Paper start
-+    public static Random SHARED_RANDOM = new Random() {
++    public static RandomSource SHARED_RANDOM = new RandomRandomSource();
++    private static final class RandomRandomSource extends java.util.Random implements RandomSource {
 +        private boolean locked = false;
++
 +        @Override
 +        public synchronized void setSeed(long seed) {
 +            if (locked) {
@@ -25,7 +35,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                locked = true;
 +            }
 +        }
-+    };
++
++        @Override
++        public RandomSource fork() {
++            return new net.minecraft.world.level.levelgen.LegacyRandomSource(this.nextLong());
++        }
++
++        @Override
++        public PositionalRandomFactory forkPositional() {
++            return new net.minecraft.world.level.levelgen.LegacyRandomSource.LegacyPositionalRandomFactory(this.nextLong());
++        }
++
++        @Override
++        public int nextInt(int origin, int bound) {
++            return RandomSource.super.nextInt(origin, bound);
++        }
++    }
 +    // Paper end
 +
      private CraftEntity bukkitEntity;
@@ -35,7 +60,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.bb = Entity.INITIAL_AABB;
          this.stuckSpeedMultiplier = Vec3.ZERO;
          this.nextStep = 1.0F;
--        this.random = new Random();
+-        this.random = RandomSource.create();
 +        this.random = SHARED_RANDOM; // Paper
          this.remainingFireTicks = -this.getFireImmuneTicks();
          this.fluidHeight = new Object2DoubleArrayMap(2);
