@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 16 May 2016 20:47:41 -0400
+Subject: [PATCH] Async GameProfileCache saving
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index b62d7b2e974f9eafb8e60ddb9ed58273b0393185..9e5271d39e4a15a71c59a8560edd59c75ec6dd52 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -942,7 +942,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         } catch (java.lang.InterruptedException ignored) {} // Paper
+         if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
+             MinecraftServer.LOGGER.info("Saving usercache.json");
+-            this.getProfileCache().save();
++            this.getProfileCache().save(false); // Paper
+         }
+         // Spigot end
+ 
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 9e7fb3e2d423ba1db22819aa8b666ca886d98cf6..576fc01b902acaf2a217db3fb39b799f2f57ce01 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -250,7 +250,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+ 
+         if (this.convertOldUsers()) {
+-            this.getProfileCache().save();
++            this.getProfileCache().save(false); // Paper
+         }
+ 
+         if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
+diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+index fb110ecb7fa8d0de7d8ce8e239d1db341a333203..717a0d1c1f4df7ebd5f4cdd5e24cabe3fb66bf06 100644
+--- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
++++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+@@ -127,7 +127,7 @@ public class GameProfileCache {
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = new GameProfileCache.GameProfileInfo(profile, date);
+ 
+         this.safeAdd(usercache_usercacheentry);
+-        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.save(); // Spigot - skip saving if disabled
++        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.save(true); // Spigot - skip saving if disabled // Paper - async
+     }
+ 
+     private long getNextOperation() {
+@@ -160,7 +160,7 @@ public class GameProfileCache {
+         }
+ 
+         if (flag && !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) { // Spigot - skip saving if disabled
+-            this.save();
++            this.save(true); // Paper
+         }
+ 
+         return optional;
+@@ -274,7 +274,7 @@ public class GameProfileCache {
+         return arraylist;
+     }
+ 
+-    public void save() {
++    public void save(boolean asyncSave) { // Paper
+         JsonArray jsonarray = new JsonArray();
+         DateFormat dateformat = GameProfileCache.createDateFormat();
+ 
+@@ -282,6 +282,7 @@ public class GameProfileCache {
+             jsonarray.add(GameProfileCache.writeGameProfile(usercache_usercacheentry, dateformat));
+         });
+         String s = this.gson.toJson(jsonarray);
++        Runnable save = () -> { // Paper
+ 
+         try {
+             BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
+@@ -306,6 +307,14 @@ public class GameProfileCache {
+         } catch (IOException ioexception) {
+             ;
+         }
++        // Paper start
++        };
++        if (asyncSave) {
++            net.minecraft.server.MCUtil.scheduleAsyncTask(save);
++        } else {
++            save.run();
++        }
++        // Paper end
+ 
+     }
+ 
