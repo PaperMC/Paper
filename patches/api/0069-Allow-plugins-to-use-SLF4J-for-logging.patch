@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Thu, 21 Sep 2017 16:33:12 +0200
+Subject: [PATCH] Allow plugins to use SLF4J for logging
+
+SLF4J is a commonly used abstraction for various logging frameworks
+such as java.util.logging (JUL) or Log4j. Currently, plugins are
+required to do all their logging using the provided JUL logger.
+This is annoying for plugins that target multiple platforms or when
+using libraries that log messages using SLF4J.
+
+Expose SLF4J as optional logging API for plugins, so they can use
+it without having to shade it in the plugin and going through
+several layers of logging abstraction.
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 9ec782b00f9f2ac5a38a75667d36de4582a25a03..ac0a4aea48436201b5712b166413bb7dc0d0b9d8 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -38,6 +38,8 @@ dependencies {
+     apiAndDocs("net.kyori:adventure-text-serializer-gson")
+     apiAndDocs("net.kyori:adventure-text-serializer-legacy")
+     apiAndDocs("net.kyori:adventure-text-serializer-plain")
++    api("org.apache.logging.log4j:log4j-api:2.17.1")
++    api("org.slf4j:slf4j-api:1.8.0-beta4")
+ 
+     implementation("org.ow2.asm:asm:9.2")
+     implementation("org.ow2.asm:asm-commons:9.2")
+diff --git a/src/main/java/org/bukkit/plugin/Plugin.java b/src/main/java/org/bukkit/plugin/Plugin.java
+index 03ca87a1cbace2459174bb7bb8847bda766e80c5..34438b5362b0ba0949625d81e8371fe0d1f76fdf 100644
+--- a/src/main/java/org/bukkit/plugin/Plugin.java
++++ b/src/main/java/org/bukkit/plugin/Plugin.java
+@@ -179,6 +179,22 @@ public interface Plugin extends TabExecutor {
+     @NotNull
+     public Logger getLogger();
+ 
++    // Paper start - Add SLF4J/Log4J loggers
++    @NotNull
++    default org.slf4j.Logger getSLF4JLogger() {
++        return org.slf4j.LoggerFactory.getLogger(getLogger().getName());
++    }
++
++    /**
++     * @deprecated use {@link #getSLF4JLogger()}
++     */
++    @Deprecated
++    @NotNull
++    default org.apache.logging.log4j.Logger getLog4JLogger() {
++        return org.apache.logging.log4j.LogManager.getLogger(getLogger().getName());
++    }
++    // Paper end
++
+     /**
+      * Returns the name of the plugin.
+      * <p>

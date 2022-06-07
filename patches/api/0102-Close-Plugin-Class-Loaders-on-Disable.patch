@@ -1,0 +1,105 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 1 May 2018 21:33:35 -0400
+Subject: [PATCH] Close Plugin Class Loaders on Disable
+
+This should close more memory leaks from /reload and disabling plugins,
+by closing the class loader and the jar file.
+
+Note: This patch is no longer necessary as upstream now also closes
+PluginClassLoaders on disable. This patch is now only to keep around
+API methods it previously added, and to add back the log message when a
+PluginClassLoader fails to disable, as upstream decided to ignore the
+exception.
+
+diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
+index a88733f1cd1ddb5d85ab1b0e6af4fd5b80bbc1c6..256e440e699942e3c9da4205bb964bdc10ec92c4 100644
+--- a/src/main/java/org/bukkit/plugin/PluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/PluginLoader.java
+@@ -77,4 +77,21 @@ public interface PluginLoader {
+      * @param plugin Plugin to disable
+      */
+     public void disablePlugin(@NotNull Plugin plugin);
++
++    // Paper start - close Classloader on disable
++    /**
++     * This method is no longer useful as upstream has
++     * made it so plugin classloaders are always closed on disable.
++     * Use {@link #disablePlugin(Plugin)} instead.
++     *
++     * @param plugin Plugin to disable
++     * @param closeClassloader unused
++     * @deprecated Classloader is always closed by upstream now.
++     */
++    @Deprecated(forRemoval = true)
++    // provide default to allow other PluginLoader implementations to work
++    default public void disablePlugin(@NotNull Plugin plugin, boolean closeClassloader) {
++        disablePlugin(plugin);
++    }
++    // Paper end - close Classloader on disable
+ }
+diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
+index 41e26451fe12d8e6e0ef73c85731b24b4e3f200c..0d1b20f2b5580ea5505ccc2f003925dbcee67199 100644
+--- a/src/main/java/org/bukkit/plugin/PluginManager.java
++++ b/src/main/java/org/bukkit/plugin/PluginManager.java
+@@ -161,6 +161,22 @@ public interface PluginManager {
+      */
+     public void disablePlugin(@NotNull Plugin plugin);
+ 
++    // Paper start - close Classloader on disable
++    /**
++     * This method is no longer useful as upstream has
++     * made it so plugin classloaders are always closed on disable.
++     * Use {@link #disablePlugin(Plugin)} instead.
++     *
++     * @param plugin Plugin to disable
++     * @param closeClassloader unused
++     * @deprecated Classloader is always closed by upstream now.
++     */
++    @Deprecated(forRemoval = true)
++    public default void disablePlugin(@NotNull Plugin plugin, boolean closeClassloader) {
++        this.disablePlugin(plugin);
++    }
++    // Paper end - close Classloader on disable
++
+     /**
+      * Gets a {@link Permission} from its fully qualified name
+      *
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index efe0e5e6b43c50c6a41ee3baa44beb7d883b551a..6b38b14bfd73f3b7d06b6f747d60373cedf1fa6f 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -503,6 +503,21 @@ public final class SimplePluginManager implements PluginManager {
+         }
+     }
+ 
++    // Paper start
++    /**
++     * This method is no longer useful as upstream has
++     * made it so plugin classloaders are always closed on disable.
++     * Use {@link #disablePlugins()} instead.
++     *
++     * @param closeClassloaders unused
++     * @deprecated Classloader is always closed by upstream now.
++     */
++    @Deprecated(forRemoval = true)
++    public void disablePlugins(boolean closeClassloaders) {
++        this.disablePlugins();
++    }
++    // Paper end
++
+     @Override
+     public void disablePlugin(@NotNull final Plugin plugin) {
+         if (plugin.isEnabled()) {
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 5d74fab03a15d7099e5dacb780eade4cdc185797..032ed2aba7d47144d241d616ba27489ce22d6fea 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -366,6 +366,7 @@ public final class JavaPluginLoader implements PluginLoader {
+                     loader.close();
+                 } catch (IOException ex) {
+                     //
++                    this.server.getLogger().log(Level.WARNING, "Error closing the PluginClassLoader for '" + plugin.getDescription().getFullName() + "'", ex); // Paper - log exception
+                 }
+             }
+         }
