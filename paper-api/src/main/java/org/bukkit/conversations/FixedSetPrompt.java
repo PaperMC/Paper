@@ -1,8 +1,8 @@
 package org.bukkit.conversations;
 
+import com.google.common.base.Joiner;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -42,6 +42,6 @@ public abstract class FixedSetPrompt extends ValidatingPrompt {
      */
     @NotNull
     protected String formatFixedSet() {
-        return "[" + StringUtils.join(fixedSet, ", ") + "]";
+        return "[" + Joiner.on(", ").join(fixedSet) + "]";
     }
 }

@@ -1,9 +1,9 @@
 package org.bukkit.util;
 
+import com.google.common.base.Preconditions;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -39,8 +39,8 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public static BoundingBox of(@NotNull Vector corner1, @NotNull Vector corner2) {
-        Validate.notNull(corner1, "Corner1 is null!");
-        Validate.notNull(corner2, "Corner2 is null!");
+        Preconditions.checkArgument(corner1 != null, "Corner1 is null!");
+        Preconditions.checkArgument(corner2 != null, "Corner2 is null!");
         return new BoundingBox(corner1.getX(), corner1.getY(), corner1.getZ(), corner2.getX(), corner2.getY(), corner2.getZ());
     }
 
@@ -54,9 +54,9 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public static BoundingBox of(@NotNull Location corner1, @NotNull Location corner2) {
-        Validate.notNull(corner1, "Corner1 is null!");
-        Validate.notNull(corner2, "Corner2 is null!");
-        Validate.isTrue(Objects.equals(corner1.getWorld(), corner2.getWorld()), "Locations from different worlds!");
+        Preconditions.checkArgument(corner1 != null, "Corner1 is null!");
+        Preconditions.checkArgument(corner2 != null, "Corner2 is null!");
+        Preconditions.checkArgument(Objects.equals(corner1.getWorld(), corner2.getWorld()), "Locations from different worlds!");
         return new BoundingBox(corner1.getX(), corner1.getY(), corner1.getZ(), corner2.getX(), corner2.getY(), corner2.getZ());
     }
 
@@ -72,9 +72,9 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public static BoundingBox of(@NotNull Block corner1, @NotNull Block corner2) {
-        Validate.notNull(corner1, "Corner1 is null!");
-        Validate.notNull(corner2, "Corner2 is null!");
-        Validate.isTrue(Objects.equals(corner1.getWorld(), corner2.getWorld()), "Blocks from different worlds!");
+        Preconditions.checkArgument(corner1 != null, "Corner1 is null!");
+        Preconditions.checkArgument(corner2 != null, "Corner2 is null!");
+        Preconditions.checkArgument(Objects.equals(corner1.getWorld(), corner2.getWorld()), "Blocks from different worlds!");
 
         int x1 = corner1.getX();
         int y1 = corner1.getY();
@@ -101,7 +101,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public static BoundingBox of(@NotNull Block block) {
-        Validate.notNull(block, "Block is null!");
+        Preconditions.checkArgument(block != null, "Block is null!");
         return new BoundingBox(block.getX(), block.getY(), block.getZ(), block.getX() + 1, block.getY() + 1, block.getZ() + 1);
     }
 
@@ -116,7 +116,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public static BoundingBox of(@NotNull Vector center, double x, double y, double z) {
-        Validate.notNull(center, "Center is null!");
+        Preconditions.checkArgument(center != null, "Center is null!");
         return new BoundingBox(center.getX() - x, center.getY() - y, center.getZ() - z, center.getX() + x, center.getY() + y, center.getZ() + z);
     }
 
@@ -131,7 +131,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public static BoundingBox of(@NotNull Location center, double x, double y, double z) {
-        Validate.notNull(center, "Center is null!");
+        Preconditions.checkArgument(center != null, "Center is null!");
         return new BoundingBox(center.getX() - x, center.getY() - y, center.getZ() - z, center.getX() + x, center.getY() + y, center.getZ() + z);
     }
 
@@ -348,7 +348,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox copy(@NotNull BoundingBox other) {
-        Validate.notNull(other, "Other bounding box is null!");
+        Preconditions.checkArgument(other != null, "Other bounding box is null!");
         return this.resize(other.getMinX(), other.getMinY(), other.getMinZ(), other.getMaxX(), other.getMaxY(), other.getMaxZ());
     }
 
@@ -449,7 +449,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox expand(@NotNull Vector expansion) {
-        Validate.notNull(expansion, "Expansion is null!");
+        Preconditions.checkArgument(expansion != null, "Expansion is null!");
         double x = expansion.getX();
         double y = expansion.getY();
         double z = expansion.getZ();
@@ -510,7 +510,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox expand(@NotNull Vector direction, double expansion) {
-        Validate.notNull(direction, "Direction is null!");
+        Preconditions.checkArgument(direction != null, "Direction is null!");
         return this.expand(direction.getX(), direction.getY(), direction.getZ(), expansion);
     }
 
@@ -527,7 +527,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox expand(@NotNull BlockFace blockFace, double expansion) {
-        Validate.notNull(blockFace, "Block face is null!");
+        Preconditions.checkArgument(blockFace != null, "Block face is null!");
         if (blockFace == BlockFace.SELF) return this;
 
         return this.expand(blockFace.getDirection(), expansion);
@@ -563,7 +563,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox expandDirectional(@NotNull Vector direction) {
-        Validate.notNull(direction, "Expansion is null!");
+        Preconditions.checkArgument(direction != null, "Expansion is null!");
         return this.expand(direction.getX(), direction.getY(), direction.getZ(), 1.0D);
     }
 
@@ -599,7 +599,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox union(@NotNull Vector position) {
-        Validate.notNull(position, "Position is null!");
+        Preconditions.checkArgument(position != null, "Position is null!");
         return this.union(position.getX(), position.getY(), position.getZ());
     }
 
@@ -612,7 +612,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox union(@NotNull Location position) {
-        Validate.notNull(position, "Position is null!");
+        Preconditions.checkArgument(position != null, "Position is null!");
         return this.union(position.getX(), position.getY(), position.getZ());
     }
 
@@ -625,7 +625,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox union(@NotNull BoundingBox other) {
-        Validate.notNull(other, "Other bounding box is null!");
+        Preconditions.checkArgument(other != null, "Other bounding box is null!");
         if (this.contains(other)) return this;
         double newMinX = Math.min(this.minX, other.minX);
         double newMinY = Math.min(this.minY, other.minY);
@@ -646,8 +646,8 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox intersection(@NotNull BoundingBox other) {
-        Validate.notNull(other, "Other bounding box is null!");
-        Validate.isTrue(this.overlaps(other), "The bounding boxes do not overlap!");
+        Preconditions.checkArgument(other != null, "Other bounding box is null!");
+        Preconditions.checkArgument(this.overlaps(other), "The bounding boxes do not overlap!");
         double newMinX = Math.max(this.minX, other.minX);
         double newMinY = Math.max(this.minY, other.minY);
         double newMinZ = Math.max(this.minZ, other.minZ);
@@ -680,7 +680,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox shift(@NotNull Vector shift) {
-        Validate.notNull(shift, "Shift is null!");
+        Preconditions.checkArgument(shift != null, "Shift is null!");
         return this.shift(shift.getX(), shift.getY(), shift.getZ());
     }
 
@@ -692,7 +692,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     public BoundingBox shift(@NotNull Location shift) {
-        Validate.notNull(shift, "Shift is null!");
+        Preconditions.checkArgument(shift != null, "Shift is null!");
         return this.shift(shift.getX(), shift.getY(), shift.getZ());
     }
 
@@ -712,7 +712,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      * @return <code>true</code> if overlapping
      */
     public boolean overlaps(@NotNull BoundingBox other) {
-        Validate.notNull(other, "Other bounding box is null!");
+        Preconditions.checkArgument(other != null, "Other bounding box is null!");
         return this.overlaps(other.minX, other.minY, other.minZ, other.maxX, other.maxY, other.maxZ);
     }
 
@@ -728,8 +728,8 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      * @return <code>true</code> if overlapping
      */
     public boolean overlaps(@NotNull Vector min, @NotNull Vector max) {
-        Validate.notNull(min, "Min is null!");
-        Validate.notNull(max, "Max is null!");
+        Preconditions.checkArgument(min != null, "Min is null!");
+        Preconditions.checkArgument(max != null, "Max is null!");
         double x1 = min.getX();
         double y1 = min.getY();
         double z1 = min.getZ();
@@ -773,7 +773,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      * @return <code>true</code> if the bounding box contains the position
      */
     public boolean contains(@NotNull Vector position) {
-        Validate.notNull(position, "Position is null!");
+        Preconditions.checkArgument(position != null, "Position is null!");
         return this.contains(position.getX(), position.getY(), position.getZ());
     }
 
@@ -791,7 +791,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      * box
      */
     public boolean contains(@NotNull BoundingBox other) {
-        Validate.notNull(other, "Other bounding box is null!");
+        Preconditions.checkArgument(other != null, "Other bounding box is null!");
         return this.contains(other.minX, other.minY, other.minZ, other.maxX, other.maxY, other.maxZ);
     }
 
@@ -805,8 +805,8 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      *     bounding box
      */
     public boolean contains(@NotNull Vector min, @NotNull Vector max) {
-        Validate.notNull(min, "Min is null!");
-        Validate.notNull(max, "Max is null!");
+        Preconditions.checkArgument(min != null, "Min is null!");
+        Preconditions.checkArgument(max != null, "Max is null!");
         double x1 = min.getX();
         double y1 = min.getY();
         double z1 = min.getZ();
@@ -831,11 +831,11 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
      */
     @Nullable
     public RayTraceResult rayTrace(@NotNull Vector start, @NotNull Vector direction, double maxDistance) {
-        Validate.notNull(start, "Start is null!");
+        Preconditions.checkArgument(start != null, "Start is null!");
         start.checkFinite();
-        Validate.notNull(direction, "Direction is null!");
+        Preconditions.checkArgument(direction != null, "Direction is null!");
         direction.checkFinite();
-        Validate.isTrue(direction.lengthSquared() > 0, "Direction's magnitude is 0!");
+        Preconditions.checkArgument(direction.lengthSquared() > 0, "Direction's magnitude is 0!");
         if (maxDistance < 0.0D) return null;
 
         // ray start:

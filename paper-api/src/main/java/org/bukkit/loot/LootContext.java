@@ -1,6 +1,6 @@
 package org.bukkit.loot;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
@@ -22,8 +22,8 @@ public final class LootContext {
     private final HumanEntity killer;
 
     private LootContext(@NotNull Location location, float luck, int lootingModifier, @Nullable Entity lootedEntity, @Nullable HumanEntity killer) {
-        Validate.notNull(location, "LootContext location cannot be null");
-        Validate.notNull(location.getWorld(), "LootContext World cannot be null");
+        Preconditions.checkArgument(location != null, "LootContext location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "LootContext World cannot be null");
         this.location = location;
         this.luck = luck;
         this.lootingModifier = lootingModifier;

@@ -1,7 +1,7 @@
 package org.bukkit.util;
 
+import com.google.common.base.Preconditions;
 import java.util.Objects;
-import org.apache.commons.lang.Validate;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
@@ -24,7 +24,7 @@ public class RayTraceResult {
     private final Entity hitEntity;
 
     private RayTraceResult(@NotNull Vector hitPosition, @Nullable Block hitBlock, @Nullable BlockFace hitBlockFace, @Nullable Entity hitEntity) {
-        Validate.notNull(hitPosition, "Hit position is null!");
+        Preconditions.checkArgument(hitPosition != null, "Hit position is null!");
         this.hitPosition = hitPosition.clone();
         this.hitBlock = hitBlock;
         this.hitBlockFace = hitBlockFace;

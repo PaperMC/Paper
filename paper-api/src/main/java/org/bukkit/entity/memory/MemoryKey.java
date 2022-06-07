@@ -65,6 +65,10 @@ public final class MemoryKey<T> implements Keyed {
     public static final MemoryKey<Integer> LONG_JUMP_COOLING_DOWN = new MemoryKey<>(NamespacedKey.minecraft("long_jump_cooling_down"), Integer.class);
     public static final MemoryKey<Boolean> HAS_HUNTING_COOLDOWN = new MemoryKey<>(NamespacedKey.minecraft("has_hunting_cooldown"), Boolean.class);
     public static final MemoryKey<Integer> RAM_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("ram_cooldown_ticks"), Integer.class);
+    public static final MemoryKey<UUID> LIKED_PLAYER = new MemoryKey<>(NamespacedKey.minecraft("liked_player"), UUID.class);
+    public static final MemoryKey<Location> LIKED_NOTEBLOCK_POSITION = new MemoryKey<>(NamespacedKey.minecraft("liked_noteblock"), Location.class);
+    public static final MemoryKey<Integer> LIKED_NOTEBLOCK_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("liked_noteblock_cooldown_ticks"), Integer.class);
+    public static final MemoryKey<Integer> ITEM_PICKUP_COOLDOWN_TICKS = new MemoryKey<>(NamespacedKey.minecraft("item_pickup_cooldown_ticks"), Integer.class);
 
     /**
      * Returns a {@link MemoryKey} by a {@link NamespacedKey}.

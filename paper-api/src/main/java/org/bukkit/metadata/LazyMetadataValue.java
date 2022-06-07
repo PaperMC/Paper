@@ -1,8 +1,8 @@
 package org.bukkit.metadata;
 
+import com.google.common.base.Preconditions;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.Callable;
-import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,8 +47,8 @@ public class LazyMetadataValue extends MetadataValueAdapter {
      */
     public LazyMetadataValue(@NotNull Plugin owningPlugin, @NotNull CacheStrategy cacheStrategy, @NotNull Callable<Object> lazyValue) {
         super(owningPlugin);
-        Validate.notNull(cacheStrategy, "cacheStrategy cannot be null");
-        Validate.notNull(lazyValue, "lazyValue cannot be null");
+        Preconditions.checkArgument(cacheStrategy != null, "cacheStrategy cannot be null");
+        Preconditions.checkArgument(lazyValue != null, "lazyValue cannot be null");
         this.internalValue = new SoftReference<Object>(null);
         this.lazyValue = lazyValue;
         this.cacheStrategy = cacheStrategy;

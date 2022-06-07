@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -121,7 +120,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
     @Deprecated
     @NotNull
     public ShapelessRecipe addIngredient(int count, @NotNull Material ingredient, int rawdata) {
-        Validate.isTrue(ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
+        Preconditions.checkArgument(ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
 
         // -1 is the old wildcard, map to Short.MAX_VALUE as the new one
         if (rawdata == -1) {
@@ -136,7 +135,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
 
     @NotNull
     public ShapelessRecipe addIngredient(@NotNull RecipeChoice ingredient) {
-        Validate.isTrue(ingredients.size() + 1 <= 9, "Shapeless recipes cannot have more than 9 ingredients");
+        Preconditions.checkArgument(ingredients.size() + 1 <= 9, "Shapeless recipes cannot have more than 9 ingredients");
 
         ingredients.add(ingredient);
         return this;

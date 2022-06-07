@@ -1,9 +1,9 @@
 package org.bukkit.event.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Cancellable;
@@ -70,7 +70,7 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
      * @param intensity relative to maximum effect
      */
     public void setIntensity(@NotNull LivingEntity entity, double intensity) {
-        Validate.notNull(entity, "You must specify a valid entity.");
+        Preconditions.checkArgument(entity != null, "You must specify a valid entity.");
         if (intensity <= 0.0) {
             affectedEntities.remove(entity);
         } else {

@@ -1,6 +1,6 @@
 package org.bukkit.event.inventory;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -33,7 +33,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
     private final boolean didSourceInitiate;
 
     public InventoryMoveItemEvent(@NotNull final Inventory sourceInventory, @NotNull final ItemStack itemStack, @NotNull final Inventory destinationInventory, final boolean didSourceInitiate) {
-        Validate.notNull(itemStack, "ItemStack cannot be null");
+        Preconditions.checkArgument(itemStack != null, "ItemStack cannot be null");
         this.sourceInventory = sourceInventory;
         this.itemStack = itemStack;
         this.destinationInventory = destinationInventory;
@@ -69,7 +69,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
      * @param itemStack The ItemStack
      */
     public void setItem(@NotNull ItemStack itemStack) {
-        Validate.notNull(itemStack, "ItemStack cannot be null.  Cancel the event if you want nothing to be transferred.");
+        Preconditions.checkArgument(itemStack != null, "ItemStack cannot be null.  Cancel the event if you want nothing to be transferred.");
         this.itemStack = itemStack.clone();
     }
 

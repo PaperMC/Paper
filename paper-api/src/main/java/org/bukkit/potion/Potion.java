@@ -1,7 +1,7 @@
 package org.bukkit.potion;
 
+import com.google.common.base.Preconditions;
 import java.util.Collection;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -28,7 +28,7 @@ public class Potion {
      * @param type The potion type
      */
     public Potion(@NotNull PotionType type) {
-        Validate.notNull(type, "Null PotionType");
+        Preconditions.checkArgument(type != null, "Null PotionType");
         this.type = type;
     }
 
@@ -40,8 +40,8 @@ public class Potion {
      */
     public Potion(@NotNull PotionType type, int level) {
         this(type);
-        Validate.notNull(type, "Type cannot be null");
-        Validate.isTrue(level > 0 && level < 3, "Level must be 1 or 2");
+        Preconditions.checkArgument(type != null, "Type cannot be null");
+        Preconditions.checkArgument(level > 0 && level < 3, "Level must be 1 or 2");
         this.level = level;
     }
 
@@ -105,9 +105,9 @@ public class Potion {
      * @param to The itemstack to apply to
      */
     public void apply(@NotNull ItemStack to) {
-        Validate.notNull(to, "itemstack cannot be null");
-        Validate.isTrue(to.hasItemMeta(), "given itemstack is not a potion");
-        Validate.isTrue(to.getItemMeta() instanceof PotionMeta, "given itemstack is not a potion");
+        Preconditions.checkArgument(to != null, "itemstack cannot be null");
+        Preconditions.checkArgument(to.hasItemMeta(), "given itemstack is not a potion");
+        Preconditions.checkArgument(to.getItemMeta() instanceof PotionMeta, "given itemstack is not a potion");
         PotionMeta meta = (PotionMeta) to.getItemMeta();
         meta.setBasePotionData(new PotionData(type, extended, level == 2));
         to.setItemMeta(meta);
@@ -121,7 +121,7 @@ public class Potion {
      * @see LivingEntity#addPotionEffects(Collection)
      */
     public void apply(@NotNull LivingEntity to) {
-        Validate.notNull(to, "entity cannot be null");
+        Preconditions.checkArgument(to != null, "entity cannot be null");
         to.addPotionEffects(getEffects());
     }
 
@@ -204,7 +204,7 @@ public class Potion {
      * @param isExtended Whether the potion should have extended duration
      */
     public void setHasExtendedDuration(boolean isExtended) {
-        Validate.isTrue(type == null || !type.isInstant(), "Instant potions cannot be extended");
+        Preconditions.checkArgument(type == null || !type.isInstant(), "Instant potions cannot be extended");
         extended = isExtended;
     }
 
@@ -233,8 +233,8 @@ public class Potion {
      * @param level The new level of this potion
      */
     public void setLevel(int level) {
-        Validate.notNull(this.type, "No-effect potions don't have a level.");
-        Validate.isTrue(level > 0 && level <= 2, "Level must be between 1 and 2 for this potion");
+        Preconditions.checkArgument(this.type != null, "No-effect potions don't have a level.");
+        Preconditions.checkArgument(level > 0 && level <= 2, "Level must be between 1 and 2 for this potion");
         this.level = level;
     }
 
@@ -354,7 +354,7 @@ public class Potion {
 
     @NotNull
     public static Potion fromItemStack(@NotNull ItemStack item) {
-        Validate.notNull(item, "item cannot be null");
+        Preconditions.checkArgument(item != null, "item cannot be null");
         if (item.getType() != Material.POTION)
             throw new IllegalArgumentException("item is not a potion");
         return fromDamage(item.getDurability());

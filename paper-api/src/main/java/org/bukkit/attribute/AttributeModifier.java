@@ -1,10 +1,10 @@
 package org.bukkit.attribute;
 
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import org.apache.commons.lang.Validate;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.NumberConversions;
@@ -31,9 +31,9 @@ public class AttributeModifier implements ConfigurationSerializable {
     }
 
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation, @Nullable EquipmentSlot slot) {
-        Validate.notNull(uuid, "UUID cannot be null");
-        Validate.notNull(name, "Name cannot be null");
-        Validate.notNull(operation, "Operation cannot be null");
+        Preconditions.checkArgument(uuid != null, "UUID cannot be null");
+        Preconditions.checkArgument(name != null, "Name cannot be null");
+        Preconditions.checkArgument(operation != null, "Operation cannot be null");
         this.uuid = uuid;
         this.name = name;
         this.amount = amount;

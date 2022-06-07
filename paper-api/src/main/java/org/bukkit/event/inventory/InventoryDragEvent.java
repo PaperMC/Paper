@@ -1,10 +1,10 @@
 package org.bukkit.event.inventory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -65,8 +65,8 @@ public class InventoryDragEvent extends InventoryInteractEvent {
     public InventoryDragEvent(@NotNull InventoryView what, @Nullable ItemStack newCursor, @NotNull ItemStack oldCursor, boolean right, @NotNull Map<Integer, ItemStack> slots) {
         super(what);
 
-        Validate.notNull(oldCursor);
-        Validate.notNull(slots);
+        Preconditions.checkArgument(oldCursor != null);
+        Preconditions.checkArgument(slots != null);
 
         type = right ? DragType.SINGLE : DragType.EVEN;
         this.newCursor = newCursor;

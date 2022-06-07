@@ -1,9 +1,9 @@
 package org.bukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Utility;
@@ -79,7 +79,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      */
     @Deprecated
     public ItemStack(@NotNull final Material type, final int amount, final short damage, @Nullable final Byte data) {
-        Validate.notNull(type, "Material cannot be null");
+        Preconditions.checkArgument(type != null, "Material cannot be null");
         this.type = type;
         this.amount = amount;
         if (damage != 0) {
@@ -98,7 +98,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      *     returns an item meta not created by the item factory
      */
     public ItemStack(@NotNull final ItemStack stack) throws IllegalArgumentException {
-        Validate.notNull(stack, "Cannot copy null stack");
+        Preconditions.checkArgument(stack != null, "Cannot copy null stack");
         this.type = stack.getType();
         this.amount = stack.getAmount();
         if (this.type.isLegacy()) {
@@ -133,7 +133,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      */
     @Utility
     public void setType(@NotNull Material type) {
-        Validate.notNull(type, "Material cannot be null");
+        Preconditions.checkArgument(type != null, "Material cannot be null");
         this.type = type;
         if (this.meta != null) {
             this.meta = Bukkit.getItemFactory().asMetaFor(meta, type);
@@ -368,7 +368,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      */
     @Utility
     public void addEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
-        Validate.notNull(enchantments, "Enchantments cannot be null");
+        Preconditions.checkArgument(enchantments != null, "Enchantments cannot be null");
         for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             addEnchantment(entry.getKey(), entry.getValue());
         }
@@ -387,7 +387,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      */
     @Utility
     public void addEnchantment(@NotNull Enchantment ench, int level) {
-        Validate.notNull(ench, "Enchantment cannot be null");
+        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
         if ((level < ench.getStartLevel()) || (level > ench.getMaxLevel())) {
             throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + ench.getStartLevel() + " to " + ench.getMaxLevel() + ")");
         } else if (!ench.canEnchantItem(this)) {

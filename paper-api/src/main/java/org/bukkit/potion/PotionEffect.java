@@ -1,9 +1,9 @@
 package org.bukkit.potion;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -44,7 +44,7 @@ public class PotionEffect implements ConfigurationSerializable {
      * @param icon the icon status, see {@link PotionEffect#hasIcon()}
      */
     public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon) {
-        Validate.notNull(type, "effect type cannot be null");
+        Preconditions.checkArgument(type != null, "effect type cannot be null");
         this.type = type;
         this.duration = duration;
         this.amplifier = amplifier;

@@ -1,5 +1,7 @@
 package org.bukkit.command.defaults;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,10 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
-import org.apache.commons.lang.math.NumberUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -45,10 +43,10 @@ public class HelpCommand extends BukkitCommand {
         if (args.length == 0) {
             command = "";
             pageNumber = 1;
-        } else if (NumberUtils.isDigits(args[args.length - 1])) {
-            command = StringUtils.join(ArrayUtils.subarray(args, 0, args.length - 1), " ");
+        } else if (args[args.length - 1].chars().allMatch(Character::isDigit)) {
+            command = Joiner.on(" ").join(Arrays.copyOfRange(args, 0, args.length - 1));
             try {
-                pageNumber = NumberUtils.createInteger(args[args.length - 1]);
+                pageNumber = Integer.decode(args[args.length - 1]);
             } catch (NumberFormatException exception) {
                 pageNumber = 1;
             }
@@ -56,7 +54,7 @@ public class HelpCommand extends BukkitCommand {
                 pageNumber = 1;
             }
         } else {
-            command = StringUtils.join(args, " ");
+            command = Joiner.on(" ").join(args);
             pageNumber = 1;
         }
 
@@ -114,9 +112,9 @@ public class HelpCommand extends BukkitCommand {
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
-        Validate.notNull(sender, "Sender cannot be null");
-        Validate.notNull(args, "Arguments cannot be null");
-        Validate.notNull(alias, "Alias cannot be null");
+        Preconditions.checkArgument(sender != null, "Sender cannot be null");
+        Preconditions.checkArgument(args != null, "Arguments cannot be null");
+        Preconditions.checkArgument(alias != null, "Alias cannot be null");
 
         if (args.length == 1) {
             List<String> matchedTopics = new ArrayList<String>();

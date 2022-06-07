@@ -1,9 +1,9 @@
 package org.bukkit;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -180,8 +180,8 @@ public enum ChatColor {
      */
     @Nullable
     public static ChatColor getByChar(@NotNull String code) {
-        Validate.notNull(code, "Code cannot be null");
-        Validate.isTrue(code.length() > 0, "Code must have at least one char");
+        Preconditions.checkArgument(code != null, "Code cannot be null");
+        Preconditions.checkArgument(code.length() > 0, "Code must have at least one char");
 
         return BY_CHAR.get(code.charAt(0));
     }
@@ -214,7 +214,7 @@ public enum ChatColor {
      */
     @NotNull
     public static String translateAlternateColorCodes(char altColorChar, @NotNull String textToTranslate) {
-        Validate.notNull(textToTranslate, "Cannot translate null text");
+        Preconditions.checkArgument(textToTranslate != null, "Cannot translate null text");
 
         char[] b = textToTranslate.toCharArray();
         for (int i = 0; i < b.length - 1; i++) {
@@ -234,7 +234,7 @@ public enum ChatColor {
      */
     @NotNull
     public static String getLastColors(@NotNull String input) {
-        Validate.notNull(input, "Cannot get last colors from null text");
+        Preconditions.checkArgument(input != null, "Cannot get last colors from null text");
 
         String result = "";
         int length = input.length();

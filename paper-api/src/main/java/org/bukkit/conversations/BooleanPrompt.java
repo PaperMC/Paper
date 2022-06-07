@@ -1,7 +1,8 @@
 package org.bukkit.conversations;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.BooleanUtils;
+import com.google.common.collect.ImmutableSet;
+import java.util.Locale;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,21 +12,23 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class BooleanPrompt extends ValidatingPrompt {
 
+    private static final Set<String> TRUE_INPUTS = ImmutableSet.of("true", "on", "yes", "y", "1", "right", "correct", "valid");
+    private static final Set<String> FALSE_INPUTS = ImmutableSet.of("false", "off", "no", "n", "0", "wrong", "incorrect", "invalid");
+    private static final Set<String> VALID_INPUTS = ImmutableSet.<String>builder().addAll(TRUE_INPUTS).addAll(FALSE_INPUTS).build();
+
     public BooleanPrompt() {
         super();
     }
 
     @Override
     protected boolean isInputValid(@NotNull ConversationContext context, @NotNull String input) {
-        String[] accepted = {/* Apache values: */ "true", "false", "on", "off", "yes", "no", /* Additional values: */ "y", "n", "1", "0", "right", "wrong", "correct", "incorrect", "valid", "invalid"};
-        return ArrayUtils.contains(accepted, input.toLowerCase());
+        return VALID_INPUTS.contains(input.toLowerCase(Locale.ROOT));
     }
 
     @Nullable
     @Override
     protected Prompt acceptValidatedInput(@NotNull ConversationContext context, @NotNull String input) {
-        if (input.equalsIgnoreCase("y") || input.equals("1") || input.equalsIgnoreCase("right") || input.equalsIgnoreCase("correct") || input.equalsIgnoreCase("valid")) input = "true";
-        return acceptValidatedInput(context, BooleanUtils.toBoolean(input));
+        return acceptValidatedInput(context, TRUE_INPUTS.contains(input.toLowerCase(Locale.ROOT)));
     }
 
     /**

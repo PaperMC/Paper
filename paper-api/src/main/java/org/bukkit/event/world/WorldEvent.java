@@ -11,6 +11,11 @@ public abstract class WorldEvent extends Event {
     private final World world;
 
     public WorldEvent(@NotNull final World world) {
+        this(world, false);
+    }
+
+    public WorldEvent(@NotNull World world, boolean isAsync) {
+        super(isAsync);
         this.world = world;
     }
 

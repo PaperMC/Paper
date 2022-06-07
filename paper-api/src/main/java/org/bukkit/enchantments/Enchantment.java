@@ -205,6 +205,11 @@ public abstract class Enchantment implements Keyed {
      */
     public static final Enchantment SOUL_SPEED = new EnchantmentWrapper("soul_speed");
 
+    /**
+     * Walk quicker while sneaking
+     */
+    public static final Enchantment SWIFT_SNEAK = new EnchantmentWrapper("swift_sneak");
+
     private static final Map<NamespacedKey, Enchantment> byKey = new HashMap<NamespacedKey, Enchantment>();
     private static final Map<String, Enchantment> byName = new HashMap<String, Enchantment>();
     private static boolean acceptingNew = true;

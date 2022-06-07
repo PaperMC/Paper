@@ -1,8 +1,8 @@
 package org.bukkit;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import java.util.HashMap;
-import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +35,11 @@ public enum Art implements Keyed {
     PIGSCENE(22, 4, 4),
     BURNING_SKULL(23, 4, 4),
     SKELETON(24, 4, 3),
-    DONKEY_KONG(25, 4, 3);
+    DONKEY_KONG(25, 4, 3),
+    EARTH(26, 2, 2),
+    WIND(27, 2, 2),
+    WATER(28, 2, 2),
+    FIRE(29, 2, 2);
 
     private final int id, width, height;
     private final NamespacedKey key;
@@ -107,7 +111,7 @@ public enum Art implements Keyed {
      */
     @Nullable
     public static Art getByName(@NotNull String name) {
-        Validate.notNull(name, "Name cannot be null");
+        Preconditions.checkArgument(name != null, "Name cannot be null");
 
         return BY_NAME.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }

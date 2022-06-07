@@ -1,7 +1,7 @@
 package org.bukkit.command;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
-import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -128,9 +128,9 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
     @NotNull
     @Override
     public java.util.List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws CommandException, IllegalArgumentException {
-        Validate.notNull(sender, "Sender cannot be null");
-        Validate.notNull(args, "Arguments cannot be null");
-        Validate.notNull(alias, "Alias cannot be null");
+        Preconditions.checkArgument(sender != null, "Sender cannot be null");
+        Preconditions.checkArgument(args != null, "Arguments cannot be null");
+        Preconditions.checkArgument(alias != null, "Alias cannot be null");
 
         List<String> completions = null;
         try {

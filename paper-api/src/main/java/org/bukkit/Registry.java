@@ -12,6 +12,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Frog;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.loot.LootTables;
@@ -170,6 +171,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Fluid
      */
     Registry<Fluid> FLUID = new SimpleRegistry<>(Fluid.class);
+    /**
+     * Frog variants.
+     *
+     * @see Frog.Variant
+     */
+    Registry<Frog.Variant> FROG_VARIANT = new SimpleRegistry<>(Frog.Variant.class);
     /**
      * Game events.
      *

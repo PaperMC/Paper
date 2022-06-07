@@ -1,5 +1,6 @@
 package org.bukkit.plugin.java;
 
+import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +20,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Level;
-import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.SimplePluginManager;
@@ -50,7 +50,7 @@ final class PluginClassLoader extends URLClassLoader {
 
     PluginClassLoader(@NotNull final JavaPluginLoader loader, @Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader) throws IOException, InvalidPluginException, MalformedURLException {
         super(new URL[] {file.toURI().toURL()}, parent);
-        Validate.notNull(loader, "Loader cannot be null");
+        Preconditions.checkArgument(loader != null, "Loader cannot be null");
 
         this.loader = loader;
         this.description = description;
@@ -219,8 +219,8 @@ final class PluginClassLoader extends URLClassLoader {
     }
 
     synchronized void initialize(@NotNull JavaPlugin javaPlugin) {
-        Validate.notNull(javaPlugin, "Initializing plugin cannot be null");
-        Validate.isTrue(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
+        Preconditions.checkArgument(javaPlugin != null, "Initializing plugin cannot be null");
+        Preconditions.checkArgument(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
         if (this.plugin != null || this.pluginInit != null) {
             throw new IllegalArgumentException("Plugin already initialized!", pluginState);
         }

@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -61,15 +60,15 @@ public class ShapedRecipe implements Recipe, Keyed {
      */
     @NotNull
     public ShapedRecipe shape(@NotNull final String... shape) {
-        Validate.notNull(shape, "Must provide a shape");
-        Validate.isTrue(shape.length > 0 && shape.length < 4, "Crafting recipes should be 1, 2 or 3 rows, not ", shape.length);
+        Preconditions.checkArgument(shape != null, "Must provide a shape");
+        Preconditions.checkArgument(shape.length > 0 && shape.length < 4, "Crafting recipes should be 1, 2 or 3 rows, not ", shape.length);
 
         int lastLen = -1;
         for (String row : shape) {
-            Validate.notNull(row, "Shape cannot have null rows");
-            Validate.isTrue(row.length() > 0 && row.length() < 4, "Crafting rows should be 1, 2, or 3 characters, not ", row.length());
+            Preconditions.checkArgument(row != null, "Shape cannot have null rows");
+            Preconditions.checkArgument(row.length() > 0 && row.length() < 4, "Crafting rows should be 1, 2, or 3 characters, not ", row.length());
 
-            Validate.isTrue(lastLen == -1 || lastLen == row.length(), "Crafting recipes must be rectangular");
+            Preconditions.checkArgument(lastLen == -1 || lastLen == row.length(), "Crafting recipes must be rectangular");
             lastLen = row.length();
         }
         this.rows = new String[shape.length];
@@ -125,7 +124,7 @@ public class ShapedRecipe implements Recipe, Keyed {
     @Deprecated
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull Material ingredient, int raw) {
-        Validate.isTrue(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
+        Preconditions.checkArgument(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
 
         // -1 is the old wildcard, map to Short.MAX_VALUE as the new one
         if (raw == -1) {
@@ -138,7 +137,7 @@ public class ShapedRecipe implements Recipe, Keyed {
 
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull RecipeChoice ingredient) {
-        Validate.isTrue(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
+        Preconditions.checkArgument(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
 
         ingredients.put(key, ingredient);
         return this;

@@ -1,6 +1,6 @@
 package org.bukkit.potion;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
 public final class PotionData {
@@ -20,10 +20,10 @@ public final class PotionData {
      * must be true
      */
     public PotionData(@NotNull PotionType type, boolean extended, boolean upgraded) {
-        Validate.notNull(type, "Potion Type must not be null");
-        Validate.isTrue(!upgraded || type.isUpgradeable(), "Potion Type is not upgradable");
-        Validate.isTrue(!extended || type.isExtendable(), "Potion Type is not extendable");
-        Validate.isTrue(!upgraded || !extended, "Potion cannot be both extended and upgraded");
+        Preconditions.checkArgument(type != null, "Potion Type must not be null");
+        Preconditions.checkArgument(!upgraded || type.isUpgradeable(), "Potion Type is not upgradable");
+        Preconditions.checkArgument(!extended || type.isExtendable(), "Potion Type is not extendable");
+        Preconditions.checkArgument(!upgraded || !extended, "Potion cannot be both extended and upgraded");
         this.type = type;
         this.extended = extended;
         this.upgraded = upgraded;

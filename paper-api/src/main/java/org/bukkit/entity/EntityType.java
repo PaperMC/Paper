@@ -271,6 +271,11 @@ public enum EntityType implements Keyed {
     GLOW_SQUID("glow_squid", GlowSquid.class, -1),
     GOAT("goat", Goat.class, -1),
     MARKER("marker", Marker.class, -1),
+    ALLAY("allay", Allay.class, -1),
+    CHEST_BOAT("chest_boat", ChestBoat.class, -1),
+    FROG("frog", Frog.class, -1),
+    TADPOLE("tadpole", Tadpole.class, -1),
+    WARDEN("warden", Warden.class, -1),
     /**
      * A fishing line and bobber.
      */

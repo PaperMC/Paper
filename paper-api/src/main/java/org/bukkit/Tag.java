@@ -44,7 +44,12 @@ public interface Tag<T extends Keyed> extends Keyed {
     /**
      * Vanilla block tag representing all colors of carpet.
      */
-    Tag<Material> CARPETS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("carpets"), Material.class);
+    Tag<Material> WOOL_CARPETS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wool_carpets"), Material.class);
+    /**
+     * @deprecated {@link #WOOL_CARPETS}.
+     */
+    @Deprecated
+    Tag<Material> CARPETS = WOOL_CARPETS;
     /**
      * Vanilla block tag representing all wooden doors.
      */
@@ -91,6 +96,11 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> LOGS_THAT_BURN = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("logs_that_burn"), Material.class);
     /**
+     * Vanilla block tag representing all log bark variants that appear
+     * naturally in the overworld.
+     */
+    Tag<Material> OVERWORLD_NATURAL_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("overworld_natural_logs"), Material.class);
+    /**
      * Vanilla block tag representing all log and bark variants.
      */
     Tag<Material> LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("logs"), Material.class);
@@ -118,6 +128,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all spruce log and bark variants.
      */
     Tag<Material> SPRUCE_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("spruce_logs"), Material.class);
+    /**
+     * Vanilla block tag representing all mangrove log and bark variants.
+     */
+    Tag<Material> MANGROVE_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("mangrove_logs"), Material.class);
     /**
      * Vanilla block tag representing all crimson stems.
      */
@@ -240,6 +254,11 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> TERRACOTTA = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("terracotta"), Material.class);
     /**
+     * Vanilla block tag representing all blocks which complete the find tree
+     * tutorial.
+     */
+    Tag<Material> COMPLETES_FIND_TREE_TUTORIAL = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("completes_find_tree_tutorial"), Material.class);
+    /**
      * Vanilla block tag denoting blocks that enderman may pick up and hold.
      */
     Tag<Material> ENDERMAN_HOLDABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("enderman_holdable"), Material.class);
@@ -295,6 +314,11 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all blocks immune to dragons.
      */
     Tag<Material> DRAGON_IMMUNE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dragon_immune"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks transparent to the ender
+     * dragon.
+     */
+    Tag<Material> DRAGON_TRANSPARENT = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dragon_transparent"), Material.class);
     /**
      * Vanilla block tag representing all blocks immune to withers.
      */
@@ -423,6 +447,16 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> BASE_STONE_NETHER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("base_stone_nether"), Material.class);
     /**
+     * Vanilla block tag representing all blocks replaceable by the overworld
+     * carver.
+     */
+    Tag<Material> OVERWORLD_CARVER_REPLACEABLES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("overworld_carver_replaceables"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks replaceable by the nether
+     * carver.
+     */
+    Tag<Material> NETHER_CARVER_REPLACEABLES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("nether_carver_replaceables"), Material.class);
+    /**
      * Vanilla block tag representing all candle cakes.
      */
     Tag<Material> CANDLE_CAKES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("candle_cakes"), Material.class);
@@ -442,6 +476,11 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all blocks that block vibration signals.
      */
     Tag<Material> OCCLUDES_VIBRATION_SIGNALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("occludes_vibration_signals"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks that dampen the propagation of
+     * vibration signals.
+     */
+    Tag<Material> DAMPENS_VIBRATIONS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dampens_vibrations"), Material.class);
     /**
      * Vanilla block tag representing all blocks that are replaceable by
      * dripstone.
@@ -520,6 +559,24 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> GEODE_INVALID_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("geode_invalid_blocks"), Material.class);
     /**
+     * Vanilla block tag representing all blocks which frogs prefer to jump to.
+     */
+    Tag<Material> FROG_PREFER_JUMP_TO = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("frog_prefer_jump_to"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which can be replaced by skulk.
+     */
+    Tag<Material> SCULK_REPLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("sculk_replaceable"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which can be replaced by skulk
+     * during world generation.
+     */
+    Tag<Material> SCULK_REPLACEABLE_WORLD_GEN = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("sculk_replaceable_world_gen"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which can be replaced by
+     * ancient cities.
+     */
+    Tag<Material> ANCIENT_CITY_REPLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("ancient_city_replaceable"), Material.class);
+    /**
      * Vanilla block tag representing all blocks which animals will spawn on.
      */
     Tag<Material> ANIMALS_SPAWNABLE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("animals_spawnable_on"), Material.class);
@@ -543,7 +600,12 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all blocks which polar bears will spawn
      * on.
      */
-    Tag<Material> POLAR_BEARS_SPAWNABLE_ON_IN_FROZEN_OCEAN = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("polar_bears_spawnable_on_in_frozen_ocean"), Material.class);
+    Tag<Material> POLAR_BEARS_SPAWNABLE_ON_ALTERNATE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("polar_bears_spawnable_on_alternate"), Material.class);
+    /**
+     * @deprecated {@link #POLAR_BEARS_SPAWNABLE_ON_ALTERNATE}
+     */
+    @Deprecated
+    Tag<Material> POLAR_BEARS_SPAWNABLE_ON_IN_FROZEN_OCEAN = POLAR_BEARS_SPAWNABLE_ON_ALTERNATE;
     /**
      * Vanilla block tag representing all blocks which rabbits will spawn on.
      */
@@ -557,6 +619,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> WOLVES_SPAWNABLE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wolves_spawnable_on"), Material.class);
     /**
+     * Vanilla block tag representing all blocks which frogs will spawn on.
+     */
+    Tag<Material> FROGS_SPAWNABLE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("frogs_spawnable_on"), Material.class);
+    /**
      * Vanilla block tag representing all blocks which azaleas will grow on.
      */
     Tag<Material> AZALEA_GROWS_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("azalea_grows_on"), Material.class);
@@ -564,6 +630,37 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all plant blocks which may be replaced.
      */
     Tag<Material> REPLACEABLE_PLANTS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("replaceable_plants"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which may be converted to mud.
+     */
+    Tag<Material> CONVERTABLE_TO_MUD = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("convertable_to_mud"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which mangrove logs can grow
+     * through.
+     */
+    Tag<Material> MANGROVE_LOGS_CAN_GROW_THROUGH = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("mangrove_logs_can_grow_through"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which mangrove roots can grow
+     * through.
+     */
+    Tag<Material> MANGROVE_ROOTS_CAN_GROW_THROUGH = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("mangrove_roots_can_grow_through"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which dead bushes may be placed
+     * on.
+     */
+    Tag<Material> DEAD_BUSH_MAY_PLACE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dead_bush_may_place_on"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which snap dropped goat horns.
+     */
+    Tag<Material> SNAPS_GOAT_HORN = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("snaps_goat_horn"), Material.class);
+    /**
+     * Vanilla block tag representing blocks which snow cannot survive on.
+     */
+    Tag<Material> SNOW_LAYER_CANNOT_SURVIVE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("snow_layer_cannot_survive_on"), Material.class);
+    /**
+     * Vanilla block tag representing blocks which snow can survive on.
+     */
+    Tag<Material> SNOW_LAYER_CAN_SURVIVE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("snow_layer_can_survive_on"), Material.class);
     /**
      * Key for the built in item registry.
      */
@@ -592,6 +689,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla item tag representing all boat items.
      */
     Tag<Material> ITEMS_BOATS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("boats"), Material.class);
+    /**
+     * Vanilla item tag representing all chest boat items.
+     */
+    Tag<Material> ITEMS_CHEST_BOATS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("chest_boats"), Material.class);
     /**
      * Vanilla item tag representing all fish items.
      */
@@ -628,6 +729,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla item tag representing all furnace materials.
      */
     Tag<Material> ITEMS_FURNACE_MATERIALS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("furnace_materials"), Material.class);
+    /**
+     * Vanilla item tag representing all compasses.
+     */
+    Tag<Material> ITEMS_COMPASSES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("compasses"), Material.class);
     /**
      * Vanilla item tag representing all items that confer freeze immunity on
      * the wearer.
@@ -698,6 +803,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla tag representing entities extra susceptible to freezing.
      */
     Tag<EntityType> ENTITY_TYPES_FREEZE_HURTS_EXTRA_TYPES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("freeze_hurts_extra_types"), EntityType.class);
+    /**
+     * Vanilla tag representing entities which can be eaten by frogs.
+     */
+    Tag<EntityType> ENTITY_TYPES_FROG_FOOD = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("frog_food"), EntityType.class);
 
     /**
      * Returns whether or not this tag has an entry for the specified item.

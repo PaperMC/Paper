@@ -1,8 +1,8 @@
 package org.bukkit.material;
 
+import com.google.common.base.Preconditions;
 import java.util.EnumSet;
 import java.util.Set;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.material.types.MushroomBlockTexture;
@@ -37,7 +37,7 @@ public class Mushroom extends MaterialData {
      */
     public Mushroom(Material shroom) {
         super(shroom);
-        Validate.isTrue(shroom == Material.LEGACY_HUGE_MUSHROOM_1 || shroom == Material.LEGACY_HUGE_MUSHROOM_2, "Not a mushroom!");
+        Preconditions.checkArgument(shroom == Material.LEGACY_HUGE_MUSHROOM_1 || shroom == Material.LEGACY_HUGE_MUSHROOM_2, "Not a mushroom!");
     }
 
     /**
@@ -82,7 +82,7 @@ public class Mushroom extends MaterialData {
     @Deprecated
     public Mushroom(Material shroom, byte data) {
         super(shroom, data);
-        Validate.isTrue(shroom == Material.LEGACY_HUGE_MUSHROOM_1 || shroom == Material.LEGACY_HUGE_MUSHROOM_2, "Not a mushroom!");
+        Preconditions.checkArgument(shroom == Material.LEGACY_HUGE_MUSHROOM_1 || shroom == Material.LEGACY_HUGE_MUSHROOM_2, "Not a mushroom!");
     }
 
     /**

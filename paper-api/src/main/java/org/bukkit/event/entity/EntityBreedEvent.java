@@ -1,6 +1,6 @@
 package org.bukkit.event.entity;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -26,9 +26,9 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
     public EntityBreedEvent(@NotNull LivingEntity child, @NotNull LivingEntity mother, @NotNull LivingEntity father, @Nullable LivingEntity breeder, @Nullable ItemStack bredWith, int experience) {
         super(child);
 
-        Validate.notNull(child, "Cannot have null child");
-        Validate.notNull(mother, "Cannot have null mother");
-        Validate.notNull(father, "Cannot have null father");
+        Preconditions.checkArgument(child != null, "Cannot have null child");
+        Preconditions.checkArgument(mother != null, "Cannot have null mother");
+        Preconditions.checkArgument(father != null, "Cannot have null father");
 
         // Breeder can be null in the case of spontaneous conception
         this.mother = mother;
@@ -101,7 +101,7 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
      * @param experience experience amount
      */
     public void setExperience(int experience) {
-        Validate.isTrue(experience >= 0, "Experience cannot be negative");
+        Preconditions.checkArgument(experience >= 0, "Experience cannot be negative");
         this.experience = experience;
     }
 

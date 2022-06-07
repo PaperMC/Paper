@@ -1,11 +1,11 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.apache.commons.lang.Validate;
 import org.bukkit.map.MapCursor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -111,7 +111,7 @@ public final class StructureType implements Keyed {
      * They consist primarily of end stone bricks, purpur blocks, and end rods.
      * They are the only place where shulkers can be found.
      */
-    public static final StructureType END_CITY = register(new StructureType("endcity", MapCursor.Type.RED_X));
+    public static final StructureType END_CITY = register(new StructureType("end_city", MapCursor.Type.RED_X));
 
     /**
      * Mansions (also known as woodland mansions) are massive house structures
@@ -175,7 +175,7 @@ public final class StructureType implements Keyed {
      * not be compatible with explorer maps.
      */
     private StructureType(@NotNull String name, @Nullable MapCursor.Type mapIcon) {
-        Validate.notEmpty(name, "Structure name cannot be empty");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(name), "Structure name cannot be empty");
         this.key = NamespacedKey.minecraft(name);
         this.mapCursor = mapIcon;
     }

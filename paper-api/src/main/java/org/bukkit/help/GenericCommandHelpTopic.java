@@ -1,6 +1,6 @@
 package org.bukkit.help;
 
-import org.apache.commons.lang.StringUtils;
+import com.google.common.base.Joiner;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -54,7 +54,7 @@ public class GenericCommandHelpTopic extends HelpTopic {
             sb.append(ChatColor.GOLD);
             sb.append("Aliases: ");
             sb.append(ChatColor.WHITE);
-            sb.append(ChatColor.WHITE + StringUtils.join(command.getAliases(), ", "));
+            sb.append(Joiner.on(", ").join(command.getAliases()));
         }
         fullText = sb.toString();
     }

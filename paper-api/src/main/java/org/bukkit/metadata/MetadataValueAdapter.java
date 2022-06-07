@@ -1,7 +1,7 @@
 package org.bukkit.metadata;
 
+import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
-import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,7 @@ public abstract class MetadataValueAdapter implements MetadataValue {
     protected final WeakReference<Plugin> owningPlugin;
 
     protected MetadataValueAdapter(@NotNull Plugin owningPlugin) {
-        Validate.notNull(owningPlugin, "owningPlugin cannot be null");
+        Preconditions.checkArgument(owningPlugin != null, "owningPlugin cannot be null");
         this.owningPlugin = new WeakReference<Plugin>(owningPlugin);
     }
 

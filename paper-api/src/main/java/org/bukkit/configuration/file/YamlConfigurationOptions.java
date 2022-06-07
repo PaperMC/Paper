@@ -1,7 +1,7 @@
 package org.bukkit.configuration.file;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
-import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -95,8 +95,8 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
      */
     @NotNull
     public YamlConfigurationOptions indent(int value) {
-        Validate.isTrue(value >= 2, "Indent must be at least 2 characters");
-        Validate.isTrue(value <= 9, "Indent cannot be greater than 9 characters");
+        Preconditions.checkArgument(value >= 2, "Indent must be at least 2 characters");
+        Preconditions.checkArgument(value <= 9, "Indent cannot be greater than 9 characters");
 
         this.indent = value;
         return this;

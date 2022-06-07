@@ -1,6 +1,7 @@
 package org.bukkit.plugin.java;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,7 +14,6 @@ import java.net.URLConnection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -389,7 +389,7 @@ public abstract class JavaPlugin extends PluginBase {
      */
     @NotNull
     public static <T extends JavaPlugin> T getPlugin(@NotNull Class<T> clazz) {
-        Validate.notNull(clazz, "Null class cannot have a plugin");
+        Preconditions.checkArgument(clazz != null, "Null class cannot have a plugin");
         if (!JavaPlugin.class.isAssignableFrom(clazz)) {
             throw new IllegalArgumentException(clazz + " does not extend " + JavaPlugin.class);
         }
@@ -418,7 +418,7 @@ public abstract class JavaPlugin extends PluginBase {
      */
     @NotNull
     public static JavaPlugin getProvidingPlugin(@NotNull Class<?> clazz) {
-        Validate.notNull(clazz, "Null class cannot have a plugin");
+        Preconditions.checkArgument(clazz != null, "Null class cannot have a plugin");
         final ClassLoader cl = clazz.getClassLoader();
         if (!(cl instanceof PluginClassLoader)) {
             throw new IllegalArgumentException(clazz + " is not provided by " + PluginClassLoader.class);

@@ -1,7 +1,7 @@
 package org.bukkit.event.player;
 
+import com.google.common.base.Preconditions;
 import java.util.Collection;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -22,8 +22,8 @@ public class PlayerChatTabCompleteEvent extends PlayerEvent {
 
     public PlayerChatTabCompleteEvent(@NotNull final Player who, @NotNull final String message, @NotNull final Collection<String> completions) {
         super(who);
-        Validate.notNull(message, "Message cannot be null");
-        Validate.notNull(completions, "Completions cannot be null");
+        Preconditions.checkArgument(message != null, "Message cannot be null");
+        Preconditions.checkArgument(completions != null, "Completions cannot be null");
         this.message = message;
         int i = message.lastIndexOf(' ');
         if (i < 0) {

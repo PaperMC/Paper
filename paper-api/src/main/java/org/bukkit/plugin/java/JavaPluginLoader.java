@@ -1,5 +1,6 @@
 package org.bukkit.plugin.java;
 
+import com.google.common.base.Preconditions;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -18,7 +19,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Server;
 import org.bukkit.Warning;
 import org.bukkit.Warning.WarningState;
@@ -61,7 +61,7 @@ public final class JavaPluginLoader implements PluginLoader {
      */
     @Deprecated
     public JavaPluginLoader(@NotNull Server instance) {
-        Validate.notNull(instance, "Server cannot be null");
+        Preconditions.checkArgument(instance != null, "Server cannot be null");
         server = instance;
 
         LibraryLoader libraryLoader = null;
@@ -77,7 +77,7 @@ public final class JavaPluginLoader implements PluginLoader {
     @Override
     @NotNull
     public Plugin loadPlugin(@NotNull final File file) throws InvalidPluginException {
-        Validate.notNull(file, "File cannot be null");
+        Preconditions.checkArgument(file != null, "File cannot be null");
 
         if (!file.exists()) {
             throw new InvalidPluginException(new FileNotFoundException(file.getPath() + " does not exist"));
@@ -155,7 +155,7 @@ public final class JavaPluginLoader implements PluginLoader {
     @Override
     @NotNull
     public PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException {
-        Validate.notNull(file, "File cannot be null");
+        Preconditions.checkArgument(file != null, "File cannot be null");
 
         JarFile jar = null;
         InputStream stream = null;
@@ -226,8 +226,8 @@ public final class JavaPluginLoader implements PluginLoader {
     @Override
     @NotNull
     public Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(@NotNull Listener listener, @NotNull final Plugin plugin) {
-        Validate.notNull(plugin, "Plugin can not be null");
-        Validate.notNull(listener, "Listener can not be null");
+        Preconditions.checkArgument(plugin != null, "Plugin can not be null");
+        Preconditions.checkArgument(listener != null, "Listener can not be null");
 
         boolean useTimings = server.getPluginManager().useTimings();
         Map<Class<? extends Event>, Set<RegisteredListener>> ret = new HashMap<Class<? extends Event>, Set<RegisteredListener>>();
@@ -316,7 +316,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
     @Override
     public void enablePlugin(@NotNull final Plugin plugin) {
-        Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
+        Preconditions.checkArgument(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
 
         if (!plugin.isEnabled()) {
             plugin.getLogger().info("Enabling " + plugin.getDescription().getFullName());
@@ -344,7 +344,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
     @Override
     public void disablePlugin(@NotNull Plugin plugin) {
-        Validate.isTrue(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
+        Preconditions.checkArgument(plugin instanceof JavaPlugin, "Plugin is not associated with this PluginLoader");
 
         if (plugin.isEnabled()) {
             String message = String.format("Disabling %s", plugin.getDescription().getFullName());

@@ -1,6 +1,6 @@
 package org.bukkit.event.entity;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -56,7 +56,7 @@ public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancella
      * @param newPhase the new dragon phase
      */
     public void setNewPhase(@NotNull EnderDragon.Phase newPhase) {
-        Validate.notNull(newPhase, "New dragon phase cannot be null");
+        Preconditions.checkArgument(newPhase != null, "New dragon phase cannot be null");
         this.newPhase = newPhase;
     }
 

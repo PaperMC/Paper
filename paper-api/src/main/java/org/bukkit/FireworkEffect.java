@@ -1,10 +1,10 @@
 package org.bukkit;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
@@ -75,7 +75,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
          */
         @NotNull
         public Builder with(@NotNull Type type) throws IllegalArgumentException {
-            Validate.notNull(type, "Cannot have null type");
+            Preconditions.checkArgument(type != null, "Cannot have null type");
             this.type = type;
             return this;
         }
@@ -135,7 +135,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
          */
         @NotNull
         public Builder withColor(@NotNull Color color) throws IllegalArgumentException {
-            Validate.notNull(color, "Cannot have null color");
+            Preconditions.checkArgument(color != null, "Cannot have null color");
 
             colors.add(color);
 
@@ -153,14 +153,14 @@ public final class FireworkEffect implements ConfigurationSerializable {
          */
         @NotNull
         public Builder withColor(@NotNull Color... colors) throws IllegalArgumentException {
-            Validate.notNull(colors, "Cannot have null colors");
+            Preconditions.checkArgument(colors != null, "Cannot have null colors");
             if (colors.length == 0) {
                 return this;
             }
 
             ImmutableList.Builder<Color> list = this.colors;
             for (Color color : colors) {
-                Validate.notNull(color, "Color cannot be null");
+                Preconditions.checkArgument(color != null, "Color cannot be null");
                 list.add(color);
             }
 
@@ -179,7 +179,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
          */
         @NotNull
         public Builder withColor(@NotNull Iterable<?> colors) throws IllegalArgumentException {
-            Validate.notNull(colors, "Cannot have null colors");
+            Preconditions.checkArgument(colors != null, "Cannot have null colors");
 
             ImmutableList.Builder<Color> list = this.colors;
             for (Object color : colors) {
@@ -203,7 +203,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
          */
         @NotNull
         public Builder withFade(@NotNull Color color) throws IllegalArgumentException {
-            Validate.notNull(color, "Cannot have null color");
+            Preconditions.checkArgument(color != null, "Cannot have null color");
 
             if (fadeColors == null) {
                 fadeColors = ImmutableList.builder();
@@ -225,7 +225,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
          */
         @NotNull
         public Builder withFade(@NotNull Color... colors) throws IllegalArgumentException {
-            Validate.notNull(colors, "Cannot have null colors");
+            Preconditions.checkArgument(colors != null, "Cannot have null colors");
             if (colors.length == 0) {
                 return this;
             }
@@ -236,7 +236,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
             }
 
             for (Color color : colors) {
-                Validate.notNull(color, "Color cannot be null");
+                Preconditions.checkArgument(color != null, "Color cannot be null");
                 list.add(color);
             }
 
@@ -255,7 +255,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
          */
         @NotNull
         public Builder withFade(@NotNull Iterable<?> colors) throws IllegalArgumentException {
-            Validate.notNull(colors, "Cannot have null colors");
+            Preconditions.checkArgument(colors != null, "Cannot have null colors");
 
             ImmutableList.Builder<Color> list = this.fadeColors;
             if (list == null) {

@@ -1,5 +1,6 @@
 package org.bukkit.configuration.serialization;
 
+import com.google.common.base.Preconditions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -8,7 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
@@ -115,7 +115,7 @@ public class ConfigurationSerialization {
 
     @Nullable
     public ConfigurationSerializable deserialize(@NotNull Map<String, ?> args) {
-        Validate.notNull(args, "Args must not be null");
+        Preconditions.checkArgument(args != null, "Args must not be null");
 
         ConfigurationSerializable result = null;
         Method method = null;

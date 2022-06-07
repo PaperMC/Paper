@@ -24,8 +24,8 @@ public class GenericGameEvent extends WorldEvent implements Cancellable {
     private int radius;
     private boolean cancelled;
 
-    public GenericGameEvent(@NotNull GameEvent event, @NotNull Location location, @Nullable Entity entity, int radius) {
-        super(location.getWorld());
+    public GenericGameEvent(@NotNull GameEvent event, @NotNull Location location, @Nullable Entity entity, int radius, boolean isAsync) {
+        super(location.getWorld(), isAsync);
         this.event = event;
         this.location = location;
         this.entity = entity;

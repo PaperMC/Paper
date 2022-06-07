@@ -1,5 +1,6 @@
 package org.bukkit.command;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,7 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.command.defaults.BukkitCommand;
@@ -181,8 +181,8 @@ public class SimpleCommandMap implements CommandMap {
     @Override
     @Nullable
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine, @Nullable Location location) {
-        Validate.notNull(sender, "Sender cannot be null");
-        Validate.notNull(cmdLine, "Command line cannot null");
+        Preconditions.checkArgument(sender != null, "Sender cannot be null");
+        Preconditions.checkArgument(cmdLine != null, "Command line cannot null");
 
         int spaceIndex = cmdLine.indexOf(' ');
 

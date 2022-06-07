@@ -1,12 +1,12 @@
 package org.bukkit.permissions;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.PluginManager;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +53,7 @@ public class Permission {
     }
 
     public Permission(@NotNull String name, @Nullable String description, @Nullable PermissionDefault defaultValue, @Nullable Map<String, Boolean> children) {
-        Validate.notNull(name, "Name cannot be null");
+        Preconditions.checkArgument(name != null, "Name cannot be null");
         this.name = name;
         this.description = (description == null) ? "" : description;
 
@@ -288,8 +288,8 @@ public class Permission {
      */
     @NotNull
     public static Permission loadPermission(@NotNull String name, @NotNull Map<?, ?> data, @Nullable PermissionDefault def, @Nullable List<Permission> output) {
-        Validate.notNull(name, "Name cannot be null");
-        Validate.notNull(data, "Data cannot be null");
+        Preconditions.checkArgument(name != null, "Name cannot be null");
+        Preconditions.checkArgument(data != null, "Data cannot be null");
 
         String desc = null;
         Map<String, Boolean> children = null;

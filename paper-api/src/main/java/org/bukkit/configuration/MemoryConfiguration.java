@@ -1,7 +1,7 @@
 package org.bukkit.configuration;
 
+import com.google.common.base.Preconditions;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,7 +32,7 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
 
     @Override
     public void addDefault(@NotNull String path, @Nullable Object value) {
-        Validate.notNull(path, "Path may not be null");
+        Preconditions.checkArgument(path != null, "Path may not be null");
 
         if (defaults == null) {
             defaults = new MemoryConfiguration();
@@ -43,7 +43,7 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
 
     @Override
     public void addDefaults(@NotNull Map<String, Object> defaults) {
-        Validate.notNull(defaults, "Defaults may not be null");
+        Preconditions.checkArgument(defaults != null, "Defaults may not be null");
 
         for (Map.Entry<String, Object> entry : defaults.entrySet()) {
             addDefault(entry.getKey(), entry.getValue());
@@ -52,7 +52,7 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
 
     @Override
     public void addDefaults(@NotNull Configuration defaults) {
-        Validate.notNull(defaults, "Defaults may not be null");
+        Preconditions.checkArgument(defaults != null, "Defaults may not be null");
 
         for (String key : defaults.getKeys(true)) {
             if (!defaults.isConfigurationSection(key)) {
@@ -63,7 +63,7 @@ public class MemoryConfiguration extends MemorySection implements Configuration 
 
     @Override
     public void setDefaults(@NotNull Configuration defaults) {
-        Validate.notNull(defaults, "Defaults may not be null");
+        Preconditions.checkArgument(defaults != null, "Defaults may not be null");
 
         this.defaults = defaults;
     }

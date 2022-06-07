@@ -1,8 +1,10 @@
 package org.bukkit;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import java.util.Arrays;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
+import java.util.Objects;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
@@ -144,7 +146,7 @@ public final class Color implements ConfigurationSerializable {
      */
     @NotNull
     public static Color fromRGB(int rgb) throws IllegalArgumentException {
-        Validate.isTrue((rgb >> 24) == 0, "Extrenuous data in: ", rgb);
+        Preconditions.checkArgument((rgb >> 24) == 0, "Extrenuous data in: ", rgb);
         return fromRGB(rgb >> 16 & BIT_MASK, rgb >> 8 & BIT_MASK, rgb >> 0 & BIT_MASK);
     }
 
@@ -159,14 +161,14 @@ public final class Color implements ConfigurationSerializable {
      */
     @NotNull
     public static Color fromBGR(int bgr) throws IllegalArgumentException {
-        Validate.isTrue((bgr >> 24) == 0, "Extrenuous data in: ", bgr);
+        Preconditions.checkArgument((bgr >> 24) == 0, "Extrenuous data in: ", bgr);
         return fromBGR(bgr >> 16 & BIT_MASK, bgr >> 8 & BIT_MASK, bgr >> 0 & BIT_MASK);
     }
 
     private Color(int red, int green, int blue) {
-        Validate.isTrue(red >= 0 && red <= BIT_MASK, "Red is not between 0-255: ", red);
-        Validate.isTrue(green >= 0 && green <= BIT_MASK, "Green is not between 0-255: ", green);
-        Validate.isTrue(blue >= 0 && blue <= BIT_MASK, "Blue is not between 0-255: ", blue);
+        Preconditions.checkArgument(red >= 0 && red <= BIT_MASK, "Red is not between 0-255: ", red);
+        Preconditions.checkArgument(green >= 0 && green <= BIT_MASK, "Green is not between 0-255: ", green);
+        Preconditions.checkArgument(blue >= 0 && blue <= BIT_MASK, "Blue is not between 0-255: ", blue);
 
         this.red = (byte) red;
         this.green = (byte) green;
@@ -261,7 +263,7 @@ public final class Color implements ConfigurationSerializable {
     // TODO: Javadoc what this method does, not what it mimics. API != Implementation
     @NotNull
     public Color mixDyes(@NotNull DyeColor... colors) {
-        Validate.noNullElements(colors, "Colors cannot be null");
+        Preconditions.checkArgument(colors != null && Arrays.stream(colors).allMatch(Objects::nonNull), "Colors cannot be null");
 
         Color[] toPass = new Color[colors.length];
         for (int i = 0; i < colors.length; i++) {
@@ -281,7 +283,7 @@ public final class Color implements ConfigurationSerializable {
     // TODO: Javadoc what this method does, not what it mimics. API != Implementation
     @NotNull
     public Color mixColors(@NotNull Color... colors) {
-        Validate.noNullElements(colors, "Colors cannot be null");
+        Preconditions.checkArgument(colors != null && Arrays.stream(colors).allMatch(Objects::nonNull), "Colors cannot be null");
 
         int totalRed = this.getRed();
         int totalGreen = this.getGreen();

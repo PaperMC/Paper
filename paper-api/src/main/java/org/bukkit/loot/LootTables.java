@@ -30,6 +30,8 @@ public enum LootTables implements Keyed {
     BASTION_OTHER("chests/bastion_other"),
     BASTION_BRIDGE("chests/bastion_bridge"),
     BASTION_HOGLIN_STABLE("chests/bastion_hoglin_stable"),
+    ANCIENT_CITY("chests/ancient_city"),
+    ANCIENT_CITY_ICE_BOX("chests/ancient_city_ice_box"),
     RUINED_PORTAL("chests/ruined_portal"),
     SHIPWRECK_MAP("chests/shipwreck_map"),
     SHIPWRECK_SUPPLY("chests/shipwreck_supply"),

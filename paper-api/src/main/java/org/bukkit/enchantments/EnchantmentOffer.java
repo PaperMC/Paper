@@ -1,6 +1,6 @@
 package org.bukkit.enchantments;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -34,7 +34,7 @@ public class EnchantmentOffer {
      * @param enchantment type of the enchantment
      */
     public void setEnchantment(@NotNull Enchantment enchantment) {
-        Validate.notNull(enchantment, "The enchantment may not be null!");
+        Preconditions.checkArgument(enchantment != null, "The enchantment may not be null!");
 
         this.enchantment = enchantment;
     }
@@ -54,7 +54,7 @@ public class EnchantmentOffer {
      * @param enchantmentLevel level of the enchantment
      */
     public void setEnchantmentLevel(int enchantmentLevel) {
-        Validate.isTrue(enchantmentLevel > 0, "The enchantment level must be greater than 0!");
+        Preconditions.checkArgument(enchantmentLevel > 0, "The enchantment level must be greater than 0!");
 
         this.enchantmentLevel = enchantmentLevel;
     }
@@ -76,7 +76,7 @@ public class EnchantmentOffer {
      * @param cost cost for this enchantment
      */
     public void setCost(int cost) {
-        Validate.isTrue(cost > 0, "The cost must be greater than 0!");
+        Preconditions.checkArgument(cost > 0, "The cost must be greater than 0!");
 
         this.cost = cost;
     }

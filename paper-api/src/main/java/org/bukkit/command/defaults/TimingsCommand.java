@@ -1,12 +1,12 @@
 package org.bukkit.command.defaults;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -113,9 +113,9 @@ public class TimingsCommand extends BukkitCommand {
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
-        Validate.notNull(sender, "Sender cannot be null");
-        Validate.notNull(args, "Arguments cannot be null");
-        Validate.notNull(alias, "Alias cannot be null");
+        Preconditions.checkArgument(sender != null, "Sender cannot be null");
+        Preconditions.checkArgument(args != null, "Arguments cannot be null");
+        Preconditions.checkArgument(alias != null, "Alias cannot be null");
 
         if (args.length == 1) {
             return StringUtil.copyPartialMatches(args[0], TIMINGS_SUBCOMMANDS, new ArrayList<String>(TIMINGS_SUBCOMMANDS.size()));

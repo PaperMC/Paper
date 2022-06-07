@@ -1,9 +1,9 @@
 package org.bukkit.potion;
 
+import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -180,6 +180,11 @@ public abstract class PotionEffectType implements Keyed {
      */
     public static final PotionEffectType HERO_OF_THE_VILLAGE = new PotionEffectTypeWrapper(32, "hero_of_the_village");
 
+    /**
+     * Causes the player's vision to dim occasionally.
+     */
+    public static final PotionEffectType DARKNESS = new PotionEffectTypeWrapper(33, "darkness");
+
     private final int id;
     private final NamespacedKey key;
 
@@ -276,7 +281,7 @@ public abstract class PotionEffectType implements Keyed {
         return "PotionEffectType[" + id + ", " + getName() + "]";
     }
 
-    private static final PotionEffectType[] byId = new PotionEffectType[33];
+    private static final PotionEffectType[] byId = new PotionEffectType[34];
     private static final Map<String, PotionEffectType> byName = new HashMap<String, PotionEffectType>();
     private static final Map<NamespacedKey, PotionEffectType> byKey = new HashMap<NamespacedKey, PotionEffectType>();
     // will break on updates.
@@ -317,7 +322,7 @@ public abstract class PotionEffectType implements Keyed {
      */
     @Nullable
     public static PotionEffectType getByName(@NotNull String name) {
-        Validate.notNull(name, "name cannot be null");
+        Preconditions.checkArgument(name != null, "name cannot be null");
         return byName.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }
 

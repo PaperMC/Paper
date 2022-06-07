@@ -1,6 +1,7 @@
 package org.bukkit.command.defaults;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
@@ -16,7 +17,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -127,9 +127,9 @@ public class VersionCommand extends BukkitCommand {
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
-        Validate.notNull(sender, "Sender cannot be null");
-        Validate.notNull(args, "Arguments cannot be null");
-        Validate.notNull(alias, "Alias cannot be null");
+        Preconditions.checkArgument(sender != null, "Sender cannot be null");
+        Preconditions.checkArgument(args != null, "Arguments cannot be null");
+        Preconditions.checkArgument(alias != null, "Alias cannot be null");
 
         if (args.length == 1) {
             List<String> completions = new ArrayList<String>();
