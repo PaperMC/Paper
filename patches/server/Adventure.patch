@@ -1182,6 +1182,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public ClientboundPlayerChatPacket(Component signedContent, Optional<Component> unsignedContent, int typeId, ChatSender sender, Instant timeStamp, Crypt.SaltSignaturePair saltSignature) {
 +        this(null, signedContent, unsignedContent, typeId, sender, timeStamp, saltSignature);
 +    }
++
++    @Deprecated // doesn't support signed messages
++    public ClientboundPlayerChatPacket(net.kyori.adventure.text.Component adventure$message, int typeId, ChatSender sender, Instant timeStamp) {
++        this(adventure$message, Component.empty(), Optional.empty(), typeId, sender, timeStamp, net.minecraft.util.Crypt.SaltSignaturePair.EMPTY);
++    }
 +    // Paper end
 +
      public ClientboundPlayerChatPacket(FriendlyByteBuf buf) {
@@ -1279,29 +1284,31 @@ diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystem
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.chat.ChatType;
- import net.minecraft.network.chat.Component;
+@@ -0,0 +0,0 @@ import net.minecraft.network.chat.Component;
  import net.minecraft.network.protocol.Packet;
  
-+// Paper start
  // Spigot start
 -public record ClientboundSystemChatPacket(String content, int typeId) implements Packet<ClientGamePacketListener> {
-+public record ClientboundSystemChatPacket(@org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component adventure$message, String content, int typeId) implements Packet<ClientGamePacketListener> {
-+
-+    public ClientboundSystemChatPacket(String content, int typeId) {
-+        this(null, content, typeId);
-+    }
++public record ClientboundSystemChatPacket(@javax.annotation.Nullable net.kyori.adventure.text.Component adventure$content, @javax.annotation.Nullable String content, int typeId) implements Packet<ClientGamePacketListener> { // Paper - Adventure
  
      public ClientboundSystemChatPacket(Component content, int typeId) {
 -        this(Component.Serializer.toJson(content), typeId);
-+        this(null, Component.Serializer.toJson(content), typeId);
++        this(null, Component.Serializer.toJson(content), typeId); // Paper - Adventure
      }
  
      public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, int typeId) {
 -        this(net.md_5.bungee.chat.ComponentSerializer.toString(content), typeId);
-+        this(null, net.md_5.bungee.chat.ComponentSerializer.toString(content), typeId);
++        this(null, net.md_5.bungee.chat.ComponentSerializer.toString(content), typeId); // Paper - Adventure
      }
      // Spigot end
++    // Paper start
++    public ClientboundSystemChatPacket {
++        com.google.common.base.Preconditions.checkArgument(!(adventure$content == null && content == null), "Component adventure$content and String (json) content cannot both be null");
++    }
++
++    public ClientboundSystemChatPacket(net.kyori.adventure.text.Component content, int typeId) {
++        this(content, null, typeId);
++    }
 +    // Paper end
  
      public ClientboundSystemChatPacket(FriendlyByteBuf buf) {
@@ -1310,12 +1317,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public void write(FriendlyByteBuf buf) {
--        buf.writeUtf(this.content, 262144); // Spigot
 +        // Paper start
-+        if (adventure$message != null) {
-+            buf.writeComponent(this.adventure$message);
++        if (this.adventure$content != null) {
++            buf.writeComponent(this.adventure$content);
++        } else if (this.content != null) {
+         buf.writeUtf(this.content, 262144); // Spigot
 +        } else {
-+            buf.writeUtf(this.content, 262144); // Spigot
++            throw new IllegalArgumentException("Must supply either adventure component or string json content");
 +        }
 +        // Paper end
          buf.writeVarInt(this.typeId);
@@ -2717,8 +2725,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
 +        if (getHandle().connection == null) return;
-+        final ClientboundChatPacket packet = new ClientboundChatPacket(null, type == net.kyori.adventure.audience.MessageType.CHAT ? net.minecraft.network.chat.ChatType.CHAT : net.minecraft.network.chat.ChatType.SYSTEM, identity.uuid());
-+        packet.adventure$message = message;
++        // TODO this needs to be checked
++        final net.minecraft.core.Registry<ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.Registry.CHAT_TYPE_REGISTRY);
++        final net.minecraft.network.protocol.Packet<?> packet;
++        if (identity.equals(net.kyori.adventure.identity.Identity.nil()) || type == net.kyori.adventure.audience.MessageType.SYSTEM) {
++            packet = new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(message, chatTypeRegistry.getId(chatTypeRegistry.get(ChatType.SYSTEM)));
++        } else {
++            final @Nullable Player source = this.getServer().getPlayer(identity.uuid());
++            final ChatSender sender;
++            if (source != null) {
++                sender = ((CraftPlayer) source).getHandle().asChatSender();
++            } else {
++                sender = new ChatSender(identity.uuid(), Component.empty(), null);
++            }
++            packet = new net.minecraft.network.protocol.game.ClientboundPlayerChatPacket(message, chatTypeRegistry.getId(chatTypeRegistry.get(ChatType.CHAT)), sender, java.time.Instant.now());
++        }
 +        this.getHandle().connection.send(packet);
 +    }
 +
