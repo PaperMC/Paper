@@ -3477,7 +3477,7 @@ index deb852aa0fb2ad55a94d3c7ee542a0cc8013be42..40830a2b231df9bbf676d8325e76c825
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index 8a4750dd8f604062c4ea452f7b97b05a0c8d583a..80a7a1340908ae783a029912487485f7596bec5b 100644
+index 8a4750dd8f604062c4ea452f7b97b05a0c8d583a..678bd36581ead3a225e3a6e24b78e5db4e42657b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 @@ -34,10 +34,10 @@ import net.minecraft.world.level.ChunkPos;
@@ -3532,7 +3532,7 @@ index 8a4750dd8f604062c4ea452f7b97b05a0c8d583a..80a7a1340908ae783a029912487485f7
 +
 +    // Paper start - async chunk io
 +    public void loadInData(ChunkPos chunkPos, CompoundTag compound) {
-+        this.readColumn(chunkPos, NbtOps.INSTANCE, compound);
++        this.readColumn(chunkPos, RegistryOps.create(NbtOps.INSTANCE, this.registryAccess), compound);
      }
 +    // Paper end - aync chnnk i
  
@@ -3547,13 +3547,14 @@ index 8a4750dd8f604062c4ea452f7b97b05a0c8d583a..80a7a1340908ae783a029912487485f7
          } else {
              LOGGER.error("Expected compound tag, got {}", (Object)tag);
          }
-@@ -198,6 +204,20 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -198,6 +204,21 @@ public class SectionStorage<R> implements AutoCloseable {
          return new Dynamic<>(ops, ops.createMap(ImmutableMap.of(ops.createString("Sections"), ops.createMap(map), ops.createString("DataVersion"), ops.createInt(SharedConstants.getCurrentVersion().getWorldVersion()))));
      }
  
 +    // Paper start - internal get data function, copied from above
-+    private CompoundTag getDataInternal(ChunkPos chunkcoordintpair) {
-+        Dynamic<Tag> dynamic = this.writeColumn(chunkcoordintpair, NbtOps.INSTANCE);
++    private CompoundTag getDataInternal(ChunkPos pos) {
++        RegistryOps<Tag> registryOps = RegistryOps.create(NbtOps.INSTANCE, this.registryAccess);
++        Dynamic<Tag> dynamic = this.writeColumn(pos, registryOps);
 +        Tag nbtbase = (Tag) dynamic.getValue();
 +
 +        if (nbtbase instanceof CompoundTag) {
@@ -3568,7 +3569,7 @@ index 8a4750dd8f604062c4ea452f7b97b05a0c8d583a..80a7a1340908ae783a029912487485f7
      private static long getKey(ChunkPos chunkPos, int y) {
          return SectionPos.asLong(chunkPos.x, y, chunkPos.z);
      }
-@@ -233,6 +253,23 @@ public class SectionStorage<R> implements AutoCloseable {
+@@ -233,6 +254,23 @@ public class SectionStorage<R> implements AutoCloseable {
  
      @Override
      public void close() throws IOException {
