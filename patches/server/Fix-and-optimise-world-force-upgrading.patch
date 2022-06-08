@@ -247,9 +247,9 @@ diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/mi
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -0,0 +0,0 @@ import java.nio.file.Path;
- import java.nio.file.Paths;
+@@ -0,0 +0,0 @@ import java.util.Objects;
  import java.util.Optional;
+ import java.util.UUID;
  import java.util.function.BooleanSupplier;
 +import io.papermc.paper.world.ThreadedWorldUpgrader;
  import joptsimple.NonOptionArgumentSpec;
@@ -286,20 +286,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 +            // Paper - move down
  
-             ServerLevelData iworlddataserver = worlddata;
+             PrimaryLevelData iworlddataserver = worlddata;
              WorldGenSettings generatorsettings = worlddata.worldGenSettings();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                 }
+                 biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
              }
  
 +            // Paper start - fix and optimise world upgrading
 +            if (options.has("forceUpgrade")) {
 +                net.minecraft.server.Main.convertWorldButItWorks(
-+                        dimensionKey, worldSession, DataFixers.getDataFixer(), chunkgenerator.getTypeNameForDataFixer(), options.has("eraseCache")
++                    dimensionKey, worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), options.has("eraseCache")
 +                );
 +            }
 +            // Paper end - fix and optimise world upgrading
-+
              ResourceKey<Level> worldKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, dimensionKey.location());
  
              if (dimensionKey == LevelStem.OVERWORLD) {
@@ -375,17 +374,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          long j = BiomeManager.obfuscateSeed(creator.seed());
          List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-             }
+             biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
          }
  
 +        // Paper start - fix and optimise world upgrading
 +        if (console.options.has("forceUpgrade")) {
 +            net.minecraft.server.Main.convertWorldButItWorks(
-+                actualDimension,  worldSession, DataFixers.getDataFixer(), chunkgenerator.getTypeNameForDataFixer(), console.options.has("eraseCache")
++                actualDimension,  worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), console.options.has("eraseCache")
 +            );
 +        }
 +        // Paper end - fix and optimise world upgrading
-+
          ResourceKey<net.minecraft.world.level.Level> worldKey;
          String levelName = this.getServer().getProperties().levelName;
          if (name.equals(levelName + "_nether")) {
