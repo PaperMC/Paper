@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..6a77a2148efb95d86710b80e4d109f508e3dd125 100644
+index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..97166c362a5468e3f7e2fcfd5e318dc519bfbf6c 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -97,6 +97,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -50,7 +50,7 @@ index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..6a77a2148efb95d86710b80e4d109f50
          this.channel.attr(Connection.ATTRIBUTE_PROTOCOL).set(state);
          this.channel.config().setAutoRead(true);
          Connection.LOGGER.debug("Enabled auto read");
-@@ -198,19 +203,87 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -198,19 +203,89 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          Validate.notNull(listener, "packetListener", new Object[0]);
          this.packetListener = listener;
      }
@@ -86,7 +86,9 @@ index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..6a77a2148efb95d86710b80e4d109f50
 +        private static boolean canSendImmediate(Connection networkManager, Packet<?> packet) {
 +            return networkManager.isPending || networkManager.protocol != ConnectionProtocol.PLAY ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundKeepAlivePacket ||
-+                packet instanceof net.minecraft.network.protocol.game.ClientboundChatPacket ||
++                packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket ||
++                packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket ||
++                packet instanceof net.minecraft.network.protocol.game.ClientboundChatPreviewPacket ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket ||
@@ -142,7 +144,7 @@ index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..6a77a2148efb95d86710b80e4d109f50
      }
  
      private void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback) {
-@@ -238,33 +311,79 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -238,33 +313,79 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              this.setProtocol(packetState);
          }
  
@@ -170,7 +172,7 @@ index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..6a77a2148efb95d86710b80e4d109f50
 +        // Paper start
 +        } catch (Exception e) {
 +            LOGGER.error("NetworkException: " + player, e);
-+            disconnect(new net.minecraft.network.chat.TranslatableComponent("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
++            disconnect(Component.translatable("disconnect.genericReason", "Internal Exception: " + e.getMessage()));
 +            packet.onPacketDispatchFinish(player, null);
 +        }
 +        // Paper end
@@ -231,7 +233,7 @@ index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..6a77a2148efb95d86710b80e4d109f50
  
      public void tick() {
          this.flushQueue();
-@@ -301,9 +420,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -301,9 +422,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return this.address;
      }
  
@@ -254,7 +256,7 @@ index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..6a77a2148efb95d86710b80e4d109f50
          // Spigot End
          if (this.channel.isOpen()) {
              this.channel.close(); // We can't wait as this may be called from an event loop.
-@@ -421,7 +553,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -421,7 +555,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -263,7 +265,7 @@ index 58e50b56b0e3f1388826c73c4616a1e24852bdbd..6a77a2148efb95d86710b80e4d109f50
              } else {
                  this.disconnectionHandled = true;
                  if (this.getDisconnectedReason() != null) {
-@@ -429,7 +561,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -429,7 +563,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                  } else if (this.getPacketListener() != null) {
                      this.getPacketListener().onDisconnect(Component.translatable("multiplayer.disconnect.generic"));
                  }
