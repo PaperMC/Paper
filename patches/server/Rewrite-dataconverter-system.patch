@@ -17519,9 +17519,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
++import ca.spottedleaf.dataconverter.converters.advancements.ConverterCriteriaRename;
++import ca.spottedleaf.dataconverter.converters.entity.ConverterEntityVariant;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.advancements.ConverterCriteriaRename;
-+import ca.spottedleaf.dataconverter.minecraft.converters.entity.ConverterEntityVariant;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import com.google.common.collect.ImmutableMap;
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -17574,8 +17574,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
++import ca.spottedleaf.dataconverter.converters.entity.ConverterEntityVariant;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.entity.ConverterEntityVariant;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 +
@@ -17592,6 +17592,75 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static void register() {
 +        MCTypeRegistry.ENTITY.addConverterForId("minecraft:frog", new ConverterEntityVariant(VERSION, "Variant", FROG_ID_CONVERSION::get));
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3088.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3088.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3088.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.Types;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
++import java.util.Arrays;
++import java.util.HashSet;
++import java.util.Set;
++
++public final class V3088 {
++
++    // this class originally targeted 3079 but was changed to target a later version without changing the converter, zero clue why
++    protected static final int VERSION = MCVersions.V22W14A;
++
++    private static final Set<String> STATUSES_TO_SKIP_BLENDING = new HashSet<>(
++        Arrays.asList(
++            "minecraft:empty",
++            "minecraft:structure_starts",
++            "minecraft:structure_references",
++            "minecraft:biomes"
++        )
++    );
++
++    public static void register() {
++        MCTypeRegistry.CHUNK.addStructureConverter(new DataConverter<>(VERSION) {
++
++            private static MapType<String> createBlendingData(final int height, final int minY) {
++                final MapType<String> ret = Types.NBT.createEmptyMap();
++
++                ret.setInt("min_section", minY >> 4);
++                ret.setInt("max_section", (minY + height) >> 4);
++
++                return ret;
++            }
++
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                data.remove("blending_data");
++
++                final String status = NamespaceUtil.correctNamespace(data.getString("Status"));
++                if (status == null) {
++                    return null;
++                }
++
++                final MapType<String> belowZeroRetrogen = data.getMap("below_zero_retrogen");
++
++                if (!STATUSES_TO_SKIP_BLENDING.contains(status)) {
++                    data.setMap("blending_data", createBlendingData(384, -64));
++                } else if (belowZeroRetrogen != null) {
++                    final String realStatus = NamespaceUtil.correctNamespace(belowZeroRetrogen.getString("target_status", "empty"));
++                    if (!STATUSES_TO_SKIP_BLENDING.contains(realStatus)) {
++                        data.setMap("blending_data", createBlendingData(256, 0));
++                    }
++                }
++
++                return null;
++            }
++        });
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3090.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3090.java
@@ -17709,10 +17778,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.converters.advancements.ConverterCriteriaRename;
++import ca.spottedleaf.dataconverter.converters.entity.ConverterEntityVariantRename;
++import ca.spottedleaf.dataconverter.converters.poi.ConverterPoiDelete;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.advancements.ConverterCriteriaRename;
-+import ca.spottedleaf.dataconverter.minecraft.converters.entity.ConverterEntityVariantRename;
-+import ca.spottedleaf.dataconverter.minecraft.converters.poi.ConverterPoiDelete;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import java.util.HashMap;
