@@ -10,12 +10,12 @@ just looking at the LevelStem key, look at the DimensionType key which
 is one level below that. Defaults to off to keep vanilla behavior.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 66d360b2c4ae9e380ec6c452a263c04bd3aef4ff..1ac6cf51f2682d5eb14fe19646e79f6617d492dd 100644
+index 8fff289a02234cbe5e808fe6e736788a2ed1e5c2..72e17ac76e5f3ac1283bec2133f76bc197353dd6 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -683,4 +683,9 @@ public class PaperConfig {
-         globalMaxConcurrentChunkLoads = getDouble("settings.chunk-loading.global-max-concurrent-loads", 500.0);
-         playerMaxChunkLoadRate = getDouble("settings.chunk-loading.player-max-chunk-load-rate", -1.0);
+@@ -642,4 +642,9 @@ public class PaperConfig {
+     private static void timeCommandAffectsAllWorlds() {
+         timeCommandAffectsAllWorlds = getBoolean("settings.time-command-affects-all-worlds", timeCommandAffectsAllWorlds);
      }
 +
 +    public static boolean useDimensionTypeForCustomSpawners;
@@ -24,22 +24,22 @@ index 66d360b2c4ae9e380ec6c452a263c04bd3aef4ff..1ac6cf51f2682d5eb14fe19646e79f66
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index c2c1242bcf26c73b3520c797e77c3c2d430dfac7..443fb9cdce8bf542ca6216aa65c3e48c66dde654 100644
+index 47966d87c525067f0bc3d587cdf869d89cf5710c..dc585e962033c991f323d41a8a34e791a7cebe80 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -617,7 +617,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -585,7 +585,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  this.commandStorage = new CommandStorage(worldpersistentdata);
              } else {
                  ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(11);
--                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, holder, worldloadlistener, chunkgenerator, flag, j, ImmutableList.of(), true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
+-                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, ImmutableList.of(), true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
 +                // Paper start - option to use the dimension_type to check if spawners should be added. I imagine mojang will add some datapack-y way of managing this in the future.
 +                final List<CustomSpawner> spawners;
-+                if (com.destroystokyo.paper.PaperConfig.useDimensionTypeForCustomSpawners && this.registryHolder.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(holder.value()).orElseThrow() == DimensionType.OVERWORLD_LOCATION) {
++                if (com.destroystokyo.paper.PaperConfig.useDimensionTypeForCustomSpawners && this.registryHolder.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(worlddimension.typeHolder().value()).orElseThrow() == net.minecraft.world.level.dimension.BuiltinDimensionTypes.OVERWORLD) {
 +                    spawners = list;
 +                } else {
 +                    spawners = Collections.emptyList();
 +                }
-+                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, holder, worldloadlistener, chunkgenerator, flag, j, spawners, true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
++                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, spawners, true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
 +                // Paper end
              }
  
