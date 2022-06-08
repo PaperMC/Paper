@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 2 Dec 2020 21:03:02 -0800
+Subject: [PATCH] Add config for mobs immune to default effects
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0731dcc367b621b18c2435db053645e9f9af2a80..b7d30804bfd4f9a2f379f5b77dcb6ae7446a76e9 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -730,6 +730,21 @@ public class PaperWorldConfig {
+         log("Hopper Ignore Container Entities inside Occluding Blocks: " + (hoppersIgnoreOccludingBlocks ? "enabled" : "disabled"));
+     }
+ 
++    public boolean undeadImmuneToCertainEffects = true;
++    public boolean spidersImmuneToPoisonEffect = true;
++    public boolean witherImmuneToWitherEffect = true;
++    public boolean witherSkeletonImmuneToWitherEffect = true;
++    private void mobEffectChanges() {
++        undeadImmuneToCertainEffects = getBoolean("mob-effects.undead-immune-to-certain-effects", undeadImmuneToCertainEffects);
++        log("Undead immune to harmful effects: " + undeadImmuneToCertainEffects);
++        spidersImmuneToPoisonEffect = getBoolean("mob-effects.spiders-immune-to-poison-effect", spidersImmuneToPoisonEffect);
++        log("Spiders immune to poison effect: " + spidersImmuneToPoisonEffect);
++        witherImmuneToWitherEffect = getBoolean("mob-effects.immune-to-wither-effect.wither", witherImmuneToWitherEffect);
++        log("Wither immune to wither effect: " + witherImmuneToWitherEffect);
++        witherSkeletonImmuneToWitherEffect = getBoolean("mob-effects.immune-to-wither-effect.wither-skeleton", witherSkeletonImmuneToWitherEffect);
++        log("Wither skeleton immune to wither effect: " + witherSkeletonImmuneToWitherEffect);
++    }
++
+     public boolean nerfNetherPortalPigmen = false;
+     private void nerfNetherPortalPigmen() {
+         nerfNetherPortalPigmen = getBoolean("game-mechanics.nerf-pigmen-from-nether-portals", nerfNetherPortalPigmen);
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 1bd4f72a5c0aba38609cb34dcb94ff03809f853c..a6a8b6e50d23b046c8696f141af528f569a84ce9 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1153,7 +1153,7 @@ public abstract class LivingEntity extends Entity {
+         if (this.getMobType() == MobType.UNDEAD) {
+             MobEffect mobeffectlist = effect.getEffect();
+ 
+-            if (mobeffectlist == MobEffects.REGENERATION || mobeffectlist == MobEffects.POISON) {
++            if ((mobeffectlist == MobEffects.REGENERATION || mobeffectlist == MobEffects.POISON) && this.level.paperConfig.undeadImmuneToCertainEffects) { // Paper
+                 return false;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 92734f767fde60351a179a88350a97b861be0e88..d347ab0a638a972ea53a982f29af40423919870c 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -612,7 +612,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+ 
+     @Override
+     public boolean canBeAffected(MobEffectInstance effect) {
+-        return effect.getEffect() == MobEffects.WITHER ? false : super.canBeAffected(effect);
++        return effect.getEffect() == MobEffects.WITHER && this.level.paperConfig.witherImmuneToWitherEffect ? false : super.canBeAffected(effect); // Paper
+     }
+ 
+     private class WitherDoNothingGoal extends Goal {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+index 46779380f44a037d3915f287f40515a9bd31a439..694643c8ee7447da01ae02ca242338dbdbb3412a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+@@ -133,7 +133,7 @@ public class Spider extends Monster {
+ 
+     @Override
+     public boolean canBeAffected(MobEffectInstance effect) {
+-        return effect.getEffect() == MobEffects.POISON ? false : super.canBeAffected(effect);
++        return effect.getEffect() == MobEffects.POISON && this.level.paperConfig.spidersImmuneToPoisonEffect ? false : super.canBeAffected(effect); // Paper
+     }
+ 
+     public boolean isClimbing() {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/WitherSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/WitherSkeleton.java
+index ea6233cb3ca30864e54d553a5d1071ea9147a868..c65319caa4bf95bd1d3bc41811b9cd401cc5c705 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/WitherSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/WitherSkeleton.java
+@@ -123,6 +123,6 @@ public class WitherSkeleton extends AbstractSkeleton {
+ 
+     @Override
+     public boolean canBeAffected(MobEffectInstance effect) {
+-        return effect.getEffect() == MobEffects.WITHER ? false : super.canBeAffected(effect);
++        return effect.getEffect() == MobEffects.WITHER && this.level.paperConfig.witherSkeletonImmuneToWitherEffect ? false : super.canBeAffected(effect); // Paper
+     }
+ }
