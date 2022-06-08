@@ -14,7 +14,7 @@ Adds flying monsters to control ghast and phantoms
 Adds villagers as separate config
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 9b883af58fd87751bdad909a015cb78ca5647e90..12162ff2dc7c82f50f1d892bc807985ebcd44333 100644
+index 06d4c948241f121f4ccafe869b3e37c8a6279622..1d036031889a41134b5c475c18a85c5b678fa1f7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2,7 +2,6 @@ package net.minecraft.server.level;
@@ -25,7 +25,7 @@ index 9b883af58fd87751bdad909a015cb78ca5647e90..12162ff2dc7c82f50f1d892bc807985e
  import com.google.common.collect.Lists;
  import com.mojang.datafixers.DataFixer;
  import com.mojang.datafixers.util.Pair;
-@@ -969,17 +968,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -987,17 +986,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
          ++TimingHistory.entityTicks; // Paper - timings
          // Spigot start
          co.aikar.timings.Timing timer; // Paper
@@ -47,7 +47,7 @@ index 9b883af58fd87751bdad909a015cb78ca5647e90..12162ff2dc7c82f50f1d892bc807985e
          try {
          // Paper end - timings
          entity.setOldPosAndRot();
-@@ -990,9 +989,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1008,9 +1007,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
              return Registry.ENTITY_TYPE.getKey(entity.getType()).toString();
          });
          gameprofilerfiller.incrementCounter("tickNonPassenger");
@@ -61,7 +61,7 @@ index 9b883af58fd87751bdad909a015cb78ca5647e90..12162ff2dc7c82f50f1d892bc807985e
          Iterator iterator = entity.getPassengers().iterator();
  
          while (iterator.hasNext()) {
-@@ -1000,13 +1003,18 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1018,13 +1021,18 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
              this.tickPassenger(entity, entity1);
          }
@@ -81,7 +81,7 @@ index 9b883af58fd87751bdad909a015cb78ca5647e90..12162ff2dc7c82f50f1d892bc807985e
                  passenger.setOldPosAndRot();
                  ++passenger.tickCount;
                  ProfilerFiller gameprofilerfiller = this.getProfiler();
-@@ -1015,8 +1023,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1033,8 +1041,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
                      return Registry.ENTITY_TYPE.getKey(passenger.getType()).toString();
                  });
                  gameprofilerfiller.incrementCounter("tickPassenger");
@@ -99,7 +99,7 @@ index 9b883af58fd87751bdad909a015cb78ca5647e90..12162ff2dc7c82f50f1d892bc807985e
                  gameprofilerfiller.pop();
                  Iterator iterator = passenger.getPassengers().iterator();
  
-@@ -1026,6 +1043,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1044,6 +1061,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                      this.tickPassenger(passenger, entity2);
                  }
  
@@ -108,10 +108,10 @@ index 9b883af58fd87751bdad909a015cb78ca5647e90..12162ff2dc7c82f50f1d892bc807985e
          } else {
              passenger.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 30b79e3dfbc50fee70d52367092c102dbad2d304..339031b16c856d29509916e6178151cc0f790dde 100644
+index 6f426a028e9158bf6ff554d9b9e1f0d097505ecf..dff627579f775dbe0a6323ffa60d9a65299b121a 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -322,6 +322,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -343,6 +343,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      public void inactiveTick() { }
      // Spigot end
      // Paper start
@@ -120,7 +120,7 @@ index 30b79e3dfbc50fee70d52367092c102dbad2d304..339031b16c856d29509916e6178151cc
      protected int numCollisions = 0; // Paper
      public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
      @javax.annotation.Nullable
-@@ -794,6 +796,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -816,6 +818,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          } else {
              this.wasOnFire = this.isOnFire();
              if (movementType == MoverType.PISTON) {
@@ -129,7 +129,7 @@ index 30b79e3dfbc50fee70d52367092c102dbad2d304..339031b16c856d29509916e6178151cc
                  movement = this.limitPistonMovement(movement);
                  if (movement.equals(Vec3.ZERO)) {
                      return;
-@@ -806,6 +810,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -828,6 +832,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                  this.stuckSpeedMultiplier = Vec3.ZERO;
                  this.setDeltaMovement(Vec3.ZERO);
              }
@@ -144,10 +144,10 @@ index 30b79e3dfbc50fee70d52367092c102dbad2d304..339031b16c856d29509916e6178151cc
              movement = this.maybeBackOffFromEdge(movement, movementType);
              Vec3 vec3d1 = this.collide(movement);
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index affa1d906beb49cf599a467d582144d9407b2e0e..78e28d40292ec99ac0a22bd7f834c30c68c00098 100644
+index dc5cb767c91252b1049c76841cbe14b29287572c..9e0f1938f534a61abc00ed80c8effd7d15056195 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -205,6 +205,19 @@ public abstract class Mob extends LivingEntity {
+@@ -210,6 +210,19 @@ public abstract class Mob extends LivingEntity {
          return this.lookControl;
      }
  
@@ -168,7 +168,7 @@ index affa1d906beb49cf599a467d582144d9407b2e0e..78e28d40292ec99ac0a22bd7f834c30c
          if (this.isPassenger() && this.getVehicle() instanceof Mob) {
              Mob entityinsentient = (Mob) this.getVehicle();
 diff --git a/src/main/java/net/minecraft/world/entity/PathfinderMob.java b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
-index ff458abb221daaddaa734811eaaa35ea43883343..d1ab31d03ae421e628448fe2492ff138dc57c00f 100644
+index 2df5b50be11297941d13ec9d17001f488af11750..3db309e709cd72e3aae184ff2f8b1a7b98f2c7a8 100644
 --- a/src/main/java/net/minecraft/world/entity/PathfinderMob.java
 +++ b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
 @@ -19,6 +19,7 @@ public abstract class PathfinderMob extends Mob {
@@ -248,7 +248,7 @@ index 6efba52c2e5d7811ee329ed22c1c76f75d7ddbe1..26bf383caea68834c654b25653ced901
                          }
                      }
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index ecd7083b40ce6230d49ea4487766a6f06b4e96d0..f7b8804394ad55e3f6c7c8c3a8f0fe7894385c90 100644
+index f957c0aca36b7228ac3a33ca04c948b1d10642d1..39fc94b1e1555fd6706391223dd2783139b16016 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
 @@ -225,17 +225,29 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
@@ -303,10 +303,10 @@ index ecd7083b40ce6230d49ea4487766a6f06b4e96d0..f7b8804394ad55e3f6c7c8c3a8f0fe78
          super.customServerAiStep();
      }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index dab1b7491fff4da9f606d041536adb649bfccd9a..27bd21ec70a446537d24952cb7ea04b0c2f4ef86 100644
+index 6d5d67aec4be3205032ce3b97e12356b89a0f5fe..dca25847a2d8cf2ae74121c9e8840dfab38e43e8 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -152,6 +152,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -158,6 +158,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public Map<BlockPos, BlockEntity> capturedTileEntities = new HashMap<>();
      public List<ItemEntity> captureDrops;
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
