@@ -10,7 +10,7 @@ Adds CommandRegisteredEvent
   - Allows manipulating the CommandNode to add more children/metadata for the client
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 004b37cddc8e5e4cb4643f52eb58254796886fe7..5a609a297ccfa66859b04eb907595741b8ec2160 100644
+index 344787b84f91627e4f33288c75eacd2bca7bcc3f..7dd1c9449a1e6a9197e2915399feabf63f490b0a 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -8,6 +8,7 @@ plugins {
@@ -22,20 +22,20 @@ index 004b37cddc8e5e4cb4643f52eb58254796886fe7..5a609a297ccfa66859b04eb907595741
      implementation("org.jline:jline-terminal-jansi:3.21.0")
      implementation("net.minecrell:terminalconsoleappender:1.3.0")
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index 5ebf717535eab892898a62ce6aaaf936fe064626..31aaad639b6c285226ca7aca1bd2285cfe0d9117 100644
+index cd7c33862c7e2e3895efce8a9675aa6a07a8053f..0b8d8b9875acf4c0a6bd47941ff57d01285dd507 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-@@ -38,7 +38,7 @@ import net.minecraft.world.phys.Vec2;
+@@ -36,7 +36,7 @@ import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
  import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
  
 -public class CommandSourceStack implements SharedSuggestionProvider {
 +public class CommandSourceStack implements SharedSuggestionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper
  
-     public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(new TranslatableComponent("permissions.requires.player"));
-     public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(new TranslatableComponent("permissions.requires.entity"));
-@@ -155,6 +155,25 @@ public class CommandSourceStack implements SharedSuggestionProvider {
-         return this.textName;
+     public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
+     public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
+@@ -163,6 +163,25 @@ public class CommandSourceStack implements SharedSuggestionProvider {
+         return this.entity != null ? this.entity.asChatSender() : ChatSender.system(this.getDisplayName());
      }
  
 +    // Paper start
@@ -61,10 +61,10 @@ index 5ebf717535eab892898a62ce6aaaf936fe064626..31aaad639b6c285226ca7aca1bd2285c
      public boolean hasPermission(int level) {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index f3bbe012541a71ab75c1863990d0c056c62d8c6e..4bc28b66788d06d1446284f5adef6a44be736f92 100644
+index 4c9773997c63f7b2c8465b19810068f11367466b..a8f3a84615a640d2949d268ef1ac81a051f5a38b 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
-@@ -371,6 +371,7 @@ public class Commands {
+@@ -374,6 +374,7 @@ public class Commands {
              bukkit.add(node.getName());
          }
          // Paper start - Async command map building
@@ -72,7 +72,7 @@ index f3bbe012541a71ab75c1863990d0c056c62d8c6e..4bc28b66788d06d1446284f5adef6a44
          MinecraftServer.getServer().execute(() -> {
             runSync(player, bukkit, rootcommandnode);
          });
-@@ -378,6 +379,7 @@ public class Commands {
+@@ -381,6 +382,7 @@ public class Commands {
  
      private void runSync(ServerPlayer player, Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootcommandnode) {
          // Paper end - Async command map building
@@ -81,10 +81,10 @@ index f3bbe012541a71ab75c1863990d0c056c62d8c6e..4bc28b66788d06d1446284f5adef6a44
          event.getPlayer().getServer().getPluginManager().callEvent(event);
  
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 77d62668dc22df5e9be714fa32f7b24d256361a9..95853e761f7c22b251d722031d068475733435ef 100644
+index 2d74384ed9ba6d55f88dbf9d82f3a0b4117f49a3..90da4b1e636419aa8c35ab1a06b037f5c7b328f7 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -757,8 +757,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -789,8 +789,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
                      ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
  
                      this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
@@ -99,7 +99,7 @@ index 77d62668dc22df5e9be714fa32f7b24d256361a9..95853e761f7c22b251d722031d068475
                      });
                  });
              }
-@@ -767,7 +771,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -799,7 +803,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
              builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
              completions.forEach(builder::suggest);
