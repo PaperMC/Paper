@@ -1189,19 +1189,22 @@ index 0000000000000000000000000000000000000000..18bcb79899a5ccb63096cba8075d6438
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/ReplacedDataFixerUpper.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/ReplacedDataFixerUpper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5ddf54649fc0ddcee1b1f6bdc6e8d7be7ae46618
+index 0000000000000000000000000000000000000000..0c8eb9e326ce1941db176e5e5bc3ea7738c4b80a
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/ReplacedDataFixerUpper.java
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,154 @@
 +package ca.spottedleaf.dataconverter.minecraft;
 +
 +import ca.spottedleaf.dataconverter.converters.datatypes.DataType;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCDataType;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import com.google.gson.JsonObject;
 +import com.mojang.datafixers.DSL;
 +import com.mojang.datafixers.DataFixer;
 +import com.mojang.datafixers.schemas.Schema;
 +import com.mojang.serialization.Dynamic;
 +import net.minecraft.SharedConstants;
++import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.util.datafix.fixes.References;
 +import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.Logger;
@@ -1308,7 +1311,7 @@ index 0000000000000000000000000000000000000000..5ddf54649fc0ddcee1b1f6bdc6e8d7be
 +        if (equivType != null) {
 +            if (newVersion > version) {
 +                try {
-+                    final Dynamic<T> ret = new Dynamic<>(input.getOps(), (T)MCDataConverter.copy(MCDataConverter.convertUnwrapped((DataType)equivType, input.getValue(), false, version, newVersion)));
++                    final Dynamic<T> ret = new Dynamic<>(input.getOps(), (T)MCDataConverter.copy(convertUnwrapped((DataType)equivType, input.getValue(), false, version, newVersion)));
 +                    return ret;
 +                } catch (final Exception ex) {
 +                    LOGGER.error("Failed to convert data using DataConverter, falling back to DFU", new Throwable());
@@ -1326,6 +1329,17 @@ index 0000000000000000000000000000000000000000..5ddf54649fc0ddcee1b1f6bdc6e8d7be
 +
 +            return this.wrapped.update(type, input, version, newVersion);
 +        }
++    }
++
++    public static <T, R> R convertUnwrapped(final DataType<T, R> type, final T data, final boolean compressedJson, final int fromVersion, final int toVersion) {
++        if (data instanceof CompoundTag) {
++            return (R)MCDataConverter.convertTag((MCDataType)type, (CompoundTag)data, fromVersion, toVersion);
++        }
++        if (data instanceof JsonObject) {
++            return (R)MCDataConverter.convertJson((MCDataType)type, (JsonObject)data, compressedJson, fromVersion, toVersion);
++        }
++
++        return MCDataConverter.convert(type, data, fromVersion, toVersion);
 +    }
 +
 +    @Override
