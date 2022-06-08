@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 5a609a297ccfa66859b04eb907595741b8ec2160..398bedaba0a006bcd8ad562486ecd583d9d129ef 100644
+index 7dd1c9449a1e6a9197e2915399feabf63f490b0a..9bd09c4465f5fe1cd68b63da293f506da4b17a72 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -1,4 +1,6 @@
@@ -23,8 +23,8 @@ index 5a609a297ccfa66859b04eb907595741b8ec2160..398bedaba0a006bcd8ad562486ecd583
 +    annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - Needed to generate meta for our Log4j plugins
      // Paper end
      implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
-     implementation("org.ow2.asm:asm:9.2")
-@@ -31,6 +34,8 @@ dependencies {
+     implementation("org.ow2.asm:asm:9.3")
+@@ -32,6 +35,8 @@ dependencies {
      runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.2")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.2")
  
@@ -33,7 +33,7 @@ index 5a609a297ccfa66859b04eb907595741b8ec2160..398bedaba0a006bcd8ad562486ecd583
      testImplementation("junit:junit:4.13.2")
      testImplementation("org.hamcrest:hamcrest-library:1.3")
  }
-@@ -89,6 +94,45 @@ tasks.shadowJar {
+@@ -90,6 +95,45 @@ tasks.shadowJar {
      }
  }
  
@@ -518,7 +518,7 @@ index 3941e14d1c3e6e688e28904948039c8b2200de5f..a4fda4a3bae9ce600e778b44cd3ef432
          }
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index a0d3d9e344f530b713167d0663634c40eefce5b5..c469688c2b55b1c93435a2ac6e8e4494ab7e5229 100644
+index 97166c362a5468e3f7e2fcfd5e318dc519bfbf6c..ed4587248fada36c4c206be1fa36fef42fc969e2 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -66,13 +66,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -539,10 +539,10 @@ index a0d3d9e344f530b713167d0663634c40eefce5b5..c469688c2b55b1c93435a2ac6e8e4494
      private final PacketFlow receiving;
      private final Queue<Connection.PacketHolder> queue = Queues.newConcurrentLinkedQueue();
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
-index 5165170e3289fe3939497c56a71eae9fdaa4bcfa..8a0ced3f9b9099913ade4b71181aff6cafbc4ee6 100644
+index 72932b13d71f71896f07810c8850eb45749ae2e6..5c92aa1cc1a7e7fd0b7a06ae9b21e734fab71c74 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
-@@ -27,7 +27,7 @@ public class ServerboundChatPacket implements Packet<ServerGamePacketListener> {
+@@ -41,7 +41,7 @@ public class ServerboundChatPacket implements Packet<ServerGamePacketListener> {
  
      // Spigot Start
      private static final java.util.concurrent.ExecutorService executors = java.util.concurrent.Executors.newCachedThreadPool(
@@ -552,10 +552,10 @@ index 5165170e3289fe3939497c56a71eae9fdaa4bcfa..8a0ced3f9b9099913ade4b71181aff6c
          if ( !this.message.startsWith("/") )
          {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index d0d058287fc1e87e944e99d4fc2cbd38eafb82b3..cec0082718c2a729044d6f19d74b8e4425816725 100644
+index 7d381cc2c514045aad2bf65fd166b8ad1c8a9c97..ce700e9c74ad961703d95245febf95d060a7df8d 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -215,6 +215,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -208,6 +208,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
          com.destroystokyo.paper.PaperConfig.registerCommands();
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
@@ -564,10 +564,10 @@ index d0d058287fc1e87e944e99d4fc2cbd38eafb82b3..cec0082718c2a729044d6f19d74b8e44
  
          this.setPvpAllowed(dedicatedserverproperties.pvp);
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 7c820a8f9ae85eb6941dce0e6296775fb331d720..888e863b6d605bf587d0c071795a43d2157afa4d 100644
+index 78808e6239070121d36b6c377202d76e8fb3fa32..72fbc58f7d003b7af3c35e5fc504010307c7086b 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-@@ -52,10 +52,10 @@ public class ServerConnectionListener {
+@@ -53,10 +53,10 @@ public class ServerConnectionListener {
  
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final LazyLoadedValue<NioEventLoopGroup> SERVER_EVENT_GROUP = new LazyLoadedValue<>(() -> {

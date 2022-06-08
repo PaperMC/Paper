@@ -5,10 +5,10 @@ Subject: [PATCH] Add permission for command blocks
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index d4f57fde2f02071dfde08cb2a5c8359984056aef..176e5bbac94cf39805dcacfcae3a3daa98b793b7 100644
+index 312768054e02847bbc7d2ec7fa6198dad52b86d2..32a6b4d8e6c8f9c05cc7ca811c2188aa554f9e3e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -403,7 +403,7 @@ public class ServerPlayerGameMode {
+@@ -396,7 +396,7 @@ public class ServerPlayerGameMode {
              BlockEntity tileentity = this.level.getBlockEntity(pos);
              Block block = iblockdata.getBlock();
  
@@ -18,32 +18,32 @@ index d4f57fde2f02071dfde08cb2a5c8359984056aef..176e5bbac94cf39805dcacfcae3a3daa
                  return false;
              } else if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 5069017665f98a8b3900220b01ca4b99bc8d2f93..b03b8bb8e3f19de772d41bc5a9bda3192273df07 100644
+index 90ce47c8ac50da05b3082402d56b295fc3293532..44b44548c33f5128fbf09ac36c6bab428b8a8c97 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -796,7 +796,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -828,7 +828,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (!this.server.isCommandBlockEnabled()) {
-             this.player.sendMessage(new TranslatableComponent("advMode.notEnabled"), Util.NIL_UUID);
+             this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
 -        } else if (!this.player.canUseGameMasterBlocks()) {
 +        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
-             this.player.sendMessage(new TranslatableComponent("advMode.notAllowed"), Util.NIL_UUID);
+             this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandblocklistenerabstract = null;
-@@ -863,7 +863,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -895,7 +895,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (!this.server.isCommandBlockEnabled()) {
-             this.player.sendMessage(new TranslatableComponent("advMode.notEnabled"), Util.NIL_UUID);
+             this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
 -        } else if (!this.player.canUseGameMasterBlocks()) {
 +        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
-             this.player.sendMessage(new TranslatableComponent("advMode.notAllowed"), Util.NIL_UUID);
+             this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandblocklistenerabstract = packet.getCommandBlock(this.player.level);
 diff --git a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
-index 5b125aa77e769983a0aee7c5f6eb6a8a146fead0..fca57e5d1e25db6367c53ad04e49508ebf2223e7 100644
+index da504702bc9423774b35dff792d2dbe7fc270fe3..c0195f73cd2c8721e882c681eaead65471710081 100644
 --- a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
 +++ b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
-@@ -199,7 +199,7 @@ public abstract class BaseCommandBlock implements CommandSource {
+@@ -198,7 +198,7 @@ public abstract class BaseCommandBlock implements CommandSource {
      }
  
      public InteractionResult usedBy(Player player) {
@@ -53,7 +53,7 @@ index 5b125aa77e769983a0aee7c5f6eb6a8a146fead0..fca57e5d1e25db6367c53ad04e49508e
          } else {
              if (player.getCommandSenderWorld().isClientSide) {
 diff --git a/src/main/java/net/minecraft/world/level/block/CommandBlock.java b/src/main/java/net/minecraft/world/level/block/CommandBlock.java
-index 25a297968388f85108d7b9de96fdc7d368034e4d..1a48c5ea1f2f755abfa85469e26f37ea5f02d6da 100644
+index 061a56e3828767cd6576d5a9edde5f3498e609d0..2e7c03b00bc941b86df6a7f1b2b188c9f0aede22 100644
 --- a/src/main/java/net/minecraft/world/level/block/CommandBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CommandBlock.java
 @@ -130,7 +130,7 @@ public class CommandBlock extends BaseEntityBlock implements GameMasterBlock {
