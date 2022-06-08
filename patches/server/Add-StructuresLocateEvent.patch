@@ -15,12 +15,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.world.structure.ConfiguredStructure;
  import net.minecraft.core.Registry;
  import net.minecraft.resources.ResourceKey;
-+import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
++import net.minecraft.world.level.levelgen.structure.Structure;
  import org.bukkit.Keyed;
  
  public record RegistryKey<API extends Keyed, MINECRAFT>(Class<API> apiClass, ResourceKey<? extends Registry<MINECRAFT>> resourceKey) {
 +
-+    public static final RegistryKey<ConfiguredStructure, ConfiguredStructureFeature<?, ?>> CONFIGURED_STRUCTURE_REGISTRY = new RegistryKey<>(ConfiguredStructure.class, Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
++    public static final RegistryKey<ConfiguredStructure, Structure> CONFIGURED_STRUCTURE_REGISTRY = new RegistryKey<>(ConfiguredStructure.class, Registry.STRUCTURE_REGISTRY);
 +
  }
 diff --git a/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
@@ -35,8 +35,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.RegistryKey;
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
-+import net.minecraft.world.level.levelgen.feature.StructureFeature;
++import net.minecraft.world.level.levelgen.structure.Structure;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.StructureType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -55,52 +54,39 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        new ConfiguredStructureRegistry().register();
 +    }
 +
-+    static final class ConfiguredStructureRegistry extends PaperRegistry<ConfiguredStructure, ConfiguredStructureFeature<?, ?>> {
++    static final class ConfiguredStructureRegistry extends PaperRegistry<ConfiguredStructure, Structure> {
 +
-+        private static final Supplier<Registry<StructureFeature<?>>> STRUCTURE_FEATURE_REGISTRY = registryFor(Registry.STRUCTURE_FEATURE_REGISTRY);
++        private static final Supplier<Registry<Structure>> STRUCTURE_FEATURE_REGISTRY = registryFor(Registry.STRUCTURE_REGISTRY);
 +
 +        public ConfiguredStructureRegistry() {
 +            super(RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
 +        }
 +
 +        @Override
-+        public ConfiguredStructure convertToApi(NamespacedKey key, ConfiguredStructureFeature<?, ?> nms) {
-+            final ResourceLocation structureFeatureLoc = Objects.requireNonNull(STRUCTURE_FEATURE_REGISTRY.get().getKey(nms.feature));
-+            final StructureType structureType = Objects.requireNonNull(StructureType.getStructureTypes().get(structureFeatureLoc.getPath()), structureFeatureLoc + " could not be converted to an API type");
++        public ConfiguredStructure convertToApi(NamespacedKey key, Structure nms) {
++            final ResourceLocation structureTypeLoc = Objects.requireNonNull(Registry.STRUCTURE_TYPES.getKey(nms.type()), "unexpected structure type " + nms.type());
++            final StructureType structureType = Objects.requireNonNull(StructureType.getStructureTypes().get(structureTypeLoc.getPath()), structureTypeLoc + " could not be converted to an API type"); // TODO this is just not gonna work until upstream fixes their StructureType pseudo-enum
 +            return new ConfiguredStructure(key, structureType);
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.packRepository.setSelected(dataPacks);
-             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
-             this.resources.managers.updateRegistryTags(this.registryAccess());
--            io.papermc.paper.PaperRegistry.clearCaches(); // Paper
-+            io.papermc.paper.registry.PaperRegistry.clearCaches(); // Paper
-             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
-             if (Thread.currentThread() != this.serverThread) return; // Paper
-             //this.getPlayerList().saveAll(); // Paper - we don't need to do this
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -0,0 +0,0 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+@@ -0,0 +0,0 @@ public abstract class ChunkGenerator {
  
      @Nullable
-     public Pair<BlockPos, Holder<ConfiguredStructureFeature<?, ?>>> findNearestMapFeature(ServerLevel worldserver, HolderSet<ConfiguredStructureFeature<?, ?>> holderset, BlockPos center, int radius, boolean skipExistingChunks) {
+     public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(ServerLevel world, HolderSet<Structure> structures, BlockPos center, int radius, boolean skipReferencedStructures) {
 +        // Paper start - StructureLocateEvent
-+        final org.bukkit.World world = worldserver.getWorld();
-+        final org.bukkit.Location origin = net.minecraft.server.MCUtil.toLocation(worldserver, center);
++        final org.bukkit.World bukkitWorld = world.getWorld();
++        final org.bukkit.Location origin = net.minecraft.server.MCUtil.toLocation(world, center);
 +        final var paperRegistry = io.papermc.paper.registry.PaperRegistry.getRegistry(io.papermc.paper.registry.RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
 +        final List<io.papermc.paper.world.structure.ConfiguredStructure> configuredStructures = new ArrayList<>();
-+        for (Holder<net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature<?, ?>> holder : holderset) {
++        for (Holder<Structure> holder : structures) {
 +            configuredStructures.add(paperRegistry.convertToApi(holder));
 +        }
-+        final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(world, origin, configuredStructures, radius, skipExistingChunks);
++        final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, configuredStructures, radius, skipReferencedStructures);
 +        if (!event.callEvent()) {
 +            return null;
 +        }
@@ -109,24 +95,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        center = net.minecraft.server.MCUtil.toBlockPosition(event.getOrigin());
 +        radius = event.getRadius();
-+        skipExistingChunks = event.shouldFindUnexplored();
-+        holderset = HolderSet.direct(paperRegistry::getMinecraftHolder, event.getConfiguredStructures());
++        skipReferencedStructures = event.shouldFindUnexplored();
++        structures = HolderSet.direct(paperRegistry::getMinecraftHolder, event.getConfiguredStructures());
 +        // Paper end
-         Set<Holder<Biome>> set = (Set) holderset.stream().flatMap((holder) -> {
-             return ((ConfiguredStructureFeature) holder.value()).biomes().stream();
-         }).collect(Collectors.toSet());
-diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/ConfiguredStructureFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/ConfiguredStructureFeature.java
+         Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap();
+         Iterator iterator = structures.iterator();
+ 
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java b/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/levelgen/feature/ConfiguredStructureFeature.java
-+++ b/src/main/java/net/minecraft/world/level/levelgen/feature/ConfiguredStructureFeature.java
-@@ -0,0 +0,0 @@ public class ConfiguredStructureFeature<FC extends FeatureConfiguration, F exten
-     public final HolderSet<Biome> biomes;
-     public final Map<MobCategory, StructureSpawnOverride> spawnOverrides;
-     public final boolean adaptNoise;
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/Structure.java
+@@ -0,0 +0,0 @@ public abstract class Structure {
+     public static final Codec<Structure> DIRECT_CODEC = Registry.STRUCTURE_TYPES.byNameCodec().dispatch(Structure::type, StructureType::codec);
+     public static final Codec<Holder<Structure>> CODEC = RegistryFileCodec.create(Registry.STRUCTURE_REGISTRY, DIRECT_CODEC);
+     protected final Structure.StructureSettings settings;
 +    static { io.papermc.paper.world.structure.PaperConfiguredStructure.init(); } // Paper
  
-     public ConfiguredStructureFeature(F feature, FC config, HolderSet<Biome> biomes, boolean bl, Map<MobCategory, StructureSpawnOverride> map) {
-         this.feature = feature;
+     public static <S extends Structure> RecordCodecBuilder<S, Structure.StructureSettings> settingsCodec(RecordCodecBuilder.Instance<S> instance) {
+         return Structure.StructureSettings.CODEC.forGetter((feature) -> {
 diff --git a/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -140,7 +126,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.Bootstrap;
-+import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
++import net.minecraft.world.level.levelgen.structure.Structure;
 +import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -186,11 +172,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Test
 +    public void testMinecraftToApi() {
-+        assertEquals("configured structure maps should be the same size", BUILT_IN_STRUCTURES.size(), BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE.size());
++        assertEquals("configured structure maps should be the same size", BUILT_IN_STRUCTURES.size(), BuiltinRegistries.STRUCTURES.size());
 +
-+        Map<ResourceLocation, ConfiguredStructureFeature<?, ?>> missing = new LinkedHashMap<>();
-+        for (ConfiguredStructureFeature<?, ?> feature : BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE) {
-+            final ResourceLocation key = BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE.getKey(feature);
++        Map<ResourceLocation, Structure> missing = new LinkedHashMap<>();
++        for (Structure feature : BuiltinRegistries.STRUCTURES) {
++            final ResourceLocation key = BuiltinRegistries.STRUCTURES.getKey(feature);
 +            assertNotNull("Missing built-in registry key", key);
 +            if (DEFAULT_CONFIGURED_STRUCTURES.get(CraftNamespacedKey.fromMinecraft(key)) == null) {
 +                missing.put(key, feature);
@@ -203,11 +189,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Test
 +    public void testApiToMinecraft() {
 +        for (NamespacedKey apiKey : DEFAULT_CONFIGURED_STRUCTURES.keySet()) {
-+            assertTrue(apiKey + " does not have a minecraft counterpart", BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE.containsKey(CraftNamespacedKey.toMinecraft(apiKey)));
++            assertTrue(apiKey + " does not have a minecraft counterpart", BuiltinRegistries.STRUCTURES.containsKey(CraftNamespacedKey.toMinecraft(apiKey)));
 +        }
 +    }
 +
-+    private static String printMissing(Map<ResourceLocation, ConfiguredStructureFeature<?, ?>> missing) {
++    private static String printMissing(Map<ResourceLocation, Structure> missing) {
 +        final StringJoiner joiner = new StringJoiner("\n", "Missing: \n", "");
 +
 +        missing.forEach((key, configuredFeature) -> {
