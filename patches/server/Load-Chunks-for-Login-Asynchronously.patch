@@ -41,13 +41,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-     private static final int LATENCY_CHECK_INTERVAL = 15000;
+     private static final int NO_BLOCK_UPDATES_TO_ACK = -1;
      public final Connection connection;
      private final MinecraftServer server;
 +    public Runnable playerJoinReady; // Paper
      public ServerPlayer player;
      private int tickCount;
-     private long keepAliveTime = Util.getMillis();
+     private int ackBlockChangesUpTo = -1;
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      // CraftBukkit end
  
@@ -61,9 +61,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Don't tick if not valid (dead), otherwise we load chunks below
 +        if (this.player.valid) {
 +        // Paper end
-         this.resetPosition();
-         this.player.xo = this.player.getX();
-         this.player.yo = this.player.getY();
+         if (this.ackBlockChangesUpTo > -1) {
+             this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
+             this.ackBlockChangesUpTo = -1;
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              this.lastVehicle = null;
              this.clientVehicleIsFloating = false;
@@ -99,14 +99,6 @@ diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
- import net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket;
- import net.minecraft.network.protocol.game.ClientboundChatPacket;
- import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
-+import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
- import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
- import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
- import net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket;
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
      private final IpBanList ipBans;
      private final ServerOpList ops;
@@ -189,8 +181,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    void disconnectPendingPlayer(ServerPlayer entityplayer) {
-+        TranslatableComponent msg = new TranslatableComponent("multiplayer.disconnect.duplicate_login", new Object[0]);
-+        entityplayer.networkManager.send(new ClientboundDisconnectPacket(msg), (future) -> {
++        Component msg = Component.translatable("multiplayer.disconnect.duplicate_login");
++        entityplayer.networkManager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(msg), (future) -> {
 +            entityplayer.networkManager.disconnect(msg);
 +            entityplayer.networkManager = null;
 +        });
@@ -203,7 +195,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        player.didPlayerJoinEvent = true;
 +        // Paper end
-         TranslatableComponent chatmessage;
+         MutableComponent ichatmutablecomponent;
  
          if (player.getGameProfile().getName().equalsIgnoreCase(s)) {
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
