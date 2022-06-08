@@ -41,20 +41,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public BiomeProvider vanillaBiomeProvider() {
-+        final net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator;
-+        if (this.getHandle().chunkSource.getGenerator() instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator bukkit) {
-+            chunkGenerator = bukkit.delegate;
-+        } else {
-+            chunkGenerator = this.getHandle().chunkSource.getGenerator();
-+        }
++        net.minecraft.server.level.ServerChunkCache serverCache = this.getHandle().chunkSource;
++
++        final net.minecraft.world.level.biome.BiomeSource biomeSource = serverCache.getGenerator().getBiomeSource();
++        final net.minecraft.world.level.biome.Climate.Sampler sampler = serverCache.randomState().sampler();
 +        final net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry = this.getHandle().registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY);
-+        final List<Biome> possibleBiomes = chunkGenerator.getBiomeSource().possibleBiomes().stream()
++
++        final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
 +            .map(biome -> CraftBlock.biomeBaseToBiome(biomeRegistry, biome))
 +            .toList();
 +        return new BiomeProvider() {
 +            @Override
 +            public Biome getBiome(final org.bukkit.generator.WorldInfo worldInfo, final int x, final int y, final int z) {
-+                return CraftBlock.biomeBaseToBiome(biomeRegistry, CraftWorld.this.getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
++                return CraftBlock.biomeBaseToBiome(biomeRegistry, biomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
 +            }
 +
 +            @Override
