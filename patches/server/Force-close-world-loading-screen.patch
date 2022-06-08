@@ -17,13 +17,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          // Paper start - move vehicle into method so it can be called above - short circuit around that code
          onPlayerJoinFinish(player, worldserver1, s1);
-+        // Send empty chunk, so players aren't stuck in the world loading screen
-+        net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> plains = worldserver1.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)
-+            .getHolderOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
-+        player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
-+            new net.minecraft.world.level.chunk.EmptyLevelChunk(worldserver1, player.chunkPosition(), plains),
-+            worldserver1.getLightEngine(), null, null, true, false)
-+        );
++        // Paper start - Send empty chunk, so players aren't stuck in the world loading screen with our chunk system not sending chunks when dead
++        if (player.isDeadOrDying()) {
++            net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> plains = worldserver1.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)
++                .getHolderOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
++            player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
++                new net.minecraft.world.level.chunk.EmptyLevelChunk(worldserver1, player.chunkPosition(), plains),
++                worldserver1.getLightEngine(), null, null, true, false)
++            );
++        }
++        // Paper end
      }
      private void mountSavedVehicle(ServerPlayer player, ServerLevel worldserver1, CompoundTag nbttagcompound) {
          // Paper end
