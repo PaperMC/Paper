@@ -12,7 +12,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      synchronized (ServerHandshakePacketListenerImpl.throttleTracker) {
                          if (ServerHandshakePacketListenerImpl.throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - ServerHandshakePacketListenerImpl.throttleTracker.get(address) < connectionThrottle) {
                              ServerHandshakePacketListenerImpl.throttleTracker.put(address, currentTime);
--                            TranslatableComponent chatmessage = new TranslatableComponent(com.destroystokyo.paper.PaperConfig.connectionThrottleKickMessage); // Paper - Configurable connection throttle kick message
+-                            MutableComponent chatmessage = Component.literal(com.destroystokyo.paper.PaperConfig.connectionThrottleKickMessage); // Paper - Configurable connection throttle kick message
 +                            Component chatmessage = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(com.destroystokyo.paper.PaperConfig.connectionThrottleKickMessage, true)[0]; // Paper - Configurable connection throttle kick message // Paper - Fix hex colors not working in some kick messages
                              this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
                              this.connection.disconnect(chatmessage);
@@ -21,18 +21,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
                  // CraftBukkit end
                  if (packet.getProtocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
--                    TranslatableComponent chatmessage;
-+                    Component chatmessage; // Paper - Fix hex colors not working in some kick messages
+-                    MutableComponent ichatmutablecomponent;
++                    Component ichatmutablecomponent; // Paper - Fix hex colors not working in some kick messages
  
                      if (packet.getProtocolVersion() < 754) {
--                        chatmessage = new TranslatableComponent( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) ); // Spigot
-+                        chatmessage = org.bukkit.craftbukkit.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) , true )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
+-                        ichatmutablecomponent = Component.literal( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) ); // Spigot
++                        ichatmutablecomponent = org.bukkit.craftbukkit.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) , true )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
                      } else {
--                        chatmessage = new TranslatableComponent( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) ); // Spigot
-+                        chatmessage = org.bukkit.craftbukkit.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) , true )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
+-                        ichatmutablecomponent = Component.literal( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) ); // Spigot
++                        ichatmutablecomponent = org.bukkit.craftbukkit.util.CraftChatMessage.fromString( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) , true )[0]; // Spigot // Paper - Fix hex colors not working in some kick messages
                      }
  
-                     this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
+                     this.connection.send(new ClientboundLoginDisconnectPacket(ichatmutablecomponent));
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
@@ -41,15 +41,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit start
      @Deprecated
      public void disconnect(String s) {
--        try {
--            Component ichatbasecomponent = new TextComponent(s);
--            ServerLoginPacketListenerImpl.LOGGER.info("Disconnecting {}: {}", this.getUserName(), s);
--            this.connection.send(new ClientboundLoginDisconnectPacket(ichatbasecomponent));
--            this.connection.disconnect(ichatbasecomponent);
--        } catch (Exception exception) {
--            ServerLoginPacketListenerImpl.LOGGER.error("Error whilst disconnecting player", exception);
--        }
-+        disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s, true)[0]); // Paper - Fix hex colors not working in some kick messages
+-        this.disconnect(Component.literal(s));
++        this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s, true)[0]); // Paper - Fix hex colors not working in some kick messages
      }
      // CraftBukkit end
  
