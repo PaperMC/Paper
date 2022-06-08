@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.block.data.type;
 import org.bukkit.block.data.type.Leaves;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-public class CraftLeaves extends CraftBlockData implements Leaves {
+public abstract class CraftLeaves extends CraftBlockData implements Leaves {
 
     private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DISTANCE = getInteger("distance");
     private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean PERSISTENT = getBoolean("persistent");
