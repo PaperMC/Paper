@@ -11,10 +11,10 @@ to the nearest Integer when updating its current cook time.
 Modified by: Eric Su <ericsu@alumni.usc.edu>
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-index c3c53a34f645a834256c31951e465ae33aa1a9ff..635d47d4bea679e96736ef891c40f57488cbc6a1 100644
+index bbccb2f97ee88fe43af4eec30fbb2ecea1ebb1b4..a46b2ab813d17b56761e562a49c3cd4112b9def7 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-@@ -75,6 +75,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -76,11 +76,13 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
      protected NonNullList<ItemStack> items;
      public int litTime;
      int litDuration;
@@ -22,7 +22,21 @@ index c3c53a34f645a834256c31951e465ae33aa1a9ff..635d47d4bea679e96736ef891c40f574
      public int cookingProgress;
      public int cookingTotalTime;
      protected final ContainerData dataAccess;
-@@ -281,6 +282,11 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+     public final Object2IntOpenHashMap<ResourceLocation> recipesUsed;
+     private final RecipeManager.CachedCheck<Container, ? extends AbstractCookingRecipe> quickCheck;
++    public final RecipeType<? extends AbstractCookingRecipe> recipeType; // Paper
+ 
+     protected AbstractFurnaceBlockEntity(BlockEntityType<?> blockEntityType, BlockPos pos, BlockState state, RecipeType<? extends AbstractCookingRecipe> recipeType) {
+         super(blockEntityType, pos, state);
+@@ -127,6 +129,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+         };
+         this.recipesUsed = new Object2IntOpenHashMap();
+         this.quickCheck = RecipeManager.createCheck((RecipeType<AbstractCookingRecipe>) recipeType); // CraftBukkit - decompile error // Eclipse fail
++        this.recipeType = recipeType; // Paper
+     }
+ 
+     public static Map<Item, Integer> getFuel() {
+@@ -285,6 +288,11 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
              this.recipesUsed.put(new ResourceLocation(s), nbttagcompound1.getInt(s));
          }
  
@@ -34,7 +48,7 @@ index c3c53a34f645a834256c31951e465ae33aa1a9ff..635d47d4bea679e96736ef891c40f574
      }
  
      @Override
-@@ -289,6 +295,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -293,6 +301,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
          nbt.putShort("BurnTime", (short) this.litTime);
          nbt.putShort("CookTime", (short) this.cookingProgress);
          nbt.putShort("CookTimeTotal", (short) this.cookingTotalTime);
@@ -42,7 +56,7 @@ index c3c53a34f645a834256c31951e465ae33aa1a9ff..635d47d4bea679e96736ef891c40f574
          ContainerHelper.saveAllItems(nbt, this.items);
          CompoundTag nbttagcompound1 = new CompoundTag();
  
-@@ -351,7 +358,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -364,7 +373,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
                      CraftItemStack source = CraftItemStack.asCraftMirror(blockEntity.items.get(0));
                      CookingRecipe<?> recipe = (CookingRecipe<?>) irecipe.toBukkitRecipe();
  
@@ -51,40 +65,40 @@ index c3c53a34f645a834256c31951e465ae33aa1a9ff..635d47d4bea679e96736ef891c40f574
                      world.getCraftServer().getPluginManager().callEvent(event);
  
                      blockEntity.cookingTotalTime = event.getTotalCookTime();
-@@ -359,9 +366,9 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -372,9 +381,9 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
                  // CraftBukkit end
  
                  ++blockEntity.cookingProgress;
 -                if (blockEntity.cookingProgress == blockEntity.cookingTotalTime) {
 +                if (blockEntity.cookingProgress >= blockEntity.cookingTotalTime) { // Paper - cook speed multiplier API
                      blockEntity.cookingProgress = 0;
--                    blockEntity.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity.recipeType, blockEntity);
-+                    blockEntity.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity.recipeType, blockEntity, blockEntity.cookSpeedMultiplier);
+-                    blockEntity.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity);
++                    blockEntity.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(world, blockEntity.recipeType, blockEntity, blockEntity.cookSpeedMultiplier); // Paper
                      if (AbstractFurnaceBlockEntity.burn(blockEntity.level, blockEntity.worldPosition, irecipe, blockEntity.items, i)) { // CraftBukkit
                          blockEntity.setRecipeUsed(irecipe);
                      }
-@@ -461,9 +468,13 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -474,9 +483,13 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
          }
      }
  
--    private static int getTotalCookTime(Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, Container inventory) {
--        return (world != null) ? (Integer) world.getRecipeManager().getRecipeFor((RecipeType<AbstractCookingRecipe>) recipeType, inventory, world).map(AbstractCookingRecipe::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
-+    // Paper begin - Expose this function so CraftFurnace can correctly scale the total cooking time to a new multiplier
-+    public static int getTotalCookTime(@Nullable Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, Container inventory, final double cookSpeedMultiplier) {
+-    private static int getTotalCookTime(Level world, AbstractFurnaceBlockEntity furnace) {
+-        return (world != null) ? (Integer) furnace.quickCheck.getRecipeFor(furnace, world).map(AbstractCookingRecipe::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302
++    // Paper start
++    public static int getTotalCookTime(Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, AbstractFurnaceBlockEntity furnace, double cookSpeedMultiplier) {
 +        /* Scale the recipe's cooking time to the current cookSpeedMultiplier */
-+        int cookTime = (world != null ? world.getRecipeManager() : net.minecraft.server.MinecraftServer.getServer().getRecipeManager()).getRecipeFor(recipeType, inventory, world /* passing a null level here is safe. world is only used for map extending recipes which won't happen here */).map(AbstractCookingRecipe::getCookingTime).orElse(200); // CraftBukkit - SPIGOT-4302 // Eclipse fail
++        int cookTime = world == null ? furnace.quickCheck.getRecipeFor(furnace, world).map(AbstractCookingRecipe::getCookingTime).orElse(200) : (net.minecraft.server.MinecraftServer.getServer().getRecipeManager().getRecipeFor(recipeType, furnace, world /* passing a null level here is safe. world is only used for map extending recipes which won't happen here */).map(AbstractCookingRecipe::getCookingTime).orElse(200));
 +        return (int) Math.ceil (cookTime / cookSpeedMultiplier);
      }
 +    // Paper end
  
      public static boolean isFuel(ItemStack stack) {
          return AbstractFurnaceBlockEntity.getFuel().containsKey(stack.getItem());
-@@ -532,7 +543,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -545,7 +558,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
          }
  
          if (slot == 0 && !flag) {
--            this.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.level, this.recipeType, this);
-+            this.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.level, this.recipeType, this, this.cookSpeedMultiplier);
+-            this.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.level, this);
++            this.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.level, this.recipeType, this, this.cookSpeedMultiplier); // Paper
              this.cookingProgress = 0;
              this.setChanged();
          }
