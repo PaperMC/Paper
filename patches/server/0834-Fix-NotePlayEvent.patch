@@ -5,23 +5,27 @@ Subject: [PATCH] Fix NotePlayEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/NoteBlock.java b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
-index 16e11e31077f160198e0b04abdfeabb97ed20c6f..0e106bcc1f882877a5e444a2621466c6e4696d42 100644
+index 293affa9821bcf7c6f4c2d57818958ae2765c5de..c14eb4f7decdbcd6176d3bff95d595a947d4ec95 100644
 --- a/src/main/java/net/minecraft/world/level/block/NoteBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
-@@ -60,10 +60,9 @@ public class NoteBlock extends Block {
-     private void playNote(Level world, BlockPos blockposition, BlockState data) { // CraftBukkit
+@@ -63,11 +63,12 @@ public class NoteBlock extends Block {
+     private void playNote(@Nullable Entity entity, Level world, BlockPos blockposition, BlockState data) { // CraftBukkit
          if (world.getBlockState(blockposition.above()).isAir()) {
              // CraftBukkit start
 -            org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, blockposition, data.getValue(NoteBlock.INSTRUMENT), data.getValue(NoteBlock.NOTE));
--            if (!event.isCancelled()) {
-+            // Paper start - move NotePlayEvent call to fix instrument/note changes
-                 world.blockEvent(blockposition, this, 0, 0);
+-            if (event.isCancelled()) {
+-                return;
 -            }
-+            // Paper end
++            // org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, blockposition, data.getValue(NoteBlock.INSTRUMENT), data.getValue(NoteBlock.NOTE)); // Paper - move event into block event handler
++            // if (event.isCancelled()) {
++            //     return;
++            // }
              // CraftBukkit end
++            // Paper - TODO any way to cancel the game event?
+             world.blockEvent(blockposition, this, 0, 0);
+             world.gameEvent(entity, GameEvent.NOTE_BLOCK_PLAY, blockposition);
          }
- 
-@@ -92,10 +91,14 @@ public class NoteBlock extends Block {
+@@ -97,10 +98,14 @@ public class NoteBlock extends Block {
  
      @Override
      public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
