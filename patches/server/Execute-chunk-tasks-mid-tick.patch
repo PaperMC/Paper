@@ -130,16 +130,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-     private final StructureFeatureManager structureFeatureManager;
+     private final StructureManager structureManager;
      private final StructureCheck structureCheck;
      private final boolean tickTime;
--
-+    // Paper start - execute chunk tasks mid tick
-+    public long lastMidTickExecuteFailure;
-+    // Paper end - execute chunk tasks mid tick
++    public long lastMidTickExecuteFailure; // Paper - execute chunk tasks mid tick
  
      // CraftBukkit start
-     private int tickPosition;
+     public final LevelStorageSource.LevelStorageAccess convertable;
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
          if (fluid1.is(fluid)) {
              fluid1.tick(this, pos);
@@ -162,7 +159,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  // Spigot end
-             } else if (this.shouldTickBlocksAt(ChunkPos.asLong(tickingblockentity.getPos()))) {
+             } else if (this.shouldTickBlocksAt(tickingblockentity.getPos())) {
                  tickingblockentity.tick();
 +                // Paper start - execute chunk tasks during tick
 +                if ((this.tileTickPosition & 7) == 0) {
