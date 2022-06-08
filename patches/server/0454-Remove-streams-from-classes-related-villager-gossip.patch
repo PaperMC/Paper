@@ -5,24 +5,16 @@ Subject: [PATCH] Remove streams from classes related villager gossip
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-index e98951ac056910340c498d866715e174d461f723..8d879cc6f8b96c7521d4b55fcf1f3abb9e669ecd 100644
+index 0de65462956fa734b6405614e047161696e596fb..aa277479f5552503a202a057b1a3ede379f2bbbf 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-@@ -8,6 +8,7 @@ import com.mojang.serialization.Dynamic;
- import com.mojang.serialization.DynamicOps;
- import it.unimi.dsi.fastutil.objects.Object2IntMap;
- import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-+import it.unimi.dsi.fastutil.objects.ObjectArrayList; // Paper
- import it.unimi.dsi.fastutil.objects.ObjectIterator;
- import java.util.Arrays;
- import java.util.Collection;
-@@ -58,8 +59,21 @@ public class GossipContainer {
+@@ -58,8 +58,21 @@ public class GossipContainer {
          });
      }
  
 +    // Paper start - Remove streams from reputation
 +    private List<GossipContainer.GossipEntry> decompress() {
-+        List<GossipContainer.GossipEntry> list = new ObjectArrayList<>();
++        List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
 +        for (Map.Entry<UUID, GossipContainer.EntityGossips> entry : getReputations().entrySet()) {
 +            for (GossipContainer.GossipEntry cur : entry.getValue().decompress(entry.getKey())) {
 +                if (cur.weightedValue() != 0)
@@ -33,26 +25,22 @@ index e98951ac056910340c498d866715e174d461f723..8d879cc6f8b96c7521d4b55fcf1f3abb
 +    }
 +    // Paper end
 +
-     private Collection<GossipContainer.GossipEntry> selectGossipsForTransfer(Random random, int count) {
+     private Collection<GossipContainer.GossipEntry> selectGossipsForTransfer(RandomSource random, int count) {
 -        List<GossipContainer.GossipEntry> list = this.unpack().collect(Collectors.toList());
-+        List<GossipContainer.GossipEntry> list = decompress(); // Paper - Remove streams from reputation
++        List<GossipContainer.GossipEntry> list = this.decompress(); // Paper - Remove streams from reputation
          if (list.isEmpty()) {
              return Collections.emptyList();
          } else {
-@@ -152,9 +166,9 @@ public class GossipContainer {
- 
+@@ -153,7 +166,7 @@ public class GossipContainer {
      }
  
--    public <T> Dynamic<T> store(DynamicOps<T> dynamicOps) {
+     public <T> Dynamic<T> store(DynamicOps<T> dynamicOps) {
 -        return new Dynamic<>(dynamicOps, dynamicOps.createList(this.unpack().map((gossipEntry) -> {
--            return gossipEntry.store(dynamicOps);
-+    public <T> Dynamic<T> store(DynamicOps<T> dynamicops) {
-+        return new Dynamic(dynamicops, dynamicops.createList(this.decompress().stream().map((reputation_b) -> {
-+            return reputation_b.store(dynamicops);
++        return new Dynamic<>(dynamicOps, dynamicOps.createList(this.decompress().stream().map((gossipEntry) -> {
+             return gossipEntry.store(dynamicOps);
          }).map(Dynamic::getValue)));
      }
- 
-@@ -179,11 +193,23 @@ public class GossipContainer {
+@@ -179,11 +192,23 @@ public class GossipContainer {
          final Object2IntMap<GossipType> entries = new Object2IntOpenHashMap<>();
  
          public int weightedValue(Predicate<GossipType> gossipTypeFilter) {
@@ -72,7 +60,7 @@ index e98951ac056910340c498d866715e174d461f723..8d879cc6f8b96c7521d4b55fcf1f3abb
 +        }
 +
 +        public List<GossipContainer.GossipEntry> decompress(UUID uuid) {
-+            List<GossipContainer.GossipEntry> list = new ObjectArrayList<>();
++            List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
 +            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
 +                list.add(new GossipContainer.GossipEntry(uuid, entry.getKey(), entry.getIntValue()));
 +            }
