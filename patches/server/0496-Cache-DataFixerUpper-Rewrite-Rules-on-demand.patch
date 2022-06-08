@@ -30,10 +30,10 @@ This patch will significantly reduce CPU use on startup, reduce memory usage,
 and improve server startup time.
 
 diff --git a/src/main/java/com/mojang/datafixers/DataFixerBuilder.java b/src/main/java/com/mojang/datafixers/DataFixerBuilder.java
-index e7e410585760c6f0cb4b6cf81fcc97333fc8ab10..503828188b25ce41b86a868853d6969b84764a84 100644
+index d25f106ab64c90438f521a2c6fa944bdedc1969a..3d5e52d997a8e7d7f3b000e3737d30762aae2ca1 100644
 --- a/src/main/java/com/mojang/datafixers/DataFixerBuilder.java
 +++ b/src/main/java/com/mojang/datafixers/DataFixerBuilder.java
-@@ -26,8 +26,10 @@ public class DataFixerBuilder {
+@@ -28,8 +28,10 @@ public class DataFixerBuilder {
      private final Int2ObjectSortedMap<Schema> schemas = new Int2ObjectAVLTreeMap<>();
      private final List<DataFix> globalList = Lists.newArrayList();
      private final IntSortedSet fixerVersions = new IntAVLTreeSet();
@@ -44,11 +44,11 @@ index e7e410585760c6f0cb4b6cf81fcc97333fc8ab10..503828188b25ce41b86a868853d6969b
          this.dataVersion = dataVersion;
      }
  
-@@ -65,6 +67,7 @@ public class DataFixerBuilder {
+@@ -74,6 +76,7 @@ public class DataFixerBuilder {
          final IntBidirectionalIterator iterator = fixerUpper.fixerVersions().iterator();
          while (iterator.hasNext()) {
              final int versionKey = iterator.nextInt();
 +            if (versionKey < minDataFixPrecacheVersion) continue; // Paper
              final Schema schema = schemas.get(versionKey);
              for (final String typeName : schema.types()) {
-                 CompletableFuture.runAsync(() -> {
+                 final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
