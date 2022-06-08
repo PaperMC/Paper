@@ -51,9 +51,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.poiManager.loadInData(pos, chunkHolder.poiData);
                  chunkHolder.tasks.forEach(Runnable::run);
 +                this.getPoiManager().dequeueUnload(pos.longKey); // Paper
-                 // Paper end
  
-                 if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
+                 if (chunkHolder.protoChunk != null) {
+                     ProtoChunk protochunk = chunkHolder.protoChunk;
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
@@ -87,10 +87,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - unload poi data
      private final LongSet loadedChunks = new LongOpenHashSet();
-     public final net.minecraft.server.level.ServerLevel world; // Paper // Paper public
+     private final net.minecraft.server.level.ServerLevel world; // Paper
  
-     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, LevelHeightAccessor world) {
-         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, world);
+     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) {
+         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world);
 +        if (world == null) { throw new IllegalStateException("world must be non-null"); } // Paper - require non-null
          this.world = (net.minecraft.server.level.ServerLevel)world; // Paper
 -        this.distanceTracker = new PoiManager.DistanceTracker();
@@ -210,7 +210,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - actually unload POI data
 +
-     public void add(BlockPos pos, PoiType type) {
+     public void add(BlockPos pos, Holder<PoiType> type) {
          this.getOrCreate(SectionPos.asLong(pos)).add(pos, type);
      }
 @@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> {

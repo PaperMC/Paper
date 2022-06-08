@@ -26,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-     private ServerPlayer delayedAcceptPlayer;
+     private ProfilePublicKey playerProfilePublicKey;
      public String hostname = ""; // CraftBukkit - add field
      private int velocityLoginMessageId = -1; // Paper - Velocity support
 +    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
@@ -34,7 +34,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-         // Paper end
+         }
      }
  
 +    // Paper start - validate usernames
@@ -60,19 +60,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
-         this.gameProfile = packet.getGameProfile();
-         Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(this.gameProfile.getName()), "Invalid characters in username", new Object[0]);
+         Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
 +        // Paper start - validate usernames
 +        if (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() && com.destroystokyo.paper.PaperConfig.performUsernameValidation) {
-+            if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(this.gameProfile.getName())) {
++            if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(packet.name())) {
 +                ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
 +                return;
 +            }
 +        }
 +        // Paper end - validate usernames
-         if (this.server.usesAuthentication() && !this.connection.isMemoryConnection()) {
-             this.state = ServerLoginPacketListenerImpl.State.KEY;
-             this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
+ 
+         try {
+             this.playerProfilePublicKey = ServerLoginPacketListenerImpl.validatePublicKey(packet, this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
