@@ -25,10 +25,10 @@ index 6f39e343147803e15e7681c993b8797a629702e7..87154ae69788249960bca376aafd90bf
  }
 diff --git a/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ec66a52c06aceb4e16b987e695e50dbe0f9e1c44
+index 0000000000000000000000000000000000000000..423bf87ebda7ea266dc7b48cbfadbc8551180721
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,42 @@
 +package io.papermc.paper.world.structure;
 +
 +import io.papermc.paper.registry.PaperRegistry;
@@ -39,6 +39,7 @@ index 0000000000000000000000000000000000000000..ec66a52c06aceb4e16b987e695e50dbe
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.StructureType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +import java.util.Objects;
@@ -63,18 +64,18 @@ index 0000000000000000000000000000000000000000..ec66a52c06aceb4e16b987e695e50dbe
 +        }
 +
 +        @Override
-+        public ConfiguredStructure convertToApi(NamespacedKey key, Structure nms) {
++        public @Nullable ConfiguredStructure convertToApi(NamespacedKey key, Structure nms) {
 +            final ResourceLocation structureTypeLoc = Objects.requireNonNull(Registry.STRUCTURE_TYPES.getKey(nms.type()), "unexpected structure type " + nms.type());
-+            final StructureType structureType = Objects.requireNonNull(StructureType.getStructureTypes().get(structureTypeLoc.getPath()), structureTypeLoc + " could not be converted to an API type"); // TODO this is just not gonna work until upstream fixes their StructureType pseudo-enum
-+            return new ConfiguredStructure(key, structureType);
++            final @Nullable StructureType structureType = StructureType.getStructureTypes().get(structureTypeLoc.getPath());
++            return structureType == null ? null : new ConfiguredStructure(key, structureType);
 +        }
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 0f92f2906195f5b2b70ca02a46fa111a46f8f18f..36940a873b2f891a50009fd44a2793c1940d2b05 100644
+index 0f92f2906195f5b2b70ca02a46fa111a46f8f18f..a0b21c6ffdc1a08472079db0cbfc36ec0155f2c4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -295,6 +295,26 @@ public abstract class ChunkGenerator {
+@@ -295,6 +295,24 @@ public abstract class ChunkGenerator {
  
      @Nullable
      public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(ServerLevel world, HolderSet<Structure> structures, BlockPos center, int radius, boolean skipReferencedStructures) {
@@ -83,9 +84,7 @@ index 0f92f2906195f5b2b70ca02a46fa111a46f8f18f..36940a873b2f891a50009fd44a2793c1
 +        final org.bukkit.Location origin = net.minecraft.server.MCUtil.toLocation(world, center);
 +        final var paperRegistry = io.papermc.paper.registry.PaperRegistry.getRegistry(io.papermc.paper.registry.RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
 +        final List<io.papermc.paper.world.structure.ConfiguredStructure> configuredStructures = new ArrayList<>();
-+        for (Holder<Structure> holder : structures) {
-+            configuredStructures.add(paperRegistry.convertToApi(holder));
-+        }
++        paperRegistry.convertToApi(structures, configuredStructures::add, false); // gracefully handle missing api, use tests to check (or exclude)
 +        final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, configuredStructures, radius, skipReferencedStructures);
 +        if (!event.callEvent()) {
 +            return null;
@@ -115,10 +114,10 @@ index 737956b316c02e4ccdc6eef8de4a0a299d36b9ca..b8649eab719a1b71dc686386a8db756e
          return Structure.StructureSettings.CODEC.forGetter((feature) -> {
 diff --git a/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9b07d3128cc788efd17ed6a6bdd3370a3d88b48b
+index 0000000000000000000000000000000000000000..61efebe1d363b34e2043ccc4c6e28bb714c2fa31
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.world.structure;
 +
 +import io.papermc.paper.registry.Reference;
@@ -178,6 +177,9 @@ index 0000000000000000000000000000000000000000..9b07d3128cc788efd17ed6a6bdd3370a
 +        for (Structure feature : BuiltinRegistries.STRUCTURES) {
 +            final ResourceLocation key = BuiltinRegistries.STRUCTURES.getKey(feature);
 +            assertNotNull("Missing built-in registry key", key);
++            if (key.equals(BuiltinStructures.ANCIENT_CITY.location())) {
++                continue; // TODO remove when upstream adds "jigsaw" StructureType
++            }
 +            if (DEFAULT_CONFIGURED_STRUCTURES.get(CraftNamespacedKey.fromMinecraft(key)) == null) {
 +                missing.put(key, feature);
 +            }

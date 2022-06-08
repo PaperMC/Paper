@@ -7,10 +7,10 @@ PaperRegistry is a server-backed impl of bukkit's Registry interface
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistry.java b/src/main/java/io/papermc/paper/registry/PaperRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8d1f3c4891870b4239df678dd1e52e9f4ef74b2c
+index 0000000000000000000000000000000000000000..7c265d27da034986be73921d35bf08ae250b42f3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistry.java
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,167 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.base.Preconditions;
@@ -35,6 +35,7 @@ index 0000000000000000000000000000000000000000..8d1f3c4891870b4239df678dd1e52e9f
 +import java.util.Objects;
 +import java.util.Optional;
 +import java.util.concurrent.ConcurrentHashMap;
++import java.util.function.Consumer;
 +import java.util.function.Supplier;
 +
 +@DefaultQualifier(NonNull.class)
@@ -69,13 +70,21 @@ index 0000000000000000000000000000000000000000..8d1f3c4891870b4239df678dd1e52e9f
 +        });
 +    }
 +
-+    public abstract API convertToApi(NamespacedKey key, MINECRAFT nms);
++    public abstract @Nullable API convertToApi(NamespacedKey key, MINECRAFT nms);
 +
-+    public API convertToApi(ResourceLocation resourceLocation, MINECRAFT nms) {
++    public API convertToApiOrThrow(ResourceLocation resourceLocation, MINECRAFT nms) {
++        return Objects.requireNonNull(this.convertToApi(resourceLocation, nms), resourceLocation + " has a null api representation");
++    }
++
++    public @Nullable API convertToApi(ResourceLocation resourceLocation, MINECRAFT nms) {
 +        return this.convertToApi(CraftNamespacedKey.fromMinecraft(resourceLocation), nms);
 +    }
 +
-+    public API convertToApi(Holder<MINECRAFT> nmsHolder) {
++    public API convertToApiOrThrow(Holder<MINECRAFT> nmsHolder) {
++        return Objects.requireNonNull(this.convertToApi(nmsHolder), nmsHolder + " has a null api representation");
++    }
++
++    public @Nullable API convertToApi(Holder<MINECRAFT> nmsHolder) {
 +        final Optional<ResourceKey<MINECRAFT>> key = nmsHolder.unwrapKey();
 +        if (nmsHolder.isBound() && key.isPresent()) {
 +            return this.convertToApi(key.get().location(), nmsHolder.value());
@@ -88,6 +97,17 @@ index 0000000000000000000000000000000000000000..8d1f3c4891870b4239df678dd1e52e9f
 +            }
 +        }
 +        throw new IllegalStateException("Cannot convert " + nmsHolder + " to an API type in: " + this.registryKey);
++    }
++
++    public void convertToApi(Iterable<Holder<MINECRAFT>> holders, Consumer<API> apiConsumer, boolean throwOnNull) {
++        for (Holder<MINECRAFT> holder : holders) {
++            final @Nullable API api = this.convertToApi(holder);
++            if (api == null && throwOnNull) {
++                throw new NullPointerException(holder + " has a null api representation");
++            } else if (api != null) {
++                apiConsumer.accept(api);
++            }
++        }
 +    }
 +
 +    public MINECRAFT getMinecraftValue(API apiValue) {
