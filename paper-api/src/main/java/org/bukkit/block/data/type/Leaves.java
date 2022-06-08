@@ -1,6 +1,6 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Waterlogged;
 
 /**
  * 'persistent' indicates whether or not leaves will be checked by the server to
@@ -10,7 +10,7 @@ import org.bukkit.block.data.BlockData;
  * conjunction with 'persistent' flag to determine if the leaves will decay or
  * not.
  */
-public interface Leaves extends BlockData {
+public interface Leaves extends Waterlogged {
 
     /**
      * Gets the value of the 'persistent' property.
