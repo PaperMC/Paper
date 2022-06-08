@@ -1754,12 +1754,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().connection.send(times);
 
         if (title != null) {
-            ClientboundSetTitleTextPacket packetTitle = new ClientboundSetTitleTextPacket(CraftChatMessage.fromStringOrNull(title));
+            ClientboundSetTitleTextPacket packetTitle = new ClientboundSetTitleTextPacket(CraftChatMessage.fromString(title)[0]);
             getHandle().connection.send(packetTitle);
         }
 
         if (subtitle != null) {
-            ClientboundSetSubtitleTextPacket packetSubtitle = new ClientboundSetSubtitleTextPacket(CraftChatMessage.fromStringOrNull(subtitle));
+            ClientboundSetSubtitleTextPacket packetSubtitle = new ClientboundSetSubtitleTextPacket(CraftChatMessage.fromString(title)[0]);
             getHandle().connection.send(packetSubtitle);
         }
     }
