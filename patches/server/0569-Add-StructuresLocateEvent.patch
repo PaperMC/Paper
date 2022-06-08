@@ -72,10 +72,10 @@ index 0000000000000000000000000000000000000000..423bf87ebda7ea266dc7b48cbfadbc85
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 0f92f2906195f5b2b70ca02a46fa111a46f8f18f..a0b21c6ffdc1a08472079db0cbfc36ec0155f2c4 100644
+index 0f92f2906195f5b2b70ca02a46fa111a46f8f18f..a4e2ee3efde40c902555f982ffa546c24bc31377 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -295,6 +295,24 @@ public abstract class ChunkGenerator {
+@@ -295,6 +295,26 @@ public abstract class ChunkGenerator {
  
      @Nullable
      public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(ServerLevel world, HolderSet<Structure> structures, BlockPos center, int radius, boolean skipReferencedStructures) {
@@ -85,17 +85,19 @@ index 0f92f2906195f5b2b70ca02a46fa111a46f8f18f..a0b21c6ffdc1a08472079db0cbfc36ec
 +        final var paperRegistry = io.papermc.paper.registry.PaperRegistry.getRegistry(io.papermc.paper.registry.RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
 +        final List<io.papermc.paper.world.structure.ConfiguredStructure> configuredStructures = new ArrayList<>();
 +        paperRegistry.convertToApi(structures, configuredStructures::add, false); // gracefully handle missing api, use tests to check (or exclude)
-+        final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, configuredStructures, radius, skipReferencedStructures);
-+        if (!event.callEvent()) {
-+            return null;
++        if (!configuredStructures.isEmpty()) {
++            final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, configuredStructures, radius, skipReferencedStructures);
++            if (!event.callEvent()) {
++                return null;
++            }
++            if (event.getResult() != null) {
++                return Pair.of(net.minecraft.server.MCUtil.toBlockPosition(event.getResult().position()), paperRegistry.getMinecraftHolder(event.getResult().configuredStructure()));
++            }
++            center = net.minecraft.server.MCUtil.toBlockPosition(event.getOrigin());
++            radius = event.getRadius();
++            skipReferencedStructures = event.shouldFindUnexplored();
++            structures = HolderSet.direct(paperRegistry::getMinecraftHolder, event.getConfiguredStructures());
 +        }
-+        if (event.getResult() != null) {
-+            return Pair.of(net.minecraft.server.MCUtil.toBlockPosition(event.getResult().position()), paperRegistry.getMinecraftHolder(event.getResult().configuredStructure()));
-+        }
-+        center = net.minecraft.server.MCUtil.toBlockPosition(event.getOrigin());
-+        radius = event.getRadius();
-+        skipReferencedStructures = event.shouldFindUnexplored();
-+        structures = HolderSet.direct(paperRegistry::getMinecraftHolder, event.getConfiguredStructures());
 +        // Paper end
          Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap();
          Iterator iterator = structures.iterator();
