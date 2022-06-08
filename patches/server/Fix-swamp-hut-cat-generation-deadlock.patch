@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 12 Mar 2022 06:31:13 -0800
+Subject: [PATCH] Fix swamp hut cat generation deadlock
+
+The worldgen thread will attempt to get structure references
+via the world's getChunkAt method, which is fine if the gen is
+not cancelled - but if the chunk was unloaded, the call will block
+indefinitely. Instead of using the world state, we use the already
+supplied ServerLevelAccessor which will always have the chunk available.
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Cat.java b/src/main/java/net/minecraft/world/entity/animal/Cat.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Cat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Cat.java
+@@ -0,0 +0,0 @@ public class Cat extends TamableAnimal {
+         });
+         ServerLevel worldserver = world.getLevel();
+ 
+-        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
++        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - fix deadlock
+             this.setCatVariant(CatVariant.ALL_BLACK);
+             this.setPersistenceRequired();
+         }
+diff --git a/src/main/java/net/minecraft/world/level/StructureManager.java b/src/main/java/net/minecraft/world/level/StructureManager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/StructureManager.java
++++ b/src/main/java/net/minecraft/world/level/StructureManager.java
+@@ -0,0 +0,0 @@ public class StructureManager {
+     }
+ 
+     public List<StructureStart> startsForStructure(ChunkPos chunkPos, Predicate<Structure> predicate) {
+-        Map<Structure, LongSet> map = this.level.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
++        // Paper start
++        return this.startsForStructure(chunkPos, predicate, null);
++    }
++    public List<StructureStart> startsForStructure(ChunkPos chunkPos, Predicate<Structure> predicate, @Nullable ServerLevelAccessor levelAccessor) {
++        // Paper end
++        Map<Structure, LongSet> map = (levelAccessor == null ? this.level : levelAccessor).getChunk(chunkPos.x, chunkPos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
+         ImmutableList.Builder<StructureStart> builder = ImmutableList.builder();
+ 
+         for(Map.Entry<Structure, LongSet> entry : map.entrySet()) {
+@@ -0,0 +0,0 @@ public class StructureManager {
+     }
+ 
+     public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> structureTag) {
++        // Paper start
++        return this.getStructureWithPieceAt(pos, structureTag, null);
++    }
++    public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> structureTag, @Nullable ServerLevelAccessor levelAccessor) {
++        // Paper end
+         Registry<Structure> registry = this.registryAccess().registryOrThrow(Registry.STRUCTURE_REGISTRY);
+ 
+         for(StructureStart structureStart : this.startsForStructure(new ChunkPos(pos), (structure) -> {
+             return registry.getHolder(registry.getId(structure)).map((holder) -> {
+                 return holder.is(structureTag);
+             }).orElse(false);
+-        })) {
++        }, levelAccessor)) { // Paper
+             if (this.structureHasPieceAt(pos, structureStart)) {
+                 return structureStart;
+             }
