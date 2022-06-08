@@ -131,14 +131,6 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListene
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -0,0 +0,0 @@ import javax.crypto.Cipher;
- import javax.crypto.SecretKey;
- import net.minecraft.DefaultUncaughtExceptionHandler;
- import net.minecraft.network.Connection;
-+import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.TextComponent;
- import net.minecraft.network.chat.TranslatableComponent;
 @@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
  import org.bukkit.event.player.PlayerPreLoginEvent;
@@ -149,25 +141,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
      @Nullable
-     private ServerPlayer delayedAcceptPlayer;
+     private ProfilePublicKey playerProfilePublicKey;
      public String hostname = ""; // CraftBukkit - add field
 +    private int velocityLoginMessageId = -1; // Paper - Velocity support
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-             this.state = ServerLoginPacketListenerImpl.State.KEY;
-             this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
-         } else {
-+            // Paper start - Velocity support
-+            if (com.destroystokyo.paper.PaperConfig.velocitySupport) {
-+                this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
-+                net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, new FriendlyByteBuf(Unpooled.EMPTY_BUFFER));
-+                this.connection.send(packet1);
-+                return;
-+            }
-+            // Paper end
-             // Spigot start
+                 this.state = ServerLoginPacketListenerImpl.State.KEY;
+                 this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
+             } else {
++                // Paper start - Velocity support
++                if (com.destroystokyo.paper.PaperConfig.velocitySupport) {
++                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
++                    net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, new net.minecraft.network.FriendlyByteBuf(Unpooled.EMPTY_BUFFER));
++                    this.connection.send(packet1);
++                    return;
++                }
++                // Paper end
+                 // Spigot start
              // Paper start - Cache authenticator threads
              authenticatorPool.execute(new Runnable() {
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
@@ -189,7 +181,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
 +        // Paper start - Velocity support
 +        if (com.destroystokyo.paper.PaperConfig.velocitySupport && packet.getTransactionId() == this.velocityLoginMessageId) {
-+            FriendlyByteBuf buf = packet.getData();
++            net.minecraft.network.FriendlyByteBuf buf = packet.getData();
 +            if (buf == null) {
 +                this.disconnect("This server requires you to connect with Velocity.");
 +                return;
@@ -221,7 +213,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +        // Paper end
-         this.disconnect(new TranslatableComponent("multiplayer.disconnect.unexpected_query_response"));
+         this.disconnect(Component.translatable("multiplayer.disconnect.unexpected_query_response"));
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
