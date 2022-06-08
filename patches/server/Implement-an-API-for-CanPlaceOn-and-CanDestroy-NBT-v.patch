@@ -349,20 +349,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private @Nullable Namespaced deserializeNamespaced(String raw) {
 +        boolean isTag = raw.length() > 0 && raw.codePointAt(0) == '#';
-+        net.minecraft.commands.arguments.blocks.BlockStateParser blockParser = new net.minecraft.commands.arguments.blocks.BlockStateParser(new com.mojang.brigadier.StringReader(raw), true);
++        com.mojang.datafixers.util.Either<net.minecraft.commands.arguments.blocks.BlockStateParser.BlockResult, net.minecraft.commands.arguments.blocks.BlockStateParser.TagResult> result;
 +        try {
-+            blockParser = blockParser.parse(false);
++            result = net.minecraft.commands.arguments.blocks.BlockStateParser.parseForTesting(net.minecraft.core.Registry.BLOCK, raw, false);
 +        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
 +            return null;
 +        }
 +
 +        net.minecraft.resources.ResourceLocation key = null;
-+        if (isTag) {
-+            if (blockParser.getTag() != null) {
-+                key = blockParser.getTag().location();
-+            }
-+        } else {
-+            key = blockParser.id;
++        if (isTag && result.right().isPresent() && result.right().get().tag() instanceof net.minecraft.core.HolderSet.Named<net.minecraft.world.level.block.Block> namedSet) {
++            key = namedSet.key().location();
++        } else if (result.left().isPresent()) {
++            key = net.minecraft.core.Registry.BLOCK.getKey(result.left().get().blockState().getBlock());
 +        }
 +
 +        if (key == null) {
