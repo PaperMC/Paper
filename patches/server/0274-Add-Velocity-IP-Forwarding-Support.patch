@@ -128,18 +128,10 @@ index 0000000000000000000000000000000000000000..41d73aa91fb401612e087aa1b7278ba6
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 5ebc450432805d52457b9f8ff1e2b1981bdd78e6..4c06e62e967f28eb844d74237948834e61daeab0 100644
+index 136ff7de4ffb91d3fc84a90560a2f5db84703cff..cbb0865b08185d1c9dc95f6dc5507cc39f92f15e 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -17,6 +17,7 @@ import javax.crypto.Cipher;
- import javax.crypto.SecretKey;
- import net.minecraft.DefaultUncaughtExceptionHandler;
- import net.minecraft.network.Connection;
-+import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.TextComponent;
- import net.minecraft.network.chat.TranslatableComponent;
-@@ -40,6 +41,7 @@ import org.bukkit.craftbukkit.util.Waitable;
+@@ -46,6 +46,7 @@ import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
  import org.bukkit.event.player.PlayerPreLoginEvent;
  // CraftBukkit end
@@ -147,30 +139,30 @@ index 5ebc450432805d52457b9f8ff1e2b1981bdd78e6..4c06e62e967f28eb844d74237948834e
  
  public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener {
  
-@@ -58,6 +60,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -69,6 +70,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
      @Nullable
-     private ServerPlayer delayedAcceptPlayer;
+     private ProfilePublicKey playerProfilePublicKey;
      public String hostname = ""; // CraftBukkit - add field
 +    private int velocityLoginMessageId = -1; // Paper - Velocity support
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -231,6 +234,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-             this.state = ServerLoginPacketListenerImpl.State.KEY;
-             this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
-         } else {
-+            // Paper start - Velocity support
-+            if (com.destroystokyo.paper.PaperConfig.velocitySupport) {
-+                this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
-+                net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, new FriendlyByteBuf(Unpooled.EMPTY_BUFFER));
-+                this.connection.send(packet1);
-+                return;
-+            }
-+            // Paper end
-             // Spigot start
+@@ -279,6 +281,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+                 this.state = ServerLoginPacketListenerImpl.State.KEY;
+                 this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
+             } else {
++                // Paper start - Velocity support
++                if (com.destroystokyo.paper.PaperConfig.velocitySupport) {
++                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
++                    net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, new net.minecraft.network.FriendlyByteBuf(Unpooled.EMPTY_BUFFER));
++                    this.connection.send(packet1);
++                    return;
++                }
++                // Paper end
+                 // Spigot start
              // Paper start - Cache authenticator threads
              authenticatorPool.execute(new Runnable() {
-@@ -338,6 +349,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -392,6 +402,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
      public class LoginHandler {
  
          public void fireEvents() throws Exception {
@@ -183,13 +175,13 @@ index 5ebc450432805d52457b9f8ff1e2b1981bdd78e6..4c06e62e967f28eb844d74237948834e
                          String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
                          java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
                          java.util.UUID uniqueId = ServerLoginPacketListenerImpl.this.gameProfile.getId();
-@@ -385,6 +402,40 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -439,6 +455,40 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
      // Spigot end
  
      public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
 +        // Paper start - Velocity support
 +        if (com.destroystokyo.paper.PaperConfig.velocitySupport && packet.getTransactionId() == this.velocityLoginMessageId) {
-+            FriendlyByteBuf buf = packet.getData();
++            net.minecraft.network.FriendlyByteBuf buf = packet.getData();
 +            if (buf == null) {
 +                this.disconnect("This server requires you to connect with Velocity.");
 +                return;
@@ -221,14 +213,14 @@ index 5ebc450432805d52457b9f8ff1e2b1981bdd78e6..4c06e62e967f28eb844d74237948834e
 +            return;
 +        }
 +        // Paper end
-         this.disconnect(new TranslatableComponent("multiplayer.disconnect.unexpected_query_response"));
+         this.disconnect(Component.translatable("multiplayer.disconnect.unexpected_query_response"));
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ee25c3a9f499017dcd2adbc789030bd2d7cce7c4..c4c7120808a42dc36fbd85d9a842792797193a55 100644
+index 907de15edda4f9b1165d985ff6b2c2a8317f06b5..ff47276975bac1dfa83c310a8944ec6335247a54 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -760,7 +760,7 @@ public final class CraftServer implements Server {
+@@ -755,7 +755,7 @@ public final class CraftServer implements Server {
      @Override
      public long getConnectionThrottle() {
          // Spigot Start - Automatically set connection throttle for bungee configurations
