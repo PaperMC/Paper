@@ -515,13 +515,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final byte[] src = other.storageUpdating;
 +        final byte[] into;
 +
-+        if (this.storageUpdating != null) {
-+            into = this.storageUpdating;
++        if (!this.updatingDirty) {
++            if (this.storageUpdating != null) {
++                into = this.storageUpdating = allocateBytes();
++            } else {
++                this.storageUpdating = into = allocateBytes();
++                this.stateUpdating = INIT_STATE_INIT;
++            }
++            this.updatingDirty = true;
 +        } else {
-+            this.storageUpdating = into = allocateBytes();
-+            this.stateUpdating = INIT_STATE_INIT;
++            into = this.storageUpdating;
 +        }
-+        this.updatingDirty = true;
 +
 +        final int start = 0;
 +        final int end = (15 | (15 << 4)) >>> 1;
@@ -4126,7 +4130,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final Logger LOGGER = LogUtils.getLogger();
 +
-+    private static final int STARLIGHT_LIGHT_VERSION = 6;
++    private static final int STARLIGHT_LIGHT_VERSION = 8;
++
++    public static int getLightVersion() {
++        return STARLIGHT_LIGHT_VERSION;
++    }
 +
 +    private static final String BLOCKLIGHT_STATE_TAG = "starlight.blocklight_state";
 +    private static final String SKYLIGHT_STATE_TAG = "starlight.skylight_state";
@@ -4249,7 +4257,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        SWMRNibbleArray[] skyNibbles = StarLightEngine.getFilledEmptyLight(world);
 +
 +
-+        // start copy from from the original method
++        // start copy from the original method
 +        boolean lit = tag.get("isLightOn") != null && tag.getInt(STARLIGHT_VERSION_TAG) == STARLIGHT_LIGHT_VERSION;
 +        boolean canReadSky = world.dimensionType().hasSkyLight();
 +        ChunkStatus status = ChunkStatus.byName(tag.getString("Status"));
@@ -4443,7 +4451,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final BlockableEventLoop<Runnable> mainThreadExecutor; // Paper - public
      final java.util.concurrent.Executor mainInvokingExecutor; // Paper
      public ChunkGenerator generator;
-     public final Supplier<DimensionDataStorage> overworldDataStorage;
+     private RandomState randomState;
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
@@ -4791,9 +4799,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour {
-             this.isViewBlocking = blockbase_info.isViewBlocking;
              this.hasPostProcess = blockbase_info.hasPostProcess;
              this.emissiveRendering = blockbase_info.emissiveRendering;
+             this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
 +            this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
          }
          // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
@@ -5005,7 +5013,7 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          return this.get(this.strategy.getIndex(x, y, z));
      }
  
@@ -5036,8 +5044,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
-     private static final String BLOCK_TICKS_TAG = "block_ticks";
-     private static final String FLUID_TICKS_TAG = "fluid_ticks";
+     public static final String BLOCK_LIGHT_TAG = "BlockLight";
+     public static final String SKY_LIGHT_TAG = "SkyLight";
  
 +    // Paper start - replace light engine impl
 +    private static final int STARLIGHT_LIGHT_VERSION = 7;
@@ -5069,9 +5077,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final int maxSection = io.papermc.paper.util.WorldUtil.getMaxLightSection(world);
 +        boolean canReadSky = world.dimensionType().hasSkyLight();
 +        // Paper end
- 
-         if (flag) {
-             tasksToExecuteOnMain.add(() -> { // Paper - delay this task since we're executing off-main
+         Registry<Biome> iregistry = world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
+         Codec<PalettedContainer<Holder<Biome>>> codec = ChunkSerializer.makeBiomeCodecRW(iregistry); // CraftBukkit - read/write
+         boolean flag2 = false;
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
          DataResult dataresult;
  
@@ -5082,44 +5090,47 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              int k = world.getSectionIndexFromSectionY(b0);
  
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
-             }
+             boolean flag3 = nbttagcompound1.contains("BlockLight", 7);
+             boolean flag4 = flag1 && nbttagcompound1.contains("SkyLight", 7);
  
-             if (flag) {
--                if (nbttagcompound1.contains("BlockLight", 7)) {
+-            if (flag3 || flag4) {
+-                if (!flag2) {
++            // Paper start - rewrite the light engine
++            if (true || flag3 || flag4) {
++                if ((flag3 || flag4) && !flag2) {
+                     tasksToExecuteOnMain.add(() -> { // Paper - delay this task since we're executing off-main
+                     lightengine.retainData(chunkPos, true);
+                     }); // Paper - delay this task since we're executing off-main
+                     flag2 = true;
+                 }
+ 
++                int y = sectionData.getByte("Y");
+                 if (flag3) {
 -                    // Paper start - delay this task since we're executing off-main
--                    DataLayer blockLight = new DataLayer(nbttagcompound1.getByteArray("BlockLight"));
+-                    DataLayer blockLight = new DataLayer(nbttagcompound1.getByteArray("BlockLight").clone());
 -                    tasksToExecuteOnMain.add(() -> {
--                        lightengine.queueSectionData(LightLayer.BLOCK, SectionPos.of(chunkcoordintpair1, b0), blockLight, true);
+-                        lightengine.queueSectionData(LightLayer.BLOCK, SectionPos.of(chunkPos, b0), blockLight, true);
 -                    });
 -                    // Paper end - delay this task since we're executing off-main
-+                // Paper start - rewrite light engine
-+                int y = sectionData.getByte("Y");
-+
-+                if (sectionData.contains("BlockLight", 7)) {
 +                    // this is where our diff is
 +                    blockNibbles[y - minSection] = new ca.spottedleaf.starlight.common.light.SWMRNibbleArray(sectionData.getByteArray("BlockLight").clone(), sectionData.getInt(BLOCKLIGHT_STATE_TAG)); // clone for data safety
 +                } else {
 +                    blockNibbles[y - minSection] = new ca.spottedleaf.starlight.common.light.SWMRNibbleArray(null, sectionData.getInt(BLOCKLIGHT_STATE_TAG));
                  }
  
--                if (flag1 && nbttagcompound1.contains("SkyLight", 7)) {
+                 if (flag4) {
 -                    // Paper start - delay this task since we're executing off-main
--                    DataLayer skyLight = new DataLayer(nbttagcompound1.getByteArray("SkyLight"));
+-                    DataLayer skyLight = new DataLayer(nbttagcompound1.getByteArray("SkyLight").clone());
 -                    tasksToExecuteOnMain.add(() -> {
--                        lightengine.queueSectionData(LightLayer.SKY, SectionPos.of(chunkcoordintpair1, b0), skyLight, true);
+-                        lightengine.queueSectionData(LightLayer.SKY, SectionPos.of(chunkPos, b0), skyLight, true);
 -                    });
 -                    // Paper end - delay this task since we're executing off-mai
-+                if (canReadSky) {
-+                    if (sectionData.contains("SkyLight", 7)) {
-+                        // we store under the same key so mod programs editing nbt
-+                        // can still read the data, hopefully.
-+                        // however, for compatibility we store chunks as unlit so vanilla
-+                        // is forced to re-light them if it encounters our data. It's too much of a burden
-+                        // to try and maintain compatibility with a broken and inferior skylight management system.
-+                        skyNibbles[y - minSection] = new ca.spottedleaf.starlight.common.light.SWMRNibbleArray(sectionData.getByteArray("SkyLight").clone(), sectionData.getInt(SKYLIGHT_STATE_TAG)); // clone for data safety
-+                    } else {
-+                        skyNibbles[y - minSection] = new ca.spottedleaf.starlight.common.light.SWMRNibbleArray(null, sectionData.getInt(SKYLIGHT_STATE_TAG));
-+                    }
++                    // we store under the same key so mod programs editing nbt
++                    // can still read the data, hopefully.
++                    // however, for compatibility we store chunks as unlit so vanilla
++                    // is forced to re-light them if it encounters our data. It's too much of a burden
++                    // to try and maintain compatibility with a broken and inferior skylight management system.
++                    skyNibbles[y - minSection] = new ca.spottedleaf.starlight.common.light.SWMRNibbleArray(sectionData.getByteArray("SkyLight").clone(), sectionData.getInt(SKYLIGHT_STATE_TAG)); // clone for data safety
                  }
 +                // Paper end - rewrite light engine
              }
@@ -5128,9 +5139,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
              }, chunkPos);
  
-             object = new LevelChunk(world.getLevel(), chunkPos, chunkconverter, levelchunkticks, levelchunkticks1, l, achunksection, ChunkSerializer.postLoadChunk(world, nbt), blendingdata);
-+            ((LevelChunk)object).setBlockNibbles(blockNibbles); // Paper - replace light impl
-+            ((LevelChunk)object).setSkyNibbles(skyNibbles); // Paper - replace light impl
+             object1 = new LevelChunk(world.getLevel(), chunkPos, chunkconverter, levelchunkticks, levelchunkticks1, l, achunksection, ChunkSerializer.postLoadChunk(world, nbt), blendingdata);
++            ((LevelChunk)object1).setBlockNibbles(blockNibbles); // Paper - replace light impl
++            ((LevelChunk)object1).setSkyNibbles(skyNibbles); // Paper - replace light impl
          } else {
              ProtoChunkTicks<Block> protochunkticklist = ProtoChunkTicks.load(nbt.getList("block_ticks", 10), (s) -> {
                  return Registry.BLOCK.getOptional(ResourceLocation.tryParse(s));
@@ -5141,7 +5152,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            protochunk.setBlockNibbles(blockNibbles); // Paper - replace light impl
 +            protochunk.setSkyNibbles(skyNibbles); // Paper - replace light impl
  
-             object = protochunk;
+             object1 = protochunk;
              protochunk.setInhabitedTime(l);
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
          DataLayer[] blockLight = new DataLayer[lightenginethreaded.getMaxLightSection() - lightenginethreaded.getMinLightSection()];
