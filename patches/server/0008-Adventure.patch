@@ -2044,7 +2044,7 @@ index 9d55f36f146435f0cfb4e62ffa7c94eab404a596..c186a44b927188ed222f8b2f8f76aaef
      public String getCustomName() {
          BeaconBlockEntity beacon = this.getSnapshot();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java
-index 02fc6b189541fdedd0acef6700722eb7e53346c4..5df1e8c7277759bda57253db449907eb1185cce3 100644
+index 02fc6b189541fdedd0acef6700722eb7e53346c4..c4ea6760f489e6171f9e6e170160b932597f842f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java
 @@ -30,4 +30,16 @@ public class CraftCommandBlock extends CraftBlockEntityState<CommandBlockEntity>
@@ -2060,7 +2060,7 @@ index 02fc6b189541fdedd0acef6700722eb7e53346c4..5df1e8c7277759bda57253db449907eb
 +
 +    @Override
 +    public void name(net.kyori.adventure.text.Component name) {
-+        getSnapshot().getCommandBlock().setName(name == null ? new net.minecraft.network.chat.TextComponent("@") : io.papermc.paper.adventure.PaperAdventure.asVanilla(name));
++        getSnapshot().getCommandBlock().setName(name == null ? net.minecraft.network.chat.Component.literal("@") : io.papermc.paper.adventure.PaperAdventure.asVanilla(name));
 +    }
 +    // Paper end
  }
@@ -2113,7 +2113,7 @@ index 0beb96dc896f63003e1b1ae458b73902bdbe648a..102eb86bad3000f258775ac06ecd1a6d
      public String getCustomName() {
          EnchantmentTableBlockEntity enchant = this.getSnapshot();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
-index 3f5292deeeddb8a6a5df57aac01f48ba11be6d7c..541f943d307f5307460ea049294fd98d53054d52 100644
+index 3f5292deeeddb8a6a5df57aac01f48ba11be6d7c..911843bf38ab750edd4a63417ba7a9deb6b64cb1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 @@ -13,34 +13,60 @@ import org.bukkit.entity.Player;
@@ -2222,7 +2222,7 @@ index 3f5292deeeddb8a6a5df57aac01f48ba11be6d7c..541f943d307f5307460ea049294fd98d
 +            if (i < lines.size() && lines.get(i) != null) {
 +                components[i] = io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(i));
 +            } else {
-+                components[i] = new TextComponent("");
++                components[i] = net.minecraft.network.chat.Component.literal("");
 +            }
 +        }
 +        return components;
@@ -2480,7 +2480,7 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..f9863e138994f6c7a7975a852f106faa
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index fe392a144edc3282793449cac6c9c953d9648a9e..4c939de8822b064f0e44b741c4b3807ba13e5e9e 100644
+index fe392a144edc3282793449cac6c9c953d9648a9e..aff5fa1fe20b4b3aa7562cafa4117b43bc904d0a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -269,14 +269,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2726,10 +2726,10 @@ index fe392a144edc3282793449cac6c9c953d9648a9e..4c939de8822b064f0e44b741c4b3807b
 +    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
 +        if (getHandle().connection == null) return;
 +        // TODO this needs to be checked
-+        final net.minecraft.core.Registry<ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.Registry.CHAT_TYPE_REGISTRY);
++        final net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.Registry.CHAT_TYPE_REGISTRY);
 +        final net.minecraft.network.protocol.Packet<?> packet;
 +        if (identity.equals(net.kyori.adventure.identity.Identity.nil()) || type == net.kyori.adventure.audience.MessageType.SYSTEM) {
-+            packet = new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(message, chatTypeRegistry.getId(chatTypeRegistry.get(ChatType.SYSTEM)));
++            packet = new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(message, chatTypeRegistry.getId(chatTypeRegistry.get(net.minecraft.network.chat.ChatType.SYSTEM)));
 +        } else {
 +            final @Nullable Player source = this.getServer().getPlayer(identity.uuid());
 +            final ChatSender sender;
@@ -2738,7 +2738,7 @@ index fe392a144edc3282793449cac6c9c953d9648a9e..4c939de8822b064f0e44b741c4b3807b
 +            } else {
 +                sender = new ChatSender(identity.uuid(), Component.empty(), null);
 +            }
-+            packet = new net.minecraft.network.protocol.game.ClientboundPlayerChatPacket(message, chatTypeRegistry.getId(chatTypeRegistry.get(ChatType.CHAT)), sender, java.time.Instant.now());
++            packet = new net.minecraft.network.protocol.game.ClientboundPlayerChatPacket(message, chatTypeRegistry.getId(chatTypeRegistry.get(net.minecraft.network.chat.ChatType.CHAT)), sender, java.time.Instant.now());
 +        }
 +        this.getHandle().connection.send(packet);
 +    }
