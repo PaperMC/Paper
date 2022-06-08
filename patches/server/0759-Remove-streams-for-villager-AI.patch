@@ -5,7 +5,7 @@ Subject: [PATCH] Remove streams for villager AI
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
-index e644bdd3a6f7c09a44149da03587b796674fa568..c67c448e0d8bdd788b94189651304110694c95da 100644
+index 5a5d454b5987bb01d03f91c15b7a6bff46f1de71..c545539fc5d20cc69a0e5d2e261ef46a8f6fa4f0 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 @@ -30,11 +30,19 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
@@ -128,26 +128,26 @@ index e644bdd3a6f7c09a44149da03587b796674fa568..c67c448e0d8bdd788b94189651304110
      }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
-index 4f42344fec13b8d7fe0c1dd412525853c35bacca..b35abac7029708042b25d98ab11005c2ea8ae6ea 100644
+index 090bba46b6ecd7d0e1415feb678b9b23264fe5e9..ca771d60283d94c00aa65d06ef93071e412357e8 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
-@@ -12,7 +12,7 @@ import java.util.Random;
- import java.util.stream.Stream;
+@@ -12,7 +12,7 @@ import java.util.stream.Stream;
+ import net.minecraft.util.RandomSource;
  
  public class ShufflingList<U> {
 -    protected final List<ShufflingList.WeightedEntry<U>> entries;
 +    public final List<ShufflingList.WeightedEntry<U>> entries; // Paper - public
-     private final Random random = new Random();
+     private final RandomSource random = RandomSource.create();
      private final boolean isUnsafe; // Paper
  
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
-index 49f3b25d28072b61f5cc97260df61df892a58714..71f2692c83feafbb31f45427e6c738cb3881c82c 100644
+index 1dfcc5cba6ffb463acf161a23fff1ca452184290..2c4517850a9692f1c2b1332b58e8312fe1166772 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
-@@ -25,17 +25,20 @@ public class NearestItemSensor extends Sensor<Mob> {
+@@ -25,13 +25,16 @@ public class NearestItemSensor extends Sensor<Mob> {
      protected void doTick(ServerLevel world, Mob entity) {
          Brain<?> brain = entity.getBrain();
-         List<ItemEntity> list = world.getEntitiesOfClass(ItemEntity.class, entity.getBoundingBox().inflate(8.0D, 4.0D, 8.0D), (itemEntity) -> {
+         List<ItemEntity> list = world.getEntitiesOfClass(ItemEntity.class, entity.getBoundingBox().inflate(32.0D, 16.0D, 32.0D), (itemEntity) -> {
 -            return true;
 +            return itemEntity.closerThan(entity, 9.0D) && entity.wantsToPickUp(itemEntity.getItem()); // Paper - move predicate into getEntities
          });
@@ -157,18 +157,14 @@ index 49f3b25d28072b61f5cc97260df61df892a58714..71f2692c83feafbb31f45427e6c738cb
          // Paper start - remove streams in favour of lists
          ItemEntity nearest = null;
 -        for (ItemEntity entityItem : list) {
--            if (entity.wantsToPickUp(entityItem.getItem()) && entityItem.closerThan(entity, 9.0D) && entity.hasLineOfSight(entityItem)) {
+-            if (entity.wantsToPickUp(entityItem.getItem()) && entityItem.closerThan(entity, 32.0D) && entity.hasLineOfSight(entityItem)) {
 +        for (int i = 0; i < list.size(); i++) {
 +            ItemEntity entityItem = list.get(i);
 +            if (entity.hasLineOfSight(entityItem)) {
++                // Paper end - remove streams
                  nearest = entityItem;
                  break;
              }
-         }
-+        // Paper end - remove streams
-         brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, Optional.ofNullable(nearest));
-         // Paper end
-     }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
 index 312775d0430f793720211dc29bb293503e799d11..75d9c4f011b5a97def215784c92bb57bbb35d06b 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
