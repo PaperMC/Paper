@@ -119,8 +119,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end
          // CraftBukkit end
-         MinecraftServer.LOGGER.info("Stopping server");
-         MinecraftTimings.stopServer(); // Paper
+         if (this.metricsRecorder.isRecording()) {
+             this.cancelRecordingMetrics();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.getProfileCache().save(false); // Paper
          }
@@ -145,30 +145,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected void runServer() {
          try {
 +            long serverStartTime = Util.getNanos(); // Paper
-             if (this.initServer()) {
-                 this.nextTickTime = Util.getMillis();
-                 this.status.setDescription(new TextComponent(this.motd));
+             if (!this.initServer()) {
+                 throw new IllegalStateException("Failed to initialize server");
+             }
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                 this.updateStatusIcon(this.status);
+             this.updateStatusIcon(this.status);
  
-                 // Spigot start
-+                // Paper start - move done tracking
-+                LOGGER.info("Running delayed init tasks");
-+                this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // run all 1 tick delay tasks during init,
-+                // this is going to be the first thing the tick process does anyways, so move done and run it after
-+                // everything is init before watchdog tick.
-+                // anything at 3+ won't be caught here but also will trip watchdog....
-+                // tasks are default scheduled at -1 + delay, and first tick will tick at 1
-+                String doneTime = String.format(java.util.Locale.ROOT, "%.3fs", (double) (Util.getNanos() - serverStartTime) / 1.0E9D);
-+                LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
-+                // Paper end
+             // Spigot start
++            // Paper start - move done tracking
++            LOGGER.info("Running delayed init tasks");
++            this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // run all 1 tick delay tasks during init,
++            // this is going to be the first thing the tick process does anyways, so move done and run it after
++            // everything is init before watchdog tick.
++            // anything at 3+ won't be caught here but also will trip watchdog....
++            // tasks are default scheduled at -1 + delay, and first tick will tick at 1
++            String doneTime = String.format(java.util.Locale.ROOT, "%.3fs", (double) (Util.getNanos() - serverStartTime) / 1.0E9D);
++            LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
++            // Paper end
 +
-+                org.spigotmc.WatchdogThread.tick(); // Paper
-                 org.spigotmc.WatchdogThread.hasStarted = true; // Paper
-                 Arrays.fill( recentTps, 20 );
-                 long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
++            org.spigotmc.WatchdogThread.tick(); // Paper
+             org.spigotmc.WatchdogThread.hasStarted = true; // Paper
+             Arrays.fill( recentTps, 20 );
+             long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                 this.onServerCrash((CrashReport) null);
+                 JvmProfiler.INSTANCE.onServerTick(this.averageTickTime);
              }
          } catch (Throwable throwable) {
 +            // Paper start
@@ -181,7 +181,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Spigot Start
              if ( throwable.getCause() != null )
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                     this.profileCache.clearExecutor();
+                     this.services.profileCache().clearExecutor();
                  }
  
 -                org.spigotmc.WatchdogThread.doStop(); // Spigot
@@ -228,7 +228,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            //this.getPlayerList().saveAll(); // Paper - we don't need to do this
              this.getPlayerList().reloadResources();
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
-             this.structureManager.onResourceManagerReload(this.resources.resourceManager);
+             this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
