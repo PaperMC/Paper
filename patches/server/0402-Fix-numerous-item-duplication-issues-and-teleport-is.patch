@@ -16,10 +16,10 @@ So even if something NEW comes up, it would be impossible to drop the
 same item twice because the source was destroyed.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index d387e8cc95f9f54dfbf018d4e52cde5087bfc209..f69bc9d81750feb108119347f984de6bca24ae44 100644
+index 60ef82b7811fbb3e579b2f1321ed065404dafeda..1413acf7029fd690fbdb50c80037d040ef24e24f 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2141,11 +2141,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2189,11 +2189,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          } else {
              // CraftBukkit start - Capture drops for death event
              if (this instanceof net.minecraft.world.entity.LivingEntity && !((net.minecraft.world.entity.LivingEntity) this).forceDrops) {
@@ -34,7 +34,7 @@ index d387e8cc95f9f54dfbf018d4e52cde5087bfc209..f69bc9d81750feb108119347f984de6b
  
              entityitem.setDefaultPickUpDelay();
              // CraftBukkit start
-@@ -2910,6 +2911,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2957,6 +2958,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      @Nullable
      public Entity teleportTo(ServerLevel worldserver, BlockPos location) {
          // CraftBukkit end
@@ -47,7 +47,7 @@ index d387e8cc95f9f54dfbf018d4e52cde5087bfc209..f69bc9d81750feb108119347f984de6b
          if (this.level instanceof ServerLevel && !this.isRemoved()) {
              this.level.getProfiler().push("changeDimension");
              // CraftBukkit start
-@@ -2936,6 +2943,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2983,6 +2990,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                  // CraftBukkit end
  
                  this.level.getProfiler().popPush("reloading");
@@ -59,7 +59,7 @@ index d387e8cc95f9f54dfbf018d4e52cde5087bfc209..f69bc9d81750feb108119347f984de6b
                  Entity entity = this.getType().create(worldserver);
  
                  if (entity != null) {
-@@ -2949,10 +2961,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2996,10 +3008,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                      // CraftBukkit start - Forward the CraftEntity to the new entity
                      this.getBukkitEntity().setHandle(entity);
                      entity.bukkitEntity = this.getBukkitEntity();
@@ -70,7 +70,7 @@ index d387e8cc95f9f54dfbf018d4e52cde5087bfc209..f69bc9d81750feb108119347f984de6b
                      // CraftBukkit end
                  }
  
-@@ -3074,7 +3082,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -3121,7 +3129,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      }
  
      public boolean canChangeDimensions() {
@@ -80,23 +80,23 @@ index d387e8cc95f9f54dfbf018d4e52cde5087bfc209..f69bc9d81750feb108119347f984de6b
  
      public float getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState, float max) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 960f56019313977b336cf0de9495aae8e1dc976a..2b63a1cac397d80103b172477a0f3933e030e9a3 100644
+index efb5cc1705bd0ff50360203d68a564875662299c..4cfb5c89538c8d0ce20883bc6d2a5f7dc4967acd 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -1622,9 +1622,9 @@ public abstract class LivingEntity extends Entity {
+@@ -1643,9 +1643,9 @@ public abstract class LivingEntity extends Entity {
                  // Paper start
-                 org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(source);
+                 org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(damageSource);
                  if (deathEvent == null || !deathEvent.isCancelled()) {
 -                    if (this.deathScore >= 0 && entityliving != null) {
--                        entityliving.awardKillScore(this, this.deathScore, source);
+-                        entityliving.awardKillScore(this, this.deathScore, damageSource);
 -                    }
 +                    // if (this.deathScore >= 0 && entityliving != null) { // Paper moved to be run earlier in #dropAllDeathLoot before destroying the drop items in CraftEventFactory#callEntityDeathEvent
-+                    //     entityliving.awardKillScore(this, this.deathScore, source);
++                    //     entityliving.awardKillScore(this, this.deathScore, damageSource);
 +                    // }
                      // Paper start - clear equipment if event is not cancelled
                      if (this instanceof Mob) {
                          for (EquipmentSlot slot : this.clearedEquipmentSlots) {
-@@ -1721,8 +1721,13 @@ public abstract class LivingEntity extends Entity {
+@@ -1743,8 +1743,13 @@ public abstract class LivingEntity extends Entity {
              this.dropCustomDeathLoot(source, i, flag);
              this.clearEquipmentSlots = prev; // Paper
          }
@@ -113,10 +113,10 @@ index 960f56019313977b336cf0de9495aae8e1dc976a..2b63a1cac397d80103b172477a0f3933
          this.drops = new ArrayList<>();
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index a3a900d10440ed5ebe24370a77ccb6cad911cfc9..0d468631b9c260091e732925da43c177ebda892f 100644
+index a885e4a63f9ffb70b305b6d8c0f0dedf5b3cbeef..b8c0a1b5703460d4c4d8923e18b56ab937b8226c 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -610,7 +610,7 @@ public class ArmorStand extends LivingEntity {
+@@ -608,7 +608,7 @@ public class ArmorStand extends LivingEntity {
          for (i = 0; i < this.handItems.size(); ++i) {
              itemstack = (ItemStack) this.handItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -125,7 +125,7 @@ index a3a900d10440ed5ebe24370a77ccb6cad911cfc9..0d468631b9c260091e732925da43c177
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -618,7 +618,7 @@ public class ArmorStand extends LivingEntity {
+@@ -616,7 +616,7 @@ public class ArmorStand extends LivingEntity {
          for (i = 0; i < this.armorItems.size(); ++i) {
              itemstack = (ItemStack) this.armorItems.get(i);
              if (!itemstack.isEmpty()) {
