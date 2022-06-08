@@ -39,6 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.StructureType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +import java.util.Objects;
@@ -63,10 +64,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        @Override
-+        public ConfiguredStructure convertToApi(NamespacedKey key, Structure nms) {
++        public @Nullable ConfiguredStructure convertToApi(NamespacedKey key, Structure nms) {
 +            final ResourceLocation structureTypeLoc = Objects.requireNonNull(Registry.STRUCTURE_TYPES.getKey(nms.type()), "unexpected structure type " + nms.type());
-+            final StructureType structureType = Objects.requireNonNull(StructureType.getStructureTypes().get(structureTypeLoc.getPath()), structureTypeLoc + " could not be converted to an API type"); // TODO this is just not gonna work until upstream fixes their StructureType pseudo-enum
-+            return new ConfiguredStructure(key, structureType);
++            final @Nullable StructureType structureType = StructureType.getStructureTypes().get(structureTypeLoc.getPath());
++            return structureType == null ? null : new ConfiguredStructure(key, structureType);
 +        }
 +    }
 +}
@@ -83,9 +84,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final org.bukkit.Location origin = net.minecraft.server.MCUtil.toLocation(world, center);
 +        final var paperRegistry = io.papermc.paper.registry.PaperRegistry.getRegistry(io.papermc.paper.registry.RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
 +        final List<io.papermc.paper.world.structure.ConfiguredStructure> configuredStructures = new ArrayList<>();
-+        for (Holder<Structure> holder : structures) {
-+            configuredStructures.add(paperRegistry.convertToApi(holder));
-+        }
++        paperRegistry.convertToApi(structures, configuredStructures::add, false); // gracefully handle missing api, use tests to check (or exclude)
 +        final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, configuredStructures, radius, skipReferencedStructures);
 +        if (!event.callEvent()) {
 +            return null;
@@ -178,6 +177,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (Structure feature : BuiltinRegistries.STRUCTURES) {
 +            final ResourceLocation key = BuiltinRegistries.STRUCTURES.getKey(feature);
 +            assertNotNull("Missing built-in registry key", key);
++            if (key.equals(BuiltinStructures.ANCIENT_CITY.location())) {
++                continue; // TODO remove when upstream adds "jigsaw" StructureType
++            }
 +            if (DEFAULT_CONFIGURED_STRUCTURES.get(CraftNamespacedKey.fromMinecraft(key)) == null) {
 +                missing.put(key, feature);
 +            }
