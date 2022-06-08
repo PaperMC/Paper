@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 7 May 2022 14:58:53 -0700
+Subject: [PATCH] Do not accept invalid client settings
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 68ac242d2012ea04ae53280b401e5254c597f83d..b53876746fcc23e7517da3287fdc58909865eb39 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3351,6 +3351,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     @Override
+     public void handleClientInformation(ServerboundClientInformationPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
++        // Paper start - do not accept invalid information
++        if (packet.viewDistance() < 0) {
++            LOGGER.warn("Disconnecting " + this.player.getScoreboardName() + " for invalid view distance: " + packet.viewDistance());
++            this.disconnect("Invalid client settings", PlayerKickEvent.Cause.ILLEGAL_ACTION);
++            return;
++        }
++        // Paper end - do not accept invalid information
+         this.player.updateOptions(packet);
+     }
+ 

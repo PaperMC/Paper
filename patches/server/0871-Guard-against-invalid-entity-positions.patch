@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 31 Mar 2022 05:18:28 -0700
+Subject: [PATCH] Guard against invalid entity positions
+
+Anything not finite should be blocked and logged
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 7deb28159c822b2a05df228028278776e5bea4d5..f8652e17a1d9779b6ca39aa251b15f49e3b2f6e1 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -4136,11 +4136,33 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         return this.getZ((2.0D * this.random.nextDouble() - 1.0D) * widthScale);
+     }
+ 
++    // Paper start - block invalid positions
++    public static boolean checkPosition(Entity entity, double newX, double newY, double newZ) {
++        if (Double.isFinite(newX) && Double.isFinite(newY) && Double.isFinite(newZ)) {
++            return true;
++        }
++
++        String entityInfo = null;
++        try {
++            entityInfo = entity.toString();
++        } catch (Exception ex) {
++            entityInfo = "[Entity info unavailable] ";
++        }
++        LOGGER.error("New entity position is invalid! Tried to set invalid position (" + newX + "," + newY + "," + newZ + ") for entity " + entity.getClass().getName() + " located at " + entity.position + ", entity info: " + entityInfo, new Throwable());
++        return false;
++    }
++    // Paper end - block invalid positions
++
+     public final void setPosRaw(double x, double y, double z) {
+         // Paper start
+         this.setPosRaw(x, y, z, false);
+     }
+     public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
++        // Paper start - block invalid positions
++        if (!checkPosition(this, x, y, z)) {
++            return;
++        }
++        // Paper end - block invalid positions
+         // Paper end
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
+             synchronized (this.posLock) { // Paper
