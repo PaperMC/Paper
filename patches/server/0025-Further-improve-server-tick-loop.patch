@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index bd549661ccfb29b9a4f9d69956c549ba3e888e31..032e6819da27c8616b9b3b6c09bd559e69c35100 100644
+index bd549661ccfb29b9a4f9d69956c549ba3e888e31..39a079ce407081ba1ff13c23cfbeeab9c5a78e07 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -267,7 +267,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -96,11 +96,11 @@ index bd549661ccfb29b9a4f9d69956c549ba3e888e31..032e6819da27c8616b9b3b6c09bd559e
              // Spigot start
              Arrays.fill( recentTps, 20 );
 -            long curTime, tickSection = Util.getMillis(), tickCount = 1;
-+                long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
-+                lastTick = start - TICK_TIME; // Paper
++            long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
++            lastTick = start - TICK_TIME; // Paper
              while (this.running) {
 -                long i = (curTime = Util.getMillis()) - this.nextTickTime;
-+                    long i = ((curTime = System.nanoTime()) / (1000L * 1000L)) - this.nextTickTime; // Paper
++                long i = ((curTime = System.nanoTime()) / (1000L * 1000L)) - this.nextTickTime; // Paper
  
                  if (i > 5000L && this.nextTickTime - this.lastOverloadWarning >= 30000L) { // CraftBukkit
                      long j = i / 50L;
@@ -114,22 +114,22 @@ index bd549661ccfb29b9a4f9d69956c549ba3e888e31..032e6819da27c8616b9b3b6c09bd559e
  
                  ++MinecraftServer.currentTickLong; // Paper
 -                if ( tickCount++ % MinecraftServer.SAMPLE_INTERVAL == 0 )
-+                    if ( ++MinecraftServer.currentTick % MinecraftServer.SAMPLE_INTERVAL == 0 )
++                if ( ++MinecraftServer.currentTick % MinecraftServer.SAMPLE_INTERVAL == 0 )
                  {
 -                    double currentTps = 1E3 / ( curTime - tickSection ) * MinecraftServer.SAMPLE_INTERVAL;
 -                    this.recentTps[0] = MinecraftServer.calcTps( this.recentTps[0], 0.92, currentTps ); // 1/exp(5sec/1min)
 -                    this.recentTps[1] = MinecraftServer.calcTps( this.recentTps[1], 0.9835, currentTps ); // 1/exp(5sec/5min)
 -                    this.recentTps[2] = MinecraftServer.calcTps( this.recentTps[2], 0.9945, currentTps ); // 1/exp(5sec/15min)
-+                        final long diff = curTime - tickSection;
-+                        java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
-+                        tps1.add(currentTps, diff);
-+                        tps5.add(currentTps, diff);
-+                        tps15.add(currentTps, diff);
-+                        // Backwards compat with bad plugins
-+                        this.recentTps[0] = tps1.getAverage();
-+                        this.recentTps[1] = tps5.getAverage();
-+                        this.recentTps[2] = tps15.getAverage();
-+                        // Paper end
++                    final long diff = curTime - tickSection;
++                    java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
++                    tps1.add(currentTps, diff);
++                    tps5.add(currentTps, diff);
++                    tps15.add(currentTps, diff);
++                    // Backwards compat with bad plugins
++                    this.recentTps[0] = tps1.getAverage();
++                    this.recentTps[1] = tps5.getAverage();
++                    this.recentTps[2] = tps15.getAverage();
++                    // Paper end
                      tickSection = curTime;
                  }
                  // Spigot end
@@ -138,13 +138,13 @@ index bd549661ccfb29b9a4f9d69956c549ba3e888e31..032e6819da27c8616b9b3b6c09bd559e
                  }
  
 -                MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
-+                    //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
-+                    lastTick = curTime;
++                //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
++                lastTick = curTime;
                  this.nextTickTime += 50L;
                  this.startMetricsRecordingTick();
                  this.profiler.push("tick");
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 93947c982c40be873bd1f3273ca69dbdf6820aeb..a7dcdb5cce888f8580b54f7de263110e69285311 100644
+index 6a35ff1c7d7b59b8dae8bbae2f2133f74d00e35b..24ede23d6cb432c0f842ce076ce592ef8c089a85 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2374,6 +2374,17 @@ public final class CraftServer implements Server {
