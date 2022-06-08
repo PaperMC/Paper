@@ -16,7 +16,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!entity.canAttack(entityliving)) {
 -            this.clearAttackTarget(entity);
 +            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
-         } else if (StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entity)) {
+         } else if (this.canGrowTiredOfTryingToReachTarget && StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entity)) {
 -            this.clearAttackTarget(entity);
 +            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // Paper
          } else if (this.isCurrentTargetDeadOrRemoved(entity)) {
@@ -41,20 +41,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        LivingEntity old = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
 -        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
 +        // Paper start - fix this event
-+        //EntityLiving old = e0.getBehaviorController().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
++        // LivingEntity old = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
 +        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, null, reason);
          if (event.isCancelled()) {
              return;
          }
 -        if (event.getTarget() != null) {
--            entity.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
 +        // comment out, bad logic - bad
 +        /*if (event.getTarget() != null) {
-+            e0.getBehaviorController().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
+             entity.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
              return;
 -        }
 +        }*/
 +        // Paper end
          // CraftBukkit end
-         this.onTargetErased.accept(entity);
+         this.onTargetErased.accept(entity, this.getAttackTarget(entity));
          entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);

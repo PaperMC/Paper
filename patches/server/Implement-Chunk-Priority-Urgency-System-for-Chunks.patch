@@ -369,11 +369,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final BlockableEventLoop<Runnable> mainThreadExecutor;
 +    final java.util.concurrent.Executor mainInvokingExecutor; // Paper
      public ChunkGenerator generator;
+     private RandomState randomState;
      public final Supplier<DimensionDataStorage> overworldDataStorage;
-     private final PoiManager poiManager;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.level = world;
-         this.generator = chunkGenerator;
+         }
+ 
          this.mainThreadExecutor = mainThreadExecutor;
 +        // Paper start
 +        this.mainInvokingExecutor = (run) -> {
@@ -468,7 +468,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper - revert 1.17 chunk system changes
  
              if (optional.isPresent() && ((ChunkAccess) optional.get()).getStatus().isOrAfter(requiredStatus)) {
-                 CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = requiredStatus.load(this.level, this.structureManager, this.lightEngine, (ichunkaccess) -> {
+                 CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = requiredStatus.load(this.level, this.structureTemplateManager, this.lightEngine, (ichunkaccess) -> {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              } else {
                  return this.scheduleChunkGeneration(holder, requiredStatus);
@@ -505,7 +505,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
 +        this.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, priority); // Paper
          return ret;
-         // Paper end
+         // Paper end - Async chunk io
      }
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  this.releaseLightTicket(chunkcoordintpair);
