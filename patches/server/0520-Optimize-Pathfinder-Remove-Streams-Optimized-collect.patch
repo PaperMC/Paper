@@ -17,25 +17,26 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index 118cc040f156b96a2b6357ad8817808823595629..3dc896a7ded8d5d109100a393c8299e308954d99 100644
+index 300c812d513e0b948a7e79c0ed241f514c7a09fc..d23481453717f715124156b5d83f6448f720d049 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -35,27 +35,31 @@ public class PathFinder {
-         this.openSet.clear();
-         this.nodeEvaluator.prepare(world, mob);
-         Node node = this.nodeEvaluator.getStart();
--        Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
--            return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
--        }, Function.identity()));
-+        // Paper start - remove streams - and optimize collection
-+        List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
-+        for (BlockPos blockPos : positions) {
-+            map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(blockPos.getX(), blockPos.getY(), blockPos.getZ()), blockPos));
-+        }
-+        // Paper end
-         Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
-         this.nodeEvaluator.done();
-         return path;
+@@ -38,9 +38,12 @@ public class PathFinder {
+         if (node == null) {
+             return null;
+         } else {
+-            Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
+-                return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
+-            }, Function.identity()));
++            // Paper start - remove streams - and optimize collection
++            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
++            for (BlockPos pos : positions) {
++                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
++            }
++            // Paper end
+             Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
+             this.nodeEvaluator.done();
+             return path;
+@@ -48,18 +51,19 @@ public class PathFinder {
      }
  
      @Nullable
@@ -45,7 +46,7 @@ index 118cc040f156b96a2b6357ad8817808823595629..3dc896a7ded8d5d109100a393c8299e3
          profiler.push("find_path");
          profiler.markForCharting(MetricCategory.PATH_FINDING);
 -        Set<Target> set = positions.keySet();
-+        //Set<Target> set = positions.keySet();
++        // Set<Target> set = positions.keySet();
          startNode.g = 0.0F;
 -        startNode.h = this.getBestH(startNode, set);
 +        startNode.h = this.getBestH(startNode, positions); // Paper - optimize collection
@@ -53,14 +54,14 @@ index 118cc040f156b96a2b6357ad8817808823595629..3dc896a7ded8d5d109100a393c8299e3
          this.openSet.clear();
          this.openSet.insert(startNode);
 -        Set<Node> set2 = ImmutableSet.of();
-+        //Set<Node> set2 = ImmutableSet.of(); // Paper - unused - diff on change
++        // Set<Node> set2 = ImmutableSet.of(); // Paper - unused - diff on change
          int i = 0;
 -        Set<Target> set3 = Sets.newHashSetWithExpectedSize(set.size());
 +        List<Map.Entry<Target, BlockPos>> entryList = Lists.newArrayListWithExpectedSize(positions.size()); // Paper - optimize collection
          int j = (int)((float)this.maxVisitedNodes * rangeMultiplier);
  
          while(!this.openSet.isEmpty()) {
-@@ -67,14 +71,18 @@ public class PathFinder {
+@@ -71,14 +75,18 @@ public class PathFinder {
              Node node = this.openSet.pop();
              node.closed = true;
  
@@ -82,7 +83,7 @@ index 118cc040f156b96a2b6357ad8817808823595629..3dc896a7ded8d5d109100a393c8299e3
                  break;
              }
  
-@@ -89,7 +97,7 @@ public class PathFinder {
+@@ -93,7 +101,7 @@ public class PathFinder {
                      if (node2.walkedDistance < followRange && (!node2.inOpenSet() || g < node2.g)) {
                          node2.cameFrom = node;
                          node2.g = g;
@@ -91,12 +92,12 @@ index 118cc040f156b96a2b6357ad8817808823595629..3dc896a7ded8d5d109100a393c8299e3
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -101,19 +109,27 @@ public class PathFinder {
+@@ -105,23 +113,31 @@ public class PathFinder {
              }
          }
  
--        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map((target) -> {
--            return this.reconstructPath(target.getBestNode(), positions.get(target), true);
+-        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map((node) -> {
+-            return this.reconstructPath(node.getBestNode(), positions.get(node), true);
 -        }).min(Comparator.comparingInt(Path::getNodeCount)) : set.stream().map((target) -> {
 -            return this.reconstructPath(target.getBestNode(), positions.get(target), false);
 -        }).min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
@@ -114,6 +115,10 @@ index 118cc040f156b96a2b6357ad8817808823595629..3dc896a7ded8d5d109100a393c8299e3
 +        }
 +        return best;
 +        // Paper end
+     }
+ 
+     protected float distance(Node a, Node b) {
+         return a.distanceTo(b);
      }
  
 -    private float getBestH(Node node, Set<Target> targets) {
