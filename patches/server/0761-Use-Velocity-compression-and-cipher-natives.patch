@@ -5,11 +5,11 @@ Subject: [PATCH] Use Velocity compression and cipher natives
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 6b46f9c94dc051579ca5b51755caad19505e874a..4715d1386afd939628c392a7d8062e5887d7a507 100644
+index 8c597c2671746ecf89d53704fba4d85d61dc316c..a7c7d450f22f9642fadeac9cb601214cfa9a2b02 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -35,6 +35,11 @@ dependencies {
-     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.2")
+@@ -36,6 +36,11 @@ dependencies {
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
  
      implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
 +    // Paper start - Use Velocity cipher
@@ -268,10 +268,10 @@ index 792883afe53d2b7989c25a81c2f9a639d5e21d20..c04379ca8a4db0f4de46ad2b3b338431
          return this.threshold;
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index d3a25cc5262843b5c9736ff32e300264d9847c9b..42400b6f0b693dd0ec4a2303a82bd131753a24ba 100644
+index 1e4b75ab79a1d63a82498907d72932d644552635..7030c38980dbebfd374c2369294555650cf7880b 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -640,11 +640,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -642,11 +642,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return networkmanager;
      }
  
@@ -304,7 +304,7 @@ index d3a25cc5262843b5c9736ff32e300264d9847c9b..42400b6f0b693dd0ec4a2303a82bd131
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -673,16 +690,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -675,16 +692,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
          if (compressionThreshold >= 0) {
@@ -325,10 +325,10 @@ index d3a25cc5262843b5c9736ff32e300264d9847c9b..42400b6f0b693dd0ec4a2303a82bd131
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index bfa519b9335c960a5baec50b0da95d95cd5ee958..af4d9244102bd0ac204f44a8de7f3a7706e3692d 100644
+index 9e7154c9df96d5a0577886d43a98a73626a8f189..af3e70920221b6bd127bb3aed7f1e0a7e9e4c322 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-@@ -104,6 +104,11 @@ public class ServerConnectionListener {
+@@ -105,6 +105,11 @@ public class ServerConnectionListener {
                  ServerConnectionListener.LOGGER.info("Using default channel type");
              }
  
@@ -341,10 +341,10 @@ index bfa519b9335c960a5baec50b0da95d95cd5ee958..af4d9244102bd0ac204f44a8de7f3a77
                  protected void initChannel(Channel channel) {
                      try {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 4e23e9ac3579dd0cedf0dfdbb231f6fae111745c..4cd92875d60c2f1dcce67ac99e9ba257a10f87b1 100644
+index ffbd711375c400c9faaa4c984463a24af2f4993f..b146fc81ebd4adb8c15b10ed05c92db202a2c89e 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -279,12 +279,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -339,12 +339,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
              }
  
              SecretKey secretkey = packet.getSecretKey(privatekey);
