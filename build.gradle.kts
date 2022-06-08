@@ -25,7 +25,6 @@ subprojects {
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
         options.release.set(17)
-        options.compilerArgs.addAll(listOf("-Xmaxerrs", "500"))
     }
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()
