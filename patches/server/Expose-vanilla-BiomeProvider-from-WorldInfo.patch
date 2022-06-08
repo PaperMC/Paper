@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Paper end
  
 -            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.typeHolder().value());
-+            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.typeHolder().value(), worlddimension.generator(), this.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
++            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.typeHolder().value(), worlddimension.generator(), this.registryAccess()); // Paper
              if (biomeProvider == null && gen != null) {
                  biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
              }
@@ -26,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          LevelStem worlddimension = (LevelStem) iregistry.get(actualDimension);
  
 -        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.typeHolder().value());
-+        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.typeHolder().value(), worlddimension.generator(), this.getHandle().getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
++        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.typeHolder().value(), worlddimension.generator(), this.getHandle().getServer().registryAccess()); // Paper
          if (biomeProvider == null && generator != null) {
              biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
          }
@@ -75,29 +75,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final int maxHeight;
 +    // Paper start
 +    private final net.minecraft.world.level.chunk.ChunkGenerator vanillaChunkGenerator;
-+    private final net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry;
++    private final net.minecraft.core.RegistryAccess.Frozen registryAccess;
  
-     public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager) {
-+        this(worldDataServer, session, environment, dimensionManager, null, null);
-+    }
-+    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry) {
-+        this.biomeRegistry = biomeRegistry;
+-    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager) {
++    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.RegistryAccess.Frozen registryAccess) {
++        this.registryAccess = registryAccess;
 +        this.vanillaChunkGenerator = chunkGenerator;
 +        // Paper end
          this.name = worldDataServer.getLevelName();
          this.uuid = WorldUUID.getUUID(session.levelDirectory.path().toFile());
          this.environment = environment;
 @@ -0,0 +0,0 @@ public class CraftWorldInfo implements WorldInfo {
+         this.maxHeight = dimensionManager.minY() + dimensionManager.height();
      }
  
-     public CraftWorldInfo(String name, UUID uuid, World.Environment environment, long seed, int minHeight, int maxHeight) {
-+        // Paper start
-+        this.vanillaChunkGenerator = null;
-+        this.biomeRegistry = null;
-+        // Paper end
-         this.name = name;
-         this.uuid = uuid;
-         this.environment = environment;
+-    public CraftWorldInfo(String name, UUID uuid, World.Environment environment, long seed, int minHeight, int maxHeight) {
+-        this.name = name;
+-        this.uuid = uuid;
+-        this.environment = environment;
+-        this.seed = seed;
+-        this.minHeight = minHeight;
+-        this.maxHeight = maxHeight;
+-    }
+-
+     @Override
+     public String getName() {
+         return this.name;
 @@ -0,0 +0,0 @@ public class CraftWorldInfo implements WorldInfo {
      public int getMaxHeight() {
          return this.maxHeight;
@@ -106,13 +109,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public org.bukkit.generator.BiomeProvider vanillaBiomeProvider() {
++        final net.minecraft.world.level.levelgen.RandomState randomState;
++        if (vanillaChunkGenerator instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator noiseBasedChunkGenerator) {
++            randomState = net.minecraft.world.level.levelgen.RandomState.create(noiseBasedChunkGenerator.generatorSettings().value(),
++                registryAccess.registryOrThrow(net.minecraft.core.Registry.NOISE_REGISTRY), getSeed());
++        } else {
++            randomState = net.minecraft.world.level.levelgen.RandomState.create(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.dummy(),
++                registryAccess.registryOrThrow(net.minecraft.core.Registry.NOISE_REGISTRY), getSeed());
++        }
++
++        final net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry = CraftWorldInfo.this.registryAccess.registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY);
 +        final java.util.List<org.bukkit.block.Biome> possibleBiomes = CraftWorldInfo.this.vanillaChunkGenerator.getBiomeSource().possibleBiomes().stream()
-+            .map(biome -> org.bukkit.craftbukkit.block.CraftBlock.biomeBaseToBiome(CraftWorldInfo.this.biomeRegistry, biome))
++            .map(biome -> org.bukkit.craftbukkit.block.CraftBlock.biomeBaseToBiome(biomeRegistry, biome))
 +            .toList();
 +        return new org.bukkit.generator.BiomeProvider() {
 +            @Override
 +            public org.bukkit.block.Biome getBiome(final WorldInfo worldInfo, final int x, final int y, final int z) {
-+                return org.bukkit.craftbukkit.block.CraftBlock.biomeBaseToBiome(CraftWorldInfo.this.biomeRegistry, CraftWorldInfo.this.vanillaChunkGenerator.getNoiseBiome(x >> 2, y >> 2, z >> 2));
++                return org.bukkit.craftbukkit.block.CraftBlock.biomeBaseToBiome(biomeRegistry,
++                    CraftWorldInfo.this.vanillaChunkGenerator.getBiomeSource().getNoiseBiome(x >> 2, y >> 2, z >> 2, randomState.sampler()));
 +            }
 +
 +            @Override
