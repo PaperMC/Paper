@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <jahnke.nassim@gmail.com>
+Date: Thu, 16 Dec 2021 09:40:39 +0100
+Subject: [PATCH] Configurable max block light for monster spawning
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index d618afa4dc54d0abff18e90121663e14e0416c2b..4933961ab8bc29749c053c6c54c5d2138f2c1742 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -1083,4 +1083,9 @@ public class PaperWorldConfig {
+         Integer rate = table.get(columnKey, rowKey);
+         return rate != null && rate > -1 ? rate : def;
+     }
++
++    public int maxBlockLightForMonsterSpawning = -1;
++    private void minBlockLightForMobSpawning() {
++        this.maxBlockLightForMonsterSpawning = getInt("monster-spawn-max-light-level", maxBlockLightForMonsterSpawning);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Monster.java b/src/main/java/net/minecraft/world/entity/monster/Monster.java
+index 6e0bd0eab0b06a4ac3042496bbb91292544e9f3c..37539f7680013ab99ed3313b82f9829617d17a71 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Monster.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Monster.java
+@@ -93,7 +93,7 @@ public abstract class Monster extends PathfinderMob implements Enemy {
+             return false;
+         } else {
+             DimensionType dimensionType = world.dimensionType();
+-            int i = dimensionType.monsterSpawnBlockLightLimit();
++            int i = world.getLevel().paperConfig.maxBlockLightForMonsterSpawning >= 0 ? world.getLevel().paperConfig.maxBlockLightForMonsterSpawning : dimensionType.monsterSpawnBlockLightLimit(); // Paper
+             if (i < 15 && world.getBrightness(LightLayer.BLOCK, pos) > i) {
+                 return false;
+             } else {
