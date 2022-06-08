@@ -1759,7 +1759,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         if (subtitle != null) {
-            ClientboundSetSubtitleTextPacket packetSubtitle = new ClientboundSetSubtitleTextPacket(CraftChatMessage.fromString(title)[0]);
+            ClientboundSetSubtitleTextPacket packetSubtitle = new ClientboundSetSubtitleTextPacket(CraftChatMessage.fromString(subtitle)[0]);
             getHandle().connection.send(packetSubtitle);
         }
     }
