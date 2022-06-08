@@ -101,12 +101,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.playHurtSound(source);
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
          if (!this.isRemoved() && !this.dead) {
-             Entity entity = source.getEntity();
+             Entity entity = damageSource.getEntity();
              LivingEntity entityliving = this.getKillCredit();
 -
 +            /* // Paper - move down to make death event cancellable - this is the awardKillScore below
              if (this.deathScore >= 0 && entityliving != null) {
-                 entityliving.awardKillScore(this, this.deathScore, source);
+                 entityliving.awardKillScore(this, this.deathScore, damageSource);
              }
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
              if (!this.level.isClientSide && this.hasCustomName()) {
@@ -118,17 +118,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.getCombatTracker().recheckStatus();
 +            // Paper - moved into if below
              if (this.level instanceof ServerLevel) {
-                 if (entity != null) {
--                    entity.killed((ServerLevel) this.level, this);
-+                    // Paper - move below into if for onKill
-                 }
- 
--                this.dropAllDeathLoot(source);
+-                if (entity == null || entity.wasKilled((ServerLevel) this.level, this)) {
++                // Paper - move below into if for onKill
++
 +                // Paper start
-+                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(source);
++                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(damageSource);
 +                if (deathEvent == null || !deathEvent.isCancelled()) {
 +                    if (this.deathScore >= 0 && entityliving != null) {
-+                        entityliving.awardKillScore(this, this.deathScore, source);
++                        entityliving.awardKillScore(this, this.deathScore, damageSource);
 +                    }
 +                    // Paper start - clear equipment if event is not cancelled
 +                    if (this instanceof Mob) {
@@ -149,18 +146,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                    this.getCombatTracker().recheckStatus();
 +                    if (entity != null) {
-+                        entity.killed((ServerLevel) this.level, this);
++                        entity.wasKilled((ServerLevel) this.level, this);
 +                    }
+                     this.gameEvent(GameEvent.ENTITY_DIE);
+-                    this.dropAllDeathLoot(damageSource);
+-                    this.createWitherRose(entityliving);
 +                } else {
 +                    this.dead = false;
 +                    this.setHealth((float) deathEvent.getReviveHealth());
-+                }
+                 }
+-
+-                this.level.broadcastEntityEvent(this, (byte) 3);
 +                // Paper end
-                 this.createWitherRose(entityliving);
++                this.createWitherRose(entityliving);
              }
  
 +            if (this.dead) { // Paper
-             this.level.broadcastEntityEvent(this, (byte) 3);
++            this.level.broadcastEntityEvent(this, (byte) 3);
              this.setPose(Pose.DYING);
 +            } // Paper
          }
@@ -305,8 +307,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event // Paper - make cancellable
 +        if (event.isCancelled()) return; // Paper - make cancellable
          this.remove(Entity.RemovalReason.KILLED);
+         this.gameEvent(GameEvent.ENTITY_DIE);
      }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
