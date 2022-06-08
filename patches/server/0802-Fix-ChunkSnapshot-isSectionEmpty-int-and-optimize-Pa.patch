@@ -6,14 +6,14 @@ Subject: [PATCH] Fix ChunkSnapshot#isSectionEmpty(int) and optimize
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 0cf67d55ab30ab145ffb2ff562c26c47c2e2879e..403aba29347c779da75337531c3723632120e7c9 100644
+index 7fd9f20d60339270d5e4adbf098ac38a832fb224..7f538d8a6918fbb659d4090c7157d02b3d085478 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -282,13 +282,17 @@ public class CraftChunk implements Chunk {
-         PalettedContainer<Holder<Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
+@@ -283,13 +283,17 @@ public class CraftChunk implements Chunk {
+         PalettedContainerRO<Holder<Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
  
          Registry<Biome> iregistry = this.worldServer.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
--        Codec<PalettedContainer<Holder<Biome>>> biomeCodec = PalettedContainer.codec(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS), null); // Paper - Anti-Xray - Add preset biomes
+-        Codec<PalettedContainerRO<Holder<Biome>>> biomeCodec = PalettedContainer.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
  
          for (int i = 0; i < cs.length; i++) {
 -            CompoundTag data = new CompoundTag();
@@ -31,7 +31,7 @@ index 0cf67d55ab30ab145ffb2ff562c26c47c2e2879e..403aba29347c779da75337531c372363
  
              LevelLightEngine lightengine = chunk.level.getLightEngine();
              DataLayer skyLightArray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(x, i, z));
-@@ -307,8 +311,7 @@ public class CraftChunk implements Chunk {
+@@ -308,8 +312,7 @@ public class CraftChunk implements Chunk {
              }
  
              if (biome != null) {

@@ -10,10 +10,10 @@ This patch also prevents the saving/unloading of POI data when
 world saving is disabled.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 727ee42ec573fd1d008f526f49d0e63396ef0a9d..0e6bc8f7b31581fe0e7adb13119b30295aeac48d 100644
+index 6bae8378c14aa1ae35cf31f284bda2fcc61f1322..1794893cab3f26faa58745a95cb50d239f8a1484 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -848,6 +848,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -864,6 +864,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      }
                      // Paper end
                  }
@@ -21,7 +21,7 @@ index 727ee42ec573fd1d008f526f49d0e63396ef0a9d..0e6bc8f7b31581fe0e7adb13119b3029
  
                  this.updatingChunks.queueUpdate(pos, holder); // Paper - Don't copy
                  this.modified = true;
-@@ -999,7 +1000,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1015,7 +1016,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
          LongIterator longiterator = this.toDrop.iterator();
@@ -30,7 +30,7 @@ index 727ee42ec573fd1d008f526f49d0e63396ef0a9d..0e6bc8f7b31581fe0e7adb13119b3029
              long j = longiterator.nextLong();
              ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
  
-@@ -1047,6 +1048,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1063,6 +1064,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                          this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
                      }
                      // Paper end
@@ -38,7 +38,7 @@ index 727ee42ec573fd1d008f526f49d0e63396ef0a9d..0e6bc8f7b31581fe0e7adb13119b3029
                      if (ichunkaccess instanceof LevelChunk) {
                          ((LevelChunk) ichunkaccess).setLoaded(false);
                      }
-@@ -1076,6 +1078,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1092,6 +1094,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
                      this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
                  }
@@ -46,16 +46,16 @@ index 727ee42ec573fd1d008f526f49d0e63396ef0a9d..0e6bc8f7b31581fe0e7adb13119b3029
              } // Paper end
                  } finally { this.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes while unloading chunks
  
-@@ -1152,6 +1155,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1167,6 +1170,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
                  this.poiManager.loadInData(pos, chunkHolder.poiData);
                  chunkHolder.tasks.forEach(Runnable::run);
 +                this.getPoiManager().dequeueUnload(pos.longKey); // Paper
-                 // Paper end
  
-                 if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
+                 if (chunkHolder.protoChunk != null) {
+                     ProtoChunk protochunk = chunkHolder.protoChunk;
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21ff420130f 100644
+index ab9bb440c8e91ecb49c1e14a427d35087a87ac80..400732788820a94acebccb1ad64789e0f6defdb1 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -1,5 +1,6 @@
@@ -65,7 +65,7 @@ index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21f
  import com.mojang.datafixers.DataFixer;
  import com.mojang.datafixers.util.Pair;
  import it.unimi.dsi.fastutil.longs.Long2ByteMap;
-@@ -35,16 +36,145 @@ import net.minecraft.world.level.chunk.storage.SectionStorage;
+@@ -38,16 +39,145 @@ import net.minecraft.world.level.chunk.storage.SectionStorage;
  public class PoiManager extends SectionStorage<PoiSection> {
      public static final int MAX_VILLAGE_DISTANCE = 6;
      public static final int VILLAGE_SECTION_SIZE = 1;
@@ -87,10 +87,10 @@ index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21f
 +    }
 +    // Paper end - unload poi data
      private final LongSet loadedChunks = new LongOpenHashSet();
-     public final net.minecraft.server.level.ServerLevel world; // Paper // Paper public
+     private final net.minecraft.server.level.ServerLevel world; // Paper
  
-     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, LevelHeightAccessor world) {
-         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, world);
+     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) {
+         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world);
 +        if (world == null) { throw new IllegalStateException("world must be non-null"); } // Paper - require non-null
          this.world = (net.minecraft.server.level.ServerLevel)world; // Paper
 -        this.distanceTracker = new PoiManager.DistanceTracker();
@@ -210,10 +210,10 @@ index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21f
 +    }
 +    // Paper end - actually unload POI data
 +
-     public void add(BlockPos pos, PoiType type) {
+     public void add(BlockPos pos, Holder<PoiType> type) {
          this.getOrCreate(SectionPos.asLong(pos)).add(pos, type);
      }
-@@ -181,8 +311,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -182,8 +312,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
      }
  
      public int sectionsToVillage(SectionPos pos) {
@@ -224,7 +224,7 @@ index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21f
      }
  
      boolean isVillageCenter(long pos) {
-@@ -195,7 +325,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -198,7 +328,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
      @Override
      public void tick(BooleanSupplier shouldKeepTicking) {
          // Paper start - async chunk io
@@ -233,7 +233,7 @@ index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21f
              ChunkPos chunkcoordintpair = SectionPos.of(this.dirty.firstLong()).chunk();
  
              net.minecraft.nbt.CompoundTag data;
-@@ -205,19 +335,24 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -208,19 +338,24 @@ public class PoiManager extends SectionStorage<PoiSection> {
              com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world,
                  chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
          }
@@ -261,7 +261,7 @@ index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21f
      }
  
      public void checkConsistencyWithBlocks(ChunkPos chunkPos, LevelChunkSection chunkSection) {
-@@ -275,7 +410,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -278,7 +413,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
  
          @Override
          protected int getLevelFromSource(long id) {
@@ -271,10 +271,10 @@ index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21f
  
          @Override
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index 3cfc57b49fb3d85c4b9039907fc22bad3a0efe3e..2df0b55a18e57163e49770e83ef067a5587d2126 100644
+index 72be000b43c0026bc3b9236171f00a73cc4078e9..0f0718f0ee729715afcc4ba48307f5768a1a088d 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-@@ -52,6 +52,40 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
+@@ -58,6 +58,40 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
          // Paper - remove mojang I/O thread
      }
  
@@ -315,7 +315,7 @@ index 3cfc57b49fb3d85c4b9039907fc22bad3a0efe3e..2df0b55a18e57163e49770e83ef067a5
      protected void tick(BooleanSupplier shouldKeepTicking) {
          while(this.hasWork() && shouldKeepTicking.getAsBoolean()) {
              ChunkPos chunkPos = SectionPos.of(this.dirty.firstLong()).chunk();
-@@ -166,6 +200,7 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
+@@ -175,6 +209,7 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
                  });
              }
          }

@@ -5,25 +5,26 @@ Subject: [PATCH] Add more Campfire API
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-index 1d2dbaec8201de12fb65e2c01ca8a1ead7e873a7..96c161b15a62a720fa991e8849f35956f767ff09 100644
+index 18b22efe9f5335bb49aa0e899727d1911dc20718..8e198941b4ad7845d73ab1cfea5ac07b0014fe22 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
-@@ -32,12 +32,14 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
-     private final NonNullList<ItemStack> items;
+@@ -39,6 +39,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
      public final int[] cookingProgress;
      public final int[] cookingTime;
+     private final RecipeManager.CachedCheck<Container, CampfireCookingRecipe> quickCheck;
 +    public final boolean[] stopCooking; // Paper
  
      public CampfireBlockEntity(BlockPos pos, BlockState state) {
          super(BlockEntityType.CAMPFIRE, pos, state);
-         this.items = NonNullList.withSize(4, ItemStack.EMPTY);
+@@ -46,6 +47,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
          this.cookingProgress = new int[4];
          this.cookingTime = new int[4];
+         this.quickCheck = RecipeManager.createCheck(RecipeType.CAMPFIRE_COOKING);
 +        this.stopCooking = new boolean[4]; // Paper
      }
  
      public static void cookTick(Level world, BlockPos pos, BlockState state, CampfireBlockEntity campfire) {
-@@ -48,7 +50,9 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+@@ -56,7 +58,9 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
  
              if (!itemstack.isEmpty()) {
                  flag = true;
@@ -33,7 +34,7 @@ index 1d2dbaec8201de12fb65e2c01ca8a1ead7e873a7..96c161b15a62a720fa991e8849f35956
  
                  if (campfire.cookingProgress[i] >= campfire.cookingTime[i]) {
                      SimpleContainer inventorysubcontainer = new SimpleContainer(new ItemStack[]{itemstack});
-@@ -155,6 +159,16 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+@@ -163,6 +167,16 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
              System.arraycopy(aint, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, aint.length));
          }
  
@@ -50,7 +51,7 @@ index 1d2dbaec8201de12fb65e2c01ca8a1ead7e873a7..96c161b15a62a720fa991e8849f35956
      }
  
      @Override
-@@ -163,6 +177,13 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+@@ -171,6 +185,13 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
          ContainerHelper.saveAllItems(nbt, this.items, true);
          nbt.putIntArray("CookingTimes", this.cookingProgress);
          nbt.putIntArray("CookingTotalTimes", this.cookingTime);

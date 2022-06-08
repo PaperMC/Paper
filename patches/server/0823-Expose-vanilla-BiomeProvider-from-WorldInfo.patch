@@ -5,33 +5,33 @@ Subject: [PATCH] Expose vanilla BiomeProvider from WorldInfo
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index df955666723a8cb1e612311f0b8e77fb577d6be5..01aefce226ae82d707b38b0d56d2580d411a3c9a 100644
+index 6279b843ad04769b202b74913e328c86f256ee13..718b477b2f53a3b2decb4c045ece12ab75aee23d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -582,7 +582,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                 chunkgenerator = worlddimension.generator();
+@@ -558,7 +558,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
+             // Paper end
  
--            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), holder.value());
-+            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), holder.value(), chunkgenerator, this.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
+-            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.typeHolder().value());
++            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.typeHolder().value(), worlddimension.generator(), this.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
              if (biomeProvider == null && gen != null) {
                  biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8769e15a395b1c6e72f3e4a7f96b8c90c34e7569..b4133f8dde5edb75b8d2d1008c50db7810276913 100644
+index 5bfd4457f551e5e71e0f74a0d52568e165404e22..f8b7cd7026fcd73c8cf0245d9f7ba58a453fb733 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1217,7 +1217,7 @@ public final class CraftServer implements Server {
-             chunkgenerator = worlddimension.generator();
-         }
+@@ -1202,7 +1202,7 @@ public final class CraftServer implements Server {
+         Registry<LevelStem> iregistry = worlddata.worldGenSettings().dimensions();
+         LevelStem worlddimension = (LevelStem) iregistry.get(actualDimension);
  
--        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), holder.value());
-+        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), holder.value(), chunkgenerator, this.getHandle().getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
+-        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.typeHolder().value());
++        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.typeHolder().value(), worlddimension.generator(), this.getHandle().getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
          if (biomeProvider == null && generator != null) {
              biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index f05ff9891d59cd7ae4e37c05c690dda0c75962fe..925907eff49e26cac48e895f44c55f80b9a6f81e 100644
+index 24d2a9b4a1c602b8ac5960ed9668ab70f34d6620..63e4b8e4e44d6885b537ca3dd052dd806411f618 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -195,6 +195,31 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -67,7 +67,7 @@ index f05ff9891d59cd7ae4e37c05c690dda0c75962fe..925907eff49e26cac48e895f44c55f80
  
      private static final Random rand = new Random();
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
-index aeffb30cd91d4b21850059d33070c537bd5cb25e..3918c24dfb6cda4cff18016cca807c2dbc2a9156 100644
+index 3795dc9b12d62113146e803554283acd8d0e5db9..704bd0ca45eccce5fa1e6f72690398e428b0af44 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
 @@ -17,8 +17,17 @@ public class CraftWorldInfo implements WorldInfo {
@@ -86,7 +86,7 @@ index aeffb30cd91d4b21850059d33070c537bd5cb25e..3918c24dfb6cda4cff18016cca807c2d
 +        this.vanillaChunkGenerator = chunkGenerator;
 +        // Paper end
          this.name = worldDataServer.getLevelName();
-         this.uuid = WorldUUID.getUUID(session.levelPath.toFile());
+         this.uuid = WorldUUID.getUUID(session.levelDirectory.path().toFile());
          this.environment = environment;
 @@ -28,6 +37,10 @@ public class CraftWorldInfo implements WorldInfo {
      }

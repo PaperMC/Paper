@@ -5,10 +5,10 @@ Subject: [PATCH] Validate usernames
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 9e01ee1776a02dd7be0a47ac3a06e69968d26bdc..94a96c34e207a84a7c9226e9255beb6d0371f068 100644
+index a1e36435187a51d2fe100945b90f409b8f9305c1..6706e502a068766e2eff3f790bbca004698932d1 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -495,6 +495,12 @@ public class PaperConfig {
+@@ -491,6 +491,12 @@ public class PaperConfig {
          set("settings.unsupported-settings.allow-tnt-duplication", null);
      }
  
@@ -22,19 +22,19 @@ index 9e01ee1776a02dd7be0a47ac3a06e69968d26bdc..94a96c34e207a84a7c9226e9255beb6d
      public static int maxPlayerAutoSavePerTick = 10;
      private static void playerAutoSaveRate() {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index f5c1dff1d571e89f960f11400edbcbbea0620575..7065aa4522431d08018fec8e591ba7c255398140 100644
+index 38521660c6fa7c1a19c5268dac05928b5ec983f4..221f32e034ccb57907f79bae4ecec324e9cdb14e 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -61,6 +61,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-     private ServerPlayer delayedAcceptPlayer;
+@@ -71,6 +71,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+     private ProfilePublicKey playerProfilePublicKey;
      public String hostname = ""; // CraftBukkit - add field
      private int velocityLoginMessageId = -1; // Paper - Velocity support
 +    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -226,11 +227,39 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-         // Paper end
+@@ -263,10 +264,38 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+         }
      }
  
 +    // Paper start - validate usernames
@@ -60,21 +60,20 @@ index f5c1dff1d571e89f960f11400edbcbbea0620575..7065aa4522431d08018fec8e591ba7c2
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
-         this.gameProfile = packet.getGameProfile();
-         Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(this.gameProfile.getName()), "Invalid characters in username", new Object[0]);
+         Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
 +        // Paper start - validate usernames
 +        if (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() && com.destroystokyo.paper.PaperConfig.performUsernameValidation) {
-+            if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(this.gameProfile.getName())) {
++            if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(packet.name())) {
 +                ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
 +                return;
 +            }
 +        }
 +        // Paper end - validate usernames
-         if (this.server.usesAuthentication() && !this.connection.isMemoryConnection()) {
-             this.state = ServerLoginPacketListenerImpl.State.KEY;
-             this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
+ 
+         try {
+             this.playerProfilePublicKey = ServerLoginPacketListenerImpl.validatePublicKey(packet, this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index bb4e844c77c76eb893c55844c5a814ccd337b7f4..32f710e52da781ed9a0df8249a9ca79f1804b24a 100644
+index ac9ee7f574f9b6c5e9c9368e54928e47ca62fb24..6951b8e320dcea2c2ce4271ed03a20c729ff503b 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -707,7 +707,7 @@ public abstract class PlayerList {
