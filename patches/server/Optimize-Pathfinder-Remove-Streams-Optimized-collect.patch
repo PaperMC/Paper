@@ -21,21 +21,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -0,0 +0,0 @@ public class PathFinder {
-         this.openSet.clear();
-         this.nodeEvaluator.prepare(world, mob);
-         Node node = this.nodeEvaluator.getStart();
--        Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
--            return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
--        }, Function.identity()));
-+        // Paper start - remove streams - and optimize collection
-+        List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
-+        for (BlockPos blockPos : positions) {
-+            map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(blockPos.getX(), blockPos.getY(), blockPos.getZ()), blockPos));
-+        }
-+        // Paper end
-         Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
-         this.nodeEvaluator.done();
-         return path;
+         if (node == null) {
+             return null;
+         } else {
+-            Map<Target, BlockPos> map = positions.stream().collect(Collectors.toMap((pos) -> {
+-                return this.nodeEvaluator.getGoal((double)pos.getX(), (double)pos.getY(), (double)pos.getZ());
+-            }, Function.identity()));
++            // Paper start - remove streams - and optimize collection
++            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
++            for (BlockPos pos : positions) {
++                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
++            }
++            // Paper end
+             Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
+             this.nodeEvaluator.done();
+             return path;
+@@ -0,0 +0,0 @@ public class PathFinder {
      }
  
      @Nullable
@@ -45,7 +46,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          profiler.push("find_path");
          profiler.markForCharting(MetricCategory.PATH_FINDING);
 -        Set<Target> set = positions.keySet();
-+        //Set<Target> set = positions.keySet();
++        // Set<Target> set = positions.keySet();
          startNode.g = 0.0F;
 -        startNode.h = this.getBestH(startNode, set);
 +        startNode.h = this.getBestH(startNode, positions); // Paper - optimize collection
@@ -53,7 +54,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.openSet.clear();
          this.openSet.insert(startNode);
 -        Set<Node> set2 = ImmutableSet.of();
-+        //Set<Node> set2 = ImmutableSet.of(); // Paper - unused - diff on change
++        // Set<Node> set2 = ImmutableSet.of(); // Paper - unused - diff on change
          int i = 0;
 -        Set<Target> set3 = Sets.newHashSetWithExpectedSize(set.size());
 +        List<Map.Entry<Target, BlockPos>> entryList = Lists.newArrayListWithExpectedSize(positions.size()); // Paper - optimize collection
@@ -95,8 +96,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
--        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map((target) -> {
--            return this.reconstructPath(target.getBestNode(), positions.get(target), true);
+-        Optional<Path> optional = !set3.isEmpty() ? set3.stream().map((node) -> {
+-            return this.reconstructPath(node.getBestNode(), positions.get(node), true);
 -        }).min(Comparator.comparingInt(Path::getNodeCount)) : set.stream().map((target) -> {
 -            return this.reconstructPath(target.getBestNode(), positions.get(target), false);
 -        }).min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
@@ -114,6 +115,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        return best;
 +        // Paper end
+     }
+ 
+     protected float distance(Node a, Node b) {
+         return a.distanceTo(b);
      }
  
 -    private float getBestH(Node node, Set<Target> targets) {
