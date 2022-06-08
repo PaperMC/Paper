@@ -11,22 +11,22 @@ Also fix above-mentioned modifiers from having the reverse effect
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
-index 87dabe3c80b48bff52f2e3dbbaceb37a1a21e431..effee89e308c9a663938ac5b00a8c6512ce407c2 100644
+index 7d9056f9d841fbbdeaf1e323d818f2f1267b47e8..6659a96b3638265f128a352cc9f12629874bfb4b 100644
 --- a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
 @@ -47,9 +47,17 @@ public class CaveVinesBlock extends GrowingPlantHeadBlock implements Bonemealabl
  
      @Override
-     protected BlockState getGrowIntoState(BlockState state, Random random) {
+     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
 -        return (BlockState) super.getGrowIntoState(state, random).setValue(CaveVinesBlock.BERRIES, random.nextFloat() < 0.11F);
 +        // Paper start
 +        return this.getGrowIntoState(state, random, null);
      }
  
 +    @Override
-+    protected BlockState getGrowIntoState(BlockState state, Random random, Level level) {
-+        final boolean value = (level == null ? random.nextFloat() : random.nextFloat(100.00F / level.spigotConfig.glowBerryModifier)) < 0.11F;
-+        return super.getGrowIntoState(state, random).setValue(CaveVinesBlock.BERRIES, value);
++    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
++        final boolean value = random.nextFloat() < (level != null ? (0.11F * (level.spigotConfig.glowBerryModifier * 2)) : 0.11F);
++        return (BlockState) super.getGrowIntoState(state, random).setValue(CaveVinesBlock.BERRIES, value);
 +    }
 +    // Paper end
 +
@@ -34,13 +34,13 @@ index 87dabe3c80b48bff52f2e3dbbaceb37a1a21e431..effee89e308c9a663938ac5b00a8c651
      public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
          return new ItemStack(Items.GLOW_BERRIES);
 diff --git a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
-index def3b62feada5cebae4049883fa967b12f6f32b4..8e642ff6d387e05f900acfc3cf6cfa5975bf69e4 100644
+index ae9052efc48dc05c7b41cb18c4330d7e62839a07..4d1e1cf4c541793492a02681087a6242e7977acd 100644
 --- a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
 @@ -40,16 +40,36 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
  
      @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
 -        if ((Integer) state.getValue(GrowingPlantHeadBlock.AGE) < 25 && random.nextDouble() < (100.0D / world.spigotConfig.kelpModifier) * this.growPerTickProbability) { // Spigot
 +        // Paper start
 +        final int modifier;
@@ -68,12 +68,12 @@ index def3b62feada5cebae4049883fa967b12f6f32b4..8e642ff6d387e05f900acfc3cf6cfa59
      }
  
 +    // Paper start
-+    protected BlockState getGrowIntoState(BlockState state, Random random, Level level) {
++    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
 +        return this.getGrowIntoState(state, random);
 +    }
 +    // Paper end
 +
-     protected BlockState getGrowIntoState(BlockState state, Random random) {
+     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
          return (BlockState) state.cycle(GrowingPlantHeadBlock.AGE);
      }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
