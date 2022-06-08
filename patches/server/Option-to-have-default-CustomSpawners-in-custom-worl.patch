@@ -14,8 +14,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ public class PaperConfig {
-         globalMaxConcurrentChunkLoads = getDouble("settings.chunk-loading.global-max-concurrent-loads", 500.0);
-         playerMaxChunkLoadRate = getDouble("settings.chunk-loading.player-max-chunk-load-rate", -1.0);
+     private static void timeCommandAffectsAllWorlds() {
+         timeCommandAffectsAllWorlds = getBoolean("settings.time-command-affects-all-worlds", timeCommandAffectsAllWorlds);
      }
 +
 +    public static boolean useDimensionTypeForCustomSpawners;
@@ -31,15 +31,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.commandStorage = new CommandStorage(worldpersistentdata);
              } else {
                  ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(11);
--                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, holder, worldloadlistener, chunkgenerator, flag, j, ImmutableList.of(), true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
+-                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, ImmutableList.of(), true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
 +                // Paper start - option to use the dimension_type to check if spawners should be added. I imagine mojang will add some datapack-y way of managing this in the future.
 +                final List<CustomSpawner> spawners;
-+                if (com.destroystokyo.paper.PaperConfig.useDimensionTypeForCustomSpawners && this.registryHolder.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(holder.value()).orElseThrow() == DimensionType.OVERWORLD_LOCATION) {
++                if (com.destroystokyo.paper.PaperConfig.useDimensionTypeForCustomSpawners && this.registryHolder.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(worlddimension.typeHolder().value()).orElseThrow() == net.minecraft.world.level.dimension.BuiltinDimensionTypes.OVERWORLD) {
 +                    spawners = list;
 +                } else {
 +                    spawners = Collections.emptyList();
 +                }
-+                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, holder, worldloadlistener, chunkgenerator, flag, j, spawners, true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
++                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, spawners, true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
 +                // Paper end
              }
  
