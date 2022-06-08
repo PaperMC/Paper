@@ -6,7 +6,7 @@ Subject: [PATCH] Optimise chunk tick iteration
 Use a dedicated list of entity ticking chunks to reduce the cost
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index b9d3535dd4e0af771bb74c85f18265e38f383e0e..469b921cceabc3f42961e8aa5314bdc849ad41b9 100644
+index 77c7fe4d39f09499274ac34fd6c3f3a99cfbdd1d..020617ec8e5e77920d36380f019e430286006f89 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -86,11 +86,21 @@ public class ChunkHolder {
@@ -40,15 +40,15 @@ index b9d3535dd4e0af771bb74c85f18265e38f383e0e..469b921cceabc3f42961e8aa5314bdc8
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
              }
  
-@@ -273,6 +283,7 @@ public class ChunkHolder {
-                 int k = this.lightEngine.getMaxLightSection();
+@@ -276,6 +286,7 @@ public class ChunkHolder {
+                     int k = this.lightEngine.getMaxLightSection();
  
-                 if (y >= j && y <= k) {
+                     if (y >= j && y <= k) {
 +                    this.addToBroadcastMap(); // Paper - optimise chunk tick iteration
-                     int l = y - j;
+                         int l = y - j;
  
-                     if (lightType == LightLayer.SKY) {
-@@ -286,8 +297,19 @@ public class ChunkHolder {
+                         if (lightType == LightLayer.SKY) {
+@@ -290,8 +301,19 @@ public class ChunkHolder {
          }
      }
  
@@ -70,10 +70,10 @@ index b9d3535dd4e0af771bb74c85f18265e38f383e0e..469b921cceabc3f42961e8aa5314bdc8
              int i = 0;
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 5d60fa26e9f5d3c9c57a61c509d5b924bbed3281..ef28e0f57ba593265a3eca4d3f21d0b1b51e8740 100644
+index 30fbb3df9b91697cca0f0fc7982dced758bdd778..bb9f0614b9a2945c78f1b45a70adcb6a22bfda2b 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -159,6 +159,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -163,6 +163,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
@@ -82,10 +82,10 @@ index 5d60fa26e9f5d3c9c57a61c509d5b924bbed3281..ef28e0f57ba593265a3eca4d3f21d0b1
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index eca75916c5e476db280e58522e5540def4f4de68..d06ad4f2c76eebd3b8191f3de6c0199fa3bb5f22 100644
+index ad36cf0788044d2249d71223d85d9a43c0d16067..108164945f2aa088834585d9d80274ea551608d9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -46,6 +46,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
+@@ -47,6 +47,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  import net.minecraft.world.level.storage.DimensionDataStorage;
  import net.minecraft.world.level.storage.LevelData;
  import net.minecraft.world.level.storage.LevelStorageSource;
@@ -93,7 +93,7 @@ index eca75916c5e476db280e58522e5540def4f4de68..d06ad4f2c76eebd3b8191f3de6c0199f
  
  public class ServerChunkCache extends ChunkSource {
  
-@@ -986,34 +987,42 @@ public class ServerChunkCache extends ChunkSource {
+@@ -987,34 +988,42 @@ public class ServerChunkCache extends ChunkSource {
  
              this.lastSpawnState = spawnercreature_d;
              gameprofilerfiller.popPush("filteringLoadedChunks");
@@ -152,7 +152,7 @@ index eca75916c5e476db280e58522e5540def4f4de68..d06ad4f2c76eebd3b8191f3de6c0199f
                          NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                      }
  
-@@ -1021,7 +1030,16 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1022,7 +1031,16 @@ public class ServerChunkCache extends ChunkSource {
                          this.level.tickChunk(chunk1, k);
                      }
                  }
@@ -169,7 +169,7 @@ index eca75916c5e476db280e58522e5540def4f4de68..d06ad4f2c76eebd3b8191f3de6c0199f
              this.level.timings.chunkTicks.stopTiming(); // Paper
              gameprofilerfiller.popPush("customSpawners");
              if (flag2) {
-@@ -1029,15 +1047,24 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1030,15 +1048,24 @@ public class ServerChunkCache extends ChunkSource {
                  this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
                  } // Paper - timings
              }

@@ -35,10 +35,10 @@ index a6bcf936747720202857ba586fa35c46c9c91caf..63294b95ec062e32c87e52560353374d
              List<ChunkHolder> allChunks = new ArrayList<>(visibleChunks.values());
              List<ServerPlayer> players = world.players;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704662c41e8 100644
+index bb9f0614b9a2945c78f1b45a70adcb6a22bfda2b..66a627a6b58ef5b420aceb0a3a1bcf90aec13198 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -123,9 +123,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -126,9 +126,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private static final int MIN_VIEW_DISTANCE = 3;
      public static final int MAX_VIEW_DISTANCE = 33;
      public static final int MAX_CHUNK_DISTANCE = 33 + ChunkStatus.maxDistance();
@@ -52,16 +52,16 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
      private final Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
      public final LongSet entitiesInLevel;
      public final ServerLevel level;
-@@ -317,7 +319,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -321,7 +323,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      boolean unloadingPlayerChunk = false; // Paper - do not allow ticket level changes while unloading chunks
-     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
+     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
 -        this.visibleChunkMap = this.updatingChunkMap.clone();
 +        // Paper - don't copy
          this.pendingUnloads = new Long2ObjectLinkedOpenHashMap();
          this.entitiesInLevel = new LongOpenHashSet();
          this.toDrop = new LongOpenHashSet();
-@@ -541,12 +543,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -557,12 +559,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      @Nullable
      public ChunkHolder getUpdatingChunkIfPresent(long pos) {
@@ -81,7 +81,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
      }
  
      protected IntSupplier getChunkQueueLevel(long pos) {
-@@ -686,9 +693,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -702,9 +709,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          };
  
          stringbuilder.append("Updating:").append(System.lineSeparator());
@@ -93,7 +93,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
          CrashReport crashreport = CrashReport.forThrowable(exception, "Chunk loading");
          CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Chunk loading");
  
-@@ -739,7 +746,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -755,7 +762,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      // Paper end
                  }
  
@@ -102,7 +102,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
                  this.modified = true;
              }
  
-@@ -819,7 +826,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -835,7 +842,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      protected void saveAllChunks(boolean flush) {
          if (flush) {
@@ -111,7 +111,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
              MutableBoolean mutableboolean = new MutableBoolean();
  
              do {
-@@ -850,7 +857,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -866,7 +873,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              //this.flushWorker(); // Paper - nuke IOWorker
              this.level.asyncChunkTaskManager.flush(); // Paper - flush to preserve behavior compat with pre-async behaviour
          } else {
@@ -120,7 +120,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
          }
  
      }
-@@ -873,14 +880,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -889,14 +896,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public boolean hasWork() {
@@ -137,7 +137,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
  
              if (playerchunk != null) {
                  playerchunk.onChunkRemove(); // Paper
-@@ -975,7 +982,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -991,7 +998,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (!this.modified) {
              return false;
          } else {
@@ -151,7 +151,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
              this.modified = false;
              return true;
          }
-@@ -1465,7 +1477,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1491,7 +1503,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
              this.viewDistance = j;
              this.distanceManager.updatePlayerTickets(this.viewDistance + 1);
@@ -160,7 +160,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
  
              while (objectiterator.hasNext()) {
                  ChunkHolder playerchunk = (ChunkHolder) objectiterator.next();
-@@ -1508,7 +1520,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1534,7 +1546,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public int size() {
@@ -169,7 +169,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
      }
  
      public DistanceManager getDistanceManager() {
-@@ -1516,13 +1528,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1542,13 +1554,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      protected Iterable<ChunkHolder> getChunks() {
@@ -186,7 +186,7 @@ index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704
          while (objectbidirectionaliterator.hasNext()) {
              Entry<ChunkHolder> entry = (Entry) objectbidirectionaliterator.next();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 42434152c79f8318009b02e9a39326fd9d4ff466..f05ff9891d59cd7ae4e37c05c690dda0c75962fe 100644
+index fdc4879ff05616dfe89b78bfae5c1d9aad87577d..24d2a9b4a1c602b8ac5960ed9668ab70f34d6620 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -161,7 +161,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
