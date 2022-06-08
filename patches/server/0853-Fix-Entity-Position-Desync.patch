@@ -8,15 +8,11 @@ If entities were teleported in the first tick it would not be send to the client
 This excludes hanging entities, as this fix caused problematic behavior due to them having their own
 position field.
 
-This also fixes desync caused be relatively teleporting paintings. (https://bugs.mojang.com/browse/MC-249169)
-This is caused by the fact that setPacketCoordinates isn't called on paintings when they are spawned (unlike every other entity, like XP orbs)
-on the client for some reason. This causes it to be relatively teleported to the world origin (0,0,0).
-
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index a482cc1c4d7eab531cd3f5cf42f7d3a43470ef6b..3eb947e16684965b861a07591f18db838e7c874b 100644
+index a482cc1c4d7eab531cd3f5cf42f7d3a43470ef6b..623adb2d7b34a769316c2af858591572ecddfc6b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -152,11 +152,12 @@ public class ServerEntity {
+@@ -152,7 +152,7 @@ public class ServerEntity {
                  boolean flag2 = flag1 || this.tickCount % 60 == 0;
                  boolean flag3 = Math.abs(i - this.yRotp) >= 1 || Math.abs(j - this.xRotp) >= 1;
  
@@ -25,8 +21,3 @@ index a482cc1c4d7eab531cd3f5cf42f7d3a43470ef6b..3eb947e16684965b861a07591f18db83
                      long k = this.positionCodec.encodeX(vec3d);
                      long l = this.positionCodec.encodeY(vec3d);
                      long i1 = this.positionCodec.encodeZ(vec3d);
-                     boolean flag4 = k < -32768L || k > 32767L || l < -32768L || l > 32767L || i1 < -32768L || i1 > 32767L;
-+                    if (this.entity instanceof net.minecraft.world.entity.decoration.Painting) {flag4 = true;} // Paper - Always send exact position for paintings
- 
-                     if (!flag4 && this.teleportDelay <= 400 && !this.wasRiding && this.wasOnGround == this.entity.isOnGround() && !(com.destroystokyo.paper.PaperConfig.sendFullPosForHardCollidingEntities && this.entity.hardCollides())) { // Paper - send full pos for hard colliding entities to prevent collision problems due to desync
-                         if ((!flag2 || !flag3) && !(this.entity instanceof AbstractArrow)) {
