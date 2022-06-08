@@ -26,26 +26,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-     private int aboveGroundVehicleTickCount;
-     private int receivedMovePacketCount;
-     private int knownMovePacketCount;
-+    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
+     private final ChatPreviewThrottler chatPreviewThrottler = new ChatPreviewThrottler();
+     private final AtomicReference<Instant> lastChatTimeStamp;
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
++    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
+         this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
-             for (int i = 0; i < signText.size(); ++i) {
-                 TextFilter.FilteredText currentLine = signText.get(i);
-+                // Paper start - cap line length - modified clients can send longer data than normal
-+                if (MAX_SIGN_LINE_LENGTH > 0 && currentLine.getRaw().length() > MAX_SIGN_LINE_LENGTH) {
-+                    // This handles multibyte characters as 1
-+                    int offset = currentLine.getRaw().codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
-+                    if (offset < currentLine.getRaw().length()) {
-+                        signText.set(i, currentLine = net.minecraft.server.network.TextFilter.FilteredText.passThrough(currentLine.getRaw().substring(0, offset))); // this will break any filtering, but filtering is NYI as of 1.17
-+                    }
+     @Override
+     public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
+-        List<String> list = (List) Stream.of(packet.getLines()).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
++        // Paper start - cap line length - modified clients can send longer data than normal
++        String[] lines = packet.getLines();
++        for (int i = 0; i < lines.length; ++i) {
++            if (MAX_SIGN_LINE_LENGTH > 0 && lines[i].length() > MAX_SIGN_LINE_LENGTH) {
++                // This handles multibyte characters as 1
++                int offset = lines[i].codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
++                if (offset < lines[i].length()) {
++                    lines[i] = lines[i].substring(0, offset); // this will break any filtering, but filtering is NYI as of 1.17
 +                }
-+                // Paper end
++            }
++        }
++        List<String> list = (List) Stream.of(lines).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
++        // Paper end
  
-                 if (this.player.isTextFilteringEnabled()) {
-                     lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getFiltered())));
+         this.filterTextPacket(list, (list1) -> {
+             this.updateSignText(packet, list1);

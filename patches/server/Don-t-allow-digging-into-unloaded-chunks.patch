@@ -35,25 +35,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
                  this.lastSentState = -1;
 @@ -0,0 +0,0 @@ public class ServerPlayerGameMode {
-         double d3 = d0 * d0 + d1 * d1 + d2 * d2;
  
-         if (d3 > 36.0D) {
+     public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence) {
+         if (this.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > ServerGamePacketListenerImpl.MAX_INTERACTION_DISTANCE) {
 +            if (true) return; // Paper - Don't notify if unreasonably far away
-             BlockState iblockdata;
- 
-             if (this.player.level.getServer() != null && this.player.chunkPosition().getChessboardDistance(new ChunkPos(pos)) < this.player.level.getServer().getPlayerList().getViewDistance()) {
+             this.debugLogging(pos, false, sequence, "too far");
+         } else if (pos.getY() >= worldHeight) {
+             this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
 @@ -0,0 +0,0 @@ public class ServerPlayerGameMode {
-                 this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, true, "stopped destroying"));
+                 this.debugLogging(pos, true, sequence, "stopped destroying");
              } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
 -                if (!Objects.equals(this.destroyPos, pos)) {
-+                if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) {
++                if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) { // Paper
                      ServerPlayerGameMode.LOGGER.debug("Mismatch in destroy block pos: {} {}", this.destroyPos, pos); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
 -                    this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
--                    this.player.connection.send(new ClientboundBlockBreakAckPacket(this.destroyPos, this.level.getBlockState(this.destroyPos), action, true, "aborted mismatched destroying"));
+-                    this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
 +                    BlockState type = this.level.getBlockStateIfLoaded(this.destroyPos); // Paper - don't load unloaded chunks for stale records here
-+                    if (type != null) this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1); // Paper
-+                    if (type != null) this.player.connection.send(new ClientboundBlockBreakAckPacket(this.destroyPos, type, action, true, "aborted mismatched destroying")); // Paper
++                    if (type != null) this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
++                    if (type != null) this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
 +                    this.destroyPos = BlockPos.ZERO; // Paper
                  }
  
@@ -68,10 +68,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              case STOP_DESTROY_BLOCK:
 +                // Paper start - Don't allow digging in unloaded chunks
 +                if (this.player.level.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) == null) {
++                    this.player.connection.ackBlockChangesUpTo(packet.getSequence());
 +                    return;
 +                }
-                 this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level.getMaxBuildHeight());
 +                // Paper end - Don't allow digging in unloaded chunks
+                 this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level.getMaxBuildHeight(), packet.getSequence());
+                 this.player.connection.ackBlockChangesUpTo(packet.getSequence());
                  return;
-             default:
-                 throw new IllegalArgumentException("Invalid player action");
