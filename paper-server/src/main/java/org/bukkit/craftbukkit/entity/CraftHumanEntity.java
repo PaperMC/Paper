@@ -36,6 +36,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -645,5 +646,19 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public void setStarvationRate(int i) {
         getHandle().getFoodData().starvationRate = i;
+    }
+
+    @Override
+    public Location getLastDeathLocation() {
+        return getHandle().getLastDeathLocation().map(CraftMemoryMapper::fromNms).orElse(null);
+    }
+
+    @Override
+    public void setLastDeathLocation(Location location) {
+        if (location == null) {
+            getHandle().setLastDeathLocation(Optional.empty());
+        } else {
+            getHandle().setLastDeathLocation(Optional.of(CraftMemoryMapper.toNms(location)));
+        }
     }
 }
