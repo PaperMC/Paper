@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.map;
 
+import java.awt.Color;
 import java.awt.Image;
 import java.util.Arrays;
 import org.bukkit.map.MapCanvas;
@@ -33,6 +34,21 @@ public class CraftMapCanvas implements MapCanvas {
     @Override
     public void setCursors(MapCursorCollection cursors) {
         this.cursors = cursors;
+    }
+
+    @Override
+    public void setPixelColor(int x, int y, Color color) {
+        setPixel(x, y, MapPalette.matchColor(color));
+    }
+
+    @Override
+    public Color getPixelColor(int x, int y) {
+        return MapPalette.getColor(getPixel(x, y));
+    }
+
+    @Override
+    public Color getBasePixelColor(int x, int y) {
+        return MapPalette.getColor(getBasePixel(x, y));
     }
 
     @Override
