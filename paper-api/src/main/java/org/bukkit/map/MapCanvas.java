@@ -1,5 +1,6 @@
 package org.bukkit.map;
 
+import java.awt.Color;
 import java.awt.Image;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,10 +38,45 @@ public interface MapCanvas {
 
     /**
      * Draw a pixel to the canvas.
+     * <p>
+     * The provided color might be converted to another color,
+     * which is in the map color range. This means, that
+     * {@link #getPixelColor(int, int)} might return another
+     * color than set.
+     *
+     * @param x The x coordinate, from 0 to 127.
+     * @param y The y coordinate, from 0 to 127.
+     * @param color The color.
+     */
+    void setPixelColor(int x, int y, @NotNull Color color);
+
+    /**
+     * Get a pixel from the canvas.
+     *
+     * @param x The x coordinate, from 0 to 127.
+     * @param y The y coordinate, from 0 to 127.
+     * @return The color.
+     */
+    @NotNull
+    Color getPixelColor(int x, int y);
+
+    /**
+     * Get a pixel from the layers below this canvas.
+     *
+     * @param x The x coordinate, from 0 to 127.
+     * @param y The y coordinate, from 0 to 127.
+     * @return The color.
+     */
+    @NotNull
+    Color getBasePixelColor(int x, int y);
+
+    /**
+     * Draw a pixel to the canvas.
      *
      * @param x The x coordinate, from 0 to 127.
      * @param y The y coordinate, from 0 to 127.
      * @param color The color. See {@link MapPalette}.
+     * @deprecated Magic value, use {@link #setPixelColor(int, int, Color)}
      */
     public void setPixel(int x, int y, byte color);
 
@@ -50,7 +86,9 @@ public interface MapCanvas {
      * @param x The x coordinate, from 0 to 127.
      * @param y The y coordinate, from 0 to 127.
      * @return The color. See {@link MapPalette}.
+     * @deprecated Magic value, use {@link #getPixelColor(int, int)}
      */
+    @Deprecated
     public byte getPixel(int x, int y);
 
     /**
@@ -59,7 +97,9 @@ public interface MapCanvas {
      * @param x The x coordinate, from 0 to 127.
      * @param y The y coordinate, from 0 to 127.
      * @return The color. See {@link MapPalette}.
+     * @deprecated Magic value, use {@link #getBasePixelColor(int, int)}
      */
+    @Deprecated
     public byte getBasePixel(int x, int y);
 
     /**
