@@ -2205,7 +2205,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public final class PacketClassSerializer extends ScalarSerializer<Class<? extends Packet<?>>> {
 +    private static final TypeToken<Class<? extends Packet<?>>> TYPE = new TypeToken<Class<? extends Packet<?>>>() {};
 +    private static final List<String> SUBPACKAGES = List.of("game", "handshake", "login", "status");
-+    private static final Map<String, String> MOJANG_TO_OBF = Optional.ofNullable(ObfHelper.INSTANCE.mappingsByObfName())
++    private static final Map<String, String> MOJANG_TO_OBF = Optional.ofNullable(ObfHelper.INSTANCE.mappingsByMojangName())
 +        .map(Map::entrySet)
 +        .map(Collection::stream)
 +        .map(stream -> stream.collect(Collectors.toMap(entry -> entry.getValue().mojangName(), entry -> entry.getValue().obfName())))
@@ -2759,6 +2759,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
 +
++import java.util.List;
 +import java.util.function.Predicate;
 +
 +import static org.spongepowered.configurate.NodePath.path;
@@ -2863,10 +2864,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .addAction(path("packet-limiter", "limits"), (path, value) -> new Object[]{"packet-limiter", "overrides"})
 +            .addAction(path("packet-limiter", "overrides", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +                if (ObfHelper.INSTANCE.mappingsByObfName() != null) { // requires mappings to be present
-+                    final Class<? extends Packet<?>> packet = PACKET_CLASS_SERIALIZER.deserialize(Void.TYPE /* doesn't matter */, BasicConfigurationNode.root(value.options()).set(value.key()));
-+                    final Object[] newPath = new Object[path.size()];
-+                    newPath[path.size() - 1] = packet.getSimpleName();
-+                    return newPath;
++                    final @Nullable Object key = value.key();
++                    if (key != null) {
++                        String className = key.toString();
++                        for (final String state : List.of("game", "handshake", "login", "status")) {
++                            final String fullClassName = "net.minecraft.network.protocol." + state + "." + className;
++                            final ObfHelper.ClassMapping classMapping = ObfHelper.INSTANCE.mappingsByObfName().get(fullClassName);
++                            if (classMapping != null) {
++                                final String[] split = classMapping.mojangName().split("\\.");
++                                className = split[split.length - 1];
++                                break;
++                            }
++                        }
++
++                        return path.with(path.size() - 1, className).array();
++                    } else {
++                        LOGGER.warn("Could not convert spigot-mapped packet class name {}", value);
++                    }
 +                } else {
 +                    final @Nullable Object keyValue = value.key();
 +                    if (keyValue != null && keyValue.toString().equals("PacketPlayInAutoRecipe")) { // add special case to catch the default
