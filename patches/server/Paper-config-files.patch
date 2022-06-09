@@ -3058,6 +3058,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import java.util.HashMap;
 +import java.util.List;
++import java.util.Locale;
 +import java.util.Map;
 +import java.util.Optional;
 +
@@ -3076,9 +3077,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static ConfigurationTransformation.Versioned versioned() {
 +        return ConfigurationTransformation.versionedBuilder().versionKey(Configuration.LEGACY_CONFIG_VERSION_FIELD)
-+            .addVersion(13, ConfigurationTransformation.builder().addAction(path("enable-old-tnt-cannon-behaviors"), TransformAction.rename("prevent-tnt-from-moving-in-water")).build()).addVersion(16, ConfigurationTransformation.builder().addAction(path("use-chunk-inhabited-timer"), (path, value) -> {
++            .addVersion(13, ConfigurationTransformation.builder().addAction(path("enable-old-tnt-cannon-behaviors"), TransformAction.rename("prevent-tnt-from-moving-in-water")).build())
++            .addVersion(16, ConfigurationTransformation.builder().addAction(path("use-chunk-inhabited-timer"), (path, value) -> {
 +                if (!value.getBoolean(true)) {
 +                    value.raw(0);
++                } else {
++                    value.raw(-1);
 +                }
 +                final Object[] newPath = path.array();
 +                newPath[newPath.length - 1] = "fixed-chunk-inhabited-time";
@@ -3087,6 +3091,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .addVersion(18, ConfigurationTransformation.builder().addAction(path("nether-ceiling-void-damage"), (path, value) -> {
 +                if (value.getBoolean(false)) {
 +                    value.raw(128);
++                } else {
++                    value.raw(0);
 +                }
 +                final Object[] newPath = path.array();
 +                newPath[newPath.length - 1] = "nether-ceiling-void-damage-height";
@@ -3141,9 +3147,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            )
 +            .addVersion(26, ConfigurationTransformation.builder().addAction(path("alt-item-despawn-rate", "items", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +                String itemName = path.get(path.size() - 1).toString();
-+                final Optional<Holder<Item>> item = Registry.ITEM.getHolder(ResourceKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(itemName)));
++                final Optional<Holder<Item>> item = Registry.ITEM.getHolder(ResourceKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
 +                if (item.isEmpty()) {
-+                    itemName = Material.valueOf(itemName).getKey().getKey().toString();
++                    itemName = Material.valueOf(itemName).getKey().getKey();
 +                }
 +                final Object[] newPath = path.array();
 +                newPath[newPath.length - 1] = itemName;
