@@ -411,10 +411,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.configuration;
 +
 +import co.aikar.timings.MinecraftTimings;
-+import co.aikar.timings.TimingsManager;
 +import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
 +import net.minecraft.network.protocol.Packet;
 +import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 +import org.checkerframework.checker.nullness.qual.Nullable;
@@ -447,13 +448,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public Kick kick;
 +
 +        public class Kick extends ConfigurationPart {
-+            public String authenticationServersDown = ""; // TODO empty is fallback to translatable msg
-+            public String connectionThrottle = "Connection throttled! Please wait before reconnecting.";
-+            public String flyingPlayer = "Flying is not enabled on this server";
-+            public String flyingVehicle = "Flying is not enabled on this server";
++            public Component authenticationServersDown = Component.translatable("multiplayer.disconnect.authservers_down");
++            public Component connectionThrottle = Component.text("Connection throttled! Please wait before reconnecting.");
++            public Component flyingPlayer = Component.translatable("multiplayer.disconnect.flying");
++            public Component flyingVehicle = Component.translatable("multiplayer.disconnect.flying");
 +        }
 +
-+        public String noPermission = "&cI'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.";
++        public Component noPermission = Component.text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", NamedTextColor.RED);
 +        public boolean useDisplayNameInQuitMessage = false;
 +    }
 +
@@ -613,7 +614,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public PacketLimiter packetLimiter;
 +
 +    public class PacketLimiter extends ConfigurationPart {
-+        public String kickMessage = "&cSent too many packets"; // todo: minimessage
++        public Component kickMessage = Component.translatable("disconnect.exceeded_packet_rate", NamedTextColor.RED);
 +        public PacketLimit allPackets = new PacketLimit(7.0, 500.0, PacketLimit.ViolateAction.KICK);
 +        public Map<Class<? extends Packet<?>>, PacketLimit> overrides = Map.of(ServerboundPlaceRecipePacket.class, new PacketLimit(4.0, 5.0, PacketLimit.ViolateAction.DROP));
 +
@@ -846,6 +847,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
++import io.papermc.paper.configuration.serializer.ComponentSerializer;
 +import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 +import io.papermc.paper.configuration.serializer.FastutilMapSerializer;
 +import io.papermc.paper.configuration.serializer.PacketClassSerializer;
@@ -971,6 +973,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return options.serializers(builder -> builder
 +            .register(MapSerializer.TYPE, new MapSerializer(false))
 +            .register(new EnumValueSerializer())
++            .register(new ComponentSerializer())
 +        );
 +    }
 +
@@ -2006,6 +2009,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 \ No newline at end of file
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/ComponentSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/ComponentSerializer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/serializer/ComponentSerializer.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.serializer;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.minimessage.MiniMessage;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
++
++import java.lang.reflect.Type;
++import java.util.function.Predicate;
++
++public class ComponentSerializer extends ScalarSerializer<Component> {
++
++    public ComponentSerializer() {
++        super(Component.class);
++    }
++
++    @Override
++    public Component deserialize(Type type, Object obj) throws SerializationException {
++        return MiniMessage.miniMessage().deserialize(obj.toString());
++    }
++
++    @Override
++    protected Object serialize(Component component, Predicate<Class<?>> typeSupported) {
++        return MiniMessage.miniMessage().serialize(component);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/EnumValueSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/EnumValueSerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -2703,8 +2738,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.Configuration;
 +import io.papermc.paper.configuration.serializer.PacketClassSerializer;
 +import io.papermc.paper.util.ObfHelper;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.minimessage.MiniMessage;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.minecraft.network.protocol.Packet;
 +import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
++import org.bukkit.ChatColor;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.slf4j.Logger;
@@ -2712,6 +2752,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
++
++import java.util.function.Predicate;
 +
 +import static org.spongepowered.configurate.NodePath.path;
 +
@@ -2867,10 +2909,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        moveFromRoot(builder, "proxy-protocol", "proxies");
 +
++        miniMessageWithTranslatable(builder, String::isBlank, "multiplayer.disconnect.authservers_down", "messages", "kick", "authentication-servers-down");
++        miniMessageWithTranslatable(builder, Predicate.isEqual("Flying is not enabled on this server"), "multiplayer.disconnect.flying", "messages", "kick", "flying-player");
++        miniMessageWithTranslatable(builder, Predicate.isEqual("Flying is not enabled on this server"), "multiplayer.disconnect.flying", "messages", "kick", "flying-vehicle");
++        miniMessage(builder, "messages", "kick", "connection-throttle");
++        miniMessage(builder, "messages", "no-permission");
++        miniMessageWithTranslatable(builder, Predicate.isEqual("&cSent too many packets"), Component.translatable("disconnect.exceeded_packet_rate", NamedTextColor.RED), "packet-limiter", "kick-message");
++
 +        return builder.build();
 +    }
 +
-+    private static void moveFromRootToMisc(final ConfigurationTransformation.Builder builder, String key) {
++    private static void miniMessageWithTranslatable(final ConfigurationTransformation.Builder builder, final Predicate<String> englishCheck, final String i18nKey, final String... strPath) {
++        miniMessageWithTranslatable(builder, englishCheck, Component.translatable(i18nKey), strPath);
++    }
++    private static void miniMessageWithTranslatable(final ConfigurationTransformation.Builder builder, final Predicate<String> englishCheck, final Component component, final String... strPath) {
++        builder.addAction(path((Object[]) strPath), (path, value) -> {
++            final @Nullable Object val = value.raw();
++            if (val != null) {
++                final String strVal = val.toString();
++                if (!englishCheck.test(strVal)) {
++                    value.set(miniMessage(strVal));
++                    return null;
++                }
++            }
++            value.set(MiniMessage.miniMessage().serialize(component));
++            return null;
++        });
++    }
++
++    private static void miniMessage(final ConfigurationTransformation.Builder builder, final String... strPath) {
++        builder.addAction(path((Object[]) strPath), (path, value) -> {
++            final @Nullable Object val = value.raw();
++            if (val != null) {
++                value.set(miniMessage(val.toString()));
++            }
++            return null;
++        });
++    }
++
++    private static String miniMessage(final String input) {
++        return MiniMessage.miniMessage().serialize(LegacyComponentSerializer.legacySection().deserialize(ChatColor.translateAlternateColorCodes('&', input)));
++    }
++
++    private static void moveFromRootToMisc(final ConfigurationTransformation.Builder builder, final String key) {
 +        moveFromRoot(builder, key, "misc");
 +    }
 +
