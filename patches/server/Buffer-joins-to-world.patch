@@ -7,46 +7,22 @@ This patch buffers the number of logins which will attempt to join
 the world per tick, this attempts to reduce the impact that join floods
 has on the server
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         }
-     }
- 
-+    public static int maxJoinsPerTick;
-+    private static void maxJoinsPerTick() {
-+        maxJoinsPerTick = getInt("settings.max-joins-per-tick", 3);
-+    }
-+
-     public static void registerCommands() {
-         for (Map.Entry<String, Command> entry : commands.entrySet()) {
-             MinecraftServer.getServer().server.getCommandMap().register(entry.getKey(), "Paper", entry.getValue());
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
- import net.minecraft.network.protocol.PacketFlow;
- import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
- import net.minecraft.network.protocol.login.ClientboundLoginDisconnectPacket;
-+import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.RunningOnDifferentThreadException;
- import net.minecraft.server.network.ServerGamePacketListenerImpl;
- import net.minecraft.server.network.ServerLoginPacketListenerImpl;
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
      // Paper end
  
-+    private static final int MAX_PER_TICK = com.destroystokyo.paper.PaperConfig.maxJoinsPerTick; // Paper
++    private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper
 +    private static int joinAttemptsThisTick; // Paper
 +    private static int currTick; // Paper
      public void tick() {
          this.flushQueue();
 +        // Paper start
-+        if (currTick != MinecraftServer.currentTick) {
-+            currTick = MinecraftServer.currentTick;
++        if (currTick != net.minecraft.server.MinecraftServer.currentTick) {
++            currTick = net.minecraft.server.MinecraftServer.currentTick;
 +            joinAttemptsThisTick = 0;
 +        }
 +        // Paper end

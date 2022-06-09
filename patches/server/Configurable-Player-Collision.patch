@@ -4,20 +4,6 @@ Date: Wed, 13 Apr 2016 02:10:49 -0400
 Subject: [PATCH] Configurable Player Collision
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-     private static void regionFileCacheSize() {
-         regionFileCacheSize = Math.max(getInt("settings.region-file-cache-size", 256), 4);
-     }
-+
-+    public static boolean enablePlayerCollisions = true;
-+    private static void enablePlayerCollisions() {
-+        enablePlayerCollisions = getBoolean("settings.enable-player-collisions", true);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
@@ -27,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              buf.writeByte(this.options);
              buf.writeUtf(this.nametagVisibility);
 -            buf.writeUtf(this.collisionRule);
-+            buf.writeUtf(!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions ? "never" : this.collisionRule); // Paper
++            buf.writeUtf(!io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions ? "never" : this.collisionRule); // Paper
              buf.writeEnum(this.color);
              buf.writeComponent(this.playerPrefix);
              buf.writeComponent(this.playerSuffix);
@@ -35,28 +21,20 @@ diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.storage.loot.LootTables;
- import net.minecraft.world.level.storage.loot.PredicateManager;
- import net.minecraft.world.phys.Vec2;
- import net.minecraft.world.phys.Vec3;
-+import net.minecraft.world.scores.PlayerTeam; // Paper
- import org.apache.commons.lang3.Validate;
- import org.slf4j.Logger;
- 
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
          }
  
 +        // Paper start - Handle collideRule team for player collision toggle
 +        final ServerScoreboard scoreboard = this.getScoreboard();
-+        final java.util.Collection<String> toRemove = scoreboard.getPlayerTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(PlayerTeam::getName).collect(java.util.stream.Collectors.toList());
++        final java.util.Collection<String> toRemove = scoreboard.getPlayerTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(net.minecraft.world.scores.PlayerTeam::getName).collect(java.util.stream.Collectors.toList());
 +        for (String teamName : toRemove) {
 +            scoreboard.removePlayerTeam(scoreboard.getPlayerTeam(teamName)); // Clean up after ourselves
 +        }
 +
-+        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions) {
 +            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + java.util.concurrent.ThreadLocalRandom.current().nextInt(), 16);
-+            PlayerTeam collideTeam = scoreboard.addPlayerTeam(this.getPlayerList().collideRuleTeamName);
++            net.minecraft.world.scores.PlayerTeam collideTeam = scoreboard.addPlayerTeam(this.getPlayerList().collideRuleTeamName);
 +            collideTeam.setSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
 +        }
 +        // Paper end

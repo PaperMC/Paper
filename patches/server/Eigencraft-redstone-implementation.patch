@@ -18,51 +18,6 @@ A lot of this code is self-contained in a helper class.
 Aside from making the obvious class/function renames and obfhelpers I didn't need to modify much.
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         zombiesTargetTurtleEggs = getBoolean("zombies-target-turtle-eggs", zombiesTargetTurtleEggs);
-     }
- 
-+    public enum RedstoneImplementation {
-+        VANILLA, EIGENCRAFT
-+    }
-+    public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
-+    private void redstoneImplementation() {
-+        String implementation;
-+        if (PaperConfig.version < 27) {
-+            implementation = "vanilla";
-+            if (config.contains("world-settings.default.use-faster-eigencraft-redstone")) {
-+                implementation = config.getBoolean("world-settings.default.use-faster-eigencraft-redstone") ? "eigencraft" : "vanilla";
-+                config.set("world-settings.default.redstone-implementation", implementation);
-+            }
-+            if (config.contains("world-settings." + worldName + ".use-faster-eigencraft-redstone")) {
-+                implementation = config.getBoolean("world-settings." + worldName + ".use-faster-eigencraft-redstone") ? "eigencraft" : "vanilla";
-+                config.set("world-settings." + worldName + ".redstone-implementation", implementation);
-+            }
-+            remove("use-faster-eigencraft-redstone");
-+        } else {
-+            implementation = this.getString("redstone-implementation", "vanilla").toLowerCase().trim();
-+        }
-+        switch (implementation) {
-+            default:
-+                logError("Invalid redstone-implementation config " + implementation + " - must be one of: vanilla, eigencraft");
-+            case "vanilla":
-+                redstoneImplementation = RedstoneImplementation.VANILLA;
-+                log("Using the Vanilla redstone implementation.");
-+                break;
-+            case "eigencraft":
-+                redstoneImplementation = RedstoneImplementation.EIGENCRAFT;
-+                log("Using Eigencraft's redstone implementation by theosib.");
-+                break;
-+        }
-+    }
-+
-     public short keepLoadedRange;
-     private void keepLoadedRange() {
-         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
 diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -1000,7 +955,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Note: Added 'source' argument so as to help determine direction of information flow
 +     */
 +    private void updateSurroundingRedstone(Level worldIn, BlockPos pos, BlockState state, BlockPos source) {
-+        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.EIGENCRAFT) {
++        if (worldIn.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.EIGENCRAFT) {
 +            turbo.updateSurroundingRedstone(worldIn, pos, state, source);
 +            return;
 +        }
@@ -1024,7 +979,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int k = worldIn.getBestNeighborSignal(pos1);
 +        this.shouldSignal = true;
 +
-+        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA) {
++        if (worldIn.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.VANILLA) {
 +            // This code is totally redundant to if statements just below the loop.
 +            if (k > 0 && k > j - 1) {
 +                j = k;
@@ -1038,7 +993,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // redstone wire will be set to 'k'.  If 'k' is already 15, then nothing inside the
 +        // following loop can affect the power level of the wire.  Therefore, the loop is
 +        // skipped if k is already 15.
-+        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA || k < 15) {
++        if (worldIn.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.VANILLA || k < 15) {
 +            for (Direction enumfacing : Direction.Plane.HORIZONTAL) {
 +                BlockPos blockpos = pos1.relative(enumfacing);
 +                boolean flag = blockpos.getX() != pos2.getX() || blockpos.getZ() != pos2.getZ();
@@ -1057,7 +1012,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA) {
++        if (worldIn.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.VANILLA) {
 +            // The old code would decrement the wire value only by 1 at a time.
 +            if (l > j) {
 +                j = l - 1;

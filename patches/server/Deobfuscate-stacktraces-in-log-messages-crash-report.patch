@@ -24,15 +24,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end
      implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
      implementation("org.ow2.asm:asm:9.3")
-@@ -0,0 +0,0 @@ dependencies {
-     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
-     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
- 
+     implementation("org.ow2.asm:asm-commons:9.3") // Paper - ASM event executor generation
+     implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
+     implementation("commons-lang:commons-lang:2.6")
 +    implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
-+
-     testImplementation("junit:junit:4.13.2")
-     testImplementation("org.hamcrest:hamcrest-library:1.3")
- }
+     runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
+     runtimeOnly("mysql:mysql-connector-java:8.0.29")
+     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 @@ -0,0 +0,0 @@ tasks.shadowJar {
      }
  }
@@ -78,20 +76,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
  tasks.test {
      exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
- }
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-             log("Async Chunks: Enabled - Chunks will be loaded much faster, without lag.");
-         }
-     }
-+
-+    public static boolean deobfuscateStacktraces = true;
-+    private static void loggerSettings() {
-+        deobfuscateStacktraces = getBoolean("settings.loggers.deobfuscate-stacktraces", deobfuscateStacktraces);
-+    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -310,7 +294,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.util;
 +
-+import com.destroystokyo.paper.PaperConfig;
++import io.papermc.paper.configuration.GlobalConfiguration;
 +import it.unimi.dsi.fastutil.ints.IntArrayList;
 +import it.unimi.dsi.fastutil.ints.IntList;
 +import java.io.IOException;
@@ -340,7 +324,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    });
 +
 +    public void deobfuscateThrowable(final Throwable throwable) {
-+        if (!PaperConfig.deobfuscateStacktraces) {
++        if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
 +            return;
 +        }
 +
@@ -355,7 +339,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public StackTraceElement[] deobfuscateStacktrace(final StackTraceElement[] traceElements) {
-+        if (!PaperConfig.deobfuscateStacktraces) {
++        if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
 +            return traceElements;
 +        }
 +
@@ -556,13 +540,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-         }
-         com.destroystokyo.paper.PaperConfig.registerCommands();
-         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
-+        io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // load mappings for stacktrace deobf and etc.
-         // Paper end
- 
-         this.setPvpAllowed(dedicatedserverproperties.pvp);
+         org.spigotmc.SpigotConfig.registerCommands();
+         // Spigot end
+         // Paper start
++        io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // Paper - load mappings for stacktrace deobf and etc.
+         paperConfigurations.initializeGlobalConfiguration();
+         paperConfigurations.initializeWorldDefaultsConfiguration();
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java

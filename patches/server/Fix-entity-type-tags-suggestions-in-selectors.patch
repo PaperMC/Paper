@@ -9,22 +9,6 @@ when if this was fixed on the client, that wouldn't be needed.
 
 Mojira Issue: https://bugs.mojang.com/browse/MC-235045
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
-     }
- 
-+    public static boolean fixTargetSelectorTagCompletion = true;
-+    private static void fixTargetSelectorTagCompletion() {
-+        fixTargetSelectorTagCompletion = getBoolean("settings.fix-target-selector-tag-completion", fixTargetSelectorTagCompletion);
-+    }
-+
-     public static final class PacketLimit {
-         public final double packetLimitInterval;
-         public final double maxPacketRate;
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
@@ -36,7 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - override getSelectedEntities
 +    @Override
 +    public Collection<String> getSelectedEntities() {
-+        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
 +            double pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 5.0F : 4.5F;
 +            Vec3 min = player.getEyePosition(1.0F);
 +            Vec3 viewVector = player.getViewVector(1.0F);
@@ -68,7 +52,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          requiredargumentbuilder.suggests(SuggestionProviders.safelySwap(requiredargumentbuilder.getSuggestionsProvider()));
 +                        // Paper start - tell clients to ask server for suggestions for EntityArguments
 +                        registeredAskServerSuggestionsForTree = requiredargumentbuilder.getSuggestionsProvider() == net.minecraft.commands.synchronization.SuggestionProviders.ASK_SERVER;
-+                    } else if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && !registeredAskServerSuggestionsForTree && requiredargumentbuilder.getType() instanceof net.minecraft.commands.arguments.EntityArgument) {
++                    } else if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && !registeredAskServerSuggestionsForTree && requiredargumentbuilder.getType() instanceof net.minecraft.commands.arguments.EntityArgument) {
 +                        requiredargumentbuilder.suggests(requiredargumentbuilder.getType()::listSuggestions);
 +                        registeredAskServerSuggestionsForTree = true; // You can only
 +                        // Paper end - tell clients to ask server for suggestions for EntityArguments
@@ -141,7 +125,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      if (reader.isTag()) {
                          TagKey<EntityType<?>> tagKey = TagKey.create(Registry.ENTITY_TYPE_REGISTRY, ResourceLocation.read(reader.getReader()));
 +                        // Paper start - throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
-+                        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && reader.parsingEntityArgumentSuggestions && !Registry.ENTITY_TYPE.isKnownTagName(tagKey)) {
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && reader.parsingEntityArgumentSuggestions && !Registry.ENTITY_TYPE.isKnownTagName(tagKey)) {
 +                            reader.getReader().setCursor(i);
 +                            throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
 +                        }

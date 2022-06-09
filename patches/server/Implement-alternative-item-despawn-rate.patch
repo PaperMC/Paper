@@ -5,86 +5,6 @@ Subject: [PATCH] Implement alternative item-despawn-rate
 
 Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-             Bukkit.getLogger().warning("You have enabled permission-based Anti-Xray checking - depending on your permission plugin, this may cause performance issues");
-         }
-     }
--}
- 
-+    public boolean altItemDespawnRateEnabled;
-+    public java.util.Map<net.minecraft.resources.ResourceLocation, Integer> altItemDespawnRateMap = new java.util.HashMap<>();
-+    private void altItemDespawnRate() {
-+        String path = "alt-item-despawn-rate";
-+        // Migrate from bukkit material to Mojang item ids
-+        if (PaperConfig.version < 26) {
-+            String world = worldName;
-+            try {
-+                org.bukkit.configuration.ConfigurationSection mapSection = config.getConfigurationSection("world-settings." + world + "." + path + ".items");
-+                if (mapSection == null) {
-+                    world = "default";
-+                    mapSection = config.getConfigurationSection("world-settings." + world + "." + path + ".items");
-+                }
-+                if (mapSection != null) {
-+                    for (String key : mapSection.getKeys(false)) {
-+                        int val = mapSection.getInt(key);
-+                        try {
-+                            // Ignore options that are already valid mojang wise, otherwise we might try to migrate the same config twice and fail.
-+                            boolean isMojangMaterial = net.minecraft.core.Registry.ITEM.getOptional(new net.minecraft.resources.ResourceLocation(key.toLowerCase())).isPresent();
-+                            mapSection.set(key, null);
-+                            String newKey = isMojangMaterial ? key.toLowerCase() : org.bukkit.Material.valueOf(key).getKey().getKey().toLowerCase();
-+                            mapSection.set(newKey, val);
-+                        } catch (Exception e) {
-+                            logError("Could not add item " + key + " to altItemDespawnRateMap: " + e.getMessage());
-+                        }
-+                    }
-+                    config.set("world-settings." + world + "." + path + ".items", mapSection);
-+                }
-+            } catch (Exception e) {
-+                logError("alt-item-despawn-rate was malformatted");
-+                return;
-+            }
-+        }
-+
-+        altItemDespawnRateEnabled = getBoolean(path + ".enabled", false);
-+
-+        if (config.getConfigurationSection("world-settings.default." + path + ".items") == null) {
-+            // Initialize default
-+            config.addDefault("world-settings.default." + path + ".items.cobblestone", 300);
-+        }
-+
-+        if (!altItemDespawnRateEnabled) {
-+            return;
-+        }
-+
-+        org.bukkit.configuration.ConfigurationSection mapSection = config.getConfigurationSection("world-settings." + worldName + "." + path + ".items");
-+        if (mapSection == null) {
-+            mapSection = config.getConfigurationSection("world-settings.default." + path + ".items");
-+        }
-+        if (mapSection != null) {
-+            for (String key : mapSection.getKeys(false)) {
-+                try {
-+                    int val = mapSection.getInt(key);
-+                    net.minecraft.resources.ResourceLocation keyLocation = new net.minecraft.resources.ResourceLocation(key);
-+                    if (net.minecraft.core.Registry.ITEM.getOptional(keyLocation).isPresent()) {
-+                        altItemDespawnRateMap.put(keyLocation, val);
-+                    } else {
-+                        logError("Could not add item " + key + " to altItemDespawnRateMap: not a valid item");
-+                    }
-+                } catch (Exception e) {
-+                    logError("Could not add item " + key + " to altItemDespawnRateMap: " + e.getMessage());
-+                }
-+            }
-+        }
-+
-+        for (net.minecraft.resources.ResourceLocation key : altItemDespawnRateMap.keySet()) {
-+            log("Alternative item despawn rate of " + key.getPath() + ": " + altItemDespawnRateMap.get(key));
-+        }
-+    }
-+}
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
@@ -128,8 +48,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          com.google.common.base.Preconditions.checkArgument(!stack.isEmpty(), "Cannot drop air"); // CraftBukkit
          this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
          this.getEntityData().markDirty(ItemEntity.DATA_ITEM); // CraftBukkit - SPIGOT-4591, must mark dirty
-+        net.minecraft.resources.ResourceLocation location = net.minecraft.core.Registry.ITEM.getKey(stack.getItem()); // Paper
-+        this.despawnRate = level.paperConfig.altItemDespawnRateMap.getOrDefault(location, level.spigotConfig.itemDespawnRate); // Paper
++        this.despawnRate = level.paperConfig().entities.spawning.altItemDespawnRate.enabled ? level.paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(stack.getItem(), level.spigotConfig.itemDespawnRate) : level.spigotConfig.itemDespawnRate; // Paper
      }
  
      @Override

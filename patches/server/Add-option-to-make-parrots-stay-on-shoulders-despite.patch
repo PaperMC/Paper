@@ -10,21 +10,6 @@ I suspect Mojang may switch to this behavior before full release.
 
 To be converted into a Paper-API event at some point in the future?
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", this.maxCollisionsPerEntity, false) );
-         log( "Max Entity Collisions: " + maxCollisionsPerEntity );
-     }
-+
-+    public boolean parrotsHangOnBetter;
-+    private void parrotsHangOnBetter() {
-+        parrotsHangOnBetter = getBoolean("parrots-are-unaffected-by-player-movement", false);
-+        log("Parrots are unaffected by player movement: " + parrotsHangOnBetter);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
@@ -35,7 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.player.setShiftKeyDown(true);
 +
 +                // Paper start - Hang on!
-+                if (this.player.level.paperConfig.parrotsHangOnBetter) {
++                if (this.player.level.paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) {
 +                    this.player.removeEntitiesOnShoulder();
 +                }
 +                // Paper end
@@ -52,7 +37,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
          if (!this.level.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping() || this.isInPowderSnow) {
 -            this.removeEntitiesOnShoulder();
-+            if (!this.level.paperConfig.parrotsHangOnBetter) this.removeEntitiesOnShoulder(); // Paper - Hang on!
++            if (!this.level.paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) this.removeEntitiesOnShoulder(); // Paper - Hang on!
          }
  
      }

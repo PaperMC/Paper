@@ -4,22 +4,6 @@ Date: Tue, 2 Oct 2018 09:57:50 +0100
 Subject: [PATCH] Configurable connection throttle kick message
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
-     }
- 
-+    public static String connectionThrottleKickMessage = "Connection throttled! Please wait before reconnecting.";
-+    private static void connectionThrottleKickMessage() {
-+        connectionThrottleKickMessage = getString("messages.kick.connection-throttle", connectionThrottleKickMessage);
-+    }
-+
-     private static void savePlayerData() {
-         Object val = config.get("settings.save-player-data");
-         if (val instanceof Boolean) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
@@ -29,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          if (ServerHandshakePacketListenerImpl.throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - ServerHandshakePacketListenerImpl.throttleTracker.get(address) < connectionThrottle) {
                              ServerHandshakePacketListenerImpl.throttleTracker.put(address, currentTime);
 -                            MutableComponent chatmessage = Component.literal("Connection throttled! Please wait before reconnecting.");
-+                            MutableComponent chatmessage = Component.literal(com.destroystokyo.paper.PaperConfig.connectionThrottleKickMessage); // Paper - Configurable connection throttle kick message
++                            MutableComponent chatmessage = Component.literal(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.connectionThrottle); // Paper - Configurable connection throttle kick message
                              this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
                              this.connection.disconnect(chatmessage);
                              return;

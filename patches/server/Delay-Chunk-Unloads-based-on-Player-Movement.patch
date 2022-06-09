@@ -16,24 +16,6 @@ before it actually unloads, which will be handled by the ticket expiry process.
 This allows servers with smaller worlds who do less long distance exploring to stop
 wasting cpu cycles on saving/unloading/reloading chunks repeatedly.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         expMergeMaxValue = getInt("experience-merge-max-value", -1);
-         log("Experience Merge Max Value: " + expMergeMaxValue);
-     }
-+
-+    public long delayChunkUnloadsBy;
-+    private void delayChunkUnloadsBy() {
-+        delayChunkUnloadsBy = PaperConfig.getSeconds(getString("delay-chunk-unloads-by", "10s"));
-+        if (delayChunkUnloadsBy > 0) {
-+            log("Delaying chunk unloads by " + delayChunkUnloadsBy + " seconds");
-+            delayChunkUnloadsBy *= 20;
-+        }
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
@@ -43,7 +25,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (arraysetsorted.remove(ticket)) {
              removed = true; // CraftBukkit
 +            // Paper start - delay chunk unloads for player tickets
-+            long delayChunkUnloadsBy = chunkMap.level.paperConfig.delayChunkUnloadsBy;
++            long delayChunkUnloadsBy = chunkMap.level.paperConfig().chunks.delayChunkUnloadsBy.ticks();
 +            if (ticket.getType() == TicketType.PLAYER && delayChunkUnloadsBy > 0) {
 +                boolean hasPlayer = false;
 +                for (Ticket<?> ticket1 : arraysetsorted) {

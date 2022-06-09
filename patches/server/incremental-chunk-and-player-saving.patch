@@ -4,51 +4,6 @@ Date: Sun, 9 Jun 2019 03:53:22 +0100
 Subject: [PATCH] incremental chunk and player saving
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         set("settings.unsupported-settings.allow-tnt-duplication", null);
-     }
- 
-+    public static int playerAutoSaveRate = -1;
-+    public static int maxPlayerAutoSavePerTick = 10;
-+    private static void playerAutoSaveRate() {
-+        playerAutoSaveRate = getInt("settings.player-auto-save-rate", -1);
-+        maxPlayerAutoSavePerTick = getInt("settings.max-player-auto-save-per-tick", -1);
-+        if (maxPlayerAutoSavePerTick == -1) { // -1 Automatic / "Recommended"
-+            // 10 should be safe for everyone unless you mass spamming player auto save
-+            maxPlayerAutoSavePerTick = (playerAutoSaveRate == -1 || playerAutoSaveRate > 100) ? 10 : 20;
-+        }
-+    }
- }
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         log( "Keep Spawn Loaded Range: " + (keepLoadedRange/16));
-     }
- 
-+    public int autoSavePeriod = -1;
-+    private void autoSavePeriod() {
-+        autoSavePeriod = getInt("auto-save-interval", -1);
-+        if (autoSavePeriod > 0) {
-+            log("Auto Save Interval: " +autoSavePeriod + " (" + (autoSavePeriod / 20) + "s)");
-+        } else if (autoSavePeriod < 0) {
-+            autoSavePeriod = net.minecraft.server.MinecraftServer.getServer().autosavePeriod;
-+        }
-+    }
-+
-+    public int maxAutoSaveChunksPerTick = 24;
-+    private void maxAutoSaveChunksPerTick() {
-+        maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
-+    }
-+
-     private boolean getBoolean(String path, boolean def) {
-         return this.getBoolean(path, def, true);
-     }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -73,7 +28,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.profiler.pop();
 -            MinecraftServer.LOGGER.debug("Autosave finished");
 +        // Paper start - incremental chunk and player saving
-+        int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
++        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
 +        if (playerSaveInterval < 0) {
 +            playerSaveInterval = autosavePeriod;
          }
@@ -85,7 +40,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.playerList.saveAll(playerSaveInterval);
 +            }
 +            for (ServerLevel level : this.getAllLevels()) {
-+                if (level.paperConfig.autoSavePeriod > 0) {
++                if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
 +                    level.saveIncrementally(fullSave);
 +                }
 +            }
@@ -121,7 +76,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            long timeSinceAutoSave = this.inactiveTimeStart - this.lastAutoSaveTime;
 +            if (timeSinceAutoSave < 0) {
 +                // safest bet is to assume autosave is needed here
-+                timeSinceAutoSave = this.chunkMap.level.paperConfig.autoSavePeriod;
++                timeSinceAutoSave = this.chunkMap.level.paperConfig().chunks.autoSaveInterval.value();
 +            }
 +            this.lastAutoSaveTime = this.chunkMap.level.getGameTime() - timeSinceAutoSave;
 +            this.chunkMap.autoSaveQueue.add(this);
@@ -142,7 +97,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                long timeSinceAutoSave = this.inactiveTimeStart - this.lastAutoSaveTime;
 +                if (timeSinceAutoSave < 0) {
 +                    // safest bet is to assume autosave is needed here
-+                    timeSinceAutoSave = this.chunkMap.level.paperConfig.autoSavePeriod;
++                    timeSinceAutoSave = this.chunkMap.level.paperConfig().chunks.autoSaveInterval.value();
 +                }
 +                this.lastAutoSaveTime = this.chunkMap.level.getGameTime() - timeSinceAutoSave;
 +                this.chunkMap.autoSaveQueue.add(this);
@@ -193,9 +148,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    protected void saveIncrementally() {
 +        int savedThisTick = 0;
 +        // optimized since we search far less chunks to hit ones that need to be saved
-+        List<ChunkHolder> reschedule = new java.util.ArrayList<>(this.level.paperConfig.maxAutoSaveChunksPerTick);
++        List<ChunkHolder> reschedule = new java.util.ArrayList<>(this.level.paperConfig().chunks.maxAutoSaveChunksPerTick);
 +        long currentTick = this.level.getGameTime();
-+        long maxSaveTime = currentTick - this.level.paperConfig.autoSavePeriod;
++        long maxSaveTime = currentTick - this.level.paperConfig().chunks.autoSaveInterval.value();
 +
 +        for (Iterator<ChunkHolder> iterator = this.autoSaveQueue.iterator(); iterator.hasNext();) {
 +            ChunkHolder playerchunk = iterator.next();
@@ -215,7 +170,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (!playerchunk.setHasBeenLoaded()) {
 +                        // do not fall through to reschedule logic
 +                        playerchunk.inactiveTimeStart = currentTick;
-+                        if (savedThisTick >= this.level.paperConfig.maxAutoSaveChunksPerTick) {
++                        if (savedThisTick >= this.level.paperConfig().chunks.maxAutoSaveChunksPerTick) {
 +                            break;
 +                        }
 +                        continue;
@@ -225,7 +180,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            reschedule.add(playerchunk);
 +
-+            if (savedThisTick >= this.level.paperConfig.maxAutoSaveChunksPerTick) {
++            if (savedThisTick >= this.level.paperConfig().chunks.maxAutoSaveChunksPerTick) {
 +                break;
 +            }
 +        }
@@ -384,7 +339,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ServerPlayer entityplayer = this.players.get(i);
 +            if (interval == -1 || now - entityplayer.lastSave >= interval) {
 +                this.save(entityplayer);
-+                if (interval != -1 && ++numSaved <= com.destroystokyo.paper.PaperConfig.maxPlayerAutoSavePerTick) { break; }
++                if (interval != -1 && ++numSaved <= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) { break; }
 +            }
 +            // Paper end
          }

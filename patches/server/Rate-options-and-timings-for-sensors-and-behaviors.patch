@@ -27,79 +27,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      /**
       * Get a named timer for the specified tile entity type to track type specific timings.
       * @param entity
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
- import net.minecraft.world.entity.MobCategory;
- import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
- import java.util.HashMap;
-+import java.util.Locale;
- import java.util.Map;
- import org.bukkit.Bukkit;
-+import org.bukkit.configuration.ConfigurationSection;
- import org.bukkit.configuration.file.YamlConfiguration;
- import org.spigotmc.SpigotWorldConfig;
- 
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void playerCrammingDamage() {
-         allowPlayerCrammingDamage = getBoolean("allow-player-cramming-damage", allowPlayerCrammingDamage);
-     }
-+
-+    private com.google.common.collect.Table<String, String, Integer> sensorTickRates;
-+    private com.google.common.collect.Table<String, String, Integer> behaviorTickRates;
-+    private void tickRates() {
-+        config.addDefault("world-settings.default.tick-rates.sensor.villager.secondarypoisensor", 40);
-+        config.addDefault("world-settings.default.tick-rates.behavior.villager.validatenearbypoi", -1); // Example
-+        log("Tick rates:");
-+        sensorTickRates = loadTickRates("sensor");
-+        behaviorTickRates = loadTickRates("behavior");
-+    }
-+
-+    private com.google.common.collect.Table<String, String, Integer> loadTickRates(String type) {
-+        log("  " + type + ":");
-+        com.google.common.collect.Table<String, String, Integer> table = com.google.common.collect.HashBasedTable.create();
-+
-+        ConfigurationSection typeSection = config.getConfigurationSection("world-settings." + worldName + ".tick-rates." + type);
-+        if (typeSection == null) {
-+            typeSection = config.getConfigurationSection("world-settings.default.tick-rates." + type);
-+        }
-+        if (typeSection != null) {
-+            for (String entity : typeSection.getKeys(false)) {
-+                ConfigurationSection entitySection = typeSection.getConfigurationSection(entity);
-+                if (entitySection != null) {
-+                    log("    " + entity + ":");
-+                    for (String typeName : entitySection.getKeys(false)) {
-+                        if (entitySection.isInt(typeName)) {
-+                            int tickRate = entitySection.getInt(typeName);
-+                            table.put(entity.toLowerCase(Locale.ROOT), typeName.toLowerCase(Locale.ROOT), tickRate);
-+                            log("      " + typeName + ": " + tickRate);
-+                        }
-+                    }
-+                }
-+            }
-+        }
-+
-+        if (table.isEmpty()) {
-+            log("    None configured");
-+        }
-+        return table;
-+    }
-+
-+    public int getBehaviorTickRate(String typeName, String entityType, int def) {
-+        return getIntOrDefault(behaviorTickRates, typeName, entityType, def);
-+    }
-+
-+    public int getSensorTickRate(String typeName, String entityType, int def) {
-+        return getIntOrDefault(sensorTickRates, typeName, entityType, def);
-+    }
-+
-+    private int getIntOrDefault(com.google.common.collect.Table<String, String, Integer> table, String rowKey, String columnKey, int def) {
-+        Integer rate = table.get(columnKey, rowKey);
-+        return rate != null && rate > -1 ? rate : def;
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
@@ -136,7 +63,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public final boolean tryStart(ServerLevel world, E entity, long time) {
 +        // Paper start - behavior tick rate
-+        int tickRate = world.paperConfig.getBehaviorTickRate(this.configKey, entity.getType().id, -1);
++        int tickRate = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.behavior.get(entity.getType(), this.configKey), -1);
 +        if (tickRate > -1 && time < this.endTimestamp + tickRate) {
 +            return false;
 +        }
@@ -197,7 +124,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (--this.timeToTick <= 0L) {
 -            this.timeToTick = (long)this.scanRate;
 +            // Paper start - configurable sensor tick rate and timings
-+            this.timeToTick = world.paperConfig.getSensorTickRate(this.configKey, entity.getType().id, this.scanRate);
++            this.timeToTick = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.sensor.get(entity.getType(), this.configKey), this.scanRate);
 +            this.timing.startTiming();
 +            // Paper end
              this.doTick(world, entity);

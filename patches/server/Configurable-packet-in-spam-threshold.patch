@@ -4,24 +4,6 @@ Date: Sun, 11 Sep 2016 14:30:57 -0500
 Subject: [PATCH] Configurable packet in spam threshold
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-     public static boolean isProxyOnlineMode() {
-         return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode);
-     }
-+
-+    public static int packetInSpamThreshold = 300;
-+    private static void packetInSpamThreshold() {
-+        if (version < 11) {
-+            int oldValue = getInt("settings.play-in-use-item-spam-threshold", 300);
-+            set("settings.incoming-packet-spam-threshold", oldValue);
-+        }
-+        packetInSpamThreshold = getInt("settings.incoming-packet-spam-threshold", 300);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
@@ -30,7 +12,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot start - limit place/interactions
      private int limitedPackets;
      private long lastLimitedPacket = -1;
-+    private static final int THRESHOLD = com.destroystokyo.paper.PaperConfig.packetInSpamThreshold; // Paper - Configurable threshold
++    private static final int THRESHOLD = io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold; // Paper - Configurable threshold
  
      private boolean checkLimit(long timestamp) {
 -        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < 30 && this.limitedPackets++ >= 4) {

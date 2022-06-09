@@ -8,33 +8,6 @@ thread dumps at an interval until the point of crash.
 
 This will help diagnose what was going on in that time before the crash.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ import org.bukkit.configuration.file.YamlConfiguration;
- import co.aikar.timings.Timings;
- import co.aikar.timings.TimingsManager;
- import org.spigotmc.SpigotConfig;
-+import org.spigotmc.WatchdogThread;
- 
- public class PaperConfig {
- 
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         }
-     }
- 
-+    public static int watchdogPrintEarlyWarningEvery = 5000;
-+    public static int watchdogPrintEarlyWarningDelay = 10000;
-+    private static void watchdogEarlyWarning() {
-+        watchdogPrintEarlyWarningEvery = getInt("settings.watchdog.early-warning-every", 5000);
-+        watchdogPrintEarlyWarningDelay = getInt("settings.watchdog.early-warning-delay", 10000);
-+        WatchdogThread.doStart(SpigotConfig.timeoutTime, SpigotConfig.restartOnCrash );
-+    }
-+
-     public static int tabSpamIncrement = 1;
-     public static int tabSpamLimit = 500;
-     private static void tabSpamLimiters() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -47,6 +20,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Arrays.fill( recentTps, 20 );
              long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
              lastTick = start - TICK_TIME; // Paper
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // Paper start
+         paperConfigurations.initializeGlobalConfiguration();
+         paperConfigurations.initializeWorldDefaultsConfiguration();
++        org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
+         io.papermc.paper.configuration.PaperConfigurations.registerCommands(this);
+         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
+         // Paper end
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -76,7 +61,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          SpigotConfig.restartMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.restart", "Server is restarting" ) );
          SpigotConfig.commands.put( "restart", new RestartCommand( "restart" ) );
 -        WatchdogThread.doStart( timeoutTime, restartOnCrash );
-+        //WatchdogThread.doStart( timeoutTime, restartOnCrash ); // Paper - moved to PaperConfig
++        // WatchdogThread.doStart( timeoutTime, restartOnCrash ); // Paper - moved to after paper config initialization
      }
  
      public static boolean bungee;
@@ -84,14 +69,6 @@ diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -0,0 +0,0 @@ import java.lang.management.MonitorInfo;
- import java.lang.management.ThreadInfo;
- import java.util.logging.Level;
- import java.util.logging.Logger;
-+import com.destroystokyo.paper.PaperConfig;
- import net.minecraft.server.MinecraftServer;
- import org.bukkit.Bukkit;
- 
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
      private static WatchdogThread instance;
      private long timeoutTime;
@@ -107,8 +84,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          super( "Paper Watchdog Thread" );
          this.timeoutTime = timeoutTime;
          this.restart = restart;
-+        earlyWarningEvery = Math.min(PaperConfig.watchdogPrintEarlyWarningEvery, timeoutTime); // Paper
-+        earlyWarningDelay = Math.min(PaperConfig.watchdogPrintEarlyWarningDelay, timeoutTime); // Paper
++        earlyWarningEvery = Math.min(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.earlyWarningEvery, timeoutTime); // Paper
++        earlyWarningDelay = Math.min(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.earlyWarningDelay, timeoutTime); // Paper
      }
  
      private static long monotonicMillis()

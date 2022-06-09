@@ -4,23 +4,6 @@ Date: Mon, 19 Aug 2019 01:27:58 +0500
 Subject: [PATCH] implement optional per player mob spawns
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-             log("Alternative item despawn rate of " + key.getPath() + ": " + altItemDespawnRateMap.get(key));
-         }
-     }
-+
-+    public boolean perPlayerMobSpawns = false;
-+    private void perPlayerMobSpawns() {
-+        if (PaperConfig.version < 22) {
-+            set("per-player-mob-spawns", Boolean.TRUE);
-+        }
-+        perPlayerMobSpawns = getBoolean("per-player-mob-spawns", true);
-+    }
- }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java b/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -316,7 +299,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
-+        this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets) : null; // Paper
++        this.playerMobDistanceMap = this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets) : null; // Paper
      }
  
      protected ChunkGenerator generator() {
@@ -326,7 +309,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start
 +    public void updatePlayerMobTypeMap(Entity entity) {
-+        if (!this.level.paperConfig.perPlayerMobSpawns) {
++        if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
 +            return;
 +        }
 +        int index = entity.getType().getCategory().ordinal();
@@ -462,7 +445,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            int k1 = limit * info.getSpawnableChunkCount() / NaturalSpawner.MAGIC_NUMBER;
 +            int difference = k1 - currEntityCount;
 +
-+            if (world.paperConfig.perPlayerMobSpawns) {
++            if (world.paperConfig().entities.spawning.perPlayerMobSpawns) {
 +                int minDiff = Integer.MAX_VALUE;
 +                final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<net.minecraft.server.level.ServerPlayer> inRange = world.getChunkSource().chunkMap.playerMobDistanceMap.getObjectsInRange(chunk.getPos());
 +                if (inRange != null) {
@@ -486,7 +469,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                NaturalSpawner.spawnCategoryForChunk(enumcreaturetype, world, chunk, spawnercreature_c, info::afterSpawn);
 +                // Paper start
 +                int spawnCount = NaturalSpawner.spawnCategoryForChunk(enumcreaturetype, world, chunk, spawnercreature_c, info::afterSpawn,
-+                    difference, world.paperConfig.perPlayerMobSpawns ? world.getChunkSource().chunkMap::updatePlayerMobTypeMap : null);
++                    difference, world.paperConfig().entities.spawning.perPlayerMobSpawns ? world.getChunkSource().chunkMap::updatePlayerMobTypeMap : null);
 +                info.mobCategoryCounts.mergeInt(enumcreaturetype, spawnCount, Integer::sum);
 +                // Paper end
              }

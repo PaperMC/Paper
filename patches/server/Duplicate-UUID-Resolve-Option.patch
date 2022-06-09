@@ -32,68 +32,10 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         preventMovingIntoUnloadedChunks = getBoolean("prevent-moving-into-unloaded-chunks", false);
-     }
- 
-+    public enum DuplicateUUIDMode {
-+        SAFE_REGEN, DELETE, NOTHING, WARN
-+    }
-+    public DuplicateUUIDMode duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
-+    public int duplicateUUIDDeleteRange = 32;
-+    private void repairDuplicateUUID() {
-+        String desiredMode = getString("duplicate-uuid-resolver", "saferegen").toLowerCase().trim();
-+        duplicateUUIDDeleteRange = getInt("duplicate-uuid-saferegen-delete-range", duplicateUUIDDeleteRange);
-+        switch (desiredMode.toLowerCase()) {
-+            case "regen":
-+            case "regenerate":
-+            case "saferegen":
-+            case "saferegenerate":
-+                duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
-+                log("Duplicate UUID Resolve: Regenerate New UUID if distant (Delete likely duplicates within " + duplicateUUIDDeleteRange + " blocks)");
-+                break;
-+            case "remove":
-+            case "delete":
-+                duplicateUUIDMode = DuplicateUUIDMode.DELETE;
-+                log("Duplicate UUID Resolve: Delete Entity");
-+                break;
-+            case "silent":
-+            case "nothing":
-+                duplicateUUIDMode = DuplicateUUIDMode.NOTHING;
-+                logError("Duplicate UUID Resolve: Do Nothing (no logs) - Warning, may lose indication of bad things happening");
-+                break;
-+            case "log":
-+            case "warn":
-+                duplicateUUIDMode = DuplicateUUIDMode.WARN;
-+                log("Duplicate UUID Resolve: Warn (do nothing but log it happened, may be spammy)");
-+                break;
-+            default:
-+                duplicateUUIDMode = DuplicateUUIDMode.WARN;
-+                logError("Warning: Invalid duplicate-uuid-resolver config " + desiredMode + " - must be one of: regen, delete, nothing, warn");
-+                log("Duplicate UUID Resolve: Warn (do nothing but log it happened, may be spammy)");
-+                break;
-+        }
-+    }
-+
-     public boolean countAllMobsForSpawning = false;
-     private void countAllMobsForSpawning() {
-         countAllMobsForSpawning = getBoolean("count-all-mobs-for-spawning", false);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -0,0 +0,0 @@
- package net.minecraft.server.level;
- 
- import co.aikar.timings.Timing; // Paper
-+import com.destroystokyo.paper.PaperWorldConfig; // Paper
- import com.google.common.collect.ImmutableList;
- import com.google.common.collect.ImmutableList.Builder;
- import com.google.common.collect.Iterables;
 @@ -0,0 +0,0 @@ import java.io.Writer;
  import java.nio.file.Path;
  import java.util.ArrayList;
@@ -126,17 +68,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start
 +    private static void checkDupeUUID(ServerLevel level, Entity entity) {
-+        PaperWorldConfig.DuplicateUUIDMode mode = level.paperConfig.duplicateUUIDMode;
-+        if (mode != PaperWorldConfig.DuplicateUUIDMode.WARN
-+            && mode != PaperWorldConfig.DuplicateUUIDMode.DELETE
-+            && mode != PaperWorldConfig.DuplicateUUIDMode.SAFE_REGEN) {
++        io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode mode = level.paperConfig().entities.spawning.duplicateUuid.mode;
++        if (mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.WARN
++            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.DELETE
++            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN) {
 +            return;
 +        }
 +        Entity other = level.getEntity(entity.getUUID());
 +
-+        if (mode == PaperWorldConfig.DuplicateUUIDMode.SAFE_REGEN && other != null && !other.isRemoved()
++        if (mode == io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN && other != null && !other.isRemoved()
 +            && Objects.equals(other.getEncodeId(), entity.getEncodeId())
-+            && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < level.paperConfig.duplicateUUIDDeleteRange
++            && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < level.paperConfig().entities.spawning.duplicateUuid.safeRegenDeleteRange
 +        ) {
 +            if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + " because it was near the duplicate and likely an actual duplicate. See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +            entity.discard();
@@ -181,11 +123,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
              PersistentEntitySectionManager.LOGGER.warn("UUID of added entity already exists: {}", entity);
 +            // Paper start
-+            if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level.paperConfig.duplicateUUIDMode != com.destroystokyo.paper.PaperWorldConfig.DuplicateUUIDMode.NOTHING) {
++            if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level.paperConfig().entities.spawning.duplicateUuid.mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.NOTHING) {
 +                if (((Entity) entity).addedToWorldStack != null) {
 +                    ((Entity) entity).addedToWorldStack.printStackTrace();
 +                }
-+                net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((net.minecraft.world.entity.Entity) entity).printStackTrace();
++                net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((Entity) entity).printStackTrace();
 +            }
 +            // Paper end
              return false;

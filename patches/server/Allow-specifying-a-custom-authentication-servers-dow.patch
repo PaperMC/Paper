@@ -5,27 +5,6 @@ Subject: [PATCH] Allow specifying a custom "authentication servers down" kick
  message
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@
- package com.destroystokyo.paper;
- 
-+import com.google.common.base.Strings;
- import com.google.common.base.Throwables;
- 
- import java.io.File;
-@@ -0,0 +0,0 @@ public class PaperConfig {
-     private static void suggestPlayersWhenNull() {
-         suggestPlayersWhenNullTabCompletions = getBoolean("settings.suggest-player-names-when-null-tab-completions", suggestPlayersWhenNullTabCompletions);
-     }
-+
-+    public static String authenticationServersDownKickMessage = ""; // empty = use translatable message
-+    private static void authenticationServersDownKickMessage() {
-+        authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
@@ -35,8 +14,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          ServerLoginPacketListenerImpl.this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
                      } else {
 +                        // Paper start
-+                        if (com.destroystokyo.paper.PaperConfig.authenticationServersDownKickMessage != null) {
-+                            ServerLoginPacketListenerImpl.this.disconnect(Component.literal(com.destroystokyo.paper.PaperConfig.authenticationServersDownKickMessage));
++                        if (!io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.authenticationServersDown.isEmpty()) {
++                            ServerLoginPacketListenerImpl.this.disconnect(Component.literal(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.authenticationServersDown));
 +                        } else // Paper end
                          ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.authservers_down"));
                          ServerLoginPacketListenerImpl.LOGGER.error("Couldn't verify username because servers are unavailable");

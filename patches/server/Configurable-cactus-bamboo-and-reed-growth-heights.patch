@@ -6,27 +6,6 @@ Subject: [PATCH] Configurable cactus bamboo and reed growth heights
 Bamboo - Both the minimum fully-grown heights and the maximum are configurable
 - Machine_Maker
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         config.addDefault("world-settings.default." + path, def.stream().map(Enum::name).collect(Collectors.toList()));
-         return ((List<String>) (config.getList("world-settings." + worldName + "." + path, config.getList("world-settings.default." + path)))).stream().map(s -> Enum.valueOf(type, s)).collect(Collectors.toList());
-     }
-+
-+    public int cactusMaxHeight;
-+    public int reedMaxHeight;
-+    public int bambooMaxHeight;
-+    public int bambooMinHeight;
-+    private void blockGrowthHeight() {
-+        cactusMaxHeight = getInt("max-growth-height.cactus", 3);
-+        reedMaxHeight = getInt("max-growth-height.reeds", 3);
-+        bambooMaxHeight = getInt("max-growth-height.bamboo.max", 16);
-+        bambooMinHeight = getInt("max-growth-height.bamboo.min", 11);
-+        log("Max height for cactus growth " + cactusMaxHeight + ". Max height for reed growth " + reedMaxHeight + ". Max height for bamboo growth " + bambooMaxHeight + ". Min height for fully-grown bamboo " + bambooMinHeight + ".");
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/level/block/BambooBlock.java b/src/main/java/net/minecraft/world/level/block/BambooBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/BambooBlock.java
@@ -36,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  int i = this.getHeightBelowUpToMax(world, pos) + 1;
  
 -                if (i < 16) {
-+                if (i < world.paperConfig.bambooMaxHeight) { // Paper
++                if (i < world.paperConfig().maxGrowthHeight.bamboo.max) { // Paper
                      this.growBamboo(state, world, pos, random, i);
                  }
              }
@@ -45,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int j = this.getHeightBelowUpToMax(world, pos);
  
 -        return i + j + 1 < 16 && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1;
-+        return i + j + 1 < ((Level) world).paperConfig.bambooMaxHeight && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1; // Paper
++        return i + j + 1 < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1; // Paper
      }
  
      @Override
@@ -54,7 +33,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              BlockState iblockdata1 = world.getBlockState(blockposition1);
  
 -            if (k >= 16 || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here
-+            if (k >= world.paperConfig.bambooMaxHeight || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus bamboo and reed growth heights
++            if (k >= world.paperConfig().maxGrowthHeight.bamboo.max || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus bamboo and reed growth heights
                  return;
              }
  
@@ -63,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          int j = (Integer) state.getValue(BambooBlock.AGE) != 1 && !iblockdata2.is(Blocks.BAMBOO) ? 0 : 1;
 -        int k = (height < 11 || random.nextFloat() >= 0.25F) && height != 15 ? 0 : 1;
-+        int k = (height < world.paperConfig.bambooMinHeight || random.nextFloat() >= 0.25F) && height != (world.paperConfig.bambooMaxHeight - 1) ? 0 : 1; // Paper
++        int k = (height < world.paperConfig().maxGrowthHeight.bamboo.min || random.nextFloat() >= 0.25F) && height != (world.paperConfig().maxGrowthHeight.bamboo.max - 1) ? 0 : 1; // Paper
  
          // CraftBukkit start
          if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) ((BlockState) ((BlockState) this.defaultBlockState().setValue(BambooBlock.AGE, j)).setValue(BambooBlock.LEAVES, blockpropertybamboosize)).setValue(BambooBlock.STAGE, k), 3)) {
@@ -72,7 +51,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int i;
  
 -        for (i = 0; i < 16 && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) {
-+        for (i = 0; i < ((Level) world).paperConfig.bambooMaxHeight && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
++        for (i = 0; i < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
              ;
          }
  
@@ -81,7 +60,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int i;
  
 -        for (i = 0; i < 16 && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) {
-+        for (i = 0; i < ((Level) world).paperConfig.bambooMaxHeight && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
++        for (i = 0; i < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
              ;
          }
  
@@ -94,7 +73,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 -            if (i < 3) {
-+            if (i < world.paperConfig.cactusMaxHeight) { // Paper - Configurable growth height
++            if (i < world.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable growth height
                  int j = (Integer) state.getValue(CactusBlock.AGE);
  
                  if (j >= (byte) range(3, ((100.0F / world.spigotConfig.cactusModifier) * 15) + 0.5F, 15)) { // Spigot
@@ -107,7 +86,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 -            if (i < 3) {
-+            if (i < world.paperConfig.reedMaxHeight) { // Paper - Configurable growth height
++            if (i < world.paperConfig().maxGrowthHeight.reeds) { // Paper - Configurable growth height
                  int j = (Integer) state.getValue(SugarCaneBlock.AGE);
  
                  if (j >= (byte) range(3, ((100.0F / world.spigotConfig.caneModifier) * 15) + 0.5F, 15)) { // Spigot

@@ -4,27 +4,6 @@ Date: Mon, 2 Aug 2021 11:24:39 -0400
 Subject: [PATCH] Add configurable height for slime spawn
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         allChunksAreSlimeChunks = getBoolean("all-chunks-are-slime-chunks", false);
-     }
- 
-+    public double slimeMaxSpawnHeightInSwamp = 70;
-+    public double slimeMinSpawnHeightInSwamp = 50;
-+    public double slimeMaxSpawnHeightInSlimeChunks = 40;
-+    private void slimeSpawnHeight() {
-+        slimeMaxSpawnHeightInSwamp = getDouble("slime-spawn-height.swamp-biome.maximum", this.slimeMaxSpawnHeightInSwamp);
-+        slimeMinSpawnHeightInSwamp = getDouble("slime-spawn-height.swamp-biome.minimum", this.slimeMinSpawnHeightInSwamp);
-+        slimeMaxSpawnHeightInSlimeChunks = getDouble("slime-spawn-height.slime-chunk.maximum", this.slimeMaxSpawnHeightInSlimeChunks);
-+    }
-+
-+
-     public int portalSearchRadius;
-     public int portalCreateRadius;
-     public boolean portalSearchVanillaDimensionScaling;
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Slime.java b/src/main/java/net/minecraft/world/entity/monster/Slime.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Slime.java
@@ -35,8 +14,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (world.getDifficulty() != Difficulty.PEACEFUL) {
 -            if (world.getBiome(pos).is(BiomeTags.ALLOWS_SURFACE_SLIME_SPAWNS) && pos.getY() > 50 && pos.getY() < 70 && random.nextFloat() < 0.5F && random.nextFloat() < world.getMoonBrightness() && world.getMaxLocalRawBrightness(pos) <= random.nextInt(8)) {
 +            // Paper start - Replace rules for Height in Swamp Biome
-+            final double maxHeightSwamp = world.getMinecraftWorld().paperConfig.slimeMaxSpawnHeightInSwamp;
-+            final double minHeightSwamp = world.getMinecraftWorld().paperConfig.slimeMinSpawnHeightInSwamp;
++            final double maxHeightSwamp = world.getMinecraftWorld().paperConfig().entities.spawning.slimeSpawnHeight.swampBiome.maximum;
++            final double minHeightSwamp = world.getMinecraftWorld().paperConfig().entities.spawning.slimeSpawnHeight.swampBiome.minimum;
 +            if (world.getBiome(pos).is(net.minecraft.world.level.biome.Biomes.SWAMP) && pos.getY() > minHeightSwamp && pos.getY() < maxHeightSwamp && random.nextFloat() < 0.5F && random.nextFloat() < world.getMoonBrightness() && world.getMaxLocalRawBrightness(pos) <= random.nextInt(8)) {
 +                // Paper end
                  return checkMobSpawnRules(type, world, spawnReason, pos, random);
@@ -44,11 +23,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public class Slime extends Mob implements Enemy {
              ChunkPos chunkcoordintpair = new ChunkPos(pos);
-             boolean flag = world.getMinecraftWorld().paperConfig.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(chunkcoordintpair.x, chunkcoordintpair.z, ((WorldGenLevel) world).getSeed(), world.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot // Paper
+             boolean flag = world.getMinecraftWorld().paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(chunkcoordintpair.x, chunkcoordintpair.z, ((WorldGenLevel) world).getSeed(), world.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot // Paper
  
 -            if (random.nextInt(10) == 0 && flag && pos.getY() < 40) {
 +            // Paper start - Replace rules for Height in Slime Chunks
-+            final double maxHeightSlimeChunk = world.getMinecraftWorld().paperConfig.slimeMaxSpawnHeightInSlimeChunks;
++            final double maxHeightSlimeChunk = world.getMinecraftWorld().paperConfig().entities.spawning.slimeSpawnHeight.slimeChunk.maximum;
 +            if (random.nextInt(10) == 0 && flag && pos.getY() < maxHeightSlimeChunk) {
 +            // Paper end
                  return checkMobSpawnRules(type, world, spawnReason, pos, random);

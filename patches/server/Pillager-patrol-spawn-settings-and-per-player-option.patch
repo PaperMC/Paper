@@ -9,29 +9,6 @@ start day per player. (Based on the time played statistic)
 When not per player it will use the Vanilla mechanic of one delay per
 world and the world age for the start day.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     }
- 
-     public boolean disablePillagerPatrols = false;
-+    public double patrolSpawnChance = 0.2;
-+    public boolean patrolPerPlayerDelay = false;
-+    public int patrolDelay = 12000;
-+    public boolean patrolPerPlayerStart = false;
-+    public int patrolStartDay = 5;
-     private void pillagerSettings() {
-         disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
-+        patrolSpawnChance = getDouble("game-mechanics.pillager-patrols.spawn-chance", patrolSpawnChance);
-+        patrolPerPlayerDelay = getBoolean("game-mechanics.pillager-patrols.spawn-delay.per-player", patrolPerPlayerDelay);
-+        patrolDelay = getInt("game-mechanics.pillager-patrols.spawn-delay.ticks", patrolDelay);
-+        patrolPerPlayerStart = getBoolean("game-mechanics.pillager-patrols.start.per-player", patrolPerPlayerStart);
-+        patrolStartDay = getInt("game-mechanics.pillager-patrols.start.day", patrolStartDay);
-     }
- 
-     public boolean generateFlatBedrock = false;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
@@ -52,8 +29,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public int tick(ServerLevel world, boolean spawnMonsters, boolean spawnAnimals) {
--        if (world.paperConfig.disablePillagerPatrols) return 0; // Paper
-+        if (world.paperConfig.disablePillagerPatrols || world.paperConfig.patrolSpawnChance == 0) return 0; // Paper
+-        if (world.paperConfig().entities.behavior.pillagerPatrols.disable) return 0; // Paper
++        if (world.paperConfig().entities.behavior.pillagerPatrols.disable || world.paperConfig().entities.behavior.pillagerPatrols.spawnChance == 0) return 0; // Paper
          if (!spawnMonsters) {
              return 0;
          } else if (!world.getGameRules().getBoolean(GameRules.RULE_DO_PATROL_SPAWNING)) {
@@ -76,7 +53,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            int patrolSpawnDelay;
-+            if (world.paperConfig.patrolPerPlayerDelay) {
++            if (world.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.perPlayer) {
 +                --entityhuman.patrolSpawnDelay;
 +                patrolSpawnDelay = entityhuman.patrolSpawnDelay;
              } else {
@@ -90,21 +67,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return 0;
 +            } else {
 +                long days;
-+                if (world.paperConfig.patrolPerPlayerStart) {
++                if (world.paperConfig().entities.behavior.pillagerPatrols.start.perPlayer) {
 +                    days = entityhuman.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME)) / 24000L; // PLAY_ONE_MINUTE is actually counting in ticks, a misnomer by Mojang
 +                } else {
 +                    days = world.getDayTime() / 24000L;
 +                }
-+                if (world.paperConfig.patrolPerPlayerDelay) {
-+                    entityhuman.patrolSpawnDelay += world.paperConfig.patrolDelay + randomsource.nextInt(1200);
++                if (world.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.perPlayer) {
++                    entityhuman.patrolSpawnDelay += world.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + randomsource.nextInt(1200);
 +                } else {
-+                    this.nextTick += world.paperConfig.patrolDelay + randomsource.nextInt(1200);
++                    this.nextTick += world.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + randomsource.nextInt(1200);
 +                }
  
 -                if (i >= 5L && world.isDay()) {
 -                    if (randomsource.nextInt(5) != 0) {
-+                if (days >= world.paperConfig.patrolStartDay && world.isDay()) {
-+                    if (randomsource.nextDouble() >= world.paperConfig.patrolSpawnChance) {
++                if (days >= world.paperConfig().entities.behavior.pillagerPatrols.start.day && world.isDay()) {
++                    if (randomsource.nextDouble() >= world.paperConfig().entities.behavior.pillagerPatrols.spawnChance) {
 +                        // Paper end
                          return 0;
                      } else {

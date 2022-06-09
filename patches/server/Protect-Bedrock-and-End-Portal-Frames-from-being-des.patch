@@ -12,26 +12,6 @@ So protect them from a multitude of methods of destroying them.
 A config is provided if you rather let players use these exploits, and let
 them destroy the worlds End Portals and get on top of the nether easy.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-     private static void loggerSettings() {
-         deobfuscateStacktraces = getBoolean("settings.loggers.deobfuscate-stacktraces", deobfuscateStacktraces);
-     }
-+
-+    public static boolean allowBlockPermanentBreakingExploits = false;
-+    private static void allowBlockPermanentBreakingExploits() {
-+        if (config.contains("allow-perm-block-break-exploits")) {
-+            allowBlockPermanentBreakingExploits = config.getBoolean("allow-perm-block-break-exploits", false);
-+            config.set("allow-perm-block-break-exploits", null);
-+        }
-+
-+        config.set("settings.unsupported-settings.allow-permanent-block-break-exploits-readme", "This setting controls if players should be able to break bedrock, end portals and other intended to be permanent blocks.");
-+        allowBlockPermanentBreakingExploits = getBoolean("settings.unsupported-settings.allow-permanent-block-break-exploits", allowBlockPermanentBreakingExploits);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
@@ -77,7 +57,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private BlockState defaultBlockState;
      // Paper start
 +    public final boolean isDestroyable() {
-+        return com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits ||
++        return io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits ||
 +            this != Blocks.BEDROCK &&
 +            this != Blocks.END_PORTAL_FRAME &&
 +            this != Blocks.END_PORTAL &&
@@ -102,7 +82,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Direction enumdirection = (Direction) state.getValue(PistonBaseBlock.FACING);
 +        // Paper start - prevent retracting when we're facing the wrong way (we were replaced before retraction could occur)
 +        Direction directionQueuedAs = Direction.from3DDataValue(data & 7); // Paper - copied from below
-+        if (!com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits && enumdirection != directionQueuedAs) {
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits && enumdirection != directionQueuedAs) {
 +            return false;
 +        }
 +        // Paper end - prevent retracting when we're facing the wrong way
@@ -125,7 +105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                world.removeBlock(pos.relative(enumdirection), false);
 +                // Paper start - fix headless pistons breaking blocks
 +                BlockPos headPos = pos.relative(enumdirection);
-+                if (com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits || world.getBlockState(headPos) == Blocks.PISTON_HEAD.defaultBlockState().setValue(FACING, enumdirection)) { // double check to make sure we're not a headless piston.
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits || world.getBlockState(headPos) == Blocks.PISTON_HEAD.defaultBlockState().setValue(FACING, enumdirection)) { // double check to make sure we're not a headless piston.
 +                    world.removeBlock(headPos, false);
 +                } else {
 +                    ((ServerLevel)world).getChunkSource().blockChanged(headPos); // ... fix client desync
@@ -178,7 +158,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              for (int k = -1; k < 4; ++k) {
                  temp.setWithOffset(pos, portalDirection.getStepX() * j + enumdirection1.getStepX() * distanceOrthogonalToPortal, k, portalDirection.getStepZ() * j + enumdirection1.getStepZ() * distanceOrthogonalToPortal);
 +                // Paper start - prevent destroying unbreakable blocks
-+                if (!com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits) {
++                if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits) {
 +                    if (!this.level.getBlockState(temp).isDestroyable()) {
 +                        return false;
 +                    }

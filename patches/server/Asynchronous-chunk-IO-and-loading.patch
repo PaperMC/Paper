@@ -160,76 +160,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static Timing getTickList(ServerLevel worldserver, String timingsType) {
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@
- package com.destroystokyo.paper;
- 
-+import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
- import com.google.common.base.Strings;
- import com.google.common.base.Throwables;
- 
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         }
-         tabSpamLimit = getInt("settings.spam-limiter.tab-spam-limit", tabSpamLimit);
-     }
-+
-+    public static boolean asyncChunks = false;
-+    private static void asyncChunks() {
-+        ConfigurationSection section;
-+        if (version < 15) {
-+            section = config.createSection("settings.async-chunks");
-+            section.set("threads", -1);
-+        } else {
-+            section = config.getConfigurationSection("settings.async-chunks");
-+            if (section == null) {
-+                section = config.createSection("settings.async-chunks");
-+            }
-+        }
-+        // Clean up old configs
-+        if (section.contains("load-threads")) {
-+            if (!section.contains("threads")) {
-+                section.set("threads", section.get("load-threads"));
-+            }
-+            section.set("load-threads", null);
-+        }
-+        section.set("generation", null);
-+        section.set("enabled", null);
-+        section.set("thread-per-world-generation", null);
-+
-+        int threads = getInt("settings.async-chunks.threads", -1);
-+        int cpus = Runtime.getRuntime().availableProcessors() / 2;
-+        if (threads <= 0) {
-+            if (cpus <= 4) {
-+                threads = cpus <= 2 ? 1 : 2;
-+            } else {
-+                threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 4), cpus / 2);
-+            }
-+        }
-+        if (cpus == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore")) {
-+            asyncChunks = false;
-+        } else {
-+            asyncChunks = true;
-+        }
-+
-+        // Let Shared Host set some limits
-+        String sharedHostThreads = System.getenv("PAPER_ASYNC_CHUNKS_SHARED_HOST_THREADS");
-+        if (sharedHostThreads != null) {
-+            try {
-+                threads = Math.max(1, Math.min(threads, Integer.parseInt(sharedHostThreads)));
-+            } catch (NumberFormatException ignored) {}
-+        }
-+
-+        if (!asyncChunks) {
-+            log("Async Chunks: Disabled - Chunks will be managed synchronously, and will cause tremendous lag.");
-+        } else {
-+            ChunkTaskManager.initGlobalLoadThreads(threads);
-+            log("Async Chunks: Enabled - Chunks will be loaded much faster, without lag.");
-+        }
-+    }
- }
 diff --git a/src/main/java/com/destroystokyo/paper/io/IOUtil.java b/src/main/java/com/destroystokyo/paper/io/IOUtil.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -1793,6 +1723,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.io.IOUtil;
 +import com.destroystokyo.paper.io.PrioritizedTaskQueue;
 +import com.destroystokyo.paper.io.QueueExecutorThread;
++import io.papermc.paper.configuration.GlobalConfiguration;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ChunkHolder;
@@ -1916,6 +1847,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getStatus().toString()));
 +            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Ticket Status - "  + ChunkHolder.getStatus(chunkHolder.getTicketLevel()));
 +            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
++        }
++    }
++
++    public static void processConfiguration(GlobalConfiguration.AsyncChunks config) {
++        int cpus = Runtime.getRuntime().availableProcessors() / 2;
++        if (config.threads <= 0) {
++            if (cpus <= 4) {
++                config.threads = cpus <= 2 ? 1 : 2;
++            } else {
++                config.threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 4), cpus / 2);
++            }
++        }
++        if (cpus == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore")) {
++            config.asyncChunks = false;
++        } else {
++            config.asyncChunks = true;
++        }
++
++        // Let Shared Host set some limits
++        String sharedHostThreads = System.getenv("PAPER_ASYNC_CHUNKS_SHARED_HOST_THREADS");
++        if (sharedHostThreads != null) {
++            try {
++                config.threads = Math.max(1, Math.min(config.threads, Integer.parseInt(sharedHostThreads)));
++            } catch (NumberFormatException ignored) {}
++        }
++
++        if (config.asyncChunks) {
++            ChunkTaskManager.initGlobalLoadThreads(config.threads);
 +        }
 +    }
 +
@@ -3405,7 +3364,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
              return regionfile;
          } else {
-             if (this.regionCache.size() >= com.destroystokyo.paper.PaperConfig.regionFileCacheSize) { // Paper - configurable
+             if (this.regionCache.size() >= io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize) { // Paper - configurable
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
              RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
  

@@ -4,22 +4,6 @@ Date: Sat, 25 Apr 2020 15:13:41 -0500
 Subject: [PATCH] Add phantom creative and insomniac controls
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         }
-         perPlayerMobSpawns = getBoolean("per-player-mob-spawns", true);
-     }
-+
-+    public boolean phantomIgnoreCreative = true;
-+    public boolean phantomOnlyAttackInsomniacs = true;
-+    private void phantomSettings() {
-+        phantomIgnoreCreative = getBoolean("phantoms-do-not-spawn-on-creative-players", phantomIgnoreCreative);
-+        phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
@@ -40,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          Player entityhuman = (Player) iterator.next();
  
                          if (Phantom.this.canAttack(entityhuman, TargetingConditions.DEFAULT)) {
-+                            if (!level.paperConfig.phantomOnlyAttackInsomniacs || EntitySelector.isInsomniac.test(entityhuman)) // Paper
++                            if (!level.paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.isInsomniac.test(entityhuman)) // Paper
                              Phantom.this.setTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
                              return true;
                          }
@@ -53,7 +37,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          Player entityhuman = (Player) iterator.next();
  
 -                        if (!entityhuman.isSpectator()) {
-+                        if (!entityhuman.isSpectator() && (!world.paperConfig.phantomIgnoreCreative || !entityhuman.isCreative())) { // Paper
++                        if (!entityhuman.isSpectator() && (!world.paperConfig().entities.behavior.phantomsDoNotSpawnOnCreativePlayers || !entityhuman.isCreative())) { // Paper
                              BlockPos blockposition = entityhuman.blockPosition();
  
                              if (!world.dimensionType().hasSkyLight() || blockposition.getY() >= world.getSeaLevel() && world.canSeeSky(blockposition)) {

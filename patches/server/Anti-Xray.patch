@@ -4,65 +4,6 @@ Date: Thu, 25 Nov 2021 13:27:51 +0100
 Subject: [PATCH] Anti-Xray
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@
- package com.destroystokyo.paper;
- 
-+import java.util.Arrays;
- import java.util.List;
- 
- import java.util.stream.Collectors;
- import it.unimi.dsi.fastutil.objects.Reference2IntMap;
- import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
- import net.minecraft.world.entity.MobCategory;
-+import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
- import org.bukkit.Bukkit;
- import org.bukkit.configuration.file.YamlConfiguration;
- import org.spigotmc.SpigotWorldConfig;
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void lightQueueSize() {
-         lightQueueSize = getInt("light-queue-size", lightQueueSize);
-     }
-+
-+    public boolean antiXray;
-+    public EngineMode engineMode;
-+    public int maxBlockHeight;
-+    public int updateRadius;
-+    public boolean lavaObscures;
-+    public boolean usePermission;
-+    public List<String> hiddenBlocks;
-+    public List<String> replacementBlocks;
-+    private void antiXray() {
-+        antiXray = getBoolean("anti-xray.enabled", false);
-+        engineMode = EngineMode.getById(getInt("anti-xray.engine-mode", EngineMode.HIDE.getId()));
-+        engineMode = engineMode == null ? EngineMode.HIDE : engineMode;
-+        maxBlockHeight = getInt("anti-xray.max-block-height", 64);
-+        updateRadius = getInt("anti-xray.update-radius", 2);
-+        lavaObscures = getBoolean("anti-xray.lava-obscures", false);
-+        usePermission = getBoolean("anti-xray.use-permission", false);
-+        hiddenBlocks = getList("anti-xray.hidden-blocks", Arrays.asList("copper_ore", "deepslate_copper_ore", "gold_ore", "deepslate_gold_ore", "iron_ore", "deepslate_iron_ore",
-+            "coal_ore", "deepslate_coal_ore", "lapis_ore", "deepslate_lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "deepslate_diamond_ore",
-+            "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore", "deepslate_emerald_ore", "ender_chest"));
-+        replacementBlocks = getList("anti-xray.replacement-blocks", Arrays.asList("stone", "oak_planks", "deepslate"));
-+        if (PaperConfig.version < 19) {
-+            hiddenBlocks.remove("lit_redstone_ore");
-+            int index = replacementBlocks.indexOf("planks");
-+            if (index != -1) {
-+                replacementBlocks.set(index, "oak_planks");
-+            }
-+            set("anti-xray.hidden-blocks", hiddenBlocks);
-+            set("anti-xray.replacement-blocks", replacementBlocks);
-+        }
-+        log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Up to " + ((maxBlockHeight >> 4) << 4) + " blocks / Update Radius: " + updateRadius);
-+        if (antiXray && usePermission) {
-+            Bukkit.getLogger().warning("You have enabled permission-based Anti-Xray checking - depending on your permission plugin, this may cause performance issues");
-+        }
-+    }
- }
- 
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/BitStorageReader.java b/src/main/java/com/destroystokyo/paper/antixray/BitStorageReader.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -264,7 +205,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.antixray;
 +
-+import com.destroystokyo.paper.PaperWorldConfig;
++import io.papermc.paper.configuration.WorldConfiguration;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.core.Direction;
 +import net.minecraft.core.Registry;
@@ -284,11 +225,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.*;
 +import org.bukkit.Bukkit;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
++import java.lang.reflect.Type;
 +import java.util.*;
 +import java.util.concurrent.Executor;
 +import java.util.concurrent.ThreadLocalRandom;
 +import java.util.function.IntSupplier;
++import java.util.function.Predicate;
 +
 +public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
 +
@@ -317,7 +262,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public ChunkPacketBlockControllerAntiXray(Level level, Executor executor) {
 +        this.executor = executor;
-+        PaperWorldConfig paperWorldConfig = level.paperConfig;
++        WorldConfiguration.AntiCheat.AntiXRay paperWorldConfig = level.paperConfig().anticheat.antiXray;
 +        engineMode = paperWorldConfig.engineMode;
 +        maxBlockHeight = paperWorldConfig.maxBlockHeight >> 4 << 4;
 +        updateRadius = paperWorldConfig.updateRadius;
@@ -901,6 +846,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        HIDE(1, "hide ores"),
 +        OBFUSCATE(2, "obfuscate");
 +
++        public static final ScalarSerializer<EngineMode> SERIALIZER = new Serializer();
++
 +        private final int id;
 +        private final String description;
 +
@@ -925,6 +872,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        public String getDescription() {
 +            return description;
++        }
++
++        static class Serializer extends ScalarSerializer<EngineMode> {
++
++            Serializer() {
++                super(EngineMode.class);
++            }
++
++            @Override
++            public EngineMode deserialize(Type type, Object obj) throws SerializationException {
++                if (obj instanceof Integer num) {
++                    return Objects.requireNonNullElse(EngineMode.getById(num), HIDE);
++                }
++                throw new SerializationException(obj + " is not of a valid type (" + type + ") for this node");
++            }
++
++            @Override
++            protected Object serialize(EngineMode item, Predicate<Class<?>> typeSupported) {
++                return item.getId();
++            }
 +        }
 +    }
 +}
@@ -1049,6 +1016,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        chunkPacketBlockControllerAntiXray.obfuscate(this);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
++++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+@@ -0,0 +0,0 @@ package io.papermc.paper.configuration;
+ 
+ import com.destroystokyo.paper.Metrics;
+ import com.destroystokyo.paper.PaperCommand;
++import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray;
+ import com.google.common.collect.Table;
+ import com.mojang.logging.LogUtils;
+ import io.leangen.geantyref.TypeToken;
+@@ -0,0 +0,0 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+                     .register(DoubleOrDefault.SERIALIZER)
+                     .register(BooleanOrDefault.SERIALIZER)
+                     .register(Duration.SERIALIZER)
++                    .register(ChunkPacketBlockControllerAntiXray.EngineMode.SERIALIZER)
+                     .register(FallbackValueSerializer.create(spigotConfig, MinecraftServer::getServer))
+                     .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registry.ENTITY_TYPE, true))
+                     .register(new RegistryValueSerializer<>(Item.class, Registry.ITEM, true))
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
@@ -1193,8 +1180,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // Holder holder = worlddimension.typeHolder(); // CraftBukkit - decompile error
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env);
-+        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, executor); // Paper - Async-Anti-Xray - Pass executor
+-        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), spigotConfig)); // Paper
++        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), spigotConfig), executor); // Paper - Async-Anti-Xray - Pass executor
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
@@ -1225,27 +1212,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
+     }
+     // Paper end
  
-     public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
 +    public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
- 
++
      public final co.aikar.timings.WorldTimingsHandler timings; // Paper
      public static BlockPos lastPhysicsProblem; // Spigot
+     private org.spigotmc.TickLimiter entityLimiter;
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public abstract ResourceKey<LevelStem> getTypeKey();
  
--    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
+-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
-         this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
+         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper
          this.generator = gen;
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         this.keepSpawnInMemory = this.paperConfig.keepSpawnInMemory; // Paper
+         this.keepSpawnInMemory = this.paperConfig().spawn.keepSpawnLoaded; // Paper
          this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
-+        this.chunkPacketBlockController = this.paperConfig.antiXray ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
++        this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
      }
  
      // Paper start

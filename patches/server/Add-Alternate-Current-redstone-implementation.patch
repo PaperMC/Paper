@@ -1920,39 +1920,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return LevelHelper.setWireState(level, pos, state, added);
 +    }
 +}
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     }
- 
-     public enum RedstoneImplementation {
--        VANILLA, EIGENCRAFT
-+        VANILLA, EIGENCRAFT, ALTERNATE_CURRENT
-     }
-     public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
-     private void redstoneImplementation() {
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         }
-         switch (implementation) {
-             default:
--                logError("Invalid redstone-implementation config " + implementation + " - must be one of: vanilla, eigencraft");
-+                logError("Invalid redstone-implementation config " + implementation + " - must be one of: vanilla, eigencraft, alternate-current");
-             case "vanilla":
-                 redstoneImplementation = RedstoneImplementation.VANILLA;
-                 log("Using the Vanilla redstone implementation.");
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-                 redstoneImplementation = RedstoneImplementation.EIGENCRAFT;
-                 log("Using Eigencraft's redstone implementation by theosib.");
-                 break;
-+            case "alternate-current":
-+                redstoneImplementation = RedstoneImplementation.ALTERNATE_CURRENT;
-+                log("Using Alternate Current's redstone implementation by Space Walker.");
-+                break;
-         }
-     }
- 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -2213,7 +2180,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!oldState.is(state.getBlock()) && !world.isClientSide) {
 -            this.updateSurroundingRedstone(world, pos, state, null); // Paper - Optimize redstone
 +            // Paper start - optimize redstone - replace call to updatePowerStrength
-+            if (world.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.ALTERNATE_CURRENT) {
++            if (world.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.ALTERNATE_CURRENT) {
 +                world.getWireHandler().onWireAdded(pos); // Alternate Current
 +            } else {
 +                this.updateSurroundingRedstone(world, pos, state, null); // vanilla/Eigencraft
@@ -2228,7 +2195,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -                this.updateSurroundingRedstone(world, pos, state, null); // Paper - Optimize redstone
 +                // Paper start - optimize redstone - replace call to updatePowerStrength
-+                if (world.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.ALTERNATE_CURRENT) {
++                if (world.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.ALTERNATE_CURRENT) {
 +                    world.getWireHandler().onWireRemoved(pos, state); // Alternate Current
 +                } else {
 +                    this.updateSurroundingRedstone(world, pos, state, null); // vanilla/Eigencraft
@@ -2243,7 +2210,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!world.isClientSide) {
 +            // Paper start - optimize redstone (Alternate Current)
 +            // Alternate Current handles breaking of redstone wires in the WireHandler.
-+            if (world.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.ALTERNATE_CURRENT) {
++            if (world.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.ALTERNATE_CURRENT) {
 +                world.getWireHandler().onWireUpdated(pos);
 +            } else
 +            // Paper end

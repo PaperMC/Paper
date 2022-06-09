@@ -4,33 +4,10 @@ Date: Wed, 8 Aug 2018 16:33:21 -0600
 Subject: [PATCH] Configurable speed for water flowing over lava
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         this.armorStandTick = this.getBoolean("armor-stands-tick", this.armorStandTick);
-         log("ArmorStand ticking is " + (this.armorStandTick ? "enabled" : "disabled") + " by default");
-     }
-+
-+    public int waterOverLavaFlowSpeed;
-+    private void waterOverLavaFlowSpeed() {
-+        waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
-+        log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/level/block/LiquidBlock.java b/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
- import net.minecraft.world.level.block.state.properties.IntegerProperty;
- import net.minecraft.world.level.material.FlowingFluid;
- import net.minecraft.world.level.material.FluidState;
-+import net.minecraft.world.level.material.Material;
- import net.minecraft.world.level.pathfinder.PathComputationType;
- import net.minecraft.world.level.storage.loot.LootContext;
- import net.minecraft.world.phys.shapes.CollisionContext;
 @@ -0,0 +0,0 @@ public class LiquidBlock extends Block implements BucketPickup {
      @Override
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
@@ -43,14 +20,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - Get flow speed. Throttle if its water and flowing adjacent to lava
 +    public int getFlowSpeed(Level world, BlockPos blockposition) {
-+        if (this.material == Material.WATER) {
++        if (this.material == net.minecraft.world.level.material.Material.WATER) {
 +            if (
-+                world.getMaterialIfLoaded(blockposition.north(1)) == Material.LAVA ||
-+                world.getMaterialIfLoaded(blockposition.south(1)) == Material.LAVA ||
-+                world.getMaterialIfLoaded(blockposition.west(1)) == Material.LAVA ||
-+                world.getMaterialIfLoaded(blockposition.east(1)) == Material.LAVA
++                world.getMaterialIfLoaded(blockposition.north(1)) == net.minecraft.world.level.material.Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.south(1)) == net.minecraft.world.level.material.Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.west(1)) == net.minecraft.world.level.material.Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.east(1)) == net.minecraft.world.level.material.Material.LAVA
 +            ) {
-+                return world.paperConfig.waterOverLavaFlowSpeed;
++                return world.paperConfig().environment.waterOverLavaFlowSpeed;
 +            }
 +        }
 +        return this.fluid.getTickDelay(world);

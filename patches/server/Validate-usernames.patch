@@ -4,23 +4,6 @@ Date: Sat, 1 Jan 2022 05:19:37 -0800
 Subject: [PATCH] Validate usernames
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         set("settings.unsupported-settings.allow-tnt-duplication", null);
-     }
- 
-+    public static boolean performUsernameValidation;
-+    private static void performUsernameValidation() {
-+        performUsernameValidation = getBoolean("settings.unsupported-settings.perform-username-validation", true);
-+    }
-+
-+
-     public static int playerAutoSaveRate = -1;
-     public static int maxPlayerAutoSavePerTick = 10;
-     private static void playerAutoSaveRate() {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
@@ -62,7 +45,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
          Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
 +        // Paper start - validate usernames
-+        if (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() && com.destroystokyo.paper.PaperConfig.performUsernameValidation) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation) {
 +            if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(packet.name())) {
 +                ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
 +                return;
@@ -81,7 +64,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          for (int i = 0; i < this.players.size(); ++i) {
              entityplayer = (ServerPlayer) this.players.get(i);
 -            if (entityplayer.getUUID().equals(uuid)) {
-+            if (entityplayer.getUUID().equals(uuid) || (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() && entityplayer.getGameProfile().getName().equalsIgnoreCase(gameprofile.getName()))) { // Paper - validate usernames
++            if (entityplayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && entityplayer.getGameProfile().getName().equalsIgnoreCase(gameprofile.getName()))) { // Paper - validate usernames
                  list.add(entityplayer);
              }
          }

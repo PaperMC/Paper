@@ -5,38 +5,6 @@ Subject: [PATCH] Configurable door breaking difficulty
 
 Co-authored-by: Doc <nachito94@msn.com>
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void disableMobSpawnerSpawnEggTransformation() {
-         disableMobSpawnerSpawnEggTransformation = getBoolean("game-mechanics.disable-mob-spawner-spawn-egg-transformation", disableMobSpawnerSpawnEggTransformation);
-     }
-+    
-+    private final List<net.minecraft.world.entity.EntityType<?>> entitiesValidForBreakDoors = Arrays.asList(net.minecraft.world.entity.EntityType.ZOMBIE, net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, net.minecraft.world.entity.EntityType.HUSK, net.minecraft.world.entity.EntityType.ZOMBIFIED_PIGLIN, net.minecraft.world.entity.EntityType.VINDICATOR);
-+    public java.util.Map<net.minecraft.world.entity.EntityType<?>, java.util.List<net.minecraft.world.Difficulty>> entitiesDifficultyBreakDoors = new it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap<>();
-+    private void setupEntityBreakingDoors() {
-+        for (net.minecraft.world.entity.EntityType<?> entityType : entitiesValidForBreakDoors) {
-+            java.util.function.Predicate<net.minecraft.world.Difficulty> difficultyPredicate = net.minecraft.world.entity.monster.Zombie.DOOR_BREAKING_PREDICATE;
-+            if (entityType == net.minecraft.world.entity.EntityType.VINDICATOR) {
-+                difficultyPredicate = net.minecraft.world.entity.monster.Vindicator.DOOR_BREAKING_PREDICATE;
-+            }
-+            entitiesDifficultyBreakDoors.put(
-+                entityType,
-+                getEnumList(
-+                    "door-breaking-difficulty." + entityType.id,
-+                    java.util.Arrays.stream(net.minecraft.world.Difficulty.values())
-+                        .filter(difficultyPredicate)
-+                        .collect(Collectors.toList()),
-+                    net.minecraft.world.Difficulty.class
-+                )
-+            );
-+        }
-+    }
- 
-     public short keepLoadedRange;
-     private void keepLoadedRange() {
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
@@ -46,7 +14,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      static class VindicatorBreakDoorGoal extends BreakDoorGoal {
          public VindicatorBreakDoorGoal(Mob mob) {
 -            super(mob, 6, Vindicator.DOOR_BREAKING_PREDICATE);
-+            super(mob, 6, com.google.common.base.Predicates.in(mob.level.paperConfig.entitiesDifficultyBreakDoors.getOrDefault(mob.getType(), mob.level.paperConfig.entitiesDifficultyBreakDoors.get(EntityType.VINDICATOR)))); // Paper
++            super(mob, 6, com.google.common.base.Predicates.in(mob.level.paperConfig().entities.behavior.doorBreakingDifficulty.getOrDefault(mob.getType(), mob.level.paperConfig().entities.behavior.doorBreakingDifficulty.get(EntityType.VINDICATOR)))); // Paper
              this.setFlags(EnumSet.of(Goal.Flag.MOVE));
          }
  
@@ -59,7 +27,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Zombie(EntityType<? extends Zombie> type, Level world) {
          super(type, world);
 -        this.breakDoorGoal = new BreakDoorGoal(this, Zombie.DOOR_BREAKING_PREDICATE);
-+        this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(world.paperConfig.entitiesDifficultyBreakDoors.getOrDefault(type, world.paperConfig.entitiesDifficultyBreakDoors.get(EntityType.ZOMBIE)))); // Paper
++        this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(world.paperConfig().entities.behavior.doorBreakingDifficulty.getOrDefault(type, world.paperConfig().entities.behavior.doorBreakingDifficulty.get(EntityType.ZOMBIE)))); // Paper
      }
  
      public Zombie(Level world) {

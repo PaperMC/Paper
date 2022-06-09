@@ -9,20 +9,6 @@ phantoms, wandering traders, etc.). This adds an option to instead of
 just looking at the LevelStem key, look at the DimensionType key which
 is one level below that. Defaults to off to keep vanilla behavior.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-     private static void timeCommandAffectsAllWorlds() {
-         timeCommandAffectsAllWorlds = getBoolean("settings.time-command-affects-all-worlds", timeCommandAffectsAllWorlds);
-     }
-+
-+    public static boolean useDimensionTypeForCustomSpawners;
-+    private static void useDimensionTypeForCustomSpawners() {
-+        useDimensionTypeForCustomSpawners = getBoolean("settings.use-dimension-type-for-custom-spawners", false);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -34,7 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, ImmutableList.of(), true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
 +                // Paper start - option to use the dimension_type to check if spawners should be added. I imagine mojang will add some datapack-y way of managing this in the future.
 +                final List<CustomSpawner> spawners;
-+                if (com.destroystokyo.paper.PaperConfig.useDimensionTypeForCustomSpawners && this.registryHolder.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(worlddimension.typeHolder().value()).orElseThrow() == net.minecraft.world.level.dimension.BuiltinDimensionTypes.OVERWORLD) {
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.useDimensionTypeForCustomSpawners && this.registryHolder.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(worlddimension.typeHolder().value()).orElseThrow() == net.minecraft.world.level.dimension.BuiltinDimensionTypes.OVERWORLD) {
 +                    spawners = list;
 +                } else {
 +                    spawners = Collections.emptyList();

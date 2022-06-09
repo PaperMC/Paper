@@ -31,23 +31,6 @@ This patch fixes https://bugs.mojang.com/browse/MC-188840
 
 This patch also fixes rail duping and carpet duping.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-     private static void consoleHasAllPermissions() {
-         consoleHasAllPermissions = getBoolean("settings.console-has-all-permissions", consoleHasAllPermissions);
-     }
-+
-+    public static boolean allowPistonDuplication;
-+    private static void allowPistonDuplication() {
-+        config.set("settings.unsupported-settings.allow-piston-duplication-readme", "This setting controls if player should be able to use TNT duplication, but this also allows duplicating carpet, rails and potentially other items");
-+        allowPistonDuplication = getBoolean("settings.unsupported-settings.allow-piston-duplication", config.getBoolean("settings.unsupported-settings.allow-tnt-duplication", false));
-+        set("settings.unsupported-settings.allow-tnt-duplication", null);
-+    }
-+
- }
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
@@ -59,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                blockposition3 = (BlockPos) list.get(k);
 -                iblockdata1 = world.getBlockState(blockposition3);
 +                // Paper start - fix a variety of piston desync dupes
-+                boolean allowDesync = com.destroystokyo.paper.PaperConfig.allowPistonDuplication;
++                boolean allowDesync = io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPistonDuplication;
 +                BlockPos oldPos = blockposition3 = (BlockPos) list.get(k);
 +                iblockdata1 = allowDesync ? world.getBlockState(oldPos) : null;
 +                // Paper end - fix a variety of piston desync dupes
@@ -91,7 +74,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      BlockState blockState = Block.updateFromNeighbourShapes(blockEntity.movedState, world, pos);
                      if (blockState.isAir()) {
 -                        world.setBlock(pos, blockEntity.movedState, 84);
-+                        world.setBlock(pos, blockEntity.movedState, com.destroystokyo.paper.PaperConfig.allowPistonDuplication ? 84 : (84 | 2)); // Paper - force notify (flag 2), it's possible the set type by the piston block (which doesn't notify) set this block to air
++                        world.setBlock(pos, blockEntity.movedState, io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPistonDuplication ? 84 : (84 | 2)); // Paper - force notify (flag 2), it's possible the set type by the piston block (which doesn't notify) set this block to air
                          Block.updateOrDestroy(blockEntity.movedState, blockState, world, pos, 3);
                      } else {
                          if (blockState.hasProperty(BlockStateProperties.WATERLOGGED) && blockState.getValue(BlockStateProperties.WATERLOGGED)) {

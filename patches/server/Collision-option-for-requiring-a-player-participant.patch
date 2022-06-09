@@ -4,29 +4,6 @@ Date: Sat, 14 Nov 2020 16:48:37 +0100
 Subject: [PATCH] Collision option for requiring a player participant
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         }
-     }
- 
-+    public boolean onlyPlayersCollide = false;
-+    public boolean allowVehicleCollisions = true;
-+    private void onlyPlayersCollide() {
-+        onlyPlayersCollide = getBoolean("only-players-collide", onlyPlayersCollide);
-+        allowVehicleCollisions = getBoolean("allow-vehicle-collisions", allowVehicleCollisions);
-+        if (onlyPlayersCollide && !allowVehicleCollisions) {
-+            log("Collisions will only work if a player is one of the two entities colliding.");
-+        } else if (onlyPlayersCollide) {
-+            log("Collisions will only work if a player OR a vehicle is one of the two entities colliding.");
-+        }
-+    }
-+
-     public int wanderingTraderSpawnMinuteTicks = 1200;
-     public int wanderingTraderSpawnDayTicks = 24000;
-     public int wanderingTraderSpawnChanceFailureIncrement = 25;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -35,7 +12,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void push(Entity entity) {
          if (!this.isPassengerOfSameVehicle(entity)) {
              if (!entity.noPhysics && !this.noPhysics) {
-+                if (this.level.paperConfig.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper
++                if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper
                  double d0 = entity.getX() - this.getX();
                  double d1 = entity.getZ() - this.getZ();
                  double d2 = Mth.absMax(d0, d1);
@@ -47,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void push(Entity entity) {
          if (!this.level.isClientSide) {
              if (!entity.noPhysics && !this.noPhysics) {
-+                if (!this.level.paperConfig.allowVehicleCollisions && this.level.paperConfig.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
++                if (!this.level.paperConfig().collisions.allowVehicleCollisions && this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
                  if (!this.hasPassenger(entity)) {
                      // CraftBukkit start
                      VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
@@ -59,7 +36,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public void push(Entity entity) {
-+        if (!this.level.paperConfig.allowVehicleCollisions && this.level.paperConfig.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
++        if (!this.level.paperConfig().collisions.allowVehicleCollisions && this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
          if (entity instanceof Boat) {
              if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
                  // CraftBukkit start

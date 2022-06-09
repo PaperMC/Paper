@@ -4,25 +4,6 @@ Date: Tue, 30 Mar 2021 16:06:08 -0700
 Subject: [PATCH] Enhance console tab completions for brigadier commands
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         trackPluginScoreboards = getBoolean("settings.track-plugin-scoreboards", false);
-     }
- 
-+
-+    public static boolean enableBrigadierConsoleHighlighting = true;
-+    public static boolean enableBrigadierConsoleCompletions = true;
-+    private static void consoleSettings() {
-+        enableBrigadierConsoleHighlighting = getBoolean("settings.console.enable-brigadier-highlighting", enableBrigadierConsoleHighlighting);
-+        enableBrigadierConsoleCompletions = getBoolean("settings.console.enable-brigadier-completions", enableBrigadierConsoleCompletions);
-+    }
-+
-     public static void registerCommands() {
-         for (Map.Entry<String, Command> entry : commands.entrySet()) {
-             MinecraftServer.getServer().server.getCommandMap().register(entry.getKey(), "Paper", entry.getValue());
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
@@ -38,7 +19,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  .completer(new ConsoleCommandCompleter(this.server))
 -        );
 +                .option(LineReader.Option.COMPLETE_IN_WORD, true);
-+        if (com.destroystokyo.paper.PaperConfig.enableBrigadierConsoleHighlighting) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierHighlighting) {
 +            builder.highlighter(new io.papermc.paper.console.BrigadierCommandHighlighter(this.server, this.server.createCommandSourceStack()));
 +        }
 +        return super.buildReader(builder);
@@ -83,7 +64,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public void complete(final @NonNull LineReader reader, final @NonNull ParsedLine line, final @NonNull List<Candidate> candidates, final @NonNull List<Completion> existing) {
-+        if (!com.destroystokyo.paper.PaperConfig.enableBrigadierConsoleCompletions) {
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierCompletions) {
 +            this.addCandidates(candidates, Collections.emptyList(), existing);
 +            return;
 +        }
@@ -230,13 +211,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-             DedicatedServer.LOGGER.error("Unable to load server configuration", e);
-             return false;
-         }
+         paperConfigurations.initializeGlobalConfiguration();
+         paperConfigurations.initializeWorldDefaultsConfiguration();
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
 +        thread.start(); // Paper - start console thread after MinecraftServer.console & PaperConfig are initialized
-         com.destroystokyo.paper.PaperConfig.registerCommands();
+         io.papermc.paper.configuration.PaperConfigurations.registerCommands(this);
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
-         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // load mappings for stacktrace deobf and etc.
+         // Paper end
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java

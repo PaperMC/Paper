@@ -4,25 +4,6 @@ Date: Sun, 22 May 2016 20:20:55 -0500
 Subject: [PATCH] Optional TNT doesn't move in water
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-             );
-         }
-     }
-+
-+    public boolean preventTntFromMovingInWater;
-+    private void preventTntFromMovingInWater() {
-+        if (PaperConfig.version < 13) {
-+            boolean oldVal = getBoolean("enable-old-tnt-cannon-behaviors", false);
-+            set("prevent-tnt-from-moving-in-water", oldVal);
-+        }
-+        preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
-+        log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
@@ -45,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 +        // Paper start - Optional prevent TNT from moving in water
-+        if (!this.isRemoved() && this.wasTouchingWater && this.level.paperConfig.preventTntFromMovingInWater) {
++        if (!this.isRemoved() && this.wasTouchingWater && this.level.paperConfig().fixes.preventTntFromMovingInWater) {
 +            /*
 +             * Author: Jedediah Smith <jedediah@silencegreys.com>
 +             */
@@ -76,7 +57,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - Optional prevent TNT from moving in water
 +    @Override
 +    public boolean isPushedByFluid() {
-+        return !level.paperConfig.preventTntFromMovingInWater && super.isPushedByFluid();
++        return !level.paperConfig().fixes.preventTntFromMovingInWater && super.isPushedByFluid();
 +    }
 +    // Paper end
  }

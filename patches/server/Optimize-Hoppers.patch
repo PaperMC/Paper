@@ -12,28 +12,6 @@ Subject: [PATCH] Optimize Hoppers
 * Don't check for Entities with Inventories if the block above us is also occluding (not just Inventoried)
 * Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void entitiesTargetWithFollowRange() {
-         entitiesTargetWithFollowRange = getBoolean("entities-target-with-follow-range", entitiesTargetWithFollowRange);
-     }
-+
-+    public boolean cooldownHopperWhenFull = true;
-+    public boolean disableHopperMoveEvents = false;
-+    public boolean hoppersIgnoreOccludingBlocks = false;
-+    private void hopperOptimizations() {
-+        cooldownHopperWhenFull = getBoolean("hopper.cooldown-when-full", cooldownHopperWhenFull);
-+        log("Cooldown Hoppers when Full: " + (cooldownHopperWhenFull ? "enabled" : "disabled"));
-+        disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
-+        log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
-+        hoppersIgnoreOccludingBlocks = getBoolean("hopper.ignore-occluding-blocks", hoppersIgnoreOccludingBlocks);
-+        log("Hopper Ignore Container Entities inside Occluding Blocks: " + (hoppersIgnoreOccludingBlocks ? "enabled" : "disabled"));
-+    }
- }
- 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -42,7 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
-+            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
++            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
  
              this.profiler.push(() -> {
                  return worldserver + " " + worldserver.dimension().location();
@@ -166,7 +144,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                origItemStack.setCount(origCount);
 +            }
 +        }
-+        if (foundItem && level.paperConfig.cooldownHopperWhenFull) { // Inventory was full - cooldown
++        if (foundItem && level.paperConfig().hopper.cooldownWhenFull) { // Inventory was full - cooldown
 +            hopper.setCooldown(level.spigotConfig.hopperTransfer);
 +        }
 +        return false;
@@ -205,7 +183,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        origItemStack.setCount(origCount);
 +
-+        if (level.paperConfig.cooldownHopperWhenFull) {
++        if (level.paperConfig().hopper.cooldownWhenFull) {
 +            cooldownHopper(ihopper);
 +        }
 +
@@ -450,7 +428,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 -        if (object == null) {
-+        if (object == null && (!optimizeEntities || !world.paperConfig.hoppersIgnoreOccludingBlocks || !org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
++        if (object == null && (!optimizeEntities || !world.paperConfig().hopper.ignoreOccludingBlocks || !org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
              List<Entity> list = world.getEntities((Entity) null, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR);
  
              if (!list.isEmpty()) {

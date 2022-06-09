@@ -5,30 +5,6 @@ Subject: [PATCH] Configurable Non Player Arrow Despawn Rate
 
 Can set a much shorter despawn rate for arrows that players can not pick up.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void nonPlayerEntitiesOnScoreboards() {
-         nonPlayerEntitiesOnScoreboards = getBoolean("allow-non-player-entities-on-scoreboards", false);
-     }
-+
-+    public int nonPlayerArrowDespawnRate = -1;
-+    public int creativeArrowDespawnRate = -1;
-+    private void nonPlayerArrowDespawnRate() {
-+        nonPlayerArrowDespawnRate = getInt("non-player-arrow-despawn-rate", -1);
-+        if (nonPlayerArrowDespawnRate == -1) {
-+            nonPlayerArrowDespawnRate = spigotConfig.arrowDespawnRate;
-+        }
-+        creativeArrowDespawnRate = getInt("creative-arrow-despawn-rate", -1);
-+        if (creativeArrowDespawnRate == -1) {
-+            creativeArrowDespawnRate = spigotConfig.arrowDespawnRate;
-+        }
-+        log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
-+        log("Creative Arrow Despawn Rate: " + creativeArrowDespawnRate);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
@@ -38,7 +14,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected void tickDespawn() {
          ++this.life;
 -        if (this.life >= ((this instanceof ThrownTrident) ? level.spigotConfig.tridentDespawnRate : level.spigotConfig.arrowDespawnRate)) { // Spigot
-+        if (this.life >= (pickup == Pickup.CREATIVE_ONLY ? level.paperConfig.creativeArrowDespawnRate : (pickup == Pickup.DISALLOWED ? level.paperConfig.nonPlayerArrowDespawnRate : ((this instanceof ThrownTrident) ? level.spigotConfig.tridentDespawnRate : level.spigotConfig.arrowDespawnRate)))) { // Spigot // Paper - TODO: Extract this to init?
++        if (this.life >= (pickup == Pickup.CREATIVE_ONLY ? level.paperConfig().entities.spawning.creativeArrowDespawnRate.value() : (pickup == Pickup.DISALLOWED ? level.paperConfig().entities.spawning.nonPlayerArrowDespawnRate.value() : ((this instanceof ThrownTrident) ? level.spigotConfig.tridentDespawnRate : level.spigotConfig.arrowDespawnRate)))) { // Spigot // Paper - TODO: Extract this to init?
              this.discard();
          }
  

@@ -10,30 +10,6 @@ Usages of the vanilla WanderingTraderSpawnDelay and WanderingTraderSpawnChance v
 in IWorldServerData are removed as they were only used in certain places, with hardcoded
 values used in other places.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         }
-     }
- 
-+    public int wanderingTraderSpawnMinuteTicks = 1200;
-+    public int wanderingTraderSpawnDayTicks = 24000;
-+    public int wanderingTraderSpawnChanceFailureIncrement = 25;
-+    public int wanderingTraderSpawnChanceMin = 25;
-+    public int wanderingTraderSpawnChanceMax = 75;
-+    private void wanderingTraderSettings() {
-+        wanderingTraderSpawnMinuteTicks = getInt("wandering-trader.spawn-minute-length", wanderingTraderSpawnMinuteTicks);
-+        wanderingTraderSpawnDayTicks = getInt("wandering-trader.spawn-day-length", wanderingTraderSpawnDayTicks);
-+        wanderingTraderSpawnChanceFailureIncrement = getInt("wandering-trader.spawn-chance-failure-increment", wanderingTraderSpawnChanceFailureIncrement);
-+        wanderingTraderSpawnChanceMin = getInt("wandering-trader.spawn-chance-min", wanderingTraderSpawnChanceMin);
-+        wanderingTraderSpawnChanceMax = getInt("wandering-trader.spawn-chance-max", wanderingTraderSpawnChanceMax);
-+    }
-+
-     public short keepLoadedRange;
-     private void keepLoadedRange() {
-         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
 diff --git a/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java b/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
@@ -69,9 +45,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int tick(ServerLevel world, boolean spawnMonsters, boolean spawnAnimals) {
 +        // Paper start
 +        if (this.tickDelay == Integer.MIN_VALUE) {
-+            this.tickDelay = world.paperConfig.wanderingTraderSpawnMinuteTicks;
-+            this.spawnDelay = world.paperConfig.wanderingTraderSpawnDayTicks;
-+            this.spawnChance = world.paperConfig.wanderingTraderSpawnChanceMin;
++            this.tickDelay = world.paperConfig().entities.spawning.wanderingTrader.spawnMinuteLength;
++            this.spawnDelay = world.paperConfig().entities.spawning.wanderingTrader.spawnDayLength;
++            this.spawnChance = world.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin;
 +        }
          if (!world.getGameRules().getBoolean(GameRules.RULE_DO_TRADER_SPAWNING)) {
              return 0;
@@ -83,14 +59,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.tickDelay = 1200;
 -            this.spawnDelay -= 1200;
 -            this.serverLevelData.setWanderingTraderSpawnDelay(this.spawnDelay);
-+            this.tickDelay = world.paperConfig.wanderingTraderSpawnMinuteTicks;
-+            this.spawnDelay = this.spawnDelay - world.paperConfig.wanderingTraderSpawnMinuteTicks;
++            this.tickDelay = world.paperConfig().entities.spawning.wanderingTrader.spawnMinuteLength;
++            this.spawnDelay = this.spawnDelay - world.paperConfig().entities.spawning.wanderingTrader.spawnMinuteLength;
 +            //this.serverLevelData.setWanderingTraderSpawnDelay(this.spawnDelay); // Paper - We don't need to save this value to disk if it gets set back to a hardcoded value anyways
              if (this.spawnDelay > 0) {
                  return 0;
              } else {
 -                this.spawnDelay = 24000;
-+                this.spawnDelay = world.paperConfig.wanderingTraderSpawnDayTicks;
++                this.spawnDelay = world.paperConfig().entities.spawning.wanderingTrader.spawnDayLength;
                  if (!world.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
                      return 0;
                  } else {
@@ -98,13 +74,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -                    this.spawnChance = Mth.clamp(this.spawnChance + 25, (int) 25, (int) 75);
 -                    this.serverLevelData.setWanderingTraderSpawnChance(this.spawnChance);
-+                    this.spawnChance = Mth.clamp(i + world.paperConfig.wanderingTraderSpawnChanceFailureIncrement, world.paperConfig.wanderingTraderSpawnChanceMin, world.paperConfig.wanderingTraderSpawnChanceMax);
++                    this.spawnChance = Mth.clamp(i + world.paperConfig().entities.spawning.wanderingTrader.spawnChanceFailureIncrement, world.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin, world.paperConfig().entities.spawning.wanderingTrader.spawnChanceMax);
 +                    //this.serverLevelData.setWanderingTraderSpawnChance(this.spawnChance); // Paper - We don't need to save this value to disk if it gets set back to a hardcoded value anyways
                      if (this.random.nextInt(100) > i) {
                          return 0;
                      } else if (this.spawn(world)) {
 -                        this.spawnChance = 25;
-+                        this.spawnChance = world.paperConfig.wanderingTraderSpawnChanceMin;
++                        this.spawnChance = world.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin;
 +                        // Paper end
                          return 1;
                      } else {

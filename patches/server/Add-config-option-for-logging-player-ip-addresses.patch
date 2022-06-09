@@ -4,22 +4,6 @@ Date: Tue, 5 Oct 2021 20:04:21 +0200
 Subject: [PATCH] Add config option for logging player ip addresses
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ public class PaperConfig {
-         }
-     }
- 
-+    public static boolean logPlayerIpAddresses = true;
-+    private static void playerIpAddresses() {
-+        logPlayerIpAddresses = getBoolean("settings.log-player-ip-addresses", logPlayerIpAddresses);
-+    }
-+
-     public static int maxJoinsPerTick;
-     private static void maxJoinsPerTick() {
-         maxJoinsPerTick = getInt("settings.max-joins-per-tick", 3);
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
@@ -28,7 +12,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          packet.handle(listener);
                      } catch (Exception exception) {
                          net.minecraft.network.Connection networkmanager = listener.getConnection();
-+                        String playerIP = com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>"; // Paper
++                        String playerIP = io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>"; // Paper
                          if (networkmanager.getPlayer() != null) {
 -                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
 +                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), playerIP, exception); // Paper
@@ -47,7 +31,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.buf = null;
  
 -        LOGGER.debug("Ping: (1.6) from {}", ctx.channel().remoteAddress());
-+        LOGGER.debug("Ping: (1.6) from {}", com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? ctx.channel().remoteAddress() : "<ip address withheld>"); // Paper
++        LOGGER.debug("Ping: (1.6) from {}", io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? ctx.channel().remoteAddress() : "<ip address withheld>"); // Paper
  
          InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
          com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(
@@ -60,7 +44,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              }
  
 -                            ServerConnectionListener.LOGGER.warn("Failed to handle packet for {}", networkmanager.getRemoteAddress(), exception);
-+                            ServerConnectionListener.LOGGER.warn("Failed to handle packet for {}", com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>", exception); // Paper
++                            ServerConnectionListener.LOGGER.warn("Failed to handle packet for {}", io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>", exception); // Paper
                              MutableComponent ichatmutablecomponent = Component.literal("Internal server error");
  
                              networkmanager.send(new ClientboundDisconnectPacket(ichatmutablecomponent), (future) -> {
@@ -74,7 +58,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public String getUserName() {
 -        return this.gameProfile != null ? this.gameProfile + " (" + this.connection.getRemoteAddress() + ")" : String.valueOf(this.connection.getRemoteAddress());
 +        // Paper start
-+        String ip = com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(this.connection.getRemoteAddress()) : "<ip address withheld>";
++        String ip = io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? String.valueOf(this.connection.getRemoteAddress()) : "<ip address withheld>";
 +        return this.gameProfile != null ? this.gameProfile + " (" + ip + ")" : String.valueOf(ip);
 +        // Paper end
      }
@@ -89,7 +73,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (connection.getRemoteAddress() != null) {
 -            s1 = connection.getRemoteAddress().toString();
-+            s1 = com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? connection.getRemoteAddress().toString() : "<ip address withheld>"; // Paper
++            s1 = io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? connection.getRemoteAddress().toString() : "<ip address withheld>"; // Paper
          } else {
              s1 = "local";
          }

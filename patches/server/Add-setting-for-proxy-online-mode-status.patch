@@ -5,32 +5,6 @@ Subject: [PATCH] Add setting for proxy online mode status
 
 TODO: Add isProxyOnlineMode check to Metrics
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +0,0 @@ import org.bukkit.configuration.InvalidConfigurationException;
- import org.bukkit.configuration.file.YamlConfiguration;
- import co.aikar.timings.Timings;
- import co.aikar.timings.TimingsManager;
-+import org.spigotmc.SpigotConfig;
- 
- public class PaperConfig {
- 
-@@ -0,0 +0,0 @@ public class PaperConfig {
-     private static void saveEmptyScoreboardTeams() {
-         saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
-     }
-+
-+    public static boolean bungeeOnlineMode = true;
-+    private static void bungeeOnlineMode() {
-+        bungeeOnlineMode = getBoolean("settings.bungee-online-mode", true);
-+    }
-+
-+    public static boolean isProxyOnlineMode() {
-+        return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
@@ -39,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          };
  
-+        if (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode()) // Paper - only run in online mode - 100 COL
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) // Paper - only run in online mode - 100 COL
          repository.findProfilesByNames(new String[]{name}, Agent.MINECRAFT, profilelookupcallback);
          GameProfile gameprofile = (GameProfile) atomicreference.get();
  
@@ -48,7 +22,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private static boolean usesAuthentication() {
 -        return GameProfileCache.usesAuthentication;
-+        return com.destroystokyo.paper.PaperConfig.isProxyOnlineMode(); // Paper
++        return io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper
      }
  
      public void add(GameProfile profile) {
@@ -62,7 +36,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        if (server.usesAuthentication() || org.spigotmc.SpigotConfig.bungee) { // Spigot: bungee = online mode, for now.
 +        if (server.usesAuthentication()
-+                || (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode())) { // Spigot: bungee = online mode, for now.  // Paper - Handle via setting
++                || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode())) { // Spigot: bungee = online mode, for now.  // Paper - Handle via setting
              server.getProfileRepository().findProfilesByNames(astring, Agent.MINECRAFT, callback);
          } else {
              String[] astring1 = astring;
@@ -75,7 +49,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              GameProfile profile = null;
              // Only fetch an online UUID in online mode
 -            if ( this.getOnlineMode() || org.spigotmc.SpigotConfig.bungee )
-+            if ( this.getOnlineMode() || com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() ) // Paper - Handle via setting
++            if ( this.getOnlineMode() || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() ) // Paper - Handle via setting
              {
                  profile = this.console.getProfileCache().get(name).orElse(null);
              }
