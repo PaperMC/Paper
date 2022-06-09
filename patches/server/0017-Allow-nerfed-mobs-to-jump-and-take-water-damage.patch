@@ -4,32 +4,6 @@ Date: Tue, 1 Mar 2016 13:24:16 -0600
 Subject: [PATCH] Allow nerfed mobs to jump and take water damage
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 4b9122a3e094aa9e0a789f35fb6b0f9a7a53f772..d2ac0123812224181afae8fca96058ddc8cdff1e 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -132,4 +132,9 @@ public class PaperWorldConfig {
-         fishingMaxTicks = getInt("fishing-time-range.MaximumTicks", 600);
-         log("Fishing time ranges are between " + fishingMinTicks +" and " + fishingMaxTicks + " ticks");
-     }
-+
-+    public boolean nerfedMobsShouldJump;
-+    private void nerfedMobsShouldJump() {
-+        nerfedMobsShouldJump = getBoolean("spawner-nerfed-mobs-should-jump", false);
-+    }
- }
-diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 76dc492e9c2239a09de9ead5de50abb86a97f452..4b55e1a3b373f141f60f4ba392abeda37d2364e0 100644
---- a/src/main/java/net/minecraft/world/entity/Entity.java
-+++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1296,6 +1296,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-         return this.isInWater() || this.isInRain();
-     }
- 
-+    @Deprecated public final boolean isInWaterOrRainOrBubble() { return isInWaterRainOrBubble(); } // Paper - OBFHELPER
-     public boolean isInWaterRainOrBubble() {
-         return this.isInWater() || this.isInRain() || this.isInBubbleColumn();
-     }
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
 index decf753d088983ef6bbf32a32a6ee8d3cca3ee69..4f58fae1b3738e7e0507a46df275a258c94fcec4 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
@@ -62,14 +36,14 @@ index decf753d088983ef6bbf32a32a6ee8d3cca3ee69..4f58fae1b3738e7e0507a46df275a258
          this.sensing.tick();
          this.level.getProfiler().pop();
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
-index 01950951ea06e43bedeeede489a112e577617829..0e86eb2595cf9fbf24f789e0e9b4f05929d3164c 100644
+index 01950951ea06e43bedeeede489a112e577617829..7093c62be53fe99ed9880fc8ddaa07440fe4f715 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
 @@ -9,6 +9,7 @@ public class FloatGoal extends Goal {
  
      public FloatGoal(Mob mob) {
          this.mob = mob;
-+        if (mob.getCommandSenderWorld().paperConfig.nerfedMobsShouldJump) mob.goalFloat = this; // Paper
++        if (mob.getCommandSenderWorld().paperConfig().entities.behavior.spawnerNerfedMobsShouldJump) mob.goalFloat = this; // Paper
          this.setFlags(EnumSet.of(Goal.Flag.JUMP));
          mob.getNavigation().setCanFloat(true);
      }

@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 1 Mar 2022 14:12:17 -0800
+Subject: [PATCH] Fix World#locateNearestStructure
+
+1.18.2 switched to TagKeys to reference tags of objects, and this method
+  impl needs to be changed to reflect that
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 6911c2bee078532255faa791d34a6c4e621b055f..26d912a96e8e614865b03dbcc166d38bdd097faf 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2022,6 +2022,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.resources.managers.updateRegistryTags(this.registryAccess());
+             io.papermc.paper.registry.PaperRegistry.clearCaches(); // Paper
+             net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper
++            // Paper start - clear cache cause datapacks can add more configured structures
++            for (ServerLevel level : this.levels.values()) {
++                level.getWorld().structureCache.clear();
++            }
++            // Paper end
+             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
+             if (Thread.currentThread() != this.serverThread) return; // Paper
+             //this.getPlayerList().saveAll(); // Paper - we don't need to do this
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 0179e519c01897e373f6f9ed4af17dcf4469b762..2fff8ca8f0257e0768f49e64840742a705492619 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1881,7 +1881,16 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             if (optional.isEmpty()) {
+                 return null;
+             } else {
+-                Pair<BlockPos, Holder<Structure>> pair = this.getChunkSource().getGenerator().findNearestMapStructure(this, (HolderSet) optional.get(), pos, radius, skipReferencedStructures);
++                // Paper start
++                return this.findNearestMapFeature(optional.get(), pos, radius, skipReferencedStructures);
++            }
++        }
++    }
++    public @Nullable BlockPos findNearestMapFeature(HolderSet<Structure> holderSet, BlockPos pos, int radius, boolean skipReferencedStructures) {
++        {
++            {
++                Pair<BlockPos, Holder<Structure>> pair = this.getChunkSource().getGenerator().findNearestMapStructure(this, holderSet, pos, radius, skipReferencedStructures);
++                // Paper end
+ 
+                 return pair != null ? (BlockPos) pair.getFirst() : null;
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index d908eb6b1208cf69f2f1282ddf1c20dc04d092d1..9755342e62a4632297bf8ae7e9df5cdf89f24f31 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -2059,10 +2059,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     }
+ 
++    public final Map<StructureType, List<Holder.Reference<net.minecraft.world.level.levelgen.structure.Structure>>> structureCache = new java.util.HashMap<>(); // Paper
+     @Override
+     public Location locateNearestStructure(Location origin, StructureType structureType, int radius, boolean findUnexplored) {
+         BlockPos originPos = new BlockPos(origin.getX(), origin.getY(), origin.getZ());
+-        BlockPos nearest = this.getHandle().findNearestMapStructure(TagKey.create(Registry.STRUCTURE_REGISTRY, CraftNamespacedKey.toMinecraft(structureType.getKey())), originPos, radius, findUnexplored);
++        // Paper start - fix because you can't just create random TagKeys
++        if (!this.getHandle().serverLevelData.worldGenSettings().generateStructures()) { // from ServerLevel#findNearestMapStructure
++            return null;
++        }
++        final List<Holder.Reference<net.minecraft.world.level.levelgen.structure.Structure>> features = this.structureCache.computeIfAbsent(structureType, (type) -> {
++            final Registry<net.minecraft.world.level.levelgen.structure.StructureType<?>> structureFeatureRegistry = this.getHandle().registryAccess().registryOrThrow(Registry.STRUCTURE_TYPE_REGISTRY);
++            return this.getHandle().registryAccess().registryOrThrow(Registry.STRUCTURE_REGISTRY).holders().filter(holder -> {
++                return structureType.getKey().equals(CraftNamespacedKey.fromMinecraft(Objects.requireNonNull(structureFeatureRegistry.getKey(holder.value().type()))));
++            }).toList();
++        });
++        BlockPos nearest = this.getHandle().findNearestMapFeature(net.minecraft.core.HolderSet.direct(features), originPos, radius, findUnexplored);
++        // Paper end
+         return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
+     }
+ 

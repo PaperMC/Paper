@@ -6,24 +6,6 @@ Subject: [PATCH] Adventure
 Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 80a3d5890aab91e6a48d5734140187851106bde3..c1eb4201ecb0541c606ef0d05b828ae9c87c8a2c 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -185,4 +185,13 @@ public class PaperConfig {
-         config.addDefault(path, def);
-         return config.getString(path, config.getString(path));
-     }
-+
-+    public static boolean useDisplayNameInQuit = false;
-+    private static void useDisplayNameInQuit() {
-+        if (version < 21) {
-+            boolean oldValue = getBoolean("use-display-name-in-quit-message", useDisplayNameInQuit);
-+            set("settings.use-display-name-in-quit-message", oldValue);
-+        }
-+        useDisplayNameInQuit = getBoolean("settings.use-display-name-in-quit-message", useDisplayNameInQuit);
-+    }
- }
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureComponent.java b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..07cd02c6f9df00844b808218be2afd793c24b69a
@@ -1435,7 +1417,7 @@ index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 2cbe0230173ad391fe70b0a31d8999927461b5e6..f5f2a60b0c20d64a7523a4339b14f40e15c62633 100644
+index 2cbe0230173ad391fe70b0a31d8999927461b5e6..56e1886b4cf63fd1f14cd8420ccdba1271cf2d6c 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -172,6 +172,8 @@ import org.apache.commons.lang3.StringUtils;
@@ -1473,7 +1455,7 @@ index 2cbe0230173ad391fe70b0a31d8999927461b5e6..f5f2a60b0c20d64a7523a4339b14f40e
              return;
          }
 -        String leaveMessage = ChatFormatting.YELLOW + this.player.getScoreboardName() + " left the game.";
-+        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? this.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(this.player.getScoreboardName())); // Paper - Adventure
++        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? this.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(this.player.getScoreboardName())); // Paper - Adventure
  
 -        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), s, leaveMessage);
 +        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage); // Paper - Adventure
@@ -1599,7 +1581,7 @@ index 8670f3fab7ec2a80d69e5dd3f945fc15aaa1a36f..5d368e34c90fc5191d9ed2352f7aa44c
  
                  @Override
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..821b9c0ba003163195a461dd0bce1fa9ffd0a146 100644
+index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054efb108b8 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -8,6 +8,7 @@ import com.mojang.logging.LogUtils;
@@ -1666,7 +1648,7 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..821b9c0ba003163195a461dd0bce1fa9
          }
  
 -        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), entityplayer.kickLeaveMessage != null ? entityplayer.kickLeaveMessage : "\u00A7e" + entityplayer.getScoreboardName() + " left the game");
-+        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
++        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
          this.cserver.getPluginManager().callEvent(playerQuitEvent);
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
@@ -1832,7 +1814,7 @@ index 595b56b2ab9a813ba71399d306117294fa90dc65..3527d40102d512d0e276edc969ea3c18
                  }
                  collection = icons;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f20de26592 100644
+index 036aa7daa097c2ba0f08a1fcc66c2962883ca72f..f9ddb9835cad1b76eecd639dff8fa29472954421 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -581,8 +581,10 @@ public final class CraftServer implements Server {
@@ -1846,7 +1828,7 @@ index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f2
      }
  
      @Override
-@@ -1404,7 +1406,15 @@ public final class CraftServer implements Server {
+@@ -1403,7 +1405,15 @@ public final class CraftServer implements Server {
          return this.configuration.getInt("settings.spawn-radius", -1);
      }
  
@@ -1862,7 +1844,7 @@ index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f2
      public String getShutdownMessage() {
          return this.configuration.getString("settings.shutdown-message");
      }
-@@ -1562,7 +1572,20 @@ public final class CraftServer implements Server {
+@@ -1561,7 +1571,20 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -1883,7 +1865,7 @@ index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f2
          Set<CommandSender> recipients = new HashSet<>();
          for (Permissible permissible : this.getPluginManager().getPermissionSubscriptions(permission)) {
              if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-@@ -1570,14 +1593,14 @@ public final class CraftServer implements Server {
+@@ -1569,14 +1592,14 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -1900,7 +1882,7 @@ index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f2
  
          for (CommandSender recipient : recipients) {
              recipient.sendMessage(message);
-@@ -1828,6 +1851,14 @@ public final class CraftServer implements Server {
+@@ -1827,6 +1850,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -1915,7 +1897,7 @@ index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f2
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
-@@ -1840,13 +1871,28 @@ public final class CraftServer implements Server {
+@@ -1839,13 +1870,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -1944,7 +1926,7 @@ index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f2
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
-@@ -1906,6 +1952,12 @@ public final class CraftServer implements Server {
+@@ -1905,6 +1951,12 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -1957,10 +1939,10 @@ index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f2
      @Override
      public String getMotd() {
          return this.console.getMotd();
-@@ -2353,5 +2405,15 @@ public final class CraftServer implements Server {
-             return null;
-         }
+@@ -2322,4 +2374,15 @@ public final class CraftServer implements Server {
+         return this.spigot;
      }
+     // Spigot end
 +
 +    // Paper start
 +    private Iterable<? extends net.kyori.adventure.audience.Audience> adventure$audiences;
@@ -1971,7 +1953,7 @@ index daf5dc59a1883570569798630c4991e676e34c1c..d3d8935bafb2e0773c96c5807ebd23f2
 +        }
 +        return this.adventure$audiences;
 +    }
-     // Paper end
++    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 40421cc8ef25f1bef32a0a5d2f0f25165efe230a..1357bc97801f892e59fc8e89c3cc2d697894ccfb 100644

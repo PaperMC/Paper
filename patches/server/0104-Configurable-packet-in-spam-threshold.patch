@@ -4,33 +4,15 @@ Date: Sun, 11 Sep 2016 14:30:57 -0500
 Subject: [PATCH] Configurable packet in spam threshold
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 01b1eb60894a79bd10a035404cc796ce0d3725c8..77e1a4b9b0734734bbcf03b6adc1cf0552063d1f 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -264,4 +264,13 @@ public class PaperConfig {
-     public static boolean isProxyOnlineMode() {
-         return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode);
-     }
-+
-+    public static int packetInSpamThreshold = 300;
-+    private static void packetInSpamThreshold() {
-+        if (version < 11) {
-+            int oldValue = getInt("settings.play-in-use-item-spam-threshold", 300);
-+            set("settings.incoming-packet-spam-threshold", oldValue);
-+        }
-+        packetInSpamThreshold = getInt("settings.incoming-packet-spam-threshold", 300);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 1b92ee3988c1bdcbc751f32bd480b2ad2f588139..f3146f65f8e3ac465763093e7f5b53274d4d3356 100644
+index e7d9af82a11fb5c1250c76d32f21cc720c002da2..e4f3b2516372cb21e7b53f1df9ee484476179035 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1534,13 +1534,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      // Spigot start - limit place/interactions
      private int limitedPackets;
      private long lastLimitedPacket = -1;
-+    private static final int THRESHOLD = com.destroystokyo.paper.PaperConfig.packetInSpamThreshold; // Paper - Configurable threshold
++    private static final int THRESHOLD = io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.incomingPacketThreshold; // Paper - Configurable threshold
  
      private boolean checkLimit(long timestamp) {
 -        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < 30 && this.limitedPackets++ >= 4) {

@@ -4,25 +4,6 @@ Date: Sun, 22 May 2016 20:20:55 -0500
 Subject: [PATCH] Optional TNT doesn't move in water
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index a491af30f70f41e5f7b198ae4d40acfb6eec9b38..45712eb3967d61541580db57e1e9f84e6f5b9762 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -347,4 +347,14 @@ public class PaperWorldConfig {
-             );
-         }
-     }
-+
-+    public boolean preventTntFromMovingInWater;
-+    private void preventTntFromMovingInWater() {
-+        if (PaperConfig.version < 13) {
-+            boolean oldVal = getBoolean("enable-old-tnt-cannon-behaviors", false);
-+            set("prevent-tnt-from-moving-in-water", oldVal);
-+        }
-+        preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
-+        log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
 index 61efa24cb1b24216ae80dcd4e68abc39a9ced1bb..232341fa41b1962d329cc17f3146e41c51d22164 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
@@ -37,7 +18,7 @@ index 61efa24cb1b24216ae80dcd4e68abc39a9ced1bb..232341fa41b1962d329cc17f3146e41c
      public ServerEntity(ServerLevel worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<ServerPlayerConnection> trackedPlayers) {
          this.trackedPlayers = trackedPlayers;
 diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-index dfcca1fac06de7a4be9be3c238a738a0599fcd24..445d9d1ec6f02f32d819d8555ceddb8e1ada7acd 100644
+index 10f8b5ff56e4c1d8300835e045abdce719a99343..8101f358975b35b5a2dafbade3d14a910e408fa2 100644
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 @@ -97,6 +97,27 @@ public class PrimedTnt extends Entity {
@@ -45,7 +26,7 @@ index dfcca1fac06de7a4be9be3c238a738a0599fcd24..445d9d1ec6f02f32d819d8555ceddb8e
          }
  
 +        // Paper start - Optional prevent TNT from moving in water
-+        if (!this.isRemoved() && this.wasTouchingWater && this.level.paperConfig.preventTntFromMovingInWater) {
++        if (!this.isRemoved() && this.wasTouchingWater && this.level.paperConfig().fixes.preventTntFromMovingInWater) {
 +            /*
 +             * Author: Jedediah Smith <jedediah@silencegreys.com>
 +             */
@@ -76,7 +57,7 @@ index dfcca1fac06de7a4be9be3c238a738a0599fcd24..445d9d1ec6f02f32d819d8555ceddb8e
 +    // Paper start - Optional prevent TNT from moving in water
 +    @Override
 +    public boolean isPushedByFluid() {
-+        return !level.paperConfig.preventTntFromMovingInWater && super.isPushedByFluid();
++        return !level.paperConfig().fixes.preventTntFromMovingInWater && super.isPushedByFluid();
 +    }
 +    // Paper end
  }

@@ -6,10 +6,10 @@ Subject: [PATCH] Paper command
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0c7738412ce5c9b8c66e3f1c1e13fcd2a2154195
+index 0000000000000000000000000000000000000000..e75134a6aa92c86aa86430c7603e111280077d16
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,289 @@
+@@ -0,0 +1,286 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Functions;
@@ -83,7 +83,7 @@ index 0000000000000000000000000000000000000000..0c7738412ce5c9b8c66e3f1c1e13fcd2
 +                if (args.length == 2)
 +                    return getListMatchingLast(sender, args, "help", "list");
 +                if (args.length == 3)
-+                    return getListMatchingLast(sender, args, EntityType.getEntityNameList().stream().map(ResourceLocation::toString).sorted().toArray(String[]::new));
++                    return getListMatchingLast(sender, args, Registry.ENTITY_TYPE.keySet().stream().map(ResourceLocation::toString).sorted().toArray(String[]::new));
 +                break;
 +        }
 +        return Collections.emptyList();
@@ -188,7 +188,7 @@ index 0000000000000000000000000000000000000000..0c7738412ce5c9b8c66e3f1c1e13fcd2
 +                    filter = args[2];
 +                }
 +                final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
-+                Set<ResourceLocation> names = EntityType.getEntityNameList().stream()
++                Set<ResourceLocation> names = Registry.ENTITY_TYPE.keySet().stream()
 +                        .filter(n -> n.toString().matches(cleanfilter))
 +                        .collect(Collectors.toSet());
 +
@@ -289,13 +289,68 @@ index 0000000000000000000000000000000000000000..0c7738412ce5c9b8c66e3f1c1e13fcd2
 +        Command.broadcastCommandMessage(sender, text("Please note that this command is not supported and may cause issues.", RED));
 +        Command.broadcastCommandMessage(sender, text("If you encounter any issues please use the /stop command to restart your server.", RED));
 +
-+        MinecraftServer console = MinecraftServer.getServer();
-+        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
-+        for (ServerLevel world : console.getAllLevels()) {
-+            world.paperConfig.init();
-+        }
-+        console.server.reloadCount++;
++        MinecraftServer server = ((CraftServer) sender.getServer()).getServer();
++        server.paperConfigurations.reloadConfigs(server);
++        server.server.reloadCount++;
 +
 +        Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+index 6c19825de43b82ba3fe6e44123e7d24748698614..f06f130b2fa703e105f9d49bc755e8374d023f2e 100644
+--- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
++++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.configuration;
+ 
++import com.destroystokyo.paper.PaperCommand;
+ import com.google.common.collect.Table;
+ import com.mojang.logging.LogUtils;
+ import io.leangen.geantyref.TypeToken;
+@@ -283,6 +284,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+ 
+     private static final Map<String, Command> COMMANDS = new HashMap<>();
+     static {
++        COMMANDS.put("paper", new PaperCommand("paper"));
+     }
+ 
+     public static void registerCommands(final MinecraftServer server) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index f9ddb9835cad1b76eecd639dff8fa29472954421..268715e19a6fa7d26510d9d0a8f19b158835b279 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2376,6 +2376,34 @@ public final class CraftServer implements Server {
+     // Spigot end
+ 
+     // Paper start
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    public static java.nio.file.Path dumpHeap(java.nio.file.Path dir, String name) {
++        try {
++            java.nio.file.Files.createDirectories(dir);
++
++            javax.management.MBeanServer server = java.lang.management.ManagementFactory.getPlatformMBeanServer();
++            java.nio.file.Path file;
++
++            try {
++                Class clazz = Class.forName("openj9.lang.management.OpenJ9DiagnosticsMXBean");
++                Object openj9Mbean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "openj9.lang.management:type=OpenJ9Diagnostics", clazz);
++                java.lang.reflect.Method m = clazz.getMethod("triggerDumpToFile", String.class, String.class);
++                file = dir.resolve(name + ".phd");
++                m.invoke(openj9Mbean, "heap", file.toString());
++            } catch (ClassNotFoundException e) {
++                Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
++                Object hotspotMBean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", clazz);
++                java.lang.reflect.Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
++                file = dir.resolve(name + ".hprof");
++                m.invoke(hotspotMBean, file.toString(), true);
++            }
++
++            return file;
++        } catch (Throwable t) {
++            Bukkit.getLogger().log(Level.SEVERE, "Could not write heap", t);
++            return null;
++        }
++    }
+     private Iterable<? extends net.kyori.adventure.audience.Audience> adventure$audiences;
+     @Override
+     public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {

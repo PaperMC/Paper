@@ -10,23 +10,8 @@ I suspect Mojang may switch to this behavior before full release.
 
 To be converted into a Paper-API event at some point in the future?
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ee8ce0e5bdb0acb7d6ef3439a388e108ea1807de..aa8a02c9fab8938e8064a60f1faf5421aab3892c 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -397,4 +397,10 @@ public class PaperWorldConfig {
-         maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", this.maxCollisionsPerEntity, false) );
-         log( "Max Entity Collisions: " + maxCollisionsPerEntity );
-     }
-+
-+    public boolean parrotsHangOnBetter;
-+    private void parrotsHangOnBetter() {
-+        parrotsHangOnBetter = getBoolean("parrots-are-unaffected-by-player-movement", false);
-+        log("Parrots are unaffected by player movement: " + parrotsHangOnBetter);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 955985193a1713a6a938c6b8879a85fd329a89ab..b50ca694f827b60ab6ae4b91772774b6fef55734 100644
+index 3f1bda6c17fca41150bfaab2cd5a4e8849bd439d..95b0c01d1eaf58ba8c93c896891dcfb1075d57da 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2258,6 +2258,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -35,7 +20,7 @@ index 955985193a1713a6a938c6b8879a85fd329a89ab..b50ca694f827b60ab6ae4b91772774b6
                  this.player.setShiftKeyDown(true);
 +
 +                // Paper start - Hang on!
-+                if (this.player.level.paperConfig.parrotsHangOnBetter) {
++                if (this.player.level.paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) {
 +                    this.player.removeEntitiesOnShoulder();
 +                }
 +                // Paper end
@@ -44,7 +29,7 @@ index 955985193a1713a6a938c6b8879a85fd329a89ab..b50ca694f827b60ab6ae4b91772774b6
              case RELEASE_SHIFT_KEY:
                  this.player.setShiftKeyDown(false);
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index fdda98cb38ec96d0189931c41257cc01966373d5..0df33131bae2b6651eff4b5b34b3714625562b69 100644
+index fdda98cb38ec96d0189931c41257cc01966373d5..9aa134e56d661d033bb7229e6ab662534bf9cba9 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -587,7 +587,7 @@ public abstract class Player extends LivingEntity {
@@ -52,7 +37,7 @@ index fdda98cb38ec96d0189931c41257cc01966373d5..0df33131bae2b6651eff4b5b34b37146
          this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
          if (!this.level.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping() || this.isInPowderSnow) {
 -            this.removeEntitiesOnShoulder();
-+            if (!this.level.paperConfig.parrotsHangOnBetter) this.removeEntitiesOnShoulder(); // Paper - Hang on!
++            if (!this.level.paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) this.removeEntitiesOnShoulder(); // Paper - Hang on!
          }
  
      }

@@ -7,13 +7,13 @@ Establishes base extension of profile systems for future edits too
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2041376dfd5520776f7e32c1828973f2b719d82a
+index 0000000000000000000000000000000000000000..d945ea3484d0350096046d43112490b94e3b9bcd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 @@ -0,0 +1,399 @@
 +package com.destroystokyo.paper.profile;
 +
-+import com.destroystokyo.paper.PaperConfig;
++import io.papermc.paper.configuration.GlobalConfiguration;
 +import com.google.common.base.Charsets;
 +import com.google.common.collect.Iterables;
 +import com.mojang.authlib.GameProfile;
@@ -190,7 +190,7 @@ index 0000000000000000000000000000000000000000..2041376dfd5520776f7e32c1828973f2
 +
 +    @Override
 +    public boolean completeFromCache() {
-+        return completeFromCache(false, PaperConfig.isProxyOnlineMode());
++        return completeFromCache(false, GlobalConfiguration.get().proxies.isProxyOnlineMode());
 +    }
 +
 +    public boolean completeFromCache(boolean onlineMode) {
@@ -233,7 +233,7 @@ index 0000000000000000000000000000000000000000..2041376dfd5520776f7e32c1828973f2
 +    }
 +
 +    public boolean complete(boolean textures) {
-+        return complete(textures, PaperConfig.isProxyOnlineMode());
++        return complete(textures, GlobalConfiguration.get().proxies.isProxyOnlineMode());
 +    }
 +    public boolean complete(boolean textures, boolean onlineMode) {
 +        MinecraftServer server = MinecraftServer.getServer();
@@ -586,20 +586,20 @@ index 9f292deee1b793d52b5774304318e940128d1e26..0cf818fceddd76e7704fdc6625456787
       * Calculates distance between 2 entities
       * @param e1
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 97dc1d188a57b9f499c9cdc2ec54535af380e5cb..455a8d824540c66cf50b6440000b807bc1c71025 100644
+index a48a12a31a3d09a9373b688dcc093035f8f8a300..97b29bcb20e199c2d02457f8025e67e2d4a925fc 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -139,7 +139,7 @@ public class Main {
+@@ -138,7 +138,7 @@ public class Main {
              }
  
              File file = (File) optionset.valueOf("universe"); // CraftBukkit
--            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file);
-+            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file); // Paper
+-            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper
++            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper
              // CraftBukkit start
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 6087fff889458dc09d5a3eb52e7d4b0a77bde809..ddd78b2836c1f4a6b4fcd532153f5d3e17f91ea8 100644
+index 40ddeaea58263820c32a4e901a2e907088eb7b6e..ce3ed1572641599055edf654f20b2a5ecac952dc 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 @@ -135,6 +135,17 @@ public class GameProfileCache {
@@ -621,7 +621,7 @@ index 6087fff889458dc09d5a3eb52e7d4b0a77bde809..ddd78b2836c1f4a6b4fcd532153f5d3e
          String s1 = name.toLowerCase(Locale.ROOT);
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 9c522e7aa2f374543090cff7a49d06a7c15e450d..fbe26f8a592ed0a3b970b6f02126b6e3e454d8af 100644
+index 19e5fade2c694664930e31c6b0acf82598db315b..eed64dedb3430bd01c53c230c280a7c475fdbfd5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -239,6 +239,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
@@ -642,9 +642,9 @@ index 9c522e7aa2f374543090cff7a49d06a7c15e450d..fbe26f8a592ed0a3b970b6f02126b6e3
          CraftItemFactory.instance();
      }
  
-@@ -2563,5 +2567,37 @@ public final class CraftServer implements Server {
+@@ -2560,5 +2564,37 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
-         return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
+         return io.papermc.paper.configuration.GlobalConfiguration.get().commands.suggestPlayerNamesWhenNullTabCompletions;
      }
 +
 +    @Override

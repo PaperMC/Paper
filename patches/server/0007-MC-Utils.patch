@@ -5016,18 +5016,18 @@ index 0000000000000000000000000000000000000000..9f292deee1b793d52b5774304318e940
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 46fb83911e353f3682a250e62c4ecd7aceabaff8..c763b4d9cc16f8c3ced91ce8656bd238205dedc0 100644
+index 415f2191c10c39f8a48e6c9a2d74426ac4bdfb82..1ad7797dbef61f8e8011ae6db3089939a279071c 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -279,6 +279,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     private static final int SAMPLE_INTERVAL = 100;
+@@ -280,6 +280,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public final double[] recentTps = new double[ 3 ];
      // Spigot end
+     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations;
 +    public static long currentTickLong = 0L; // Paper
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -918,6 +919,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -919,6 +920,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              MinecraftServer.LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception1);
          }
          // Spigot start
@@ -5037,7 +5037,7 @@ index 46fb83911e353f3682a250e62c4ecd7aceabaff8..c763b4d9cc16f8c3ced91ce8656bd238
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              MinecraftServer.LOGGER.info("Saving usercache.json");
              this.getProfileCache().save();
-@@ -984,6 +988,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -985,6 +989,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                      this.lastOverloadWarning = this.nextTickTime;
                  }
  
@@ -5045,7 +5045,7 @@ index 46fb83911e353f3682a250e62c4ecd7aceabaff8..c763b4d9cc16f8c3ced91ce8656bd238
                  if ( tickCount++ % MinecraftServer.SAMPLE_INTERVAL == 0 )
                  {
                      double currentTps = 1E3 / ( curTime - tickSection ) * MinecraftServer.SAMPLE_INTERVAL;
-@@ -1222,7 +1227,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1223,7 +1228,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              MinecraftServer.LOGGER.debug("Autosave finished");
              SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
          }
@@ -5054,7 +5054,7 @@ index 46fb83911e353f3682a250e62c4ecd7aceabaff8..c763b4d9cc16f8c3ced91ce8656bd238
          this.profiler.push("tallying");
          long l = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
  
-@@ -1284,6 +1289,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1285,6 +1290,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              try {
                  worldserver.timings.doTick.startTiming(); // Spigot
                  worldserver.tick(shouldKeepTicking);
@@ -5504,7 +5504,7 @@ index 6c98676827ceb6999f340fa2b06a0b3e1cb4cae2..f08089b8672454acf8c2309e850466b3
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index d0b3fdec88ca7e8b1a57b742c1c9b785750123e8..b0c46312dfb00c13421bb643dbf246610aff897b 100644
+index ce88976db29b9e9524dbe45b16721ef90afb692b..186a8f5895fedbaf27a7949d9bdbb1a9f2e36fbf 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -50,6 +50,7 @@ import net.minecraft.world.level.storage.LevelStorageSource;
@@ -5900,8 +5900,21 @@ index d0b3fdec88ca7e8b1a57b742c1c9b785750123e8..b0c46312dfb00c13421bb643dbf24661
      @Nullable
      @Override
      public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
+@@ -327,6 +699,12 @@ public class ServerChunkCache extends ChunkSource {
+         }
+     }
+ 
++    // Paper start
++    public boolean isPositionTicking(Entity entity) {
++        return this.isPositionTicking(ChunkPos.asLong(net.minecraft.util.Mth.floor(entity.getX()) >> 4, net.minecraft.util.Mth.floor(entity.getZ()) >> 4));
++    }
++    // Paper end
++
+     public boolean isPositionTicking(long pos) {
+         ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 44f6e5cfdceb30934c2aafa85dc5492677d177d7..501fd02fedf1a47da28d07fd04b63f89368723ce 100644
+index a0140ea91f51e52174cff43738a9a159c3d24536..54bff89aed25ba49bf9fbf01c59efa61e021fd03 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -166,6 +166,7 @@ import org.bukkit.event.weather.LightningStrikeEvent;
@@ -6301,7 +6314,7 @@ index 3c707d6674b2594b09503b959a31c1f4ad3981e6..db61b6b0158a9bcc0e1d735e34fe3671
      public BlockState getBlockState(BlockPos pos) {
          return Blocks.AIR.defaultBlockState();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 5576da91821926cdd9c5ef09534deb843986d202..914e42e983d56d9c85b1583f57afab699054f4d6 100644
+index 45191c9d8dfe0c5e94d08f2c3b3fd20fe9903e18..c351e38cc12b5c58a2f85b707a7d04b59a1ef198 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -85,6 +85,7 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -6312,7 +6325,7 @@ index 5576da91821926cdd9c5ef09534deb843986d202..914e42e983d56d9c85b1583f57afab69
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
  import org.bukkit.craftbukkit.util.CraftSpawnCategory;
  import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-@@ -280,18 +281,51 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -284,18 +285,51 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return y < -20000000 || y >= 20000000;
      }
  
@@ -6368,7 +6381,7 @@ index 5576da91821926cdd9c5ef09534deb843986d202..914e42e983d56d9c85b1583f57afab69
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -302,7 +336,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -306,7 +340,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      }
  
      @Override
@@ -6377,7 +6390,7 @@ index 5576da91821926cdd9c5ef09534deb843986d202..914e42e983d56d9c85b1583f57afab69
          return this.setBlock(pos, state, flags, 512);
      }
  
-@@ -546,7 +580,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -550,7 +584,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          if (this.isOutsideBuildHeight(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
@@ -7072,7 +7085,7 @@ index d40c0d8be1b0153d62021b8bcb6e8b37fd0acb4e..e38e57b1f9ef27020de35d7ddcb36a66
      public void clear() {
          // Create new array to reset memory usage to initial capacity
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index a96cb7a5f7c94cd9a46b31cf8ec90b544221557b..43aa6b0129892b8ab8ec25c16a131541c6607487 100644
+index 8a63098d821b7aacec8529811865e0743d78c021..3dacdbb28db72ecd8ddf82f75d6d19bb386f8df0 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -118,7 +118,11 @@ public class SpigotConfig

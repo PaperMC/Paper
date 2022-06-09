@@ -5,29 +5,8 @@ Subject: [PATCH] Allow specifying a custom "authentication servers down" kick
  message
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 2a4aacd2461401a109d749eee262813367fe4a70..a8de81b1a153525b2d0d6b01802b7733947527a2 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -1,5 +1,6 @@
- package com.destroystokyo.paper;
- 
-+import com.google.common.base.Strings;
- import com.google.common.base.Throwables;
- 
- import java.io.File;
-@@ -285,4 +286,9 @@ public class PaperConfig {
-     private static void suggestPlayersWhenNull() {
-         suggestPlayersWhenNullTabCompletions = getBoolean("settings.suggest-player-names-when-null-tab-completions", suggestPlayersWhenNullTabCompletions);
-     }
-+
-+    public static String authenticationServersDownKickMessage = ""; // empty = use translatable message
-+    private static void authenticationServersDownKickMessage() {
-+        authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index dc932515bada7f84a386827f3b7e1e8f69bd7159..6d015b226ea32f9d658ca9674b9500494c837949 100644
+index dc932515bada7f84a386827f3b7e1e8f69bd7159..9fe3ec7e6bd194b825a1b29bcff9fcd5e21f22ad 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -358,6 +358,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
@@ -35,8 +14,8 @@ index dc932515bada7f84a386827f3b7e1e8f69bd7159..6d015b226ea32f9d658ca9674b950049
                          ServerLoginPacketListenerImpl.this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
                      } else {
 +                        // Paper start
-+                        if (com.destroystokyo.paper.PaperConfig.authenticationServersDownKickMessage != null) {
-+                            ServerLoginPacketListenerImpl.this.disconnect(Component.literal(com.destroystokyo.paper.PaperConfig.authenticationServersDownKickMessage));
++                        if (!io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.authenticationServersDown.isEmpty()) {
++                            ServerLoginPacketListenerImpl.this.disconnect(Component.literal(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.authenticationServersDown));
 +                        } else // Paper end
                          ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.authservers_down"));
                          ServerLoginPacketListenerImpl.LOGGER.error("Couldn't verify username because servers are unavailable");
