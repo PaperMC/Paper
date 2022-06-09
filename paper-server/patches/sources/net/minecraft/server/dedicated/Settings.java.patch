@@ -43,19 +43,20 @@
              Properties properties;
              Properties properties1;
  
-@@ -97,6 +117,11 @@
+@@ -97,6 +117,12 @@
  
      public void store(Path path) {
          try {
 +            // CraftBukkit start - Don't attempt writing to file if it's read only
 +            if (path.toFile().exists() && !path.toFile().canWrite()) {
++                Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper - log message file is read-only
 +                return;
 +            }
 +            // CraftBukkit end
              BufferedWriter bufferedwriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
  
              try {
-@@ -125,7 +150,7 @@
+@@ -125,7 +151,7 @@
      private static <V extends Number> Function<String, V> wrapNumberDeserializer(Function<String, V> parser) {
          return (s) -> {
              try {
@@ -64,7 +65,7 @@
              } catch (NumberFormatException numberformatexception) {
                  return null;
              }
-@@ -144,7 +169,7 @@
+@@ -144,7 +170,7 @@
  
      @Nullable
      public String getStringRaw(String key) {
@@ -73,7 +74,7 @@
      }
  
      @Nullable
-@@ -160,10 +185,20 @@
+@@ -160,10 +186,20 @@
      }
  
      protected <V> V get(String key, Function<String, V> parser, Function<V, String> stringifier, V fallback) {
@@ -97,7 +98,7 @@
          return v1;
      }
  
-@@ -172,7 +207,7 @@
+@@ -172,7 +208,7 @@
          V v1 = MoreObjects.firstNonNull(s1 != null ? parser.apply(s1) : null, fallback);
  
          this.properties.put(key, stringifier.apply(v1));
@@ -106,7 +107,7 @@
      }
  
      protected <V> V get(String key, Function<String, V> parser, UnaryOperator<V> parsedTransformer, Function<V, String> stringifier, V fallback) {
-@@ -236,7 +271,7 @@
+@@ -236,7 +272,7 @@
          return properties;
      }
  
@@ -115,7 +116,7 @@
  
      public class MutableValue<V> implements Supplier<V> {
  
-@@ -244,7 +279,7 @@
+@@ -244,7 +280,7 @@
          private final V value;
          private final Function<V, String> serializer;
  
@@ -124,7 +125,7 @@
              this.key = s;
              this.value = object;
              this.serializer = function;
-@@ -258,7 +293,7 @@
+@@ -258,7 +294,7 @@
              Properties properties = Settings.this.cloneProperties();
  
              properties.put(this.key, this.serializer.apply(value));

@@ -22,6 +22,7 @@ dependencies {
     implementation("jline:jline:2.12.1")
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") // Paper - remove exclusion
     implementation("org.ow2.asm:asm-commons:9.7.1")
+    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
     implementation("commons-lang:commons-lang:2.6")
     runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
     runtimeOnly("com.mysql:mysql-connector-j:9.1.0")

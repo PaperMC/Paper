@@ -142,6 +142,19 @@ public class Main {
                         .defaultsTo(new File("spigot.yml"))
                         .describedAs("Yml file");
                 // Spigot End
+
+                // Paper start
+                acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")
+                    .withRequiredArg()
+                    .ofType(File.class)
+                    .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
+                    .describedAs("Config directory");
+                acceptsAll(asList("paper", "paper-settings"), "File for Paper settings")
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File("paper.yml"))
+                        .describedAs("Yml file");
+                // Paper end
             }
         };
 

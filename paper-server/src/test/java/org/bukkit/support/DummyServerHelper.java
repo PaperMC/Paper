@@ -91,6 +91,7 @@ public final class DummyServerHelper {
         when(instance.getPluginManager()).thenReturn(pluginManager);
         // Paper end - testing additions
 
+        io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper - configuration files - setup global configuration test base
         return instance;
     }
 }

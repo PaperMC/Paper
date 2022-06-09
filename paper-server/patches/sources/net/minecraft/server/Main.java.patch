@@ -71,7 +71,7 @@
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-@@ -112,28 +125,52 @@
+@@ -112,28 +125,56 @@
              Bootstrap.validate();
              Util.startTimerHackThread();
              Path path1 = Paths.get("server.properties");
@@ -82,6 +82,10 @@
              RegionFileVersion.configure(dedicatedserversettings.getProperties().regionFileComression);
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
++            // Paper start - load config files early for access below if needed
++            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("bukkit-settings"));
++            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("spigot-settings"));
++            // Paper end - load config files early for access below if needed
  
 -            if (optionset.has(optionspec1)) {
 +            if (optionset.has("initSettings")) { // CraftBukkit
@@ -118,9 +122,10 @@
              }
  
 -            File file = new File((String) optionset.valueOf(optionspec9));
-+            File file = (File) optionset.valueOf("universe"); // CraftBukkit
-             Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file);
+-            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file);
 -            String s = (String) Optional.ofNullable((String) optionset.valueOf(optionspec10)).orElse(dedicatedserversettings.getProperties().levelName);
++            File file = (File) optionset.valueOf("universe"); // CraftBukkit
++            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper - pass OptionSet to load paper config files
 +            // CraftBukkit start
 +            String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
@@ -130,7 +135,7 @@
              Dynamic dynamic;
  
              if (convertable_conversionsession.hasWorldData()) {
-@@ -174,13 +211,31 @@
+@@ -174,13 +215,31 @@
              }
  
              Dynamic<?> dynamic1 = dynamic;
@@ -163,7 +168,7 @@
  
              WorldStem worldstem;
  
-@@ -189,6 +244,7 @@
+@@ -189,6 +248,7 @@
  
                  worldstem = (WorldStem) Util.blockUntilDone((executor) -> {
                      return WorldLoader.load(worldloader_c, (worldloader_a) -> {
@@ -171,7 +176,7 @@
                          Registry<LevelStem> iregistry = worldloader_a.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM);
  
                          if (dynamic1 != null) {
-@@ -201,7 +257,7 @@
+@@ -201,7 +261,7 @@
                              WorldOptions worldoptions;
                              WorldDimensions worlddimensions;
  
@@ -180,7 +185,7 @@
                                  worldsettings = MinecraftServer.DEMO_SETTINGS;
                                  worldoptions = WorldOptions.DEMO_OPTIONS;
                                  worlddimensions = WorldPresets.createNormalWorldDimensions(worldloader_a.datapackWorldgen());
-@@ -209,7 +265,7 @@
+@@ -209,7 +269,7 @@
                                  DedicatedServerProperties dedicatedserverproperties = dedicatedserversettings.getProperties();
  
                                  worldsettings = new LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(worldloader_a.dataConfiguration().enabledFeatures()), worldloader_a.dataConfiguration());
@@ -189,7 +194,7 @@
                                  worlddimensions = dedicatedserverproperties.createDimensions(worldloader_a.datapackWorldgen());
                              }
  
-@@ -225,32 +281,44 @@
+@@ -225,32 +285,44 @@
                  return;
              }
  
@@ -239,7 +244,7 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
                      dedicatedserver.halt(true);
-@@ -259,6 +327,7 @@
+@@ -259,6 +331,7 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -247,7 +252,7 @@
          } catch (Exception exception1) {
              Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
          }
-@@ -295,7 +364,7 @@
+@@ -295,7 +368,7 @@
      }
  
      public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, RegistryAccess dynamicRegistryManager, boolean recreateRegionFiles) {
