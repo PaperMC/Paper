@@ -815,32 +815,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final String GLOBAL_HEADER = """
 +            This is the global configuration file for Paper.
-+            As you can see, there's tons to configure. Some options may impact gameplay, so use
++            As you can see, there's a lot to configure. Some options may impact gameplay, so use
 +            with caution, and make sure you know what each option does before configuring.
 +
 +            If you need help with the configuration or have any questions related to Paper,
-+            join us in our Discord or IRC channel.
++            join us in our Discord or check the docs page.
 +
 +            The world configuration options have been moved to their own files.
 +
 +            Discord: https://discord.gg/papermc
-+            IRC: #paper @ irc.esper.net ( https://webchat.esper.net/?channels=paper )
 +            Website: https://papermc.io/
 +            Docs: https://docs.papermc.io/""";
 +
 +    private static final String WORLD_DEFAULTS_HEADER = """
 +            This is the world defaults configuration file for Paper.
-+            As you can see, there's tons to configure. Some options may impact gameplay, so use
++            As you can see, there's a lot to configure. Some options may impact gameplay, so use
 +            with caution, and make sure you know what each option does before configuring.
 +
 +            If you need help with the configuration or have any questions related to Paper,
-+            join us in our Discord or IRC channel.
++            join us in our Discord or check the docs page.
 +
 +            Configuration options here apply to all worlds, unless you specify overrides inside
 +            the world-specific config file inside each world folder.
 +
 +            Discord: https://discord.gg/papermc
-+            IRC: #paper @ irc.esper.net ( https://webchat.esper.net/?channels=paper )
 +            Website: https://papermc.io/
 +            Docs: https://docs.papermc.io/""";
 +
@@ -1083,6 +1081,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray;
 +import com.google.common.collect.HashBasedTable;
 +import com.google.common.collect.Table;
++import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
 +import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
@@ -1110,6 +1109,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.item.Items;
 +import net.minecraft.world.level.NaturalSpawner;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
++import org.slf4j.Logger;
 +import org.spigotmc.SpigotWorldConfig;
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 +import org.spongepowered.configurate.objectmapping.meta.Required;
@@ -1123,6 +1123,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class WorldConfiguration extends ConfigurationPart {
++    private static final Logger LOGGER = LogUtils.getLogger();
 +    static final int CURRENT_VERSION = 28;
 +
 +    private transient final SpigotWorldConfig spigotConfig;
@@ -1500,10 +1501,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public FeatureSeeds featureSeeds;
 +
-+    public class FeatureSeeds extends ConfigurationPart {
++    public class FeatureSeeds extends ConfigurationPart.Post {
 +        public boolean generateRandomSeedsForAll = false;
 +        public Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = new Reference2LongOpenHashMap<>();
-+        // TODO post processing to generate random seeds if generateRandomSeedsForAll == true
++
++        @Override
++        public void postProcess() {
++            features.defaultReturnValue(-1);
++            if (generateRandomSeedsForAll) {
++                final java.util.Random random = new java.security.SecureRandom();
++                boolean added[] = {false};
++                net.minecraft.server.MinecraftServer.getServer().registryAccess().registry(Registry.CONFIGURED_FEATURE_REGISTRY).get().holders().forEach(holder -> {
++                    if (features.containsKey(holder)) {
++                        return;
++                    }
++
++                    final long seed = random.nextLong();
++                    features.put(holder, seed);
++                    added[0] = true;
++                });
++                if (added[0]) {
++                    LOGGER.info("Generated random feature seeds.");
++                }
++            }
++        }
 +    }
 +
 +    public Misc misc;
