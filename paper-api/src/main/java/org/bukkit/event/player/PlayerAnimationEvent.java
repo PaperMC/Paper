@@ -17,12 +17,11 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
      * Construct a new PlayerAnimation event
      *
      * @param player The player instance
+     * @param playerAnimationType The animation type
      */
-    public PlayerAnimationEvent(@NotNull final Player player) {
+    public PlayerAnimationEvent(@NotNull final Player player, @NotNull final PlayerAnimationType playerAnimationType) {
         super(player);
-
-        // Only supported animation type for now:
-        animationType = PlayerAnimationType.ARM_SWING;
+        animationType = playerAnimationType;
     }
 
     /**
