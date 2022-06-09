@@ -885,6 +885,8 @@ public class CraftEventFactory {
                 }
             } else if ("thorns".equals(source.msgId)) {
                 cause = DamageCause.THORNS;
+            } else if ("sonic_boom".equals(source.msgId)) {
+                cause = DamageCause.SONIC_BOOM;
             }
 
             return callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions, cancelled);
