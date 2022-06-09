@@ -34,9 +34,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import javax.crypto.spec.SecretKeySpec;
 +import net.minecraft.network.FriendlyByteBuf;
 +import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.entity.player.ProfilePublicKey;
 +
 +public class VelocityProxy {
 +    private static final int SUPPORTED_FORWARDING_VERSION = 1;
++    public static final int MODERN_FORWARDING_WITH_KEY = 2;
++    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = 2;
 +    public static final ResourceLocation PLAYER_INFO_CHANNEL = new ResourceLocation("velocity", "player_info");
 +
 +    public static boolean checkIntegrity(final FriendlyByteBuf buf) {
@@ -55,11 +58,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        } catch (final InvalidKeyException | NoSuchAlgorithmException e) {
 +            throw new AssertionError(e);
-+        }
-+
-+        int version = buf.readVarInt();
-+        if (version != SUPPORTED_FORWARDING_VERSION) {
-+            throw new IllegalStateException("Unsupported forwarding version " + version + ", wanted " + SUPPORTED_FORWARDING_VERSION);
 +        }
 +
 +        return true;
@@ -84,6 +82,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            profile.getProperties().put(name, new Property(name, value, signature));
 +        }
 +    }
++
++    public static ProfilePublicKey.Data readForwardedKey(FriendlyByteBuf buf) {
++        return new ProfilePublicKey.Data(buf);
++    }
 +}
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -104,7 +106,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper start - Velocity support
 +                if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
 +                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
-+                    net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.EMPTY_BUFFER));
++                    net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
++                    buf.writeByte(com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
++                    net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, buf);
 +                    this.connection.send(packet1);
 +                    return;
 +                }
@@ -142,6 +146,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return;
 +            }
 +
++            int version = buf.readVarInt();
++            if (version > com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION) {
++                throw new IllegalStateException("Unsupported forwarding version " + version + ", wanted upto " + com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
++            }
++
 +            java.net.SocketAddress listening = this.connection.getRemoteAddress();
 +            int port = 0;
 +            if (listening instanceof java.net.InetSocketAddress) {
@@ -150,6 +159,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.connection.address = new java.net.InetSocketAddress(com.destroystokyo.paper.proxy.VelocityProxy.readAddress(buf), port);
 +
 +            this.gameProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
++
++            // We should already have this, but, we'll read it out anyway
++            //noinspection NonStrictComparisonCanBeEquality
++            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY) {
++                final ProfilePublicKey.Data forwardedKey = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
++                if (this.playerProfilePublicKey == null) {
++                    try {
++                        this.playerProfilePublicKey = ProfilePublicKey.createValidated(this.server.getServiceSignatureValidator(), forwardedKey);
++                    } catch (CryptException e) {
++                        this.disconnect("Unable to validate forwarded player key");
++                    }
++                }
++            }
 +
 +            // Proceed with login
 +            authenticatorPool.execute(() -> {
