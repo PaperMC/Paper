@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 8 Jun 2022 22:49:31 -0400
+Subject: [PATCH] Reapply game event listener on update
+
+Some block entities update their listener when load is called. This is bad as then when the block entity is
+removed the listener will not be able to be removed. This properly removes and readds listeners when updating
+block entities that have this special behavior.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 9cce218623a71955687817a6317ed519f3300368..c7aa874a636f18072a4b0c373cc0573cf43ee75b 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -757,7 +757,7 @@ public class LevelChunk extends ChunkAccess {
+         this.removeBlockEntityTicker(pos);
+     }
+ 
+-    private <T extends BlockEntity> void removeGameEventListener(T blockEntity, ServerLevel worldserver) {
++    public  <T extends BlockEntity> void removeGameEventListener(T blockEntity, ServerLevel worldserver) { // Paper
+         Block block = blockEntity.getBlockState().getBlock();
+ 
+         if (block instanceof EntityBlock) {
+@@ -1056,7 +1056,7 @@ public class LevelChunk extends ChunkAccess {
+         });
+     }
+ 
+-    private <T extends BlockEntity> void addGameEventListener(T blockEntity, ServerLevel worldserver) {
++    public <T extends BlockEntity> void addGameEventListener(T blockEntity, ServerLevel worldserver) { // Paper
+         Block block = blockEntity.getBlockState().getBlock();
+ 
+         if (block instanceof EntityBlock) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
+index 34362768f38fb3122abcbd5e63fee38a631b9ee3..f29cc889ed8d032d018a83ecec9a78563fcd6247 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
+@@ -33,4 +33,17 @@ public class CraftSculkSensor extends CraftBlockEntityState<SculkSensorBlockEnti
+         this.getSnapshot().getListener().listenerRange = range;
+     }
+     // Paper end
++    // Paper start - Reapply game event listener on update
++    @Override
++    protected void applyTo(SculkSensorBlockEntity tileEntity) {
++        net.minecraft.world.level.chunk.LevelChunk chunk = isPlaced() ? world.getHandle().getChunkIfLoaded(tileEntity.getBlockPos()) : null;
++        if (chunk != null) {
++            chunk.removeGameEventListener(tileEntity, world.getHandle());
++        }
++        super.applyTo(tileEntity);
++        if (chunk != null) {
++            chunk.addGameEventListener(tileEntity, world.getHandle());
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkShrieker.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkShrieker.java
+index 2e7e117f6edfda29f6b1d193c23256b3b93e0083..9dfe1f8ac07d9c8fadace18905f959f1a870afdb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkShrieker.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkShrieker.java
+@@ -19,4 +19,17 @@ public class CraftSculkShrieker extends CraftBlockEntityState<SculkShriekerBlock
+     public void setWarningLevel(int level) {
+         getSnapshot().warningLevel = level;
+     }
++    // Paper start - Reapply game event listener on update
++    @Override
++    protected void applyTo(SculkShriekerBlockEntity tileEntity) {
++        net.minecraft.world.level.chunk.LevelChunk chunk = isPlaced() ? world.getHandle().getChunkIfLoaded(tileEntity.getBlockPos()) : null;
++        if (chunk != null) {
++            chunk.removeGameEventListener(tileEntity, world.getHandle());
++        }
++        super.applyTo(tileEntity);
++        if (chunk != null) {
++            chunk.addGameEventListener(tileEntity, world.getHandle());
++        }
++    }
++    // Paper end
+ }
