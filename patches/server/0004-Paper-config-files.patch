@@ -743,10 +743,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6c19825de43b82ba3fe6e44123e7d24748698614
+index 0000000000000000000000000000000000000000..aa52663a65381f175411a37f9b0731de5ed772aa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,325 @@
+@@ -0,0 +1,323 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.Table;
@@ -815,32 +815,30 @@ index 0000000000000000000000000000000000000000..6c19825de43b82ba3fe6e44123e7d247
 +
 +    private static final String GLOBAL_HEADER = """
 +            This is the global configuration file for Paper.
-+            As you can see, there's tons to configure. Some options may impact gameplay, so use
++            As you can see, there's a lot to configure. Some options may impact gameplay, so use
 +            with caution, and make sure you know what each option does before configuring.
 +
 +            If you need help with the configuration or have any questions related to Paper,
-+            join us in our Discord or IRC channel.
++            join us in our Discord or check the docs page.
 +
 +            The world configuration options have been moved to their own files.
 +
 +            Discord: https://discord.gg/papermc
-+            IRC: #paper @ irc.esper.net ( https://webchat.esper.net/?channels=paper )
 +            Website: https://papermc.io/
 +            Docs: https://docs.papermc.io/""";
 +
 +    private static final String WORLD_DEFAULTS_HEADER = """
 +            This is the world defaults configuration file for Paper.
-+            As you can see, there's tons to configure. Some options may impact gameplay, so use
++            As you can see, there's a lot to configure. Some options may impact gameplay, so use
 +            with caution, and make sure you know what each option does before configuring.
 +
 +            If you need help with the configuration or have any questions related to Paper,
-+            join us in our Discord or IRC channel.
++            join us in our Discord or check the docs page.
 +
 +            Configuration options here apply to all worlds, unless you specify overrides inside
 +            the world-specific config file inside each world folder.
 +
 +            Discord: https://discord.gg/papermc
-+            IRC: #paper @ irc.esper.net ( https://webchat.esper.net/?channels=paper )
 +            Website: https://papermc.io/
 +            Docs: https://docs.papermc.io/""";
 +
@@ -1074,15 +1072,16 @@ index 0000000000000000000000000000000000000000..6c19825de43b82ba3fe6e44123e7d247
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..87ebdc61a3802ea33d3c77904122d5005fac77c2
+index 0000000000000000000000000000000000000000..163f02b4bf34da712b30166e80d859a96bf8d911
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,447 @@
+@@ -0,0 +1,470 @@
 +package io.papermc.paper.configuration;
 +
 +import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray;
 +import com.google.common.collect.HashBasedTable;
 +import com.google.common.collect.Table;
++import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
 +import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
@@ -1110,6 +1109,7 @@ index 0000000000000000000000000000000000000000..87ebdc61a3802ea33d3c77904122d500
 +import net.minecraft.world.item.Items;
 +import net.minecraft.world.level.NaturalSpawner;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
++import org.slf4j.Logger;
 +import org.spigotmc.SpigotWorldConfig;
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 +import org.spongepowered.configurate.objectmapping.meta.Required;
@@ -1123,6 +1123,7 @@ index 0000000000000000000000000000000000000000..87ebdc61a3802ea33d3c77904122d500
 +
 +@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class WorldConfiguration extends ConfigurationPart {
++    private static final Logger LOGGER = LogUtils.getLogger();
 +    static final int CURRENT_VERSION = 28;
 +
 +    private transient final SpigotWorldConfig spigotConfig;
@@ -1500,10 +1501,30 @@ index 0000000000000000000000000000000000000000..87ebdc61a3802ea33d3c77904122d500
 +
 +    public FeatureSeeds featureSeeds;
 +
-+    public class FeatureSeeds extends ConfigurationPart {
++    public class FeatureSeeds extends ConfigurationPart.Post {
 +        public boolean generateRandomSeedsForAll = false;
 +        public Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = new Reference2LongOpenHashMap<>();
-+        // TODO post processing to generate random seeds if generateRandomSeedsForAll == true
++
++        @Override
++        public void postProcess() {
++            features.defaultReturnValue(-1);
++            if (generateRandomSeedsForAll) {
++                final java.util.Random random = new java.security.SecureRandom();
++                boolean added[] = {false};
++                net.minecraft.server.MinecraftServer.getServer().registryAccess().registry(Registry.CONFIGURED_FEATURE_REGISTRY).get().holders().forEach(holder -> {
++                    if (features.containsKey(holder)) {
++                        return;
++                    }
++
++                    final long seed = random.nextLong();
++                    features.put(holder, seed);
++                    added[0] = true;
++                });
++                if (added[0]) {
++                    LOGGER.info("Generated random feature seeds.");
++                }
++            }
++        }
 +    }
 +
 +    public Misc misc;
