@@ -440,6 +440,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * <p>
          * Damage: 1 or 5
          */
-        FREEZE;
+        FREEZE,
+        /**
+         * Damage caused by the Sonic Boom attack from {@link org.bukkit.entity.Warden}
+         * <p>
+         * Damage: 10
+         */
+        SONIC_BOOM;
     }
 }
