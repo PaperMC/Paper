@@ -886,8 +886,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationOptions;
++import org.spongepowered.configurate.NodePath;
 +import org.spongepowered.configurate.objectmapping.ObjectMapper;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++import org.spongepowered.configurate.transformation.TransformAction;
 +import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 +
 +import java.io.File;
@@ -1045,6 +1047,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            LOGGER.warn("The world config file for " + world + " didn't have a version set, assuming latest");
 +            version.raw(WorldConfiguration.CURRENT_VERSION);
 +        }
++        ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
++        for (NodePath path : RemovedConfigurations.REMOVED_WORLD_PATHS) {
++            builder.addAction(path, TransformAction.remove());
++        }
++        builder.build().apply(node);
++        // ADD FUTURE TRANSFORMS HERE
++    }
++
++    @Override
++    protected void applyGlobalConfigTransformations(ConfigurationNode node) throws ConfigurateException {
++        ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
++        for (NodePath path : RemovedConfigurations.REMOVED_GLOBAL_PATHS) {
++            builder.addAction(path, TransformAction.remove());
++        }
++        builder.build().apply(node);
 +        // ADD FUTURE TRANSFORMS HERE
 +    }
 +
@@ -1213,6 +1230,57 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .serializers(builder -> builder.register(type -> ConfigurationPart.class.isAssignableFrom(erase(type)), factory.asTypeSerializer()));
 +        return BasicConfigurationNode.root(options);
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java b/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration;
++
++import org.spongepowered.configurate.NodePath;
++
++import static org.spongepowered.configurate.NodePath.path;
++
++interface RemovedConfigurations {
++
++    NodePath[] REMOVED_WORLD_PATHS = {
++        path("elytra-hit-wall-damage"),
++        path("queue-light-updates"),
++        path("save-queue-limit-for-auto-save"),
++        path("max-chunk-sends-per-tick"),
++        path("max-chunk-gens-per-tick"),
++        path("fire-physics-event-for-redstone"),
++        path("fix-zero-tick-instant-grow-farms"),
++        path("bed-search-radius"),
++        path("lightning-strike-distance-limit"),
++        path("fix-wither-targeting-bug"),
++        path("remove-corrupt-tile-entities"),
++        path("allow-leashing-undead-horse"),
++        path("reset-arrow-despawn-timer-on-fall"),
++        path("seed-based-feature-search"),
++        path("seed-based-feature-search-loads-chunks"),
++        path("viewdistances.no-tick-view-distance"),
++        path("seed-based-feature-search"), // unneeded as of 1.18
++        path("seed-based-feature-search-loads-chunks"), // unneeded as of 1.18
++        path("reset-arrow-despawn-timer-on-fall"),
++        path("squid-spawn-height"),
++        path("viewdistances"),
++    };
++
++    NodePath[] REMOVED_GLOBAL_PATHS = {
++        path("queue-light-updates-max-loss"),
++        path("sleep-between-chunk-saves"),
++        path("remove-invalid-statistics"),
++        path("min-chunk-load-threads"),
++        path("use-versioned-world"),
++        path("save-player-data"), // to spigot (converted)
++        path("log-named-entity-deaths"), // default in vanilla
++        path("chunk-tasks-per-tick"), // removed in tuinity merge
++        path("item-validation", "loc-name")
++    };
++
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
