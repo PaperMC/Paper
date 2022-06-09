@@ -2180,7 +2180,7 @@ index 0000000000000000000000000000000000000000..f2f362883d1825084c277608c791f821
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3942d9f163c606b8a7d4afcb6ccd0f305c002fca
+index 0000000000000000000000000000000000000000..a13691523554a85c3ea3efb70d847904a9d91f0c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
 @@ -0,0 +1,61 @@
@@ -2205,7 +2205,7 @@ index 0000000000000000000000000000000000000000..3942d9f163c606b8a7d4afcb6ccd0f30
 +public final class PacketClassSerializer extends ScalarSerializer<Class<? extends Packet<?>>> {
 +    private static final TypeToken<Class<? extends Packet<?>>> TYPE = new TypeToken<Class<? extends Packet<?>>>() {};
 +    private static final List<String> SUBPACKAGES = List.of("game", "handshake", "login", "status");
-+    private static final Map<String, String> MOJANG_TO_OBF = Optional.ofNullable(ObfHelper.INSTANCE.mappingsByObfName())
++    private static final Map<String, String> MOJANG_TO_OBF = Optional.ofNullable(ObfHelper.INSTANCE.mappingsByMojangName())
 +        .map(Map::entrySet)
 +        .map(Collection::stream)
 +        .map(stream -> stream.collect(Collectors.toMap(entry -> entry.getValue().mojangName(), entry -> entry.getValue().obfName())))
@@ -2734,10 +2734,10 @@ index 0000000000000000000000000000000000000000..0300fb1e09d41465e4a50bfdc987b957
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/LegacyPaperConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/global/LegacyPaperConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..55886e548d3b140c4fb14495f7265ea3e1c26fd0
+index 0000000000000000000000000000000000000000..943cd629c48a60f108c7a724201cfcad07fcc4ff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/global/LegacyPaperConfig.java
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,250 @@
 +package io.papermc.paper.configuration.transformation.global;
 +
 +import com.mojang.logging.LogUtils;
@@ -2759,6 +2759,7 @@ index 0000000000000000000000000000000000000000..55886e548d3b140c4fb14495f7265ea3
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
 +
++import java.util.List;
 +import java.util.function.Predicate;
 +
 +import static org.spongepowered.configurate.NodePath.path;
@@ -2863,10 +2864,23 @@ index 0000000000000000000000000000000000000000..55886e548d3b140c4fb14495f7265ea3
 +            .addAction(path("packet-limiter", "limits"), (path, value) -> new Object[]{"packet-limiter", "overrides"})
 +            .addAction(path("packet-limiter", "overrides", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +                if (ObfHelper.INSTANCE.mappingsByObfName() != null) { // requires mappings to be present
-+                    final Class<? extends Packet<?>> packet = PACKET_CLASS_SERIALIZER.deserialize(Void.TYPE /* doesn't matter */, BasicConfigurationNode.root(value.options()).set(value.key()));
-+                    final Object[] newPath = new Object[path.size()];
-+                    newPath[path.size() - 1] = packet.getSimpleName();
-+                    return newPath;
++                    final @Nullable Object key = value.key();
++                    if (key != null) {
++                        String className = key.toString();
++                        for (final String state : List.of("game", "handshake", "login", "status")) {
++                            final String fullClassName = "net.minecraft.network.protocol." + state + "." + className;
++                            final ObfHelper.ClassMapping classMapping = ObfHelper.INSTANCE.mappingsByObfName().get(fullClassName);
++                            if (classMapping != null) {
++                                final String[] split = classMapping.mojangName().split("\\.");
++                                className = split[split.length - 1];
++                                break;
++                            }
++                        }
++
++                        return path.with(path.size() - 1, className).array();
++                    } else {
++                        LOGGER.warn("Could not convert spigot-mapped packet class name {}", value);
++                    }
 +                } else {
 +                    final @Nullable Object keyValue = value.key();
 +                    if (keyValue != null && keyValue.toString().equals("PacketPlayInAutoRecipe")) { // add special case to catch the default
