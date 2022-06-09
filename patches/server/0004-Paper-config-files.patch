@@ -1870,10 +1870,10 @@ index 0000000000000000000000000000000000000000..f2f362883d1825084c277608c791f821
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed58ae2fee2ccd2a83e3c2641f2a197ef47d57d6
+index 0000000000000000000000000000000000000000..3942d9f163c606b8a7d4afcb6ccd0f305c002fca
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,61 @@
 +package io.papermc.paper.configuration.serializer;
 +
 +import io.leangen.geantyref.TypeToken;
@@ -1913,6 +1913,7 @@ index 0000000000000000000000000000000000000000..ed58ae2fee2ccd2a83e3c2641f2a197e
 +            final String fullClassName = "net.minecraft.network.protocol." + subpackage + "." + obj;
 +            try {
 +                packetClass = Class.forName(fullClassName);
++                break;
 +            } catch (final ClassNotFoundException ex) {
 +                final @Nullable String spigotClassName = MOJANG_TO_OBF.get(fullClassName);
 +                if (spigotClassName != null) {
@@ -1930,6 +1931,7 @@ index 0000000000000000000000000000000000000000..ed58ae2fee2ccd2a83e3c2641f2a197e
 +
 +    @Override
 +    protected Object serialize(final Class<? extends Packet<?>> item, final Predicate<Class<?>> typeSupported) {
++        //TODO always serialize the mapped class name to not break on switching between mapped/unmapped servers
 +        return item.getSimpleName();
 +    }
 +}
@@ -2585,10 +2587,10 @@ index 0000000000000000000000000000000000000000..ecea36a434e0f4893899ee4694166768
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c638016e3b231cba2e795a4e0f8063df44d4ea5a
+index 0000000000000000000000000000000000000000..371e5939a643b820a35e9b7d7021c883f31c3f66
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
-@@ -0,0 +1,283 @@
+@@ -0,0 +1,289 @@
 +package io.papermc.paper.configuration.transformation.world;
 +
 +import io.papermc.paper.configuration.Configuration;
@@ -2851,10 +2853,16 @@ index 0000000000000000000000000000000000000000..c638016e3b231cba2e795a4e0f8063df
 +            return new Object[]{"entities", "spawning", "duplicate-uuid", "mode"};
 +        });
 +
++        builder.addAction(path("redstone-implementation"), (path, value) -> {
++            if (value.require(String.class).equalsIgnoreCase("alternate-current")) {
++                value.set("alternate_current");
++            }
++            return new Object[]{"misc", "redstone-implementation"};
++        });
++
 +        moveToMisc(builder, "light-queue-size");
 +        moveToMisc(builder, "update-pathfinding-on-block-update");
 +        moveToMisc(builder, "show-sign-click-command-failure-msgs-to-player");
-+        moveToMisc(builder, "redstone-implementation");
 +        moveToMisc(builder, "max-leash-distance");
 +
 +        return builder.build();
