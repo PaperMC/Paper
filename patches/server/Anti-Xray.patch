@@ -1025,17 +1025,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.destroystokyo.paper.Metrics;
  import com.destroystokyo.paper.PaperCommand;
 +import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray;
+ import com.google.common.base.Suppliers;
  import com.google.common.collect.Table;
  import com.mojang.logging.LogUtils;
- import io.leangen.geantyref.TypeToken;
 @@ -0,0 +0,0 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
                      .register(DoubleOrDefault.SERIALIZER)
                      .register(BooleanOrDefault.SERIALIZER)
                      .register(Duration.SERIALIZER)
 +                    .register(ChunkPacketBlockControllerAntiXray.EngineMode.SERIALIZER)
-                     .register(FallbackValueSerializer.create(spigotConfig, MinecraftServer::getServer))
-                     .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registry.ENTITY_TYPE, true))
-                     .register(new RegistryValueSerializer<>(Item.class, Registry.ITEM, true))
+                     .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
+                     .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registry.ENTITY_TYPE_REGISTRY, true))
+                     .register(new RegistryValueSerializer<>(Item.class, Registry.ITEM_REGISTRY, true))
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
@@ -1180,8 +1180,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // Holder holder = worlddimension.typeHolder(); // CraftBukkit - decompile error
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), spigotConfig)); // Paper
-+        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), spigotConfig), executor); // Paper - Async-Anti-Xray - Pass executor
+-        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig))); // Paper
++        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig)), executor); // Paper - Async-Anti-Xray - Pass executor
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());

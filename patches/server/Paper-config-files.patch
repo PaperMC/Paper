@@ -119,14 +119,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration;
 +
-+import com.google.common.base.Suppliers;
++import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.level.ServerLevel;
-+import org.apache.commons.lang3.RandomStringUtils;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.MustBeInvokedByOverriders;
-+import org.spigotmc.SpigotConfig;
-+import org.spigotmc.SpigotWorldConfig;
 +import org.spongepowered.configurate.CommentedConfigurationNode;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
@@ -140,19 +139,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.lang.reflect.Type;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
++import java.util.HashMap;
++import java.util.Map;
++import java.util.NoSuchElementException;
 +import java.util.Objects;
-+import java.util.function.Supplier;
 +import java.util.function.UnaryOperator;
 +
 +public abstract class Configurations<G, W> {
 +
 +    public static final String WORLD_DEFAULTS = "__world_defaults__";
-+    private static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
-+        @Override // override to ensure "verbose" is false
-+        public void init() {
-+            SpigotConfig.readConfig(SpigotWorldConfig.class, this);
-+        }
-+    });
++    public static final ResourceLocation WORLD_DEFAULTS_KEY = new ResourceLocation("configurations", WORLD_DEFAULTS);
 +    protected final Path globalFolder;
 +    protected final Class<G> globalConfigClass;
 +    protected final Class<W> worldConfigClass;
@@ -241,45 +237,56 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    protected void applyGlobalConfigTransformations(final ConfigurationNode node) throws ConfigurateException {
 +    }
 +
++    @MustBeInvokedByOverriders
++    protected ContextMap.Builder createDefaultContextMap() {
++        return ContextMap.builder()
++            .put(WORLD_NAME, WORLD_DEFAULTS)
++            .put(WORLD_KEY, WORLD_DEFAULTS_KEY);
++    }
++
 +    public void initializeWorldDefaultsConfiguration() throws ConfigurateException {
-+        final YamlConfigurationLoader loader = this.createDefaultWorldLoader(false);
++        final ContextMap contextMap = this.createDefaultContextMap()
++            .put(FIRST_DEFAULT)
++            .build();
++        final YamlConfigurationLoader loader = this.createDefaultWorldLoader(false, contextMap);
 +        final ConfigurationNode node = loader.load();
-+        this.applyWorldConfigTransformations(WORLD_DEFAULTS, node);
++        this.applyWorldConfigTransformations(contextMap, node);
 +        final W instance = node.require(this.worldConfigClass);
 +        node.set(this.worldConfigClass, instance);
 +        loader.save(node);
 +    }
 +
-+    private YamlConfigurationLoader createDefaultWorldLoader(final boolean requireFile) {
++    private YamlConfigurationLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap) {
 +        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
 +        if (requireFile && !Files.exists(configFile)) {
 +            throw new IllegalStateException("World defaults configuration file '" + configFile + "' doesn't exist");
 +        }
-+        return this.createWorldConfigLoaderBuilder(WORLD_DEFAULTS, SPIGOT_WORLD_DEFAULTS.get())
-+            .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(WORLD_DEFAULTS, SPIGOT_WORLD_DEFAULTS.get()).build()))
++        return this.createWorldConfigLoaderBuilder(contextMap)
++            .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(contextMap).build()))
 +            .path(configFile)
 +            .build();
 +    }
 +
-+    protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final String levelName, final SpigotWorldConfig spigotConfig) {
++    protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final ContextMap contextMap) {
 +        return this.createObjectMapper();
 +    }
 +
 +    @MustBeInvokedByOverriders
-+    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final String levelName, final SpigotWorldConfig spigotConfig) {
++    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final ContextMap contextMap) {
 +        return this.createLoaderBuilder();
 +    }
 +
 +    // Make sure to run version transforms on the default world config first via #setupWorldDefaultsConfig
-+    public W createWorldConfig(final Path dir, final String levelName, final SpigotWorldConfig spigotConfig) throws IOException {
-+        return this.createWorldConfig(dir, levelName, spigotConfig, creator(this.worldConfigClass, false));
++    public W createWorldConfig(final ContextMap contextMap) throws IOException {
++        return this.createWorldConfig(contextMap, creator(this.worldConfigClass, false));
 +    }
 +
-+    protected W createWorldConfig(final Path dir, final String levelName, final SpigotWorldConfig spigotConfig, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
-+        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true);
++    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
++        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build());
 +        final ConfigurationNode defaultsNode = defaultsLoader.load();
 +
 +        boolean newFile = false;
++        final Path dir = contextMap.require(WORLD_DIRECTORY);
 +        final Path worldConfigFile = dir.resolve(this.worldConfigFileName);
 +        if (Files.notExists(worldConfigFile)) {
 +            Files.createDirectories(dir);
@@ -287,22 +294,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            newFile = true;
 +        }
 +
-+        final YamlConfigurationLoader worldLoader = this.createWorldConfigLoaderBuilder(levelName, spigotConfig)
-+            .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(levelName, spigotConfig).build()))
++        final YamlConfigurationLoader worldLoader = this.createWorldConfigLoaderBuilder(contextMap)
++            .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(contextMap).build()))
 +            .path(worldConfigFile)
 +            .build();
 +        final ConfigurationNode worldNode = worldLoader.load();
 +        if (newFile) {
 +            worldNode.node(Configuration.VERSION_FIELD).set(WorldConfiguration.CURRENT_VERSION);
 +        }
-+        this.applyWorldConfigTransformations(levelName, worldNode);
++        this.applyWorldConfigTransformations(contextMap, worldNode);
++        this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
 +        worldLoader.save(worldNode); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
 +        worldNode.mergeFrom(defaultsNode);
-+        final W worldConfig = creator.apply(worldNode);
-+        return worldConfig;
++        return creator.apply(worldNode);
 +    }
 +
-+    protected void applyWorldConfigTransformations(final String world, final ConfigurationNode node) throws ConfigurateException {
++    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
++    }
++
++    protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
 +    }
 +
 +    private UnaryOperator<ConfigurationOptions> applyObjectMapperFactory(final ObjectMapper.Factory factory) {
@@ -313,6 +323,83 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public Path getWorldConfigFile(ServerLevel level) {
 +        return level.convertable.levelDirectory.path().resolve(this.worldConfigFileName);
++    }
++
++    public static class ContextMap {
++        private static final Object VOID = new Object();
++
++        public static Builder builder() {
++            return new Builder();
++        }
++
++        private final Map<ContextKey<?>, Object> backingMap;
++
++        private ContextMap(Map<ContextKey<?>, Object> map) {
++            this.backingMap = Map.copyOf(map);
++        }
++
++        @SuppressWarnings("unchecked")
++        public <T> T require(ContextKey<T> key) {
++            final @Nullable Object value = this.backingMap.get(key);
++            if (value == null) {
++                throw new NoSuchElementException("No element found for " + key + " with type " + key.type());
++            } else if (value == VOID) {
++                throw new IllegalArgumentException("Cannot get the value of a Void key");
++            }
++            return (T) value;
++        }
++
++        @SuppressWarnings("unchecked")
++        public <T> @Nullable T get(ContextKey<T> key) {
++            return (T) this.backingMap.get(key);
++        }
++
++        public boolean has(ContextKey<?> key) {
++            return this.backingMap.containsKey(key);
++        }
++
++        public boolean isDefaultWorldContext() {
++            return this.require(WORLD_KEY).equals(WORLD_DEFAULTS_KEY);
++        }
++
++        public static class Builder {
++
++            private Builder() {
++            }
++
++            private final Map<ContextKey<?>, Object> buildingMap = new HashMap<>();
++
++            public <T> Builder put(ContextKey<T> key, T value) {
++                this.buildingMap.put(key, value);
++                return this;
++            }
++
++            public Builder put(ContextKey<Void> key) {
++                this.buildingMap.put(key, VOID);
++                return this;
++            }
++
++            public ContextMap build() {
++                return new ContextMap(this.buildingMap);
++            }
++        }
++    }
++
++    public static final ContextKey<Path> WORLD_DIRECTORY = new ContextKey<>(Path.class, "world directory");
++    public static final ContextKey<String> WORLD_NAME = new ContextKey<>(String.class, "world name"); // TODO remove when we deprecate level names
++    public static final ContextKey<ResourceLocation> WORLD_KEY = new ContextKey<>(ResourceLocation.class, "world key");
++    public static final ContextKey<Void> FIRST_DEFAULT = new ContextKey<>(Void.class, "first default");
++
++    public record ContextKey<T>(TypeToken<T> type, String name) {
++
++        public ContextKey(Class<T> type, String name) {
++            this(TypeToken.get(type), name);
++        }
++
++        @Override
++        public String toString() {
++            return "ContextKey{" + this.name + "}";
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
@@ -695,8 +782,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.overrides;
 +    }
 +
-+    static FieldDiscoverer<?> worldConfig(SpigotWorldConfig spigotConfig) {
-+        return new InnerClassFieldDiscoverer(Map.of(WorldConfiguration.class, new WorldConfiguration(spigotConfig)));
++    static FieldDiscoverer<?> worldConfig(Configurations.ContextMap contextMap) {
++        final Map<Class<?>, Object> overrides = Map.of(
++            WorldConfiguration.class, new WorldConfiguration(
++                contextMap.require(PaperConfigurations.SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(),
++                contextMap.require(Configurations.WORLD_KEY)
++            )
++        );
++        return new InnerClassFieldDiscoverer(overrides);
 +    }
 +
 +    static FieldDiscoverer<?> globalConfig() {
@@ -749,10 +842,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration;
 +
++import com.google.common.base.Suppliers;
 +import com.google.common.collect.Table;
 +import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
++import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 +import io.papermc.paper.configuration.serializer.FastutilMapSerializer;
 +import io.papermc.paper.configuration.serializer.PacketClassSerializer;
 +import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
@@ -760,7 +855,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.serializer.collections.MapSerializer;
 +import io.papermc.paper.configuration.serializer.registry.RegistryHolderSerializer;
 +import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
++import io.papermc.paper.configuration.transformation.Transformations;
 +import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
++import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
@@ -772,23 +869,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
 +import net.minecraft.core.Registry;
-+import net.minecraft.data.BuiltinRegistries;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.item.Item;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
++import org.apache.commons.lang3.RandomStringUtils;
 +import org.bukkit.command.Command;
 +import org.bukkit.configuration.ConfigurationSection;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.jetbrains.annotations.VisibleForTesting;
 +import org.slf4j.Logger;
++import org.spigotmc.SpigotConfig;
 +import org.spigotmc.SpigotWorldConfig;
 +import org.spongepowered.configurate.BasicConfigurationNode;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationOptions;
 +import org.spongepowered.configurate.objectmapping.ObjectMapper;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 +
 +import java.io.File;
@@ -798,8 +898,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.nio.file.Path;
 +import java.nio.file.StandardCopyOption;
 +import java.util.HashMap;
++import java.util.List;
 +import java.util.Map;
-+import java.util.function.UnaryOperator;
++import java.util.function.Supplier;
 +
 +import static com.google.common.base.Preconditions.checkState;
 +import static io.leangen.geantyref.GenericTypeReflector.erase;
@@ -846,6 +947,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            This is a world configuration file for Paper.
 +            This file may start empty but can be filled with settings to override ones in the config/world-defaults.yml""";
 +
++    private static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
++        @Override // override to ensure "verbose" is false
++        public void init() {
++            SpigotConfig.readConfig(SpigotWorldConfig.class, this);
++        }
++    });
++    static final ContextKey<Supplier<SpigotWorldConfig>> SPIGOT_WORLD_CONFIG_CONTEXT_KEY = new ContextKey<>(new TypeToken<Supplier<SpigotWorldConfig>>() {}, "spigot world config");
++
 +
 +    public PaperConfigurations(final Path globalFolder) {
 +        super(globalFolder, GlobalConfiguration.class, WorldConfiguration.class, GLOBAL_CONFIG_FILE_NAME, WORLD_DEFAULTS_CONFIG_FILE_NAME, WORLD_CONFIG_FILE_NAME);
@@ -858,7 +967,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private static ConfigurationOptions defaultOptions(ConfigurationOptions options) {
-+        return options.serializers(builder -> builder.register(MapSerializer.TYPE, new MapSerializer()));
++        return options.serializers(builder -> builder
++            .register(MapSerializer.TYPE, new MapSerializer(false))
++            .register(new EnumValueSerializer())
++        );
 +    }
 +
 +    @Override
@@ -890,23 +1002,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    protected void applyGlobalConfigTransformations(org.spongepowered.configurate.ConfigurationNode node) throws org.spongepowered.configurate.ConfigurateException {
-+        super.applyGlobalConfigTransformations(node);
++    protected ContextMap.Builder createDefaultContextMap() {
++        return super.createDefaultContextMap()
++            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, SPIGOT_WORLD_DEFAULTS);
 +    }
 +
 +    @Override
-+    protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final String levelName, final SpigotWorldConfig spigotConfig) {
-+        return super.createWorldObjectMapperFactoryBuilder(levelName, spigotConfig)
-+            .addNodeResolver(new RequiresSpigotInitialization.Factory(spigotConfig))
++    protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final ContextMap contextMap) {
++        return super.createWorldObjectMapperFactoryBuilder(contextMap)
++            .addNodeResolver(new RequiresSpigotInitialization.Factory(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get()))
 +            .addNodeResolver(new NestedSetting.Factory())
-+            .addDiscoverer(InnerClassFieldDiscoverer.worldConfig(spigotConfig));
++            .addDiscoverer(InnerClassFieldDiscoverer.worldConfig(contextMap));
 +    }
 +
 +    @Override
-+    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final String levelName, final SpigotWorldConfig spigotConfig) {
-+        return super.createWorldConfigLoaderBuilder(levelName, spigotConfig)
++    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final ContextMap contextMap) {
++        return super.createWorldConfigLoaderBuilder(contextMap)
 +            .defaultOptions(options -> options
-+                .header(levelName.equals(WORLD_DEFAULTS) ? WORLD_DEFAULTS_HEADER : WORLD_HEADER)
++                .header(contextMap.require(WORLD_NAME).equals(WORLD_DEFAULTS) ? WORLD_DEFAULTS_HEADER : WORLD_HEADER)
 +                .serializers(serializers -> serializers
 +                    .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
 +                    .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
@@ -916,18 +1029,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    .register(DoubleOrDefault.SERIALIZER)
 +                    .register(BooleanOrDefault.SERIALIZER)
 +                    .register(Duration.SERIALIZER)
-+                    .register(FallbackValueSerializer.create(spigotConfig, MinecraftServer::getServer))
-+                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registry.ENTITY_TYPE, true))
-+                    .register(new RegistryValueSerializer<>(Item.class, Registry.ITEM, true))
-+                    .register(new RegistryHolderSerializer<>(new TypeToken<ConfiguredFeature<?, ?>>() {}, BuiltinRegistries.CONFIGURED_FEATURE, false))
-+                    .register(new RegistryHolderSerializer<>(Item.class, Registry.ITEM, true))
++                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
++                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registry.ENTITY_TYPE_REGISTRY, true))
++                    .register(new RegistryValueSerializer<>(Item.class, Registry.ITEM_REGISTRY, true))
++                    .register(new RegistryHolderSerializer<>(new TypeToken<ConfiguredFeature<?, ?>>() {}, Registry.CONFIGURED_FEATURE_REGISTRY, false))
++                    .register(new RegistryHolderSerializer<>(Item.class, Registry.ITEM_REGISTRY, true))
 +                )
 +            );
 +    }
 +
 +    @Override
-+    protected void applyWorldConfigTransformations(final String world, final ConfigurationNode node) throws ConfigurateException {
++    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
 +        final ConfigurationNode version = node.node(Configuration.VERSION_FIELD);
++        final String world = contextMap.require(WORLD_NAME);
 +        if (version.virtual()) {
 +            LOGGER.warn("The world config file for " + world + " didn't have a version set, assuming latest");
 +            version.raw(WorldConfiguration.CURRENT_VERSION);
@@ -935,10 +1049,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // ADD FUTURE TRANSFORMS HERE
 +    }
 +
++    private static final List<Transformations.DefaultsAware> DEFAULT_AWARE_TRANSFORMATIONS = List.of(FeatureSeedsGeneration::apply);
++
 +    @Override
-+    public WorldConfiguration createWorldConfig(final Path dir, final String levelName, final SpigotWorldConfig spigotConfig) {
++    protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
++        final ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
++        // ADD FUTURE TRANSFORMS HERE (these transforms run after the defaults have been merged into the node)
++        DEFAULT_AWARE_TRANSFORMATIONS.forEach(transform -> transform.apply(builder, contextMap, defaultsNode));
++
++        builder.build().apply(worldNode);
++    }
++
++    @Override
++    public WorldConfiguration createWorldConfig(final ContextMap contextMap) {
++        final String levelName = contextMap.require(WORLD_NAME);
 +        try {
-+            return super.createWorldConfig(dir, levelName, spigotConfig);
++            return super.createWorldConfig(contextMap);
 +        } catch (IOException exception) {
 +            throw new RuntimeException("Could not create world config for " + levelName, exception);
 +        }
@@ -954,11 +1080,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.initializeGlobalConfiguration(reloader(this.globalConfigClass, GlobalConfiguration.get()));
 +            this.initializeWorldDefaultsConfiguration();
 +            for (ServerLevel level : server.getAllLevels()) {
-+                this.createWorldConfig(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.spigotConfig, reloader(this.worldConfigClass, level.paperConfig()));
++                this.createWorldConfig(createWorldContextMap(level), reloader(this.worldConfigClass, level.paperConfig()));
 +            }
 +        } catch (Exception ex) {
 +            throw new RuntimeException("Could not reload paper configuration files", ex);
 +        }
++    }
++
++    private static ContextMap createWorldContextMap(ServerLevel level) {
++        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig);
++    }
++
++    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, SpigotWorldConfig spigotConfig) {
++        return ContextMap.builder()
++            .put(WORLD_DIRECTORY, dir)
++            .put(WORLD_NAME, levelName)
++            .put(WORLD_KEY, worldKey)
++            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, Suppliers.ofInstance(spigotConfig))
++            .build();
 +    }
 +
 +    public static PaperConfigurations setup(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
@@ -1087,6 +1226,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 +import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 +import io.papermc.paper.configuration.legacy.SpawnLoadedRangeInitializer;
++import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
@@ -1100,6 +1240,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.Util;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.world.Difficulty;
 +import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.entity.MobCategory;
@@ -1127,8 +1268,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final int CURRENT_VERSION = 28;
 +
 +    private transient final SpigotWorldConfig spigotConfig;
-+    WorldConfiguration(SpigotWorldConfig spigotConfig) {
++    private transient final ResourceLocation worldKey;
++    WorldConfiguration(SpigotWorldConfig spigotConfig, ResourceLocation worldKey) {
 +        this.spigotConfig = spigotConfig;
++        this.worldKey = worldKey;
++    }
++
++    public boolean isDefault() {
++        return this.worldKey.equals(PaperConfigurations.WORLD_DEFAULTS_KEY);
 +    }
 +
 +    @Setting(Configuration.VERSION_FIELD)
@@ -1499,31 +1646,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
 +    }
 +
++    @Setting(FeatureSeedsGeneration.FEATURE_SEEDS_KEY)
 +    public FeatureSeeds featureSeeds;
 +
 +    public class FeatureSeeds extends ConfigurationPart.Post {
++        @Setting(FeatureSeedsGeneration.GENERATE_KEY)
 +        public boolean generateRandomSeedsForAll = false;
++        @Setting(FeatureSeedsGeneration.FEATURES_KEY)
 +        public Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = new Reference2LongOpenHashMap<>();
 +
 +        @Override
 +        public void postProcess() {
-+            features.defaultReturnValue(-1);
-+            if (generateRandomSeedsForAll) {
-+                final java.util.Random random = new java.security.SecureRandom();
-+                boolean added[] = {false};
-+                net.minecraft.server.MinecraftServer.getServer().registryAccess().registry(Registry.CONFIGURED_FEATURE_REGISTRY).get().holders().forEach(holder -> {
-+                    if (features.containsKey(holder)) {
-+                        return;
-+                    }
-+
-+                    final long seed = random.nextLong();
-+                    features.put(holder, seed);
-+                    added[0] = true;
-+                });
-+                if (added[0]) {
-+                    LOGGER.info("Generated random feature seeds.");
-+                }
-+            }
++            this.features.defaultReturnValue(-1);
 +        }
 +    }
 +
@@ -1590,9 +1724,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.constraint;
 +
++import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.GlobalConfiguration;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import org.checkerframework.checker.nullness.qual.Nullable;
++import org.slf4j.Logger;
 +import org.spongepowered.configurate.objectmapping.meta.Constraint;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
@@ -1609,10 +1745,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static final class Velocity implements Constraint<GlobalConfiguration.Proxies.Velocity> {
++
++        private static final Logger LOGGER = LogUtils.getLogger();
++
 +        @Override
 +        public void validate(final GlobalConfiguration.Proxies.@Nullable Velocity value) throws SerializationException {
 +            if (value != null && value.enabled && value.secret.isEmpty()) {
-+                throw new SerializationException("Velocity is enabled, but no secret key was specified. A secret key is required!");
++                LOGGER.error("Velocity is enabled, but no secret key was specified. A secret key is required. Disabling velocity...");
++                value.enabled = false;
 +            }
 +        }
 +    }
@@ -1793,6 +1933,62 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 \ No newline at end of file
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/EnumValueSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/EnumValueSerializer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/serializer/EnumValueSerializer.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.serializer;
++
++import com.mojang.logging.LogUtils;
++import io.leangen.geantyref.TypeToken;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.slf4j.Logger;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.util.EnumLookup;
++
++import java.lang.reflect.Type;
++import java.util.Arrays;
++import java.util.List;
++import java.util.function.Predicate;
++
++import static io.leangen.geantyref.GenericTypeReflector.erase;
++
++/**
++ * Enum serializer that lists options if fails and accepts `-` as `_`.
++ */
++public class EnumValueSerializer extends ScalarSerializer<Enum<?>> {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
++
++    public EnumValueSerializer() {
++        super(new TypeToken<Enum<?>>() {});
++    }
++
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    @Override
++    public @Nullable Enum<?> deserialize(final Type type, final Object obj) throws SerializationException {
++        final String enumConstant = obj.toString();
++        final Class<? extends Enum> typeClass = erase(type).asSubclass(Enum.class);
++        @Nullable Enum<?> ret = EnumLookup.lookupEnum(typeClass, enumConstant);
++        if (ret == null) {
++            ret = EnumLookup.lookupEnum(typeClass, enumConstant.replace("-", "_"));
++        }
++        if (ret == null) {
++            boolean longer = typeClass.getEnumConstants().length > 10;
++            List<String> options = Arrays.stream(typeClass.getEnumConstants()).limit(10L).map(Enum::name).toList();
++            LOGGER.error("Invalid enum constant provided, expected one of [" + String.join(", " ,options) + (longer ? ", ..." : "") + "], but got " + enumConstant);
++        }
++        return ret;
++    }
++
++    @Override
++    public Object serialize(final Enum<?> item, final Predicate<Class<?>> typeSupported) {
++        return item.name();
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/FastutilMapSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/FastutilMapSerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -2089,7 +2285,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
-+import io.papermc.paper.configuration.Configuration;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.slf4j.Logger;
 +import org.spongepowered.configurate.BasicConfigurationNode;
@@ -2117,6 +2312,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final TypeToken<Map<?, ?>> TYPE = new TypeToken<Map<?, ?>>() {};
 +
 +    private static final Logger LOGGER = LogUtils.getLogger();
++
++    private final boolean clearInvalids;
++
++    public MapSerializer(boolean clearInvalids) {
++        this.clearInvalids = clearInvalids;
++    }
 +
 +    @Override
 +    public Map<?, ?> deserialize(Type type, ConfigurationNode node) throws SerializationException {
@@ -2155,8 +2356,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private @Nullable Object deserialize(Type type, TypeSerializer<?> serializer, String mapPart, ConfigurationNode node, NodePath path) {
 +        try {
 +            return serializer.deserialize(type, node);
-+        } catch (SerializationException exception) {
-+            LOGGER.error("Could not deserialize {} {} into {} at {}", mapPart, node.raw(), type, path, exception);
++        } catch (SerializationException ex) {
++            ex.initPath(node::path);
++            LOGGER.error("Could not deserialize {} {} into {} at {}", mapPart, node.raw(), type, path);
 +        }
 +        return null;
 +    }
@@ -2185,6 +2387,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (obj == null || obj.isEmpty()) {
 +            node.set(Collections.emptyMap());
 +        } else {
++            final Set<Object> unvisitedKeys;
++            if (node.empty()) {
++                node.raw(Collections.emptyMap());
++                unvisitedKeys = Collections.emptySet();
++            } else {
++                unvisitedKeys = new HashSet<>(node.childrenMap().keySet());
++            }
 +            final BasicConfigurationNode keyNode = BasicConfigurationNode.root(node.options());
 +            for (Map.Entry<?, ?> ent : obj.entrySet()) {
 +                if (!serialize(key, keySerializer, ent.getKey(), "key", keyNode, node.path())) {
@@ -2193,6 +2402,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                final Object keyObj = requireNonNull(keyNode.raw(), "Key must not be null!");
 +                final ConfigurationNode child = node.node(keyObj);
 +                serialize(value, valueSerializer, ent.getValue(), "value", child, child.path());
++                unvisitedKeys.remove(keyObj);
++            }
++            if (this.clearInvalids) {
++                for (Object unusedChild : unvisitedKeys) {
++                    node.removeChild(unusedChild);
++                }
 +            }
 +        }
 +    }
@@ -2204,7 +2419,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return true;
 +        } catch (SerializationException ex) {
 +            ex.initPath(node::path);
-+            LOGGER.error("Could not serialize {} {} from {} at {}", mapPart, object, type, path, ex);
++            LOGGER.error("Could not serialize {} {} from {} at {}", mapPart, object, type, path);
 +        }
 +        return false;
 +    }
@@ -2226,6 +2441,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.MinecraftServer;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
 +import org.spongepowered.configurate.serialize.SerializationException;
@@ -2235,23 +2451,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +abstract class RegistryEntrySerializer<T, R> extends ScalarSerializer<T> {
 +
-+    private final Registry<R> registry;
++    private final ResourceKey<? extends Registry<R>> registryKey;
 +    private final boolean omitMinecraftNamespace;
 +
-+    protected RegistryEntrySerializer(TypeToken<T> type, Registry<R> registry, boolean omitMinecraftNamespace) {
++    protected RegistryEntrySerializer(TypeToken<T> type, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
 +        super(type);
-+        this.registry = registry;
++        this.registryKey = registryKey;
 +        this.omitMinecraftNamespace = omitMinecraftNamespace;
 +    }
 +
-+    protected RegistryEntrySerializer(Class<T> type, Registry<R> registry, boolean omitMinecraftNamespace) {
++    protected RegistryEntrySerializer(Class<T> type, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
 +        super(type);
-+        this.registry = registry;
++        this.registryKey = registryKey;
 +        this.omitMinecraftNamespace = omitMinecraftNamespace;
 +    }
 +
 +    protected final Registry<R> registry() {
-+        return this.registry;
++        return MinecraftServer.getServer().registryAccess().registryOrThrow(this.registryKey);
 +    }
 +
 +    protected abstract T convertFromResourceKey(ResourceKey<R> key) throws SerializationException;
@@ -2278,7 +2494,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (key == null) {
 +            throw new SerializationException("Could not create a key from " + input);
 +        }
-+        return ResourceKey.create(this.registry.key(), key);
++        return ResourceKey.create(this.registryKey, key);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java
@@ -2302,12 +2518,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public final class RegistryHolderSerializer<T> extends RegistryEntrySerializer<Holder<T>, T> {
 +
 +    @SuppressWarnings("unchecked")
-+    public RegistryHolderSerializer(TypeToken<T> typeToken, Registry<T> registry, boolean omitMinecraftNamespace) {
-+        super((TypeToken<Holder<T>>) TypeToken.get(TypeFactory.parameterizedClass(Holder.class, typeToken.getType())), registry, omitMinecraftNamespace);
++    public RegistryHolderSerializer(TypeToken<T> typeToken, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super((TypeToken<Holder<T>>) TypeToken.get(TypeFactory.parameterizedClass(Holder.class, typeToken.getType())), registryKey, omitMinecraftNamespace);
 +    }
 +
-+    public RegistryHolderSerializer(Class<T> type, Registry<T> registry, boolean omitMinecraftNamespace) {
-+        this(TypeToken.get(type), registry, omitMinecraftNamespace);
++    public RegistryHolderSerializer(Class<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        this(TypeToken.get(type), registryKey, omitMinecraftNamespace);
 +        Preconditions.checkArgument(type.getTypeParameters().length == 0, "%s must have 0 type parameters", type);
 +    }
 +
@@ -2339,12 +2555,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + */
 +public final class RegistryValueSerializer<T> extends RegistryEntrySerializer<T, T> {
 +
-+    public RegistryValueSerializer(TypeToken<T> type, Registry<T> registry, boolean omitMinecraftNamespace) {
-+        super(type, registry, omitMinecraftNamespace);
++    public RegistryValueSerializer(TypeToken<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super(type, registryKey, omitMinecraftNamespace);
 +    }
 +
-+    public RegistryValueSerializer(Class<T> type, Registry<T> registry, boolean omitMinecraftNamespace) {
-+        super(type, registry, omitMinecraftNamespace);
++    public RegistryValueSerializer(Class<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super(type, registryKey, omitMinecraftNamespace);
 +    }
 +
 +    @Override
@@ -2369,6 +2585,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.transformation;
 +
++import io.papermc.paper.configuration.Configurations;
++import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.NodePath;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +
@@ -2394,6 +2612,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return newPath;
 +        });
 +    }
++
++    @FunctionalInterface
++    public interface DefaultsAware {
++        void apply(final ConfigurationTransformation.Builder builder, final Configurations.ContextMap contextMap, final ConfigurationNode defaultsNode);
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/LegacyPaperConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/global/LegacyPaperConfig.java
 new file mode 100644
@@ -2408,6 +2631,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.serializer.PacketClassSerializer;
 +import io.papermc.paper.util.ObfHelper;
 +import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.slf4j.Logger;
@@ -2523,7 +2747,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    newPath[path.size() - 1] = packet.getSimpleName();
 +                    return newPath;
 +                } else {
-+                    LOGGER.warn("Could not convert spigot-mapped packet class names because no mappings were found in the jar");
++                    final @Nullable Object keyValue = value.key();
++                    if (keyValue != null && keyValue.toString().equals("PacketPlayInAutoRecipe")) { // add special case to catch the default
++                        return path.with(path.size() - 1, ServerboundPlaceRecipePacket.class.getSimpleName()).array();
++                    } else {
++                        LOGGER.warn("Could not convert spigot-mapped packet class name {} because no mappings were found in the jar", keyValue);
++                    }
 +                }
 +                return null;
 +            }).addAction(path("loggers"), TransformAction.rename("logging"));
@@ -2585,6 +2814,83 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java b/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.transformation.world;
++
++import com.mojang.logging.LogUtils;
++import io.leangen.geantyref.TypeToken;
++import io.papermc.paper.configuration.Configurations;
++import it.unimi.dsi.fastutil.objects.Reference2LongMap;
++import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
++import net.minecraft.core.Holder;
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.slf4j.Logger;
++import org.spongepowered.configurate.ConfigurateException;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++import org.spongepowered.configurate.transformation.TransformAction;
++
++import java.security.SecureRandom;
++import java.util.Objects;
++import java.util.Random;
++import java.util.concurrent.atomic.AtomicInteger;
++
++import static org.spongepowered.configurate.NodePath.path;
++
++public class FeatureSeedsGeneration implements TransformAction {
++
++    public static final String FEATURE_SEEDS_KEY = "feature-seeds";
++    public static final String GENERATE_KEY = "generate-random-seeds-for-all";
++    public static final String FEATURES_KEY = "features";
++
++    private static final Logger LOGGER = LogUtils.getLogger();
++
++    private final ResourceLocation worldKey;
++
++    private FeatureSeedsGeneration(ResourceLocation worldKey) {
++        this.worldKey = worldKey;
++    }
++
++    @Override
++    public Object @Nullable [] visitPath(NodePath path, ConfigurationNode value) throws ConfigurateException {
++        ConfigurationNode featureNode = value.node(FEATURE_SEEDS_KEY, FEATURES_KEY);
++        final Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = Objects.requireNonNullElseGet(featureNode.get(new TypeToken<Reference2LongMap<Holder<ConfiguredFeature<?, ?>>>>() {}), Reference2LongOpenHashMap::new);
++        final Random random = new SecureRandom();
++        AtomicInteger counter = new AtomicInteger(0);
++        MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.CONFIGURED_FEATURE_REGISTRY).holders().forEach(holder -> {
++            if (features.containsKey(holder)) {
++                return;
++            }
++
++            final long seed = random.nextLong();
++            features.put(holder, seed);
++            counter.incrementAndGet();
++        });
++        if (counter.get() > 0) {
++            LOGGER.info("Generated {} random feature seeds for {}", counter.get(), this.worldKey);
++            featureNode.raw(null);
++            featureNode.set(new TypeToken<Reference2LongMap<Holder<ConfiguredFeature<?, ?>>>>() {}, features);
++        }
++        return null;
++    }
++
++
++    public static void apply(final ConfigurationTransformation.Builder builder, final Configurations.ContextMap contextMap, final ConfigurationNode defaultsNode) {
++        if (!contextMap.isDefaultWorldContext() && defaultsNode.node(FEATURE_SEEDS_KEY, GENERATE_KEY).getBoolean(false)) {
++            builder.addAction(path(), new FeatureSeedsGeneration(contextMap.require(Configurations.WORLD_KEY)));
++        }
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -2606,7 +2912,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
 +
++import java.util.HashMap;
 +import java.util.List;
++import java.util.Map;
 +import java.util.Optional;
 +
 +import static io.papermc.paper.configuration.transformation.Transformations.moveFromRoot;
@@ -2691,7 +2999,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                String itemName = path.get(path.size() - 1).toString();
 +                final Optional<Holder<Item>> item = Registry.ITEM.getHolder(ResourceKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(itemName)));
 +                if (item.isEmpty()) {
-+                    itemName = Material.valueOf(itemName).getKey().toString();
++                    itemName = Material.valueOf(itemName).getKey().getKey().toString();
 +                }
 +                final Object[] newPath = path.array();
 +                newPath[newPath.length - 1] = itemName;
@@ -2699,7 +3007,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }).build())
 +            .addVersion(27, ConfigurationTransformation.builder().addAction(path("use-faster-eigencraft-redstone"), (path, value) -> {
 +                final WorldConfiguration.Misc.RedstoneImplementation redstoneImplementation = value.getBoolean(false) ? WorldConfiguration.Misc.RedstoneImplementation.EIGENCRAFT : WorldConfiguration.Misc.RedstoneImplementation.VANILLA;
-+                value.raw(redstoneImplementation);
++                value.set(redstoneImplementation);
 +                final Object[] newPath = path.array();
 +                newPath[newPath.length - 1] = "redstone-implementation";
 +                return newPath;
@@ -2715,6 +3023,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                value.node("villager-trade").set(prevValue);
 +                value.node("loot-tables").set(prevValue);
 +                return path.with(path.size() - 1, "treasure-maps-find-already-discovered").array();
++            })
++            .addAction(path("alt-item-despawn-rate"), (path, value) -> {
++                if (value.isMap()) {
++                    Map<String, Integer> rebuild = new HashMap<>();
++                    value.childrenMap().forEach((key, node) -> {
++                        String itemName = key.toString();
++                        final Optional<Holder<Item>> itemHolder = Registry.ITEM.getHolder(ResourceKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(itemName)));
++                        final @Nullable String item;
++                        if (itemHolder.isEmpty()) {
++                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
++                            item = bukkitMat != null ? bukkitMat.getKey().getKey() : null;
++                        } else {
++                            item = itemHolder.get().unwrapKey().orElseThrow().location().getPath();
++                        }
++                        if (item != null) {
++                            rebuild.put(item, node.getInt());
++                        }
++                    });
++                    value.set(rebuild);
++                }
++                return null;
 +            })
 +            .build();
 +    }
@@ -2753,7 +3082,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        moveFromRoot(builder, "all-chunks-are-slime-chunks", "entities", "spawning");
 +        moveFromRoot(builder, "skeleton-horse-thunder-spawn-chance", "entities", "spawning");
 +        moveFromRoot(builder, "iron-golems-can-spawn-in-air", "entities", "spawning");
-+        moveFromRoot(builder, "alt-item-despawn-rate", "entities", "spawning");
++        moveFromRoot(builder, "alt-item-despawn-rate", "entities", "spawning"); // TODO versioned migration is broken, fix it here
 +        moveFromRoot(builder, "count-all-mobs-for-spawning", "entities", "spawning");
 +        moveFromRoot(builder, "creative-arrow-despawn-rate", "entities", "spawning");
 +        moveFromRoot(builder, "non-player-arrow-despawn-rate", "entities", "spawning");
@@ -2822,6 +3151,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        moveFromRoot(builder, "remove-corrupt-tile-entities", "fixes");
 +        moveFromRoot(builder, "split-overstacked-loot", "fixes");
 +        moveFromRoot(builder, "tnt-entity-height-nerf", "fixes");
++        moveFromRoot(builder, "fix-wither-targeting-bug", "fixes");
 +        moveFromGameMechanics(builder, "disable-unloaded-chunk-enderpearl-exploit", "fixes");
 +        moveFromGameMechanics(builder, "fix-curing-zombie-villager-discount-exploit", "fixes");
 +
@@ -3546,7 +3876,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Holder holder = worlddimension.typeHolder(); // CraftBukkit - decompile error
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
 -        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env);
-+        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), spigotConfig)); // Paper
++        super(iworlddataserver, resourcekey, worlddimension.typeHolder(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig))); // Paper
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
