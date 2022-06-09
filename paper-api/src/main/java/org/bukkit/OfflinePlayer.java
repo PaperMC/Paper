@@ -366,4 +366,12 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *     for the statistic
      */
     public void setStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int newValue);
+
+    /**
+     * Gets the player's last death location.
+     *
+     * @return the last death location if it exists, otherwise null.
+     */
+    @Nullable
+    public Location getLastDeathLocation();
 }

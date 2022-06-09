@@ -568,4 +568,22 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param ticks the amount of ticks to lose 1 health
      */
     public void setStarvationRate(int ticks);
+
+    /**
+     * Gets the player's last death location.
+     *
+     * @return the last death location if it exists, otherwise null.
+     */
+    @Nullable
+    public Location getLastDeathLocation();
+
+    /**
+     * Sets the player's last death location.
+     * <br>
+     * <b>Note:</b> This data is updated in the player's client only when the
+     * player respawns.
+     *
+     * @param location where to set the last death player location
+     */
+    public void setLastDeathLocation(@Nullable Location location);
 }
