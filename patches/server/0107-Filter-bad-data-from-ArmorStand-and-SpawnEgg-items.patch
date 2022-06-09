@@ -4,25 +4,8 @@ Date: Sat, 12 Nov 2016 23:25:22 -0600
 Subject: [PATCH] Filter bad data from ArmorStand and SpawnEgg items
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 45712eb3967d61541580db57e1e9f84e6f5b9762..0b5e223594ff95b8ba7c300d4a66ca7a17e53802 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -357,4 +357,12 @@ public class PaperWorldConfig {
-         preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
-         log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
-     }
-+
-+    public boolean filterNBTFromSpawnEgg = true;
-+    private void fitlerNBTFromSpawnEgg() {
-+        filterNBTFromSpawnEgg = getBoolean("filter-nbt-data-from-spawn-eggs-and-related", true);
-+        if (!filterNBTFromSpawnEgg) {
-+            Bukkit.getLogger().warning("Spawn Egg and Armor Stand NBT filtering disabled, this is a potential security risk");
-+        }
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index 242e02646b8584a8d2a512374ad03729661d584f..08defb76e73a5f9121bf405c86a3c4c750ab1933 100644
+index 6c4be7da19d0d61f35942558d438587853231aaa..18d81e8e8f387a7fb531652cb78c61a9bd5ae600 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 @@ -316,6 +316,18 @@ public class FallingBlockEntity extends Entity {
@@ -31,7 +14,7 @@ index 242e02646b8584a8d2a512374ad03729661d584f..08defb76e73a5f9121bf405c86a3c4c7
          this.blockState = NbtUtils.readBlockState(nbt.getCompound("BlockState"));
 +        // Paper start - Block FallingBlocks with Command Blocks
 +        final Block b = this.blockState.getBlock();
-+        if (this.level.paperConfig.filterNBTFromSpawnEgg
++        if (this.level.paperConfig().entities.spawning.filterNbtDataFromSpawnEggsAndRelated
 +            && (b == Blocks.COMMAND_BLOCK
 +            || b == Blocks.REPEATING_COMMAND_BLOCK
 +            || b == Blocks.CHAIN_COMMAND_BLOCK

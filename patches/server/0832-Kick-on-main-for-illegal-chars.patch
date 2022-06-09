@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <jahnke.nassim@gmail.com>
+Date: Mon, 17 Jan 2022 19:47:19 +0100
+Subject: [PATCH] Kick on main for illegal chars
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b93e6c14141f3ed3bc74c786eb56cf462510218a..fa4a5dc33887e403330933c2d00adb0220e5cc2d 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2104,7 +2104,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         }
+         // CraftBukkit end
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.getMessage())) {
++            this.server.scheduleOnMain(() -> { // Paper - push to main for event firing
+             this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add cause
++            }); // Paper - push to main for event firing
+         } else {
+             if (this.tryHandleChat(packet.getMessage(), packet.getTimeStamp())) {
+                 // CraftBukkit start
+@@ -2120,7 +2122,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     @Override
+     public void handleChatCommand(ServerboundChatCommandPacket packet) {
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.command())) {
++            this.server.scheduleOnMain(() -> { // Paper - push to main for event firing
+             this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
++            }); // Paper - push to main for event firing
+         } else {
+             PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+             if (this.tryHandleChat(packet.command(), packet.timeStamp())) {

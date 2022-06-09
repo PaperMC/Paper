@@ -11,23 +11,8 @@ just as it does in Vanilla, but entity pushing logic will be capped.
 
 You can set this to 0 to disable collisions.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 8451982ba4fc9522f2d77f68fc63a0e12558955f..ee8ce0e5bdb0acb7d6ef3439a388e108ea1807de 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -391,4 +391,10 @@ public class PaperWorldConfig {
-         treasureMapsAlreadyDiscoveredVillager = getBoolean("treasure-maps-find-already-discovered.villager-trade", treasureMapsAlreadyDiscoveredVillager);
-         treasureMapsAlreadyDiscoveredLootTable = getBooleanOrNull("treasure-maps-find-already-discovered.loot-tables", treasureMapsAlreadyDiscoveredLootTable);
-     }
-+
-+    public int maxCollisionsPerEntity = 8;
-+    private void maxEntityCollision() {
-+        maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", this.maxCollisionsPerEntity, false) );
-+        log( "Max Entity Collisions: " + maxCollisionsPerEntity );
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index a93426773dff94aebea8283ebd9f21fa841e01d7..1e9589e08149bbbbe581ecb68d9f590d16ed897a 100644
+index 25fb1785e76aa72eb59565dd51f9fc65b0509869..bfc7736bfe538b615343b6f41f2a670493e2c701 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -373,6 +373,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
@@ -39,7 +24,7 @@ index a93426773dff94aebea8283ebd9f21fa841e01d7..1e9589e08149bbbbe581ecb68d9f590d
      private org.bukkit.util.Vector origin;
      @javax.annotation.Nullable
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 8e6c9fb5eb58c20b97141551b2514c004eb4cedb..2eed84529ad9a34ae88c4f37f2b0c7943f51b0ad 100644
+index 86a624e505db71241e3acb0b9269372ea693031d..7c50e9c28f9f26b42d2baa51d8fa735bb182ffa5 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3261,8 +3261,11 @@ public abstract class LivingEntity extends Entity {
@@ -47,8 +32,8 @@ index 8e6c9fb5eb58c20b97141551b2514c004eb4cedb..2eed84529ad9a34ae88c4f37f2b0c794
              }
  
 -            for (j = 0; j < list.size(); ++j) {
-+            this.numCollisions = Math.max(0, this.numCollisions - this.level.paperConfig.maxCollisionsPerEntity); // Paper
-+            for (j = 0; j < list.size() && this.numCollisions < this.level.paperConfig.maxCollisionsPerEntity; ++j) { // Paper
++            this.numCollisions = Math.max(0, this.numCollisions - this.level.paperConfig().collisions.maxEntityCollisions); // Paper
++            for (j = 0; j < list.size() && this.numCollisions < this.level.paperConfig().collisions.maxEntityCollisions; ++j) { // Paper
                  Entity entity = (Entity) list.get(j);
 +                entity.numCollisions++; // Paper
 +                this.numCollisions++; // Paper

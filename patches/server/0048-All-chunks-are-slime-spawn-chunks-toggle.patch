@@ -4,22 +4,8 @@ Date: Thu, 3 Mar 2016 01:19:22 -0600
 Subject: [PATCH] All chunks are slime spawn chunks toggle
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index adf5a83fc1b62e55ba4524893f8704ad6cd81e97..567bad50508870001c3337bf109a407b6b4cde0e 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -247,4 +247,9 @@ public class PaperWorldConfig {
-     private void disableChestCatDetection() {
-         disableChestCatDetection = getBoolean("game-mechanics.disable-chest-cat-detection", false);
-     }
-+
-+    public boolean allChunksAreSlimeChunks;
-+    private void allChunksAreSlimeChunks() {
-+        allChunksAreSlimeChunks = getBoolean("all-chunks-are-slime-chunks", false);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Slime.java b/src/main/java/net/minecraft/world/entity/monster/Slime.java
-index a62f88048d8243f5b98834988c049471114c4199..61304f83aff18ae20316db7e16b673a652eb73a4 100644
+index a62f88048d8243f5b98834988c049471114c4199..7b95d18fb5edbd1575f6be92bfcbb3e0d7f691c8 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Slime.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Slime.java
 @@ -316,7 +316,7 @@ public class Slime extends Mob implements Enemy {
@@ -27,12 +13,12 @@ index a62f88048d8243f5b98834988c049471114c4199..61304f83aff18ae20316db7e16b673a6
  
              ChunkPos chunkcoordintpair = new ChunkPos(pos);
 -            boolean flag = WorldgenRandom.seedSlimeChunk(chunkcoordintpair.x, chunkcoordintpair.z, ((WorldGenLevel) world).getSeed(), world.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot
-+            boolean flag = world.getMinecraftWorld().paperConfig.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(chunkcoordintpair.x, chunkcoordintpair.z, ((WorldGenLevel) world).getSeed(), world.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot // Paper
++            boolean flag = world.getMinecraftWorld().paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(chunkcoordintpair.x, chunkcoordintpair.z, ((WorldGenLevel) world).getSeed(), world.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot // Paper
  
              if (random.nextInt(10) == 0 && flag && pos.getY() < 40) {
                  return checkMobSpawnRules(type, world, spawnReason, pos, random);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index d748eb01ecb2b15b081ab3d98b3b3d5804a2215a..0a72475c241e0392993c3e501f891b74c7f72019 100644
+index d748eb01ecb2b15b081ab3d98b3b3d5804a2215a..0d905269ab3bce4cfe68647b9b0cda8fff4aa17e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 @@ -220,7 +220,7 @@ public class CraftChunk implements Chunk {
@@ -40,7 +26,7 @@ index d748eb01ecb2b15b081ab3d98b3b3d5804a2215a..0a72475c241e0392993c3e501f891b74
      public boolean isSlimeChunk() {
          // 987234911L is deterimined in EntitySlime when seeing if a slime can spawn in a chunk
 -        return WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), worldServer.spigotConfig.slimeSeed).nextInt(10) == 0;
-+        return this.worldServer.paperConfig.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), worldServer.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
++        return this.worldServer.paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), worldServer.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
      }
  
      @Override

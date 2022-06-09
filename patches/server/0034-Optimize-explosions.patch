@@ -9,26 +9,11 @@ expensive when there are hundreds or more entities in range.
 This patch adds a per-tick cache that is used for storing and retrieving
 an entity's exposure during an explosion.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 067234ed44cae4454acc76b9ebe83ee1394fb913..73dda3becdf29dac35f4a0ceea070d174c546c8b 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -211,4 +211,10 @@ public class PaperWorldConfig {
-         disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
-         log("End credits disabled: " + disableEndCredits);
-     }
-+
-+    public boolean optimizeExplosions;
-+    private void optimizeExplosions() {
-+        optimizeExplosions = getBoolean("optimize-explosions", false);
-+        log("Optimize explosions: " + optimizeExplosions);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 032e6819da27c8616b9b3b6c09bd559e69c35100..f037503a68f2b7b7c76b6ac7243dde2bf734afbd 100644
+index 8cc5b6bbe2d8cbeb72e88b9e08e87fbbb98a6f8a..21e09c039a4c3fa64f6456e5cc7d50463590f787 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1393,6 +1393,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1394,6 +1394,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              this.profiler.pop();
              this.profiler.pop();
@@ -37,7 +22,7 @@ index 032e6819da27c8616b9b3b6c09bd559e69c35100..f037503a68f2b7b7c76b6ac7243dde2b
  
          this.profiler.popPush("connection");
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 292571fc9fa999d3b92e0fdd56d07ebfb4ae7402..95e59d7c45bb5128b9176e3c172bd51d98449050 100644
+index 292571fc9fa999d3b92e0fdd56d07ebfb4ae7402..db7a025cd064c898e33037133b65eecc3702542d 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -225,7 +225,7 @@ public class Explosion {
@@ -55,7 +40,7 @@ index 292571fc9fa999d3b92e0fdd56d07ebfb4ae7402..95e59d7c45bb5128b9176e3c172bd51d
      }
 +    // Paper start - Optimize explosions
 +    private float getBlockDensity(Vec3 vec3d, Entity entity) {
-+        if (!this.level.paperConfig.optimizeExplosions) {
++        if (!this.level.paperConfig().environment.optimizeExplosions) {
 +            return getSeenPercent(vec3d, entity);
 +        }
 +        CacheKey key = new CacheKey(this, entity.getBoundingBox());
@@ -135,10 +120,10 @@ index 292571fc9fa999d3b92e0fdd56d07ebfb4ae7402..95e59d7c45bb5128b9176e3c172bd51d
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 0a0625eabfb0574a2a0ce866690ae98b0a260378..7d86a8744d76e2fe8b3bf4b85152ea2203817713 100644
+index b35ca9316bf719e6b45f4d33ca7deecc95321ab3..849f83944467ca3c505afebf2b84806e46670fb0 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -157,6 +157,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -161,6 +161,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;

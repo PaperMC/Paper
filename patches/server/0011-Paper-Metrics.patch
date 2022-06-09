@@ -15,7 +15,7 @@ decisions on behalf of the project.
 
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e3b74dbdf8e14219a56fab939f3174e0c2f66de6
+index 0000000000000000000000000000000000000000..5a19e30a9b7e65a70f68a429b8ca741f788a303b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
 @@ -0,0 +1,670 @@
@@ -576,8 +576,8 @@ index 0000000000000000000000000000000000000000..e3b74dbdf8e14219a56fab939f3174e0
 +
 +    }
 +
-+    static class PaperMetrics {
-+        static void startMetrics() {
++    public static class PaperMetrics {
++        public static void startMetrics() {
 +            // Get the config file
 +            File configFile = new File(new File((File) MinecraftServer.getServer().options.valueOf("plugins"), "bStats"), "config.yml");
 +            YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
@@ -689,22 +689,29 @@ index 0000000000000000000000000000000000000000..e3b74dbdf8e14219a56fab939f3174e0
 +        }
 +    }
 +}
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index c1eb4201ecb0541c606ef0d05b828ae9c87c8a2c..52e9dca37dab4cacdded3b084c40d4dd75182bb5 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -42,6 +42,7 @@ public class PaperConfig {
-     private static boolean verbose;
-     private static boolean fatalError;
-     /*========================================================================*/
-+    private static boolean metricsStarted;
+diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+index f06f130b2fa703e105f9d49bc755e8374d023f2e..ef407d6a961c327631656cfd4cc610a22a9e53ac 100644
+--- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
++++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.configuration;
  
-     public static void init(File configFile) {
-         CONFIG_FILE = configFile;
-@@ -84,6 +85,11 @@ public class PaperConfig {
-         for (Map.Entry<String, Command> entry : commands.entrySet()) {
-             MinecraftServer.getServer().server.getCommandMap().register(entry.getKey(), "Paper", entry.getValue());
-         }
++import com.destroystokyo.paper.Metrics;
+ import com.destroystokyo.paper.PaperCommand;
+ import com.google.common.collect.Table;
+ import com.mojang.logging.LogUtils;
+@@ -283,6 +284,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+     }
+ 
+     private static final Map<String, Command> COMMANDS = new HashMap<>();
++    private static boolean metricsStarted = false;
+     static {
+         COMMANDS.put("paper", new PaperCommand("paper"));
+     }
+@@ -291,6 +293,11 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+         COMMANDS.forEach((s, command) -> {
+             server.server.getCommandMap().register(s, "Paper", command);
+         });
 +
 +        if (!metricsStarted) {
 +            Metrics.PaperMetrics.startMetrics();
@@ -712,9 +719,9 @@ index c1eb4201ecb0541c606ef0d05b828ae9c87c8a2c..52e9dca37dab4cacdded3b084c40d4dd
 +        }
      }
  
-     static void readConfig(Class<?> clazz, Object instance) {
+     @Deprecated
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 43aa6b0129892b8ab8ec25c16a131541c6607487..9d3d65de7cb0be25aa7fc40353390280943b55f4 100644
+index ed8ae212fc0ca781438fa9667f3f5cccc0af4cee..051d7c7fc5796ad056ae1ba5e5e630fde8794108 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -83,6 +83,7 @@ public class SpigotConfig
@@ -732,4 +739,4 @@ index 43aa6b0129892b8ab8ec25c16a131541c6607487..9d3d65de7cb0be25aa7fc40353390280
 +        */ // Paper end
      }
  
-     static void readConfig(Class<?> clazz, Object instance)
+     public static void readConfig(Class<?> clazz, Object instance) // Paper - package-private -> public

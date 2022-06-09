@@ -5,27 +5,8 @@ Subject: [PATCH] Drop falling block and tnt entities at the specified height
 
 * Dec 2, 2020 Added tnt nerf for tnt minecarts - Machine_Maker
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index f32726275d18772904883b618be66893ca5d84fd..b41f6074e0d88b6becb5b931fc4ee94a1f9f2f0b 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -180,4 +180,14 @@ public class PaperWorldConfig {
-         keepSpawnInMemory = getBoolean("keep-spawn-loaded", true);
-         log("Keep spawn chunk loaded: " + keepSpawnInMemory);
-     }
-+
-+    public int fallingBlockHeightNerf;
-+    public int entityTNTHeightNerf;
-+    private void heightNerfs() {
-+        fallingBlockHeightNerf = getInt("falling-block-height-nerf", 0);
-+        entityTNTHeightNerf = getInt("tnt-entity-height-nerf", 0);
-+
-+        if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
-+        if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index 7e1594e8df4fd09cd1aecbc5f3784797b04a8337..26ab6d0c98560e4dfebbad3482fd308861818e30 100644
+index 7e1594e8df4fd09cd1aecbc5f3784797b04a8337..bd357c3e6fcbd82f3c53ecc8dab46aa5d3708bc2 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 @@ -137,6 +137,17 @@ public class FallingBlockEntity extends Entity {
@@ -34,7 +15,7 @@ index 7e1594e8df4fd09cd1aecbc5f3784797b04a8337..26ab6d0c98560e4dfebbad3482fd3088
              this.move(MoverType.SELF, this.getDeltaMovement());
 +
 +            // Paper start - Configurable EntityFallingBlock height nerf
-+            if (this.level.paperConfig.fallingBlockHeightNerf != 0 && this.getY() > this.level.paperConfig.fallingBlockHeightNerf) {
++            if (this.level.paperConfig().fixes.fallingBlockHeightNerf != 0 && this.getY() > this.level.paperConfig().fixes.fallingBlockHeightNerf) {
 +                if (this.dropItem && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
 +                    this.spawnAtLocation(block);
 +                }
@@ -47,7 +28,7 @@ index 7e1594e8df4fd09cd1aecbc5f3784797b04a8337..26ab6d0c98560e4dfebbad3482fd3088
                  BlockPos blockposition = this.blockPosition();
                  boolean flag = this.blockState.getBlock() instanceof ConcretePowderBlock;
 diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-index e24b46820394c5f220d5bf7c4e763ef95ff9e9ab..bbe15c66917781a8b6950307449f0243ffc3c8c7 100644
+index e24b46820394c5f220d5bf7c4e763ef95ff9e9ab..2d4a990da2402a6c24c03e8be7e518e33db99c8f 100644
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 @@ -68,6 +68,12 @@ public class PrimedTnt extends Entity {
@@ -55,7 +36,7 @@ index e24b46820394c5f220d5bf7c4e763ef95ff9e9ab..bbe15c66917781a8b6950307449f0243
  
          this.move(MoverType.SELF, this.getDeltaMovement());
 +        // Paper start - Configurable TNT entity height nerf
-+        if (this.level.paperConfig.entityTNTHeightNerf != 0 && this.getY() > this.level.paperConfig.entityTNTHeightNerf) {
++        if (this.level.paperConfig().fixes.tntEntityHeightNerf != 0 && this.getY() > this.level.paperConfig().fixes.tntEntityHeightNerf) {
 +            this.discard();
 +            return;
 +        }
@@ -64,7 +45,7 @@ index e24b46820394c5f220d5bf7c4e763ef95ff9e9ab..bbe15c66917781a8b6950307449f0243
          if (this.onGround) {
              this.setDeltaMovement(this.getDeltaMovement().multiply(0.7D, -0.5D, 0.7D));
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
-index c10c28eb441e65c6285c25b5d4760c876909c724..469dbae2e04a9ded9e46a576b2e1b020801c1395 100644
+index c10c28eb441e65c6285c25b5d4760c876909c724..136bd0168b573079dfad127d02ca8ba72c02fafb 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
 @@ -46,6 +46,12 @@ public class MinecartTNT extends AbstractMinecart {
@@ -72,7 +53,7 @@ index c10c28eb441e65c6285c25b5d4760c876909c724..469dbae2e04a9ded9e46a576b2e1b020
          super.tick();
          if (this.fuse > 0) {
 +            // Paper start - Configurable TNT entity height nerf
-+            if (this.level.paperConfig.entityTNTHeightNerf != 0 && this.getY() > this.level.paperConfig.entityTNTHeightNerf) {
++            if (this.level.paperConfig().fixes.tntEntityHeightNerf != 0 && this.getY() > this.level.paperConfig().fixes.tntEntityHeightNerf) {
 +                this.discard();
 +                return;
 +            }

@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 19 Dec 2021 09:13:41 -0800
+Subject: [PATCH] Only write chunk data to disk if it serializes without
+ throwing
+
+This ensures at least a valid version of the chunk exists
+on disk, even if outdated
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+index 8ff8855c5267379b3a5f5d8baa4a275ffee2c4bf..6704ae5c2ee01f8b319f4d425fe08c16d7b1b212 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -1019,6 +1019,24 @@ public class RegionFile implements AutoCloseable {
+             this.pos = chunkcoordintpair;
+         }
+ 
++        // Paper start - don't write garbage data to disk if writing serialization fails
++        @Override
++        public void write(final int b) {
++            if (this.count > 500_000_000) {
++                throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + this.count);
++            }
++            super.write(b);
++        }
++
++        @Override
++        public void write(final byte[] b, final int off, final int len) {
++            if (this.count + len > 500_000_000) {
++                throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + (this.count + len));
++            }
++            super.write(b, off, len);
++        }
++        // Paper end
++
+         public void close() throws IOException {
+             ByteBuffer bytebuffer = ByteBuffer.wrap(this.buf, 0, this.count);
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index 6986a170f37f70e8eb89d79d5d2615a06a5e0f0c..c31b9a6b1d4548d507ecb60d42ca9f96f49f6c4b 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -298,10 +298,17 @@ public class RegionFileStorage implements AutoCloseable {
+                 NbtIo.write(nbt, (DataOutput) dataoutputstream);
+                 regionfile.setStatus(pos.x, pos.z, ChunkSerializer.getStatus(nbt)); // Paper - cache status on disk
+                 regionfile.setOversized(pos.x, pos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
++                dataoutputstream.close(); // Paper - only write if successful
++            // Paper start - don't write garbage data to disk if writing serialization fails
++            } catch (RegionFileSizeException e) {
++                attempts = 5; // Don't retry
++                regionfile.clear(pos);
++                throw e;
++                // Paper end - don't write garbage data to disk if writing serialization fails
+             } catch (Throwable throwable) {
+                 if (dataoutputstream != null) {
+                     try {
+-                        dataoutputstream.close();
++                        //dataoutputstream.close(); // Paper - don't write garbage data to disk if writing serialization fails
+                     } catch (Throwable throwable1) {
+                         throwable.addSuppressed(throwable1);
+                     }
+@@ -309,10 +316,7 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+                 throw throwable;
+             }
+-
+-            if (dataoutputstream != null) {
+-                dataoutputstream.close();
+-            }
++            // Paper - move into try block to only write if successfully serialized
+         }
+ 
+             // Paper start
+@@ -359,4 +363,13 @@ public class RegionFileStorage implements AutoCloseable {
+         }
+ 
+     }
++
++    // Paper start
++    public static final class RegionFileSizeException extends RuntimeException {
++
++        public RegionFileSizeException(String message) {
++            super(message);
++        }
++    }
++    // Paper end
+ }
