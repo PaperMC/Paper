@@ -10,7 +10,7 @@ Also has a hover text on each mob category listing what entity types are
 in said category
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index f953ea6f63d7aee3564d57eb250b02a28d36a187..3322b811ef7e6018383227de0e605324ae3ed48f 100644
+index 5ab7f0b6db9a25792aa99e90504ae75512bffc63..268374eccbccfc45257567f89de25ac83a6416fe 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -3,6 +3,7 @@ package com.destroystokyo.paper;
@@ -21,7 +21,7 @@ index f953ea6f63d7aee3564d57eb250b02a28d36a187..3322b811ef7e6018383227de0e605324
  import com.google.common.collect.ImmutableSet;
  import com.google.common.collect.Iterables;
  import com.google.common.collect.Lists;
-@@ -10,6 +11,13 @@ import com.google.common.collect.Maps;
+@@ -12,6 +13,12 @@ import net.minecraft.resources.ResourceLocation;
  import com.google.gson.JsonObject;
  import com.google.gson.internal.Streams;
  import com.google.gson.stream.JsonWriter;
@@ -31,24 +31,21 @@ index f953ea6f63d7aee3564d57eb250b02a28d36a187..3322b811ef7e6018383227de0e605324
 +import net.kyori.adventure.text.TextComponent;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.format.TextColor;
-+import net.minecraft.core.Registry;
- import net.minecraft.resources.ResourceLocation;
- import net.minecraft.server.MCUtil;
  import net.minecraft.server.MinecraftServer;
-@@ -19,10 +27,12 @@ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ChunkHolder;
+ import net.minecraft.server.level.ServerChunkCache;
+@@ -19,8 +26,10 @@ import net.minecraft.server.level.ServerLevel;
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.server.level.ThreadedLevelLightEngine;
  import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.entity.MobCategory;
  import net.minecraft.world.level.ChunkPos;
- import net.minecraft.network.protocol.game.ClientboundLightUpdatePacket;
- import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.MCUtil;
 +import net.minecraft.world.level.NaturalSpawner;
  import org.apache.commons.lang3.tuple.MutablePair;
  import org.apache.commons.lang3.tuple.Pair;
  import org.bukkit.Bukkit;
-@@ -54,6 +64,7 @@ import java.util.List;
+@@ -52,6 +61,7 @@ import java.util.List;
  import java.util.Locale;
  import java.util.Map;
  import java.util.Set;
@@ -56,7 +53,7 @@ index f953ea6f63d7aee3564d57eb250b02a28d36a187..3322b811ef7e6018383227de0e605324
  import java.util.stream.Collectors;
  
  import static net.kyori.adventure.text.Component.text;
-@@ -66,7 +77,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
+@@ -64,7 +74,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
  
  public class PaperCommand extends Command {
      private static final String BASE_PERM = "bukkit.command.paper.";
@@ -65,7 +62,7 @@ index f953ea6f63d7aee3564d57eb250b02a28d36a187..3322b811ef7e6018383227de0e605324
  
      public PaperCommand(String name) {
          super(name);
-@@ -99,6 +110,10 @@ public class PaperCommand extends Command {
+@@ -97,6 +107,10 @@ public class PaperCommand extends Command {
                      return getListMatchingLast(sender, args, "help", "chunks");
                  }
                  break;
@@ -76,7 +73,7 @@ index f953ea6f63d7aee3564d57eb250b02a28d36a187..3322b811ef7e6018383227de0e605324
              case "chunkinfo":
                  List<String> worldNames = new ArrayList<>();
                  worldNames.add("*");
-@@ -195,6 +210,12 @@ public class PaperCommand extends Command {
+@@ -193,6 +207,12 @@ public class PaperCommand extends Command {
              case "syncloadinfo":
                  this.doSyncLoadInfo(sender, args);
                  break;
@@ -89,7 +86,7 @@ index f953ea6f63d7aee3564d57eb250b02a28d36a187..3322b811ef7e6018383227de0e605324
              case "ver":
                  if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-@@ -253,6 +274,184 @@ public class PaperCommand extends Command {
+@@ -251,6 +271,184 @@ public class PaperCommand extends Command {
          }
      }
  
@@ -296,7 +293,7 @@ index fa23e9c476d4edc6176d8b8a6cb13c52d2f66a87..4150e8cd7197eac53042d56f0a53a495
          // Paper start - add parameters and int ret type
          spawnCategoryForChunk(group, world, chunk, checker, runner, Integer.MAX_VALUE, null);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index df86cdc08d036c43000ce999647136270f97bc1b..efaaa74878ad18082a0b95ce2697b3638bc1284b 100644
+index 78759009e78804efa6fcaf3804633698f3090990..64cd0cee5c9d68994fe45246cc46bd91c83c9599 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2130,6 +2130,11 @@ public final class CraftServer implements Server {
