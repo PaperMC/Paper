@@ -1713,10 +1713,10 @@ index 0000000000000000000000000000000000000000..058fb5a41565e6ce2acbd1f4d071a1b8
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5b3ef259cf1bff7b23654c2a3e9fc96a7ebc9a03
+index 0000000000000000000000000000000000000000..af40e473521f408aa0e112953c43bdbce164a48b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,534 @@
+@@ -0,0 +1,535 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -1851,12 +1851,13 @@ index 0000000000000000000000000000000000000000..5b3ef259cf1bff7b23654c2a3e9fc96a
 +    }
 +
 +    public static void processConfiguration(GlobalConfiguration.AsyncChunks config) {
++        int threads = config.threads; // don't write back to config
 +        int cpus = Runtime.getRuntime().availableProcessors() / 2;
-+        if (config.threads <= 0) {
++        if (threads <= 0) {
 +            if (cpus <= 4) {
-+                config.threads = cpus <= 2 ? 1 : 2;
++                threads = cpus <= 2 ? 1 : 2;
 +            } else {
-+                config.threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 4), cpus / 2);
++                threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 4), cpus / 2);
 +            }
 +        }
 +        if (cpus == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore")) {
@@ -1869,12 +1870,12 @@ index 0000000000000000000000000000000000000000..5b3ef259cf1bff7b23654c2a3e9fc96a
 +        String sharedHostThreads = System.getenv("PAPER_ASYNC_CHUNKS_SHARED_HOST_THREADS");
 +        if (sharedHostThreads != null) {
 +            try {
-+                config.threads = Math.max(1, Math.min(config.threads, Integer.parseInt(sharedHostThreads)));
++                threads = Math.max(1, Math.min(threads, Integer.parseInt(sharedHostThreads)));
 +            } catch (NumberFormatException ignored) {}
 +        }
 +
 +        if (config.asyncChunks) {
-+            ChunkTaskManager.initGlobalLoadThreads(config.threads);
++            ChunkTaskManager.initGlobalLoadThreads(threads);
 +        }
 +    }
 +
