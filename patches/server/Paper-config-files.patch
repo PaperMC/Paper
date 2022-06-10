@@ -248,23 +248,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final ContextMap contextMap = this.createDefaultContextMap()
 +            .put(FIRST_DEFAULT)
 +            .build();
-+        final YamlConfigurationLoader loader = this.createDefaultWorldLoader(false, contextMap);
++        final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap);
++        final YamlConfigurationLoader loader = result.loader();
 +        final ConfigurationNode node = loader.load();
++        if (result.isNewFile()) { // add version to new files
++            node.node(Configuration.VERSION_FIELD).raw(WorldConfiguration.CURRENT_VERSION);
++        }
 +        this.applyWorldConfigTransformations(contextMap, node);
 +        final W instance = node.require(this.worldConfigClass);
 +        node.set(this.worldConfigClass, instance);
 +        loader.save(node);
 +    }
 +
-+    private YamlConfigurationLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap) {
++    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap) {
 +        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
-+        if (requireFile && !Files.exists(configFile)) {
++        boolean willCreate = Files.notExists(configFile);
++        if (requireFile && willCreate) {
 +            throw new IllegalStateException("World defaults configuration file '" + configFile + "' doesn't exist");
 +        }
-+        return this.createWorldConfigLoaderBuilder(contextMap)
-+            .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(contextMap).build()))
-+            .path(configFile)
-+            .build();
++        return new DefaultWorldLoader(
++            this.createWorldConfigLoaderBuilder(contextMap)
++                .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(contextMap).build()))
++                .path(configFile)
++                .build(),
++            willCreate
++        );
++    }
++
++    private record DefaultWorldLoader(YamlConfigurationLoader loader, boolean isNewFile) {
 +    }
 +
 +    protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final ContextMap contextMap) {
@@ -282,7 +293,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
-+        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build());
++        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build()).loader();
 +        final ConfigurationNode defaultsNode = defaultsLoader.load();
 +
 +        boolean newFile = false;
@@ -299,7 +310,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .path(worldConfigFile)
 +            .build();
 +        final ConfigurationNode worldNode = worldLoader.load();
-+        if (newFile) {
++        if (newFile) { // set the version field if new file
 +            worldNode.node(Configuration.VERSION_FIELD).set(WorldConfiguration.CURRENT_VERSION);
 +        }
 +        this.applyWorldConfigTransformations(contextMap, worldNode);
@@ -2748,13 +2759,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.minimessage.MiniMessage;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-+import net.minecraft.network.protocol.Packet;
 +import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 +import org.bukkit.ChatColor;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.slf4j.Logger;
-+import org.spongepowered.configurate.BasicConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
@@ -3209,7 +3218,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    Map<String, Integer> rebuild = new HashMap<>();
 +                    value.childrenMap().forEach((key, node) -> {
 +                        String itemName = key.toString();
-+                        final Optional<Holder<Item>> itemHolder = Registry.ITEM.getHolder(ResourceKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(itemName)));
++                        final Optional<Holder<Item>> itemHolder = Registry.ITEM.getHolder(ResourceKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
 +                        final @Nullable String item;
 +                        if (itemHolder.isEmpty()) {
 +                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
@@ -3264,7 +3273,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        moveFromRoot(builder, "all-chunks-are-slime-chunks", "entities", "spawning");
 +        moveFromRoot(builder, "skeleton-horse-thunder-spawn-chance", "entities", "spawning");
 +        moveFromRoot(builder, "iron-golems-can-spawn-in-air", "entities", "spawning");
-+        moveFromRoot(builder, "alt-item-despawn-rate", "entities", "spawning"); // TODO versioned migration is broken, fix it here
++        moveFromRoot(builder, "alt-item-despawn-rate", "entities", "spawning");
 +        moveFromRoot(builder, "count-all-mobs-for-spawning", "entities", "spawning");
 +        moveFromRoot(builder, "creative-arrow-despawn-rate", "entities", "spawning");
 +        moveFromRoot(builder, "non-player-arrow-despawn-rate", "entities", "spawning");
