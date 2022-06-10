@@ -113,10 +113,10 @@ index 0000000000000000000000000000000000000000..7a4a7a654fe2516ed894a68f2657344d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..844275e8671c62633e370ae3d4e0738eedac3e7e
+index 0000000000000000000000000000000000000000..13d7d1c24ec9192d0163f6eedeac8fca82b6e80c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
-@@ -0,0 +1,285 @@
+@@ -0,0 +1,296 @@
 +package io.papermc.paper.configuration;
 +
 +import io.leangen.geantyref.TypeToken;
@@ -248,23 +248,34 @@ index 0000000000000000000000000000000000000000..844275e8671c62633e370ae3d4e0738e
 +        final ContextMap contextMap = this.createDefaultContextMap()
 +            .put(FIRST_DEFAULT)
 +            .build();
-+        final YamlConfigurationLoader loader = this.createDefaultWorldLoader(false, contextMap);
++        final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap);
++        final YamlConfigurationLoader loader = result.loader();
 +        final ConfigurationNode node = loader.load();
++        if (result.isNewFile()) { // add version to new files
++            node.node(Configuration.VERSION_FIELD).raw(WorldConfiguration.CURRENT_VERSION);
++        }
 +        this.applyWorldConfigTransformations(contextMap, node);
 +        final W instance = node.require(this.worldConfigClass);
 +        node.set(this.worldConfigClass, instance);
 +        loader.save(node);
 +    }
 +
-+    private YamlConfigurationLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap) {
++    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap) {
 +        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
-+        if (requireFile && !Files.exists(configFile)) {
++        boolean willCreate = Files.notExists(configFile);
++        if (requireFile && willCreate) {
 +            throw new IllegalStateException("World defaults configuration file '" + configFile + "' doesn't exist");
 +        }
-+        return this.createWorldConfigLoaderBuilder(contextMap)
-+            .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(contextMap).build()))
-+            .path(configFile)
-+            .build();
++        return new DefaultWorldLoader(
++            this.createWorldConfigLoaderBuilder(contextMap)
++                .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(contextMap).build()))
++                .path(configFile)
++                .build(),
++            willCreate
++        );
++    }
++
++    private record DefaultWorldLoader(YamlConfigurationLoader loader, boolean isNewFile) {
 +    }
 +
 +    protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final ContextMap contextMap) {
@@ -282,7 +293,7 @@ index 0000000000000000000000000000000000000000..844275e8671c62633e370ae3d4e0738e
 +    }
 +
 +    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
-+        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build());
++        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build()).loader();
 +        final ConfigurationNode defaultsNode = defaultsLoader.load();
 +
 +        boolean newFile = false;
@@ -299,7 +310,7 @@ index 0000000000000000000000000000000000000000..844275e8671c62633e370ae3d4e0738e
 +            .path(worldConfigFile)
 +            .build();
 +        final ConfigurationNode worldNode = worldLoader.load();
-+        if (newFile) {
++        if (newFile) { // set the version field if new file
 +            worldNode.node(Configuration.VERSION_FIELD).set(WorldConfiguration.CURRENT_VERSION);
 +        }
 +        this.applyWorldConfigTransformations(contextMap, worldNode);
@@ -2734,10 +2745,10 @@ index 0000000000000000000000000000000000000000..0300fb1e09d41465e4a50bfdc987b957
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/LegacyPaperConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/global/LegacyPaperConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..943cd629c48a60f108c7a724201cfcad07fcc4ff
+index 0000000000000000000000000000000000000000..3be5cb126e41a533e9453bbd6326cd1c10dd879d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/global/LegacyPaperConfig.java
-@@ -0,0 +1,250 @@
+@@ -0,0 +1,248 @@
 +package io.papermc.paper.configuration.transformation.global;
 +
 +import com.mojang.logging.LogUtils;
@@ -2748,13 +2759,11 @@ index 0000000000000000000000000000000000000000..943cd629c48a60f108c7a724201cfcad
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.minimessage.MiniMessage;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-+import net.minecraft.network.protocol.Packet;
 +import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 +import org.bukkit.ChatColor;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.slf4j.Logger;
-+import org.spongepowered.configurate.BasicConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
@@ -3067,7 +3076,7 @@ index 0000000000000000000000000000000000000000..75f612b04f872d0d014fdc40b07c1511
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4861470fee09c757874c02a2abbdf56e25404c2f
+index 0000000000000000000000000000000000000000..6af307481a6752529d87869760945cb140d05bed
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 @@ -0,0 +1,321 @@
@@ -3209,7 +3218,7 @@ index 0000000000000000000000000000000000000000..4861470fee09c757874c02a2abbdf56e
 +                    Map<String, Integer> rebuild = new HashMap<>();
 +                    value.childrenMap().forEach((key, node) -> {
 +                        String itemName = key.toString();
-+                        final Optional<Holder<Item>> itemHolder = Registry.ITEM.getHolder(ResourceKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(itemName)));
++                        final Optional<Holder<Item>> itemHolder = Registry.ITEM.getHolder(ResourceKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
 +                        final @Nullable String item;
 +                        if (itemHolder.isEmpty()) {
 +                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
@@ -3264,7 +3273,7 @@ index 0000000000000000000000000000000000000000..4861470fee09c757874c02a2abbdf56e
 +        moveFromRoot(builder, "all-chunks-are-slime-chunks", "entities", "spawning");
 +        moveFromRoot(builder, "skeleton-horse-thunder-spawn-chance", "entities", "spawning");
 +        moveFromRoot(builder, "iron-golems-can-spawn-in-air", "entities", "spawning");
-+        moveFromRoot(builder, "alt-item-despawn-rate", "entities", "spawning"); // TODO versioned migration is broken, fix it here
++        moveFromRoot(builder, "alt-item-despawn-rate", "entities", "spawning");
 +        moveFromRoot(builder, "count-all-mobs-for-spawning", "entities", "spawning");
 +        moveFromRoot(builder, "creative-arrow-despawn-rate", "entities", "spawning");
 +        moveFromRoot(builder, "non-player-arrow-despawn-rate", "entities", "spawning");
