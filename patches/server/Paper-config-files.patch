@@ -926,7 +926,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final String GLOBAL_CONFIG_FILE_NAME = "paper-global.yml";
 +    static final String WORLD_DEFAULTS_CONFIG_FILE_NAME = "paper-world-defaults.yml";
 +    static final String WORLD_CONFIG_FILE_NAME = "paper-world.yml";
-+    private static final Path BACKUP_DIR = Path.of("legacy-backup");
++    public static final String CONFIG_DIR = "config";
++    private static final String BACKUP_DIR ="legacy-backup";
 +
 +    private static final String GLOBAL_HEADER = """
 +            This is the global configuration file for Paper.
@@ -1139,12 +1140,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static PaperConfigurations setup(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
 +        if (needsConverting(legacyConfig)) {
 +            try {
-+                Files.createDirectories(configDir.resolve(BACKUP_DIR));
-+                final Path legacyConfigBackup = configDir.resolve(BACKUP_DIR).resolve(legacyConfig.getFileName().toString() + ".old");
++                if (Files.exists(configDir) && !Files.isDirectory(configDir)) {
++                    throw new RuntimeException("Paper needs to create a '" + CONFIG_DIR + "' folder in the root of your server. You already have a non-directory named '" + CONFIG_DIR + "'. Please remove it and restart the server.");
++                }
++                final Path backupDir = configDir.resolve(BACKUP_DIR);
++                if (Files.exists(backupDir) && !Files.isDirectory(backupDir)) {
++                    throw new RuntimeException("Paper needs to create a '" + BACKUP_DIR + "' directory in the '" + CONFIG_DIR + "' folder. You already have a non-directory named '" + BACKUP_DIR + "'. Please remove it and restart the server.");
++                }
++                Files.createDirectories(backupDir);
++                final String backupFileName = legacyConfig.getFileName().toString() + ".old";
++                final Path legacyConfigBackup = backupDir.resolve(backupFileName);
++                if (Files.exists(legacyConfigBackup) && !Files.isRegularFile(legacyConfigBackup)) {
++                    throw new RuntimeException("Paper needs to create a '" + backupFileName + "' file in the '" + BACKUP_DIR + "' folder. You already have a non-file named '" + backupFileName + "'. Please remove it and restart the server.");
++                }
 +                Files.move(legacyConfig, legacyConfigBackup, StandardCopyOption.REPLACE_EXISTING); // make backup
 +                convert(legacyConfigBackup, configDir, worldFolder, spigotConfig);
 +            } catch (final IOException ex) {
-+                throw new RuntimeException("Could not convert paper.yml to the new configuration format", ex);
++                throw new RuntimeException("Could not convert '" + legacyConfig.getFileName().toString() + "' to the new configuration format", ex);
 +            }
 +        }
 +        try {
@@ -4050,7 +4062,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          SignatureValidator signatureValidator = SignatureValidator.from(authenticationService.getServicesKey());
 -        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache);
 +        // Paper start
-+        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(((File) optionSet.valueOf("paper-settings")).toPath(), java.nio.file.Path.of("config"), rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
++        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(((File) optionSet.valueOf("paper-settings")).toPath(), java.nio.file.Path.of(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR), rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
 +        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache, paperConfigurations);
 +        // Paper end
      }
