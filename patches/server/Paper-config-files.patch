@@ -2197,30 +2197,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.serializer;
 +
++import com.google.common.collect.BiMap;
++import com.google.common.collect.ImmutableBiMap;
++import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
++import io.papermc.paper.configuration.serializer.collections.MapSerializer;
 +import io.papermc.paper.util.ObfHelper;
-+import java.lang.reflect.Type;
-+import java.util.Collection;
-+import java.util.Collections;
-+import java.util.List;
-+import java.util.Map;
-+import java.util.Optional;
-+import java.util.function.Predicate;
-+import java.util.stream.Collectors;
 +import net.minecraft.network.protocol.Packet;
 +import org.checkerframework.checker.nullness.qual.Nullable;
++import org.slf4j.Logger;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
++import java.lang.reflect.Type;
++import java.util.List;
++import java.util.Map;
++import java.util.function.Predicate;
++
 +@SuppressWarnings("Convert2Diamond")
-+public final class PacketClassSerializer extends ScalarSerializer<Class<? extends Packet<?>>> {
++public final class PacketClassSerializer extends ScalarSerializer<Class<? extends Packet<?>>> implements MapSerializer.WriteBack {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
 +    private static final TypeToken<Class<? extends Packet<?>>> TYPE = new TypeToken<Class<? extends Packet<?>>>() {};
 +    private static final List<String> SUBPACKAGES = List.of("game", "handshake", "login", "status");
-+    private static final Map<String, String> MOJANG_TO_OBF = Optional.ofNullable(ObfHelper.INSTANCE.mappingsByMojangName())
-+        .map(Map::entrySet)
-+        .map(Collection::stream)
-+        .map(stream -> stream.collect(Collectors.toMap(entry -> entry.getValue().mojangName(), entry -> entry.getValue().obfName())))
-+        .orElseGet(Collections::emptyMap);
++    private static final BiMap<String, String> MOJANG_TO_OBF;
++
++    static {
++        final ImmutableBiMap.Builder<String, String> builder = ImmutableBiMap.builder();
++        final @Nullable Map<String, ObfHelper.ClassMapping> classMappingMap = ObfHelper.INSTANCE.mappingsByMojangName();
++        if (classMappingMap != null) {
++            classMappingMap.forEach((mojMap, classMapping) -> {
++                if (mojMap.startsWith("net.minecraft.network.protocol.")) {
++                    builder.put(classMapping.mojangName(), classMapping.obfName());
++                }
++            });
++        }
++        MOJANG_TO_OBF = builder.build();
++    }
 +
 +    public PacketClassSerializer() {
 +        super(TYPE);
@@ -2251,9 +2264,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    protected Object serialize(final Class<? extends Packet<?>> item, final Predicate<Class<?>> typeSupported) {
-+        //TODO always serialize the mapped class name to not break on switching between mapped/unmapped servers
-+        return item.getSimpleName();
++    protected @Nullable Object serialize(final Class<? extends Packet<?>> packetClass, final Predicate<Class<?>> typeSupported) {
++        final String name = packetClass.getName();
++        @Nullable String mojName = ObfHelper.INSTANCE.mappingsByMojangName() == null ? name : MOJANG_TO_OBF.inverse().get(name); // if the mappings are null, running on moj-mapped server
++        if (mojName == null && MOJANG_TO_OBF.containsKey(name)) {
++            mojName = name;
++        }
++        if (mojName != null) {
++            int pos = mojName.lastIndexOf('.');
++            if (pos != -1 && pos != mojName.length() - 1) {
++                return mojName.substring(pos + 1);
++            }
++        }
++
++        LOGGER.error("Could not serialize {} into a mojang-mapped packet class name", packetClass);
++        return null;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/StringRepresentableSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/StringRepresentableSerializer.java
@@ -2466,13 +2491,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            final BasicConfigurationNode keyNode = BasicConfigurationNode.root(node.options());
++            final Set<Object> keysToClear = new HashSet<>();
 +            for (Map.Entry<Object, ? extends ConfigurationNode> ent : node.childrenMap().entrySet()) {
-+                final @Nullable Object keyValue = deserialize(key, keySerializer, "key", keyNode.set(ent.getKey()), node.path());
-+                final @Nullable Object valueValue = deserialize(value, valueSerializer, "value", ent.getValue(), ent.getValue().path());
-+                if (keyValue == null || valueValue == null) {
++                final @Nullable Object deserializedKey = deserialize(key, keySerializer, "key", keyNode.set(ent.getKey()), node.path());
++                final @Nullable Object deserializedValue = deserialize(value, valueSerializer, "value", ent.getValue(), ent.getValue().path());
++                if (deserializedKey == null || deserializedValue == null) {
 +                    continue;
 +                }
-+                map.put(keyValue, valueValue);
++                if (keySerializer instanceof WriteBack) {
++                    if (serialize(key, keySerializer, deserializedKey, "key", keyNode, node.path()) && !ent.getKey().equals(requireNonNull(keyNode.raw(), "Key must not be null!"))) {
++                        keysToClear.add(ent.getKey());
++                    }
++                }
++                map.put(deserializedKey, deserializedValue);
++            }
++            if (keySerializer instanceof WriteBack) { // supports cleaning keys which deserialize to the same value
++                for (Object keyToClear : keysToClear) {
++                    node.node(keyToClear).raw(null);
++                }
 +            }
 +        }
 +        return map;
@@ -2552,6 +2588,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public @Nullable Map<?, ?> emptyValue(Type specificType, ConfigurationOptions options) {
 +        return new LinkedHashMap<>();
++    }
++
++    public interface WriteBack { // marker interface
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
@@ -2753,8 +2792,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.Configuration;
-+import io.papermc.paper.configuration.serializer.PacketClassSerializer;
-+import io.papermc.paper.util.ObfHelper;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -2768,14 +2805,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
 +
-+import java.util.List;
 +import java.util.function.Predicate;
 +
 +import static org.spongepowered.configurate.NodePath.path;
 +
 +public final class LegacyPaperConfig {
 +    private static final Logger LOGGER = LogUtils.getLogger();
-+    private static final PacketClassSerializer PACKET_CLASS_SERIALIZER = new PacketClassSerializer();
 +
 +    private LegacyPaperConfig() {
 +    }
@@ -2872,31 +2907,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .addAction(path("packet-limiter", "limits", "all"), (path, value) -> new Object[]{"packet-limiter", "all-packets"})
 +            .addAction(path("packet-limiter", "limits"), (path, value) -> new Object[]{"packet-limiter", "overrides"})
 +            .addAction(path("packet-limiter", "overrides", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
-+                if (ObfHelper.INSTANCE.mappingsByObfName() != null) { // requires mappings to be present
-+                    final @Nullable Object key = value.key();
-+                    if (key != null) {
-+                        String className = key.toString();
-+                        for (final String state : List.of("game", "handshake", "login", "status")) {
-+                            final String fullClassName = "net.minecraft.network.protocol." + state + "." + className;
-+                            final ObfHelper.ClassMapping classMapping = ObfHelper.INSTANCE.mappingsByObfName().get(fullClassName);
-+                            if (classMapping != null) {
-+                                final String[] split = classMapping.mojangName().split("\\.");
-+                                className = split[split.length - 1];
-+                                break;
-+                            }
-+                        }
-+
-+                        return path.with(path.size() - 1, className).array();
-+                    } else {
-+                        LOGGER.warn("Could not convert spigot-mapped packet class name {}", value);
-+                    }
++                final @Nullable Object keyValue = value.key();
++                if (keyValue != null && keyValue.toString().equals("PacketPlayInAutoRecipe")) { // add special cast to handle the default for moj-mapped servers that upgrade the config
++                    return path.with(path.size() - 1, ServerboundPlaceRecipePacket.class.getSimpleName()).array();
 +                } else {
-+                    final @Nullable Object keyValue = value.key();
-+                    if (keyValue != null && keyValue.toString().equals("PacketPlayInAutoRecipe")) { // add special case to catch the default
-+                        return path.with(path.size() - 1, ServerboundPlaceRecipePacket.class.getSimpleName()).array();
-+                    } else {
-+                        LOGGER.warn("Could not convert spigot-mapped packet class name {} because no mappings were found in the jar", keyValue);
-+                    }
++                    LOGGER.warn("Could not convert spigot-mapped packet class name {} because no mappings were found in the jar", keyValue);
 +                }
 +                return null;
 +            }).addAction(path("loggers"), TransformAction.rename("logging"));
