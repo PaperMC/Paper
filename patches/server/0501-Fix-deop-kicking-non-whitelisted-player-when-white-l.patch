@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 3 Oct 2020 22:00:27 -0500
+Subject: [PATCH] Fix deop kicking non-whitelisted player when white list is
+ not enabled
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index adb0389c5b38fce4bab47e4cc748cfd95de13e90..0060211b3d85c07b44be3d3a534dcb8e35547d78 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2063,13 +2063,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         if (this.isEnforceWhitelist()) {
+             PlayerList playerlist = source.getServer().getPlayerList();
+             UserWhiteList whitelist = playerlist.getWhiteList();
++            if (!((DedicatedServer)getServer()).getProperties().whiteList.get()) return; // Paper - white list not enabled
+             List<ServerPlayer> list = Lists.newArrayList(playerlist.getPlayers());
+             Iterator iterator = list.iterator();
+ 
+             while (iterator.hasNext()) {
+                 ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                if (!whitelist.isWhiteListed(entityplayer.getGameProfile())) {
++                if (!whitelist.isWhiteListed(entityplayer.getGameProfile()) && !this.getPlayerList().isOp(entityplayer.getGameProfile())) { // Paper - Fix kicking ops when whitelist is reloaded (MC-171420)
+                     entityplayer.connection.disconnect(Component.translatable("multiplayer.disconnect.not_whitelisted"));
+                 }
+             }
