@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 8 Jun 2022 22:49:31 -0400
+Subject: [PATCH] Reapply game event listener on update
+
+Some block entities update their listener when load is called. This is bad as then when the block entity is
+removed the listener will not be able to be removed. This properly removes and readds listeners when updating
+block entities that have this special behavior.
+
+Fixes MC-252786
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
+index 579a96d2d6c99d6587ea182f52b6df918f595f17..cca3eff8f2cac698c46f1f1655c94762e3a533d5 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
+@@ -21,6 +21,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements VibrationList
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private VibrationListener listener;
+     public int lastVibrationFrequency;
++    private @javax.annotation.Nullable VibrationListener lastRegistered = null; // Paper
+ 
+     public SculkSensorBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.SCULK_SENSOR, pos, state);
+@@ -38,6 +39,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements VibrationList
+         }
+         if (nbt.contains(PAPER_LISTENER_RANGE_NBT_KEY)) this.listener.listenerRange = nbt.getInt(PAPER_LISTENER_RANGE_NBT_KEY); // Paper
+ 
++        if (this.lastRegistered == null) this.lastRegistered = this.listener; // Paper
+     }
+ 
+     private static final String PAPER_LISTENER_RANGE_NBT_KEY = "Paper.ListenerRange"; // Paper
+@@ -92,4 +94,28 @@ public class SculkSensorBlockEntity extends BlockEntity implements VibrationList
+     public void setLastVibrationFrequency(int lastVibrationFrequency) {
+         this.lastVibrationFrequency = lastVibrationFrequency;
+     }
++    // Paper start - Diff at bottom because git doesn't like being close to another change (patch looks a bit wonky)
++    @Override
++    public void setChanged() {
++        super.setChanged();
++
++        // If lastregistered is not null, properly remove old one!
++        if (this.level != null && this.lastRegistered != null) {
++            net.minecraft.world.level.chunk.LevelChunk chunk = this.level.getChunkIfLoaded(worldPosition);
++            if (chunk != null) {
++                VibrationListener capturedNewListener = this.listener;
++                // Set the listener to the last registered so that removeGameEventListener removes the previous listener
++                // See #getListener()
++                this.listener = this.lastRegistered;
++                chunk.removeGameEventListener(this, (ServerLevel) this.level);
++
++                // swap back to new listener
++                this.listener = capturedNewListener;
++                // register new game event listener
++                chunk.addGameEventListener(this, (ServerLevel) this.level);
++                this.lastRegistered = null; // Properly updated and registered, can throw away old one.
++            }
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+index b733c072246dbc602b24c6422867b164dcbdb779..ea50108794ba889a7fed3c4b7be8021994493b8b 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+@@ -54,6 +54,7 @@ public class SculkShriekerBlockEntity extends BlockEntity implements VibrationLi
+     private static final int SHRIEKING_TICKS = 90;
+     public int warningLevel;
+     private VibrationListener listener = new VibrationListener(new BlockPositionSource(this.worldPosition), 8, this, (VibrationListener.ReceivingEvent)null, 0.0F, 0);
++    private @javax.annotation.Nullable VibrationListener lastRegistered = null; // Paper
+ 
+     public SculkShriekerBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.SCULK_SHRIEKER, pos, state);
+@@ -76,6 +77,7 @@ public class SculkShriekerBlockEntity extends BlockEntity implements VibrationLi
+             });
+         }
+ 
++        if (this.lastRegistered == null) this.lastRegistered = this.listener; // Paper
+     }
+ 
+     @Override
+@@ -190,4 +192,28 @@ public class SculkShriekerBlockEntity extends BlockEntity implements VibrationLi
+     public void onSignalSchedule() {
+         this.setChanged();
+     }
++    // Paper start - Diff at bottom because git doesn't like being close to another change (patch looks a bit wonky)
++    @Override
++    public void setChanged() {
++        super.setChanged();
++
++        // If lastregistered is not null, properly remove old one!
++        if (this.level != null && this.lastRegistered != null) {
++            net.minecraft.world.level.chunk.LevelChunk chunk = this.level.getChunkIfLoaded(worldPosition);
++            if (chunk != null) {
++                VibrationListener capturedNewListener = this.listener;
++                // Set the listener to the last registered so that removeGameEventListener removes the previous listener
++                // See #getListener()
++                this.listener = this.lastRegistered;
++                chunk.removeGameEventListener(this, (ServerLevel) this.level);
++
++                // swap back to new listener
++                this.listener = capturedNewListener;
++                // register new game event listener
++                chunk.addGameEventListener(this, (ServerLevel) this.level);
++                this.lastRegistered = null; // Properly updated and registered, can throw away old one.
++            }
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index c46cbbf9ac4c5661933b03bc0b2559f7ade8c798..85af3c779d989c05b017ccc0780c3cd275ba2d0a 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -794,7 +794,7 @@ public class LevelChunk extends ChunkAccess {
+         this.removeBlockEntityTicker(pos);
+     }
+ 
+-    private <T extends BlockEntity> void removeGameEventListener(T blockEntity, ServerLevel worldserver) {
++    public  <T extends BlockEntity> void removeGameEventListener(T blockEntity, ServerLevel worldserver) { // Paper
+         Block block = blockEntity.getBlockState().getBlock();
+ 
+         if (block instanceof EntityBlock) {
+@@ -1102,7 +1102,7 @@ public class LevelChunk extends ChunkAccess {
+         });
+     }
+ 
+-    private <T extends BlockEntity> void addGameEventListener(T blockEntity, ServerLevel worldserver) {
++    public <T extends BlockEntity> void addGameEventListener(T blockEntity, ServerLevel worldserver) { // Paper
+         Block block = blockEntity.getBlockState().getBlock();
+ 
+         if (block instanceof EntityBlock) {
