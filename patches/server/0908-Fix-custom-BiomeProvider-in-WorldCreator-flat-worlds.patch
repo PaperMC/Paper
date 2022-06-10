@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Thu, 9 Jun 2022 17:38:39 -0700
+Subject: [PATCH] Fix custom BiomeProvider in WorldCreator flat worlds
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 3f1d0b2cad36b26389755ee098465b78acf228d3..38ec01fb649510897b089e0b730c27444b6c1a86 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -513,6 +513,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             BiomeSource worldChunkManager = new CustomWorldChunkManager(getWorld(), biomeProvider, server.registryHolder.registryOrThrow(Registry.BIOME_REGISTRY));
+             if (chunkgenerator instanceof NoiseBasedChunkGenerator cga) {
+                 chunkgenerator = new NoiseBasedChunkGenerator(cga.structureSets, cga.noises, worldChunkManager, cga.settings);
++                // Paper start
++            } else if (chunkgenerator instanceof net.minecraft.world.level.levelgen.FlatLevelSource flat) {
++                chunkgenerator = new net.minecraft.world.level.levelgen.FlatLevelSource(flat.structureSets, flat.settings(), worldChunkManager);
++                // Paper end
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/FlatLevelSource.java b/src/main/java/net/minecraft/world/level/levelgen/FlatLevelSource.java
+index d813a366b272fddad61e1c84cdfba7f842e2c09e..3783eb5e32df1c05020fa816068acdd21427f9ed 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/FlatLevelSource.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/FlatLevelSource.java
+@@ -29,7 +29,12 @@ public class FlatLevelSource extends ChunkGenerator {
+     private final FlatLevelGeneratorSettings settings;
+ 
+     public FlatLevelSource(Registry<StructureSet> structureSetRegistry, FlatLevelGeneratorSettings config) {
+-        super(structureSetRegistry, config.structureOverrides(), new FixedBiomeSource(config.getBiome()), Util.memoize(config::adjustGenerationSettings));
++        // Paper start
++        this(structureSetRegistry, config, new FixedBiomeSource(config.getBiome()));
++    }
++    public FlatLevelSource(Registry<StructureSet> structureSetRegistry, FlatLevelGeneratorSettings config, net.minecraft.world.level.biome.BiomeSource biomeSource) {
++        super(structureSetRegistry, config.structureOverrides(), biomeSource, Util.memoize(config::adjustGenerationSettings));
++        // Paper end
+         this.settings = config;
+     }
+ 
