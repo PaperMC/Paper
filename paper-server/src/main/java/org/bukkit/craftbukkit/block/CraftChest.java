@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.sounds.SoundEffects;
 import net.minecraft.world.ITileInventory;
 import net.minecraft.world.level.block.BlockChest;
 import net.minecraft.world.level.block.Blocks;
@@ -58,8 +57,10 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
         requirePlaced();
         if (!getTileEntity().openersCounter.opened && getWorldHandle() instanceof net.minecraft.world.level.World) {
             IBlockData block = getTileEntity().getBlockState();
-            getTileEntity().getLevel().blockEvent(getPosition(), block.getBlock(), 1, getTileEntity().openersCounter.getOpenerCount() + 1);
-            TileEntityChest.playSound(getTileEntity().getLevel(), getPosition(), block, SoundEffects.CHEST_OPEN);
+            int openCount = getTileEntity().openersCounter.getOpenerCount();
+
+            getTileEntity().openersCounter.onAPIOpen((net.minecraft.world.level.World) getWorldHandle(), getPosition(), block);
+            getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.World) getWorldHandle(), getPosition(), block, openCount, openCount + 1);
         }
         getTileEntity().openersCounter.opened = true;
     }
@@ -69,8 +70,10 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
         requirePlaced();
         if (getTileEntity().openersCounter.opened && getWorldHandle() instanceof net.minecraft.world.level.World) {
             IBlockData block = getTileEntity().getBlockState();
-            getTileEntity().getLevel().blockEvent(getPosition(), block.getBlock(), 1, 0);
-            TileEntityChest.playSound(getTileEntity().getLevel(), getPosition(), block, SoundEffects.CHEST_CLOSE);
+            int openCount = getTileEntity().openersCounter.getOpenerCount();
+
+            getTileEntity().openersCounter.onAPIClose((net.minecraft.world.level.World) getWorldHandle(), getPosition(), block);
+            getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.World) getWorldHandle(), getPosition(), block, openCount, 0);
         }
         getTileEntity().openersCounter.opened = false;
     }
