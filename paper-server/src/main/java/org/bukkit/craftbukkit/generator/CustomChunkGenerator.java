@@ -92,6 +92,10 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         this.generator = generator;
     }
 
+    public net.minecraft.world.level.chunk.ChunkGenerator getDelegate() {
+        return delegate;
+    }
+
     private static SeededRandom getSeededRandom() {
         return new SeededRandom(new LegacyRandomSource(0));
     }
