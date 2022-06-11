@@ -65,10 +65,10 @@ index 0000000000000000000000000000000000000000..817fd26cc3591f9cae0f61f4036dde43
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/ConfigurationLoaders.java b/src/main/java/io/papermc/paper/configuration/ConfigurationLoaders.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cb7d11dcf13c6ac464634a7e8115bf3dee0e72a2
+index 0000000000000000000000000000000000000000..227039a6c69c4c99bbd9c674b3aab0ef5e2c1374
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/ConfigurationLoaders.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.configuration;
 +
 +import java.nio.file.Path;
@@ -85,6 +85,7 @@ index 0000000000000000000000000000000000000000..cb7d11dcf13c6ac464634a7e8115bf3d
 +        return YamlConfigurationLoader.builder()
 +            .indent(2)
 +            .nodeStyle(NodeStyle.BLOCK)
++            .headerMode(HeaderMode.PRESET)
 +            .defaultOptions(options -> options.mapFactory(MapFactories.sortedNatural()));
 +    }
 +
@@ -896,10 +897,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bc46e342b398dc56c976702d98ff3646995eb41e
+index 0000000000000000000000000000000000000000..518a00886f7bde1de95150366541fc992f178246
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,396 @@
+@@ -0,0 +1,405 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -963,6 +964,7 @@ index 0000000000000000000000000000000000000000..bc46e342b398dc56c976702d98ff3646
 +import java.util.HashMap;
 +import java.util.List;
 +import java.util.Map;
++import java.util.function.Function;
 +import java.util.function.Supplier;
 +
 +import static com.google.common.base.Preconditions.checkState;
@@ -978,7 +980,7 @@ index 0000000000000000000000000000000000000000..bc46e342b398dc56c976702d98ff3646
 +    public static final String CONFIG_DIR = "config";
 +    private static final String BACKUP_DIR ="legacy-backup";
 +
-+    private static final String GLOBAL_HEADER = """
++    private static final String GLOBAL_HEADER = String.format("""
 +            This is the global configuration file for Paper.
 +            As you can see, there's a lot to configure. Some options may impact gameplay, so use
 +            with caution, and make sure you know what each option does before configuring.
@@ -986,11 +988,12 @@ index 0000000000000000000000000000000000000000..bc46e342b398dc56c976702d98ff3646
 +            If you need help with the configuration or have any questions related to Paper,
 +            join us in our Discord or check the docs page.
 +
-+            The world configuration options have been moved to their own files.
++            The world configuration options have been moved inside
++            their respective world folder. The files are named %s
 +
++            Docs: https://docs.papermc.io/
 +            Discord: https://discord.gg/papermc
-+            Website: https://papermc.io/
-+            Docs: https://docs.papermc.io/""";
++            Website: https://papermc.io/""", WORLD_CONFIG_FILE_NAME);
 +
 +    private static final String WORLD_DEFAULTS_HEADER = """
 +            This is the world defaults configuration file for Paper.
@@ -1003,13 +1006,20 @@ index 0000000000000000000000000000000000000000..bc46e342b398dc56c976702d98ff3646
 +            Configuration options here apply to all worlds, unless you specify overrides inside
 +            the world-specific config file inside each world folder.
 +
++            Docs: https://docs.papermc.io/
 +            Discord: https://discord.gg/papermc
-+            Website: https://papermc.io/
-+            Docs: https://docs.papermc.io/""";
++            Website: https://papermc.io/""";
 +
-+    private static final String WORLD_HEADER = """
-+            This is a world configuration file for Paper.
-+            This file may start empty but can be filled with settings to override ones in the config/world-defaults.yml""";
++    private static final Function<ContextMap, String> WORLD_HEADER = map -> String.format("""
++        This is a world configuration file for Paper.
++        This file may start empty but can be filled with settings to override ones in the %s/%s
++        
++        World: %s (%s)""",
++        PaperConfigurations.CONFIG_DIR,
++        PaperConfigurations.WORLD_DEFAULTS_CONFIG_FILE_NAME,
++        map.require(WORLD_NAME),
++        map.require(WORLD_KEY)
++    );
 +
 +    private static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
 +        @Override // override to ensure "verbose" is false
@@ -1084,7 +1094,7 @@ index 0000000000000000000000000000000000000000..bc46e342b398dc56c976702d98ff3646
 +    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final ContextMap contextMap) {
 +        return super.createWorldConfigLoaderBuilder(contextMap)
 +            .defaultOptions(options -> options
-+                .header(contextMap.require(WORLD_NAME).equals(WORLD_DEFAULTS) ? WORLD_DEFAULTS_HEADER : WORLD_HEADER)
++                .header(contextMap.require(WORLD_NAME).equals(WORLD_DEFAULTS) ? WORLD_DEFAULTS_HEADER : WORLD_HEADER.apply(contextMap))
 +                .serializers(serializers -> serializers
 +                    .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
 +                    .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
