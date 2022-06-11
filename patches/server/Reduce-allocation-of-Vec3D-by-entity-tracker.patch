@@ -4,6 +4,19 @@ Date: Mon, 27 Apr 2020 00:04:16 -0700
 Subject: [PATCH] Reduce allocation of Vec3D by entity tracker
 
 
+diff --git a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
++++ b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.phys.Vec3;
+ 
+ public class VecDeltaCodec {
+     private static final double TRUNCATION_STEPS = 4096.0D;
+-    private Vec3 base = Vec3.ZERO;
++    public Vec3 base = Vec3.ZERO; // Paper
+ 
+     private static long encode(double value) {
+         return Mth.lfloor(value * 4096.0D);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -24,3 +37,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  double d2 = d0 * d0;
                  boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player);
  
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -0,0 +0,0 @@ public class ServerEntity {
+                 i = Mth.floor(this.entity.getYRot() * 256.0F / 360.0F);
+                 j = Mth.floor(this.entity.getXRot() * 256.0F / 360.0F);
+                 Vec3 vec3d = this.entity.trackingPosition();
+-                boolean flag1 = this.positionCodec.delta(vec3d).lengthSqr() >= 7.62939453125E-6D;
++                // Paper start - reduce allocation of Vec3D here
++                Vec3 base = this.positionCodec.base;
++                double vec3d_dx = vec3d.x - base.x;
++                double vec3d_dy = vec3d.y - base.y;
++                double vec3d_dz = vec3d.z - base.z;
++                boolean flag1 = (vec3d_dx * vec3d_dx + vec3d_dy * vec3d_dy + vec3d_dz * vec3d_dz) >= 7.62939453125E-6D;
++                // Paper end - reduce allocation of Vec3D here
+                 Packet<?> packet1 = null;
+                 boolean flag2 = flag1 || this.tickCount % 60 == 0;
+                 boolean flag3 = Math.abs(i - this.yRotp) >= 1 || Math.abs(j - this.xRotp) >= 1;
