@@ -685,14 +685,14 @@ index 0000000000000000000000000000000000000000..5a808a09291da691cbee75a55f6aa1b7
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/InnerClassFieldDiscoverer.java b/src/main/java/io/papermc/paper/configuration/InnerClassFieldDiscoverer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b33c7e67cff07c801d1b7aa2bc342ab5a9c1bad3
+index 0000000000000000000000000000000000000000..a0aa1f1a7adf986d500a2135aa42e138aa3c4f08
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/InnerClassFieldDiscoverer.java
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,142 @@
 +package io.papermc.paper.configuration;
 +
++import io.leangen.geantyref.GenericTypeReflector;
 +import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spigotmc.SpigotWorldConfig;
 +import org.spongepowered.configurate.objectmapping.FieldDiscoverer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.util.CheckedSupplier;
@@ -703,6 +703,7 @@ index 0000000000000000000000000000000000000000..b33c7e67cff07c801d1b7aa2bc342ab5
 +import java.lang.reflect.Modifier;
 +import java.util.Collections;
 +import java.util.HashMap;
++import java.util.Iterator;
 +import java.util.Map;
 +
 +import static io.leangen.geantyref.GenericTypeReflector.erase;
@@ -765,18 +766,41 @@ index 0000000000000000000000000000000000000000..b33c7e67cff07c801d1b7aa2bc342ab5
 +                        return mutableInstanceFactoryDelegate.begin();
 +                    }
 +
++                    @SuppressWarnings("unchecked")
 +                    @Override
 +                    public void complete(Object instance, Map<Field, Object> intermediate) throws SerializationException {
++                        final Iterator<Map.Entry<Field, Object>> iter = intermediate.entrySet().iterator();
++                        try {
++                            while (iter.hasNext()) { // manually merge any mergeable maps
++                                Map.Entry<Field, Object> entry = iter.next();
++                                if (entry.getKey().isAnnotationPresent(MergeMap.class) && Map.class.isAssignableFrom(entry.getKey().getType()) && intermediate.get(entry.getKey()) instanceof Map<?, ?> map) {
++                                    iter.remove();
++                                    @Nullable Map<Object, Object> existingMap = (Map<Object, Object>) entry.getKey().get(instance);
++                                    if (existingMap != null) {
++                                        existingMap.putAll(map);
++                                    } else {
++                                        entry.getKey().set(instance, entry.getValue());
++                                    }
++                                }
++                            }
++                        } catch (final IllegalAccessException e) {
++                            throw new SerializationException(target.getType(), e);
++                        }
 +                        mutableInstanceFactoryDelegate.complete(instance, intermediate);
 +                    }
 +
 +                    @Override
 +                    public Object complete(Map<Field, Object> intermediate) throws SerializationException {
-+                        Object value = mutableInstanceFactoryDelegate.complete(intermediate);
-+                        if (value instanceof ConfigurationPart.Post post) {
++                        @Nullable Object targetInstance = InnerClassFieldDiscoverer.this.instanceMap.get(GenericTypeReflector.erase(target.getType()));
++                        if (targetInstance != null) {
++                            this.complete(targetInstance, intermediate);
++                        } else {
++                            targetInstance = mutableInstanceFactoryDelegate.complete(intermediate);
++                        }
++                        if (targetInstance instanceof ConfigurationPart.Post post) {
 +                            post.postProcess();
 +                        }
-+                        return value;
++                        return targetInstance;
 +                    }
 +
 +                    @Override
@@ -806,6 +830,31 @@ index 0000000000000000000000000000000000000000..b33c7e67cff07c801d1b7aa2bc342ab5
 +    static FieldDiscoverer<?> globalConfig() {
 +        return new InnerClassFieldDiscoverer(Collections.emptyMap());
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/MergeMap.java b/src/main/java/io/papermc/paper/configuration/MergeMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a977b80cb196b7345bdfcb0b65ee2021f112efd1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/MergeMap.java
+@@ -0,0 +1,19 @@
++package io.papermc.paper.configuration;
++
++import java.lang.annotation.Documented;
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++
++/**
++ * For use in maps inside {@link ConfigurationPart}s that have default keys that shouldn't be removed by users
++ * <p>
++ * Note that when the config is reloaded, the maps will be merged again, so make sure this map can't accumulate
++ * keys overtime.
++ */
++@Documented
++@Target(ElementType.FIELD)
++@Retention(RetentionPolicy.RUNTIME)
++public @interface MergeMap {
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/NestedSetting.java b/src/main/java/io/papermc/paper/configuration/NestedSetting.java
 new file mode 100644
@@ -1316,10 +1365,10 @@ index 0000000000000000000000000000000000000000..d69d203eea014fc9fb40a556f0771dba
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5bcce63166657f80eaa8446d3dd64a5cba62f198
+index 0000000000000000000000000000000000000000..32f0cd29d1198fe320d10ccfe0b02f8632ac12aa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,465 @@
+@@ -0,0 +1,467 @@
 +package io.papermc.paper.configuration;
 +
 +import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray;
@@ -1449,7 +1498,9 @@ index 0000000000000000000000000000000000000000..5bcce63166657f80eaa8446d3dd64a5c
 +            public boolean disableMobSpawnerSpawnEggTransformation = false;
 +            public boolean perPlayerMobSpawns = true;
 +            public boolean scanForLegacyEnderDragon = true;
++            @MergeMap
 +            public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
++            @MergeMap
 +            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), category.getDespawnDistance())));
 +
 +            @ConfigSerializable
