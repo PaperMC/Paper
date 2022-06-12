@@ -4093,10 +4093,10 @@ index 6cc81495d8d09ff1fbb09f2e63a16ec4fa6138ec..73662a463fc9d38b39c4c779fcfaa09a
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
-index 697ca7457115423a8c4d8a7d1f7a353237b56509..3997024eca83af2d82132de3bb5770e155659797 100644
+index 697ca7457115423a8c4d8a7d1f7a353237b56509..d7d65d0faefa5551480a4090de3a881828238ffd 100644
 --- a/src/main/java/net/minecraft/server/Services.java
 +++ b/src/main/java/net/minecraft/server/Services.java
-@@ -7,14 +7,28 @@ import java.io.File;
+@@ -7,14 +7,30 @@ import java.io.File;
  import net.minecraft.server.players.GameProfileCache;
  import net.minecraft.util.SignatureValidator;
  
@@ -4123,7 +4123,9 @@ index 697ca7457115423a8c4d8a7d1f7a353237b56509..3997024eca83af2d82132de3bb5770e1
          SignatureValidator signatureValidator = SignatureValidator.from(authenticationService.getServicesKey());
 -        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache);
 +        // Paper start
-+        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(((File) optionSet.valueOf("paper-settings")).toPath(), java.nio.file.Path.of(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR), rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
++        final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
++        final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
++        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
 +        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache, paperConfigurations);
 +        // Paper end
      }
@@ -4197,16 +4199,21 @@ index 1d94c0fbdead83155aefc8d4a16dbcb95b3c9838..42be8ab024e5c889b2a114f1098e1bed
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index e5008c75054df38356af193fd049110d7d56e2d4..c694c6dfed0b3aa098b1822676e39bd3eb04b45a 100644
+index e5008c75054df38356af193fd049110d7d56e2d4..df98326c49973183e81ccb96d4b1a7a7626dffee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -129,6 +129,14 @@ public class Main {
+@@ -129,6 +129,19 @@ public class Main {
                          .defaultsTo(new File("spigot.yml"))
                          .describedAs("Yml file");
                  // Spigot End
 +
 +                // Paper Start
-+                acceptsAll(asList("paper", "paper-settings"), "File for paper settings")
++                acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
++                    .describedAs("Config directory");
++                acceptsAll(asList("paper", "paper-settings"), "File for Paper settings")
 +                        .withRequiredArg()
 +                        .ofType(File.class)
 +                        .defaultsTo(new File("paper.yml"))
