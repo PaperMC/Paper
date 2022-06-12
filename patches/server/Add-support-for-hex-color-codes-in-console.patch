@@ -12,29 +12,56 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
  package com.destroystokyo.paper.console;
  
-+import io.papermc.paper.console.HexFormattingConverter;
 +import net.kyori.adventure.audience.MessageType;
 +import net.kyori.adventure.identity.Identity;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+-import org.apache.logging.log4j.Logger;
  import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
-@@ -0,0 +0,0 @@ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
+ 
+ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
+ 
+-    private static final Logger LOGGER = LogManager.getRootLogger();
++    private static final ComponentLogger LOGGER = ComponentLogger.logger(LogManager.getRootLogger().getName());
  
      @Override
      public void sendRawMessage(String message) {
 -        // TerminalConsoleAppender supports color codes directly in log messages
--        LOGGER.info(message);
 +        final Component msg = LegacyComponentSerializer.legacySection().deserialize(message);
 +        this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
 +    }
 +
 +    @Override
 +    public void sendMessage(Identity identity, Component message, MessageType type) {
-+        LOGGER.info(HexFormattingConverter.SERIALIZER.serialize(message));
+         LOGGER.info(message);
      }
  
+diff --git a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
++++ b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
+@@ -0,0 +0,0 @@
+ package io.papermc.paper.adventure.providers;
+ 
+-import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.console.HexFormattingConverter;
++import java.util.Locale;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLoggerProvider;
++import net.kyori.adventure.translation.GlobalTranslator;
+ import org.jetbrains.annotations.NotNull;
+ import org.slf4j.LoggerFactory;
+ 
+@@ -0,0 +0,0 @@ public class ComponentLoggerProviderImpl implements ComponentLoggerProvider {
+     }
+ 
+     private String serialize(final Component message) {
+-        return PaperAdventure.asPlain(message, null);
++        return HexFormattingConverter.SERIALIZER.serialize(GlobalTranslator.render(message, Locale.getDefault()));
+     }
  }
 diff --git a/src/main/java/io/papermc/paper/console/HexFormattingConverter.java b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
 new file mode 100644
