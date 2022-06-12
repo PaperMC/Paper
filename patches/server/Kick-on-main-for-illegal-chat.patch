@@ -1,8 +1,10 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Nassim Jahnke <nassim@njahnke.dev>
 Date: Mon, 17 Jan 2022 19:47:19 +0100
-Subject: [PATCH] Kick on main for illegal chars
+Subject: [PATCH] Kick on main for illegal chat
 
+Makes the PlayerKickEvent fire on the main thread for
+illegal characters or chat out-of-order errors.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -28,3 +30,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
              PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
              if (this.tryHandleChat(packet.command(), packet.timeStamp())) {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private boolean tryHandleChat(String s, Instant instant) {
+         if (!this.updateChatOrder(instant)) {
+             ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), s);
++            this.server.scheduleOnMain(() -> { // Paper - push to main
+             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
++            }); // Paper - push to main
+             return false;
+         } else {
+             if (this.isChatExpired(instant)) {
