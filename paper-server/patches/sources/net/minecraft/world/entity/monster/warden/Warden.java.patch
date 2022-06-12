@@ -18,7 +18,23 @@
      }
  
      @Override
-@@ -547,7 +547,7 @@
+@@ -482,6 +482,15 @@
+     @VisibleForTesting
+     public void increaseAngerAt(@Nullable Entity entity, int amount, boolean listening) {
+         if (!this.isNoAi() && this.canTargetEntity(entity)) {
++            // Paper start - Add WardenAngerChangeEvent
++            int activeAnger = this.angerManagement.getActiveAnger(entity);
++            io.papermc.paper.event.entity.WardenAngerChangeEvent event = new io.papermc.paper.event.entity.WardenAngerChangeEvent((org.bukkit.entity.Warden) this.getBukkitEntity(), entity.getBukkitEntity(), activeAnger, Math.min(150, activeAnger + amount));
++            this.level().getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return;
++            }
++            amount = event.getNewAnger() - activeAnger;
++            // Paper end - Add WardenAngerChangeEvent
+             WardenAi.setDigCooldown(this);
+             boolean flag1 = !(this.getTarget() instanceof Player);
+             int j = this.angerManagement.increaseAnger(entity, amount);
+@@ -547,7 +556,7 @@
  
      public void setAttackTarget(LivingEntity target) {
          this.getBrain().eraseMemory(MemoryModuleType.ROAR_TARGET);
@@ -27,7 +43,7 @@
          this.getBrain().eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
          SonicBoom.setCooldown(this, 200);
      }
-@@ -582,11 +582,11 @@
+@@ -582,11 +591,11 @@
  
      @Override
      protected PathNavigation createNavigation(Level world) {
