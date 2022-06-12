@@ -3,7 +3,7 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftMangrovePropagule extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.MangrovePropagule, org.bukkit.block.data.Ageable, org.bukkit.block.data.type.Sapling, org.bukkit.block.data.Waterlogged {
+public final class CraftMangrovePropagule extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.MangrovePropagule, org.bukkit.block.data.Ageable, org.bukkit.block.data.Hangable, org.bukkit.block.data.type.Sapling, org.bukkit.block.data.Waterlogged {
 
     public CraftMangrovePropagule() {
         super();
@@ -30,6 +30,20 @@ public final class CraftMangrovePropagule extends org.bukkit.craftbukkit.block.d
     @Override
     public int getMaximumAge() {
         return getMax(AGE);
+    }
+
+    // org.bukkit.craftbukkit.block.data.CraftHangable
+
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean HANGING = getBoolean(net.minecraft.world.level.block.MangrovePropaguleBlock.class, "hanging");
+
+    @Override
+    public boolean isHanging() {
+        return get(HANGING);
+    }
+
+    @Override
+    public void setHanging(boolean hanging) {
+        set(HANGING, hanging);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftSapling

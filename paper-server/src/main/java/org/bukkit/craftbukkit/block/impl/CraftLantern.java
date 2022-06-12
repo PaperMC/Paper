@@ -13,7 +13,7 @@ public final class CraftLantern extends org.bukkit.craftbukkit.block.data.CraftB
         super(state);
     }
 
-    // org.bukkit.craftbukkit.block.data.type.CraftLantern
+    // org.bukkit.craftbukkit.block.data.CraftHangable
 
     private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean HANGING = getBoolean(net.minecraft.world.level.block.BlockLantern.class, "hanging");
 
