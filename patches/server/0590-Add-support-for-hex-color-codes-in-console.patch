@@ -6,35 +6,62 @@ Subject: [PATCH] Add support for hex color codes in console
 Converts upstream's hex color code legacy format into actual hex color codes in the console.
 
 diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..709f2a420ceaffe0101c676ec23e949e8d684465 100644
+index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..8f07539a82f449ad217e316a7513a1708781fb63 100644
 --- a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 +++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-@@ -1,5 +1,10 @@
+@@ -1,16 +1,25 @@
  package com.destroystokyo.paper.console;
  
-+import io.papermc.paper.console.HexFormattingConverter;
 +import net.kyori.adventure.audience.MessageType;
 +import net.kyori.adventure.identity.Identity;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+-import org.apache.logging.log4j.Logger;
  import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
-@@ -10,8 +15,13 @@ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
+ 
+ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
+ 
+-    private static final Logger LOGGER = LogManager.getRootLogger();
++    private static final ComponentLogger LOGGER = ComponentLogger.logger(LogManager.getRootLogger().getName());
  
      @Override
      public void sendRawMessage(String message) {
 -        // TerminalConsoleAppender supports color codes directly in log messages
--        LOGGER.info(message);
 +        final Component msg = LegacyComponentSerializer.legacySection().deserialize(message);
 +        this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
 +    }
 +
 +    @Override
 +    public void sendMessage(Identity identity, Component message, MessageType type) {
-+        LOGGER.info(HexFormattingConverter.SERIALIZER.serialize(message));
+         LOGGER.info(message);
      }
  
+diff --git a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
+index c3631efda9c7fa531a8a9f18fbee7b5f8655382b..9a3c1314d5a0aa20380662595359580b1a97be89 100644
+--- a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
++++ b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
+@@ -1,9 +1,11 @@
+ package io.papermc.paper.adventure.providers;
+ 
+-import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.console.HexFormattingConverter;
++import java.util.Locale;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLoggerProvider;
++import net.kyori.adventure.translation.GlobalTranslator;
+ import org.jetbrains.annotations.NotNull;
+ import org.slf4j.LoggerFactory;
+ 
+@@ -14,6 +16,6 @@ public class ComponentLoggerProviderImpl implements ComponentLoggerProvider {
+     }
+ 
+     private String serialize(final Component message) {
+-        return PaperAdventure.asPlain(message, null);
++        return HexFormattingConverter.SERIALIZER.serialize(GlobalTranslator.render(message, Locale.getDefault()));
+     }
  }
 diff --git a/src/main/java/io/papermc/paper/console/HexFormattingConverter.java b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
 new file mode 100644
@@ -255,7 +282,7 @@ index 0000000000000000000000000000000000000000..f39ae450e316255d315aeb362bf967ea
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 49f481d34eec97c2bd4f0780e97ce2d41ed04b34..57924d8f2ddac1e7c0c151c4813a2a5ca17e58b8 100644
+index 9e943c5d3a5ee91bc8a3f77d14e1413d0a1ecdb7..d61acd95810f735245b15555f9bf2022e5bc3683 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1670,7 +1670,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
