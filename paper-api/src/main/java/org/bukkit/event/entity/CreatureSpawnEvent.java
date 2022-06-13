@@ -186,6 +186,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         FROZEN,
         /**
+         * When a tadpole converts to a frog
+         */
+        METAMORPHOSIS,
+        /**
          * When a creature is spawned by the "/summon" command
          */
         COMMAND,

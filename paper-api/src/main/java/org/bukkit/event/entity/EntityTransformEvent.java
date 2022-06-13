@@ -113,6 +113,10 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
          */
         PIGLIN_ZOMBIFIED,
         /**
+         * When a tadpole converts to a frog
+         */
+        METAMORPHOSIS,
+        /**
          * When reason is unknown.
          */
         UNKNOWN
