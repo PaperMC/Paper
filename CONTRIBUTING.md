@@ -309,56 +309,55 @@ what fits best in your situation.
 
 ## Configuration files
 
-To use a configurable value in your patch, add a new entry in either the
-`PaperConfig` or `PaperWorldConfig` classes. Use `PaperConfig` if a value
+To use a configurable value in your patch, add a new field in either the
+`GlobalConfiguration` or `WorldConfiguration` classes (inside the 
+`io.papermc.paper.configuration` package). Use `GlobalConfiguration` if a value
 must remain the same throughout all worlds, or the latter if it can change
 between worlds. World-specific configuration options are preferred whenever
 possible.
 
-### PaperConfig example
-
+### Example
+This is adding a new miscellaneous setting that doesn't seem to fit in other categories.
+Try to check and see if an existing category (inner class) exists that matches
+whatever configuration option you are adding.
 ```java
-public static boolean saveEmptyScoreboardTeams = false;
-private static void saveEmptyScoreboardTeams() {
-    // This is called automatically!
-    // The name also doesn't matter.
-    saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
+public class GlobalConfiguration {
+    // other sections
+    public class Misc extends ConfigurationPart {
+        // other settings
+        public boolean lagCompensateBlockBreaking = true;
+        public boolean useDimensionTypeForCustomSpawners = false;
+        public int maxNumOfPlayers = 20; // This is the new setting
+    }
 }
 ```
+You set the type of the setting as the field type, and the default value is the
+initial field value. The name of the setting defaults to the snake-case of the
+field name, so in this case it would be `misc.max-num-of-players`. You can use
+the `@Setting` annotation to override that, but generally just try to set the 
+field name to what you want the setting to be called.
 
-Notice that the field is always public, but the setter is always private. This
-is important to the way the configuration generation system works. To access
-this value, reference it as you would any other static value:
-
+#### Accessing the value
+If you added a new global config value, you can access it in the code just by
+doing
 ```java
-if (!PaperConfig.saveEmptyScoreboardTeams) {
+int maxPlayers = GlobalConfiguration.get().misc.maxNumOfPlayers;
+```
+Generally for global config values you will use the fully qualified class name,
+`io.papermc.paper.configuration.GlobalConfiguration` since it's not imported in
+most places.
+---
+If you are adding a new world config value, you must have access to an instance
+of the `net.minecraft.world.level.Level` which you can then access the config by doing
+```java
+int maxPlayers = level.paperConfig().misc.maxNumOfPlayers;
 ```
 
-It is often preferred that you use the fully qualified name for the
-configuration class when accessing it, like so:
-`com.destroystokyo.paper.PaperConfig.valueHere`.  
-If this is not done, a developer for Paper might fix that for you before
-merging, but it's always nice if you make it a habit where you only need 1-2
-lines changed.
-
-### PaperWorldConfig example
-
-```java
-public boolean useInhabitedTime = true;
-private void useInhabitedTime() {
-    // This is called automatically!
-    // The name also doesn't matter.
-    useInhabitedTime = getBoolean("use-chunk-inhabited-timer", true);
-}
-```
-
-Again, notice that the field is always public, but the setter is always private.
-To access this value, you'll need an instance of the `net.minecraft.world.level.Level`
-object:
-
-```java
-return this.level.paperConfig.useInhabitedTime ? this.inhabitedTime : 0;
-```
+#### Committing changes
+All changes to the `GlobalConfiguration` and `WorldConfiguration` files
+should be done in the commit that created them. So do an interactive rebase
+or fixup to apply just those changes to that commit, then add a new commit
+that includes the logic that uses that option in the server somewhere.
 
 ## Testing API changes
 
