@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: nopjar <code.nopjar@gmail.com>
+Date: Mon, 13 Jun 2022 11:29:42 +0200
+Subject: [PATCH] Add sendTitleUpdate for inventories
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+index a2eeaad280569c9ab2c02d2885611db50462bf2b..021d4b5283be07a62ef08e0a7e3d1acc62520d19 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+@@ -80,6 +80,16 @@ public class CraftContainer extends AbstractContainerMenu {
+             public String getTitle() {
+                 return inventory instanceof CraftInventoryCustom custom ? custom.getTitle() : inventory.getType().getDefaultTitle(); // Paper
+             }
++
++            // Paper start
++            @Override
++            public void sendTitleUpdate(@org.jetbrains.annotations.NotNull net.kyori.adventure.text.Component title) {
++                AbstractContainerMenu menu = ((org.bukkit.craftbukkit.entity.CraftHumanEntity) getPlayer()).getHandle().containerMenu;
++                var packet = new net.minecraft.network.protocol.game.ClientboundOpenScreenPacket(menu.containerId, menu.getType(), io.papermc.paper.adventure.PaperAdventure.asVanilla(title));
++                ((net.minecraft.server.level.ServerPlayer) player).connection.send(packet);
++                menu.sendAllDataToRemote();
++            }
++            // Paper end
+         }, player, id);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
+index 7d6b5fdb00a5c1614849735634262a36a4efbd66..68e11a13120d81eff511f2e6c6c08aeef4fd50ae 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
+@@ -83,4 +83,13 @@ public class CraftInventoryView extends InventoryView {
+     public AbstractContainerMenu getHandle() {
+         return this.container;
+     }
++
++    // Paper start
++    @Override
++    public void sendTitleUpdate(@org.jetbrains.annotations.NotNull net.kyori.adventure.text.Component title) {
++        var packet = new net.minecraft.network.protocol.game.ClientboundOpenScreenPacket(this.container.containerId, this.container.getType(), io.papermc.paper.adventure.PaperAdventure.asVanilla(title));
++        ((org.bukkit.craftbukkit.entity.CraftPlayer) getPlayer()).getHandle().connection.send(packet);
++        container.sendAllDataToRemote();
++    }
++    // Paper end
+ }
