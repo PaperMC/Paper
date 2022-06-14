@@ -160,6 +160,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return new Location(worldServer.getWorld(), bed.getX(), bed.getY(), bed.getZ());
     }
     // Paper end
+    // Paper start
+    @Override
+    public org.bukkit.entity.FishHook getFishHook() {
+        if (getHandle().fishing == null) {
+            return null;
+        }
+        return (org.bukkit.entity.FishHook) getHandle().fishing.getBukkitEntity();
+    }
+    // Paper end
     @Override
     public boolean sleep(Location location, boolean force) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
