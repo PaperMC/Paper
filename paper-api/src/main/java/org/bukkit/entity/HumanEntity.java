@@ -425,6 +425,13 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     @Nullable
     public Location getPotentialBedLocation();
     // Paper end
+    // Paper start
+    /**
+     * @return the player's fishing hook if they are fishing
+     */
+    @Nullable
+    FishHook getFishHook();
+    // Paper end
 
     /**
      * Attempts to make the entity sleep at the given location.
