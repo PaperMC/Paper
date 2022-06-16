@@ -71,7 +71,7 @@ index 8cc4cb2163a93b9491550fe6d0f5d980fb216920..4dd14d73a37b32288a64fbd67ee22c43
              cause = cause.getCause();
          }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ce7b96819bf8d7e992c2aafd3013e8a9478e500d..e055824c5414e3b723fbc2ba41e01fda96b72901 100644
+index ce7b96819bf8d7e992c2aafd3013e8a9478e500d..53320d5d9cadb8702f82d94bada32db4c1b32f26 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -281,7 +281,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -219,13 +219,20 @@ index ce7b96819bf8d7e992c2aafd3013e8a9478e500d..e055824c5414e3b723fbc2ba41e01fda
                      throw new RuntimeException("Error generating crash report", t);
                  }
                  // Spigot End
-@@ -1915,7 +1969,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1915,7 +1969,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.packRepository.setSelected(dataPacks);
              this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
              this.resources.managers.updateRegistryTags(this.registryAccess());
 -            this.getPlayerList().saveAll();
-+            if (Thread.currentThread() != this.serverThread) return; // Paper
-+            //this.getPlayerList().saveAll(); // Paper - we don't need to do this
++            // Paper start
++            if (Thread.currentThread() != this.serverThread) {
++                return;
++            }
++            // this.getPlayerList().saveAll(); // Paper - we don't need to save everything, just advancements
++            for (ServerPlayer player : this.getPlayerList().getPlayers()) {
++                player.getAdvancements().save();
++            }
++            // Paper end
              this.getPlayerList().reloadResources();
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
