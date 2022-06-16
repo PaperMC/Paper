@@ -1928,7 +1928,7 @@ public final class CraftServer implements Server {
         // Paper end
         Set<CommandSender> recipients = new HashSet<>();
         for (Permissible permissible : this.getPluginManager().getPermissionSubscriptions(permission)) {
-            if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
+            if (permissible instanceof CommandSender && !(permissible instanceof org.bukkit.command.BlockCommandSender) && permissible.hasPermission(permission)) { // Paper - Don't broadcast messages to command blocks
                 recipients.add((CommandSender) permissible);
             }
         }
