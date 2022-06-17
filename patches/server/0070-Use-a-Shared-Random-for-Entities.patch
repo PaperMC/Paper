@@ -6,16 +6,16 @@ Subject: [PATCH] Use a Shared Random for Entities
 Reduces memory usage and provides ensures more randomness, Especially since a lot of garbage entity objects get created.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 704a5aa2881c6f826d49ad9aed6003db7c5f5843..e3fe98ef3a7537d3717824d3357cc84c632ee0ea 100644
+index 704a5aa2881c6f826d49ad9aed6003db7c5f5843..112942d72a30a722ba929f89fb57f67328366d99 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -158,6 +158,74 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -158,6 +158,79 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
      }
  
 +    // Paper start
 +    public static RandomSource SHARED_RANDOM = new RandomRandomSource();
-+    private static final class RandomRandomSource extends java.util.Random implements RandomSource {
++    private static final class RandomRandomSource extends java.util.Random implements net.minecraft.world.level.levelgen.BitRandomSource {
 +        private boolean locked = false;
 +
 +        @Override
@@ -38,40 +38,45 @@ index 704a5aa2881c6f826d49ad9aed6003db7c5f5843..e3fe98ef3a7537d3717824d3357cc84c
 +            return new net.minecraft.world.level.levelgen.LegacyRandomSource.LegacyPositionalRandomFactory(this.nextLong());
 +        }
 +
-+        @Override
-+        public int nextInt(int origin, int bound) {
-+            return RandomSource.super.nextInt(origin, bound);
-+        }
-+
 +        // these below are added to fix reobf issues that I don't wanna deal with right now
 +        @Override
++        public int next(int bits) {
++            return super.next(bits);
++        }
++
++        @Override
++        public int nextInt(int origin, int bound) {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt(origin, bound);
++        }
++
++        @Override
 +        public long nextLong() {
-+            return super.nextInt();
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextLong();
 +        }
 +
 +        @Override
 +        public int nextInt() {
-+            return super.nextInt();
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt();
 +        }
 +
 +        @Override
 +        public int nextInt(int bound) {
-+            return super.nextInt(bound);
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt(bound);
 +        }
 +
 +        @Override
 +        public boolean nextBoolean() {
-+            return super.nextBoolean();
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextBoolean();
 +        }
 +
 +        @Override
 +        public float nextFloat() {
-+            return super.nextFloat();
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextFloat();
 +        }
 +
 +        @Override
 +        public double nextDouble() {
-+            return super.nextDouble();
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextDouble();
 +        }
 +
 +        @Override
@@ -84,7 +89,7 @@ index 704a5aa2881c6f826d49ad9aed6003db7c5f5843..e3fe98ef3a7537d3717824d3357cc84c
      private CraftEntity bukkitEntity;
  
      public CraftEntity getBukkitEntity() {
-@@ -345,7 +413,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -345,7 +418,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          this.bb = Entity.INITIAL_AABB;
          this.stuckSpeedMultiplier = Vec3.ZERO;
          this.nextStep = 1.0F;

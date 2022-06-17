@@ -20,18 +20,20 @@ remains the same.
 
 diff --git a/src/main/java/io/papermc/paper/util/math/ThreadUnsafeRandom.java b/src/main/java/io/papermc/paper/util/math/ThreadUnsafeRandom.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..16ca915c33e31b50d33336408b041e401cb9cbfc
+index 0000000000000000000000000000000000000000..7d93652c1abbb6aee6eb7c26cf35d4d032ef7b69
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/math/ThreadUnsafeRandom.java
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.util.math;
 +
 +import net.minecraft.util.RandomSource;
++import net.minecraft.world.level.levelgen.LegacyRandomSource;
 +import net.minecraft.world.level.levelgen.PositionalRandomFactory;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import java.util.Random;
-+
-+public final class ThreadUnsafeRandom extends Random implements RandomSource {
++@DefaultQualifier(NonNull.class)
++public final class ThreadUnsafeRandom extends LegacyRandomSource {
 +
 +    // See javadoc and internal comments for java.util.Random where these values come from, how they are used, and the author for them.
 +    private static final long multiplier = 0x5DEECE66DL;
@@ -44,19 +46,18 @@ index 0000000000000000000000000000000000000000..16ca915c33e31b50d33336408b041e40
 +
 +    private long seed;
 +
++    public ThreadUnsafeRandom(long seed) {
++        super(seed);
++    }
++
 +    @Override
 +    public RandomSource fork() {
-+        return new ThreadUnsafeRandom();
++        return new ThreadUnsafeRandom(this.nextLong());
 +    }
 +
 +    @Override
 +    public PositionalRandomFactory forkPositional() {
 +        throw new UnsupportedOperationException();
-+    }
-+
-+    @Override
-+    public int nextInt(int origin, int bound) {
-+        return RandomSource.super.nextInt(origin, bound);
 +    }
 +
 +    @Override
@@ -66,7 +67,7 @@ index 0000000000000000000000000000000000000000..16ca915c33e31b50d33336408b041e40
 +    }
 +
 +    @Override
-+    protected int next(int bits) {
++    public int next(int bits) {
 +        // avoid the expensive CAS logic used by superclass
 +        return (int) (((this.seed = this.seed * multiplier + addend) & mask) >>> (48 - bits));
 +    }
@@ -87,40 +88,9 @@ index 0000000000000000000000000000000000000000..16ca915c33e31b50d33336408b041e40
 +        // however there's nothing that uses this class that relies on it
 +        return fastRandomBounded(this.next(32) & 0xFFFFFFFFL, bound);
 +    }
-+
-+    // these below are added to fix reobf issues that I don't wanna deal with right now
-+    @Override
-+    public long nextLong() {
-+        return super.nextInt();
-+    }
-+
-+    @Override
-+    public int nextInt() {
-+        return super.nextInt();
-+    }
-+
-+    @Override
-+    public boolean nextBoolean() {
-+        return super.nextBoolean();
-+    }
-+
-+    @Override
-+    public float nextFloat() {
-+        return super.nextFloat();
-+    }
-+
-+    @Override
-+    public double nextDouble() {
-+        return super.nextDouble();
-+    }
-+
-+    @Override
-+    public double nextGaussian() {
-+        return super.nextGaussian();
-+    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index d3470ba0b1732356d1082f23632dbe218ceb167e..b0c971df2ae296b2ae4516ff121052b3b4526103 100644
+index b2c6d72beefe48189aa36f453f8950209b7e3ee1..1fc9cafbec488240a242b0de5eb2582cef86f413 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -665,6 +665,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -129,7 +99,7 @@ index d3470ba0b1732356d1082f23632dbe218ceb167e..b0c971df2ae296b2ae4516ff121052b3
      }
 +    // Paper start - optimise random block ticking
 +    private final BlockPos.MutableBlockPos chunkTickMutablePosition = new BlockPos.MutableBlockPos();
-+    private final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom();
++    private final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(this.random.nextLong());
 +    // Paper end
  
      public void tickChunk(LevelChunk chunk, int randomTickSpeed) {
