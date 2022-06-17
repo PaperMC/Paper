@@ -3565,6 +3565,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.OptionalDouble;
 +import java.util.function.Predicate;
 +
++@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 +public final class DoubleOrDefault {
 +    private static final String DEFAULT_VALUE = "default";
 +    public static final DoubleOrDefault USE_DEFAULT = new DoubleOrDefault(OptionalDouble.empty());
@@ -3602,10 +3603,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (NumberUtils.isParsable(string)) {
 +                    return new DoubleOrDefault(OptionalDouble.of(Double.parseDouble(string)));
 +                }
-+            } else if (obj instanceof Double num) {
-+                return new DoubleOrDefault(OptionalDouble.of(num));
++            } else if (obj instanceof Number num) {
++                return new DoubleOrDefault(OptionalDouble.of(num.doubleValue()));
 +            }
-+            throw new SerializationException(obj + " is of an unexpected type " + type);
++            throw new SerializationException(obj + "(" + type + ") is not a double or '" + DEFAULT_VALUE + "'");
 +        }
 +
 +        @Override
@@ -3730,15 +3731,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.type;
 +
-+import java.lang.reflect.Type;
-+import java.util.OptionalInt;
-+import java.util.function.Predicate;
++import com.mojang.logging.LogUtils;
 +import org.apache.commons.lang3.math.NumberUtils;
++import org.slf4j.Logger;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
++import java.lang.reflect.Type;
++import java.util.OptionalInt;
++import java.util.function.Predicate;
++
 +public record IntOrDefault(OptionalInt value) {
 +    private static final String DEFAULT_VALUE = "default";
++    private static final Logger LOGGER = LogUtils.getLogger();
 +    public static final IntOrDefault USE_DEFAULT = new IntOrDefault(OptionalInt.empty());
 +    public static final ScalarSerializer<IntOrDefault> SERIALIZER = new Serializer();
 +
@@ -3760,8 +3765,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (NumberUtils.isParsable(string)) {
 +                    return new IntOrDefault(OptionalInt.of(Integer.parseInt(string)));
 +                }
-+            } else if (obj instanceof Integer num) {
-+                return new IntOrDefault(OptionalInt.of(num));
++            } else if (obj instanceof Number num) {
++                if (num.intValue() != num.doubleValue() || num.intValue() != num.longValue()) {
++                    LOGGER.error("{} cannot be converted to an integer without losing information", num);
++                }
++                return new IntOrDefault(OptionalInt.of(num.intValue()));
 +            }
 +            throw new SerializationException(obj + "(" + type + ") is not a integer or '" + DEFAULT_VALUE + "'");
 +        }
@@ -3886,6 +3894,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Set;
 +import java.util.function.Supplier;
 +
++@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 +public sealed abstract class FallbackValue permits FallbackValue.Int {
 +
 +    private static final String DEFAULT_VALUE = "default";
