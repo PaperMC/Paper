@@ -199,13 +199,14 @@ index 0000000000000000000000000000000000000000..aabad39d13ead83042ec2e4dd7f4ed49
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a5d43901595f864c8a5dd5d013aa42d7f294e489
+index 0000000000000000000000000000000000000000..ad34441e543d4f3b2e6d623a1d8fb157b45f2c29
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,692 @@
+@@ -0,0 +1,635 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import io.papermc.paper.configuration.WorldConfiguration;
++import io.papermc.paper.configuration.type.EngineMode;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.core.Direction;
 +import net.minecraft.core.Registry;
@@ -225,15 +226,11 @@ index 0000000000000000000000000000000000000000..a5d43901595f864c8a5dd5d013aa42d7
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.*;
 +import org.bukkit.Bukkit;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
 +
-+import java.lang.reflect.Type;
 +import java.util.*;
 +import java.util.concurrent.Executor;
 +import java.util.concurrent.ThreadLocalRandom;
 +import java.util.function.IntSupplier;
-+import java.util.function.Predicate;
 +
 +public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
 +
@@ -262,7 +259,7 @@ index 0000000000000000000000000000000000000000..a5d43901595f864c8a5dd5d013aa42d7
 +
 +    public ChunkPacketBlockControllerAntiXray(Level level, Executor executor) {
 +        this.executor = executor;
-+        WorldConfiguration.AntiCheat.AntiXRay paperWorldConfig = level.paperConfig().anticheat.antiXray;
++        WorldConfiguration.Anticheat.AntiXray paperWorldConfig = level.paperConfig().anticheat.antiXray;
 +        engineMode = paperWorldConfig.engineMode;
 +        maxBlockHeight = paperWorldConfig.maxBlockHeight >> 4 << 4;
 +        updateRadius = paperWorldConfig.updateRadius;
@@ -840,60 +837,6 @@ index 0000000000000000000000000000000000000000..a5d43901595f864c8a5dd5d013aa42d7
 +            ((ServerLevel) level).getChunkSource().blockChanged(blockPos);
 +        }
 +    }
-+
-+    public enum EngineMode {
-+
-+        HIDE(1, "hide ores"),
-+        OBFUSCATE(2, "obfuscate");
-+
-+        public static final ScalarSerializer<EngineMode> SERIALIZER = new Serializer();
-+
-+        private final int id;
-+        private final String description;
-+
-+        EngineMode(int id, String description) {
-+            this.id = id;
-+            this.description = description;
-+        }
-+
-+        public static EngineMode getById(int id) {
-+            for (EngineMode engineMode : values()) {
-+                if (engineMode.id == id) {
-+                    return engineMode;
-+                }
-+            }
-+
-+            return null;
-+        }
-+
-+        public int getId() {
-+            return id;
-+        }
-+
-+        public String getDescription() {
-+            return description;
-+        }
-+
-+        static class Serializer extends ScalarSerializer<EngineMode> {
-+
-+            Serializer() {
-+                super(EngineMode.class);
-+            }
-+
-+            @Override
-+            public EngineMode deserialize(Type type, Object obj) throws SerializationException {
-+                if (obj instanceof Integer num) {
-+                    return Objects.requireNonNullElse(EngineMode.getById(num), HIDE);
-+                }
-+                throw new SerializationException(obj + " is not of a valid type (" + type + ") for this node");
-+            }
-+
-+            @Override
-+            protected Object serialize(EngineMode item, Predicate<Class<?>> typeSupported) {
-+                return item.getId();
-+            }
-+        }
-+    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfo.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketInfo.java
 new file mode 100644
@@ -1016,25 +959,6 @@ index 0000000000000000000000000000000000000000..80a2dfb266ae1221680a7b24fee2f7e2
 +        chunkPacketBlockControllerAntiXray.obfuscate(this);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-index fa191f418079a8ee24326c5952d12d4481f57aef..28c54542f8c4168c6da8e9d897d33569fc145caf 100644
---- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-+++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -1,5 +1,6 @@
- package io.papermc.paper.configuration;
- 
-+import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray;
- import com.google.common.base.Suppliers;
- import com.google.common.collect.Table;
- import com.mojang.logging.LogUtils;
-@@ -201,6 +202,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
-                     .register(DoubleOrDefault.SERIALIZER)
-                     .register(BooleanOrDefault.SERIALIZER)
-                     .register(Duration.SERIALIZER)
-+                    .register(ChunkPacketBlockControllerAntiXray.EngineMode.SERIALIZER)
-                     .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
-                     .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registry.ENTITY_TYPE_REGISTRY, true))
-                     .register(new RegistryValueSerializer<>(Item.class, Registry.ITEM_REGISTRY, true))
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 index 568ac283baf40e2a89f5b002ffd899eba8008ef2..23d76eb74a88610472aa0288559efbaa5cd916dc 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java

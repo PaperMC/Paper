@@ -898,10 +898,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fa191f418079a8ee24326c5952d12d4481f57aef
+index 0000000000000000000000000000000000000000..e446542ff64670e368c8515d1716af5407f98c7a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,412 @@
+@@ -0,0 +1,414 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -925,6 +925,7 @@ index 0000000000000000000000000000000000000000..fa191f418079a8ee24326c5952d12d44
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
++import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOrDefault;
 +import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 +import it.unimi.dsi.fastutil.objects.Reference2IntMap;
@@ -1105,6 +1106,7 @@ index 0000000000000000000000000000000000000000..fa191f418079a8ee24326c5952d12d44
 +                    .register(DoubleOrDefault.SERIALIZER)
 +                    .register(BooleanOrDefault.SERIALIZER)
 +                    .register(Duration.SERIALIZER)
++                    .register(EngineMode.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
 +                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registry.ENTITY_TYPE_REGISTRY, true))
 +                    .register(new RegistryValueSerializer<>(Item.class, Registry.ITEM_REGISTRY, true))
@@ -1385,13 +1387,12 @@ index 0000000000000000000000000000000000000000..1bb16fc7598cd53e822d84b69d6a9727
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..32f0cd29d1198fe320d10ccfe0b02f8632ac12aa
+index 0000000000000000000000000000000000000000..e2c612dd55fcb2769fb06f7878b8d0873f2be139
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 @@ -0,0 +1,467 @@
 +package io.papermc.paper.configuration;
 +
-+import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray;
 +import com.google.common.collect.HashBasedTable;
 +import com.google.common.collect.Table;
 +import com.mojang.logging.LogUtils;
@@ -1404,6 +1405,7 @@ index 0000000000000000000000000000000000000000..32f0cd29d1198fe320d10ccfe0b02f86
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
++import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOrDefault;
 +import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
 +import io.papermc.paper.configuration.type.fallback.AutosavePeriod;
@@ -1455,9 +1457,9 @@ index 0000000000000000000000000000000000000000..32f0cd29d1198fe320d10ccfe0b02f86
 +    @Setting(Configuration.VERSION_FIELD)
 +    public int version = CURRENT_VERSION;
 +
-+    public AntiCheat anticheat;
++    public Anticheat anticheat;
 +
-+    public class AntiCheat extends ConfigurationPart {
++    public class Anticheat extends ConfigurationPart {
 +
 +        public Obfuscation obfuscation;
 +
@@ -1469,11 +1471,11 @@ index 0000000000000000000000000000000000000000..32f0cd29d1198fe320d10ccfe0b02f86
 +            }
 +        }
 +
-+        public AntiXRay antiXray;
++        public AntiXray antiXray;
 +
-+        public class AntiXRay extends ConfigurationPart {
++        public class AntiXray extends ConfigurationPart {
 +            public boolean enabled = false;
-+            public ChunkPacketBlockControllerAntiXray.EngineMode engineMode = ChunkPacketBlockControllerAntiXray.EngineMode.HIDE;
++            public EngineMode engineMode = EngineMode.HIDE;
 +            public int maxBlockHeight = 64;
 +            public int updateRadius = 2;
 +            public boolean lavaObscures = false;
@@ -2139,6 +2141,45 @@ index 0000000000000000000000000000000000000000..9c339ef178ebc3b0251095f320e4a7a3
 +    @Override
 +    protected Object serialize(Component component, Predicate<Class<?>> typeSupported) {
 +        return MiniMessage.miniMessage().serialize(component);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/EngineModeSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/EngineModeSerializer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..27c0679d376bb31ab52131dfea74b3b580ca92b5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/serializer/EngineModeSerializer.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.configuration.serializer;
++
++import io.papermc.paper.configuration.type.EngineMode;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
++
++import java.lang.reflect.Type;
++import java.util.function.Predicate;
++
++public final class EngineModeSerializer extends ScalarSerializer<EngineMode> {
++
++    public EngineModeSerializer() {
++        super(EngineMode.class);
++    }
++
++    @Override
++    public EngineMode deserialize(Type type, Object obj) throws SerializationException {
++        if (obj instanceof Integer id) {
++            try {
++                return EngineMode.valueOf(id);
++            } catch (IllegalArgumentException e) {
++                throw new SerializationException(id + " is not a valid id for type " + type + " for this node");
++            }
++        }
++
++        throw new SerializationException(obj + " is not of a valid type " + type + " for this node");
++    }
++
++    @Override
++    protected Object serialize(EngineMode item, Predicate<Class<?>> typeSupported) {
++        return item.getId();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/EnumValueSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/EnumValueSerializer.java
@@ -3728,6 +3769,49 @@ index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b
 +        protected Object serialize(Duration item, Predicate<Class<?>> typeSupported) {
 +            return item.value();
 +        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/EngineMode.java b/src/main/java/io/papermc/paper/configuration/type/EngineMode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..99e90636051fa0c770ee2eafb7f0d29c8195f9ae
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/EngineMode.java
+@@ -0,0 +1,37 @@
++package io.papermc.paper.configuration.type;
++
++import io.papermc.paper.configuration.serializer.EngineModeSerializer;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++
++public enum EngineMode {
++
++    HIDE(1, "hide ores"), OBFUSCATE(2, "obfuscate");
++
++    public static final ScalarSerializer<EngineMode> SERIALIZER = new EngineModeSerializer();
++
++    private final int id;
++    private final String description;
++
++    EngineMode(int id, String description) {
++        this.id = id;
++        this.description = description;
++    }
++
++    public static EngineMode valueOf(int id) {
++        for (EngineMode engineMode : values()) {
++            if (engineMode.getId() == id) {
++                return engineMode;
++            }
++        }
++
++        throw new IllegalArgumentException("No enum constant with id " + id);
++    }
++
++    public int getId() {
++        return id;
++    }
++
++    public String getDescription() {
++        return description;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/IntOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/IntOrDefault.java
