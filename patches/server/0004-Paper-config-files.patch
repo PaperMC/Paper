@@ -416,7 +416,7 @@ index 0000000000000000000000000000000000000000..13d7d1c24ec9192d0163f6eedeac8fca
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3e7086d31b2f101b2d6e982f3935922886cadc77
+index 0000000000000000000000000000000000000000..456595e4b7e0c7f50617aa2694b0d2dfc368ab81
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 @@ -0,0 +1,265 @@
@@ -3551,10 +3551,10 @@ index 0000000000000000000000000000000000000000..3e422b74a377fa3edaf82dd960e7449c
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/DoubleOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/DoubleOrDefault.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..37aa2873eb7fbfb9cfbf890e5ca2a3965f8d612f
+index 0000000000000000000000000000000000000000..193709f1d08e489fc51cbe11d432529768ac1449
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/DoubleOrDefault.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.configuration.type;
 +
 +import org.apache.commons.lang3.math.NumberUtils;
@@ -3565,6 +3565,7 @@ index 0000000000000000000000000000000000000000..37aa2873eb7fbfb9cfbf890e5ca2a396
 +import java.util.OptionalDouble;
 +import java.util.function.Predicate;
 +
++@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 +public final class DoubleOrDefault {
 +    private static final String DEFAULT_VALUE = "default";
 +    public static final DoubleOrDefault USE_DEFAULT = new DoubleOrDefault(OptionalDouble.empty());
@@ -3602,10 +3603,10 @@ index 0000000000000000000000000000000000000000..37aa2873eb7fbfb9cfbf890e5ca2a396
 +                if (NumberUtils.isParsable(string)) {
 +                    return new DoubleOrDefault(OptionalDouble.of(Double.parseDouble(string)));
 +                }
-+            } else if (obj instanceof Double num) {
-+                return new DoubleOrDefault(OptionalDouble.of(num));
++            } else if (obj instanceof Number num) {
++                return new DoubleOrDefault(OptionalDouble.of(num.doubleValue()));
 +            }
-+            throw new SerializationException(obj + " is of an unexpected type " + type);
++            throw new SerializationException(obj + "(" + type + ") is not a double or '" + DEFAULT_VALUE + "'");
 +        }
 +
 +        @Override
@@ -3724,21 +3725,25 @@ index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/IntOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/IntOrDefault.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18a77c5694dc9739c7e2b52deb7dbfebb01b6c38
+index 0000000000000000000000000000000000000000..3278045dbf081cc4099e2eac3a6c4fac3012be4b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/IntOrDefault.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.configuration.type;
++
++import com.mojang.logging.LogUtils;
++import org.apache.commons.lang3.math.NumberUtils;
++import org.slf4j.Logger;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
 +import java.lang.reflect.Type;
 +import java.util.OptionalInt;
 +import java.util.function.Predicate;
-+import org.apache.commons.lang3.math.NumberUtils;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
 +
 +public record IntOrDefault(OptionalInt value) {
 +    private static final String DEFAULT_VALUE = "default";
++    private static final Logger LOGGER = LogUtils.getLogger();
 +    public static final IntOrDefault USE_DEFAULT = new IntOrDefault(OptionalInt.empty());
 +    public static final ScalarSerializer<IntOrDefault> SERIALIZER = new Serializer();
 +
@@ -3760,8 +3765,11 @@ index 0000000000000000000000000000000000000000..18a77c5694dc9739c7e2b52deb7dbfeb
 +                if (NumberUtils.isParsable(string)) {
 +                    return new IntOrDefault(OptionalInt.of(Integer.parseInt(string)));
 +                }
-+            } else if (obj instanceof Integer num) {
-+                return new IntOrDefault(OptionalInt.of(num));
++            } else if (obj instanceof Number num) {
++                if (num.intValue() != num.doubleValue() || num.intValue() != num.longValue()) {
++                    LOGGER.error("{} cannot be converted to an integer without losing information", num);
++                }
++                return new IntOrDefault(OptionalInt.of(num.intValue()));
 +            }
 +            throw new SerializationException(obj + "(" + type + ") is not a integer or '" + DEFAULT_VALUE + "'");
 +        }
@@ -3868,10 +3876,10 @@ index 0000000000000000000000000000000000000000..0f2765b2edc63c11ba3c57ff55c53605
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/fallback/FallbackValue.java b/src/main/java/io/papermc/paper/configuration/type/fallback/FallbackValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d279ef02a44e2a8fc971cbf8ec816444271ccfc9
+index 0000000000000000000000000000000000000000..a3a1d398d783c37914fb6d646e11361afee687b8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/fallback/FallbackValue.java
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,102 @@
 +package io.papermc.paper.configuration.type.fallback;
 +
 +import com.google.common.base.Preconditions;
@@ -3886,6 +3894,7 @@ index 0000000000000000000000000000000000000000..d279ef02a44e2a8fc971cbf8ec816444
 +import java.util.Set;
 +import java.util.function.Supplier;
 +
++@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 +public sealed abstract class FallbackValue permits FallbackValue.Int {
 +
 +    private static final String DEFAULT_VALUE = "default";
