@@ -127,3 +127,76 @@
          if (flag1) {
              BlockPosition blockposition1 = new BlockPosition(i + this.random.nextInt(l - i + 1), j + this.random.nextInt(i1 - j + 1), k + this.random.nextInt(j1 - k + 1));
  
+@@ -531,6 +603,21 @@
+ 
+     }
+ 
++    // CraftBukkit start - SPIGOT-2420: Special case, the ender dragon drops 12000 xp for the first kill and 500 xp for every other kill and this over time.
++    @Override
++    public int getExpReward() {
++        // CraftBukkit - Moved from #tickDeath method
++        boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
++        short short0 = 500;
++
++        if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
++            short0 = 12000;
++        }
++
++        return flag ? short0 : 0;
++    }
++    // CraftBukkit end
++
+     @Override
+     protected void tickDeath() {
+         if (this.dragonFight != null) {
+@@ -546,15 +633,20 @@
+             this.level.addParticle(Particles.EXPLOSION_EMITTER, this.getX() + (double) f, this.getY() + 2.0D + (double) f1, this.getZ() + (double) f2, 0.0D, 0.0D, 0.0D);
+         }
+ 
++        // CraftBukkit start - SPIGOT-2420: Moved up to #getExpReward method
++        /*
+         boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
+         short short0 = 500;
+ 
+         if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
+             short0 = 12000;
+         }
++        */
++        int short0 = expToDrop;
++        // CraftBukkit end
+ 
+         if (this.level instanceof WorldServer) {
+-            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && flag) {
++            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && true) {  // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
+                 EntityExperienceOrb.award((WorldServer) this.level, this.position(), MathHelper.floor((float) short0 * 0.08F));
+             }
+ 
+@@ -567,7 +659,7 @@
+         this.setYRot(this.getYRot() + 20.0F);
+         this.yBodyRot = this.getYRot();
+         if (this.dragonDeathTime == 200 && this.level instanceof WorldServer) {
+-            if (flag) {
++            if (true) { // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
+                 EntityExperienceOrb.award((WorldServer) this.level, this.position(), MathHelper.floor((float) short0 * 0.2F));
+             }
+ 
+@@ -788,6 +880,7 @@
+         super.addAdditionalSaveData(nbttagcompound);
+         nbttagcompound.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
+         nbttagcompound.putInt("DragonDeathTime", this.dragonDeathTime);
++        nbttagcompound.putInt("Bukkit.expToDrop", expToDrop); // CraftBukkit - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
+     }
+ 
+     @Override
+@@ -801,6 +894,11 @@
+             this.dragonDeathTime = nbttagcompound.getInt("DragonDeathTime");
+         }
+ 
++        // CraftBukkit start - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
++        if (nbttagcompound.contains("Bukkit.expToDrop")) {
++            this.expToDrop = nbttagcompound.getInt("Bukkit.expToDrop");
++        }
++        // CraftBukkit end
+     }
+ 
+     @Override
