@@ -1008,6 +1008,26 @@ public final class Bukkit {
     }
 
     /**
+     * Gets whether the server should send a preview of the player's chat
+     * message to the client when the player sends a message
+     *
+     * @return true if the server should send a preview, false otherwise
+     */
+    public static boolean shouldSendChatPreviews() {
+        return server.shouldSendChatPreviews();
+    }
+
+    /**
+     * Gets whether the server only allow players with Mojang-signed public key
+     * to join
+     *
+     * @return true if only Mojang-signed players can join, false otherwise
+     */
+    public static boolean isEnforcingSecureProfiles() {
+        return server.isEnforcingSecureProfiles();
+    }
+
+    /**
      * Gets whether the Server hide online players in server status.
      *
      * @return true if the server hide online players, false otherwise
@@ -1366,6 +1386,17 @@ public final class Bukkit {
     @NotNull
     public static Merchant createMerchant(@Nullable String title) {
         return server.createMerchant(title);
+    }
+
+    /**
+     * Gets the amount of consecutive neighbor updates before skipping
+     * additional ones.
+     *
+     * @return the amount of consecutive neighbor updates, if the value is
+     * negative then the limit it's not used
+     */
+    public static int getMaxChainedNeighborUpdates() {
+        return server.getMaxChainedNeighborUpdates();
     }
 
     /**
