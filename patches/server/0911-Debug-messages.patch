@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kihz17 <mitchdawdy@gmail.com>
+Date: Sat, 4 Jun 2022 15:41:08 -0400
+Subject: [PATCH] Debug messages
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index f485f1fc1f4c9a3652653cbdd4fceadcd0243900..16ce4e7819cd220832987c9e05f9f4f45256dee9 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -495,9 +495,9 @@ public class ServerChunkCache extends ChunkSource {
+     private long asyncLoadSeqCounter;
+ 
+     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
+-        LOGGER.debug("Chunk at async");
++        LOGGER.info("Chunk at async");
+         if (Thread.currentThread() != this.mainThread) {
+-            LOGGER.debug("Not main thread");
++            LOGGER.info("Not main thread");
+             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = new CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>();
+             this.mainThreadProcessor.execute(() -> {
+                 this.getChunkAtAsynchronously(x, z, gen, isUrgent).whenComplete((chunk, ex) -> {
+@@ -511,7 +511,7 @@ public class ServerChunkCache extends ChunkSource {
+             return future;
+         }
+ 
+-        LOGGER.debug("Main thread chubk async");
++        LOGGER.info("Main thread chubk async");
+         long k = ChunkPos.asLong(x, z);
+         ChunkPos chunkPos = new ChunkPos(x, z);
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 8902ce13757e506846c274cc106811e62fa9855c..e23bf31d1cd20de62e6b83d53e27bb33df0b849c 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -294,17 +294,17 @@ public abstract class PlayerList {
+         distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
+         worldserver1.getChunkSource().markAreaHighPriority(pos, 28, 3); // Paper - Chunk priority
+         worldserver1.getChunkSource().getChunkAtAsynchronously(chunkX, chunkZ, true, false).thenApply(chunk -> { // Paper - Chunk priority
+-            LOGGER.debug("First and then");
++            LOGGER.info("First and then");
+             net.minecraft.server.level.ChunkHolder updatingChunk = playerChunkMap.getUpdatingChunkIfPresent(pos.toLong());
+             if (updatingChunk != null) {
+-                LOGGER.debug("Chunk not null");
++                LOGGER.info("Chunk not null");
+                 return updatingChunk.getEntityTickingChunkFuture();
+             } else {
+-                LOGGER.debug("Was null");
++                LOGGER.info("Was null");
+                 return java.util.concurrent.CompletableFuture.completedFuture(chunk);
+             }
+         }).thenAccept(chunk -> {
+-            LOGGER.debug("Final step");
++            LOGGER.info("Final step");
+             playerconnection.playerJoinReady = () -> {
+                 postChunkLoadJoin(
+                     player, finalWorldserver, connection, playerconnection,

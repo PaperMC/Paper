@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kihz17 <mitchdawdy@gmail.com>
+Date: Fri, 10 Jun 2022 22:08:20 -0400
+Subject: [PATCH] Add dot product check before LoS test
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index 16ce4e7819cd220832987c9e05f9f4f45256dee9..fb0757d4bb32123641535a88a22bc074b8d2623f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -495,9 +495,7 @@ public class ServerChunkCache extends ChunkSource {
+     private long asyncLoadSeqCounter;
+ 
+     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
+-        LOGGER.info("Chunk at async");
+         if (Thread.currentThread() != this.mainThread) {
+-            LOGGER.info("Not main thread");
+             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = new CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>();
+             this.mainThreadProcessor.execute(() -> {
+                 this.getChunkAtAsynchronously(x, z, gen, isUrgent).whenComplete((chunk, ex) -> {
+@@ -511,7 +509,6 @@ public class ServerChunkCache extends ChunkSource {
+             return future;
+         }
+ 
+-        LOGGER.info("Main thread chubk async");
+         long k = ChunkPos.asLong(x, z);
+         ChunkPos chunkPos = new ChunkPos(x, z);
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index bac13a6c16ab98929379ee73d07ab971c9f2fcb5..cc7ec0025117a318f89c0f3d43c13043a56f25ef 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -460,30 +460,25 @@ public class ServerEntity {
+         if(yDistance <= losYThreshold && horizontalDistance <= losHorizontalThreshold) // We are close enough to them, just return true
+             return true;
+ 
+-        Vec3 originalPosition = player.getEyePosition();
+-        Vec3 originalEntityPos = this.entity.getEyePosition();
+-
+-        for(int i = 1; i <= 3; i++) {
+-            float originYOffset = player.getEyeHeight() - (player.getEyeHeight() / (float)i);
+-            float endYOffset = this.entity.getEyeHeight() - (this.entity.getEyeHeight() / (float) i);
+-
+-            Vec3 start = new Vec3(originalPosition.x, originalPosition.y - originYOffset, originalPosition.z);
+-            Vec3 end = new Vec3(originalEntityPos.x, originalEntityPos.y - endYOffset, originalEntityPos.z);
+-
+-            Vec3 left = end.subtract(start).normalize().cross(new Vec3(0.0f, 1.0, 0.0));
+-            for(int j = -1; j <= 1; j++) {
+-                Vec3 offset = left.scale(j);
+-                Vec3 rayOrigin = start.add(offset);
+-                Vec3 rayEnd = end.add(offset);
+-
+-                ClipContext ray = new ClipContext(rayOrigin, rayEnd, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player);
+-                BlockHitResult hitResult = player.level.clipIgnoreTransparent(ray);
+-
+-                if(hitResult.getType() != HitResult.Type.BLOCK) // We didn't hit a block, we have LOS, stop checking
+-                    return true;
+-            }
+-        }
+-
+-        return false; // All of our rays hit a block, we can't see this person
++        Vec3 start = player.getEyePosition();
++        Vec3 end = this.entity.getEyePosition();
++
++        // Do dot product test
++        float yaw = player.getYHeadRot();
++        float pitch = player.getXRot();
++        double yDir = -Math.sin(Math.toRadians(pitch));
++        double xz = Math.cos(Math.toRadians(pitch));
++        double xDir = -xz * Math.sin(Math.toRadians(yaw));
++        double zDir = xz * Math.cos(Math.toRadians(yaw));
++
++        Vec3 playerDir = new Vec3(xDir, yDir, zDir).normalize();
++        Vec3 dirToEntity = end.subtract(start).normalize();
++        if(playerDir.dot(dirToEntity) <= 0.2D) // Player is looking away from the entity, don't bother doing ray casting checks
++            return false;
++
++        ClipContext ray = new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player);
++        BlockHitResult hitResult = player.level.clipIgnoreTransparent(ray);
++
++        return hitResult.getType() != HitResult.Type.BLOCK;
+     }
+ }

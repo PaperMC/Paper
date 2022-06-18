@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kihz17 <mitchdawdy@gmail.com>
+Date: Fri, 17 Jun 2022 20:56:07 -0400
+Subject: [PATCH] Add entity field to entity data packet event.
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/events/SendEntityDataPacketEvent.java b/src/main/java/com/destroystokyo/paper/events/SendEntityDataPacketEvent.java
+index 3d2ae4443f68f85590c444fae5556001905e3dfc..83d8296e5bb22b2278a85d1ddf55a3cdc0eb3aa7 100644
+--- a/src/main/java/com/destroystokyo/paper/events/SendEntityDataPacketEvent.java
++++ b/src/main/java/com/destroystokyo/paper/events/SendEntityDataPacketEvent.java
+@@ -2,6 +2,7 @@ package com.destroystokyo.paper.events;
+ 
+ import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+ import net.minecraft.network.syncher.SynchedEntityData;
++import org.bukkit.entity.Entity;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.HandlerList;
+@@ -12,12 +13,14 @@ import java.util.List;
+ 
+ public class SendEntityDataPacketEvent extends PlayerEvent implements Cancellable {
+     private final List<SynchedEntityData.DataItem<?>> dataItems;
++    private final Entity entity;
+     private boolean cancelled;
+ 
+     private static final HandlerList handlers = new HandlerList();
+ 
+-    public SendEntityDataPacketEvent(@NotNull Player who, ClientboundSetEntityDataPacket packet) {
++    public SendEntityDataPacketEvent(@NotNull Player who, ClientboundSetEntityDataPacket packet, Entity entity) {
+         super(who);
++        this.entity = entity;
+         this.dataItems = packet.getUnpackedData();
+     }
+ 
+@@ -25,6 +28,10 @@ public class SendEntityDataPacketEvent extends PlayerEvent implements Cancellabl
+         return dataItems;
+     }
+ 
++    public Entity getEntity() {
++        return entity;
++    }
++
+     @Override
+     public boolean isCancelled() {
+         return cancelled;
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index a0106a613c8cb38ed3baf654807d7f295b184427..10550c5093cc23928b5342c10a5d3f6646a028c1 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -312,7 +312,7 @@ public class ServerEntity {
+ 
+         if (!this.entity.getEntityData().isEmpty()) {
+             ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(this.entity.getId(), this.entity.getEntityData(), true);
+-            SendEntityDataPacketEvent event = new SendEntityDataPacketEvent(entityplayer.getBukkitEntity(), dataPacket);
++            SendEntityDataPacketEvent event = new SendEntityDataPacketEvent(entityplayer.getBukkitEntity(), dataPacket, entity.getBukkitEntity());
+             level.getCraftServer().getPluginManager().callEvent(event);
+             if(!event.isCancelled())
+                 entityplayer.connection.send(dataPacket);
+@@ -415,7 +415,7 @@ public class ServerEntity {
+                         .collect(Collectors.toList());
+ 
+                     ClientboundSetEntityDataPacket clonedPacket = new ClientboundSetEntityDataPacket(entity.getId(), clonedList);
+-                    SendEntityDataPacketEvent event = new SendEntityDataPacketEvent(connection.getPlayer().getBukkitEntity(), clonedPacket);
++                    SendEntityDataPacketEvent event = new SendEntityDataPacketEvent(connection.getPlayer().getBukkitEntity(), clonedPacket, entity.getBukkitEntity());
+                     level.getCraftServer().getPluginManager().callEvent(event);
+                     if(!event.isCancelled())
+                         connection.send(clonedPacket);
+@@ -424,7 +424,7 @@ public class ServerEntity {
+                 // We are a player, send to ourselves
+                 if(entity instanceof ServerPlayer player) {
+                     ClientboundSetEntityDataPacket clonedPacket = new ClientboundSetEntityDataPacket(entity.getId(), dirtyItems);
+-                    SendEntityDataPacketEvent event = new SendEntityDataPacketEvent(player.getBukkitEntity(), clonedPacket);
++                    SendEntityDataPacketEvent event = new SendEntityDataPacketEvent(player.getBukkitEntity(), clonedPacket, entity.getBukkitEntity());
+                     level.getCraftServer().getPluginManager().callEvent(event);
+                     if(!event.isCancelled())
+                         player.connection.send(clonedPacket);
