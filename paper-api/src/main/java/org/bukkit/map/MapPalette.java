@@ -1,5 +1,6 @@
 package org.bukkit.map;
 
+import com.google.common.base.Preconditions;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -238,6 +239,10 @@ public final class MapPalette {
     public static byte matchColor(@NotNull Color color) {
         if (color.getAlpha() < 128) return 0;
 
+        if (mapColorCache != null && mapColorCache.isCached()) {
+            return mapColorCache.matchColor(color);
+        }
+
         int index = 0;
         double best = -1;
 
@@ -265,5 +270,45 @@ public final class MapPalette {
     public static Color getColor(byte index) {
         // Minecraft has 143 colors, some of which have negative byte representations
         return colors[index >= 0 ? index : index + 256];
+    }
+
+    private static MapColorCache mapColorCache;
+
+    /**
+     * Sets the given MapColorCache.
+     *
+     * @param mapColorCache The map color cache to set
+     */
+    public static void setMapColorCache(@NotNull MapColorCache mapColorCache) {
+        Preconditions.checkState(MapPalette.mapColorCache == null, "Map color cache already set");
+
+        MapPalette.mapColorCache = mapColorCache;
+    }
+
+    /**
+     * Holds cached information for matching map colors of a given RBG color.
+     */
+    public interface MapColorCache {
+
+        /**
+         * Returns true if the MapColorCache has values cached, if not it will
+         * return false.
+         * A case where it might return false is when the cache is not build jet.
+         *
+         * @return true if this MapColorCache has values cached otherwise false
+         */
+        boolean isCached();
+
+        /**
+         * Get the cached index of the closest matching color in the palette to the given
+         * color.
+         *
+         * @param color The Color to match.
+         * @return The index in the palette.
+         * @throws IllegalStateException if {@link #isCached()} returns false
+         * @deprecated Magic value
+         */
+        @Deprecated
+        byte matchColor(@NotNull Color color);
     }
 }
