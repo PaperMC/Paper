@@ -4108,10 +4108,10 @@ index 0000000000000000000000000000000000000000..177d0a969f3d72a34e773e8309c3719a
 +}
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/util/SaveUtil.java b/src/main/java/ca/spottedleaf/starlight/common/util/SaveUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9892863af9f94ab8e378652df2a7ccfebb8c7f41
+index 0000000000000000000000000000000000000000..6df9e01731d7fcbe279736b8fc18396595b95574
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/starlight/common/util/SaveUtil.java
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,192 @@
 +package ca.spottedleaf.starlight.common.util;
 +
 +import ca.spottedleaf.starlight.common.light.SWMRNibbleArray;
@@ -4143,9 +4143,12 @@ index 0000000000000000000000000000000000000000..9892863af9f94ab8e378652df2a7ccfe
 +    public static void saveLightHook(final Level world, final ChunkAccess chunk, final CompoundTag nbt) {
 +        try {
 +            saveLightHookReal(world, chunk, nbt);
-+        } catch (final Exception ex) {
++        } catch (final Throwable ex) {
 +            // failing to inject is not fatal so we catch anything here. if it fails, it will have correctly set lit to false
 +            // for Vanilla to relight on load and it will not set our lit tag so we will relight on load
++            if (ex instanceof ThreadDeath) {
++                throw (ThreadDeath)ex;
++            }
 +            LOGGER.warn("Failed to inject light data into save data for chunk " + chunk.getPos() + ", chunk light will be recalculated on its next load", ex);
 +        }
 +    }
@@ -4237,9 +4240,12 @@ index 0000000000000000000000000000000000000000..9892863af9f94ab8e378652df2a7ccfe
 +    public static void loadLightHook(final Level world, final ChunkPos pos, final CompoundTag tag, final ChunkAccess into) {
 +        try {
 +            loadLightHookReal(world, pos, tag, into);
-+        } catch (final Exception ex) {
++        } catch (final Throwable ex) {
 +            // failing to inject is not fatal so we catch anything here. if it fails, then we simply relight. Not a problem, we get correct
 +            // lighting in both cases.
++            if (ex instanceof ThreadDeath) {
++                throw (ThreadDeath)ex;
++            }
 +            LOGGER.warn("Failed to load light for chunk " + pos + ", light will be recalculated", ex);
 +        }
 +    }
@@ -4297,7 +4303,6 @@ index 0000000000000000000000000000000000000000..9892863af9f94ab8e378652df2a7ccfe
 +    }
 +
 +    private SaveUtil() {}
-+
 +}
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/util/WorldUtil.java b/src/main/java/ca/spottedleaf/starlight/common/util/WorldUtil.java
 new file mode 100644
