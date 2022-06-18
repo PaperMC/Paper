@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: leChapelierFou-D <regisgaia@hotmail.fr>
+Date: Sun, 8 May 2022 23:45:06 +0000
+Subject: [PATCH] Add PlayerPassengerInputEvent call in handlePlayerInput
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 1a87f61d534ed531132fb43a9d2a45a4b604a6fc..683ebe21465bb6762c771284924e1bf086a39b70 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -494,9 +494,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     @Override
+     public void handlePlayerInput(ServerboundPlayerInputPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+-        this.player.setPlayerInput(packet.getXxa(), packet.getZza(), packet.isJumping(), packet.isShiftKeyDown());
++        // Paper start - create event control mounted entity
++        var event = new io.papermc.paper.event.player.PlayerPassengerInputEvent(player.getBukkitEntity(),
++                packet.getXxa(), packet.getZza(), packet.isJumping(), packet.isShiftKeyDown());
++        if (!event.callEvent()) return;
++        //this.player.setPlayerInput(packet.getXxa(), packet.getZza(), packet.isJumping(), packet.isShiftKeyDown());
++        this.player.setPlayerInput(event.getCoefVelocityX(), event.getCoefVelocityZ(), event.isJumping(), event.isCrouching());
++        // Paper end
+     }
+ 
++
+     private static boolean containsInvalidValues(double x, double y, double z, float yaw, float pitch) {
+         return Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z) || !Floats.isFinite(pitch) || !Floats.isFinite(yaw);
+     }
