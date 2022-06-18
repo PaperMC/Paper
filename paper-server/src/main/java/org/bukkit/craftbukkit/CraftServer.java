@@ -1396,6 +1396,16 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public boolean shouldSendChatPreviews() {
+        return this.getServer().previewsChat();
+    }
+
+    @Override
+    public boolean isEnforcingSecureProfiles() {
+        return this.getServer().enforceSecureProfile();
+    }
+
+    @Override
     public boolean getHideOnlinePlayers() {
         return console.hidesOnlinePlayers();
     }
@@ -1818,6 +1828,11 @@ public final class CraftServer implements Server {
     @Override
     public Merchant createMerchant(String title) {
         return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
+    }
+
+    @Override
+    public int getMaxChainedNeighborUpdates() {
+        return this.getServer().getMaxChainedNeighborUpdates();
     }
 
     @Override
