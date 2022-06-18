@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DigitalRegent <misterwener@gmail.com>
+Date: Sat, 11 Apr 2020 13:10:58 +0200
+Subject: [PATCH] Brand support
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 08d28184c7e90878b72a606c7800cfffba90472c..84943c80d4a331b18652854f3ae75b509fde806b 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -279,6 +279,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
+     private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
+ 
++    private String clientBrandName = null; // Paper - Brand name
++
+     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
+         this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
+         this.server = server;
+@@ -3213,6 +3215,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private static final ResourceLocation CUSTOM_REGISTER = new ResourceLocation("register");
+     private static final ResourceLocation CUSTOM_UNREGISTER = new ResourceLocation("unregister");
+ 
++    private static final ResourceLocation MINECRAFT_BRAND = new ResourceLocation("brand"); // Paper - Brand support
++
+     @Override
+     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+@@ -3240,6 +3244,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             try {
+                 byte[] data = new byte[packet.data.readableBytes()];
+                 packet.data.readBytes(data);
++                // Paper start - Brand support
++                if (packet.identifier.equals(MINECRAFT_BRAND)) {
++                    try {
++                        this.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
++                    } catch (StringIndexOutOfBoundsException ex) {
++                        this.clientBrandName = "illegal";
++                    }
++                }
++                // Paper end
+                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), packet.identifier.toString(), data);
+             } catch (Exception ex) {
+                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
+@@ -3249,6 +3262,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+     }
+ 
++    // Paper start - brand support
++    public String getClientBrandName() {
++        return clientBrandName;
++    }
++    // Paper end
++
+     public final boolean isDisconnected() {
+         return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 791889e540f03681e6432305772d30eca907716e..a9b80431323b71f171185b4c7bdc2f323c1de124 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2678,6 +2678,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Paper end
+     };
+ 
++    // Paper start - brand support
++    @Override
++    public String getClientBrandName() {
++        return getHandle().connection != null ? getHandle().connection.getClientBrandName() : null;
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return this.spigot;

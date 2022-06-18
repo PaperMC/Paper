@@ -13,10 +13,10 @@ completion, such as offline players.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..619ed37169c126a8c75d02699a04728bac49d10d
+index 0000000000000000000000000000000000000000..a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,176 @@
 +/*
 + * Copyright (c) 2017 Daniel Ennis (Aikar) MIT License
 + *
@@ -42,8 +42,7 @@ index 0000000000000000000000000000000000000000..619ed37169c126a8c75d02699a04728b
 +
 +package com.destroystokyo.paper.event.server;
 +
-+import com.google.common.collect.ImmutableList;
-+import org.apache.commons.lang.Validate;
++import com.google.common.base.Preconditions;
 +import org.bukkit.Location;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
@@ -117,7 +116,7 @@ index 0000000000000000000000000000000000000000..619ed37169c126a8c75d02699a04728b
 +     * @param completions the new completions
 +     */
 +    public void setCompletions(@NotNull List<String> completions) {
-+        Validate.notNull(completions);
++        Preconditions.checkNotNull(completions);
 +        this.completions = new ArrayList<>(completions);
 +    }
 +
@@ -195,39 +194,24 @@ index 0000000000000000000000000000000000000000..619ed37169c126a8c75d02699a04728b
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
-index d1a9956a1573dab54c5ff2e5d67ca86cfe1dc01a..f96c4ba53ab41ea66d4f9a4d54eeabb63f992b58 100644
+index 270e6d8ad4358baa256cee5f16cff281f063ce3b..4a3451af454295ac3e1b688e6665cad9fc594c82 100644
 --- a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
 +++ b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
-@@ -1,5 +1,6 @@
- package org.bukkit.event.server;
- 
-+import java.util.ArrayList;
- import java.util.List;
- import org.apache.commons.lang.Validate;
- import org.bukkit.command.CommandSender;
-@@ -8,6 +9,7 @@ import org.bukkit.event.Event;
- import org.bukkit.event.HandlerList;
- import org.bukkit.event.player.PlayerCommandSendEvent;
- import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
- 
- /**
-  * Called when a {@link CommandSender} of any description (ie: player or
-@@ -29,6 +31,13 @@ public class TabCompleteEvent extends Event implements Cancellable {
+@@ -29,6 +29,13 @@ public class TabCompleteEvent extends Event implements Cancellable {
      private boolean cancelled;
  
      public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions) {
 +        // Paper start
 +        this(sender, buffer, completions, sender instanceof org.bukkit.command.ConsoleCommandSender || buffer.startsWith("/"), null);
 +    }
-+    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions, boolean isCommand, @Nullable org.bukkit.Location location) {
++    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions, boolean isCommand, @org.jetbrains.annotations.Nullable org.bukkit.Location location) {
 +        this.isCommand = isCommand;
 +        this.loc = location;
 +        // Paper end
-         Validate.notNull(sender, "sender");
-         Validate.notNull(buffer, "buffer");
-         Validate.notNull(completions, "completions");
-@@ -69,14 +78,35 @@ public class TabCompleteEvent extends Event implements Cancellable {
+         Preconditions.checkArgument(sender != null, "sender");
+         Preconditions.checkArgument(buffer != null, "buffer");
+         Preconditions.checkArgument(completions != null, "completions");
+@@ -69,14 +76,35 @@ public class TabCompleteEvent extends Event implements Cancellable {
          return completions;
      }
  
@@ -244,7 +228,7 @@ index d1a9956a1573dab54c5ff2e5d67ca86cfe1dc01a..f96c4ba53ab41ea66d4f9a4d54eeabb6
 +    /**
 +     * @return The position looked at by the sender, or null if none
 +     */
-+    @Nullable
++    @org.jetbrains.annotations.Nullable
 +    public org.bukkit.Location getLocation() {
 +        return loc;
 +    }
@@ -258,9 +242,9 @@ index d1a9956a1573dab54c5ff2e5d67ca86cfe1dc01a..f96c4ba53ab41ea66d4f9a4d54eeabb6
       * @param completions the new completions
       */
      public void setCompletions(@NotNull List<String> completions) {
-         Validate.notNull(completions);
+         Preconditions.checkArgument(completions != null);
 -        this.completions = completions;
-+        this.completions = new ArrayList<>(completions); // Paper
++        this.completions = new java.util.ArrayList<>(completions); // Paper
      }
  
      @Override

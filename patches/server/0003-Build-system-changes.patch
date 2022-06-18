@@ -5,7 +5,7 @@ Subject: [PATCH] Build system changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 75c858870a55f7282a0e3500f803cb330b462f37..d39ed9a8a32913193aec1bba2a59a352b8032dae 100644
+index d10ff4a52c22033e2adb2a4e7f2cee98a13ea6c5..e4e9df9283c1a0fd7fff38a5d9b6a51f15e06b7a 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -9,10 +9,9 @@ plugins {
@@ -16,12 +16,21 @@ index 75c858870a55f7282a0e3500f803cb330b462f37..d39ed9a8a32913193aec1bba2a59a352
 -        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
 -    }
 +    implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
-     implementation("org.ow2.asm:asm:9.2")
-+    implementation("org.ow2.asm:asm-commons:9.2") // Paper - ASM event executor generation
+     implementation("org.ow2.asm:asm:9.3")
++    implementation("org.ow2.asm:asm-commons:9.3") // Paper - ASM event executor generation
+     implementation("commons-lang:commons-lang:2.6")
      runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
-     runtimeOnly("mysql:mysql-connector-java:8.0.27")
+     runtimeOnly("mysql:mysql-connector-java:8.0.29")
+@@ -23,6 +22,8 @@ dependencies {
  
-@@ -32,6 +31,7 @@ tasks.jar {
+     testImplementation("junit:junit:4.13.2")
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
++
++    implementation("io.netty:netty-all:4.1.77.Final"); // Paper - Bump netty
+ }
+ 
+ val craftbukkitPackageVersion = "1_19_R1" // Paper
+@@ -34,6 +35,7 @@ tasks.jar {
          val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
          val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
          val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
@@ -29,17 +38,18 @@ index 75c858870a55f7282a0e3500f803cb330b462f37..d39ed9a8a32913193aec1bba2a59a352
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
-@@ -40,6 +40,8 @@ tasks.jar {
+@@ -42,6 +44,9 @@ tasks.jar {
              "Specification-Title" to "Bukkit",
              "Specification-Version" to project.version,
              "Specification-Vendor" to "Bukkit Team",
 +            "Git-Branch" to gitBranch, // Paper
 +            "Git-Commit" to gitHash, // Paper
++            "CraftBukkit-Package-Version" to craftbukkitPackageVersion, // Paper
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 2c90c116d87e060b6da4a8ce79f839fff80db86d..e75ff70c52b097af447b7a91ef2c20c08a904d92 100644
+index 21a2be907f67d39605210d6bee53b3442665f65f..e5008c75054df38356af193fd049110d7d56e2d4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -190,7 +190,7 @@ public class Main {
@@ -50,7 +60,7 @@ index 2c90c116d87e060b6da4a8ce79f839fff80db86d..e75ff70c52b097af447b7a91ef2c20c0
 +                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
  
                      Calendar deadline = Calendar.getInstance();
-                     deadline.add(Calendar.DAY_OF_YEAR, -21);
+                     deadline.add(Calendar.DAY_OF_YEAR, -3);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed43495be17 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java

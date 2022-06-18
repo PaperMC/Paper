@@ -5,7 +5,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "7.1.2" apply false
-    id("io.papermc.paperweight.core") version "1.3.6"
+    id("io.papermc.paperweight.core") version "1.3.7"
 }
 
 allprojects {
@@ -19,7 +19,7 @@ allprojects {
     }
 }
 
-val paperMavenPublicUrl = "https://papermc.io/repo/repository/maven-public/"
+val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 subprojects {
     tasks.withType<JavaCompile> {
@@ -61,10 +61,10 @@ repositories {
 }
 
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.18.2+build.2:mergedv2")
+    paramMappings("net.fabricmc:yarn:1.19+build.1:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.8.2:fat")
-    decompiler("net.minecraftforge:forgeflower:1.5.498.29")
-    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.4")
+    decompiler("net.minecraftforge:forgeflower:1.5.605.7")
+    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.6")
     paperclip("io.papermc:paperclip:3.0.2")
 }
 
@@ -123,7 +123,7 @@ publishing {
 allprojects {
     publishing {
         repositories {
-            maven("https://papermc.io/repo/repository/maven-snapshots/") {
+            maven("https://repo.papermc.io/repository/maven-snapshots/") {
                 name = "paperSnapshots"
                 credentials(PasswordCredentials::class)
             }

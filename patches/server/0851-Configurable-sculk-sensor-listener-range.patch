@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 19 Aug 2021 18:45:42 -0700
+Subject: [PATCH] Configurable sculk sensor listener range
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
+index b7b70a77615dde3f22a9153e17ec2d8edbdcdc7a..579a96d2d6c99d6587ea182f52b6df918f595f17 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
+@@ -36,9 +36,11 @@ public class SculkSensorBlockEntity extends BlockEntity implements VibrationList
+                 this.listener = listener;
+             });
+         }
++        if (nbt.contains(PAPER_LISTENER_RANGE_NBT_KEY)) this.listener.listenerRange = nbt.getInt(PAPER_LISTENER_RANGE_NBT_KEY); // Paper
+ 
+     }
+ 
++    private static final String PAPER_LISTENER_RANGE_NBT_KEY = "Paper.ListenerRange"; // Paper
+     @Override
+     protected void saveAdditional(CompoundTag nbt) {
+         super.saveAdditional(nbt);
+@@ -46,6 +48,7 @@ public class SculkSensorBlockEntity extends BlockEntity implements VibrationList
+         VibrationListener.codec(this).encodeStart(NbtOps.INSTANCE, this.listener).resultOrPartial(LOGGER::error).ifPresent((listenerNbt) -> {
+             nbt.put("listener", listenerNbt);
+         });
++        if (this.listener.listenerRange != ((SculkSensorBlock) net.minecraft.world.level.block.Blocks.SCULK_SENSOR).getListenerRange()) nbt.putInt(PAPER_LISTENER_RANGE_NBT_KEY, this.listener.listenerRange); // Paper - only save if it's different from the default
+     }
+ 
+     public VibrationListener getListener() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
+index 2733154f569002e426690dfcf362ff20da8cba72..34362768f38fb3122abcbd5e63fee38a631b9ee3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
+@@ -21,4 +21,16 @@ public class CraftSculkSensor extends CraftBlockEntityState<SculkSensorBlockEnti
+         Preconditions.checkArgument(0 <= lastVibrationFrequency && lastVibrationFrequency <= 15, "Vibration frequency must be between 0-15");
+         getSnapshot().lastVibrationFrequency = lastVibrationFrequency;
+     }
++    // Paper start
++    @Override
++    public int getListenerRange() {
++        return this.getSnapshot().getListener().listenerRange;
++    }
++
++    @Override
++    public void setListenerRange(int range) {
++        Preconditions.checkArgument(range > 0, "Vibration listener range must be greater than 0");
++        this.getSnapshot().getListener().listenerRange = range;
++    }
++    // Paper end
+ }

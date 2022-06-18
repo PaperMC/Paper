@@ -1257,10 +1257,10 @@ index 0000000000000000000000000000000000000000..df142a89b8c43acb81eb383eac0ef048
 +}
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..da76e1aaee1dee794e38ddd4e0a28e0071e90bbf
+index 0000000000000000000000000000000000000000..dd72a34eaa4bedd9ea0b92eaa79091b00eb4dd09
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timings.java
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,295 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1289,7 +1289,6 @@ index 0000000000000000000000000000000000000000..da76e1aaee1dee794e38ddd4e0a28e00
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.EvictingQueue;
 +import com.google.common.collect.Lists;
-+import org.apache.commons.lang.Validate;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.plugin.Plugin;
@@ -1523,7 +1522,7 @@ index 0000000000000000000000000000000000000000..da76e1aaee1dee794e38ddd4e0a28e00
 +     * @param sender The listener to send responses too.
 +     */
 +    public static void generateReport(@NotNull TimingsReportListener sender) {
-+        Validate.notNull(sender);
++        Preconditions.checkNotNull(sender);
 +        requestingReport.add(sender);
 +    }
 +
@@ -1559,10 +1558,10 @@ index 0000000000000000000000000000000000000000..da76e1aaee1dee794e38ddd4e0a28e00
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f7c2245a310a084367ff25db539b3c967d5cb141
+index 0000000000000000000000000000000000000000..3132dc98d26c54c5e46162e53aaed195d7335c8d
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsCommand.java
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,120 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1588,9 +1587,9 @@ index 0000000000000000000000000000000000000000..f7c2245a310a084367ff25db539b3c96
 + */
 +package co.aikar.timings;
 +
++import com.google.common.base.Preconditions;
 +import com.google.common.collect.ImmutableList;
-+import org.apache.commons.lang.Validate;
-+import org.bukkit.ChatColor;
++import net.kyori.adventure.text.format.NamedTextColor;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.command.defaults.BukkitCommand;
 +import org.bukkit.util.StringUtil;
@@ -1598,7 +1597,8 @@ index 0000000000000000000000000000000000000000..f7c2245a310a084367ff25db539b3c96
 +import java.util.ArrayList;
 +import java.util.List;
 +import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++
++import static net.kyori.adventure.text.Component.text;
 +
 +
 +public class TimingsCommand extends BukkitCommand {
@@ -1618,41 +1618,41 @@ index 0000000000000000000000000000000000000000..f7c2245a310a084367ff25db539b3c96
 +            return true;
 +        }
 +        if (args.length < 1) {
-+            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++            sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));
 +            return true;
 +        }
 +        final String arg = args[0];
 +        if ("on".equalsIgnoreCase(arg)) {
 +            Timings.setTimingsEnabled(true);
-+            sender.sendMessage("Enabled Timings & Reset");
++            sender.sendMessage(text("Enabled Timings & Reset"));
 +            return true;
 +        } else if ("off".equalsIgnoreCase(arg)) {
 +            Timings.setTimingsEnabled(false);
-+            sender.sendMessage("Disabled Timings");
++            sender.sendMessage(text("Disabled Timings"));
 +            return true;
 +        }
 +
 +        if (!Timings.isTimingsEnabled()) {
-+            sender.sendMessage("Please enable timings by typing /timings on");
++            sender.sendMessage(text("Please enable timings by typing /timings on"));
 +            return true;
 +        }
 +
 +        long now = System.currentTimeMillis();
 +        if ("verbon".equalsIgnoreCase(arg)) {
 +            Timings.setVerboseTimingsEnabled(true);
-+            sender.sendMessage("Enabled Verbose Timings");
++            sender.sendMessage(text("Enabled Verbose Timings"));
 +            return true;
 +        } else if ("verboff".equalsIgnoreCase(arg)) {
 +            Timings.setVerboseTimingsEnabled(false);
-+            sender.sendMessage("Disabled Verbose Timings");
++            sender.sendMessage(text("Disabled Verbose Timings"));
 +            return true;
 +        } else if ("reset".equalsIgnoreCase(arg)) {
 +            if (now - lastResetAttempt < 30000) {
 +                TimingsManager.reset();
-+                sender.sendMessage(ChatColor.RED + "Timings reset. Please wait 5-10 minutes before using /timings report.");
++                sender.sendMessage(text("Timings reset. Please wait 5-10 minutes before using /timings report.", NamedTextColor.RED));
 +            } else {
 +                lastResetAttempt = now;
-+                sender.sendMessage(ChatColor.RED + "WARNING: Timings v2 should not be reset. If you are encountering lag, please wait 3 minutes and then issue a report. The best timings will include 10+ minutes, with data before and after your lag period. If you really want to reset, run this command again within 30 seconds.");
++                sender.sendMessage(text("WARNING: Timings v2 should not be reset. If you are experiencing lag, please wait 3 minutes and then issue a report. The best timings will include 10+ minutes, with data before and after your lag period. If you really want to reset, run this command again within 30 seconds.", NamedTextColor.RED));
 +            }
 +        } else  if (
 +            "paste".equalsIgnoreCase(arg) ||
@@ -1663,7 +1663,7 @@ index 0000000000000000000000000000000000000000..f7c2245a310a084367ff25db539b3c96
 +            ) {
 +            Timings.generateReport(sender);
 +        } else {
-+            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++            sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));
 +        }
 +        return true;
 +    }
@@ -1671,9 +1671,9 @@ index 0000000000000000000000000000000000000000..f7c2245a310a084367ff25db539b3c96
 +    @NotNull
 +    @Override
 +    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
-+        Validate.notNull(sender, "Sender cannot be null");
-+        Validate.notNull(args, "Arguments cannot be null");
-+        Validate.notNull(alias, "Alias cannot be null");
++        Preconditions.checkNotNull(sender, "Sender cannot be null");
++        Preconditions.checkNotNull(args, "Arguments cannot be null");
++        Preconditions.checkNotNull(alias, "Alias cannot be null");
 +
 +        if (args.length == 1) {
 +            return StringUtil.copyPartialMatches(args[0], TIMINGS_SUBCOMMANDS,
@@ -1878,24 +1878,23 @@ index 0000000000000000000000000000000000000000..a92925d41110226f7fda055b71ce7be6
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..73452e53afc68061245a915c863067f47a1d99f9
+index 0000000000000000000000000000000000000000..34f4c02c3bdbe571a7efb1f8c61d8924b0c81268
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,86 @@
 +package co.aikar.timings;
 +
++import com.google.common.base.Preconditions;
 +import com.google.common.collect.Lists;
-+import org.apache.commons.lang.Validate;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.command.ConsoleCommandSender;
 +import org.bukkit.command.MessageCommandSender;
 +import org.bukkit.command.RemoteConsoleCommandSender;
-+
-+import java.util.List;
-+
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
++
++import java.util.List;
 +
 +@SuppressWarnings("WeakerAccess")
 +public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender {
@@ -1913,8 +1912,8 @@ index 0000000000000000000000000000000000000000..73452e53afc68061245a915c863067f4
 +        this(senders, null);
 +    }
 +    public TimingsReportListener(@NotNull List<CommandSender> senders, @Nullable Runnable onDone) {
-+        Validate.notNull(senders);
-+        Validate.notEmpty(senders);
++        Preconditions.checkNotNull(senders);
++        Preconditions.checkArgument(!senders.isEmpty(), "senders is empty");
 +
 +        this.senders = Lists.newArrayList(senders);
 +        this.onDone = onDone;
@@ -2835,11 +2834,11 @@ index 14b078e8fa4347dd0e186e5847693904e4ceb9df..bbb4eb3c4e46ade7dd939c2b0e443616
           * Sends the component to the player
           *
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index f43ad19a44f3b7368a1a110cc55247277f4d3751..ce5794d684a1126ec9acbf4af17f5d6fa783f551 100644
+index fa28b5bb0efd9d400277cd8969f38e039e6ea8ac..c9ecd5b1908e05a1b39dadcded27241672adcddf 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
 @@ -31,6 +31,7 @@ public interface UnsafeValues {
-     net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
+     @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
      // Paper end
  
 +    void reportTimings(); // Paper
@@ -2887,7 +2886,7 @@ index 0000000000000000000000000000000000000000..f9a00aecca5ec41b460bf41dfe1c6969
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 50e6d45ec9349b56d20e2ffc664eca15ba936cc6..c4dcafac892169a7bfcc065701fffb43c6cfdf44 100644
+index 57ade3963faae3724d9a01eeeb6d02168acb567e..6fd341482d5250ad814e870360e40b52427f799a 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -33,6 +33,8 @@ public abstract class Command {
@@ -2940,13 +2939,12 @@ index d6c8938b1e13b63116b7b0e074ea8ef5997f8dc3..a6ad94ef98a1df1d2842635d850bc990
      }
 diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f8f0aa688e337222f305fb07f57eec474e3a3a2b
+index 0000000000000000000000000000000000000000..9d263ab3afb938c215c0b64d9171345fca6ceb2c
 --- /dev/null
 +++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,135 @@
 +package org.bukkit.command;
 +
-+import org.apache.commons.lang.NotImplementedException;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Server;
 +import org.bukkit.permissions.Permission;
@@ -2993,95 +2991,95 @@ index 0000000000000000000000000000000000000000..f8f0aa688e337222f305fb07f57eec47
 +    // Paper start
 +    @Override
 +    default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +    // Paper end
 +
 +    @NotNull
 +    @Override
 +    default String getName() {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
 +    default boolean isOp() {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
 +    default void setOp(boolean value) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
 +    default boolean isPermissionSet(@NotNull String name) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
 +    default boolean isPermissionSet(@NotNull Permission perm) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
 +    default boolean hasPermission(@NotNull String name) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
 +    default boolean hasPermission(@NotNull Permission perm) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @NotNull
 +    @Override
 +    default PermissionAttachment addAttachment(@NotNull Plugin plugin, @NotNull String name, boolean value) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @NotNull
 +    @Override
 +    default PermissionAttachment addAttachment(@NotNull Plugin plugin) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @NotNull
 +    @Override
 +    default PermissionAttachment addAttachment(@NotNull Plugin plugin, @NotNull String name, boolean value, int ticks) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @NotNull
 +    @Override
 +    default PermissionAttachment addAttachment(@NotNull Plugin plugin, int ticks) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
 +    default void removeAttachment(@NotNull PermissionAttachment attachment) {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
 +    default void recalculatePermissions() {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @NotNull
 +    @Override
 +    default Set<PermissionAttachmentInfo> getEffectivePermissions() {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +    @NotNull
 +    @Override
 +    default Spigot spigot() {
-+        throw new NotImplementedException();
++        throw new UnsupportedOperationException();
 +    }
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 81e4fa57337f5a40c4b673136dd5eb595cce4629..f020cb04eba27a2e70fc7cf799ebbfb434b9d974 100644
+index e195e74c48c69047aa825b75fad95419c505b41f..f99d71301ceaa3af07ff0525f7d657ac6253d0e6 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
 @@ -15,7 +15,6 @@ import org.bukkit.command.defaults.BukkitCommand;
@@ -3138,19 +3136,19 @@ index 81e4fa57337f5a40c4b673136dd5eb595cce4629..f020cb04eba27a2e70fc7cf799ebbfb4
  
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 deleted file mode 100644
-index 2a145d851ce30360aa39549745bd87590c034584..0000000000000000000000000000000000000000
+index 516d7fc7812aac343782861d0d567f54aa578c2a..0000000000000000000000000000000000000000
 --- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 +++ /dev/null
 @@ -1,250 +0,0 @@
 -package org.bukkit.command.defaults;
 -
+-import com.google.common.base.Preconditions;
 -import com.google.common.collect.ImmutableList;
 -import java.io.File;
 -import java.io.IOException;
 -import java.io.PrintStream;
 -import java.util.ArrayList;
 -import java.util.List;
--import org.apache.commons.lang.Validate;
 -import org.bukkit.Bukkit;
 -import org.bukkit.ChatColor;
 -import org.bukkit.command.CommandSender;
@@ -3336,9 +3334,9 @@ index 2a145d851ce30360aa39549745bd87590c034584..00000000000000000000000000000000
 -    @NotNull
 -    @Override
 -    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
--        Validate.notNull(sender, "Sender cannot be null");
--        Validate.notNull(args, "Arguments cannot be null");
--        Validate.notNull(alias, "Alias cannot be null");
+-        Preconditions.checkArgument(sender != null, "Sender cannot be null");
+-        Preconditions.checkArgument(args != null, "Arguments cannot be null");
+-        Preconditions.checkArgument(alias != null, "Alias cannot be null");
 -
 -        if (args.length == 1) {
 -            return StringUtil.copyPartialMatches(args[0], TIMINGS_SUBCOMMANDS, new ArrayList<String>(TIMINGS_SUBCOMMANDS.size()));
@@ -3393,10 +3391,10 @@ index 2a145d851ce30360aa39549745bd87590c034584..00000000000000000000000000000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index dc7e32a6f3be974a1d9c367d6b0f840ce98aed8b..71e696eadf7c9290791c8b50d666dc501621f24e 100644
+index fcab7ff11d06ae712d56d1eead5dca33bde29296..ca678d83218cd3179ebf4a0d0675e643b75e3471 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1968,7 +1968,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1973,7 +1973,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          @Deprecated // Paper
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
@@ -3412,10 +3410,10 @@ index dc7e32a6f3be974a1d9c367d6b0f840ce98aed8b..71e696eadf7c9290791c8b50d666dc50
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 77dcfe35e6a765c8ccb38bc5d900989dc0456b13..7548e40af8043c1b5716f2d7d0122833466854c4 100644
+index f5710d53296564eb4cd94382dc79f4c29769b672..fca73778c341df36becbf1ad1ad42ce8d1aa634c 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -358,7 +358,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -357,7 +357,6 @@ public final class SimplePluginManager implements PluginManager {
              }
          }
  
@@ -3423,7 +3421,7 @@ index 77dcfe35e6a765c8ccb38bc5d900989dc0456b13..7548e40af8043c1b5716f2d7d0122833
          return result.toArray(new Plugin[result.size()]);
      }
  
-@@ -397,9 +396,9 @@ public final class SimplePluginManager implements PluginManager {
+@@ -396,9 +395,9 @@ public final class SimplePluginManager implements PluginManager {
  
          if (result != null) {
              plugins.add(result);
@@ -3435,7 +3433,7 @@ index 77dcfe35e6a765c8ccb38bc5d900989dc0456b13..7548e40af8043c1b5716f2d7d0122833
              }
          }
  
-@@ -428,7 +427,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -427,7 +426,7 @@ public final class SimplePluginManager implements PluginManager {
      @Override
      @Nullable
      public synchronized Plugin getPlugin(@NotNull String name) {
@@ -3444,7 +3442,7 @@ index 77dcfe35e6a765c8ccb38bc5d900989dc0456b13..7548e40af8043c1b5716f2d7d0122833
      }
  
      @Override
-@@ -646,7 +645,8 @@ public final class SimplePluginManager implements PluginManager {
+@@ -645,7 +644,8 @@ public final class SimplePluginManager implements PluginManager {
              throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
          }
  
@@ -3454,7 +3452,7 @@ index 77dcfe35e6a765c8ccb38bc5d900989dc0456b13..7548e40af8043c1b5716f2d7d0122833
              getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
          } else {
              getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-@@ -861,7 +861,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -860,7 +860,7 @@ public final class SimplePluginManager implements PluginManager {
  
      @Override
      public boolean useTimings() {
@@ -3463,7 +3461,7 @@ index 77dcfe35e6a765c8ccb38bc5d900989dc0456b13..7548e40af8043c1b5716f2d7d0122833
      }
  
      /**
-@@ -870,6 +870,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -869,6 +869,6 @@ public final class SimplePluginManager implements PluginManager {
       * @param use True if per event timing code should be used
       */
      public void useTimings(boolean use) {
@@ -3472,7 +3470,7 @@ index 77dcfe35e6a765c8ccb38bc5d900989dc0456b13..7548e40af8043c1b5716f2d7d0122833
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index a09c3f71ca563b6f40a118ce1344d0eb273bed40..cf2f517765d8f2a23cc4a17d9ee2dcd81f841b1b 100644
+index 047c0304fd617cec990f80815b43916c6ef5a94c..5c1b8b05d8a5408bb4830942c74ebfe400ab5a32 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -54,7 +54,6 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -3515,7 +3513,7 @@ index a09c3f71ca563b6f40a118ce1344d0eb273bed40..cf2f517765d8f2a23cc4a17d9ee2dcd8
                  eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
              } else {
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 930f3fe08c2acd70eaf7850d0b1b2890512defa0..24e3eaa008e53af8d77439e4f2ab9007285d7826 100644
+index 2f74ec96ece706de23156ebabfe493211bc05391..6148b69af39344f758b05a28c7c572befa9b8f3f 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -29,7 +29,8 @@ import org.jetbrains.annotations.Nullable;

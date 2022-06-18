@@ -1,0 +1,190 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 6 Jan 2021 00:34:10 -0800
+Subject: [PATCH] Expand world key API
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 7e422716841d3736cce4f0968121231f9c6c33d3..4c6780dd1375f5d2c6e60229cc05c4af9d480b8a 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -810,6 +810,18 @@ public final class Bukkit {
+     public static World getWorld(@NotNull UUID uid) {
+         return server.getWorld(uid);
+     }
++    // Paper start
++    /**
++     * Gets the world from the given NamespacedKey
++     *
++     * @param worldKey the NamespacedKey of the world to retrieve
++     * @return a world with the given NamespacedKey, or null if none exists
++     */
++    @Nullable
++    public static World getWorld(@NotNull NamespacedKey worldKey) {
++        return server.getWorld(worldKey);
++    }
++    // Paper end
+ 
+     /**
+      * Create a new virtual {@link WorldBorder}.
+diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
+index 2fa3de66107162ccaa158b369e2c4a926ecaff92..aa534b1a9a1fb84a2fbd4b372f313bb4b63325fa 100644
+--- a/src/main/java/org/bukkit/RegionAccessor.java
++++ b/src/main/java/org/bukkit/RegionAccessor.java
+@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
+  * A RegionAccessor gives access to getting, modifying and spawning {@link Biome}, {@link BlockState} and {@link Entity},
+  * as well as generating some basic structures.
+  */
+-public interface RegionAccessor {
++public interface RegionAccessor extends Keyed { // Paper
+ 
+     /**
+      * Gets the {@link Biome} at the given {@link Location}.
+@@ -383,5 +383,14 @@ public interface RegionAccessor {
+      */
+     @NotNull
+     io.papermc.paper.world.MoonPhase getMoonPhase();
++
++    /**
++     * Get the world's key
++     *
++     * @return the world's key
++     */
++    @NotNull
++    @Override
++    NamespacedKey getKey();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index afed6bcf923166065ac9f63dd96191cd42eefcb9..181493def187f72b6ff89c3849598428f35d31f3 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -670,6 +670,17 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     @Nullable
+     public World getWorld(@NotNull UUID uid);
+ 
++    // Paper start
++    /**
++     * Gets the world from the given NamespacedKey
++     *
++     * @param worldKey the NamespacedKey of the world to retrieve
++     * @return a world with the given NamespacedKey, or null if none exists
++     */
++    @Nullable
++    public World getWorld(@NotNull NamespacedKey worldKey);
++    // Paper end
++
+     /**
+      * Create a new virtual {@link WorldBorder}.
+      * <p>
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index abe79e4a2233341d0030742b823a0cfb5af97f41..204ab103eeff976d3da4f5694c31beafab6e1fdd 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -157,5 +157,10 @@ public interface UnsafeValues {
+      * @throws IllegalArgumentException if there isn't a registry for that type
+      */
+     <T extends Keyed> @org.jetbrains.annotations.NotNull Registry<T> registryFor(Class<T> classOfT);
++
++    /**
++     * Just don't use it.
++     */
++    @org.jetbrains.annotations.NotNull String getMainLevelName();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/WorldCreator.java b/src/main/java/org/bukkit/WorldCreator.java
+index cbe6b3a1ba7b04826d97c3558e8eb4e5ba11f92f..cbdcac688afb7c13dd7058fa522bbd2c5adc445e 100644
+--- a/src/main/java/org/bukkit/WorldCreator.java
++++ b/src/main/java/org/bukkit/WorldCreator.java
+@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
+  * Represents various types of options that may be used to create a world.
+  */
+ public class WorldCreator {
++    private final NamespacedKey key; // Paper
+     private final String name;
+     private long seed;
+     private World.Environment environment = World.Environment.NORMAL;
+@@ -28,13 +29,80 @@ public class WorldCreator {
+      * @param name Name of the world that will be created
+      */
+     public WorldCreator(@NotNull String name) {
+-        if (name == null) {
+-            throw new IllegalArgumentException("World name cannot be null");
++        // Paper start
++        this(name, getWorldKey(name));
++    }
++
++    private static NamespacedKey getWorldKey(String name) {
++        final String mainLevelName = Bukkit.getUnsafe().getMainLevelName();
++        if (name.equals(mainLevelName)) {
++            return NamespacedKey.minecraft("overworld");
++        } else if (name.equals(mainLevelName + "_nether")) {
++            return NamespacedKey.minecraft("the_nether");
++        } else if (name.equals(mainLevelName + "_the_end")) {
++            return NamespacedKey.minecraft("the_end");
++        } else {
++            return NamespacedKey.minecraft(name.toLowerCase(java.util.Locale.ENGLISH).replace(" ", "_"));
+         }
++    }
+ 
+-        this.name = name;
++    /**
++     * Creates an empty WorldCreator for the given world name and key
++     *
++     * @param levelName LevelName of the world that will be created
++     * @param worldKey NamespacedKey of the world that will be created
++     */
++    public WorldCreator(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
++        if (levelName == null || worldKey == null) {
++            throw new IllegalArgumentException("World name and key cannot be null");
++        }
++        this.name = levelName;
+         this.seed = (new Random()).nextLong();
++        this.key = worldKey;
++    }
++
++    /**
++     * Creates an empty WorldCreator for the given key.
++     * LevelName will be the Key part of the NamespacedKey.
++     *
++     * @param worldKey NamespacedKey of the world that will be created
++     */
++    public WorldCreator(@NotNull NamespacedKey worldKey) {
++        this(worldKey.getKey(), worldKey);
++    }
++
++    /**
++     * Gets the key for this WorldCreator
++     *
++     * @return the key
++     */
++    @NotNull
++    public NamespacedKey key() {
++        return key;
++    }
++
++    /**
++     * Creates an empty WorldCreator for the given world name and key
++     *
++     * @param levelName LevelName of the world that will be created
++     * @param worldKey NamespacedKey of the world that will be created
++     */
++    @NotNull
++    public static WorldCreator ofNameAndKey(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
++        return new WorldCreator(levelName, worldKey);
++    }
++
++    /**
++     * Creates an empty WorldCreator for the given key.
++     * LevelName will be the Key part of the NamespacedKey.
++     *
++     * @param worldKey NamespacedKey of the world that will be created
++     */
++    @NotNull
++    public static WorldCreator ofKey(@NotNull NamespacedKey worldKey) {
++        return new WorldCreator(worldKey);
+     }
++    // Paper end
+ 
+     /**
+      * Copies the options from the specified world

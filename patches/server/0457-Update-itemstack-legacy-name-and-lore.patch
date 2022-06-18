@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Wed, 1 Jul 2020 11:57:40 -0500
+Subject: [PATCH] Update itemstack legacy name and lore
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 5d7e07a9612dc8e62b5843b3c805f6423d5304f2..8400f6fc96efecf0ea77f2e163b589ec375272cd 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -166,6 +166,44 @@ public final class ItemStack {
+             list.sort((java.util.Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
+         } catch (Exception ignored) {}
+     }
++
++    private void processText() {
++        CompoundTag display = getTagElement("display");
++        if (display != null) {
++            if (display.contains("Name", 8)) {
++                String json = display.getString("Name");
++                if (json != null && json.contains("\u00A7")) {
++                    try {
++                        display.put("Name", convert(json));
++                    } catch (com.google.gson.JsonParseException jsonparseexception) {
++                        display.remove("Name");
++                    }
++                }
++            }
++            if (display.contains("Lore", 9)) {
++                ListTag list = display.getList("Lore", 8);
++                for (int index = 0; index < list.size(); index++) {
++                    String json = list.getString(index);
++                    if (json != null && json.contains("\u00A7")) { // Only try if it has legacy in the unparsed json
++                        try {
++                            list.set(index, convert(json));
++                        } catch (com.google.gson.JsonParseException e) {
++                            list.set(index, net.minecraft.nbt.StringTag.valueOf(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(net.minecraft.network.chat.Component.literal(""))));
++                        }
++                    }
++                }
++            }
++        }
++    }
++
++    private net.minecraft.nbt.StringTag convert(String json) {
++        Component component = Component.Serializer.fromJson(json);
++        if (component.getContents() instanceof net.minecraft.network.chat.contents.LiteralContents literalContents && literalContents.text().contains("\u00A7") && component.getSiblings().isEmpty()) {
++            // Only convert if the root component is a single comp with legacy in it, don't convert already normal components
++            component = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(literalContents.text())[0];
++        }
++        return net.minecraft.nbt.StringTag.valueOf(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(component));
++    }
+     // Paper end
+ 
+     public ItemStack(ItemLike item) {
+@@ -220,6 +258,7 @@ public final class ItemStack {
+             this.tag = nbttagcompound.getCompound("tag").copy();
+             // CraftBukkit end
+             this.processEnchantOrder(this.tag); // Paper
++            this.processText(); // Paper
+             this.getItem().verifyTagAfterLoad(this.tag);
+         }
+ 

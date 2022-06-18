@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <jahnke.nassim@gmail.com>
+Date: Mon, 17 Jan 2022 19:47:19 +0100
+Subject: [PATCH] Kick on main for illegal chat
+
+Makes the PlayerKickEvent fire on the main thread for
+illegal characters or chat out-of-order errors.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index a84ab1754ffee0436ac3abf05e3fd69f3523e5e6..dbd16fabc781a2820dc073154830667ea88cb27d 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2105,7 +2105,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         }
+         // CraftBukkit end
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.getMessage())) {
++            this.server.scheduleOnMain(() -> { // Paper - push to main for event firing
+             this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add cause
++            }); // Paper - push to main for event firing
+         } else {
+             if (this.tryHandleChat(packet.getMessage(), packet.getTimeStamp())) {
+                 // CraftBukkit start
+@@ -2121,7 +2123,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     @Override
+     public void handleChatCommand(ServerboundChatCommandPacket packet) {
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.command())) {
++            this.server.scheduleOnMain(() -> { // Paper - push to main for event firing
+             this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
++            }); // Paper - push to main for event firing
+         } else {
+             PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+             if (this.tryHandleChat(packet.command(), packet.timeStamp())) {
+@@ -2145,7 +2149,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private boolean tryHandleChat(String s, Instant instant) {
+         if (!this.updateChatOrder(instant)) {
+             ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), s);
++            this.server.scheduleOnMain(() -> { // Paper - push to main
+             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
++            }); // Paper - push to main
+             return false;
+         } else {
+             if (this.isChatExpired(instant)) {

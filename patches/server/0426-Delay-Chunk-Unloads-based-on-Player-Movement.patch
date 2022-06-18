@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 18 Jun 2016 23:22:12 -0400
+Subject: [PATCH] Delay Chunk Unloads based on Player Movement
+
+When players are moving in the world, doing things such as building or exploring,
+they will commonly go back and forth in a small area. This causes a ton of chunk load
+and unload activity on the edge chunks of their view distance.
+
+A simple back and forth movement in 6 blocks could spam a chunk to thrash a
+loading and unload cycle over and over again.
+
+This is very wasteful. This system introduces a delay of inactivity on a chunk
+before it actually unloads, which will be handled by the ticket expiry process.
+
+This allows servers with smaller worlds who do less long distance exploring to stop
+wasting cpu cycles on saving/unloading/reloading chunks repeatedly.
+
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index 62118348d6fb00f063507debb488e1ff431d139c..9bc956068df3baabb9f8e02ee74a6397de2bf587 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -212,6 +212,27 @@ public abstract class DistanceManager {
+         boolean removed = false; // CraftBukkit
+         if (arraysetsorted.remove(ticket)) {
+             removed = true; // CraftBukkit
++            // Paper start - delay chunk unloads for player tickets
++            long delayChunkUnloadsBy = chunkMap.level.paperConfig().chunks.delayChunkUnloadsBy.ticks();
++            if (ticket.getType() == TicketType.PLAYER && delayChunkUnloadsBy > 0) {
++                boolean hasPlayer = false;
++                for (Ticket<?> ticket1 : arraysetsorted) {
++                    if (ticket1.getType() == TicketType.PLAYER) {
++                        hasPlayer = true;
++                        break;
++                    }
++                }
++                ChunkHolder playerChunk = chunkMap.getUpdatingChunkIfPresent(i);
++                if (!hasPlayer && playerChunk != null && playerChunk.isFullChunkReady()) {
++                    Ticket<Long> delayUnload = new Ticket<Long>(TicketType.DELAY_UNLOAD, 33, i);
++                    delayUnload.delayUnloadBy = delayChunkUnloadsBy;
++                    delayUnload.setCreatedTick(this.ticketTickCounter);
++                    arraysetsorted.remove(delayUnload);
++                    // refresh ticket
++                    arraysetsorted.add(delayUnload);
++                }
++            }
++            // Paper end
+         }
+ 
+         if (arraysetsorted.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
+index ffc43e5d3d0563c9e9c171064511b2c65ddf67e1..f1128f0d4a9a0241ac6c9bc18dd13b431c616bb1 100644
+--- a/src/main/java/net/minecraft/server/level/Ticket.java
++++ b/src/main/java/net/minecraft/server/level/Ticket.java
+@@ -7,11 +7,13 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
+     private final int ticketLevel;
+     public final T key;
+     public long createdTick;
++    public long delayUnloadBy; // Paper
+ 
+     protected Ticket(TicketType<T> type, int level, T argument) {
+         this.type = type;
+         this.ticketLevel = level;
+         this.key = argument;
++        this.delayUnloadBy = type.timeout; // Paper
+     }
+ 
+     @Override
+@@ -60,7 +62,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
+     }
+ 
+     protected boolean timedOut(long currentTick) {
+-        long l = this.type.timeout();
++        long l = delayUnloadBy; // Paper
+         return l != 0L && currentTick - this.createdTick > l;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/TicketType.java b/src/main/java/net/minecraft/server/level/TicketType.java
+index 78fbb4c3e52e900956ae0811aaf934c81ee5ea48..8770fe0db46b01e8b608637df4f1a669a3f4cdde 100644
+--- a/src/main/java/net/minecraft/server/level/TicketType.java
++++ b/src/main/java/net/minecraft/server/level/TicketType.java
+@@ -28,6 +28,7 @@ public class TicketType<T> {
+     public static final TicketType<ChunkPos> UNKNOWN = TicketType.create("unknown", Comparator.comparingLong(ChunkPos::toLong), 1);
+     public static final TicketType<Unit> PLUGIN = TicketType.create("plugin", (a, b) -> 0); // CraftBukkit
+     public static final TicketType<org.bukkit.plugin.Plugin> PLUGIN_TICKET = TicketType.create("plugin_ticket", (plugin1, plugin2) -> plugin1.getClass().getName().compareTo(plugin2.getClass().getName())); // CraftBukkit
++    public static final TicketType<Long> DELAY_UNLOAD = create("delay_unload", Long::compareTo, 300); // Paper
+ 
+     public static <T> TicketType<T> create(String name, Comparator<T> argumentComparator) {
+         return new TicketType<>(name, argumentComparator, 0L);

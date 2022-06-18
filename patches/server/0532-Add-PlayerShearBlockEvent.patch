@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Thu, 27 Aug 2020 15:02:48 -0400
+Subject: [PATCH] Add PlayerShearBlockEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java b/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
+index 8dff119fa83e44d71b10bb3ea6e5f4e886a48c9c..1aaab26c59bb9255955aff34ea1d057b88152768 100644
+--- a/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
+@@ -113,7 +113,7 @@ public class BeehiveBlock extends BaseEntityBlock {
+     }
+ 
+     public static void dropHoneycomb(Level world, BlockPos pos) {
+-        popResource(world, pos, new ItemStack(Items.HONEYCOMB, 3));
++        popResource(world, pos, new ItemStack(Items.HONEYCOMB, 3)); // Paper - conflict on change, item needs to be set below
+     }
+ 
+     @Override
+@@ -126,8 +126,19 @@ public class BeehiveBlock extends BaseEntityBlock {
+             Item item = itemstack.getItem();
+ 
+             if (itemstack.is(Items.SHEARS)) {
++                // Paper start - Add PlayerShearBlockEvent
++                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), net.minecraft.server.MCUtil.toBukkitBlock(world, pos), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (hand == InteractionHand.OFF_HAND ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND), new java.util.ArrayList<>());
++                event.getDrops().add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.HONEYCOMB, 3)));
++                if (!event.callEvent()) {
++                    return InteractionResult.PASS;
++                }
++                // Paper end
+                 world.playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.BEEHIVE_SHEAR, SoundSource.NEUTRAL, 1.0F, 1.0F);
+-                BeehiveBlock.dropHoneycomb(world, pos);
++                // Paper start - Add PlayerShearBlockEvent
++                for (org.bukkit.inventory.ItemStack itemDrop : event.getDrops()) {
++                    popResource(world, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemDrop));
++                }
++                // Paper end
+                 itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
+                     entityhuman1.broadcastBreakEvent(hand);
+                 });
+diff --git a/src/main/java/net/minecraft/world/level/block/PumpkinBlock.java b/src/main/java/net/minecraft/world/level/block/PumpkinBlock.java
+index 0e8cbe7a465edc31b78b7e47a928435f9c2b6bd9..f998598a34315389dd74b82e4b9c8448f0aae253 100644
+--- a/src/main/java/net/minecraft/world/level/block/PumpkinBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PumpkinBlock.java
+@@ -27,13 +27,24 @@ public class PumpkinBlock extends StemGrownBlock {
+         ItemStack itemStack = player.getItemInHand(hand);
+         if (itemStack.is(Items.SHEARS)) {
+             if (!world.isClientSide) {
++                // Paper start - Add PlayerShearBlockEvent
++                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), net.minecraft.server.MCUtil.toBukkitBlock(world, pos), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (hand == InteractionHand.OFF_HAND ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND), new java.util.ArrayList<>());
++                event.getDrops().add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.PUMPKIN_SEEDS, 4)));
++                if (!event.callEvent()) {
++                    return InteractionResult.PASS;
++                }
++                // Paper end
+                 Direction direction = hit.getDirection();
+                 Direction direction2 = direction.getAxis() == Direction.Axis.Y ? player.getDirection().getOpposite() : direction;
+                 world.playSound((Player)null, pos, SoundEvents.PUMPKIN_CARVE, SoundSource.BLOCKS, 1.0F, 1.0F);
+                 world.setBlock(pos, Blocks.CARVED_PUMPKIN.defaultBlockState().setValue(CarvedPumpkinBlock.FACING, direction2), 11);
+-                ItemEntity itemEntity = new ItemEntity(world, (double)pos.getX() + 0.5D + (double)direction2.getStepX() * 0.65D, (double)pos.getY() + 0.1D, (double)pos.getZ() + 0.5D + (double)direction2.getStepZ() * 0.65D, new ItemStack(Items.PUMPKIN_SEEDS, 4));
++                // Paper start - Add PlayerShearBlockEvent
++                for (org.bukkit.inventory.ItemStack item : event.getDrops()) {
++                ItemEntity itemEntity = new ItemEntity(world, (double) pos.getX() + 0.5D + (double) direction2.getStepX() * 0.65D, (double) pos.getY() + 0.1D, (double) pos.getZ() + 0.5D + (double) direction2.getStepZ() * 0.65D, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(item));
++                // Paper end
+                 itemEntity.setDeltaMovement(0.05D * (double)direction2.getStepX() + world.random.nextDouble() * 0.02D, 0.05D, 0.05D * (double)direction2.getStepZ() + world.random.nextDouble() * 0.02D);
+                 world.addFreshEntity(itemEntity);
++                } // Paper - Add PlayerShearBlockEvent
+                 itemStack.hurtAndBreak(1, player, (playerx) -> {
+                     playerx.broadcastBreakEvent(hand);
+                 });

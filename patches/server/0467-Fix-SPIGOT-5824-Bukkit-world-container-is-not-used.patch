@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 10 Jul 2020 13:12:33 -0500
+Subject: [PATCH] Fix SPIGOT-5824 Bukkit world-container is not used
+
+
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 8fda43173012ed3134ed1f114143ceaad66cae4a..3e1b589031d46126bdd6b6f63d7a133304fb9574 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -137,8 +137,17 @@ public class Main {
+                 return;
+             }
+ 
+-            File file = (File) optionset.valueOf("universe"); // CraftBukkit
+-            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper
++            // Paper start - fix SPIGOT-5824
++            File file;
++            File userCacheFile = new File(Services.USERID_CACHE_FILE);
++            if (optionset.has("universe")) {
++                file = (File) optionset.valueOf("universe"); // CraftBukkit
++                userCacheFile = new File(file, Services.USERID_CACHE_FILE);
++            } else {
++                file = new File(bukkitConfiguration.getString("settings.world-container", "."));
++            }
++            // Paper end - fix SPIGOT-5824
++            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, userCacheFile, optionset); // Paper
+             // CraftBukkit start
+             String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
+             LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
+diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
+index d7d65d0faefa5551480a4090de3a881828238ffd..ef6ff78af2ae747e939895b82ee9d11c75012dcd 100644
+--- a/src/main/java/net/minecraft/server/Services.java
++++ b/src/main/java/net/minecraft/server/Services.java
+@@ -19,12 +19,12 @@ public record Services(MinecraftSessionService sessionService, SignatureValidato
+         return java.util.Objects.requireNonNull(this.paperConfigurations);
+     }
+     // Paper end
+-    private static final String USERID_CACHE_FILE = "usercache.json";
++    public static final String USERID_CACHE_FILE = "usercache.json"; // Paper - private -> public
+ 
+-    public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, joptsimple.OptionSet optionSet) throws Exception { // Paper
++    public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, File userCacheFile, joptsimple.OptionSet optionSet) throws Exception { // Paper
+         MinecraftSessionService minecraftSessionService = authenticationService.createMinecraftSessionService();
+         GameProfileRepository gameProfileRepository = authenticationService.createProfileRepository();
+-        GameProfileCache gameProfileCache = new GameProfileCache(gameProfileRepository, new File(rootDirectory, "usercache.json"));
++        GameProfileCache gameProfileCache = new GameProfileCache(gameProfileRepository, userCacheFile); // Paper
+         SignatureValidator signatureValidator = SignatureValidator.from(authenticationService.getServicesKey());
+         // Paper start
+         final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();

@@ -30,7 +30,7 @@ How To (Plugin Developers)
 ```xml
 <repository>
     <id>papermc</id>
-    <url>https://papermc.io/repo/repository/maven-public/</url>
+    <url>https://repo.papermc.io/repository/maven-public/</url>
 </repository>
 ```
  * Artifact Information:
@@ -38,7 +38,7 @@ How To (Plugin Developers)
 <dependency>
     <groupId>io.papermc.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.18.2-R0.1-SNAPSHOT</version>
+    <version>1.19-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
  ```
@@ -49,12 +49,12 @@ How To (Plugin Developers)
 ```kotlin
 repositories {
     maven {
-        url = uri("https://papermc.io/repo/repository/maven-public/")
+        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.19-R0.1-SNAPSHOT")
 }
 
 java {

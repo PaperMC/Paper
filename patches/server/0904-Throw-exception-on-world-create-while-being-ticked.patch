@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Mar 2022 12:44:30 -0700
+Subject: [PATCH] Throw exception on world create while being ticked
+
+There are no plans to support creating worlds while worlds are
+being ticked themselvess.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 60de49a9888b6dfe17dcb0d9dd0dd3d2e7d829aa..9e1d3a22ed7e34e4968b5fb34cc77b661eb4747d 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -294,6 +294,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     public volatile Thread shutdownThread; // Paper
+     public volatile boolean abnormalExit = false; // Paper
++    public boolean isIteratingOverLevels = false; // Paper
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+@@ -1525,6 +1526,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Paper end
+         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
+ 
++        this.isIteratingOverLevels = true; // Paper
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
+             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+@@ -1572,6 +1574,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.profiler.pop();
+             worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+         }
++        this.isIteratingOverLevels = false; // Paper
+ 
+         this.profiler.popPush("connection");
+         MinecraftTimings.connectionTimer.startTiming(); // Spigot
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 4ac6b213b5fd3b5da2f084472fac853cd360ac45..f1e5ccfbcd08a73ac3aba9a1cb7b414faef81f9e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1128,6 +1128,7 @@ public final class CraftServer implements Server {
+     @Override
+     public World createWorld(WorldCreator creator) {
+         Preconditions.checkState(!console.levels.isEmpty(), "Cannot create additional worlds on STARTUP");
++        Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper
+         Validate.notNull(creator, "Creator may not be null");
+ 
+         String name = creator.name();

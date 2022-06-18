@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 19 Mar 2021 23:39:09 -0400
+Subject: [PATCH] Add ElderGuardianAppearanceEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffectUtil.java b/src/main/java/net/minecraft/world/effect/MobEffectUtil.java
+index f6c22fbad828afa29b9374b13d7bc8ac8cac7891..aefc65a81c91dac715df6d9a4eaaacd94f918cb5 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffectUtil.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffectUtil.java
+@@ -53,10 +53,23 @@ public final class MobEffectUtil {
+     }
+ 
+     public static List<ServerPlayer> addEffectToPlayersAround(ServerLevel worldserver, @Nullable Entity entity, Vec3 vec3d, double d0, MobEffectInstance mobeffect, int i, org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause) {
++        // Paper start
++        return addEffectToPlayersAround(worldserver, entity, vec3d, d0, mobeffect, i, cause, null);
++    }
++
++    public static List<ServerPlayer> addEffectToPlayersAround(ServerLevel worldserver, @Nullable Entity entity, Vec3 vec3d, double d0, MobEffectInstance mobeffect, int i, org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause, @Nullable java.util.function.Predicate<ServerPlayer> playerPredicate) {
++        // Paper end
+         // CraftBukkit end
+         MobEffect mobeffectlist = mobeffect.getEffect();
+         List<ServerPlayer> list = worldserver.getPlayers((entityplayer) -> {
+-            return entityplayer.gameMode.isSurvival() && (entity == null || !entity.isAlliedTo((Entity) entityplayer)) && vec3d.closerThan(entityplayer.position(), d0) && (!entityplayer.hasEffect(mobeffectlist) || entityplayer.getEffect(mobeffectlist).getAmplifier() < mobeffect.getAmplifier() || entityplayer.getEffect(mobeffectlist).getDuration() < i);
++            // Paper start
++            boolean condition = entityplayer.gameMode.isSurvival() && (entity == null || !entity.isAlliedTo((Entity) entityplayer)) && vec3d.closerThan(entityplayer.position(), d0) && (!entityplayer.hasEffect(mobeffectlist) || entityplayer.getEffect(mobeffectlist).getAmplifier() < mobeffect.getAmplifier() || entityplayer.getEffect(mobeffectlist).getDuration() < i);
++            if (condition) {
++                return playerPredicate == null || playerPredicate.test(entityplayer); // Only test the player AFTER it is true
++            } else {
++                return false;
++            }
++            // Paper ned
+         });
+ 
+         list.forEach((entityplayer) -> {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java b/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
+index 0b6c6740e1411a558d224589b3786f3ba8e0a1bc..d02286d553c600fe7e75f48e278e380d21c5b868 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
+@@ -67,7 +67,7 @@ public class ElderGuardian extends Guardian {
+         super.customServerAiStep();
+         if ((this.tickCount + this.getId()) % 1200 == 0) {
+             MobEffectInstance mobeffect = new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 6000, 2);
+-            List<ServerPlayer> list = MobEffectUtil.addEffectToPlayersAround((ServerLevel) this.level, this, this.position(), 50.0D, mobeffect, 1200, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
++            List<ServerPlayer> list = MobEffectUtil.addEffectToPlayersAround((ServerLevel) this.level, this, this.position(), 50.0D, mobeffect, 1200, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK, (player) -> new io.papermc.paper.event.entity.ElderGuardianAppearanceEvent(getBukkitEntity(), player.getBukkitEntity()).callEvent()); // CraftBukkit // Paper
+ 
+             list.forEach((entityplayer) -> {
+                 entityplayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.GUARDIAN_ELDER_EFFECT, this.isSilent() ? 0.0F : 1.0F));
