@@ -6,7 +6,7 @@ Subject: [PATCH] Implement extended PaperServerListPingEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/network/PaperServerListPingEventImpl.java b/src/main/java/com/destroystokyo/paper/network/PaperServerListPingEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4ecd0c5bbea55f68549c85aa27e80e2c7e6265d4
+index 0000000000000000000000000000000000000000..f57792d3f883a710c51bc736cff513aca4b75915
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/network/PaperServerListPingEventImpl.java
 @@ -0,0 +1,31 @@
@@ -25,7 +25,7 @@ index 0000000000000000000000000000000000000000..4ecd0c5bbea55f68549c85aa27e80e2c
 +    private final MinecraftServer server;
 +
 +    PaperServerListPingEventImpl(MinecraftServer server, StatusClient client, int protocolVersion, @Nullable CachedServerIcon icon) {
-+        super(client, server.getMotd(), server.getPlayerCount(), server.getMaxPlayers(),
++        super(client, server.getMotd(), server.previewsChat(), server.getPlayerCount(), server.getMaxPlayers(),
 +                server.getServerModName() + ' ' + server.getServerVersion(), protocolVersion, icon);
 +        this.server = server;
 +    }
@@ -190,7 +190,7 @@ index 67455a5ba75c9b816213e44d6872c5ddf8e27e98..23efad80934930beadf15e65781551d4
  
      public ClientboundStatusResponsePacket(ServerStatus metadata) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2cdde6eaf2221bb634fd0d34db849c0a6833cfbd..94201e91ee67c00fb9d5af0c6db9d96999164c06 100644
+index 037749e1f6a6dcd53fc4455869f5b41417ae8e94..f532aba1f180f0c86b4360bb85993732207b2345 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -2,6 +2,9 @@ package net.minecraft.server;
@@ -213,7 +213,7 @@ index 2cdde6eaf2221bb634fd0d34db849c0a6833cfbd..94201e91ee67c00fb9d5af0c6db9d969
  
                  for (int k = 0; k < agameprofile.length; ++k) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
-index 5d368e34c90fc5191d9ed2352f7aa44c4a299eed..d21549bb272e4848c5ce7c29862f0303aea7f9b7 100644
+index a426adfba3fccf1815177e0b8065684c9497ef45..29a22da1b94d51300481c071aa16bfd8cd02178f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 @@ -46,6 +46,8 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
@@ -225,7 +225,7 @@ index 5d368e34c90fc5191d9ed2352f7aa44c4a299eed..d21549bb272e4848c5ce7c29862f0303
              // CraftBukkit start
              // this.connection.send(new PacketStatusOutServerInfo(this.server.getStatus()));
              final Object[] players = this.server.getPlayerList().players.toArray();
-@@ -149,6 +151,9 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
+@@ -150,6 +152,9 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
  
              this.connection.send(new ClientboundStatusResponsePacket(ping));
              // CraftBukkit end
@@ -236,7 +236,7 @@ index 5d368e34c90fc5191d9ed2352f7aa44c4a299eed..d21549bb272e4848c5ce7c29862f0303
      }
  
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 2e684d28948d23a310b5d5029903a871e6f9b1ca..f4aa98ed573ffa25659ed19a8a391e04bf2bd8b2 100644
+index c2e3d32e51902503af88f089e366e784f42d999a..645643d102118ad4916a152abfb9ab0d02751e11 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -289,7 +289,7 @@ public class SpigotConfig
