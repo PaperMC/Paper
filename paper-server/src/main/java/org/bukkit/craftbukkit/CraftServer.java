@@ -166,6 +166,7 @@ import org.bukkit.craftbukkit.inventory.CraftSmokingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftStonecuttingRecipe;
 import org.bukkit.craftbukkit.inventory.RecipeIterator;
 import org.bukkit.craftbukkit.inventory.util.CraftInventoryCreator;
+import org.bukkit.craftbukkit.map.CraftMapColorCache;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.metadata.EntityMetadataStore;
 import org.bukkit.craftbukkit.metadata.PlayerMetadataStore;
@@ -217,6 +218,7 @@ import org.bukkit.inventory.SmithingRecipe;
 import org.bukkit.inventory.SmokingRecipe;
 import org.bukkit.inventory.StonecuttingRecipe;
 import org.bukkit.loot.LootTable;
+import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
@@ -353,6 +355,11 @@ public final class CraftServer implements Server {
         TicketType.PLUGIN.timeout = configuration.getInt("chunk-gc.period-in-ticks");
         minimumAPI = configuration.getString("settings.minimum-api");
         loadIcon();
+
+        // Set map color cache
+        if (configuration.getBoolean("settings.use-map-color-cache")) {
+            MapPalette.setMapColorCache(new CraftMapColorCache(logger));
+        }
     }
 
     public boolean getCommandBlockOverride(String command) {
