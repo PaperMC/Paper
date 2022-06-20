@@ -1593,15 +1593,15 @@ index fc2910ee691da96591811e4c97987ebd2cb93ac3..ff8773f3671970bd759303f7a4bbc17d
                              }
                          }
 diff --git a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
-index 8670f3fab7ec2a80d69e5dd3f945fc15aaa1a36f..5d368e34c90fc5191d9ed2352f7aa44c4a299eed 100644
+index 3a587073dbe5e8a599d342c5f758d842b7b6cddb..a426adfba3fccf1815177e0b8065684c9497ef45 100644
 --- a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 @@ -54,7 +54,7 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
                  CraftIconCache icon = server.server.getServerIcon();
  
                  ServerListPingEvent() {
--                    super(((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), ServerStatusPacketListenerImpl.this.server.getMotd(), ServerStatusPacketListenerImpl.this.server.getPlayerList().getMaxPlayers());
-+                    super(((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), ServerStatusPacketListenerImpl.this.server.server.getMotd(), ServerStatusPacketListenerImpl.this.server.getPlayerList().getMaxPlayers()); // Paper - Adventure
+-                    super(((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), ServerStatusPacketListenerImpl.this.server.getMotd(), ServerStatusPacketListenerImpl.this.server.previewsChat(), ServerStatusPacketListenerImpl.this.server.getPlayerList().getMaxPlayers());
++                    super(((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), ServerStatusPacketListenerImpl.this.server.server.getMotd(), ServerStatusPacketListenerImpl.this.server.previewsChat(), ServerStatusPacketListenerImpl.this.server.getPlayerList().getMaxPlayers()); // Paper - Adventure
                  }
  
                  @Override
@@ -1839,10 +1839,10 @@ index 595b56b2ab9a813ba71399d306117294fa90dc65..3527d40102d512d0e276edc969ea3c18
                  }
                  collection = icons;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index d239bc3f3cd1490acbac9d50239cc0a3d824148e..33e1a2c12a82f04d2a1da02b915402bbee76e1dd 100644
+index a888631dc866a784def3e59cd6cc644905f866b3..5251b5d91f4b7d8afc5dc8cf6cbb2820a29594e9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -581,8 +581,10 @@ public final class CraftServer implements Server {
+@@ -588,8 +588,10 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -1853,7 +1853,7 @@ index d239bc3f3cd1490acbac9d50239cc0a3d824148e..33e1a2c12a82f04d2a1da02b915402bb
      }
  
      @Override
-@@ -1402,7 +1404,15 @@ public final class CraftServer implements Server {
+@@ -1409,7 +1411,15 @@ public final class CraftServer implements Server {
          return this.configuration.getInt("settings.spawn-radius", -1);
      }
  
@@ -1869,7 +1869,7 @@ index d239bc3f3cd1490acbac9d50239cc0a3d824148e..33e1a2c12a82f04d2a1da02b915402bb
      public String getShutdownMessage() {
          return this.configuration.getString("settings.shutdown-message");
      }
-@@ -1560,7 +1570,20 @@ public final class CraftServer implements Server {
+@@ -1577,7 +1587,20 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -1890,7 +1890,7 @@ index d239bc3f3cd1490acbac9d50239cc0a3d824148e..33e1a2c12a82f04d2a1da02b915402bb
          Set<CommandSender> recipients = new HashSet<>();
          for (Permissible permissible : this.getPluginManager().getPermissionSubscriptions(permission)) {
              if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-@@ -1568,14 +1591,14 @@ public final class CraftServer implements Server {
+@@ -1585,14 +1608,14 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -1907,7 +1907,7 @@ index d239bc3f3cd1490acbac9d50239cc0a3d824148e..33e1a2c12a82f04d2a1da02b915402bb
  
          for (CommandSender recipient : recipients) {
              recipient.sendMessage(message);
-@@ -1826,6 +1849,14 @@ public final class CraftServer implements Server {
+@@ -1843,6 +1866,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -1922,7 +1922,7 @@ index d239bc3f3cd1490acbac9d50239cc0a3d824148e..33e1a2c12a82f04d2a1da02b915402bb
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
-@@ -1838,13 +1869,28 @@ public final class CraftServer implements Server {
+@@ -1855,13 +1886,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -1951,7 +1951,7 @@ index d239bc3f3cd1490acbac9d50239cc0a3d824148e..33e1a2c12a82f04d2a1da02b915402bb
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
-@@ -1904,6 +1950,12 @@ public final class CraftServer implements Server {
+@@ -1926,6 +1972,12 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -1964,7 +1964,7 @@ index d239bc3f3cd1490acbac9d50239cc0a3d824148e..33e1a2c12a82f04d2a1da02b915402bb
      @Override
      public String getMotd() {
          return this.console.getMotd();
-@@ -2321,4 +2373,15 @@ public final class CraftServer implements Server {
+@@ -2343,4 +2395,15 @@ public final class CraftServer implements Server {
          return this.spigot;
      }
      // Spigot end
@@ -2012,7 +2012,7 @@ index 40421cc8ef25f1bef32a0a5d2f0f25165efe230a..1357bc97801f892e59fc8e89c3cc2d69
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index df98326c49973183e81ccb96d4b1a7a7626dffee..18652607d36a980a4b0956584f8a722be776dad2 100644
+index 1db503b3c7f2cc04d417d3b9373a21171c112231..99cfa663b79eb7126f87d6fd1ecd7619ae763f45 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -19,6 +19,12 @@ public class Main {
@@ -2915,10 +2915,10 @@ index eebd8c56d319100f1f5ad9bc0b4d5a0d01e27fba..028d7a4cec039312bef59c693ef3d996
      private final Player.Spigot spigot = new Player.Spigot()
      {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 76ee5046fcfa2b66934cab2dee6af0226a906aee..1f74088858aff5deb8aac7057ad07727234f817e 100644
+index d0699be22411796174b58733cfb79b80c89f9769..97a614e2367439dbface4a258f966c0440ef965d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -815,9 +815,9 @@ public class CraftEventFactory {
+@@ -816,9 +816,9 @@ public class CraftEventFactory {
          return event;
      }
  
@@ -2930,12 +2930,12 @@ index 76ee5046fcfa2b66934cab2dee6af0226a906aee..1f74088858aff5deb8aac7057ad07727
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
          org.bukkit.World world = entity.getWorld();
-@@ -842,7 +842,7 @@ public class CraftEventFactory {
+@@ -843,7 +843,7 @@ public class CraftEventFactory {
       * Server methods
       */
-     public static ServerListPingEvent callServerListPingEvent(Server craftServer, InetAddress address, String motd, int numPlayers, int maxPlayers) {
--        ServerListPingEvent event = new ServerListPingEvent(address, motd, numPlayers, maxPlayers);
-+        ServerListPingEvent event = new ServerListPingEvent(address, craftServer.motd(), numPlayers, maxPlayers); // Paper - Adventure
+     public static ServerListPingEvent callServerListPingEvent(Server craftServer, InetAddress address, String motd, boolean shouldSendChatPreviews, int numPlayers, int maxPlayers) {
+-        ServerListPingEvent event = new ServerListPingEvent(address, motd, shouldSendChatPreviews, numPlayers, maxPlayers);
++        ServerListPingEvent event = new ServerListPingEvent(address, craftServer.motd(), shouldSendChatPreviews, numPlayers, maxPlayers); // Paper - Adventure
          craftServer.getPluginManager().callEvent(event);
          return event;
      }
