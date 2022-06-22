@@ -6,10 +6,10 @@ Subject: [PATCH] WIP Brain API
 
 diff --git a/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java b/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..924b2289f578c2300649d044a548c2a31d853688
+index 0000000000000000000000000000000000000000..d95ccca569b9346b506670a30b89dc5dbead9ca7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java
-@@ -0,0 +1,312 @@
+@@ -0,0 +1,340 @@
 +package io.papermc.paper.entity.brain;
 +
 +import com.google.common.collect.ImmutableList;
@@ -60,7 +60,7 @@ index 0000000000000000000000000000000000000000..924b2289f578c2300649d044a548c2a3
 +    }
 +
 +    @Override
-+    default void clearActivities() {
++    default void unregisterAllActivities() {
 +        Brain<?> brain = this.getBrain();
 +
 +        // Clear predefined core activities
@@ -153,11 +153,11 @@ index 0000000000000000000000000000000000000000..924b2289f578c2300649d044a548c2a3
 +        Brain<?> brain = this.getBrain();
 +
 +        ImmutableList.Builder behaviorPairList = ImmutableList.builderWithExpectedSize(behaviorPairs.size());
++        // Build nms behaviors from pairs
 +        for (BehaviorPair<? super T> pair : behaviorPairs) {
-+
 +            net.minecraft.world.entity.ai.behavior.Behavior mcBehavior;
 +            Behavior<?> paperBehavior = pair.behavior();
-+            if (paperBehavior instanceof PaperVanillaBehavior vanillaBehavior) { // Don't surround vanilla behaviors
++            if (paperBehavior instanceof PaperVanillaBehavior vanillaBehavior) { // Don't wrap vanilla behaviors
 +                mcBehavior = vanillaBehavior.getHandle();
 +            } else {
 +                mcBehavior = new PaperCustomBehavior<>(pair.behavior());
@@ -166,11 +166,13 @@ index 0000000000000000000000000000000000000000..924b2289f578c2300649d044a548c2a3
 +            behaviorPairList.add(new Pair<>(pair.priority(), mcBehavior));
 +        }
 +
++        // Build nms memories that are required inorder to run this activity
 +        Set<Pair<MemoryModuleType<?>, MemoryStatus>> memoryPairSet = new HashSet<>(requiredMemories.size());
 +        for (MemoryPair pair : requiredMemories) {
 +            memoryPairSet.add(new Pair<>(PaperBrainUtil.getHandle(pair.key()), PaperBrainUtil.getHandle(pair.requiredStatus())));
 +        }
 +
++        // Get memories removed when this activity finishes
 +        Set<MemoryModuleType<?>> removeSet = new HashSet<>(keysToRemoveOnFinish.size());
 +        for (MemoryKey<?> memoryKey : keysToRemoveOnFinish) {
 +            removeSet.add(PaperBrainUtil.getHandle(memoryKey));
@@ -201,6 +203,27 @@ index 0000000000000000000000000000000000000000..924b2289f578c2300649d044a548c2a3
 +        }
 +
 +        this.getBrain().setCoreActivities(activites);
++    }
++
++    @Override
++    @NotNull
++    default List<ActivityKey> getActivityQueue() {
++        return transformActivities(this.getBrain().manuallyCheckingActivities);
++    }
++
++    @Override
++    default void setActivityQueue(List<ActivityKey> keys) {
++        List<Activity> activites = new ArrayList<>(keys.size());
++        for (ActivityKey key : keys) {
++            activites.add(PaperBrainUtil.getHandle(key));
++        }
++
++        this.getBrain().manuallyCheckingActivities = activites;
++    }
++
++    @Override
++    default void forceTickBrain(boolean forceTick) {
++        this.getBrain().isForceTickingBrain = forceTick;
 +    }
 +
 +    @SuppressWarnings({"unchecked", "rawtypes"})
@@ -265,11 +288,17 @@ index 0000000000000000000000000000000000000000..924b2289f578c2300649d044a548c2a3
 +        brain.memories.put(PaperBrainUtil.getHandle(memoryKey), Optional.empty());
 +    }
 +
++    @Override
++    default <V> void setMemory(MemoryKey<V> memoryKey, V value) {
++       this.setMemory(memoryKey, value, Long.MAX_VALUE);
++    }
++
 +    @SuppressWarnings("unchecked")
 +    @Override
 +    default <V> void setMemory(MemoryKey<V> memoryKey, V value, long expireIn) {
 +        Brain<?> brain = this.getBrain();
 +
++        // Bukkit api, handle proper mapping to NMS types
 +        if (memoryKey.getKey().getNamespace().equals(NamespacedKey.MINECRAFT_NAMESPACE)) {
 +            value = (V) CraftMemoryMapper.toNms(value);
 +        }
@@ -282,7 +311,6 @@ index 0000000000000000000000000000000000000000..924b2289f578c2300649d044a548c2a3
 +    }
 +
 +    @Override
-+    @NotNull
 +    default boolean isMemoryStatus(MemoryKey<?> memoryKey, MemoryKeyStatus status) {
 +        Brain<?> brain = this.getBrain();
 +
@@ -816,27 +844,121 @@ index 0000000000000000000000000000000000000000..1e9a52f987bae5168a3bdb46b9bdd329
 +            '}';
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-index c24ff2ef1054523e58892c2b35080cffb6ab744a..2d530de8cb463c023d42d43cfc491ea672cfe7f6 100644
---- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-@@ -9,11 +9,11 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 279051442ac6cf288a03a16a35ddbf66d1cd1e90..c2899b4547d35ff4caef215ad76d87205d9d77f3 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -142,7 +142,6 @@ import org.bukkit.event.entity.EntityTeleportEvent;
+ import org.bukkit.event.player.PlayerItemConsumeEvent;
+ // CraftBukkit end
  
- public abstract class Behavior<E extends LivingEntity> {
-     private static final int DEFAULT_DURATION = 60;
--    protected final Map<MemoryModuleType<?>, MemoryStatus> entryCondition;
-+    public final Map<MemoryModuleType<?>, MemoryStatus> entryCondition;
-     private Behavior.Status status = Behavior.Status.STOPPED;
-     private long endTimestamp;
--    private final int minDuration;
--    private final int maxDuration;
-+    public final int minDuration;
-+    public final int maxDuration;
-     // Paper start - configurable behavior tick rate and timings
-     private final String configKey;
-     private final co.aikar.timings.Timing timing;
+-import co.aikar.timings.MinecraftTimings; // Paper
+ 
+ public abstract class LivingEntity extends Entity {
+ 
+@@ -309,7 +308,18 @@ public abstract class LivingEntity extends Entity {
+     }
+ 
+     protected Brain.Provider<?> brainProvider() {
+-        return Brain.provider(ImmutableList.of(), ImmutableList.of());
++        // Paper start
++        // Create our own brain provider for living entities to mark that this entity might not actually use their
++        // brain. Entities that override this method typically are using and ticking their brain normally.
++        return new Brain.Provider<>(ImmutableList.of(), ImmutableList.of()) {
++            @Override
++            public Brain<LivingEntity> makeBrain(Dynamic<?> data) {
++                Brain<LivingEntity> brain = super.makeBrain(data);
++                brain.isBrainTickingNormally = false;
++                return brain;
++            }
++        };
++        // Paper end
+     }
+ 
+     protected Brain<?> makeBrain(Dynamic<?> dynamic) {
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 3646b969fa51b9683ab4137e530c3a6f6fc6c465..c14ac54e48b02e056f4881c0b7fdfb0f114fb786 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -873,6 +873,12 @@ public abstract class Mob extends LivingEntity {
+         this.level.getProfiler().pop();
+         this.level.getProfiler().push("mob tick");
+         this.customServerAiStep();
++        // Paper start
++        net.minecraft.world.entity.ai.Brain brain = this.getBrain();
++        if (!brain.isBrainTickingNormally && brain.isForceTickingBrain) {
++            brain.tick((ServerLevel) level, this);
++        }
++        // Paper end
+         this.level.getProfiler().pop();
+         this.level.getProfiler().push("controls");
+         this.level.getProfiler().push("move");
+diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+index 8c8b98c7ca107b1c37c1734ef0f2b11604dd4f70..806a0b4577386ea429868be34154d8d7de761ead 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
++++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+@@ -52,6 +52,11 @@ public class Brain<E extends LivingEntity> {
+     public final Set<Activity> activeActivities = Sets.newHashSet();
+     public Activity defaultActivity = Activity.IDLE;
+     private long lastScheduleUpdate = -9999L;
++    // Paper start
++    public boolean isBrainTickingNormally = true;
++    public boolean isForceTickingBrain = false;
++    public java.util.List<Activity> manuallyCheckingActivities = java.util.List.of();
++    // Paper end
+ 
+     public static <E extends LivingEntity> Brain.Provider<E> provider(Collection<? extends MemoryModuleType<?>> memoryModules, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
+         return new Brain.Provider<>(memoryModules, sensors);
+@@ -80,7 +85,7 @@ public class Brain<E extends LivingEntity> {
+                     mutableObject.setValue(mutableObject.getValue().apply2(ImmutableList.Builder::add, dataResult2));
+                 });
+                 ImmutableList<Brain.MemoryValue<?>> immutableList = mutableObject.getValue().resultOrPartial(Brain.LOGGER::error).map(ImmutableList.Builder::build).orElseGet(ImmutableList::of);
+-                return DataResult.success(new Brain<>(memoryModules, sensors, immutableList, mutableObject::getValue));
++                return DataResult.success(new Brain(memoryModules, sensors, immutableList, mutableObject::getValue)); // Paper - decomp
+             }
+ 
+             private <T, U> DataResult<Brain.MemoryValue<U>> captureRead(MemoryModuleType<U> memoryModuleType, DynamicOps<T> dynamicOps, T object) {
+@@ -172,7 +177,7 @@ public class Brain<E extends LivingEntity> {
+         if (optional == null) {
+             throw new IllegalStateException("Unregistered memory fetched: " + type);
+         } else {
+-            return optional.map(ExpirableValue::getValue);
++            return (Optional<U>) optional.map(ExpirableValue::getValue); // Paper - decomp
+         }
+     }
+ 
+@@ -373,6 +378,11 @@ public class Brain<E extends LivingEntity> {
+         this.tickSensors(world, entity);
+         this.startEachNonRunningBehavior(world, entity);
+         this.tickEachRunningBehavior(world, entity);
++        // Paper start - Note that this will get overriden by most normal entities.
++        if (!this.manuallyCheckingActivities.isEmpty()) {
++            this.setActiveActivityToFirstValid(this.manuallyCheckingActivities);
++        }
++        // Paper end
+     }
+ 
+     private void tickSensors(ServerLevel world, E entity) {
+@@ -467,7 +477,7 @@ public class Brain<E extends LivingEntity> {
+         private final MemoryModuleType<U> type;
+         private final Optional<? extends ExpirableValue<U>> value;
+ 
+-        static <U> Brain.MemoryValue<U> createUnchecked(MemoryModuleType<U> type, Optional<? extends ExpirableValue<?>> data) {
++        static <U> Brain.MemoryValue<U> createUnchecked(MemoryModuleType<U> type, Optional data) { // Paper - decomp
+             return new Brain.MemoryValue<>(type, data);
+         }
+ 
+@@ -494,7 +504,7 @@ public class Brain<E extends LivingEntity> {
+         private final Collection<? extends SensorType<? extends Sensor<? super E>>> sensorTypes;
+         private final Codec<Brain<E>> codec;
+ 
+-        Provider(Collection<? extends MemoryModuleType<?>> memoryModules, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
++        public Provider(Collection<? extends MemoryModuleType<?>> memoryModules, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) { // Paper
+             this.memoryTypes = memoryModules;
+             this.sensorTypes = sensors;
+             this.codec = Brain.codec(memoryModules, sensors);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
-index f3b8e253a5bfc3f68121dbe656ae7e2ac0f0eb1c..33948d8387df1e422875a7edc24c3359a7c66026 100644
+index fcdb9bde8e1605e30dde3e580491522d4b62cdc0..a019155e369005119f7912451455fec3647c01ae 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 @@ -17,7 +17,7 @@ public abstract class Sensor<E extends LivingEntity> {
@@ -866,10 +988,10 @@ index f3b8e253a5bfc3f68121dbe656ae7e2ac0f0eb1c..33948d8387df1e422875a7edc24c3359
 +    // Paper end - mob goal api
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 15278bb897e6169bc5d02bf47b455634baec7be1..d9df54453add3cd5d0fcd76491c48f9e21e4a3ef 100644
+index 61c2f864bb23e75f6c377f7ccbf2ec44a670348c..09c39a5c3fc8f4d64315ac13211ca8b08ab6b843 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2872,5 +2872,19 @@ public final class CraftServer implements Server {
+@@ -2890,5 +2890,19 @@ public final class CraftServer implements Server {
          return this.potionBrewer;
      }
  
@@ -889,6 +1011,19 @@ index 15278bb897e6169bc5d02bf47b455634baec7be1..d9df54453add3cd5d0fcd76491c48f9e
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAllay.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAllay.java
+index 2e64f567a894ec2c9d265bd3d88d9e98510b901a..ae383da6c6ca00ff9a5b72ed8a83d9fbe78bf2dd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAllay.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAllay.java
+@@ -6,7 +6,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.inventory.Inventory;
+ 
+-public class CraftAllay extends CraftCreature implements org.bukkit.entity.Allay {
++public class CraftAllay extends CraftCreature implements org.bukkit.entity.Allay, io.papermc.paper.entity.brain.PaperBrainHolder<org.bukkit.entity.Allay> { // Paper - Brain API
+ 
+     public CraftAllay(CraftServer server, Allay entity) {
+         super(server, entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAxolotl.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAxolotl.java
 index cdaf860ec1b84c4ad9f2345968786d878f483f74..c97658337f6220ca56ccb81e3c4c6f95f747a077 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAxolotl.java
@@ -902,8 +1037,21 @@ index cdaf860ec1b84c4ad9f2345968786d878f483f74..c97658337f6220ca56ccb81e3c4c6f95
  
      public CraftAxolotl(CraftServer server, net.minecraft.world.entity.animal.axolotl.Axolotl entity) {
          super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFrog.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFrog.java
+index f070e72f93f9b87df56b844b2f783ae08970f056..78650b6b7f76cb180ae75aa5ea348268762442b7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFrog.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFrog.java
+@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
++public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog, io.papermc.paper.entity.brain.PaperBrainHolder<org.bukkit.entity.Frog> { // Paper - Brain API
+ 
+     public CraftFrog(CraftServer server, Frog entity) {
+         super(server, entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
-index 436aa41563b8fab112d03c8cc516cf6ff37587bd..e8a8c5b722bfb012a85bfb3f2c247f33215d58ed 100644
+index e4be28b130e35ea263f85b3157898cd3a7e80561..1971a9ff717e0974438f7ff4988394de23dc9fa0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
 @@ -4,7 +4,7 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -916,14 +1064,11 @@ index 436aa41563b8fab112d03c8cc516cf6ff37587bd..e8a8c5b722bfb012a85bfb3f2c247f33
      public CraftGoat(CraftServer server, net.minecraft.world.entity.animal.goat.Goat entity) {
          super(server, entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHoglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHoglin.java
-index d5b31e4051f22fee4b91eb0e6be25d72e0471eff..3fbc134b90b1212aade57b5d55d30025eec0833f 100644
+index d5b31e4051f22fee4b91eb0e6be25d72e0471eff..1ffcb195f2ec03c9a5cf7a34c7199ec0aee16718 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHoglin.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHoglin.java
-@@ -3,9 +3,10 @@ package org.bukkit.craftbukkit.entity;
- import com.google.common.base.Preconditions;
- import org.bukkit.craftbukkit.CraftServer;
+@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.entity.EntityType;
-+import org.bukkit.entity.Goat;
  import org.bukkit.entity.Hoglin;
  
 -public class CraftHoglin extends CraftAnimals implements Hoglin {
@@ -985,6 +1130,19 @@ index 689c4ce62f604d023e2f293db17f423fd10acbaf..48fb65275919bd8c180b6086ebbff1e6
  
      public CraftPiglinBrute(CraftServer server, net.minecraft.world.entity.monster.piglin.PiglinBrute entity) {
          super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
+index 1dfd4d92dfcb55d26fc5e9adfd1df3fbc9f02ca0..1b517b23fceede1c8eb9b504cd52ac4a98f56867 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
+@@ -4,7 +4,7 @@ import net.minecraft.world.entity.animal.frog.Tadpole;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftTadpole extends CraftFish implements org.bukkit.entity.Tadpole {
++public class CraftTadpole extends CraftFish implements org.bukkit.entity.Tadpole, io.papermc.paper.entity.brain.PaperBrainHolder<org.bukkit.entity.Tadpole> { // Paper - Brain API
+ 
+     public CraftTadpole(CraftServer server, Tadpole entity) {
+         super(server, entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
 index f0b910df1ee471b4d72d97c6197ab14f2854976e..b6aaa1ba719ec167023c6833b06011b10ee501df 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
@@ -998,16 +1156,25 @@ index f0b910df1ee471b4d72d97c6197ab14f2854976e..b6aaa1ba719ec167023c6833b06011b1
  
      public CraftVillager(CraftServer server, net.minecraft.world.entity.npc.Villager entity) {
          super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
+index 024107a70cc517224b98581389db5cbf1977a1a3..e4d3dada95fb3ae87a457192d11bd73ac65285b4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
+@@ -6,7 +6,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftWarden extends CraftMonster implements org.bukkit.entity.Warden {
++public class CraftWarden extends CraftMonster implements org.bukkit.entity.Warden, io.papermc.paper.entity.brain.PaperBrainHolder<org.bukkit.entity.Warden> { // Paper - Brain API
+ 
+     public CraftWarden(CraftServer server, Warden entity) {
+         super(server, entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftZoglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftZoglin.java
-index 611e794d86ff63d725de9bb843802ec868f4b1fd..91757bb2ebbc0bc145168c80241a819f3fe7eb59 100644
+index 611e794d86ff63d725de9bb843802ec868f4b1fd..95ffd6e66d3a3f19df7450b0dad90c1623ebd005 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZoglin.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZoglin.java
-@@ -2,9 +2,11 @@ package org.bukkit.craftbukkit.entity;
- 
- import org.bukkit.craftbukkit.CraftServer;
+@@ -4,7 +4,7 @@ import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.entity.EntityType;
-+import org.bukkit.entity.PiglinBrute;
-+import org.bukkit.entity.Villager;
  import org.bukkit.entity.Zoglin;
  
 -public class CraftZoglin extends CraftMonster implements Zoglin {
