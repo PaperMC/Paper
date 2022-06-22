@@ -18,7 +18,7 @@ index 435db1ffe47476bcb7067802faad7aee7e4c3f54..aaf0bfb8f57b62a5e8c8df6957b8bdc2
      compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
 diff --git a/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java b/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7441de4128c24bdce4e6f2366668ae0eb4d8aba8
+index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd251ccdbc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java
 @@ -0,0 +1,313 @@
@@ -78,7 +78,7 @@ index 0000000000000000000000000000000000000000..7441de4128c24bdce4e6f2366668ae0e
 +     * Unregisters all activities currently
 +     * in this brain.
 +     */
-+    void unregisterAllActivities();
++    void unregisterActivities();
 +
 +    /**
 +     * Gets activities keyed by their priority
@@ -243,7 +243,7 @@ index 0000000000000000000000000000000000000000..7441de4128c24bdce4e6f2366668ae0e
 +    /**
 +     * Clears all sensors from this brain
 +     */
-+    void clearSensors();
++    void unregisterSensors();
 +
 +    /**
 +     * Removes a sensor from this brain.
@@ -761,144 +761,19 @@ index e756edf56995f4552387c2e1082307eb3dd48bb3..4a090eac9f088faa330c0386341b98c8
 +    <C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(@NotNull NamespacedKey key, @NotNull io.leangen.geantyref.TypeToken<C> type, @Nullable org.bukkit.persistence.PersistentDataType<C, ?> serializer);
      // Paper end
  }
-diff --git a/src/main/java/org/bukkit/entity/Allay.java b/src/main/java/org/bukkit/entity/Allay.java
-index 608cd38cb26066777f663431395a5665b23d8bd1..839a4fa0c7532d85d1dfb8b12c3282fa53362f73 100644
---- a/src/main/java/org/bukkit/entity/Allay.java
-+++ b/src/main/java/org/bukkit/entity/Allay.java
-@@ -5,5 +5,5 @@ import org.bukkit.inventory.InventoryHolder;
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 31353bd20404a8c2acf6bf0df524dc3cae324272..06954c9c0b56d3ab34a74f4b50d9f5fd360ffd22 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  /**
-  * An Allay.
+  * Represents a living entity, such as a monster or player
   */
--public interface Allay extends Creature, InventoryHolder {
-+public interface Allay extends Creature, InventoryHolder, io.papermc.paper.entity.brain.BrainHolder<Allay> { // Paper - Brain API
- }
-diff --git a/src/main/java/org/bukkit/entity/Axolotl.java b/src/main/java/org/bukkit/entity/Axolotl.java
-index c8c738b1b72e9ad89d97b7a1f5450d58045a72ca..0cb6cd62619589aa5fa80a8d9ab2db48490ea57a 100644
---- a/src/main/java/org/bukkit/entity/Axolotl.java
-+++ b/src/main/java/org/bukkit/entity/Axolotl.java
-@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
- /**
-  * An Axolotl.
-  */
--public interface Axolotl extends Animals, io.papermc.paper.entity.Bucketable { // Paper - Bucketable API
-+public interface Axolotl extends Animals, io.papermc.paper.entity.Bucketable, io.papermc.paper.entity.brain.BrainHolder<Axolotl> { // Paper - Bucketable API, Brain API
+-public interface LivingEntity extends Attributable, Damageable, ProjectileSource {
++public interface LivingEntity extends Attributable, Damageable, ProjectileSource, io.papermc.paper.entity.brain.BrainHolder<LivingEntity> { // Paper
  
      /**
-      * Gets if this axolotl is playing dead.
-diff --git a/src/main/java/org/bukkit/entity/Frog.java b/src/main/java/org/bukkit/entity/Frog.java
-index 0960bdbb3253bfe109dc6283244b8c9d95a850f7..6034fb85862ebda9d104325d2550ddcecbfeb790 100644
---- a/src/main/java/org/bukkit/entity/Frog.java
-+++ b/src/main/java/org/bukkit/entity/Frog.java
-@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
- /**
-  * A Frog.
-  */
--public interface Frog extends Animals {
-+public interface Frog extends Animals, io.papermc.paper.entity.brain.BrainHolder<Frog> { // Paper - Brain API
- 
-     /**
-      * Gets the tongue target of this frog.
-diff --git a/src/main/java/org/bukkit/entity/Goat.java b/src/main/java/org/bukkit/entity/Goat.java
-index 18e48bbb04076f1535b6a4c10e139908e82da44e..6b26f97cbb08c4116db03c0f88e4d418534bf109 100644
---- a/src/main/java/org/bukkit/entity/Goat.java
-+++ b/src/main/java/org/bukkit/entity/Goat.java
-@@ -3,7 +3,7 @@ package org.bukkit.entity;
- /**
-  * A Goat.
-  */
--public interface Goat extends Animals {
-+public interface Goat extends Animals, io.papermc.paper.entity.brain.BrainHolder<Goat> { // Paper - Brain API
- 
-     /**
-      * Gets if this goat has its left horn.
-diff --git a/src/main/java/org/bukkit/entity/Hoglin.java b/src/main/java/org/bukkit/entity/Hoglin.java
-index b49670816d0d42aee08614d9a59a1f785ad8e6bc..fb966976fd5baa8d29784c12fab491e1bbcb5288 100644
---- a/src/main/java/org/bukkit/entity/Hoglin.java
-+++ b/src/main/java/org/bukkit/entity/Hoglin.java
-@@ -3,7 +3,7 @@ package org.bukkit.entity;
- /**
-  * Represents a Hoglin.
-  */
--public interface Hoglin extends Animals {
-+public interface Hoglin extends Animals, io.papermc.paper.entity.brain.BrainHolder<Hoglin> { // Paper - Brain API
- 
-     /**
-      * Gets whether the hoglin is immune to zombification.
-diff --git a/src/main/java/org/bukkit/entity/Piglin.java b/src/main/java/org/bukkit/entity/Piglin.java
-index d4cb4b0ed1d9766a87867dcf1a3a839526ba9332..09092216d332843627d40c1101ea22cb8e712e53 100644
---- a/src/main/java/org/bukkit/entity/Piglin.java
-+++ b/src/main/java/org/bukkit/entity/Piglin.java
-@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
- /**
-  * Represents a Piglin.
-  */
--public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystokyo.paper.entity.RangedEntity { // Paper
-+public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystokyo.paper.entity.RangedEntity, io.papermc.paper.entity.brain.BrainHolder<Piglin> { // Paper - Brain API
- 
-     /**
-      * Get whether the piglin is able to hunt hoglins.
-diff --git a/src/main/java/org/bukkit/entity/PiglinBrute.java b/src/main/java/org/bukkit/entity/PiglinBrute.java
-index e230c17524cd25939c7f85f3ecd7aa43cd20fdf8..22c0ed1acc89415c09340fc48e8ff94e7e7edb5b 100644
---- a/src/main/java/org/bukkit/entity/PiglinBrute.java
-+++ b/src/main/java/org/bukkit/entity/PiglinBrute.java
-@@ -3,4 +3,4 @@ package org.bukkit.entity;
- /**
-  * Represents a Piglin Brute.
-  */
--public interface PiglinBrute extends PiglinAbstract { }
-+public interface PiglinBrute extends PiglinAbstract, io.papermc.paper.entity.brain.BrainHolder<PiglinBrute> { } // Paper - Brain API
-diff --git a/src/main/java/org/bukkit/entity/Tadpole.java b/src/main/java/org/bukkit/entity/Tadpole.java
-index d64979ebdd018f0f63b6115809b48374ba454249..b91bd890c3b913d0cd294392c580399367a80c10 100644
---- a/src/main/java/org/bukkit/entity/Tadpole.java
-+++ b/src/main/java/org/bukkit/entity/Tadpole.java
-@@ -3,7 +3,7 @@ package org.bukkit.entity;
- /**
-  * A baby {@link Frog}.
-  */
--public interface Tadpole extends Fish {
-+public interface Tadpole extends Fish, io.papermc.paper.entity.brain.BrainHolder<Tadpole> { // Paper - Brain API
- 
-     /**
-      * Gets the age of this mob.
-diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
-index d61855b83da0776fe910dee8cde184c720571a71..ceaa04ca1718cfc6506980de36b0aeec9ab1e707 100644
---- a/src/main/java/org/bukkit/entity/Villager.java
-+++ b/src/main/java/org/bukkit/entity/Villager.java
-@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
- /**
-  * Represents a villager NPC
-  */
--public interface Villager extends AbstractVillager {
-+public interface Villager extends AbstractVillager, io.papermc.paper.entity.brain.BrainHolder<Villager> { // Paper - Brain API
- 
-     /**
-      * Gets the current profession of this villager.
-diff --git a/src/main/java/org/bukkit/entity/Warden.java b/src/main/java/org/bukkit/entity/Warden.java
-index 25bbecc89b01faa4905def014d07a616e39df992..723903bf6747b3052df3eac637261199dfa8f50e 100644
---- a/src/main/java/org/bukkit/entity/Warden.java
-+++ b/src/main/java/org/bukkit/entity/Warden.java
-@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
- /**
-  * A Warden.
-  */
--public interface Warden extends Monster {
-+public interface Warden extends Monster, io.papermc.paper.entity.brain.BrainHolder<Warden> { // Paper - Brain API
- 
-     /**
-      * Gets the anger level of this warden.
-diff --git a/src/main/java/org/bukkit/entity/Zoglin.java b/src/main/java/org/bukkit/entity/Zoglin.java
-index ebf4ffac777a815d516d9e9b0d2aa6b85d8376ab..97aa620e89e5a3f073aeb92ea439501cb77a2b98 100644
---- a/src/main/java/org/bukkit/entity/Zoglin.java
-+++ b/src/main/java/org/bukkit/entity/Zoglin.java
-@@ -3,7 +3,7 @@ package org.bukkit.entity;
- /**
-  * Represents a Zoglin.
-  */
--public interface Zoglin extends Monster, Ageable {
-+public interface Zoglin extends Monster, Ageable, io.papermc.paper.entity.brain.BrainHolder<Zoglin> { // Paper - Brain API
- 
-     /**
-      * Gets whether the zoglin is a baby
+      * Gets the height of the living entity's eyes above its Location.
 diff --git a/src/main/java/org/bukkit/entity/memory/MemoryKey.java b/src/main/java/org/bukkit/entity/memory/MemoryKey.java
 index 147714f3a22c41933bd0daabfe99272e5185367f..8fce2aef4d949972a91d3ad365b1b602e2d89e3e 100644
 --- a/src/main/java/org/bukkit/entity/memory/MemoryKey.java
