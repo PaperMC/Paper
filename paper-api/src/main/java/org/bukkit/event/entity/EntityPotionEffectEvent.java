@@ -254,6 +254,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         VILLAGER_TRADE,
         /**
+         * When an entity gets the effect from a warden.
+         */
+        WARDEN,
+        /**
          * When an entity comes in contact with a wither rose.
          */
         WITHER_ROSE
