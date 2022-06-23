@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Fri, 24 Jul 2020 15:56:05 -0700
+Subject: [PATCH] Fix some rails connecting improperly
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
+index 9ae45eaf77ead0a6801046d8946d50eec24612fa..a3f877bf03f75cbfbd128c856322bcd427b95d21 100644
+--- a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
+@@ -65,6 +65,7 @@ public abstract class BaseRailBlock extends Block implements SimpleWaterloggedBl
+         state = this.updateDir(world, pos, state, true);
+         if (this.isStraight) {
+             world.neighborChanged(state, pos, this, pos, notify);
++            state = world.getBlockState(pos); // Paper - don't desync, update again
+         }
+ 
+         return state;
+diff --git a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
+index fe9b6c89a1f0c98a9c73a409f2aca6a4a1c0f9e7..932a2c279f46c951182d2604b525b473b6945895 100644
+--- a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
+@@ -70,6 +70,7 @@ public class DetectorRailBlock extends BaseRailBlock {
+ 
+     private void checkPressed(Level world, BlockPos pos, BlockState state) {
+         if (this.canSurvive(state, world, pos)) {
++            if (state.getBlock() != this) { return; } // Paper - not our block, don't do anything
+             boolean flag = (Boolean) state.getValue(DetectorRailBlock.POWERED);
+             boolean flag1 = false;
+             List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (entity) -> {
+diff --git a/src/main/java/net/minecraft/world/level/block/RailState.java b/src/main/java/net/minecraft/world/level/block/RailState.java
+index 0cbfad97371b59de95963a09aa16f3dad7a37222..d873625c1b8439a727d39ce207b5e84a1d86e5eb 100644
+--- a/src/main/java/net/minecraft/world/level/block/RailState.java
++++ b/src/main/java/net/minecraft/world/level/block/RailState.java
+@@ -17,6 +17,12 @@ public class RailState {
+     private final boolean isStraight;
+     private final List<BlockPos> connections = Lists.newArrayList();
+ 
++    // Paper start - prevent desync
++    public boolean isValid() {
++        return this.level.getBlockState(this.pos).getBlock() == this.state.getBlock();
++    }
++    // Paper end - prevent desync
++
+     public RailState(Level world, BlockPos pos, BlockState state) {
+         this.level = world;
+         this.pos = pos;
+@@ -143,6 +149,11 @@ public class RailState {
+     }
+ 
+     private void connectTo(RailState placementHelper) {
++        // Paper start - prevent desync
++        if (!this.isValid() || !placementHelper.isValid()) {
++            return;
++        }
++        // Paper end - prevent desync
+         this.connections.add(placementHelper.pos);
+         BlockPos blockPos = this.pos.north();
+         BlockPos blockPos2 = this.pos.south();
+@@ -333,10 +344,15 @@ public class RailState {
+         this.state = this.state.setValue(this.block.getShapeProperty(), railShape2);
+         if (forceUpdate || this.level.getBlockState(this.pos) != this.state) {
+             this.level.setBlock(this.pos, this.state, 3);
++            // Paper start - prevent desync
++            if (!this.isValid()) {
++                return this;
++            }
++            // Paper end - prevent desync
+ 
+             for(int i = 0; i < this.connections.size(); ++i) {
+                 RailState railState = this.getRail(this.connections.get(i));
+-                if (railState != null) {
++                if (railState != null && railState.isValid()) { // Paper - prevent desync
+                     railState.removeSoftConnections();
+                     if (railState.canConnectTo(this)) {
+                         railState.connectTo(this);
+@@ -349,6 +365,6 @@ public class RailState {
+     }
+ 
+     public BlockState getState() {
+-        return this.state;
++        return this.level.getBlockState(this.pos); // Paper - prevent desync
+     }
+ }

@@ -10,41 +10,27 @@ this setting.
 So avoid looking up scoreboards and short circuit to the "not on a team"
 logic which is most likely to be true.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ada624b5f58381122e59568c2087cf38fd2baf3e..5b55fce59db9ac3ab6030ebe8374c5147535d773 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -256,4 +256,9 @@ public class PaperWorldConfig {
-     private void disableTeleportationSuffocationCheck() {
-         disableTeleportationSuffocationCheck = getBoolean("disable-teleportation-suffocation-check", false);
-     }
-+
-+    public boolean nonPlayerEntitiesOnScoreboards = false;
-+    private void nonPlayerEntitiesOnScoreboards() {
-+        nonPlayerEntitiesOnScoreboards = getBoolean("allow-non-player-entities-on-scoreboards", false);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index de15a2231057217fbbf723cf25e869998a1016f1..69f820aa1f29e626c0ae0322281063efae53c470 100644
+index 86b8747ec3aa9c92644fe313c7a73593f8bf4eae..704a5aa2881c6f826d49ad9aed6003db7c5f5843 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2561,6 +2561,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -2577,6 +2577,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
  
      @Nullable
      public Team getTeam() {
-+        if (!this.level.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof Player)) { return null; } // Paper
++        if (!this.level.paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof Player)) { return null; } // Paper
          return this.level.getScoreboard().getPlayersTeam(this.getScoreboardName());
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index b14e9a629430070071b498f719b649af1d4bb926..9168826ac85bc7cd355e73b2d02b7cce9c4c9cee 100644
+index 4731869c1bd3b8abdd2a5133fd551a2a534a6b41..3710cf92bd29f69bb86d72a7adbb8df9bf4f8f08 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -797,6 +797,7 @@ public abstract class LivingEntity extends Entity {
+@@ -823,6 +823,7 @@ public abstract class LivingEntity extends Entity {
          if (nbt.contains("Team", 8)) {
              String s = nbt.getString("Team");
              PlayerTeam scoreboardteam = this.level.getScoreboard().getPlayerTeam(s);
-+            if (!level.paperConfig.nonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { scoreboardteam = null; } // Paper
++            if (!level.paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { scoreboardteam = null; } // Paper
              boolean flag = scoreboardteam != null && this.level.getScoreboard().addPlayerToTeam(this.getStringUUID(), scoreboardteam);
  
              if (!flag) {

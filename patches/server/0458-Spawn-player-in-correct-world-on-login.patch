@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wyatt Childers <wchilders@nearce.com>
+Date: Fri, 3 Jul 2020 14:57:05 -0400
+Subject: [PATCH] Spawn player in correct world on login
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index c1e62a0d1655993430da7e4cbd8075cd4239adb4..0b301b1f164853bfd23300993288a2958824e287 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -199,7 +199,18 @@ public abstract class PlayerList {
+         }String lastKnownName = s; // Paper
+         // CraftBukkit end
+ 
+-        if (nbttagcompound != null) {
++        // Paper start - move logic in Entity to here, to use bukkit supplied world UUID.
++        if (nbttagcompound != null && nbttagcompound.contains("WorldUUIDMost") && nbttagcompound.contains("WorldUUIDLeast")) {
++            UUID uid = new UUID(nbttagcompound.getLong("WorldUUIDMost"), nbttagcompound.getLong("WorldUUIDLeast"));
++            org.bukkit.World bWorld = org.bukkit.Bukkit.getServer().getWorld(uid);
++            if (bWorld != null) {
++                resourcekey = ((CraftWorld) bWorld).getHandle().dimension();
++            } else {
++                resourcekey = Level.OVERWORLD;
++            }
++        } else if (nbttagcompound != null) {
++            // Vanilla migration support
++            // Paper end
+             DataResult<ResourceKey<Level>> dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, nbttagcompound.get("Dimension"))); // CraftBukkit - decompile error
+             Logger logger = PlayerList.LOGGER;
+ 

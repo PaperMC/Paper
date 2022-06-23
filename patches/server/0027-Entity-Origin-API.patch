@@ -5,12 +5,12 @@ Subject: [PATCH] Entity Origin API
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index c7fe4b6aa8d68bd5dc394752a5ae635eb46c5f31..a38fe84e9f8060640eb0c485957e8ceaef55c29b 100644
+index 823b0d6ce2ad55532532abec07b7920ee546eb56..41c398b1819d960994922b0ffaf64ae7348d82cf 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -2016,6 +2016,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
-             }
+@@ -2108,6 +2108,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
+             entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
              entity.valid = true; // CraftBukkit
 +            // Paper start - Set origin location when the entity is being added to the world
 +            if (entity.getOriginVector() == null) {
@@ -25,10 +25,10 @@ index c7fe4b6aa8d68bd5dc394752a5ae635eb46c5f31..a38fe84e9f8060640eb0c485957e8cea
  
          public void onTrackingEnd(Entity entity) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b883558c101ad1e5d051cc8d14e1905aa3af6aad..a0c9493c7067dabbc5c9f118d01eb9c8bdd6a8a1 100644
+index 76dc492e9c2239a09de9ead5de50abb86a97f452..96864858f28337a6807cfa255b6b607bdbd337ce 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -297,7 +297,27 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -303,7 +303,27 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      public long activatedTick = Integer.MIN_VALUE;
      public void inactiveTick() { }
      // Spigot end
@@ -56,7 +56,7 @@ index b883558c101ad1e5d051cc8d14e1905aa3af6aad..a0c9493c7067dabbc5c9f118d01eb9c8
      public float getBukkitYaw() {
          return this.yRot;
      }
-@@ -1817,6 +1837,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -1851,6 +1871,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                  this.bukkitEntity.storeBukkitValues(nbt);
              }
              // CraftBukkit end
@@ -72,7 +72,7 @@ index b883558c101ad1e5d051cc8d14e1905aa3af6aad..a0c9493c7067dabbc5c9f118d01eb9c8
              return nbt;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
-@@ -1947,6 +1976,20 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -1975,6 +2004,20 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
              }
              // CraftBukkit end
  
@@ -94,10 +94,10 @@ index b883558c101ad1e5d051cc8d14e1905aa3af6aad..a0c9493c7067dabbc5c9f118d01eb9c8
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being loaded");
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index 1cc849fadd1e1cf4ef1d1009c8e42febe92a6e28..0366303a986ae6da8e95ed3051610c432a790194 100644
+index bd357c3e6fcbd82f3c53ecc8dab46aa5d3708bc2..6c4be7da19d0d61f35942558d438587853231aaa 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-@@ -345,6 +345,14 @@ public class FallingBlockEntity extends Entity {
+@@ -337,6 +337,14 @@ public class FallingBlockEntity extends Entity {
              this.blockState = Blocks.SAND.defaultBlockState();
          }
  
@@ -113,7 +113,7 @@ index 1cc849fadd1e1cf4ef1d1009c8e42febe92a6e28..0366303a986ae6da8e95ed3051610c43
  
      public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
 diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-index 1f61dcc3d6f33f69fbebaaaee0554403c3e13adf..7135e22a2ee274eaef52804d60f15002176ff1db 100644
+index 2d4a990da2402a6c24c03e8be7e518e33db99c8f..10f8b5ff56e4c1d8300835e045abdce719a99343 100644
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 @@ -120,6 +120,14 @@ public class PrimedTnt extends Entity {
@@ -132,10 +132,10 @@ index 1f61dcc3d6f33f69fbebaaaee0554403c3e13adf..7135e22a2ee274eaef52804d60f15002
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 4b7ed15279bbdd116d993f190094f80c888aed69..fdbcf4989f72e1604a2841f565adfeebf8d45622 100644
+index b403022201b34118adddf817b19a8bbdb6229df4..35e6cdd6930209d5c0f1c23c4e6838a5c0d81aa3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -1154,4 +1154,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -1166,4 +1166,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          return this.spigot;
      }
      // Spigot end

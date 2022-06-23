@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Wed, 3 Mar 2021 12:48:48 +0100
+Subject: [PATCH] Remove streams from SensorNearest
+
+The behavioural nearby sensors are validated every tick on the entities
+that registered the respective sensors and are therefore a good subject
+to performance improvements.
+
+More specifically this commit replaces the Stream#filter usage with
+ArrayList#removeIf as the removeIf method on an array list is heavily
+optimized towards a single internal array re-allocation without any
+further overhead on the removeIf call.
+
+The only negative of this change is the rather agressive diff these
+patches introduce as the methods are basically being reimplemented
+compared to the previous stream-based implementation.
+
+See: https://nipafx.dev/java-stream-performance/
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
+index a41c3365db8e9999b686f5bf4bd888458cee43a5..1dfcc5cba6ffb463acf161a23fff1ca452184290 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
+@@ -28,11 +28,15 @@ public class NearestItemSensor extends Sensor<Mob> {
+             return true;
+         });
+         list.sort(Comparator.comparingDouble(entity::distanceToSqr));
+-        Optional<ItemEntity> optional = list.stream().filter((itemEntity) -> {
+-            return entity.wantsToPickUp(itemEntity.getItem());
+-        }).filter((itemEntity) -> {
+-            return itemEntity.closerThan(entity, 32.0D);
+-        }).filter(entity::hasLineOfSight).findFirst();
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, optional);
++        // Paper start - remove streams in favour of lists
++        ItemEntity nearest = null;
++        for (ItemEntity entityItem : list) {
++            if (entity.wantsToPickUp(entityItem.getItem()) && entityItem.closerThan(entity, 32.0D) && entity.hasLineOfSight(entityItem)) {
++                nearest = entityItem;
++                break;
++            }
++        }
++        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, Optional.ofNullable(nearest));
++        // Paper end
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+index ed1b95ec694b0fe8b647964b18b8c33707fc0b47..312775d0430f793720211dc29bb293503e799d11 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+@@ -21,18 +21,25 @@ public class PlayerSensor extends Sensor<LivingEntity> {
+ 
+     @Override
+     protected void doTick(ServerLevel world, LivingEntity entity) {
+-        List<Player> list = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter((player) -> {
+-            return entity.closerThan(player, 16.0D);
+-        }).sorted(Comparator.comparingDouble(entity::distanceToSqr)).collect(Collectors.toList());
++        List<Player> players = new java.util.ArrayList<>(world.players());
++        players.removeIf(player -> !EntitySelector.NO_SPECTATORS.test(player) || !entity.closerThan(player, 16.0D));
++        players.sort(Comparator.comparingDouble(entity::distanceTo));
+         Brain<?> brain = entity.getBrain();
+-        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, list);
+-        List<Player> list2 = list.stream().filter((player) -> {
+-            return isEntityTargetable(entity, player);
+-        }).collect(Collectors.toList());
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, list2.isEmpty() ? null : list2.get(0));
+-        Optional<Player> optional = list2.stream().filter((player) -> {
+-            return isEntityAttackable(entity, player);
+-        }).findFirst();
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, optional);
++
++        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, players);
++
++        Player nearest = null, nearestTargetable = null;
++        for (Player player : players) {
++            if (Sensor.isEntityTargetable(entity, player)) {
++                if (nearest == null) nearest = player;
++                if (Sensor.isEntityAttackable(entity, player)) {
++                    nearestTargetable = player;
++                    break; // Both variables are assigned, no reason to loop further
++                }
++            }
++        }
++        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, nearest);
++        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, nearestTargetable);
++        // Paper end
+     }
+ }

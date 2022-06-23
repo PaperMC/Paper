@@ -6,45 +6,103 @@ Subject: [PATCH] Use a Shared Random for Entities
 Reduces memory usage and provides ensures more randomness, Especially since a lot of garbage entity objects get created.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 69f820aa1f29e626c0ae0322281063efae53c470..415c746b497d19f359705721874ed65d7e7ca817 100644
+index 704a5aa2881c6f826d49ad9aed6003db7c5f5843..112942d72a30a722ba929f89fb57f67328366d99 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -152,6 +152,21 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -158,6 +158,79 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
      }
  
 +    // Paper start
-+    public static Random SHARED_RANDOM = new Random() {
++    public static RandomSource SHARED_RANDOM = new RandomRandomSource();
++    private static final class RandomRandomSource extends java.util.Random implements net.minecraft.world.level.levelgen.BitRandomSource {
 +        private boolean locked = false;
++
 +        @Override
 +        public synchronized void setSeed(long seed) {
 +            if (locked) {
-+                LogManager.getLogger().error("Ignoring setSeed on Entity.SHARED_RANDOM", new Throwable());
++                LOGGER.error("Ignoring setSeed on Entity.SHARED_RANDOM", new Throwable());
 +            } else {
 +                super.setSeed(seed);
 +                locked = true;
 +            }
 +        }
-+    };
++
++        @Override
++        public RandomSource fork() {
++            return new net.minecraft.world.level.levelgen.LegacyRandomSource(this.nextLong());
++        }
++
++        @Override
++        public net.minecraft.world.level.levelgen.PositionalRandomFactory forkPositional() {
++            return new net.minecraft.world.level.levelgen.LegacyRandomSource.LegacyPositionalRandomFactory(this.nextLong());
++        }
++
++        // these below are added to fix reobf issues that I don't wanna deal with right now
++        @Override
++        public int next(int bits) {
++            return super.next(bits);
++        }
++
++        @Override
++        public int nextInt(int origin, int bound) {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt(origin, bound);
++        }
++
++        @Override
++        public long nextLong() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextLong();
++        }
++
++        @Override
++        public int nextInt() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt();
++        }
++
++        @Override
++        public int nextInt(int bound) {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt(bound);
++        }
++
++        @Override
++        public boolean nextBoolean() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextBoolean();
++        }
++
++        @Override
++        public float nextFloat() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextFloat();
++        }
++
++        @Override
++        public double nextDouble() {
++            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextDouble();
++        }
++
++        @Override
++        public double nextGaussian() {
++            return super.nextGaussian();
++        }
++    }
 +    // Paper end
 +
      private CraftEntity bukkitEntity;
  
      public CraftEntity getBukkitEntity() {
-@@ -339,7 +354,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -345,7 +418,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          this.bb = Entity.INITIAL_AABB;
          this.stuckSpeedMultiplier = Vec3.ZERO;
          this.nextStep = 1.0F;
--        this.random = new Random();
+-        this.random = RandomSource.create();
 +        this.random = SHARED_RANDOM; // Paper
          this.remainingFireTicks = -this.getFireImmuneTicks();
          this.fluidHeight = new Object2DoubleArrayMap(2);
-         this.firstTick = true;
+         this.fluidOnEyes = new HashSet();
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Squid.java b/src/main/java/net/minecraft/world/entity/animal/Squid.java
-index 09ec4d66aaa5b9e4ef09750a76cebc389a4306fd..370513fbc39f178f903ce140ced1a97029dd39db 100644
+index 8e63ab510e4c2e458da726ca67be4d3b5274e7b7..a51424d29ac353cf1bec4d1484db0acb63bebba5 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Squid.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Squid.java
-@@ -47,7 +47,7 @@ public class Squid extends WaterAnimal {
+@@ -46,7 +46,7 @@ public class Squid extends WaterAnimal {
  
      public Squid(EntityType<? extends Squid> type, Level world) {
          super(type, world);

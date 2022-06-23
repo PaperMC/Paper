@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 28 Jun 2020 19:27:20 -0400
+Subject: [PATCH] Paper dumpitem command
+
+Let's you quickly view the item in your hands NBT data
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index fb2cb76e4954d9d69b4a631d6e20bdcc511b6b3f..27c350c123b4349b8b401a06f204de46c88da7ac 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -31,7 +31,9 @@ import org.bukkit.command.CommandSender;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.entity.Player;
++import org.bukkit.inventory.ItemStack;
+ 
+ import java.io.File;
+ import java.io.FileOutputStream;
+@@ -62,7 +64,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
+ 
+ public class PaperCommand extends Command {
+     private static final String BASE_PERM = "bukkit.command.paper.";
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight", "syncloadinfo").build();
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight", "syncloadinfo", "dumpitem").build();
+ 
+     public PaperCommand(String name) {
+         super(name);
+@@ -176,6 +178,9 @@ public class PaperCommand extends Command {
+             case "reload":
+                 doReload(sender);
+                 break;
++            case "dumpitem":
++                doDumpItem(sender);
++                break;
+             case "debug":
+                 doDebug(sender, args);
+                 break;
+@@ -489,6 +494,23 @@ public class PaperCommand extends Command {
+ 
+         Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
+     }
++    private void doDumpItem(CommandSender sender) {
++        if (!(sender instanceof Player)) {
++            sender.sendMessage("Only players can use this command");
++            return;
++        }
++        ItemStack itemInHand = ((CraftPlayer) sender).getItemInHand();
++        net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemInHand);
++        net.minecraft.nbt.CompoundTag tag = itemStack.getTag();
++        if (tag != null) {
++            net.kyori.adventure.text.Component nbtComponent = io.papermc.paper.adventure.PaperAdventure.asAdventure(net.minecraft.nbt.NbtUtils.toPrettyComponent(tag));
++            Bukkit.getConsoleSender().sendMessage(nbtComponent);
++            sender.sendMessage(nbtComponent);
++        } else {
++            sender.sendMessage("Item does not have NBT");
++        }
++    }
++
+     private void doFixLight(CommandSender sender, String[] args) {
+         if (!(sender instanceof Player)) {
+             sender.sendMessage("Only players can use this command");

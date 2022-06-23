@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Thu, 23 Dec 2021 23:59:12 -0500
+Subject: [PATCH] Fix Entity Position Desync
+
+If entities were teleported in the first tick it would not be send to the client.
+
+This excludes hanging entities, as this fix caused problematic behavior due to them having their own
+position field.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 919758363c7b703cb200582768e68c97ce5c807a..3b144c820531122eb37d41be06c182b5f5dc0724 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -158,7 +158,7 @@ public class ServerEntity {
+                 boolean flag2 = flag1 || this.tickCount % 60 == 0;
+                 boolean flag3 = Math.abs(i - this.yRotp) >= 1 || Math.abs(j - this.xRotp) >= 1;
+ 
+-                if (this.tickCount > 0 || this.entity instanceof AbstractArrow) {
++                if (!(this.entity instanceof net.minecraft.world.entity.decoration.HangingEntity) || this.tickCount > 0 || this.entity instanceof AbstractArrow) { // Paper - Always update position
+                     long k = this.positionCodec.encodeX(vec3d);
+                     long l = this.positionCodec.encodeY(vec3d);
+                     long i1 = this.positionCodec.encodeZ(vec3d);

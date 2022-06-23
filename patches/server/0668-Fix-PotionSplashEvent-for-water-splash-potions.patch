@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 20 May 2021 20:40:53 -0700
+Subject: [PATCH] Fix PotionSplashEvent for water splash potions
+
+Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6221
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+index ebe9b713905d33a4107fe32874a783e154bd0524..fee09e6ff72cf1da389d5811dd005642cd50a5b4 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+@@ -121,30 +121,47 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+         }
+     }
+ 
++    private static final Predicate<net.minecraft.world.entity.LivingEntity> APPLY_WATER_GET_ENTITIES_PREDICATE = ThrownPotion.WATER_SENSITIVE.or(Axolotl.class::isInstance); // Paper
+     private void applyWater() {
+         AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
+-        List<net.minecraft.world.entity.LivingEntity> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.WATER_SENSITIVE);
++        List<net.minecraft.world.entity.LivingEntity> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.APPLY_WATER_GET_ENTITIES_PREDICATE); // Paper
++        Map<LivingEntity, Double> affected = new HashMap<>(); // Paper
+ 
+         if (!list.isEmpty()) {
+             Iterator iterator = list.iterator();
+ 
+             while (iterator.hasNext()) {
+                 net.minecraft.world.entity.LivingEntity entityliving = (net.minecraft.world.entity.LivingEntity) iterator.next();
++                // Paper start - Change into single getEntities for axolotls & water sensitive
++                if (entityliving instanceof Axolotl axolotl) {
++                    affected.put(axolotl.getBukkitLivingEntity(), 1.0);
++                    continue;
++                }
++                // Paper end
+                 double d0 = this.distanceToSqr((Entity) entityliving);
+ 
+                 if (d0 < 16.0D && entityliving.isSensitiveToWater()) {
+-                    entityliving.hurt(DamageSource.indirectMagic(this, this.getOwner()), 1.0F);
++                    // Paper start
++                    double intensity = 1.0D - Math.sqrt(d0) / 4.0D;
++                    affected.put(entityliving.getBukkitLivingEntity(), intensity);
++                    // entityliving.hurt(DamageSource.indirectMagic(this, this.getOwner()), 1.0F); // Paper - moved down
++                    // Paper end
+                 }
+             }
+         }
+ 
+-        List<Axolotl> list1 = this.level.getEntitiesOfClass(Axolotl.class, axisalignedbb);
+-        Iterator iterator1 = list1.iterator();
+-
+-        while (iterator1.hasNext()) {
+-            Axolotl axolotl = (Axolotl) iterator1.next();
+-
+-            axolotl.rehydrate();
++        // Paper start
++        org.bukkit.event.entity.PotionSplashEvent event = CraftEventFactory.callPotionSplashEvent(this, affected);
++        if (!event.isCancelled()) {
++            for (LivingEntity affectedEntity : event.getAffectedEntities()) {
++                net.minecraft.world.entity.LivingEntity entityliving = ((CraftLivingEntity) affectedEntity).getHandle();
++                if (entityliving instanceof Axolotl axolotl && event.getIntensity(affectedEntity) > 0) {
++                    axolotl.rehydrate();
++                } else {
++                    entityliving.hurt(DamageSource.indirectMagic(this, this.getOwner()), 1.0F);
++                }
++            }
++            // Paper end
+         }
+ 
+     }
+@@ -165,6 +182,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+                     double d0 = this.distanceToSqr((Entity) entityliving);
+ 
+                     if (d0 < 16.0D) {
++                        // Paper - diff on change, used when calling the splash event for water splash potions
+                         double d1 = 1.0D - Math.sqrt(d0) / 4.0D;
+ 
+                         if (entityliving == entity) {

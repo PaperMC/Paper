@@ -9,26 +9,11 @@ expensive when there are hundreds or more entities in range.
 This patch adds a per-tick cache that is used for storing and retrieving
 an entity's exposure during an explosion.
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index bc35bdd9cbd544ae2ab27ad042d7d1b3166db9a6..2b0a75dc2e292e655ca3300f64bc1211b3adeceb 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -201,4 +201,10 @@ public class PaperWorldConfig {
-         disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
-         log("End credits disabled: " + disableEndCredits);
-     }
-+
-+    public boolean optimizeExplosions;
-+    private void optimizeExplosions() {
-+        optimizeExplosions = getBoolean("optimize-explosions", false);
-+        log("Optimize explosions: " + optimizeExplosions);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b16c2c8e173d906097ee9ac3edace1334da11a4b..4db15f60a5da9594cfc313f6fa97032ffc9259e0 100644
+index 8cc5b6bbe2d8cbeb72e88b9e08e87fbbb98a6f8a..21e09c039a4c3fa64f6456e5cc7d50463590f787 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1406,6 +1406,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1394,6 +1394,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              this.profiler.pop();
              this.profiler.pop();
@@ -37,10 +22,10 @@ index b16c2c8e173d906097ee9ac3edace1334da11a4b..4db15f60a5da9594cfc313f6fa97032f
  
          this.profiler.popPush("connection");
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 047864651dfbf009b66706e5cb0dd3d1749424bc..a901ce351c484820a8ca95889125e561023d9b31 100644
+index 292571fc9fa999d3b92e0fdd56d07ebfb4ae7402..db7a025cd064c898e33037133b65eecc3702542d 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -227,7 +227,7 @@ public class Explosion {
+@@ -225,7 +225,7 @@ public class Explosion {
                          d8 /= d11;
                          d9 /= d11;
                          d10 /= d11;
@@ -49,13 +34,13 @@ index 047864651dfbf009b66706e5cb0dd3d1749424bc..a901ce351c484820a8ca95889125e561
                          double d13 = (1.0D - d7) * d12;
  
                          // CraftBukkit start
-@@ -465,4 +465,84 @@ public class Explosion {
+@@ -470,4 +470,84 @@ public class Explosion {
  
          private BlockInteraction() {}
      }
 +    // Paper start - Optimize explosions
 +    private float getBlockDensity(Vec3 vec3d, Entity entity) {
-+        if (!this.level.paperConfig.optimizeExplosions) {
++        if (!this.level.paperConfig().environment.optimizeExplosions) {
 +            return getSeenPercent(vec3d, entity);
 +        }
 +        CacheKey key = new CacheKey(this, entity.getBoundingBox());
@@ -135,10 +120,10 @@ index 047864651dfbf009b66706e5cb0dd3d1749424bc..a901ce351c484820a8ca95889125e561
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 7b6ad4acee4a78dbea61c490dc53bd3d10346b56..c3f19d36fb200e9cdc20cf2993fd72ad8810f254 100644
+index b35ca9316bf719e6b45f4d33ca7deecc95321ab3..849f83944467ca3c505afebf2b84806e46670fb0 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -153,6 +153,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -161,6 +161,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;

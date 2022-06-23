@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 25 Nov 2020 16:33:27 -0800
+Subject: [PATCH] Added PlayerLoomPatternSelectEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+index 9cbdcb87d76fa36887413754ef625a16624aadd7..e1e479156070b3c52e9949541a7dd56571dfb35b 100644
+--- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+@@ -173,8 +173,35 @@ public class LoomMenu extends AbstractContainerMenu {
+     @Override
+     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+         if (id >= 0 && id < this.selectablePatterns.size()) {
+-            this.selectedBannerPatternIndex.set(id);
+-            this.setupResultSlot((Holder) this.selectablePatterns.get(id));
++            // Paper start
++            int selectablePatternIndex = id;
++            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.block.banner.PatternType.getByIdentifier(this.selectablePatterns.get(selectablePatternIndex).value().getHashname()));
++            if (!event.callEvent()) {
++                ((Player) player.getBukkitEntity()).updateInventory();
++                return false;
++            }
++            Holder<BannerPattern> selectedPattern = null;
++            for (int i = 0; i < this.selectablePatterns.size(); i++) {
++                final Holder<BannerPattern> holder = this.selectablePatterns.get(i);
++                if (event.getPatternType().getIdentifier().equals(holder.value().getHashname())) {
++                    selectablePatternIndex = i;
++                    selectedPattern = holder;
++                    break;
++                }
++            }
++            if (selectedPattern == null) {
++                for (BannerPattern pattern : Registry.BANNER_PATTERN) {
++                    if (event.getPatternType().getIdentifier().equals(pattern.getHashname())) {
++                        selectedPattern = Registry.BANNER_PATTERN.getHolder(Registry.BANNER_PATTERN.getId(pattern)).orElseThrow();
++                        break;
++                    }
++                }
++                selectablePatternIndex = -1;
++            }
++            ((Player) player.getBukkitEntity()).updateInventory();
++            this.selectedBannerPatternIndex.set(selectablePatternIndex);
++            this.setupResultSlot(java.util.Objects.requireNonNull(selectedPattern, "selectedPattern was null, this is unexpected"));
++            // Paper end
+             return true;
+         } else {
+             return false;

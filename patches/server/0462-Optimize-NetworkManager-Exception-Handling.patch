@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Steinborn <git@steinborn.me>
+Date: Sun, 5 Jul 2020 22:38:18 -0400
+Subject: [PATCH] Optimize NetworkManager Exception Handling
+
+
+diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+index d15ef330db69e0c948824d9bf112a26680c90b1b..25c98fa91260c5fe3bd42c0861e3834b4ec5dc5c 100644
+--- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
++++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+@@ -299,6 +299,7 @@ public enum ConnectionProtocol {
+ 
+         @Nullable
+         public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
++            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper
+             Function<FriendlyByteBuf, ? extends Packet<T>> function = this.idToDeserializer.get(id);
+             return function != null ? function.apply(buf) : null;
+         }
+diff --git a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
+index 99b581052f937b0f2d6b5d73de699008c1d51774..ed54479b14dcfc736ac90749106557f0ff537550 100644
+--- a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
++++ b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
+@@ -8,8 +8,20 @@ import io.netty.handler.codec.CorruptedFrameException;
+ import java.util.List;
+ 
+ public class Varint21FrameDecoder extends ByteToMessageDecoder {
++    private final byte[] lenBuf = new byte[3]; // Paper
++    @Override
+     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
++        // Paper start - if channel is not active just discard the packet
++        if (!channelHandlerContext.channel().isActive()) {
++            byteBuf.skipBytes(byteBuf.readableBytes());
++            return;
++        }
++        // Paper end
+         byteBuf.markReaderIndex();
++        // Paper start - reuse temporary length buffer
++        byte[] abyte = lenBuf;
++        java.util.Arrays.fill(abyte, (byte) 0);
++        // Paper end
+         byte[] bs = new byte[3];
+ 
+         for(int i = 0; i < bs.length; ++i) {
+diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+index 049e64c355d5f064009b1107ad15d28c44f999dd..a34f22cadc09e53ea4de787b04d050b99dddbcac 100644
+--- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
++++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+@@ -30,11 +30,17 @@ public class PacketUtils {
+                     try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
+                         packet.handle(listener);
+                     } catch (Exception exception) {
+-                        if (listener.shouldPropagateHandlingExceptions()) {
+-                            throw exception;
++                        net.minecraft.network.Connection networkmanager = listener.getConnection();
++                        if (networkmanager.getPlayer() != null) {
++                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
++                        } else {
++                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), exception);
+                         }
+-
+-                        PacketUtils.LOGGER.error("Failed to handle packet {}, suppressing error", packet, exception);
++                        net.minecraft.network.chat.Component error = net.minecraft.network.chat.Component.literal("Packet processing error");
++                        networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), (future) -> {
++                            networkmanager.disconnect(error);
++                        });
++                        networkmanager.setReadOnly();
+                     }
+                 } else {
+                     PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);

@@ -4,33 +4,16 @@ Date: Tue, 22 Mar 2016 12:04:28 -0500
 Subject: [PATCH] Configurable spawn chances for skeleton horses
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 71c672eafdce3547eaeb8e31fddcb142ad213094..aa8cd5965632626e4cbd4952acf9b349f79b2b1c 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -276,4 +276,12 @@ public class PaperWorldConfig {
-         log("Non Player Arrow Despawn Rate: " + nonPlayerArrowDespawnRate);
-         log("Creative Arrow Despawn Rate: " + creativeArrowDespawnRate);
-     }
-+
-+    public double skeleHorseSpawnChance;
-+    private void skeleHorseSpawnChance() {
-+        skeleHorseSpawnChance = getDouble("skeleton-horse-thunder-spawn-chance", 0.01D);
-+        if (skeleHorseSpawnChance < 0) {
-+            skeleHorseSpawnChance = 0.01D; // Vanilla value
-+        }
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b106dfc16820d89b9c9792ad85d09fd66b7204b6..4e896cdc395cfb2b976e13ee3f0228d9f475069f 100644
+index e01f380fea580e98e62444902bdef5694dc0ffd0..6414e672dc05c772c49e14aa0cd552d888b29b31 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -562,7 +562,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -586,7 +586,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
              blockposition = this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15));
              if (this.isRainingAt(blockposition)) {
                  DifficultyInstance difficultydamagescaler = this.getCurrentDifficultyAt(blockposition);
 -                boolean flag1 = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.getEffectiveDifficulty() * 0.01D && !this.getBlockState(blockposition.below()).is(Blocks.LIGHTNING_ROD);
-+                boolean flag1 = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.getEffectiveDifficulty() * paperConfig.skeleHorseSpawnChance && !this.getBlockState(blockposition.below()).is(Blocks.LIGHTNING_ROD); // Paper
++                boolean flag1 = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01D) && !this.getBlockState(blockposition.below()).is(Blocks.LIGHTNING_ROD); // Paper
  
                  if (flag1) {
                      SkeletonHorse entityhorseskeleton = (SkeletonHorse) EntityType.SKELETON_HORSE.create(this);

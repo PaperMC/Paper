@@ -1,0 +1,462 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: dfsek <dfsek@protonmail.com>
+Date: Tue, 15 Sep 2020 21:59:16 -0700
+Subject: [PATCH] Add StructuresLocateEvent
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0c83a02059d65672ff191c42932d850950e9ea00
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
+@@ -0,0 +1,157 @@
++package io.papermc.paper.event.world;
++
++import org.bukkit.Location;
++import org.bukkit.StructureType;
++import org.bukkit.World;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called <b>before</b> a structure/feature is located.
++ * This happens when:
++ * <ul>
++ *     <li>The /locate command is used.<br></li>
++ *     <li>An Eye of Ender is used.</li>
++ *     <li>An Explorer/Treasure Map is activated.</li>
++ *     <li>{@link World#locateNearestStructure(Location, StructureType, int, boolean)} is invoked.</li>
++ * </ul>
++ * @deprecated no longer used, see {@link StructuresLocateEvent}
++ */
++@Deprecated(forRemoval = true)
++public class StructureLocateEvent extends WorldEvent implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++    private final Location origin;
++    private Location result = null;
++    private StructureType type;
++    private int radius;
++    private boolean findUnexplored;
++    private boolean cancelled = false;
++
++    public StructureLocateEvent(@NotNull World world, @NotNull Location origin, @NotNull StructureType structureType, int radius, boolean findUnexplored) {
++        super(world);
++        this.origin = origin;
++        this.type = structureType;
++        this.radius = radius;
++        this.findUnexplored = findUnexplored;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    /**
++     * Gets the location set as the structure location, if it was defined.
++     * <p>
++     * Returns {@code null} if it has not been set by {@link StructureLocateEvent#setResult(Location)}.
++     * Since this event fires <i>before</i> the search is done, the actual location is unknown at this point.
++     *
++     * @return The result location, if it has been set. null if it has not.
++     * @see World#locateNearestStructure(Location, StructureType, int, boolean)
++     */
++    @Nullable
++    public Location getResult() {
++        return result;
++    }
++
++    /**
++     * Sets the result {@link Location}. This causes the search to be skipped, and the location passed here to be used as the result.
++     *
++     * @param result the {@link Location} of the structure.
++     */
++    public void setResult(@Nullable Location result) {
++        this.result = result;
++    }
++
++    /**
++     * Gets the {@link StructureType} that is to be located.
++     *
++     * @return the structure type.
++     */
++    @NotNull
++    public StructureType getType() {
++        return type;
++    }
++
++    /**
++     * Sets the {@link StructureType} that is to be located.
++     *
++     * @param type the structure type.
++     */
++    public void setType(@NotNull StructureType type) {
++        this.type = type;
++    }
++
++    /**
++     * Gets the {@link Location} from which the search is to be conducted.
++     *
++     * @return {@link Location} where search begins
++     */
++    @NotNull
++    public Location getOrigin() {
++        return origin;
++    }
++
++    /**
++     * Gets the search radius in which to attempt locating the structure.
++     * <p>
++     * This radius may not always be obeyed during the structure search!
++     *
++     * @return the search radius.
++     */
++    public int getRadius() {
++        return radius;
++    }
++
++    /**
++     * Sets the search radius in which to attempt locating the structure.
++     * <p>
++     * This radius may not always be obeyed during the structure search!
++     *
++     * @param radius the search radius.
++     */
++    public void setRadius(int radius) {
++        this.radius = radius;
++    }
++
++    /**
++     * Gets whether to search exclusively for unexplored structures.
++     * <p>
++     * As with the search radius, this value is not always obeyed.
++     *
++     * @return Whether to search for only unexplored structures.
++     */
++    public boolean shouldFindUnexplored() {
++        return findUnexplored;
++    }
++
++    /**
++     * Sets whether to search exclusively for unexplored structures.
++     * <p>
++     * As with the search radius, this value is not always obeyed.
++     *
++     * @param findUnexplored Whether to search for only unexplored structures.
++     */
++    public void setFindUnexplored(boolean findUnexplored) {
++        this.findUnexplored = findUnexplored;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..566f9df8f615142e14330965f3491f4e83846783
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
+@@ -0,0 +1,164 @@
++package io.papermc.paper.event.world;
++
++import io.papermc.paper.world.structure.ConfiguredStructure;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.ArrayList;
++import java.util.List;
++
++/**
++ * Called <b>before</b> a set of configured structures is located.
++ * This happens when:
++ * <ul>
++ *     <li>The /locate command is used.<br></li>
++ *     <li>An Eye of Ender is used.</li>
++ *     <li>An Explorer/Treasure Map is activated.</li>
++ *     <li>A dolphin swims to a treasure location.</li>
++ *     <li>A trade is done with a villager for a map.</li>
++ *     <li>{@link World#locateNearestStructure(Location, org.bukkit.StructureType, int, boolean)} is invoked.</li>
++ * </ul>
++ */
++public class StructuresLocateEvent extends WorldEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Location origin;
++    private Result result;
++    private List<ConfiguredStructure> configuredStructures;
++    private int radius;
++    private boolean findUnexplored;
++    private boolean cancelled;
++
++    public StructuresLocateEvent(@NotNull World world, @NotNull Location origin, @NotNull List<ConfiguredStructure> configuredStructures, int radius, boolean findUnexplored) {
++        super(world);
++        this.origin = origin;
++        this.configuredStructures = configuredStructures;
++        this.radius = radius;
++        this.findUnexplored = findUnexplored;
++    }
++
++    /**
++     * Gets the {@link Location} from which the search is to be conducted.
++     *
++     * @return {@link Location} where search begins
++     */
++    public @NotNull Location getOrigin() {
++        return this.origin;
++    }
++
++    /**
++     * Gets the {@link Location} and {@link ConfiguredStructure} set as the result, if it was defined.
++     * <p>
++     * Returns {@code null} if it has not been set by {@link StructuresLocateEvent#setResult(Result)}.
++     * Since this event fires <i>before</i> the search is done, the actual result is unknown at this point.
++     *
++     * @return The result location and structure, if it has been set. null if it has not.
++     * @see World#locateNearestStructure(Location, org.bukkit.StructureType, int, boolean)
++     */
++    public @Nullable Result getResult() {
++        return this.result;
++    }
++
++    /**
++     * Sets the result {@link Location} and {@link ConfiguredStructure}. This causes the search to be
++     * skipped, and the result object passed here to be used as the result.
++     *
++     * @param result the {@link Location} and {@link ConfiguredStructure} of the search.
++     */
++    public void setResult(@Nullable Result result) {
++        this.result = result;
++    }
++
++    /**
++     * Gets a mutable list of ConfiguredStructures that are valid targets for the search.
++     *
++     * @return a mutable list of ConfiguredStructures
++     */
++    public @NotNull List<ConfiguredStructure> getConfiguredStructures() {
++        return this.configuredStructures;
++    }
++
++    /**
++     * Sets the list of ConfiguredStructures that are valid targets for the search.
++     *
++     * @param configuredStructures a list of ConfiguredStructure targets
++     */
++    public void setConfiguredStructures(@NotNull List<ConfiguredStructure> configuredStructures) {
++        this.configuredStructures = new ArrayList<>(configuredStructures);
++    }
++
++    /**
++     * Gets the search radius in which to attempt locating the structure.
++     * <p>
++     * This radius may not always be obeyed during the structure search!
++     *
++     * @return the search radius.
++     */
++    public int getRadius() {
++        return this.radius;
++    }
++
++    /**
++     * Sets the search radius in which to attempt locating the structure.
++     * <p>
++     * This radius may not always be obeyed during the structure search!
++     *
++     * @param radius the search radius.
++     */
++    public void setRadius(int radius) {
++        this.radius = radius;
++    }
++
++    /**
++     * Gets whether to search exclusively for unexplored structures.
++     * <p>
++     * As with the search radius, this value is not always obeyed.
++     *
++     * @return Whether to search for only unexplored structures.
++     */
++    public boolean shouldFindUnexplored() {
++        return this.findUnexplored;
++    }
++
++    /**
++     * Sets whether to search exclusively for unexplored structures.
++     * <p>
++     * As with the search radius, this value is not always obeyed.
++     *
++     * @param findUnexplored Whether to search for only unexplored structures.
++     */
++    public void setFindUnexplored(boolean findUnexplored) {
++        this.findUnexplored = findUnexplored;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    /**
++     * Result for {@link StructuresLocateEvent}.
++     */
++    public record Result(@NotNull Location position, @NotNull ConfiguredStructure configuredStructure) {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5a43e40b7311ed2acb51f6ba8b12d1f34569ff2e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
+@@ -0,0 +1,98 @@
++package io.papermc.paper.world.structure;
++
++import io.papermc.paper.registry.Reference;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.StructureType;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Objects;
++
++/**
++ * Represents a configured structure each with a
++ * {@link StructureType}. Multiple ConfiguredStructures can have
++ * the same {@link StructureType}.
++ */
++public final class ConfiguredStructure implements Keyed {
++
++    public static final Reference<ConfiguredStructure> PILLAGER_OUTPOST = create("pillager_outpost");
++    public static final Reference<ConfiguredStructure> MINESHAFT = create("mineshaft");
++    public static final Reference<ConfiguredStructure> MINESHAFT_MESA = create("mineshaft_mesa");
++    public static final Reference<ConfiguredStructure> WOODLAND_MANSION = create("mansion");
++    public static final Reference<ConfiguredStructure> JUNGLE_TEMPLE = create("jungle_pyramid");
++    public static final Reference<ConfiguredStructure> DESERT_PYRAMID = create("desert_pyramid");
++    public static final Reference<ConfiguredStructure> IGLOO = create("igloo");
++    public static final Reference<ConfiguredStructure> SHIPWRECK = create("shipwreck");
++    public static final Reference<ConfiguredStructure> SHIPWRECK_BEACHED = create("shipwreck_beached");
++    public static final Reference<ConfiguredStructure> SWAMP_HUT = create("swamp_hut");
++    public static final Reference<ConfiguredStructure> STRONGHOLD = create("stronghold");
++    public static final Reference<ConfiguredStructure> OCEAN_MONUMENT = create("monument");
++    public static final Reference<ConfiguredStructure> OCEAN_RUIN_COLD = create("ocean_ruin_cold");
++    public static final Reference<ConfiguredStructure> OCEAN_RUIN_WARM = create("ocean_ruin_warm");
++    public static final Reference<ConfiguredStructure> FORTRESS = create("fortress");
++    public static final Reference<ConfiguredStructure> NETHER_FOSSIL = create("nether_fossil");
++    public static final Reference<ConfiguredStructure> END_CITY = create("end_city");
++    public static final Reference<ConfiguredStructure> BURIED_TREASURE = create("buried_treasure");
++    public static final Reference<ConfiguredStructure> BASTION_REMNANT = create("bastion_remnant");
++    public static final Reference<ConfiguredStructure> VILLAGE_PLAINS = create("village_plains");
++    public static final Reference<ConfiguredStructure> VILLAGE_DESERT = create("village_desert");
++    public static final Reference<ConfiguredStructure> VILLAGE_SAVANNA = create("village_savanna");
++    public static final Reference<ConfiguredStructure> VILLAGE_SNOWY = create("village_snowy");
++    public static final Reference<ConfiguredStructure> VILLAGE_TAIGA = create("village_taiga");
++    public static final Reference<ConfiguredStructure> RUINED_PORTAL_STANDARD = create("ruined_portal");
++    public static final Reference<ConfiguredStructure> RUINED_PORTAL_DESERT = create("ruined_portal_desert");
++    public static final Reference<ConfiguredStructure> RUINED_PORTAL_JUNGLE = create("ruined_portal_jungle");
++    public static final Reference<ConfiguredStructure> RUINED_PORTAL_SWAMP = create("ruined_portal_swamp");
++    public static final Reference<ConfiguredStructure> RUINED_PORTAL_MOUNTAIN = create("ruined_portal_mountain");
++    public static final Reference<ConfiguredStructure> RUINED_PORTAL_OCEAN = create("ruined_portal_ocean");
++    public static final Reference<ConfiguredStructure> RUINED_PORTAL_NETHER = create("ruined_portal_nether");
++    // public static final Reference<ConfiguredStructure> ANCIENT_CITY = create("ancient_city"); // TODO remove when upstream adds "jigsaw" StructureType
++
++    private final NamespacedKey key;
++    private final StructureType structureType;
++
++    ConfiguredStructure(@NotNull NamespacedKey key, @NotNull StructureType structureType) {
++        this.key = key;
++        this.structureType = structureType;
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++
++    /**
++     * Gets the structure type for this configure structure.
++     *
++     * @return the structure type
++     */
++    public @NotNull StructureType getStructureType() {
++        return this.structureType;
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (o == null || getClass() != o.getClass()) return false;
++        ConfiguredStructure structure = (ConfiguredStructure) o;
++        return this.key.equals(structure.key) && this.structureType.equals(structure.structureType);
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(this.key, this.structureType);
++    }
++
++    @Override
++    public String toString() {
++        return "ConfiguredStructure{" +
++            "key=" + this.key +
++            ", structureType=" + this.structureType +
++            '}';
++    }
++
++    private static @NotNull Reference<ConfiguredStructure> create(@NotNull String name) {
++        return Reference.create(Registry.CONFIGURED_STRUCTURE, NamespacedKey.minecraft(name));
++    }
++}
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 2796c5375ae32a80504a5d2ec193dc8076ca334f..dcbe848da720eabf4779c238f32b4983aa578fbf 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -196,6 +196,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+             return GameEvent.getByKey(key);
+         }
+     };
++    // Paper start
++    /**
++     * Configured structures.
++     * @see io.papermc.paper.world.structure.ConfiguredStructure
++     */
++    Registry<io.papermc.paper.world.structure.ConfiguredStructure> CONFIGURED_STRUCTURE = Bukkit.getUnsafe().registryFor(io.papermc.paper.world.structure.ConfiguredStructure.class);
++    // Paper end
+ 
+     /**
+      * Get the object by its key.

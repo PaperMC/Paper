@@ -22,30 +22,3 @@ index c71f8a7b96fc5abc499802a79fcb3b0771de021c..121dbbf163588690d0678ae73a6ab8ed
  
      protected FileConfigurationOptions(@NotNull MemoryConfiguration configuration) {
          super(configuration);
-diff --git a/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java b/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
-index 20e968764725ddb324be28d81c50be57abd00e05..1514d3ec63a6c43fbdb4933ef75f9617ce1a1a4d 100644
---- a/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
-+++ b/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
-@@ -11,11 +11,22 @@ import org.yaml.snakeyaml.representer.Representer;
- public class YamlRepresenter extends Representer {
- 
-     public YamlRepresenter() {
-+        this.multiRepresenters.put(org.bukkit.configuration.ConfigurationSection.class, new RepresentConfigurationSection()); // Paper - restore old yaml config section representer
-         this.multiRepresenters.put(ConfigurationSerializable.class, new RepresentConfigurationSerializable());
-         // SPIGOT-6234: We could just switch YamlConstructor to extend Constructor rather than SafeConstructor, however there is a very small risk of issues with plugins treating config as untrusted input
-         // So instead we will just allow future plugins to have their enums extend ConfigurationSerializable
-         this.multiRepresenters.remove(Enum.class);
-     }
-+    // Paper start - restore old yaml config section representer
-+    private class RepresentConfigurationSection extends RepresentMap {
-+
-+        @NotNull
-+        @Override
-+        public Node representData(@NotNull Object data) {
-+            return super.representData(((org.bukkit.configuration.ConfigurationSection) data).getValues(false));
-+        }
-+    }
-+    // Paper end
- 
-     private class RepresentConfigurationSerializable extends RepresentMap {
- 
