@@ -4,12 +4,74 @@ Date: Mon, 29 Nov 2021 21:57:05 -0500
 Subject: [PATCH] WIP Brain API
 
 
+diff --git a/src/main/java/io/papermc/paper/entity/brain/BrainDebug.java b/src/main/java/io/papermc/paper/entity/brain/BrainDebug.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5eeaab8c8f8bd310812ed46135d22c193fa7a962
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/BrainDebug.java
+@@ -0,0 +1,56 @@
++package io.papermc.paper.entity.brain;
++
++import io.netty.buffer.Unpooled;
++import net.minecraft.network.FriendlyByteBuf;
++import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
++import net.minecraft.network.protocol.game.DebugPackets;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.PathfinderMob;
++
++/*
++DEBUG UTIL
++
++WILL BE REMOVED SOON PROBABLY
++USE MOD TO ENABLE SHOWING THIS
++ */
++public class BrainDebug {
++
++    public static <E extends LivingEntity> void debug(E entity) {
++        if (!(entity instanceof PathfinderMob mob)) {
++            return;
++        }
++        FriendlyByteBuf byteBuf = new FriendlyByteBuf(Unpooled.buffer());
++        byteBuf.writeDouble(entity.getX());
++        byteBuf.writeDouble(entity.getY());
++        byteBuf.writeDouble(entity.getZ());
++
++
++        byteBuf.writeUUID(entity.getUUID());
++        byteBuf.writeInt(entity.getId());
++
++        byteBuf.writeUtf(entity.getName().toString());
++        byteBuf.writeUtf("N/A");
++
++
++        byteBuf.writeInt(entity.getExpReward());
++
++        byteBuf.writeFloat(entity.getHealth());
++        byteBuf.writeFloat(entity.getMaxHealth());
++        DebugPackets.writeBrain(mob, byteBuf);
++
++        sendPacketToAllPlayers((ServerLevel) entity.level, byteBuf, ClientboundCustomPayloadPacket.DEBUG_BRAIN);
++    }
++
++    private static void sendPacketToAllPlayers(ServerLevel world, FriendlyByteBuf buf, ResourceLocation channel) {
++        Packet<?> packet = new ClientboundCustomPayloadPacket(channel, buf);
++
++        for (ServerPlayer player : world.players()) {
++            player.connection.send(packet);
++        }
++
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java b/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..47c963897dcfd97641c637ccca19241c8c7a6a67
+index 0000000000000000000000000000000000000000..0210fac0356a1ebd098f0f93033942b66c35a63f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java
-@@ -0,0 +1,340 @@
+@@ -0,0 +1,359 @@
 +package io.papermc.paper.entity.brain;
 +
 +import com.google.common.collect.ImmutableList;
@@ -288,9 +350,28 @@ index 0000000000000000000000000000000000000000..47c963897dcfd97641c637ccca19241c
 +        brain.memories.put(PaperBrainUtil.getHandle(memoryKey), Optional.empty());
 +    }
 +
++    @SuppressWarnings("unchecked")
++    @Nullable
++    @Override
++    default <V> V getMemory(@NotNull MemoryKey<V> memoryKey) {
++        Brain<?> brain = this.getBrain();
++
++        Optional<?> value = brain.getMemory(PaperBrainUtil.getHandle(memoryKey));
++        if (value.isEmpty()) {
++            return null;
++        }
++
++        // Bukkit api, handle proper mapping to NMS types
++        if (memoryKey.getKey().getNamespace().equals(NamespacedKey.MINECRAFT_NAMESPACE)) {
++            return (V) CraftMemoryMapper.fromNms(value.get());
++        }
++
++        return (V) value.get();
++    }
++
 +    @Override
 +    default <V> void setMemory(MemoryKey<V> memoryKey, V value) {
-+       this.setMemory(memoryKey, value, Long.MAX_VALUE);
++        this.setMemory(memoryKey, value, Long.MAX_VALUE);
 +    }
 +
 +    @SuppressWarnings("unchecked")
@@ -352,7 +433,7 @@ index 0000000000000000000000000000000000000000..47c963897dcfd97641c637ccca19241c
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/brain/PaperBrainUtil.java b/src/main/java/io/papermc/paper/entity/brain/PaperBrainUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..be7cdc86fb990ac8ddea1e67f959d3899078c977
+index 0000000000000000000000000000000000000000..bdf281e36fb8f8c404b7e82e75515edf036dfee1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/brain/PaperBrainUtil.java
 @@ -0,0 +1,97 @@
@@ -384,7 +465,7 @@ index 0000000000000000000000000000000000000000..be7cdc86fb990ac8ddea1e67f959d389
 +public class PaperBrainUtil {
 +
 +    @SuppressWarnings("unchecked")
-+    public static <C> MemoryKey<C> registerCustomMemoryKey(NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, @Nullable PersistentDataType<C, ?> dataType) {
++    public static <C> MemoryKey<C> registerCustomMemoryKey(NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, @Nullable PersistentDataType<?, C> dataType) {
 +        MemoryKey<C> memoryKey = PaperMemoryKey.create(key, (Class<C>) GenericTypeReflector.erase(type.getType()));
 +        Registry.register(Registry.MEMORY_MODULE_TYPE, new ResourceLocation(key.toString()), new MemoryModuleType<>(Optional.ofNullable(dataType == null ? null : new PaperDataTypeWrapperCodec<>(dataType))));
 +
@@ -474,10 +555,10 @@ index 0000000000000000000000000000000000000000..989dfd561de18124034cfa0b1225a680
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/PaperCustomBehavior.java b/src/main/java/io/papermc/paper/entity/brain/activity/PaperCustomBehavior.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f8d16a82f4f2bdb4b6a973e815119dfffad0862
+index 0000000000000000000000000000000000000000..6a2c4e194cfdb4628f7965297b11223aea12d6ff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/brain/activity/PaperCustomBehavior.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.entity.brain.activity;
 +
 +import io.papermc.paper.entity.brain.PaperBrainUtil;
@@ -528,7 +609,7 @@ index 0000000000000000000000000000000000000000..1f8d16a82f4f2bdb4b6a973e815119df
 +    }
 +
 +    private static Map<MemoryModuleType<?>, MemoryStatus> toMinecraft(io.papermc.paper.entity.brain.activity.behavior.Behavior behavior) {
-+        Collection<MemoryPair> requirement = behavior.getMemoryRequirements();
++        Collection<MemoryPair> requirement = behavior.getInitialMemoryRequirements();
 +
 +        Map<MemoryModuleType<?>, MemoryStatus> map = new HashMap<>(requirement.size());
 +        for (MemoryPair pair : requirement) {
@@ -538,10 +619,14 @@ index 0000000000000000000000000000000000000000..1f8d16a82f4f2bdb4b6a973e815119df
 +        return map;
 +    }
 +
++    @Override
++    public String toString() {
++        return behavior.toString();
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/PaperVanillaBehavior.java b/src/main/java/io/papermc/paper/entity/brain/activity/PaperVanillaBehavior.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2da79dc1337745e3484ca5a347455c3dcaa72c12
+index 0000000000000000000000000000000000000000..82c09ee4392a0612819071d51481422aa7b4895d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/brain/activity/PaperVanillaBehavior.java
 @@ -0,0 +1,81 @@
@@ -617,7 +702,7 @@ index 0000000000000000000000000000000000000000..2da79dc1337745e3484ca5a347455c3d
 +    }
 +
 +    @Override
-+    public Collection<MemoryPair> getMemoryRequirements() {
++    public Collection<MemoryPair> getInitialMemoryRequirements() {
 +        return memoryRequirements;
 +    }
 +
@@ -844,6 +929,48 @@ index 0000000000000000000000000000000000000000..1e9a52f987bae5168a3bdb46b9bdd329
 +            '}';
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
+index 3ef5d440fd3ce209110543bfd36569e846a5b749..30eeb285a9cfb009cb28368838eff8a0b4ee1de1 100644
+--- a/src/main/java/net/minecraft/core/MappedRegistry.java
++++ b/src/main/java/net/minecraft/core/MappedRegistry.java
+@@ -331,6 +331,7 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+ 
+     @Override
+     public Registry<T> freeze() {
++        if (true) return this; // Paper - TODO figure a better way (crying)
+         this.frozen = true;
+         List<ResourceLocation> list = this.byKey.entrySet().stream().filter((entry) -> {
+             return !entry.getValue().isBound();
+diff --git a/src/main/java/net/minecraft/network/protocol/game/DebugPackets.java b/src/main/java/net/minecraft/network/protocol/game/DebugPackets.java
+index 91f2a2eaf52eb1f54d120599468d8249dd7fd6bb..7dfc87829681ecda34f49b55e8c616800ad6235c 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/DebugPackets.java
++++ b/src/main/java/net/minecraft/network/protocol/game/DebugPackets.java
+@@ -29,6 +29,7 @@ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.Mob;
++import net.minecraft.world.entity.PathfinderMob;
+ import net.minecraft.world.entity.ai.Brain;
+ import net.minecraft.world.entity.ai.behavior.Behavior;
+ import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+@@ -124,7 +125,7 @@ public class DebugPackets {
+     public static void sendHiveInfo(Level world, BlockPos pos, BlockState state, BeehiveBlockEntity blockEntity) {
+     }
+ 
+-    private static void writeBrain(LivingEntity entity, FriendlyByteBuf buf) {
++    public static void writeBrain(LivingEntity entity, FriendlyByteBuf buf) { // Paper - DEBUG WILL BE REMOVED
+         Brain<?> brain = entity.getBrain();
+         long l = entity.level.getGameTime();
+         if (entity instanceof InventoryCarrier) {
+@@ -134,7 +135,7 @@ public class DebugPackets {
+             buf.writeUtf("");
+         }
+ 
+-        buf.writeOptional(brain.hasMemoryValue(MemoryModuleType.PATH) ? brain.getMemory(MemoryModuleType.PATH) : Optional.empty(), (friendlyByteBuf, path) -> {
++        buf.writeOptional(brain.hasMemoryValue(MemoryModuleType.PATH) ? brain.getMemory(MemoryModuleType.PATH) : Optional.ofNullable(((PathfinderMob) entity).getNavigation().getPath()), (friendlyByteBuf, path) -> { // Paper - DEBUG WILL BE REMOVED
+             path.writeToStream(friendlyByteBuf);
+         });
+         if (entity instanceof Villager villager) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index 279051442ac6cf288a03a16a35ddbf66d1cd1e90..c2899b4547d35ff4caef215ad76d87205d9d77f3 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
@@ -894,7 +1021,7 @@ index 3646b969fa51b9683ab4137e530c3a6f6fc6c465..c14ac54e48b02e056f4881c0b7fdfb0f
          this.level.getProfiler().push("controls");
          this.level.getProfiler().push("move");
 diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
-index 8c8b98c7ca107b1c37c1734ef0f2b11604dd4f70..806a0b4577386ea429868be34154d8d7de761ead 100644
+index 8c8b98c7ca107b1c37c1734ef0f2b11604dd4f70..08f887090ad396fb124cfd4624bc5aaac23503b0 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
 @@ -52,6 +52,11 @@ public class Brain<E extends LivingEntity> {
@@ -909,16 +1036,50 @@ index 8c8b98c7ca107b1c37c1734ef0f2b11604dd4f70..806a0b4577386ea429868be34154d8d7
  
      public static <E extends LivingEntity> Brain.Provider<E> provider(Collection<? extends MemoryModuleType<?>> memoryModules, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
          return new Brain.Provider<>(memoryModules, sensors);
-@@ -80,7 +85,7 @@ public class Brain<E extends LivingEntity> {
+@@ -59,6 +64,7 @@ public class Brain<E extends LivingEntity> {
+ 
+     public static <E extends LivingEntity> Codec<Brain<E>> codec(final Collection<? extends MemoryModuleType<?>> memoryModules, final Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
+         final MutableObject<Codec<Brain<E>>> mutableObject = new MutableObject<>();
++        MutableObject<Codec<Brain<E>>> mutableObjectDecomp = mutableObject; // Paper - decomp
+         mutableObject.setValue((new MapCodec<Brain<E>>() {
+             public <T> Stream<T> keys(DynamicOps<T> dynamicOps) {
+                 return memoryModules.stream().flatMap((memoryModuleType) -> {
+@@ -80,7 +86,7 @@ public class Brain<E extends LivingEntity> {
                      mutableObject.setValue(mutableObject.getValue().apply2(ImmutableList.Builder::add, dataResult2));
                  });
                  ImmutableList<Brain.MemoryValue<?>> immutableList = mutableObject.getValue().resultOrPartial(Brain.LOGGER::error).map(ImmutableList.Builder::build).orElseGet(ImmutableList::of);
 -                return DataResult.success(new Brain<>(memoryModules, sensors, immutableList, mutableObject::getValue));
-+                return DataResult.success(new Brain(memoryModules, sensors, immutableList, mutableObject::getValue)); // Paper - decomp
++                return DataResult.success(new Brain<>(memoryModules, sensors, immutableList, mutableObjectDecomp::getValue)); // Paper - decomp
              }
  
              private <T, U> DataResult<Brain.MemoryValue<U>> captureRead(MemoryModuleType<U> memoryModuleType, DynamicOps<T> dynamicOps, T object) {
-@@ -172,7 +177,7 @@ public class Brain<E extends LivingEntity> {
+@@ -156,8 +162,24 @@ public class Brain<E extends LivingEntity> {
+         this.setMemoryInternal(type, value.map(ExpirableValue::of));
+     }
+ 
++    // Paper start
++    /*
++    This needs to be discussed, but basically memorise can only be added if they are properly registered in the
++    memories map. This map is populated in the brain constructor, containing only memories that are
++    "registered" by certain entities. However, because this api only supports adding memories during runtime we can't properly save these
++    custom brains.
++    A solution would be to
++    1. Track custom memories added and make sure they are added memories map in constructor
++    2. Save/store them separately and insert them later
++    3. Ditch the custom stored memories?
++     */
+     <U> void setMemoryInternal(MemoryModuleType<U> type, Optional<? extends ExpirableValue<?>> memory) {
+-        if (this.memories.containsKey(type)) {
++        setMemoryInternal(type, memory, false);
++    }
++
++    <U> void setMemoryInternal(MemoryModuleType<U> type, Optional<? extends ExpirableValue<?>> memory, boolean skipContained) {
++        if (this.memories.containsKey(type) || skipContained) {
++    // Paper end
+             if (memory.isPresent() && this.isEmptyCollection(memory.get().getValue())) {
+                 this.eraseMemory(type);
+             } else {
+@@ -172,7 +194,7 @@ public class Brain<E extends LivingEntity> {
          if (optional == null) {
              throw new IllegalStateException("Unregistered memory fetched: " + type);
          } else {
@@ -927,7 +1088,7 @@ index 8c8b98c7ca107b1c37c1734ef0f2b11604dd4f70..806a0b4577386ea429868be34154d8d7
          }
      }
  
-@@ -373,6 +378,11 @@ public class Brain<E extends LivingEntity> {
+@@ -373,6 +395,12 @@ public class Brain<E extends LivingEntity> {
          this.tickSensors(world, entity);
          this.startEachNonRunningBehavior(world, entity);
          this.tickEachRunningBehavior(world, entity);
@@ -935,11 +1096,12 @@ index 8c8b98c7ca107b1c37c1734ef0f2b11604dd4f70..806a0b4577386ea429868be34154d8d7
 +        if (!this.manuallyCheckingActivities.isEmpty()) {
 +            this.setActiveActivityToFirstValid(this.manuallyCheckingActivities);
 +        }
++        io.papermc.paper.entity.brain.BrainDebug.debug(entity);
 +        // Paper end
      }
  
      private void tickSensors(ServerLevel world, E entity) {
-@@ -467,7 +477,7 @@ public class Brain<E extends LivingEntity> {
+@@ -467,7 +495,7 @@ public class Brain<E extends LivingEntity> {
          private final MemoryModuleType<U> type;
          private final Optional<? extends ExpirableValue<U>> value;
  
@@ -948,7 +1110,16 @@ index 8c8b98c7ca107b1c37c1734ef0f2b11604dd4f70..806a0b4577386ea429868be34154d8d7
              return new Brain.MemoryValue<>(type, data);
          }
  
-@@ -494,7 +504,7 @@ public class Brain<E extends LivingEntity> {
+@@ -477,7 +505,7 @@ public class Brain<E extends LivingEntity> {
+         }
+ 
+         void setMemoryInternal(Brain<?> brain) {
+-            brain.setMemoryInternal(this.type, this.value);
++            brain.setMemoryInternal(this.type, this.value, true); // Paper
+         }
+ 
+         public <T> void serialize(DynamicOps<T> ops, RecordBuilder<T> builder) {
+@@ -494,7 +522,7 @@ public class Brain<E extends LivingEntity> {
          private final Collection<? extends SensorType<? extends Sensor<? super E>>> sensorTypes;
          private final Codec<Brain<E>> codec;
  
@@ -987,8 +1158,30 @@ index fcdb9bde8e1605e30dde3e580491522d4b62cdc0..a019155e369005119f7912451455fec3
 +    }
 +    // Paper end - mob goal api
  }
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Path.java b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
+index 2a335f277bd0e4b8ad0f60d8226eb8aaa80a871f..01062f60e9c4886cb04a61257b98648ffc58a8ff 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/Path.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
+@@ -143,13 +143,15 @@ public class Path {
+     }
+ 
+     public void writeToStream(FriendlyByteBuf buffer) {
+-        if (this.targetNodes != null && !this.targetNodes.isEmpty()) {
++        if (this.targetNodes != null && !this.targetNodes.isEmpty() || true) { // Paper - DEBUG WILL BE REMOVED (this method is broken)
+             buffer.writeBoolean(this.reached);
+             buffer.writeInt(this.nextNodeIndex);
+-            buffer.writeInt(this.targetNodes.size());
++            buffer.writeInt(this.targetNodes == null ? 0 : this.targetNodes.size()); // Paper - DEBUG WILL BE REMOVED (this method is broken)
++            if (this.targetNodes != null) { // Paper - DEBUG WILL BE REMOVED (this method is broken)
+             this.targetNodes.forEach((target) -> {
+                 target.writeToStream(buffer);
+             });
++            } // Paper - DEBUG WILL BE REMOVED (this method is broken)
+             buffer.writeInt(this.target.getX());
+             buffer.writeInt(this.target.getY());
+             buffer.writeInt(this.target.getZ());
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 61c2f864bb23e75f6c377f7ccbf2ec44a670348c..09c39a5c3fc8f4d64315ac13211ca8b08ab6b843 100644
+index 61c2f864bb23e75f6c377f7ccbf2ec44a670348c..cf5a9dac63f0baa87dcda8c859a3f21461b058c7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2890,5 +2890,19 @@ public final class CraftServer implements Server {
@@ -1006,13 +1199,13 @@ index 61c2f864bb23e75f6c377f7ccbf2ec44a670348c..09c39a5c3fc8f4d64315ac13211ca8b0
 +    }
 +
 +    @Override
-+    public <C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, org.bukkit.persistence.PersistentDataType<C, ?> serializer) {
++    public <C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, org.bukkit.persistence.PersistentDataType<?, C> serializer) {
 +        return io.papermc.paper.entity.brain.PaperBrainUtil.registerCustomMemoryKey(key, type, serializer);
 +    }
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index c022751e3b45469cc0ad6732e2d6ff08918bafa4..3c03a8831fe5316f85ecab5492dabb18023c3541 100644
+index c022751e3b45469cc0ad6732e2d6ff08918bafa4..a341e84289a4a2f1606ff0d683e2fc224c272838 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -84,7 +84,7 @@ import org.bukkit.util.BlockIterator;
@@ -1024,6 +1217,23 @@ index c022751e3b45469cc0ad6732e2d6ff08918bafa4..3c03a8831fe5316f85ecab5492dabb18
      private CraftEntityEquipment equipment;
  
      public CraftLivingEntity(final CraftServer server, final net.minecraft.world.entity.LivingEntity entity) {
+@@ -782,15 +782,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return this.getHandle().collidableExemptions;
+     }
+ 
+-    @Override
+-    public <T> T getMemory(MemoryKey<T> memoryKey) {
+-        return (T) this.getHandle().getBrain().getMemory(CraftMemoryKey.fromMemoryKey(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
+-    }
+-
+-    @Override
+-    public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
+-        this.getHandle().getBrain().setMemory(CraftMemoryKey.fromMemoryKey(memoryKey), CraftMemoryMapper.toNms(t));
+-    }
++    // Paper - Move memory
+ 
+     @Override
+     public EntityCategory getCategory() {
 diff --git a/src/main/java/org/bukkit/entity/memory/PaperMemoryKey.java b/src/main/java/org/bukkit/entity/memory/PaperMemoryKey.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..7f7ece65e8645e3df1fab98b3a082e3e71ca0b3f

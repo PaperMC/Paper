@@ -18,10 +18,10 @@ index 435db1ffe47476bcb7067802faad7aee7e4c3f54..aaf0bfb8f57b62a5e8c8df6957b8bdc2
      compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
 diff --git a/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java b/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd251ccdbc
+index 0000000000000000000000000000000000000000..0ed28ebd653a181372703dfbd97748ed806b3a9f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java
-@@ -0,0 +1,313 @@
+@@ -0,0 +1,344 @@
 +package io.papermc.paper.entity.brain;
 +
 +import io.papermc.paper.entity.brain.activity.ActivityKey;
@@ -112,7 +112,7 @@ index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd
 +            pairs.add(new BehaviorPair<>(beginningPriority, behavior));
 +        }
 +
-+        this.addActivity(key, pairs);
++        this.addActivity(key, pairs, List.of());
 +    }
 +
 +    /**
@@ -138,12 +138,21 @@ index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd
 +    /**
 +     * Adds a custom activity to this brain.
 +     * Activities represent a group of behaviors that can execute when the activity is marked as active.
++     * <p>
++     * This method assigns priority based on the order of the behaviors provided in the collection.
 +     *
-+     * @param key           key of this activity
-+     * @param behaviorPairs the behaviors and priorities of this activity
++     * @param key               key of this activity
++     * @param beginningPriority the priority to begin the provided behaviors at
++     * @param behaviors         behaviors of this activity ordered by priority
++     * @param requiredMemories  memories required for this activity to start
 +     */
-+    default void addActivity(@NotNull ActivityKey key, @NotNull Collection<BehaviorPair<? super T>> behaviorPairs) {
-+        this.addActivity(key, behaviorPairs, Collections.emptyList(), Collections.emptyList());
++    default void addActivity(@NotNull ActivityKey key, int beginningPriority, @NotNull Collection<Behavior<? super T>> behaviors, @NotNull Collection<MemoryPair> requiredMemories) {
++        List<BehaviorPair<? super T>> pairs = new ArrayList<>(behaviors.size());
++        for (Behavior<? super T> behavior : behaviors) {
++            pairs.add(new BehaviorPair<>(beginningPriority, behavior));
++        }
++
++        this.addActivity(key, pairs, requiredMemories);
 +    }
 +
 +    /**
@@ -157,8 +166,6 @@ index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd
 +    default void addActivity(@NotNull ActivityKey key, @NotNull Collection<BehaviorPair<? super T>> behaviorPairs, @NotNull Collection<MemoryPair> requiredMemories) {
 +        this.addActivity(key, behaviorPairs, requiredMemories, Collections.emptyList());
 +    }
-+
-+    // TODO: FIGURE OUT TICKING AND PROPERLY STARTING CUSTOM ACTIVITIES, READ THE PR FOR MORE INFORMATION
 +
 +    /**
 +     * Adds a custom activity to this brain.
@@ -206,8 +213,9 @@ index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd
 +    /**
 +     * Gets the plugin set queue of activities that should be checked
 +     * if they are able to be ran.
-+     *
++     * <p>
 +     * This does not include the ticking of activities that are set by minecraft.
++     *
 +     * @return activity queue
 +     */
 +    @NotNull
@@ -216,7 +224,7 @@ index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd
 +    /**
 +     * Sets the queue of activities that should be checked
 +     * if they are able to be ran.
-+     *
++     * <p>
 +     * This is ran ever single tick, where it will
 +     * attempt to go through each activity until a valid one is reached.
 +     * This calls the {@link BrainHolder#startFirstValidActivity(Collection)} each tick
@@ -270,6 +278,19 @@ index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd
 +    Collection<Sensor<? extends LivingEntity>> getSensors();
 +
 +    /**
++     * Registers memories in this brain, this is required inorder to set
++     * memories that do not exist already.
++     * This is mostly useful if you are inserting custom memory keys.
++     *
++     * @param keys memorykeys to register
++     */
++    default void registerMemories(List<MemoryKey<?>> keys) {
++        for (MemoryKey<?> memoryKey : keys) {
++            registerMemory(memoryKey);
++        }
++    }
++
++    /**
 +     * Registers a memory in this brain, this is required inorder to set
 +     * memories that do not exist already.
 +     * This is mostly useful if you are inserting custom memory keys.
@@ -277,6 +298,16 @@ index 0000000000000000000000000000000000000000..e7607797abc3e4e6bbe76d64a7e133dd
 +     * @param memoryKey memorykey to register
 +     */
 +    void registerMemory(@NotNull MemoryKey<?> memoryKey);
++
++    /**
++     * Gets the value of a memory
++     *
++     * @param memoryKey memory to get the value from
++     * @param <V>       value type
++     * @return memory value
++     */
++    @Nullable
++    <V> V getMemory(@NotNull MemoryKey<V> memoryKey);
 +
 +    /**
 +     * Sets the value of a memory that does not expire.
@@ -426,10 +457,10 @@ index 0000000000000000000000000000000000000000..8683ad320a0ab467c0eb33062bc6cbb8
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bac6af1d8c6a050f84b0c9cf00c3a5ba56b98ffc
+index 0000000000000000000000000000000000000000..7d68281c32b1cab364c92f383e3ac3f1b13fa09a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,80 @@
 +package io.papermc.paper.entity.brain.activity.behavior;
 +
 +import io.papermc.paper.entity.brain.memory.MemoryPair;
@@ -475,18 +506,22 @@ index 0000000000000000000000000000000000000000..bac6af1d8c6a050f84b0c9cf00c3a5ba
 +    }
 +
 +    /**
-+     * Gets the miniumum runtime in ticks that this behavior can run.
++     * Gets the miniumum runtime in ticks that this behavior  can run while canStillRun is true.
 +     *
 +     * @return time in ticks
 +     */
-+    int getMinRuntime();
++    default int getMinRuntime() {
++        return 0;
++    }
 +
 +    /**
-+     * Gets the maximum runtime in ticks that this behavior can run.
++     * Gets the maximum runtime in ticks that this behavior can run while canStillRun is true.
 +     *
 +     * @return time in ticks
 +     */
-+    int getMaxRuntime();
++    default int getMaxRuntime() {
++        return 0;
++    }
 +
 +    /**
 +     * Gets if the behavior is still able to run.
@@ -503,7 +538,7 @@ index 0000000000000000000000000000000000000000..bac6af1d8c6a050f84b0c9cf00c3a5ba
 +     *
 +     * @return required pairs
 +     */
-+    Collection<MemoryPair> getMemoryRequirements();
++    Collection<MemoryPair> getInitialMemoryRequirements();
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorPair.java b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorPair.java
@@ -672,7 +707,7 @@ index 0000000000000000000000000000000000000000..2c6935e762e7a32febcd897919296e0b
 +
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 3506a7fa07ee6e53704b1df8d8d2bb08704bfc37..52fa51c5000e42925a6e2f7afcd22df03688d364 100644
+index 3506a7fa07ee6e53704b1df8d8d2bb08704bfc37..9fa77ef0c34d225285f1ab2cb73372856cc46822 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -2406,6 +2406,42 @@ public final class Bukkit {
@@ -712,17 +747,17 @@ index 3506a7fa07ee6e53704b1df8d8d2bb08704bfc37..52fa51c5000e42925a6e2f7afcd22df0
 +     * @return memory key
 +     */
 +    @NotNull
-+    public static <P, C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(@NotNull NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, org.bukkit.persistence.PersistentDataType<C, P> serializer) {
++    public static <P, C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(@NotNull NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, org.bukkit.persistence.PersistentDataType<P, C> serializer) {
 +        return server.registerMemoryKey(key, type, serializer);
 +    }
      // Paper end
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index e756edf56995f4552387c2e1082307eb3dd48bb3..4a090eac9f088faa330c0386341b98c8bd781244 100644
+index e756edf56995f4552387c2e1082307eb3dd48bb3..eadede80ddc1d5bfe2eff5ac0a922dfd9fa98475 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -2089,5 +2089,38 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -2089,5 +2089,41 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
       * @return the potion brewer
       */
      @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
@@ -750,6 +785,9 @@ index e756edf56995f4552387c2e1082307eb3dd48bb3..4a090eac9f088faa330c0386341b98c8
 +    /**
 +     * Creates a custom memory key used in the mob brain api
 +     * to register your own types.
++     * <b>
++     * This must be called before the world is loaded inorder
++     * to allow custom keys to be properly deserialized in entities.
 +     *
 +     * @param key identifier for the memory
 +     * @param type type of the value the memory can store
@@ -758,11 +796,11 @@ index e756edf56995f4552387c2e1082307eb3dd48bb3..4a090eac9f088faa330c0386341b98c8
 +     * @return registered memory key
 +     */
 +    @NotNull
-+    <C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(@NotNull NamespacedKey key, @NotNull io.leangen.geantyref.TypeToken<C> type, @Nullable org.bukkit.persistence.PersistentDataType<C, ?> serializer);
++    <C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(@NotNull NamespacedKey key, @NotNull io.leangen.geantyref.TypeToken<C> type, @Nullable org.bukkit.persistence.PersistentDataType<?, C> serializer);
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
-index 31353bd20404a8c2acf6bf0df524dc3cae324272..06954c9c0b56d3ab34a74f4b50d9f5fd360ffd22 100644
+index 31353bd20404a8c2acf6bf0df524dc3cae324272..359fcf191f457b9c8955554640c60c28d01368da 100644
 --- a/src/main/java/org/bukkit/entity/LivingEntity.java
 +++ b/src/main/java/org/bukkit/entity/LivingEntity.java
 @@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
@@ -774,6 +812,38 @@ index 31353bd20404a8c2acf6bf0df524dc3cae324272..06954c9c0b56d3ab34a74f4b50d9f5fd
  
      /**
       * Gets the height of the living entity's eyes above its Location.
+@@ -731,30 +731,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+     @NotNull
+     Set<UUID> getCollidableExemptions();
+ 
+-    /**
+-     * Returns the value of the memory specified.
+-     * <p>
+-     * Note that the value is null when the specific entity does not have that
+-     * value by default.
+-     *
+-     * @param memoryKey memory to access
+-     * @param <T> the type of the return value
+-     * @return a instance of the memory section value or null if not present
+-     */
+-    @Nullable
+-    <T> T getMemory(@NotNull MemoryKey<T> memoryKey);
+-
+-    /**
+-     * Sets the value of the memory specified.
+-     * <p>
+-     * Note that the value will not be persisted when the specific entity does
+-     * not have that value by default.
+-     *
+-     * @param memoryKey the memory to access
+-     * @param memoryValue a typed memory value
+-     * @param <T> the type of the passed value
+-     */
+-    <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
++    // Paper - Move memory
+ 
+     /**
+      * Get the category to which this entity belongs.
 diff --git a/src/main/java/org/bukkit/entity/memory/MemoryKey.java b/src/main/java/org/bukkit/entity/memory/MemoryKey.java
 index 147714f3a22c41933bd0daabfe99272e5185367f..8fce2aef4d949972a91d3ad365b1b602e2d89e3e 100644
 --- a/src/main/java/org/bukkit/entity/memory/MemoryKey.java
