@@ -1,0 +1,393 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kihz17 <mitchdawdy@gmail.com>
+Date: Sun, 19 Jun 2022 21:06:16 -0400
+Subject: [PATCH] Add ping event and the option to not send light updates with
+ chunks.
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/events/PlayerPingEvent.java b/src/main/java/com/destroystokyo/paper/events/PlayerPingEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..98e047cebf73f5045dd612bd6bb77ee4728b6b31
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/events/PlayerPingEvent.java
+@@ -0,0 +1,31 @@
++package com.destroystokyo.paper.events;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++
++public class PlayerPingEvent extends PlayerEvent {
++    private final int latency;
++
++    private static final HandlerList handlers = new HandlerList();
++
++    public PlayerPingEvent(@NotNull Player who, int latency) {
++        super(who);
++        this.latency = latency;
++    }
++
++    public int getLatency() {
++        return latency;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
+index 2072aa8710f6e285f7c8f76c63b7bcf85cc11030..830c1113726af948274511fb98decb9ecb218c59 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
+@@ -2,6 +2,8 @@ package net.minecraft.network.protocol.game;
+ 
+ import java.util.BitSet;
+ import javax.annotation.Nullable;
++
++import com.google.common.collect.Lists;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.world.level.ChunkPos;
+@@ -39,6 +41,14 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
+         chunk.getLevel().chunkPacketBlockController.modifyBlocks(this, chunkPacketInfo); // Paper - Anti-Xray - Modify blocks
+     }
+ 
++    public ClientboundLevelChunkWithLightPacket(int x, int z, ClientboundLevelChunkPacketData chunkData, ClientboundLightUpdatePacketData lightData, boolean ready) {
++        this.x = x;
++        this.z = z;
++        this.chunkData = chunkData;
++        this.lightData = lightData;
++        this.ready = ready;
++    }
++
+     public ClientboundLevelChunkWithLightPacket(FriendlyByteBuf buf) {
+         this.x = buf.readInt();
+         this.z = buf.readInt();
+@@ -81,4 +91,15 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
+         return this.chunkData.getExtraPackets();
+     }
+     // Paper end
++
++    public static ClientboundLevelChunkWithLightPacket getPacketWithNoLight(int x, int z, ClientboundLevelChunkPacketData chunkData, ClientboundLightUpdatePacketData lightData, boolean ready) {
++        ClientboundLightUpdatePacketData newLightData = new ClientboundLightUpdatePacketData(lightData.getSkyYMask(), new BitSet(), lightData.getEmptySkyYMask(),
++            new BitSet(), lightData.getSkyUpdates(), Lists.newArrayList(), lightData.getTrustEdges());
++
++        return new ClientboundLevelChunkWithLightPacket(x, z, chunkData, newLightData, ready);
++    }
++
++    public static ClientboundLevelChunkWithLightPacket getPacketWithNoLight(ClientboundLevelChunkWithLightPacket other) {
++        return getPacketWithNoLight(other.getX(), other.getZ(), other.getChunkData(), other.getLightData(), other.isReady());
++    }
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java
+index fe9cfb2c6e3ecbe8966bc33a16785f03f870e7cf..ece0dfcdbad97cd55f9ce86e08e53b483b40a733 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java
+@@ -41,6 +41,16 @@ public class ClientboundLightUpdatePacketData {
+ 
+     }
+ 
++    public ClientboundLightUpdatePacketData(BitSet skyYMask, BitSet blockYMask, BitSet emptySkyYMask, BitSet emptyBlockYMask, List<byte[]> skyUpdates, List<byte[]> blockUpdates, boolean trustEdges) {
++        this.skyYMask = skyYMask;
++        this.blockYMask = blockYMask;
++        this.emptySkyYMask = emptySkyYMask;
++        this.emptyBlockYMask = emptyBlockYMask;
++        this.skyUpdates = skyUpdates;
++        this.blockUpdates = blockUpdates;
++        this.trustEdges = trustEdges;
++    }
++
+     public ClientboundLightUpdatePacketData(FriendlyByteBuf buf, int x, int y) {
+         this.trustEdges = buf.readBoolean();
+         this.skyYMask = buf.readBitSet();
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index d98c489a58c8c2e657a8879b991aa57ef78f5015..ffa367c8c7f319bb662eb1779176ed94b8c0f95d 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -665,7 +665,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         return !ChunkMap.isChunkInRange(x1, z1, x2, z2, distance) ? false : (!ChunkMap.isChunkInRange(x1 + 1, z1, x2, z2, distance) ? true : (!ChunkMap.isChunkInRange(x1, z1 + 1, x2, z2, distance) ? true : (!ChunkMap.isChunkInRange(x1 - 1, z1, x2, z2, distance) ? true : !ChunkMap.isChunkInRange(x1, z1 - 1, x2, z2, distance))));
+     }
+ 
+-    protected ThreadedLevelLightEngine getLightEngine() {
++    public ThreadedLevelLightEngine getLightEngine() {
+         return this.lightEngine;
+     }
+ 
+@@ -2181,9 +2181,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }
+ 
+         Boolean shouldModify = chunk.getLevel().chunkPacketBlockController.shouldModify(player, chunk);
+-        player.trackChunk(chunk.getPos(), cachedDataPackets.getValue().computeIfAbsent(shouldModify, (s) -> {
+-            return new ClientboundLevelChunkWithLightPacket(chunk, this.lightEngine, (BitSet) null, (BitSet) null, true, (Boolean) s);
+-        }));
++        ClientboundLevelChunkWithLightPacket chunkPacket = cachedDataPackets.getValue().computeIfAbsent(shouldModify, (s) ->
++            new ClientboundLevelChunkWithLightPacket(chunk, this.lightEngine, (BitSet) null, (BitSet) null, true, (Boolean) s));
++
++        // We shouldn't send light updates, modify the packet
++        if(!player.sendChunkLightUpdates) {
++            player.trackChunk(chunk.getPos(), ClientboundLevelChunkWithLightPacket.getPacketWithNoLight(chunkPacket.getX(), chunkPacket.getZ(),
++                chunkPacket.getChunkData(), chunkPacket.getLightData(), chunkPacket.isReady()));
++        } else {
++            player.trackChunk(chunk.getPos(), chunkPacket);
++        }
++
+         // Paper end
+         DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
+         List<Entity> list = Lists.newArrayList();
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 5777fa5df17154baea705a5b7777f2380f98f7d8..234558007e9efc1ab66c56cfd02b5c0796d3b7d0 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -257,6 +257,7 @@ public class ServerPlayer extends Player {
+     public Integer clientViewDistance;
+     // CraftBukkit end
+     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
++    public boolean sendChunkLightUpdates = true;
+ 
+     public double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
+@@ -265,6 +266,8 @@ public class ServerPlayer extends Player {
+     public final Set<UUID> visibleEntities = new HashSet<>();
+     public final Set<UUID> ignoreLoSChecks = new HashSet<>();
+ 
++    public static int LIGHT_PACKET_PING_THRESHOLD = 160;
++
+     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, @Nullable ProfilePublicKey publicKey) {
+         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile, publicKey);
+         this.chatVisibility = ChatVisiblity.FULL;
+@@ -2216,7 +2219,12 @@ public class ServerPlayer extends Player {
+     }
+ 
+     public void trackChunk(ChunkPos chunkPos, Packet<?> chunkDataPacket) {
+-        this.connection.send(chunkDataPacket);
++        if(!connection.receivedPing()) { // We don't have the ping yet, queue the packet for later
++            this.connection.queueChunkPacket(chunkDataPacket);
++        } else {
++            this.connection.send(chunkDataPacket);
++        }
++
+         // Paper start
+         if(io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0){
+             new io.papermc.paper.event.packet.PlayerChunkLoadEvent(this.getBukkitEntity().getWorld().getChunkAt(chunkPos.longKey), this.getBukkitEntity()).callEvent();
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 9d7eba3ef561596f76a8d5ccef9c3f3d492247d5..47f6ff15783347685d32f291158f89639b897329 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server.network;
+ 
++import com.destroystokyo.paper.events.PlayerPingEvent;
+ import com.google.common.collect.Lists;
+ import com.google.common.primitives.Floats;
+ import com.mojang.brigadier.ParseResults;
+@@ -16,12 +17,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import java.time.Instant;
+-import java.util.Collections;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Objects;
+-import java.util.Optional;
+-import java.util.Set;
++import java.util.*;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.atomic.AtomicReference;
+ import java.util.function.BiFunction;
+@@ -57,70 +53,7 @@ import net.minecraft.network.chat.MutableComponent;
+ import net.minecraft.network.chat.PlayerChatMessage;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.network.protocol.PacketUtils;
+-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+-import net.minecraft.network.protocol.game.ClientboundBlockChangedAckPacket;
+-import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+-import net.minecraft.network.protocol.game.ClientboundChatPreviewPacket;
+-import net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket;
+-import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+-import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
+-import net.minecraft.network.protocol.game.ClientboundKeepAlivePacket;
+-import net.minecraft.network.protocol.game.ClientboundMoveVehiclePacket;
+-import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
+-import net.minecraft.network.protocol.game.ClientboundSetCarriedItemPacket;
+-import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
+-import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+-import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
+-import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
+-import net.minecraft.network.protocol.game.ClientboundTagQueryPacket;
+-import net.minecraft.network.protocol.game.ServerGamePacketListener;
+-import net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket;
+-import net.minecraft.network.protocol.game.ServerboundBlockEntityTagQuery;
+-import net.minecraft.network.protocol.game.ServerboundChangeDifficultyPacket;
+-import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
+-import net.minecraft.network.protocol.game.ServerboundChatPacket;
+-import net.minecraft.network.protocol.game.ServerboundChatPreviewPacket;
+-import net.minecraft.network.protocol.game.ServerboundClientCommandPacket;
+-import net.minecraft.network.protocol.game.ServerboundClientInformationPacket;
+-import net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket;
+-import net.minecraft.network.protocol.game.ServerboundContainerButtonClickPacket;
+-import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
+-import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+-import net.minecraft.network.protocol.game.ServerboundCustomPayloadPacket;
+-import net.minecraft.network.protocol.game.ServerboundEditBookPacket;
+-import net.minecraft.network.protocol.game.ServerboundEntityTagQuery;
+-import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+-import net.minecraft.network.protocol.game.ServerboundJigsawGeneratePacket;
+-import net.minecraft.network.protocol.game.ServerboundKeepAlivePacket;
+-import net.minecraft.network.protocol.game.ServerboundLockDifficultyPacket;
+-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+-import net.minecraft.network.protocol.game.ServerboundMoveVehiclePacket;
+-import net.minecraft.network.protocol.game.ServerboundPaddleBoatPacket;
+-import net.minecraft.network.protocol.game.ServerboundPickItemPacket;
+-import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
+-import net.minecraft.network.protocol.game.ServerboundPlayerAbilitiesPacket;
+-import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+-import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
+-import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
+-import net.minecraft.network.protocol.game.ServerboundPongPacket;
+-import net.minecraft.network.protocol.game.ServerboundRecipeBookChangeSettingsPacket;
+-import net.minecraft.network.protocol.game.ServerboundRecipeBookSeenRecipePacket;
+-import net.minecraft.network.protocol.game.ServerboundRenameItemPacket;
+-import net.minecraft.network.protocol.game.ServerboundResourcePackPacket;
+-import net.minecraft.network.protocol.game.ServerboundSeenAdvancementsPacket;
+-import net.minecraft.network.protocol.game.ServerboundSelectTradePacket;
+-import net.minecraft.network.protocol.game.ServerboundSetBeaconPacket;
+-import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+-import net.minecraft.network.protocol.game.ServerboundSetCommandBlockPacket;
+-import net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket;
+-import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
+-import net.minecraft.network.protocol.game.ServerboundSetJigsawBlockPacket;
+-import net.minecraft.network.protocol.game.ServerboundSetStructureBlockPacket;
+-import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
+-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+-import net.minecraft.network.protocol.game.ServerboundTeleportToEntityPacket;
+-import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
+-import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
++import net.minecraft.network.protocol.game.*;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.MinecraftServer;
+@@ -243,7 +176,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private int tickCount;
+     private int ackBlockChangesUpTo = -1;
+     private long keepAliveTime = Util.getMillis();
+-    private boolean keepAlivePending;
++    private boolean gotFirstKeepAlive = false;
++    public boolean keepAlivePending = true;
+     private long keepAliveChallenge;
+     // CraftBukkit start - multithreaded fields
+     private final AtomicInteger chatSpamTickCount = new AtomicInteger();
+@@ -282,6 +216,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+     private String clientBrandName = null; // Paper - Brand name
+ 
++    private List<Packet<?>> queuedChunkPackets = new ArrayList<>();
++
+     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
+         this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
+         this.server = server;
+@@ -388,11 +324,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                 this.disconnect(Component.translatable("disconnect.timeout", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
+             }
+         } else {
+-            if (elapsedTime >= 5000L) { // 5 seconds
+-                this.keepAlivePending = true;
+-                this.keepAliveTime = currentTime;
+-                this.keepAliveChallenge = currentTime;
+-                this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
++            if (elapsedTime >= 2500L) { // 2.5 seconds
++               sendKeepAlive(currentTime);
+             }
+         }
+         // Paper end
+@@ -421,6 +354,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         this.chatPreviewThrottler.tick();
+     }
+ 
++    public void sendKeepAlive(long currentTime) {
++        this.keepAlivePending = true;
++        this.keepAliveTime = currentTime;
++        this.keepAliveChallenge = currentTime;
++        this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
++    }
++
+     public void resetPosition() {
+         this.firstGoodX = this.player.getX();
+         this.firstGoodY = this.player.getY();
+@@ -439,6 +379,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         return this.server.isSingleplayerOwner(this.player.getGameProfile());
+     }
+ 
++    public boolean receivedPing() {
++        return gotFirstKeepAlive;
++    }
++
++    public void queueChunkPacket(Packet<?> packet) {
++        queuedChunkPackets.add(packet);
++    }
++
+     public void disconnect(String s) {
+         // Paper start
+         this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
+@@ -3324,12 +3272,31 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+     @Override
+     public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
+-        //PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel()); // CraftBukkit // Paper - This shouldn't be on the main thread
+-        if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
+-            int i = (int) (Util.getMillis() - this.keepAliveTime);
++        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel()); // CraftBukkit // Paper - This shouldn't be on the main thread
+ 
+-            this.player.latency = i;
++        if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
++            int latency = (int) (Util.getMillis() - this.keepAliveTime);
++            this.player.latency = latency;
+             this.keepAlivePending = false;
++
++            // Call latency event
++            this.player.level.getCraftServer().getPluginManager().callEvent(new PlayerPingEvent(this.player.getBukkitEntity(), latency));
++
++            // Send off queued chunk packets once we get ping
++            if(!gotFirstKeepAlive) {
++                this.gotFirstKeepAlive = true;
++
++                if(!player.sendChunkLightUpdates) { // We shouldn't send light
++                    queuedChunkPackets.stream()
++                        .map(ClientboundLevelChunkWithLightPacket.class::cast)
++                        .map(ClientboundLevelChunkWithLightPacket::getPacketWithNoLight)
++                        .forEach(this::send);
++                } else { // Good ping, send lighting
++                    queuedChunkPackets.forEach(this::send);
++                }
++
++                queuedChunkPackets.clear();
++            }
+         } else if (!this.isSingleplayerOwner()) {
+             // Paper start - This needs to be handled on the main thread for plugins
+             server.submit(() -> {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index d6d76c1449adb88d448d75caecb096545b172407..9c81def7543d5466e40259f23487b06d97af60f0 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -26,6 +26,7 @@ import java.util.function.Function;
+ import javax.annotation.Nullable;
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.FileUtil;
++import net.minecraft.Util;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.RegistryAccess;
+@@ -274,6 +275,7 @@ public abstract class PlayerList {
+ 
+         // Spigot - view distance
+         playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.registryHolder, worldserver1.dimensionTypeId(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetSendDistance(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance(), flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat(), player.getLastDeathLocation())); // Paper - replace old player chunk management
++        playerconnection.sendKeepAlive(Util.getMillis()); // Send keep alive to client to get ping immediately
+         player.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
+         playerconnection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.BRAND, (new FriendlyByteBuf(Unpooled.buffer())).writeUtf(this.getServer().getServerModName())));
+         playerconnection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
