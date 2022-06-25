@@ -39,7 +39,16 @@
  public class ServerPlayerGameMode {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -53,18 +72,32 @@
+@@ -42,6 +61,8 @@
+     private BlockPos delayedDestroyPos;
+     private int delayedTickStart;
+     private int lastSentState;
++    public boolean captureSentBlockEntities = false; // Paper - Send block entities after destroy prediction
++    public boolean capturedBlockEntity = false; // Paper - Send block entities after destroy prediction
+ 
+     public ServerPlayerGameMode(ServerPlayer player) {
+         this.gameModeForPlayer = GameType.DEFAULT_MODE;
+@@ -53,18 +74,32 @@
      }
  
      public boolean changeGameModeForPlayer(GameType gameMode) {
@@ -75,7 +84,7 @@
          }
      }
  
-@@ -92,12 +125,12 @@
+@@ -92,12 +127,12 @@
      }
  
      public void tick() {
@@ -91,7 +100,7 @@
                  this.hasDelayedDestroy = false;
              } else {
                  float f = this.incrementDestroyProgress(iblockdata, this.delayedDestroyPos, this.delayedTickStart);
-@@ -108,7 +141,13 @@
+@@ -108,7 +143,13 @@
                  }
              }
          } else if (this.isDestroyingBlock) {
@@ -106,7 +115,7 @@
              if (iblockdata.isAir()) {
                  this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
                  this.lastSentState = -1;
-@@ -137,6 +176,7 @@
+@@ -137,6 +178,7 @@
  
      public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence) {
          if (!this.player.canInteractWithBlock(pos, 1.0D)) {
@@ -114,7 +123,7 @@
              this.debugLogging(pos, false, sequence, "too far");
          } else if (pos.getY() > worldHeight) {
              this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
-@@ -146,16 +186,46 @@
+@@ -146,16 +188,40 @@
  
              if (action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK) {
                  if (!this.level.mayInteract(this.player, pos)) {
@@ -123,28 +132,22 @@
                      this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
                      this.debugLogging(pos, false, sequence, "may not interact");
 +                    // Update any tile entity data for this block
-+                    BlockEntity tileentity = this.level.getBlockEntity(pos);
-+                    if (tileentity != null) {
-+                        this.player.connection.send(tileentity.getUpdatePacket());
-+                    }
++                    capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
 +                    // CraftBukkit end
-                     return;
-                 }
- 
++                    return;
++                }
++
 +                // CraftBukkit start
 +                PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, pos, direction, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
 +                if (event.isCancelled()) {
 +                    // Let the client know the block still exists
 +                    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
 +                    // Update any tile entity data for this block
-+                    BlockEntity tileentity = this.level.getBlockEntity(pos);
-+                    if (tileentity != null) {
-+                        this.player.connection.send(tileentity.getUpdatePacket());
-+                    }
-+                    return;
-+                }
++                    capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
+                     return;
+                 }
 +                // CraftBukkit end
-+
+ 
                  if (this.isCreative()) {
                      this.destroyAndAck(pos, sequence, "creative destroy");
                      return;
@@ -161,7 +164,7 @@
                  if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
                      this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
                      this.debugLogging(pos, false, sequence, "block action restricted");
-@@ -166,7 +236,19 @@
+@@ -166,7 +232,19 @@
                  float f = 1.0F;
  
                  iblockdata = this.level.getBlockState(pos);
@@ -182,7 +185,7 @@
                      EnchantmentHelper.onHitBlock(this.level, this.player.getMainHandItem(), this.player, this.player, EquipmentSlot.MAINHAND, Vec3.atCenterOf(pos), iblockdata, (item) -> {
                          this.player.onEquippedItemBroken(item, EquipmentSlot.MAINHAND);
                      });
-@@ -174,6 +256,26 @@
+@@ -174,6 +252,26 @@
                      f = iblockdata.getDestroyProgress(this.player, this.player.level(), pos);
                  }
  
@@ -209,7 +212,7 @@
                  if (!iblockdata.isAir() && f >= 1.0F) {
                      this.destroyAndAck(pos, sequence, "insta mine");
                  } else {
-@@ -217,14 +319,18 @@
+@@ -217,14 +315,18 @@
                  this.debugLogging(pos, true, sequence, "stopped destroying");
              } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
@@ -232,7 +235,7 @@
              }
  
          }
-@@ -242,19 +348,78 @@
+@@ -242,19 +344,80 @@
  
      public boolean destroyBlock(BlockPos pos) {
          BlockState iblockdata = this.level.getBlockState(pos);
@@ -282,10 +285,12 @@
 +                }
 +
 +                // Update any tile entity data for this block
++                if (!captureSentBlockEntities) { // Paper - Send block entities after destroy prediction
 +                BlockEntity tileentity = this.level.getBlockEntity(pos);
 +                if (tileentity != null) {
 +                    this.player.connection.send(tileentity.getUpdatePacket());
 +                }
++                } else {capturedBlockEntity = true;} // Paper - Send block entities after destroy prediction
 +                return false;
 +            }
 +        }
@@ -313,7 +318,7 @@
                  BlockState iblockdata1 = block.playerWillDestroy(this.level, pos, iblockdata, this.player);
                  boolean flag = this.level.removeBlock(pos, false);
  
-@@ -262,20 +427,46 @@
+@@ -262,20 +425,46 @@
                      block.destroy(this.level, pos, iblockdata1);
                  }
  
@@ -363,7 +368,7 @@
              }
          }
      }
-@@ -321,15 +512,58 @@
+@@ -321,15 +510,58 @@
          }
      }
  
@@ -422,7 +427,7 @@
              if (itileinventory != null) {
                  player.openMenu(itileinventory);
                  return InteractionResult.CONSUME;
-@@ -359,7 +593,7 @@
+@@ -359,7 +591,7 @@
                  }
              }
  
