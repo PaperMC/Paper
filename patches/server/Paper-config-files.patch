@@ -301,7 +301,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final Path dir = contextMap.require(WORLD_DIRECTORY);
 +        final Path worldConfigFile = dir.resolve(this.worldConfigFileName);
 +        if (Files.notExists(worldConfigFile)) {
-+            Files.createDirectories(dir);
++            PaperConfigurations.createDirectoriesSymlinkAware(dir);
 +            Files.createFile(worldConfigFile); // create empty file as template
 +            newFile = true;
 +        }
@@ -1207,7 +1207,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (Files.exists(backupDir) && !Files.isDirectory(backupDir)) {
 +                    throw new RuntimeException("Paper needs to create a '" + BACKUP_DIR + "' directory in the '" + CONFIG_DIR + "' folder. You already have a non-directory named '" + BACKUP_DIR + "'. Please remove it and restart the server.");
 +                }
-+                Files.createDirectories(backupDir);
++                createDirectoriesSymlinkAware(backupDir);
 +                final String backupFileName = legacyConfig.getFileName().toString() + ".old";
 +                final Path legacyConfigBackup = backupDir.resolve(backupFileName);
 +                if (Files.exists(legacyConfigBackup) && !Files.isRegularFile(legacyConfigBackup)) {
@@ -1220,7 +1220,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +        try {
-+            Files.createDirectories(configDir);
++            createDirectoriesSymlinkAware(configDir);
 +            return new PaperConfigurations(configDir);
 +        } catch (final IOException ex) {
 +            throw new RuntimeException("Could not setup PaperConfigurations", ex);
@@ -1228,7 +1228,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private static void convert(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
-+        Files.createDirectories(configDir);
++        createDirectoriesSymlinkAware(configDir);
 +
 +        final YamlConfigurationLoader legacyLoader = ConfigurationLoaders.naturallySortedWithoutHeader(legacyConfig);
 +        final YamlConfigurationLoader globalLoader = ConfigurationLoaders.naturallySortedWithoutHeader(configDir.resolve(GLOBAL_CONFIG_FILE_NAME));
@@ -1305,6 +1305,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ConfigurationOptions options = defaultGlobalOptions(defaultOptions(ConfigurationOptions.defaults()))
 +            .serializers(builder -> builder.register(type -> ConfigurationPart.class.isAssignableFrom(erase(type)), factory.asTypeSerializer()));
 +        return BasicConfigurationNode.root(options);
++    }
++
++    // Sym links are not correctly checked in createDirectories
++    static void createDirectoriesSymlinkAware(Path path) throws IOException {
++        if (!Files.isDirectory(path)) {
++            Files.createDirectories(path);
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java b/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java
