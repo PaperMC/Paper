@@ -114,7 +114,7 @@ index 0000000000000000000000000000000000000000..7a4a7a654fe2516ed894a68f2657344d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..13d7d1c24ec9192d0163f6eedeac8fca82b6e80c
+index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9440375d0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
 @@ -0,0 +1,296 @@
@@ -301,7 +301,7 @@ index 0000000000000000000000000000000000000000..13d7d1c24ec9192d0163f6eedeac8fca
 +        final Path dir = contextMap.require(WORLD_DIRECTORY);
 +        final Path worldConfigFile = dir.resolve(this.worldConfigFileName);
 +        if (Files.notExists(worldConfigFile)) {
-+            Files.createDirectories(dir);
++            PaperConfigurations.createDirectoriesSymlinkAware(dir);
 +            Files.createFile(worldConfigFile); // create empty file as template
 +            newFile = true;
 +        }
@@ -898,10 +898,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..518a00886f7bde1de95150366541fc992f178246
+index 0000000000000000000000000000000000000000..fa191f418079a8ee24326c5952d12d4481f57aef
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,405 @@
+@@ -0,0 +1,412 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -1207,7 +1207,7 @@ index 0000000000000000000000000000000000000000..518a00886f7bde1de95150366541fc99
 +                if (Files.exists(backupDir) && !Files.isDirectory(backupDir)) {
 +                    throw new RuntimeException("Paper needs to create a '" + BACKUP_DIR + "' directory in the '" + CONFIG_DIR + "' folder. You already have a non-directory named '" + BACKUP_DIR + "'. Please remove it and restart the server.");
 +                }
-+                Files.createDirectories(backupDir);
++                createDirectoriesSymlinkAware(backupDir);
 +                final String backupFileName = legacyConfig.getFileName().toString() + ".old";
 +                final Path legacyConfigBackup = backupDir.resolve(backupFileName);
 +                if (Files.exists(legacyConfigBackup) && !Files.isRegularFile(legacyConfigBackup)) {
@@ -1220,7 +1220,7 @@ index 0000000000000000000000000000000000000000..518a00886f7bde1de95150366541fc99
 +            }
 +        }
 +        try {
-+            Files.createDirectories(configDir);
++            createDirectoriesSymlinkAware(configDir);
 +            return new PaperConfigurations(configDir);
 +        } catch (final IOException ex) {
 +            throw new RuntimeException("Could not setup PaperConfigurations", ex);
@@ -1228,7 +1228,7 @@ index 0000000000000000000000000000000000000000..518a00886f7bde1de95150366541fc99
 +    }
 +
 +    private static void convert(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
-+        Files.createDirectories(configDir);
++        createDirectoriesSymlinkAware(configDir);
 +
 +        final YamlConfigurationLoader legacyLoader = ConfigurationLoaders.naturallySortedWithoutHeader(legacyConfig);
 +        final YamlConfigurationLoader globalLoader = ConfigurationLoaders.naturallySortedWithoutHeader(configDir.resolve(GLOBAL_CONFIG_FILE_NAME));
@@ -1305,6 +1305,13 @@ index 0000000000000000000000000000000000000000..518a00886f7bde1de95150366541fc99
 +        ConfigurationOptions options = defaultGlobalOptions(defaultOptions(ConfigurationOptions.defaults()))
 +            .serializers(builder -> builder.register(type -> ConfigurationPart.class.isAssignableFrom(erase(type)), factory.asTypeSerializer()));
 +        return BasicConfigurationNode.root(options);
++    }
++
++    // Sym links are not correctly checked in createDirectories
++    static void createDirectoriesSymlinkAware(Path path) throws IOException {
++        if (!Files.isDirectory(path)) {
++            Files.createDirectories(path);
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java b/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java
