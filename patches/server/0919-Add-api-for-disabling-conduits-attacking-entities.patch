@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: u9g <git@u9g.dev>
+Date: Mon, 27 Jun 2022 14:02:35 -0400
+Subject: [PATCH] Add api for disabling conduits attacking entities
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+index 05eab04e4aec4151018f25b59f92ddbbb4c09f87..51a1dc233df7da7af0d5841ad76407684a3ec5f9 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+@@ -51,6 +51,7 @@ public class ConduitBlockEntity extends BlockEntity {
+     @Nullable
+     private UUID destroyTargetUUID;
+     private long nextAmbientSoundActivation;
++    private boolean canAttackEntities = true;
+ 
+     public ConduitBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.CONDUIT, pos, state);
+@@ -64,6 +65,7 @@ public class ConduitBlockEntity extends BlockEntity {
+         } else {
+             this.destroyTargetUUID = null;
+         }
++        canAttackEntities = nbt.hasUUID("Paper.CanAttackEntities") && nbt.getBoolean("Paper.CanAttackEntities"); // Paper
+ 
+     }
+ 
+@@ -214,6 +216,13 @@ public class ConduitBlockEntity extends BlockEntity {
+     }
+ 
+     private static void updateDestroyTarget(Level world, BlockPos pos, BlockState state, List<BlockPos> activatingBlocks, ConduitBlockEntity blockEntity) {
++        // Paper start
++        if (!blockEntity.canAttackEntities) {
++            blockEntity.destroyTarget = null;
++            blockEntity.destroyTargetUUID = null;
++            return;
++        }
++        // Paper end
+         LivingEntity entityliving = blockEntity.destroyTarget;
+         int i = activatingBlocks.size();
+ 
+@@ -331,4 +340,12 @@ public class ConduitBlockEntity extends BlockEntity {
+     public float getActiveRotation(float tickDelta) {
+         return (this.activeRotation + tickDelta) * -0.0375F;
+     }
++    // Paper start
++    public void setCanAttackEntities(boolean canAttackEntities) {
++        this.canAttackEntities = canAttackEntities;
++    }
++    public boolean getCanAttackEntities() {
++        return canAttackEntities;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java b/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
+index a0b17670750f882846954e83a85a1dd59ac09d0f..80c21c80ce4c25a0b0c97011b0cd73470a15965a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
+@@ -9,4 +9,15 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
+     public CraftConduit(World world, ConduitBlockEntity tileEntity) {
+         super(world, tileEntity);
+     }
++    // Paper start
++    @Override
++    public void setCanAttackEntities(boolean canAttackEntities) {
++        getTileEntity().setCanAttackEntities(canAttackEntities);
++    }
++
++    @Override
++    public boolean getCanAttackEntities() {
++        return getTileEntity().getCanAttackEntities();
++    }
++    // Paper end
+ }
