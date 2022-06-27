@@ -1,0 +1,2750 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Sun, 26 Jun 2022 20:24:16 +0200
+Subject: [PATCH] Add damage source wrapper
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerAttackEntityCooldownResetEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerAttackEntityCooldownResetEvent.java
+index 5ceaff1a499d08575ddcdcbead8e2cef6cfbea47..31df5b8bfd2a62e755bc7f32989d7ddb78d4971e 100644
+--- a/src/main/java/com/destroystokyo/paper/event/player/PlayerAttackEntityCooldownResetEvent.java
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerAttackEntityCooldownResetEvent.java
+@@ -1,5 +1,6 @@
+ package com.destroystokyo.paper.event.player;
+ 
++import io.papermc.paper.entity.damageorigin.DamageOrigin;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.Cancellable;
+@@ -17,14 +18,16 @@ public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements
+ 
+     @NotNull private final Entity attackedEntity;
+     private final float cooledAttackStrength;
++    private final DamageOrigin origin;
+ 
+     private boolean cancelled;
+ 
+     @ApiStatus.Internal
+-    public PlayerAttackEntityCooldownResetEvent(@NotNull Player player, @NotNull Entity attackedEntity, float cooledAttackStrength) {
++    public PlayerAttackEntityCooldownResetEvent(@NotNull Player player, @NotNull Entity attackedEntity, float cooledAttackStrength, @NotNull DamageOrigin origin) {
+         super(player);
+         this.attackedEntity = attackedEntity;
+         this.cooledAttackStrength = cooledAttackStrength;
++        this.origin = origin;
+     }
+ 
+     /**
+@@ -46,6 +49,17 @@ public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements
+         return this.attackedEntity;
+     }
+ 
++    // todo move this inside the right patch at the end
++    /**
++     * Gets the {@link DamageOrigin} of the player attack.
++     *
++     * @return a damage origin holding the context of the player attack.
++     */
++    @NotNull
++    public DamageOrigin getOrigin() {
++        return this.origin;
++    }
++
+     /**
+      * {@inheritDoc}
+      * <p>
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/DamageOrigin.java b/src/main/java/io/papermc/paper/entity/damageorigin/DamageOrigin.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c2771f90ba66616a744831370f437298bffee1c7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/DamageOrigin.java
+@@ -0,0 +1,294 @@
++package io.papermc.paper.entity.damageorigin;
++
++import io.papermc.paper.entity.damageorigin.type.DamageType;
++import io.papermc.paper.entity.damageorigin.type.DamageTypeTags;
++import io.papermc.paper.entity.damageorigin.type.DeathMessageFormat;
++import io.papermc.paper.math.Position;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.translation.Translatable;
++import net.kyori.adventure.util.TriState;
++import org.bukkit.Bukkit;
++import org.bukkit.entity.*;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * A damage origin also known as damage source and sometimes damage cause is a label
++ * that describes in what way an entity has been damaged. This is notably used
++ * to know the death message, the sound effect, the shield covering, the potential
++ * knock-back applied and much more...
++ * <p>
++ * Common information are tied to the damage types especially for the player
++ * hurt sound, death message format, special effects, food exhaustion etc.
++ * <p>
++ * Data-packs and plugins can create their own types of damage.
++ * For plugins all that happens in the plugin bootstrapper through the
++ * methods called before the frozen registries.
++ * <p>
++ * Data-packs can additionally manage the damage type tags for further
++ * customization.
++ * <p>
++ * This new API is a replacement of the old bukkit {@link org.bukkit.event.entity.EntityDamageEvent.DamageCause DamageCause} API
++ *
++ * @see org.bukkit.event.entity.EntityDamageEvent.DamageCause
++ */
++public interface DamageOrigin extends Translatable {
++
++    /**
++     * Creates a generic {@link DamageOriginBuilder} with optionally
++     * a direct entity, an entity and a position.
++     * For example, in the case of a projectile dealing damage,
++     * the direct source will be the projectile and the source will be
++     * the thrower.
++     * Source position is used for explosion related damage.
++     * If the position is not specified it will be the source
++     * entity position.
++     *
++     * @param type           the damage type
++     * @param directSource   the entity direct source, the nearest entity
++     *                       that will damage the target
++     * @param source         the entity source
++     * @param sourcePosition the source position
++     * @return a builder to then build a new {@link DamageOrigin}
++     */
++    @NotNull
++    static DamageOriginBuilder of(@NotNull DamageType type, @Nullable Entity directSource, @Nullable Entity source, @Nullable Position sourcePosition) {
++        return Bukkit.getServer().getUnsafe().createDamageSource(type, directSource, source, sourcePosition);
++    }
++
++    /**
++     * Creates a generic {@link DamageOriginBuilder} with optionally
++     * a direct entity and an entity.
++     * For example, in the case of a projectile dealing damage,
++     * the direct source will be the projectile and the source will be
++     * the thrower.
++     *
++     * @param type         the damage type
++     * @param directSource the entity direct source, the nearest entity
++     *                     that will damage the target
++     * @param source       the entity source
++     * @return a builder to then build a new {@link DamageOrigin}
++     */
++    @NotNull
++    static DamageOriginBuilder of(@NotNull DamageType type, @Nullable Entity directSource, @Nullable Entity source) {
++        return of(type, directSource, source, null);
++    }
++
++    /**
++     * Creates a generic {@link DamageOriginBuilder} with optionally
++     * an entity.
++     *
++     * @param type   the damage type
++     * @param source the entity source
++     * @return a builder to then build a new {@link DamageOrigin}
++     */
++    @NotNull
++    static DamageOriginBuilder of(@NotNull DamageType type, @Nullable Entity source) {
++        return of(type, source, source, null);
++    }
++
++    /**
++     * Creates a generic {@link DamageOriginBuilder} with optionally
++     * a position.
++     * Source position is used for explosion related damage.
++     *
++     * @param type           the damage type
++     * @param sourcePosition the source position
++     * @return a builder to then build a new {@link DamageOrigin}
++     */
++    @NotNull
++    static DamageOriginBuilder of(@NotNull DamageType type, @Nullable Position sourcePosition) {
++        return of(type, null, null, sourcePosition);
++    }
++
++    /**
++     * Creates a generic {@link DamageOriginBuilder} without
++     * entity or position related.
++     *
++     * @param type the damage type
++     * @return a builder to then build a new {@link DamageOrigin}
++     */
++    @NotNull
++    static DamageOriginBuilder of(@NotNull DamageType type) {
++        return of(type, null, null, null);
++    }
++
++    /**
++     * Gets the type of this damage origin.
++     * The type hold a lot of generic information like
++     * the hurt sound, death message format and more...
++     * These info are even more relevant for data-pack
++     * made damage type.
++     *
++     * @return the damage type
++     */
++    @NotNull
++    DamageType getType();
++
++    /**
++     * Checks if this damage origin amount will be scaled
++     * to the difficulty of the world for players.
++     *
++     * @return {@code true} for scalable damage
++     */
++    boolean willScalesWithDifficulty();
++
++    /**
++     * Checks if this damage origin is indirect
++     * <p>
++     * Projectile launched by a player are qualified of
++     * indirect in this context for example. But it happens
++     * more generally when the direct entity ({@link #getDirectSource()})
++     * is different that the source entity ({@link #getSource()})
++     *
++     * @return {@code true} for indirect damage origin
++     */
++    boolean isIndirect();
++
++    /**
++     * Provides the entity responsible for the damage.
++     * <p>
++     * In the case of an indirect damage, the entity will be responsible for the creation
++     * of the direct entity ({@link #getDirectSource()}).
++     * <p>
++     * A knock-back in the opposite direction of this entity will be applied to the
++     * target.
++     * For an unknown entity, the knock-back will be in a random direction.
++     *
++     * @return the entity
++     */
++    @Nullable
++    Entity getSource();
++
++    /**
++     * Provides the entity that directly dealt the damage by the damage origin.
++     * The direct source is the entity that physically hurt the target
++     *
++     * @return the direct entity
++     */
++    @Nullable
++    Entity getDirectSource();
++
++    /**
++     * Gets the source position of the damage.
++     * This is used to know if the target entity is well protected by
++     * its shield or not.
++     * <p>
++     * The source position with the target position
++     * represent a vector and if that vector cross the target view
++     * vector, then the target is well protected holding its shield.
++     * <p>
++     * At this state the shield will take the damage instead of the
++     * target if the damage is greater or equals to 3 or if
++     * {@link #willHurtShield()} is {@code true}.
++     * <br>
++     * The position will not affect the possible knock-back direction.
++     *
++     * @return the source position of the damage
++     */
++    @Nullable
++    Position getSourcePosition();
++
++    /**
++     * Gets the state whether the shield will be hurt
++     * when exposed instead of the target.
++     *
++     * <ul>
++     * <li>{@code NOT_SET}: default behavior, will hurt the shield if the damage
++     * amount is greater or equals to 3</li>
++     * <li>{@code TRUE}: always hurt the shield</li>
++     * <li>{@code FALSE}: never hurt the shield</li>
++     * </ul>
++     *
++     * <b>Note</b>: Works only if the {@link #getSourcePosition() source position} is defined.
++     *
++     * @return the state of the shield behavior
++     */
++    @NotNull
++    TriState willHurtShield();
++
++    /**
++     * Gets the amount of food exhaustion when an
++     * entity takes damage from this damage origin.
++     * <p>
++     * In vanilla the amount is always equals to 0.1
++     * or zero when this damage origin bypass the armor/magic
++     * protection.
++     *
++     * @return the amount of food exhaustion
++     */
++    float getFoodExhaustion();
++
++    /**
++     * Gets the death message for a killed target.
++     * <p>
++     * This message will be displayed in the chat as
++     * a system message and will be visible to everyone connected
++     * to the server the entity dies caused by the damage from this
++     * damage origin.
++     * <p>
++     * The death message format stored in
++     * the damage type is used to determine the format of this
++     * message when no custom damage has been supplied in the
++     * builder.
++     *
++     * @param killed the potential target
++     * @return       the death message displayed
++     * @see DeathMessageFormat
++     */
++    @Nullable
++    Component getDeathMessageFor(@NotNull LivingEntity killed);
++
++    /**
++     * Gets the legacy damage cause only available for
++     * bukkit compatibility.
++     *
++     * @return the legacy damage cause
++     */
++    @Nullable
++    LegacyDamageCause getLegacyDamageCause();
++
++    /**
++     * Gets the name of the type of this
++     * damage origin.
++     * <p>
++     * This will be used with other fragments to
++     * make the final translation key when no
++     * custom death message has been defined.
++     * The name is generally a camel case key.
++     *
++     * @return the name of the type
++     */
++    @NotNull
++    default String getName() {
++        return this.getType().getName();
++    }
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * The translation key is only relevant when no custom
++     * death message/format has been defined!
++     * <p>
++     * Do not use the key directly as a translatable component use
++     * {@link #getDeathMessageFor(LivingEntity)} instead
++     * or make sure to filter out other damage origin.
++     * @see #getName()
++     */
++    @NotNull
++    default String translationKey() {
++        return this.getType().translationKey();
++    }
++
++    /**
++     * Checks if the supplied damage type tag
++     * contains the type of this damage origin.
++     *
++     * @return {@code true} if this damage is tagged by this tag key
++     * @see DamageTypeTags
++     */
++    default boolean isTagged(@NotNull Key tagKey) {
++        return this.getType().isTagged(tagKey);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/DamageOriginBuilder.java b/src/main/java/io/papermc/paper/entity/damageorigin/DamageOriginBuilder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5f40bf674c9b548cbe5ec07299b727d360b9e5d0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/DamageOriginBuilder.java
+@@ -0,0 +1,101 @@
++package io.papermc.paper.entity.damageorigin;
++
++import io.papermc.paper.entity.damageorigin.type.DamageScale;
++import io.papermc.paper.entity.damageorigin.type.DamageType;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.util.TriState;
++import org.bukkit.entity.LivingEntity;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.function.Function;
++
++/**
++ * A builder to create a new damage origin
++ */
++public interface DamageOriginBuilder {
++
++    /**
++     * Specify if the damages takes from this damage origin
++     * will hurt the shield of the victim.
++     * Works only if the position is defined.
++     * <p>
++     * The default vanilla behavior is that the
++     * shield is damaged when the amount of
++     * damage is greater or equals to 3 and that the view point
++     * of the victim has a sight on the source position
++     * of that damage.
++     *
++     * @param state the state of the shield behavior
++     * @return the builder for chaining
++     * @see DamageOrigin#willHurtShield()
++     */
++    @Contract("_ -> this")
++    @NotNull
++    DamageOriginBuilder hurtShield(@NotNull TriState state);
++
++    /**
++     * Sets the amount of food exhaustion when an
++     * entity takes damage from this damage origin.
++     * <p>
++     * In vanilla the amount is always equals to 0.1
++     * or zero when this bypass armor/magic protection.
++     * <p>
++     * <b>Note</b>: This will override the default value defined by
++     * the type of the damage!
++     *
++     * @param exhaustion The amount of food exhaustion
++     * @return The builder for chaining
++     * @see DamageOrigin#getFoodExhaustion()
++     * @see DamageType#getFoodExhaustion()
++     * @see DamageType.Builder#foodExhaustion(float)
++     */
++    @NotNull
++    @Contract("_ -> this")
++    DamageOriginBuilder foodExhaustion(float exhaustion);
++
++    /**
++     * Specify that the damages takes from this damage origin will
++     * scale with the difficulty of the victim's world.
++     * <p>
++     * <b>Note</b>: This will override the default value defined by
++     * the type of the damage!
++     *
++     * @param scale enable world scaling
++     * @return the builder for chaining
++     * @see DamageOrigin#willScalesWithDifficulty()
++     * @see DamageType#getScale()
++     * @see DamageType.Builder#scale(DamageScale)
++     * @see io.papermc.paper.entity.damageorigin.type.DamageScale
++     */
++    @NotNull
++    @Contract("_ -> this")
++    DamageOriginBuilder scalesWithDifficulty(boolean scale);
++
++    /**
++     * Sets which component will be displayed in the chat
++     * for all players. The victim is in the callback to
++     * further personalize the death message.
++     * <p>
++     * This will only work when no death message format
++     * has been found for this damage type.
++     *
++     * @param onEntityDeath The callback function
++     * @return The builder for chaining
++     * @see DamageOrigin#getDeathMessageFor(LivingEntity)
++     * @see DamageType#getDeathMessageFormat()
++     * @see io.papermc.paper.entity.damageorigin.type.DeathMessageFormat
++     */
++    @NotNull
++    @Contract("_ -> this")
++    DamageOriginBuilder deathMessage(@NotNull Function<LivingEntity, Component> onEntityDeath);
++
++    /**
++     * Transforms this prototype builder into a complete damage origin
++     * applicable to any entity.
++     *
++     * @return the new damage origin
++     */
++    @NotNull
++    DamageOrigin build();
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/DamageOrigins.java b/src/main/java/io/papermc/paper/entity/damageorigin/DamageOrigins.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..87cd38fd16ac8fc77390b8af5b781a5bb83d2cda
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/DamageOrigins.java
+@@ -0,0 +1,596 @@
++package io.papermc.paper.entity.damageorigin;
++
++import io.papermc.paper.entity.damageorigin.type.DamageType;
++import io.papermc.paper.entity.damageorigin.type.VanillaDamageType;
++import io.papermc.paper.math.Position;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.util.Services;
++import org.bukkit.entity.*;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.IdentityHashMap;
++import java.util.Map;
++
++/**
++ * A static collection of helper methods
++ * to retrieve the already existing damage origin
++ * in Vanilla.
++ */
++public final class DamageOrigins {
++
++    @NotNull
++    private static DamageOrigin ofType(@NotNull DamageType type, @Nullable Entity attacker) {
++        return ofType(type, attacker, attacker); // sync with vanilla here
++    }
++
++    @NotNull
++    private static DamageOrigin ofType(@NotNull DamageType type, @Nullable Entity source, @Nullable Entity attacker) {
++        return DamageOrigin.of(type, source, attacker, null).build(); // sync with vanilla here
++    }
++
++    /**
++     * @see VanillaDamageType#IN_FIRE
++     */
++    @NotNull
++    public static DamageOrigin inFire() {
++        return DamageOrigins.PROVIDER.inFire();
++    }
++
++    /**
++     * @see VanillaDamageType#LIGHTNING_BOLT
++     */
++    @NotNull
++    public static DamageOrigin lightningBolt() {
++        return DamageOrigins.PROVIDER.lightningBolt();
++    }
++
++    /**
++     * @see VanillaDamageType#ON_FIRE
++     */
++    @NotNull
++    public static DamageOrigin onFire() {
++        return DamageOrigins.PROVIDER.onFire();
++    }
++
++    /**
++     * @see VanillaDamageType#LAVA
++     */
++    @NotNull
++    public static DamageOrigin lava() {
++        return DamageOrigins.PROVIDER.lava();
++    }
++
++    /**
++     * @see VanillaDamageType#HOT_FLOOR
++     */
++    @NotNull
++    public static DamageOrigin hotFloor() {
++        return DamageOrigins.PROVIDER.hotFloor();
++    }
++
++    /**
++     * @see VanillaDamageType#IN_WALL
++     */
++    @NotNull
++    public static DamageOrigin inWall() {
++        return DamageOrigins.PROVIDER.inWall();
++    }
++
++    /**
++     * @see VanillaDamageType#CRAMMING
++     */
++    @NotNull
++    public static DamageOrigin cramming() {
++        return DamageOrigins.PROVIDER.cramming();
++    }
++
++    /**
++     * @see VanillaDamageType#DROWN
++     */
++    @NotNull
++    public static DamageOrigin drown() {
++        return DamageOrigins.PROVIDER.drown();
++    }
++
++    /**
++     * @see VanillaDamageType#STARVE
++     */
++    @NotNull
++    public static DamageOrigin starve() {
++        return DamageOrigins.PROVIDER.starve();
++    }
++
++    /**
++     * @see VanillaDamageType#CACTUS
++     */
++    @NotNull
++    public static DamageOrigin cactus() {
++        return DamageOrigins.PROVIDER.cactus();
++    }
++
++    /**
++     * @see VanillaDamageType#FALL
++     */
++    @NotNull
++    public static DamageOrigin fall() {
++        return DamageOrigins.PROVIDER.fall();
++    }
++
++    /**
++     * @see VanillaDamageType#FLY_INTO_WALL
++     */
++    @NotNull
++    public static DamageOrigin flyIntoWall() {
++        return DamageOrigins.PROVIDER.flyIntoWall();
++    }
++
++    /**
++     * @see VanillaDamageType#FELL_OUT_OF_WORLD
++     */
++    @NotNull
++    public static DamageOrigin fellOutOfWorld() {
++        return DamageOrigins.PROVIDER.fellOutOfWorld();
++    }
++
++    /**
++     * @see VanillaDamageType#GENERIC
++     */
++    @NotNull
++    public static DamageOrigin generic() {
++        return DamageOrigins.PROVIDER.generic();
++    }
++
++    /**
++     * @see VanillaDamageType#MAGIC
++     */
++    @NotNull
++    public static DamageOrigin magic() {
++        return DamageOrigins.PROVIDER.magic();
++    }
++
++    /**
++     * @see VanillaDamageType#WITHER
++     */
++    @NotNull
++    public static DamageOrigin wither() {
++        return DamageOrigins.PROVIDER.wither();
++    }
++
++    /**
++     * @see VanillaDamageType#DRAGON_BREATH
++     */
++    @NotNull
++    public static DamageOrigin dragonBreath() {
++        return DamageOrigins.PROVIDER.dragonBreath();
++    }
++
++    /**
++     * @see VanillaDamageType#DRY_OUT
++     */
++    @NotNull
++    public static DamageOrigin dryOut() {
++        return DamageOrigins.PROVIDER.dryOut();
++    }
++
++    /**
++     * @see VanillaDamageType#SWEET_BERRY_BUSH
++     */
++    @NotNull
++    public static DamageOrigin sweetBerryBush() {
++        return DamageOrigins.PROVIDER.sweetBerryBush();
++    }
++
++    /**
++     * @see VanillaDamageType#FREEZE
++     */
++    @NotNull
++    public static DamageOrigin freeze() {
++        return DamageOrigins.PROVIDER.freeze();
++    }
++
++    /**
++     * @see VanillaDamageType#STALAGMITE
++     */
++    @NotNull
++    public static DamageOrigin stalagmite() {
++        return DamageOrigins.PROVIDER.stalagmite();
++    }
++
++    /**
++     * Falling block damage is dealt when an entity collide a falling block.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#FALLING_BLOCK
++     */
++    @NotNull
++    public static DamageOrigin ofFallingBlock(@NotNull Entity damager) {
++        return ofType(VanillaDamageType.FALLING_BLOCK, damager);
++    }
++
++    /**
++     * Anvil damage is dealt when an entity collide a falling anvil.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#FALLING_ANVIL
++     */
++    @NotNull
++    public static DamageOrigin ofAnvil(@NotNull Entity damager) {
++        return ofType(VanillaDamageType.FALLING_ANVIL, damager);
++    }
++
++    /**
++     * Falling stalactite is dealt when an entity collide a falling
++     * pointed dripstone.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#FALLING_STALACTITE
++     */
++    @NotNull
++    public static DamageOrigin ofFallingStalactite(@NotNull Entity damager) {
++        return ofType(VanillaDamageType.FALLING_STALACTITE, damager);
++    }
++
++    /**
++     * Sting contact attack is dealt by angry bees.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#STING
++     */
++    @NotNull
++    public static DamageOrigin ofSting(@NotNull LivingEntity damager) {
++        return ofType(VanillaDamageType.STING, damager);
++    }
++
++    /**
++     * Generic mob damage origin dealt when a mob attack.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#MOB_ATTACK
++     */
++    @NotNull
++    public static DamageOrigin ofMob(@NotNull LivingEntity damager) {
++        return ofType(VanillaDamageType.MOB_ATTACK, damager);
++    }
++
++    /**
++     * Generic mob damage origin dealt when a mob attack.
++     * But unlike {@link #ofMob(LivingEntity)} the victim
++     * will not become aggressive.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#MOB_ATTACK_NO_AGGRO
++     */
++    @NotNull
++    public static DamageOrigin ofNoAggroMob(@NotNull LivingEntity damager) {
++        return ofType(VanillaDamageType.MOB_ATTACK_NO_AGGRO, damager);
++    }
++
++    /**
++     * Generic player damage origin dealt when a player attack.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#PLAYER_ATTACK
++     */
++    @NotNull
++    public static DamageOrigin ofPlayer(@NotNull HumanEntity damager) {
++        return ofType(VanillaDamageType.PLAYER_ATTACK, damager);
++    }
++
++    /**
++     * Generic arrow damage origin is dealt when an arrow hits
++     * a target.
++     * Trident should use the {@link #ofTrident(Trident)} instead.
++     *
++     * @param arrow the arrow
++     * @return      the damage origin created
++     * @see VanillaDamageType#ARROW
++     */
++    @NotNull
++    public static DamageOrigin ofArrow(@NotNull AbstractArrow arrow) {
++        return ofArrow(arrow, null);
++    }
++
++    /**
++     * Generic arrow damage origin is dealt when an arrow hits
++     * a target.
++     * Trident should use the {@link #ofTrident(Trident, Entity)} instead.
++     *
++     * @param arrow   the arrow
++     * @param thrower the thrower
++     * @return        the damage origin created
++     * @see VanillaDamageType#ARROW
++     */
++    @NotNull
++    public static DamageOrigin ofArrow(@NotNull AbstractArrow arrow, @Nullable Entity thrower) {
++        if (arrow instanceof Trident) {
++            throw new IllegalArgumentException("Projectile can only be a variant of arrow. Trident has its own method.");
++        }
++        return ofType(VanillaDamageType.ARROW, arrow, thrower);
++    }
++
++    /**
++     * Trident damage origin is dealt when a trident hits a target.
++     *
++     * @param trident the trident
++     * @return        the damage origin created
++     * @see VanillaDamageType#TRIDENT
++     */
++    @NotNull
++    public static DamageOrigin ofTrident(@NotNull Trident trident) {
++        return ofTrident(trident, null);
++    }
++
++    /**
++     * Trident damage origin is dealt when a trident hits a target.
++     *
++     * @param projectile the projectile
++     * @param thrower    the thrower
++     * @return           the damage origin created
++     * @see VanillaDamageType#TRIDENT
++     */
++    @NotNull
++    public static DamageOrigin ofTrident(@NotNull Trident projectile, @Nullable Entity thrower) {
++        return ofType(VanillaDamageType.TRIDENT, projectile, thrower);
++    }
++
++    /**
++     * Mob projectile damage origin is dealt when a projectile launched by a mob
++     * hit a target.
++     *
++     * @param projectile the projectile
++     * @return           the damage origin created
++     * @see VanillaDamageType#MOB_PROJECTILE
++     */
++    @NotNull
++    public static DamageOrigin ofMobProjectile(@NotNull Entity projectile) {
++        return ofMobProjectile(projectile, null);
++    }
++
++    /**
++     * Mob projectile damage origin is dealt when a projectile launched by a mob
++     * hit a target.
++     *
++     * @param projectile the projectile
++     * @param thrower    the thrower
++     * @return           the damage origin created
++     * @see VanillaDamageType#MOB_PROJECTILE
++     */
++    @NotNull
++    public static DamageOrigin ofMobProjectile(@NotNull Entity projectile, @Nullable LivingEntity thrower) {
++        return ofType(VanillaDamageType.MOB_PROJECTILE, projectile, thrower);
++    }
++
++    /**
++     * Fireworks damage origin is dealt when a firework explode on a target.
++     *
++     * @param firework the firework
++     * @return         the damage origin created
++     * @see VanillaDamageType#FIREWORKS
++     */
++    @NotNull
++    public static DamageOrigin ofFireworks(@NotNull Firework firework) {
++        return ofFireworks(firework, null);
++    }
++
++    /**
++     * Fireworks damage origin is dealt when a firework explode on a target.
++     *
++     * @param firework the firework
++     * @param thrower  the thrower
++     * @return         the damage origin created
++     * @see VanillaDamageType#FIREWORKS
++     */
++    @NotNull
++    public static DamageOrigin ofFireworks(@NotNull Firework firework, @Nullable Entity thrower) {
++        return ofType(VanillaDamageType.FIREWORKS, firework, thrower);
++    }
++
++    /**
++     * Fireball damage origin is dealt when a fireball explode on a target.
++     * Wither skulls should use the {@link #ofWitherSkull(WitherSkull, Entity)} instead.
++     *
++     * @param fireball the fireball
++     * @return         the damage origin created
++     * @see VanillaDamageType#FIREBALL
++     */
++    @NotNull
++    public static DamageOrigin ofFireball(@NotNull Fireball fireball) {
++        return ofFireball(fireball, null);
++    }
++
++    /**
++     * Fireball damage origin is dealt when a fireball explode on a target.
++     * Wither skulls should use the {@link #ofWitherSkull(WitherSkull, Entity)} instead.
++     *
++     * @param fireball the projectile
++     * @param thrower  the thrower
++     * @return         the damage origin created
++     * @see VanillaDamageType#FIREBALL
++     */
++    @NotNull
++    public static DamageOrigin ofFireball(@NotNull Fireball fireball, @Nullable Entity thrower) {
++        if (fireball instanceof WitherSkull) { // Thanks bukkit
++            throw new IllegalArgumentException("Projectile can only be a variant of fireball. Wither skull has its own method.");
++        }
++
++        return thrower == null ? ofType(VanillaDamageType.UNATTRIBUTED_FIREBALL, fireball) : ofType(VanillaDamageType.FIREBALL, fireball, thrower);
++    }
++
++    /**
++     * Wither skull damage origin is dealt when a wither skull explode on a target.
++     *
++     * @param witherSkull the wither skull
++     * @param thrower     the thrower
++     * @return            the damage origin created
++     * @see VanillaDamageType#WITHER_SKULL
++     */
++    @NotNull
++    public static DamageOrigin ofWitherSkull(@NotNull WitherSkull witherSkull, @NotNull Entity thrower) {
++        return ofType(VanillaDamageType.WITHER_SKULL, witherSkull, thrower);
++    }
++
++    /**
++     * Passive projectile damage origin is dealt when a projectile hits a target.
++     * It will only affect sensitive mobs.
++     *
++     * @param projectile the projectile
++     * @return           the damage origin created
++     * @see VanillaDamageType#THROWN
++     */
++    @NotNull
++    public static DamageOrigin ofPassiveProjectile(@NotNull Entity projectile) {
++        return ofPassiveProjectile(projectile, null);
++    }
++
++    /**
++     * Passive projectile damage origin is dealt when a projectile hits a target.
++     * It will only affect sensitive mobs.
++     *
++     * @param projectile the projectile
++     * @param thrower    the thrower
++     * @return           the damage origin created
++     * @see VanillaDamageType#THROWN
++     */
++    @NotNull
++    public static DamageOrigin ofPassiveProjectile(@NotNull Entity projectile, @Nullable Entity thrower) {
++        return ofType(VanillaDamageType.THROWN, projectile, thrower);
++    }
++
++    /**
++     * Indirect magic damage origin is dealt when a magic action occur
++     * by using potion, projectile or for guardian.
++     *
++     * @param magicEntity the magic entity
++     * @return            the damage origin created
++     * @see VanillaDamageType#INDIRECT_MAGIC
++     */
++    @NotNull
++    public static DamageOrigin ofIndirectMagic(@NotNull Entity magicEntity) {
++        return ofIndirectMagic(magicEntity, null);
++    }
++
++    /**
++     * Indirect magic damage origin is dealt when a magic action occur
++     * by using potion, projectile or for guardian attack.
++     *
++     * @param magicEntity the magic entity
++     * @param damager     the entity damager
++     * @return            the damage origin created
++     * @see VanillaDamageType#INDIRECT_MAGIC
++     */
++    @NotNull
++    public static DamageOrigin ofIndirectMagic(@NotNull Entity magicEntity, @Nullable Entity damager) {
++        return ofType(VanillaDamageType.INDIRECT_MAGIC, magicEntity, damager);
++    }
++
++    /**
++     * Thorns damage origin is dealt when an entity attack a target wearing
++     * an armor enchanted with thorns or for mobs natural abilities like guardians.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#THORNS
++     */
++    @NotNull
++    public static DamageOrigin ofThorns(@NotNull Entity damager) {
++        return ofType(VanillaDamageType.THORNS, damager);
++    }
++
++    /**
++     * Explosion damage origin is dealt when an entity explode.
++     *
++     * @return the damage origin created
++     * @see VanillaDamageType#EXPLOSION
++     */
++    @NotNull
++    public static DamageOrigin ofExplosion() {
++        return ofExplosion(null);
++    }
++
++    /**
++     * Explosion damage origin is dealt an entity explode or when
++     * the nearest ender crystal is destroyed in front of the ender dragon.
++     *
++     * @param source the source entity
++     * @return       the damage origin created
++     * @see VanillaDamageType#EXPLOSION
++     * @see VanillaDamageType#PLAYER_EXPLOSION
++     */
++    @NotNull
++    public static DamageOrigin ofExplosion(@Nullable Entity source) {
++        return ofExplosion(source, null);
++    }
++
++    /**
++     * Explosion damage origin is dealt when an entity explode or when
++     * the nearest ender crystal is destroyed in front of ender dragon.
++     *
++     * @param source  the source entity
++     * @param damager the damager entity
++     * @return        the damage origin created
++     * @see VanillaDamageType#EXPLOSION
++     * @see VanillaDamageType#PLAYER_EXPLOSION
++     */
++    @NotNull
++    public static DamageOrigin ofExplosion(@Nullable Entity source, @Nullable Entity damager) {
++        return ofType(damager != null && source != null ? VanillaDamageType.PLAYER_EXPLOSION : VanillaDamageType.EXPLOSION, source, damager);
++    }
++
++    /**
++     * Sonic boom damage origin is dealt when a warden perform a ranged attack.
++     * The vibration of air cut all targets in its way.
++     *
++     * @param damager the entity damager
++     * @return        the damage origin created
++     * @see VanillaDamageType#SONIC_BOOM
++     */
++    @NotNull
++    public static DamageOrigin ofSonicBoom(@NotNull Entity damager) {
++        return ofType(VanillaDamageType.SONIC_BOOM, damager);
++    }
++
++    /**
++     * Bad respawn point explosion damage is dealt when an entity try to set
++     * its spawn point using a spawn block like a bed or a respawn anchor
++     * in the wrong dimension.
++     *
++     * @param sourcePos the source position of the damage
++     * @return          the damage origin created
++     * @see VanillaDamageType#BAD_RESPAWN_POINT
++     */
++    @NotNull
++    public static DamageOrigin ofBadRespawnPointExplosion(@NotNull Position sourcePos) {
++        return DamageOrigin.of(VanillaDamageType.BAD_RESPAWN_POINT, null, null, sourcePos).build();
++    }
++
++    /**
++     * @see VanillaDamageType#OUTSIDE_BORDER
++     */
++    @NotNull
++    public static DamageOrigin outOfBorder() {
++        return DamageOrigins.PROVIDER.outOfBorder();
++    }
++
++    /**
++     * @see VanillaDamageType#GENERIC_KILL
++     */
++    @NotNull
++    public static DamageOrigin genericKill() {
++        return DamageOrigins.PROVIDER.genericKill();
++    }
++
++    private DamageOrigins() {}
++
++    @ApiStatus.Internal
++    private static final StaticDamageOriginProvider PROVIDER = Services.service(StaticDamageOriginProvider.class).orElseThrow();
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/EventContext.java b/src/main/java/io/papermc/paper/entity/damageorigin/EventContext.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2ed0513ea9190a2184243f88c4aca05123c222a2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/EventContext.java
+@@ -0,0 +1,70 @@
++package io.papermc.paper.entity.damageorigin;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.math.BlockPosition;
++import io.papermc.paper.math.Position;
++import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Represent an event context for the {@link org.bukkit.event.entity.EntityDamageEvent EntityDamageEvent}
++ * sub events
++ */
++public final class EventContext {
++
++    private final BlockPosition blockPosition;
++    private final Entity directSource;
++
++    private EventContext(@Nullable BlockPosition blockPosition, @Nullable Entity directSource) {
++        Preconditions.checkArgument((blockPosition == null) ^ (directSource == null), "Cannot create an empty context without at least a block position or a direct source");
++        this.blockPosition = blockPosition;
++        this.directSource = directSource;
++    }
++
++    /**
++     * Gets the block damager for
++     * the {@link org.bukkit.event.entity.EntityDamageByBlockEvent EntityDamageByBlockEvent}.
++     */
++    @Nullable
++    public BlockPosition blockPosition() {
++        return this.blockPosition;
++    }
++
++    /**
++     * Gets the entity damager for
++     * the {@link org.bukkit.event.entity.EntityDamageByEntityEvent EntityDamageByEntityEvent}.
++     */
++    @Nullable
++    public Entity directSource() {
++        return this.directSource;
++    }
++
++    /**
++     * Sets the block position tied for the {@link org.bukkit.event.entity.EntityDamageByBlockEvent EntityDamageByBlockEvent}.
++     * The underlying block will be resolved at runtime where the damage is dealt.
++     *
++     * @param blockPosition the block position
++     * @return a new event context
++     */
++    @NotNull
++    public static EventContext fromBlock(@NotNull Position blockPosition) {
++        return new EventContext(blockPosition.toBlock(), null);
++    }
++
++    /**
++     * Sets the entity tied for the {@link org.bukkit.event.entity.EntityDamageByEntityEvent EntityDamageByEntityEvent}.
++     * <p>
++     * The entity is needed to support fully the bukkit event notably the fact that some
++     * entity for example a lightning bolt doesn't have an entity source in their damage
++     * origin but is still caught by Bukkit.
++     *
++     * @param directSource the direct source entity
++     * @return a new event context
++     */
++    @NotNull
++    public static EventContext fromEntity(@NotNull Entity directSource) {
++        return new EventContext(null, directSource);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/LegacyDamageCause.java b/src/main/java/io/papermc/paper/entity/damageorigin/LegacyDamageCause.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c41f9b809a27e8e9f9f1fc70f9c8080b75511b61
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/LegacyDamageCause.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.entity.damageorigin;
++
++/**
++ * Unsupported and only available for compatibility with
++ * the old {@link org.bukkit.event.entity.EntityDamageEvent.DamageCause DamageCause} enumeration.
++ */
++public enum LegacyDamageCause {
++    /**
++     * Damage caused due to a snowman melting
++     * <p>
++     * Damage: 1
++     */
++    MELTING,
++
++    /**
++     * Damage caused due to an ongoing poison effect
++     * <p>
++     * Damage: 1
++     */
++    POISON
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/StaticDamageOriginProvider.java b/src/main/java/io/papermc/paper/entity/damageorigin/StaticDamageOriginProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e4306634e6c95f6dcb05a26be5604cdf208e0974
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/StaticDamageOriginProvider.java
+@@ -0,0 +1,53 @@
++package io.papermc.paper.entity.damageorigin;
++
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++public interface StaticDamageOriginProvider {
++
++    DamageOrigin inFire();
++
++    DamageOrigin lightningBolt();
++
++    DamageOrigin onFire();
++
++    DamageOrigin lava();
++
++    DamageOrigin hotFloor();
++
++    DamageOrigin inWall();
++
++    DamageOrigin cramming();
++
++    DamageOrigin drown();
++
++    DamageOrigin starve();
++
++    DamageOrigin cactus();
++
++    DamageOrigin fall();
++
++    DamageOrigin flyIntoWall();
++
++    DamageOrigin fellOutOfWorld();
++
++    DamageOrigin generic();
++
++    DamageOrigin magic();
++
++    DamageOrigin wither();
++
++    DamageOrigin dragonBreath();
++
++    DamageOrigin dryOut();
++
++    DamageOrigin sweetBerryBush();
++
++    DamageOrigin freeze();
++
++    DamageOrigin stalagmite();
++
++    DamageOrigin outOfBorder();
++
++    DamageOrigin genericKill();
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageEffect.java b/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageEffect.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e0c524099b1434edf43a0722756f0facb8e91a03
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageEffect.java
+@@ -0,0 +1,39 @@
++package io.papermc.paper.entity.damageorigin.type;
++
++import org.bukkit.Sound;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Damage effect is used to determine the hurt sound played
++ * by this type of damage when a <b>player</b> is hurt.
++ */
++public enum DamageEffect {
++
++    /**
++     * Default damage effect
++     */
++    HURT(Sound.ENTITY_PLAYER_HURT),
++    THORNS(Sound.ENCHANT_THORNS_HIT),
++    DROWNING(Sound.ENTITY_PLAYER_HURT_DROWN),
++    BURNING(Sound.ENTITY_PLAYER_HURT_ON_FIRE),
++    POKING(Sound.ENTITY_PLAYER_HURT_SWEET_BERRY_BUSH),
++    FREEZING(Sound.ENTITY_PLAYER_HURT_FREEZE);
++
++    private final Sound sound;
++
++    DamageEffect(Sound sound) {
++        this.sound = sound;
++    }
++
++    /**
++     * Gets the played sound when a damage origin
++     * holding this type will be applied to another
++     * player.
++     *
++     * @return the sound produced
++     */
++    @NotNull
++    public Sound getHurtSound() {
++        return this.sound;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageScale.java b/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageScale.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cd5df1ae6a6c4b86aca70ec711eb632a3a62af3f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageScale.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.entity.damageorigin.type;
++
++/**
++ * Represents how this type of damage will scale to the world difficulty
++ * when applied to a <b>player</b>.
++ */
++public enum DamageScale {
++    /**
++     * The damage type will never scale
++     * no matter the context
++     */
++    NEVER,
++    /**
++     * The damage type will only scale
++     * when it is caused by a living entity
++     * (excluding player).
++     * This is the default behavior when unspecified!
++     */
++    WHEN_CAUSED_BY_LIVING_NON_PLAYER,
++    /**
++     * The damage type will always scale
++     * no matter the context
++     */
++    ALWAYS
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageType.java b/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..86b56ef623af2f63684912e37f65692a73b9d3a2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageType.java
+@@ -0,0 +1,224 @@
++package io.papermc.paper.entity.damageorigin.type;
++
++import io.papermc.paper.entity.damageorigin.DamageOrigin;
++import io.papermc.paper.registry.RegistryBuilder;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.translation.Translatable;
++import org.bukkit.Keyed;
++import org.bukkit.entity.LivingEntity;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A generic type of damage. Multiple damage origin
++ * can hold the same damage type. The information stored
++ * here only affect players.
++ */
++public interface DamageType extends Keyed, Translatable {
++
++    /**
++     * Gets the name of this damage type.
++     * <p>
++     * This will be used with other fragments to
++     * make the final translation key when no
++     * custom death message has been defined.
++     * The name is generally a camel case key.
++     *
++     * @return the name
++     */
++    @NotNull
++    String getName();
++
++    /**
++     * Gets the context when this type of damage
++     * scale to the difficulty of the world
++     * for players.
++     *
++     * @return the damage scale
++     */
++    @NotNull
++    DamageScale getScale();
++
++    /**
++     * Gets the amount of food exhaustion when an
++     * entity takes damage from this type of damage.
++     * <p>
++     * In vanilla the amount is always equals to 0.1
++     * or zero when this damage bypass armor/magic protection.
++     *
++     * @return the amount of food exhaustion
++     */
++    float getFoodExhaustion();
++
++    /**
++     * Gets the effects of this type of damage
++     * once applied. This determines the hurt
++     * sound for damaged player.
++     *
++     * @return the damage effects
++     */
++    @NotNull
++    DamageEffect getEffects();
++
++    /**
++     * Gets the death message format.
++     *
++     * @return the death message format
++     */
++    @NotNull
++    DeathMessageFormat getDeathMessageFormat();
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * The translation key is only relevant when no custom
++     * death message/format has been defined!
++     * Do not use the key directly as a translatable component use
++     * {@link DamageOrigin#getDeathMessageFor(LivingEntity)} instead
++     * or make sure to filter out other damage origin.
++     *
++     * @see #getName()
++     */
++    @NotNull
++    String translationKey();
++
++    /**
++     * Checks if this damage type is tagged by the supplied
++     * damage type tag key
++     *
++     * @return {@code true} if this damage is tagged by this tag key
++     * @throws IllegalArgumentException if the damage type
++     * registry is not yet available
++     * @see DamageTypeTags
++     */
++    boolean isTagged(@NotNull Key tagKey);
++
++    /**
++     * A bootstrapper builder used before
++     * the frozen registries to modify the
++     * damage type registry safely.
++     */
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder extends RegistryBuilder<DamageType> {
++
++        /**
++         * Gets the name of this damage type.
++         * <p>
++         * This will be used with other fragments to
++         * make the final translation key when no
++         * custom death message has been defined.
++         * The name is generally a camel case key.
++         *
++         * @return the name
++         */
++        @NotNull
++        String name();
++
++        /**
++         * Sets the name of this damage type.
++         * <p>
++         * This will be used with other fragments to
++         * make the final translation key when no
++         * custom death message has been defined.
++         * The name is generally a camel case key.
++         *
++         * @param name the name
++         * @return the builder for chaining
++         */
++        @NotNull
++        @Contract("_ -> this")
++        Builder name(@NotNull String name);
++
++        /**
++         * Checks when this type of damage will
++         * scale to the difficulty of the world
++         * for players.
++         *
++         * @return the damage scale
++         */
++        @NotNull
++        DamageScale getScale();
++
++        /**
++         * Sets weather this type of damage will
++         * scale to the difficulty of the world.
++         * By default, the damage scale {@link DamageScale#WHEN_CAUSED_BY_LIVING_NON_PLAYER}
++         * is used.
++         *
++         * @param scale the damage scale
++         * @return the builder for chaining
++         */
++        @NotNull
++        @Contract("_ -> this")
++        Builder scale(@NotNull DamageScale scale);
++
++        /**
++         * Gets the amount of food exhaustion if an
++         * entity takes damage from this type of damage.
++         * <p>
++         * In vanilla the amount is always equals to 0.1
++         * or zero when this damage bypass armor/magic protection.
++         *
++         * @return the amount of food exhaustion
++         */
++        float foodExhaustion();
++
++        /**
++         * Sets the amount of food exhaustion if an
++         * entity takes damage from this type of damage.
++         * In vanilla the amount is always equals to 0.1
++         * or zero when this bypass armor/magic protection.
++         *
++         * @param exhaustion the amount of food exhaustion
++         * @return the builder for chaining
++         */
++        @NotNull
++        @Contract("_ -> this")
++        Builder foodExhaustion(float exhaustion);
++
++        /**
++         * Gets the effects of this type of damage
++         * once applied. This also determine the hurt
++         * sound for damaged player.
++         *
++         * @return the damage effects
++         */
++        @NotNull
++        DamageEffect effects();
++
++        /**
++         * Sets the effects of this type of damage
++         * once applied. This also determine the hurt
++         * sound for damaged player.
++         * By default, the damage effect {@link DamageEffect#HURT}
++         * is used.
++         *
++         * @param effects the damage effects
++         * @return the builder for chaining
++         * @see LivingEntity#getHurtSound(DamageOrigin)
++         */
++        @NotNull
++        @Contract("_ -> this")
++        Builder effects(@NotNull DamageEffect effects);
++
++        /**
++         * Gets the death message format.
++         *
++         * @return the death message format
++         */
++        @NotNull
++        DeathMessageFormat deathMessageFormat();
++
++        /**
++         * Sets the death message format.
++         *
++         * @param format the death message format
++         * @return the builder for chaining
++         */
++        @NotNull
++        @Contract("_ -> this")
++        Builder deathMessageFormat(@NotNull DeathMessageFormat format);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageTypeTags.java b/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageTypeTags.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0b07b983bfe33661221b16dd73462574623e264d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/type/DamageTypeTags.java
+@@ -0,0 +1,190 @@
++package io.papermc.paper.entity.damageorigin.type;
++
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.KeyPattern;
++import org.bukkit.MinecraftExperimental;
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * All the vanilla damage type tags
++ */
++public interface DamageTypeTags { // todo code gen
++
++    /**
++     * Tag of all damage type that will bypass the helmet
++     * of the victim.
++     */
++    Key DAMAGES_HELMET = of("damages_helmet");
++
++    /**
++     * Tag of all damage type that doesn't work against the breeze.
++     *
++     * @apiNote Locked under the {@link org.bukkit.FeatureFlag#UPDATE_121 UPDATE_1_21} flag.
++     */
++    @ApiStatus.Experimental
++    @MinecraftExperimental(value = "update 1.21")
++    Key BREEZE_IMMUNE_TO = of("breeze_immune_to");
++
++    /**
++     * Tag of all damage type that will bypass the armor
++     * of the victim.
++     */
++    Key BYPASSES_ARMOR = of("bypasses_armor");
++
++    /**
++     * Tag of all damage type that will bypass the shield
++     * of the victim.
++     */
++    Key BYPASSES_SHIELD = of("bypasses_shield");
++
++    /**
++     * Tag of all damage type that can bypass the
++     * invulnerability (like the creative mode).
++     */
++    Key BYPASSES_INVULNERABILITY = of("bypasses_invulnerability");
++
++    /**
++     * Tag of all damage type that can bypass the usual
++     * cooldown after taking damage.
++     * Empty by default but can be filled by datapack.
++     */
++    Key BYPASSES_COOLDOWN = of("bypasses_cooldown");
++
++    /**
++     * Tag of all damage type that can bypass the protection of
++     * the victim like the potion effects or the enchantments
++     *
++     * @see #BYPASSES_RESISTANCE
++     * @see #BYPASSES_ENCHANTMENTS
++     */
++    Key BYPASSES_EFFECTS = of("bypasses_effects");
++
++    /**
++     * Tag of all damage type that can bypass the
++     * resistance potion effect.
++     */
++    Key BYPASSES_RESISTANCE = of("bypasses_resistance");
++
++    /**
++     * Tag of all damage type that can bypass
++     * the active enchantments of the victim.
++     */
++    Key BYPASSES_ENCHANTMENTS = of("bypasses_enchantments");
++
++    /**
++     * Tag of all fire damage type
++     */
++    Key IS_FIRE = of("is_fire");
++
++    /**
++     * Tag of all projectile damage type
++     */
++    Key IS_PROJECTILE = of("is_projectile");
++
++    /**
++     * Tag of all damage type weak against a witch
++     */
++    Key WITCH_RESISTANT_TO = of("witch_resistant_to");
++
++    /**
++     * Tag of all explosion damage type
++     */
++    Key IS_EXPLOSION = of("is_explosion");
++
++    /**
++     * Tag of all falling damage type
++     */
++    Key IS_FALL = of("is_fall");
++
++    /**
++     * Tag of all drowning damage type
++     */
++    Key IS_DROWNING = of("is_drowning");
++
++    /**
++     * Tag of all freezing damage type
++     */
++    Key IS_FREEZING = of("is_freezing");
++
++    /**
++     * Tag of all lightning damage type.
++     * A killed turtle from this type of damage
++     * will drop a bowl and a seagrass.
++     */
++    Key IS_LIGHTNING = of("is_lightning");
++
++    /**
++     * Tag of all damage type that will not anger
++     * the victim. This tag only work for mobs!
++     */
++    Key NO_ANGER = of("no_anger");
++
++    /**
++     * Tag of all damage type without knockback
++     */
++    Key NO_IMPACT = of("no_impact");
++
++    /**
++     * Tag of all damage type that will be prioritized over
++     * the other fall damage for the death message format.
++     *
++     * @see DeathMessageFormat#FALL_VARIANTS
++     */
++    Key ALWAYS_MOST_SIGNIFICANT_FALL = of("always_most_significant_fall");
++
++    /**
++     * Tag of all damage type that doesn't work against the wither
++     */
++    Key WITHER_IMMUNE_TO = of("wither_immune_to");
++
++    /**
++     * Tag of all damage type that can ignite an armor-stand.
++     * The armorstand will be ignited for 5 seconds and will
++     * take some damage the next time.
++     */
++    Key IGNITES_ARMOR_STANDS = of("ignites_armor_stands");
++
++    /**
++     * Tag of all damage type that can burn an armor-stand.
++     * The armorstand will take 4 points of damage per hit.
++     */
++    Key BURNS_ARMOR_STANDS = of("burns_armor_stands");
++
++    /**
++     * Tag of all damage type that will ignore the natural
++     * guardian thorn for the attacker.
++     */
++    Key AVOIDS_GUARDIAN_THORNS = of("avoids_guardian_thorns");
++
++    /**
++     * Tag of all damage type where the silverfish
++     * will call its friends from the nearby rocks.
++     */
++    Key ALWAYS_TRIGGERS_SILVERFISH = of("always_triggers_silverfish");
++
++    /**
++     * Tag of all damage type that will always hurt the enderdragon regardless
++     * the context.
++     */
++    Key ALWAYS_HURTS_ENDER_DRAGONS = of("always_hurts_ender_dragons");
++
++    /**
++     * Tag of all damage type that will not deal any knockback by the damage itself.
++     */
++    Key NO_KNOCKBACK = of("no_knockback");
++
++    /**
++     * Tag of all damage type that will always kill an armorstand regardless
++     * the context.
++     */
++    Key ALWAYS_KILLS_ARMOR_STANDS = of("always_kills_armor_stands");
++
++    /**
++     * Tag of all damage type that can incrementally damage an armorstand.
++     */
++    Key CAN_BREAK_ARMOR_STAND = of("can_break_armor_stand");
++
++    private static Key of(@KeyPattern.Value String path) {
++        return Key.key(Key.MINECRAFT_NAMESPACE, path);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/type/DeathMessageFormat.java b/src/main/java/io/papermc/paper/entity/damageorigin/type/DeathMessageFormat.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4f9fdeae19d837b6019b7911f11b952c39b3044e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/type/DeathMessageFormat.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper.entity.damageorigin.type;
++
++/**
++ * A death message format
++ */
++public enum DeathMessageFormat {
++    /**
++     * The default variant just use the translation key
++     * or the provided death message without additional
++     * changes. It's the recommended format for
++     * most of the plugins.
++     */
++    DEFAULT,
++    /**
++     * The fall variant construct the translation key based
++     * on the context around the entity before the death.
++     *
++     * <pre>
++     * Translation keys:
++     * - death.fell.assist.item
++     * - death.fell.item
++     * - death.fell.finish.item
++     * - death.fell.finish
++     * - death.accident.[from block location]
++     *     The block location can be water, ladder, vines, weeping_vines, twisting_vines, other_climbable or scaffolding
++     *     with the following arguments:
++     *       %1$s = victim name
++     *       %2$s = attacker name or block location
++     *       %3$s = item used if found
++     * </pre>
++     *
++     * If no context is found, the death message
++     * will use the default death message or
++     * if found the plugin provided custom death
++     * message
++     */
++    FALL_VARIANTS,
++    /**
++     * The intentional game design is a special death message
++     * played when a bed or a respawn anchor explode in the wrong
++     * dimension.
++     * It will display a message redirecting to the Mojang bug report
++     * to be more precise <a href="https://bugs.mojang.com/browse/MCPE-28723">MCPE-28723</a>.
++     *
++     * <pre>
++     * Translation keys:
++     * - death.attack.[type name].link: [link placeholder]
++     * - death.attack.[type name].message: [death message]
++     *   with the following arguments:
++     *     %1$s = victim name
++     *     %2$s = death.attack.[type name].link
++     * </pre>
++     *
++     * <b>Warning</b>: using this special death
++     * message format will prevent plugin
++     * from changing the death message later without using event.
++     */
++    INTENTIONAL_GAME_DESIGN;
++}
+diff --git a/src/main/java/io/papermc/paper/entity/damageorigin/type/VanillaDamageType.java b/src/main/java/io/papermc/paper/entity/damageorigin/type/VanillaDamageType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..66219c5193b22180f069a1a98e1cdba8023af3bf
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/damageorigin/type/VanillaDamageType.java
+@@ -0,0 +1,242 @@
++package io.papermc.paper.entity.damageorigin.type;
++
++import io.papermc.paper.registry.RegistryAccess;
++import io.papermc.paper.registry.RegistryKey;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.KeyPattern;
++
++/**
++ * A static collection to gets the existing damage type.
++ * Those also exist for equality between the event damage origin
++ * with the vanilla damage type.
++ * <p>
++ * Data-packs and plugins can also add their own damage type!
++ * Gets them from the {@link RegistryKey#DAMAGE_TYPE DAMAGE_TYPE} registry.
++ * <br>
++ * The standalone keys are available through {@link io.papermc.paper.registry.keys.DamageTypeKeys DamageTypeKeys}
++ * for plugins custom damage type.
++ *
++ * @see io.papermc.paper.registry.keys.DamageTypeKeys DamageTypeKeys
++ */
++public final class VanillaDamageType {
++
++    /**
++     * Fire damage type is dealt by a fire related block like
++     * the fire block or the campfire block.
++     */
++    public static final DamageType IN_FIRE = get("in_fire");
++    /**
++     * Lightning bolt damage type is dealt by a lightning bolt strike.
++     */
++    public static final DamageType LIGHTNING_BOLT = get("lightning_bolt");
++    /**
++     * Repetitive fire damage type is dealt when an entity burn.
++     */
++    public static final DamageType ON_FIRE = get("on_fire");
++    /**
++     * Lava damage type is dealt when an entity fall in lava.
++     */
++    public static final DamageType LAVA = get("lava");
++    /**
++     * Hot floor damage type is dealt by a really hot block surface
++     * like the magma block.
++     */
++    public static final DamageType HOT_FLOOR = get("hot_floor");
++    /**
++     * Suffocation damage type is dealt by solid block or the world border
++     * like the magma block.
++     */
++    public static final DamageType IN_WALL = get("in_wall");
++    /**
++     * Generic damage type limited by the maxEntityCramming game-rule.
++     */
++    public static final DamageType CRAMMING = get("cramming");
++    /**
++     * Drown damage type is dealt when an entity has its head underwater
++     * and is sensitive.
++     * Note: some water animals also receive this type of damage
++     * when they are outside of water.
++     */
++    public static final DamageType DROWN = get("drown");
++    /**
++     * Starve damage type is dealt when an entity is starving and hasn't
++     * eaten for a while.
++     * Note: vex also receive this type of damage
++     * when they have lived for too long.
++     */
++    public static final DamageType STARVE = get("starve");
++    /**
++     * Cactus damage type is dealt when an entity is too close to a
++     * cactus.
++     */
++    public static final DamageType CACTUS = get("cactus");
++    /**
++     * Falling damage is dealt when an entity fall for too long.
++     * Special case: the ender-pearl always deal 5 points of damage
++     * after usage.
++     */
++    public static final DamageType FALL = get("fall");
++    /**
++     * Fall flying damage type is dealt when an entity fly with often an elytra
++     * and hits a solid block in a horizontal way with a too high velocity.
++     */
++    public static final DamageType FLY_INTO_WALL = get("fly_into_wall");
++    /**
++     * Out of world damage type is dealt when an entity exit the allowed vertical world
++     * area. These damages can often bypass the player invulnerability.
++     */
++    public static final DamageType FELL_OUT_OF_WORLD = get("out_of_world");
++    /**
++     * Generic damage type is the default type of damage used when the context
++     * doesn't permit to classify its category.
++     */
++    public static final DamageType GENERIC = get("generic");
++    /**
++     * Magic damage type is dealt when an entity gets a negative potion effect
++     * or magic creature deal damage.
++     */
++    public static final DamageType MAGIC = get("magic");
++    /**
++     * Wither damage type is dealt when an entity gets a wither potion effect.
++     */
++    public static final DamageType WITHER = get("wither");
++    /**
++     * Dragon breath damage type is dealt when a dragon breathing fire.
++     */
++    public static final DamageType DRAGON_BREATH = get("dragon_breath");
++    /**
++     * Dry out damage type is dealt when a water animal is outside of water.
++     * Note: some water animals receive the {@link #DROWN} damage origin
++     * instead of this one for legacy reason.
++     */
++    public static final DamageType DRY_OUT = get("dry_out");
++    /**
++     * Sweet berry bush damage type is dealt when an entity is inside a hurting bush.
++     */
++    public static final DamageType SWEET_BERRY_BUSH = get("sweet_berry_bush");
++    /**
++     * Freeze damage type is dealt when is frozen in powder snow.
++     * Magma cube, blaze and stride are really sensitive to this damage.
++     */
++    public static final DamageType FREEZE = get("freeze");
++    /**
++     * Stalagmite damage type is dealt when an entity fall on a pointed dripstone.
++     */
++    public static final DamageType STALAGMITE = get("stalagmite");
++    /**
++     * Falling block damage type is dealt when an entity collide a falling block.
++     */
++    public static final DamageType FALLING_BLOCK = get("falling_block");
++    /**
++     * Anvil damage type is dealt when an entity collide a falling anvil block.
++     */
++    public static final DamageType FALLING_ANVIL = get("falling_anvil");
++    /**
++     * Falling stalactite damage type is deal when an entity collide a falling
++     * pointed dripstone block.
++     */
++    public static final DamageType FALLING_STALACTITE = get("falling_stalactite");
++    /**
++     * Sting damage type is dealt by angry bees.
++     */
++    public static final DamageType STING = get("sting");
++    /**
++     * Generic damage type is dealt by mobs when they attack.
++     */
++    public static final DamageType MOB_ATTACK = get("mob_attack");
++    /**
++     * Generic damage type dealt by mobs when they attack.
++     * But unlike {@link #MOB_ATTACK} the victim
++     * will not become aggressive.
++     */
++    public static final DamageType MOB_ATTACK_NO_AGGRO = get("mob_attack_no_aggro");
++    /**
++     * Generic damage type for players when they attack.
++     */
++    public static final DamageType PLAYER_ATTACK = get("player_attack");
++    /**
++     * Generic damage type for arrows and variants when they hit
++     * an entity.
++     */
++    public static final DamageType ARROW = get("arrow");
++    /**
++     * Trident damage type is dealt when a trident hits a target.
++     */
++    public static final DamageType TRIDENT = get("trident");
++    /**
++     * Mob projectile damage type is dealt when a projectile launched by a mob
++     * hit a target.
++     */
++    public static final DamageType MOB_PROJECTILE = get("mob_projectile");
++    /**
++     * Fireworks damage type is dealt when a firework explode on a target.
++     */
++    public static final DamageType FIREWORKS = get("fireworks");
++    /**
++     * Fireball damage type is dealt when a fireball explode on a target.
++     */
++    public static final DamageType FIREBALL = get("fireball");
++    /**
++     * Fireball damage origin called when a fireball explode on a target
++     * without knowing the thrower of the fireball.
++     */
++    public static final DamageType UNATTRIBUTED_FIREBALL = get("unattributed_fireball");
++    /**
++     * Wither skull damage origin is dealt when a wither skull explode on a target.
++     */
++    public static final DamageType WITHER_SKULL = get("wither_skull");
++    /**
++     * Passive projectile damage type is dealt when a projectile hits a target
++     * but will affect only sensitive mobs.
++     */
++    public static final DamageType THROWN = get("thrown");
++    /**
++     * Indirect magic damage type is dealt when a magic action occur
++     * by using potion, projectile or for guardian attack.
++     */
++    public static final DamageType INDIRECT_MAGIC = get("indirect_magic");
++    /**
++     * Thorns damage type is dealt when an entity attack a target wearing
++     * an armor enchanted with thorns or for guardian natural abilities.
++     */
++    public static final DamageType THORNS = get("thorns");
++    /**
++     * Explosion damage type is dealt when an entity explode or when
++     * the nearest ender crystal is destroyed in front of the ender dragon.
++     */
++    public static final DamageType EXPLOSION = get("explosion");
++    /**
++     * Explosion damage type is dealt when an entity explode or when
++     * the nearest ender crystal is destroyed in front of the ender dragon
++     * Unlike {@link #EXPLOSION}, this type is used when the direct causing
++     * entity and the cause entity is known.
++     */
++    public static final DamageType PLAYER_EXPLOSION = get("player_explosion");
++    /**
++     * Sonic boom damage type is dealt when a warden perform a ranged attack.
++     * The vibration of air cut all targets in its way.
++     */
++    public static final DamageType SONIC_BOOM = get("sonic_boom");
++    /**
++     * Bad respawn point explosion damage type is dealt when an entity try to set
++     * its spawn point using a spawn block like a bed or a respawn anchor but
++     * in the wrong dimension.
++     */
++    public static final DamageType BAD_RESPAWN_POINT = get("bad_respawn_point");
++    /**
++     * Outside border damage type is dealt when an entity exit the world border
++     * This can happen when the border is shrinking.
++     */
++    public static final DamageType OUTSIDE_BORDER = get("outside_border");
++    /**
++     * Generic kill damage type is dealt when an entity is killed either naturally
++     * or by using a command. This bypass the player invulnerability.
++     */
++    public static final DamageType GENERIC_KILL = get("generic_kill");
++
++    private static DamageType get(@KeyPattern.Value String key) {
++        return RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).get(Key.key(Key.MINECRAFT_NAMESPACE, key));
++    }
++    
++    private VanillaDamageType() {}
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/TameableDeathMessageEvent.java b/src/main/java/io/papermc/paper/event/entity/TameableDeathMessageEvent.java
+index 5d449b90829bca7a6ff3060b637561d8f99dc156..5ae314498f9ebc1127584c0ef724b3fb6058574c 100644
+--- a/src/main/java/io/papermc/paper/event/entity/TameableDeathMessageEvent.java
++++ b/src/main/java/io/papermc/paper/event/entity/TameableDeathMessageEvent.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.event.entity;
+ 
++import io.papermc.paper.entity.damageorigin.DamageOrigin;
+ import net.kyori.adventure.text.Component;
+ import org.bukkit.entity.Tameable;
+ import org.bukkit.event.Cancellable;
+@@ -15,13 +16,15 @@ public class TameableDeathMessageEvent extends EntityEvent implements Cancellabl
+ 
+     private static final HandlerList HANDLER_LIST = new HandlerList();
+ 
++    private final DamageOrigin origin;
+     private Component deathMessage;
+     private boolean cancelled;
+ 
+     @ApiStatus.Internal
+-    public TameableDeathMessageEvent(@NotNull Tameable tameable, @NotNull Component deathMessage) {
++    public TameableDeathMessageEvent(@NotNull Tameable tameable, @NotNull Component deathMessage, @NotNull DamageOrigin origin) {
+         super(tameable);
+         this.deathMessage = deathMessage;
++        this.origin = origin;
+     }
+ 
+     /**
+@@ -49,6 +52,18 @@ public class TameableDeathMessageEvent extends EntityEvent implements Cancellabl
+         return (Tameable) super.getEntity();
+     }
+ 
++    // todo move in the right patch
++    /**
++     * Gets the {@link DamageOrigin} of the
++     * damage that dealt this death.
++     *
++     * @return a damage origin holding the context of the fatal damage.
++     */
++    @NotNull
++    public DamageOrigin getOrigin() {
++        return this.origin;
++    }
++
+     @Override
+     public boolean isCancelled() {
+         return this.cancelled;
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+index 5dde0eac9aa6354f71a910aff1d5e484deef0a5d..56be8adfc98929851c6ba447b254af6b45afab76 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.entity.damageorigin.type.DamageType;
+ import net.kyori.adventure.key.Keyed;
+ import org.bukkit.GameEvent;
+ import org.bukkit.MusicInstrument;
+@@ -82,4 +83,9 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
+      * @see io.papermc.paper.registry.keys.TrimPatternKeys
+      */
+     RegistryKey<TrimPattern> TRIM_PATTERN = create("trim_pattern");
++    /**
++     * Data-driven registry for damage types.
++     * @see io.papermc.paper.registry.keys.DamageTypeKeys
++     */
++    RegistryKey<DamageType> DAMAGE_TYPE = create("damage_type");
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+index b222103a73d388d5cf7eb088db1de06b582dea7d..beb10b15018c8088284e07a0964eb90d5bce1a17 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.registry.event;
+ 
++import io.papermc.paper.entity.damageorigin.type.DamageType;
+ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
+ import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
+ import io.papermc.paper.plugin.lifecycle.event.handler.configuration.LifecycleEventHandlerConfiguration;
+@@ -21,6 +22,7 @@ import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
+ public final class RegistryEvents {
+ 
+     public static final Provider<GameEvent, GameEvent.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
++    public static final Provider<DamageType, DamageType.Builder> DAMAGE_TYPE = create(RegistryKey.DAMAGE_TYPE);
+ 
+     /**
+      * Provider for each registry event type for a specific registry.
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 8e14d6a24c02db0fac8019a9a6c321ab7378722c..f2931cd05b2be97a695f65284e5ce2f620587117 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2704,7 +2704,6 @@ public final class Bukkit {
+     public static @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer() {
+         return server.getPotionBrewer();
+     }
+-    // Paper end
+ 
+     // Paper start - Folia region threading API
+     /**
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 890c07cfc2e64a52752e96d518578b5eb1afbd19..2bb87d37a5495dd882b833a8c16d0c4162e9cd28 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -281,4 +281,25 @@ public interface UnsafeValues {
+     @org.jetbrains.annotations.ApiStatus.Internal
+     io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck);
+     // Paper end - lifecycle event API
++
++    // Paper start - Damage source wrapper
++    /**
++     * Creates a generic {@link io.papermc.paper.entity.damageorigin.DamageOriginBuilder DamageOriginBuilder} with optionally
++     * a direct entity, an entity and a position.
++     * For example, in the case of a projectile dealing damage,
++     * the direct source will be the projectile and the source will be
++     * the thrower.
++     * Source position is used for explosion related damage.
++     *
++     * @param type           the damage type
++     * @param directSource   the entity direct source, the nearest entity
++     *                       that will damage the target
++     * @param source         the entity source or null
++     * @param sourcePosition the position
++     *
++     * @return a builder to then build a new {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin}
++     */
++    @NotNull
++    io.papermc.paper.entity.damageorigin.DamageOriginBuilder createDamageSource(@NotNull io.papermc.paper.entity.damageorigin.type.DamageType type, @Nullable org.bukkit.entity.Entity directSource, @Nullable org.bukkit.entity.Entity source, @Nullable io.papermc.paper.math.Position sourcePosition);
++    // Paper end - Damage source wrapper
+ }
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index efa2043e044b0e461780e808c347d6ec00f6da0a..f0652233dabd60be38af07ae2d23873279fb141b 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -2180,6 +2180,20 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      */
+     public boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks);
+ 
++    /**
++     * Creates explosion at given location with given power and optionally
++     * setting blocks on fire, with the specified entity as the source.
++     *
++     * @param source The source entity of the explosion
++     * @param position Position to blow up
++     * @param power The power of explosion, where 4F is TNT
++     * @param setFire Whether or not to set blocks on fire
++     * @param breakBlocks Whether or not to have blocks be destroyed
++     * @param origin The damage origin belonging this explosion
++     * @return false if explosion was canceled, otherwise true
++     */
++    boolean createExplosion(@Nullable Entity source, @NotNull io.papermc.paper.math.Position position, float power, boolean setFire, boolean breakBlocks, @Nullable io.papermc.paper.entity.damageorigin.DamageOrigin origin);
++
+     /**
+      * Creates explosion at given location with given power and optionally
+      * setting blocks on fire, with the specified entity as the source.
+diff --git a/src/main/java/org/bukkit/entity/Damageable.java b/src/main/java/org/bukkit/entity/Damageable.java
+index a9341849945f45cd24bf32494a9fe411de8b4ada..2599fcf6629c6bace6ae8d1c887f97b27c309fcc 100644
+--- a/src/main/java/org/bukkit/entity/Damageable.java
++++ b/src/main/java/org/bukkit/entity/Damageable.java
+@@ -8,9 +8,12 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public interface Damageable extends Entity {
+     /**
+-     * Deals the given amount of damage to this entity.
++     * Deals the given amount of damage to this entity using the
++     * {@link io.papermc.paper.entity.damageorigin.type.VanillaDamageType#GENERIC GENERIC}
++     * damage type.
+      *
+      * @param amount Amount of damage to deal
++     * @see io.papermc.paper.entity.damageorigin.DamageOrigins#generic()
+      */
+     void damage(double amount);
+ 
+@@ -20,9 +23,24 @@ public interface Damageable extends Entity {
+      *
+      * @param amount Amount of damage to deal
+      * @param source Entity which to attribute this damage from
++     * @deprecated   you should use {@link #damage(double, io.papermc.paper.entity.damageorigin.DamageOrigin, io.papermc.paper.entity.damageorigin.EventContext)} instead
++     *               to be able to choose accurately the damage origin
+      */
++    @Deprecated // Paper - Damage source wrapper
+     void damage(double amount, @Nullable Entity source);
+ 
++    // Paper start - Damage source wrapper
++    /**
++     * Gets the hurt sound that would be played for damage from this damage origin.
++     * The sound can be null and often in this case another action can occur.
++     *
++     * @param origin origin of the damage
++     * @return       the hurting sound played when the damage has been dealt
++     */
++    @Nullable
++    org.bukkit.Sound getHurtSound(@org.jetbrains.annotations.NotNull io.papermc.paper.entity.damageorigin.DamageOrigin origin);
++    // Paper end
++
+     /**
+      * Gets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead.
+      *
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 6ace3581f8d0c2a1b7e2188d5b6af5c984b74a0e..43e6a6fdd486304082f708b7323fdaddeb5d1407 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -478,6 +478,61 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+     @Nullable
+     public EntityDamageEvent getLastDamageCause();
+ 
++    // Paper start - Damage source wrapper
++    /**
++     * Deals the given amount of damage to this entity using the
++     * {@link io.papermc.paper.entity.damageorigin.type.VanillaDamageType#GENERIC GENERIC}
++     * damage type.
++     * <p>
++     * In order to anticipate if this damage call will actually deal some damage to the entity, you can
++     * use {@link #isInvulnerableTo(io.papermc.paper.entity.damageorigin.DamageOrigin)
++     * #isInvulnerableTo}, to check whether the entity is vulnerable to this damage origin however
++     * this is not accurate at 100%.
++     *
++     * @param amount amount of damage to deal
++     * @see io.papermc.paper.entity.damageorigin.DamageOrigins#generic()
++     */
++    default void damage(double amount) {
++        this.damage(amount, io.papermc.paper.entity.damageorigin.DamageOrigins.generic());
++    }
++
++    /**
++     * Deals the given amount of damage to this entity with the specific
++     * {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin}.
++     * <p>
++     * In order to anticipate if this damage call will actually deal some damage to the entity, you can
++     * use {@link #isInvulnerableTo(io.papermc.paper.entity.damageorigin.DamageOrigin)
++     * #isInvulnerableTo}, to check whether the entity is vulnerable to this damage origin however
++     * this is not accurate at 100%.
++     *
++     * @param amount amount of damage
++     * @param origin origin of the damage
++     * @return whether the damage has been dealt
++     */
++    default boolean damage(double amount, @org.jetbrains.annotations.NotNull io.papermc.paper.entity.damageorigin.DamageOrigin origin) {
++        return damage(amount, origin, null);
++    }
++
++    /**
++     * Deals the given amount of damage to this entity with the specific
++     * {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin}.
++     * <p>
++     * In order to anticipate if this damage call will actually deal some damage to the entity, you can
++     * use {@link #isInvulnerableTo(io.papermc.paper.entity.damageorigin.DamageOrigin)
++     * #isInvulnerableTo}, to check whether the entity is vulnerable to the damage origin however
++     * this is not accurate at 100%.
++     * <p>
++     * The event context is not necessary generally and should be used only if you
++     * encounter some trouble with other plugins or for very specific cases.
++     *
++     * @param amount       amount of damage
++     * @param origin       origin of the damage
++     * @param eventContext event context for bukkit
++     * @return whether the damage has been dealt
++     */
++    boolean damage(double amount, @org.jetbrains.annotations.NotNull io.papermc.paper.entity.damageorigin.DamageOrigin origin, @Nullable io.papermc.paper.entity.damageorigin.EventContext eventContext);
++    // Paper end
++
+     /**
+      * Returns a unique and persistent id for this entity
+      *
+@@ -1062,6 +1117,18 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+      * @return the entity's yaw
+      */
+     float getYaw();
++
++    /**
++     * Checks if the entity is invulnerable to a specific damage origin.
++     * <p>
++     * Note: This method only check if this entity can be affected by this damage origin
++     * but this is not accurate at 100%, for instance the gamemode, the state,
++     * the mob invulnerability etc. are not counted.
++     *
++     * @param origin origin of the damage
++     * @return       if invulnerable to that damage origin
++     */
++    boolean isInvulnerableTo(@NotNull io.papermc.paper.entity.damageorigin.DamageOrigin origin);
+     // Paper end
+ 
+     // Paper start - Collision API
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 0f0b965ce48d13a64b5546a0abcfb45c4f5f4722..f5c10dd16721b87c0677761e88a7269ad6a85c71 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -897,9 +897,10 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
+ 
+     /**
+-     * Get the {@link Sound} this entity will make when damaged.
++     * Get the {@link Sound} this entity will make when damaged by a generic damage origin.
+      *
+      * @return the hurt sound, or null if the entity does not make any sound
++     * @see Damageable#getHurtSound(io.papermc.paper.entity.damageorigin.DamageOrigin)
+      */
+     @Nullable
+     public Sound getHurtSound();
+diff --git a/src/main/java/org/bukkit/event/entity/EntityDamageByBlockEvent.java b/src/main/java/org/bukkit/event/entity/EntityDamageByBlockEvent.java
+index ab18f35b686ec79551c307dde9e43c7dfad1b182..f30b75b97da9c46ee79adbb034c790a3744cd0c8 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityDamageByBlockEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityDamageByBlockEvent.java
+@@ -18,6 +18,7 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
+     private final Block damager;
+     private final org.bukkit.block.BlockState damagerBlockState; // Paper
+ 
++    @Deprecated // Paper
+     public EntityDamageByBlockEvent(@Nullable final Block damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
+         // Paper start
+         this(damager, damagee, cause, damage, null);
+@@ -30,18 +31,30 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
+         this.damagerBlockState = damagerBlockState; // Paper
+     }
+ 
++    @Deprecated // Paper
+     public EntityDamageByBlockEvent(@Nullable final Block damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
+         // Paper start
+         this(damager, damagee, cause, modifiers, modifierFunctions, null);
+     }
+ 
+-    @org.jetbrains.annotations.ApiStatus.Internal
++    @Deprecated // Paper
+     public EntityDamageByBlockEvent(@Nullable final Block damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions, final @Nullable org.bukkit.block.BlockState damagerBlockState) {
++        this(damager, damagee, cause, io.papermc.paper.entity.damageorigin.DamageOrigins.generic(), modifiers, modifierFunctions, damagerBlockState);
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityDamageByBlockEvent(@Nullable final Block damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final io.papermc.paper.entity.damageorigin.DamageOrigin origin, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
++        this(damager, damagee, cause, origin, modifiers, modifierFunctions, null);
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityDamageByBlockEvent(@Nullable final Block damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final io.papermc.paper.entity.damageorigin.DamageOrigin origin, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions, final @Nullable org.bukkit.block.BlockState damagerBlockState) {
++        super(damagee, cause, origin, modifiers, modifierFunctions);
+         // Paper end
+-        super(damagee, cause, modifiers, modifierFunctions);
+         this.damager = damager;
+-        this.damagerBlockState = damagerBlockState; // Paper
++        this.damagerBlockState = damagerBlockState;
+     }
++    // Paper end
+ 
+     /**
+      * Returns the block that damaged the player.
+diff --git a/src/main/java/org/bukkit/event/entity/EntityDamageByEntityEvent.java b/src/main/java/org/bukkit/event/entity/EntityDamageByEntityEvent.java
+index aec5a0c2882cf69e8802b9e754b14d0acc34b162..911333a168432dd28bcb2e4c95026980b7a0fc86 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityDamageByEntityEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityDamageByEntityEvent.java
+@@ -16,6 +16,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
+         super(damagee, cause, damage);
+         this.damager = damager;
+         this.critical = false; // Paper - add critical damage API
++        this.sweep = false; // Paper - handle sweep without damage cause
+     }
+ 
+     @Deprecated // Paper - add critical damage API
+@@ -25,14 +26,28 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
+     }
+ 
+     private final boolean critical;
++    private final boolean sweep;
++    @Deprecated // Paper
+     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions, boolean critical) {
+         // Paper end
+         super(damagee, cause, modifiers, modifierFunctions);
+         this.damager = damager;
+         // Paper start - add critical damage API
+         this.critical = critical;
++        this.sweep = false;
+     }
+ 
++    // Paper start - Damage source wrapper
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final io.papermc.paper.entity.damageorigin.DamageOrigin origin, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions, boolean critical, boolean sweep) {
++        // Paper end
++        super(damagee, cause, origin, modifiers, modifierFunctions);
++        this.damager = damager;
++        this.critical = critical; // Paper add critical damage API
++        this.sweep = sweep;
++    }
++    // Paper end
++    // Paper start - add critical damage API
+     /**
+      * Shows this damage instance was critical.
+      * The damage instance can be critical if the attacking player met the respective conditions.
+@@ -45,6 +60,15 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
+         return this.critical;
+     }
+     // Paper end
++    // Paper start - handle sweep without damage cause
++    /**
++     * Checks this damage instance was caused when an entity attacks
++     * another entity in a sweep attack.
++     */
++    public boolean isSweep() {
++        return this.sweep;
++    }
++    // Paper end
+ 
+     /**
+      * Returns the entity that damaged the defender.
+diff --git a/src/main/java/org/bukkit/event/entity/EntityDamageEvent.java b/src/main/java/org/bukkit/event/entity/EntityDamageEvent.java
+index 4773f537dec20d6ebd82e4b145a1cdea0077fe90..124080b9d9490eb9ea7f644a3b9619524cf44bd1 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityDamageEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityDamageEvent.java
+@@ -27,12 +27,22 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
+     private final Map<DamageModifier, Double> originals;
+     private boolean cancelled;
+     private final DamageCause cause;
++    private final io.papermc.paper.entity.damageorigin.DamageOrigin origin; // Paper - Damage source wrapper
+ 
++    @Deprecated // Paper
+     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
+         this(damagee, cause, new EnumMap<DamageModifier, Double>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
+     }
+ 
++    @Deprecated // Paper
+     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
++        // Paper start - Damage source wrapper
++        this(damagee, cause, io.papermc.paper.entity.damageorigin.DamageOrigins.generic(), modifiers, modifierFunctions); // Paper
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final io.papermc.paper.entity.damageorigin.DamageOrigin origin, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
++        // Paper end
+         super(damagee);
+         Preconditions.checkArgument(modifiers.containsKey(DamageModifier.BASE), "BASE DamageModifier missing");
+         Preconditions.checkArgument(!modifiers.containsKey(null), "Cannot have null DamageModifier");
+@@ -41,6 +51,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
+         Preconditions.checkArgument(modifierFunctions.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier function");
+         this.originals = new EnumMap<DamageModifier, Double>(modifiers);
+         this.cause = cause;
++        this.origin = origin; // Paper
+         this.modifiers = modifiers;
+         this.modifierFunctions = modifierFunctions;
+     }
+@@ -183,12 +194,27 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
+         setDamage(DamageModifier.BASE, damage);
+     }
+ 
++    // Paper start - damage source wrapper
++    /**
++     * Gets the {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin} of the damage.
++     *
++     * @return a damage origin holding the context of the damage.
++     */
++    @NotNull
++    public io.papermc.paper.entity.damageorigin.DamageOrigin getOrigin() {
++        return origin;
++    }
++    // Paper end - damage source wrapper
++
+     /**
+      * Gets the cause of the damage.
+      *
+      * @return A DamageCause value detailing the cause of the damage.
++     * @deprecated You should use {@link #getOrigin()} instead
++     * @see io.papermc.paper.entity.damageorigin.DamageOrigin
+      */
+     @NotNull
++    @Deprecated // Paper
+     public DamageCause getCause() {
+         return cause;
+     }
+@@ -258,7 +284,11 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
+ 
+     /**
+      * An enum to specify the cause of the damage
++     * @deprecated Some damage cause do not have an equivalent to vanilla damage source. Use {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin} instead to get more information.
++     * @see io.papermc.paper.entity.damageorigin.DamageOrigin
++     * @see io.papermc.paper.entity.damageorigin.LegacyDamageCause
+      */
++    @Deprecated
+     public enum DamageCause {
+ 
+         /**
+@@ -290,7 +320,9 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
+          * Damage caused when an entity attacks another entity in a sweep attack.
+          * <p>
+          * Damage: variable
++         * @deprecated in favour of {@link EntityDamageByEntityEvent#isSweep()}
+          */
++        @Deprecated(forRemoval = true) // Paper
+         ENTITY_SWEEP_ATTACK,
+         /**
+          * Damage caused when attacked by a projectile.
+@@ -326,7 +358,9 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
+          * Damage caused due to a snowman melting
+          * <p>
+          * Damage: 1
++         * @deprecated in favour of {@link io.papermc.paper.entity.damageorigin.LegacyDamageCause#MELTING LegacyDamageCause#MELTING}
+          */
++        @Deprecated(forRemoval = true) // Paper
+         MELTING,
+         /**
+          * Damage caused by direct exposure to lava
+@@ -384,7 +418,9 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
+          * Damage caused due to an ongoing poison effect
+          * <p>
+          * Damage: 1
++         * @deprecated in favour of {@link io.papermc.paper.entity.damageorigin.LegacyDamageCause#POISON LegacyDamageCause#POISON}
+          */
++        @Deprecated(forRemoval = true) // Paper
+         POISON,
+         /**
+          * Damage caused by being hit by a damage potion or spell
+diff --git a/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java b/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
+index 130cf9e5981f701dff4fa72e71e0b5dc8295bfc8..1895caae2f6870a0fa7fe44c55735dc7c9e5518d 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
+@@ -23,15 +23,24 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
+     private float deathSoundVolume;
+     private float deathSoundPitch;
+     // Paper end
++    private final io.papermc.paper.entity.damageorigin.DamageOrigin origin; // Paper
+ 
+     public EntityDeathEvent(@NotNull final LivingEntity entity, @NotNull final List<ItemStack> drops) {
+         this(entity, drops, 0);
+     }
+ 
+     public EntityDeathEvent(@NotNull final LivingEntity what, @NotNull final List<ItemStack> drops, final int droppedExp) {
++        // Paper start - Damage source wrapper
++        this(what, drops, droppedExp, io.papermc.paper.entity.damageorigin.DamageOrigins.generic());
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityDeathEvent(@NotNull final LivingEntity what, @NotNull final List<ItemStack> drops, final int droppedExp, @NotNull final io.papermc.paper.entity.damageorigin.DamageOrigin origin) {
++        // Paper end
+         super(what);
+         this.drops = drops;
+         this.dropExp = droppedExp;
++        this.origin = origin; // Paper
+     }
+ 
+     @NotNull
+@@ -213,4 +222,17 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
+         this.deathSoundPitch = pitch;
+     }
+     // Paper end
++
++    // Paper start - Damage source wrapper
++    /**
++     * Gets the {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin} of the
++     * damage that dealt this death.
++     *
++     * @return a damage origin holding the context of the fatal damage.
++     */
++    @NotNull
++    public io.papermc.paper.entity.damageorigin.DamageOrigin getOrigin() {
++        return origin;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/event/entity/EntityResurrectEvent.java b/src/main/java/org/bukkit/event/entity/EntityResurrectEvent.java
+index 2f6ad5c2fc7ae7cf22cb424df3543c24f3ee6ebe..13585b4a25a85e2882ec9830276fad0d3e4d10e4 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityResurrectEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityResurrectEvent.java
+@@ -19,15 +19,25 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
+     private boolean cancelled;
+ 
+     private final EquipmentSlot hand;
++    private final io.papermc.paper.entity.damageorigin.DamageOrigin origin; // Paper
+ 
++    @Deprecated // Paper
+     public EntityResurrectEvent(@NotNull LivingEntity what, @Nullable EquipmentSlot hand) {
++        // Paper start - Damage source wrapper
++        this(what, hand, io.papermc.paper.entity.damageorigin.DamageOrigins.generic());
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityResurrectEvent(@NotNull LivingEntity what, @Nullable EquipmentSlot hand, @NotNull io.papermc.paper.entity.damageorigin.DamageOrigin origin) { // Paper
++        // Paper end
+         super(what);
+         this.hand = hand;
++        this.origin = origin; // Paper
+     }
+ 
+     @Deprecated
+     public EntityResurrectEvent(@NotNull LivingEntity what) {
+-        this(what, null);
++        this(what, null, io.papermc.paper.entity.damageorigin.DamageOrigins.generic()); // Paper
+     }
+ 
+     @NotNull
+@@ -47,6 +57,19 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
+         return hand;
+     }
+ 
++    // Paper start - Damage source wrapper
++    /**
++     * Gets the {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin} of the
++     * damage that dealt this death.
++     *
++     * @return a damage origin holding the context of the fatal damage.
++     */
++    @NotNull
++    public io.papermc.paper.entity.damageorigin.DamageOrigin getOrigin() {
++        return origin;
++    }
++    // Paper end
++
+     @Override
+     public boolean isCancelled() {
+         return cancelled;
+diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+index 66e9d65a8dd05bed05d0ab46ec64206a6dae0507..8d9b71689a7b31d6e5be1b32979879b097897836 100644
+--- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+@@ -36,7 +36,12 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+     @org.jetbrains.annotations.ApiStatus.Internal
+     public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage, final boolean doExpDrop) {
+         // Paper end - shouldDropExperience API
+-        super(player, drops, droppedExp);
++        this(player, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, doExpDrop, io.papermc.paper.entity.damageorigin.DamageOrigins.generic());
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final net.kyori.adventure.text.Component deathMessage, final boolean doExpDrop, final @NotNull io.papermc.paper.entity.damageorigin.DamageOrigin origin) {
++        super(player, drops, droppedExp, origin);
+         this.newExp = newExp;
+         this.newTotalExp = newTotalExp;
+         this.newLevel = newLevel;
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleDamageEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleDamageEvent.java
+index 45da51d5946781169f0c1a4d2493040faa2bc22e..721ee6f53d9df5de568fcb10a5a6bb3a677fc9ae 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleDamageEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleDamageEvent.java
+@@ -15,11 +15,21 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
+     private final Entity attacker;
+     private double damage;
+     private boolean cancelled;
++    private final io.papermc.paper.entity.damageorigin.DamageOrigin origin; // Paper
+ 
++    @Deprecated // Paper
+     public VehicleDamageEvent(@NotNull final Vehicle vehicle, @Nullable final Entity attacker, final double damage) {
++        // Paper start - Damage source wrapper
++        this(vehicle, attacker, damage, io.papermc.paper.entity.damageorigin.DamageOrigins.generic());
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public VehicleDamageEvent(@NotNull final Vehicle vehicle, @Nullable final Entity attacker, final double damage, @NotNull final io.papermc.paper.entity.damageorigin.DamageOrigin origin) {
++        // Paper end
+         super(vehicle);
+         this.attacker = attacker;
+         this.damage = damage;
++        this.origin = origin; // Paper
+     }
+ 
+     /**
+@@ -50,6 +60,18 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
+         this.damage = damage;
+     }
+ 
++    // Paper start - Damage source wrapper
++    /**
++     * Gets the {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin} of the damage.
++     *
++     * @return a damage origin holding the context of the damage.
++     */
++    @NotNull
++    public io.papermc.paper.entity.damageorigin.DamageOrigin getOrigin() {
++        return origin;
++    }
++    // Paper end
++
+     @Override
+     public boolean isCancelled() {
+         return cancelled;
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleDestroyEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleDestroyEvent.java
+index 26bc6898fce8ae938c3e2bf7818596fe90e6f525..1a384c8e98c1929ddecdbfb056ec4e8c7a2ea7d4 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleDestroyEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleDestroyEvent.java
+@@ -16,10 +16,20 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private final Entity attacker;
+     private boolean cancelled;
++    private final io.papermc.paper.entity.damageorigin.DamageOrigin origin; // Paper
+ 
++    @Deprecated // Paper
+     public VehicleDestroyEvent(@NotNull final Vehicle vehicle, @Nullable final Entity attacker) {
++        // Paper start - Damage source wrapper
++        this(vehicle, attacker, io.papermc.paper.entity.damageorigin.DamageOrigins.generic());
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public VehicleDestroyEvent(@NotNull final Vehicle vehicle, @Nullable final Entity attacker, @NotNull final io.papermc.paper.entity.damageorigin.DamageOrigin origin) {
++        // Paper end
+         super(vehicle);
+         this.attacker = attacker;
++        this.origin = origin; // Paper
+     }
+ 
+     /**
+@@ -32,6 +42,18 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
+         return attacker;
+     }
+ 
++    // Paper start - Damage source wrapper
++    /**
++     * Gets the {@link io.papermc.paper.entity.damageorigin.DamageOrigin DamageOrigin} of the damage.
++     *
++     * @return a damage origin holding the context of the damage.
++     */
++    @NotNull
++    public io.papermc.paper.entity.damageorigin.DamageOrigin getOrigin() {
++        return origin;
++    }
++    // Paper end
++
+     @Override
+     public boolean isCancelled() {
+         return cancelled;

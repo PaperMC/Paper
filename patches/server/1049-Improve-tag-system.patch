@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Thu, 23 Mar 2023 01:06:06 +0100
+Subject: [PATCH] Improve tag system
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryTag.java b/src/main/java/io/papermc/paper/registry/RegistryTag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b2d8addae07cb3002d42375a699d75f51769ebf7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/RegistryTag.java
+@@ -0,0 +1,54 @@
++package io.papermc.paper.registry;
++
++import net.minecraft.core.Holder;
++import net.minecraft.core.HolderSet;
++import net.minecraft.core.Registry;
++import net.minecraft.tags.TagKey;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Tag;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.Set;
++
++public class RegistryTag<API extends Keyed, NMS> implements Tag<API> {
++
++    protected final org.bukkit.Registry<API> apiRegistry;
++    protected final Registry<NMS> registry;
++    protected final TagKey<NMS> tag;
++    protected HolderSet.Named<NMS> values;
++
++    public RegistryTag(net.minecraft.core.Registry<NMS> registry, TagKey<NMS> tag, HolderSet.Named<NMS> values, org.bukkit.Registry<API> apiRegistry) {
++        this.registry = registry;
++        this.tag = tag;
++        this.values = values;
++        this.apiRegistry = apiRegistry;
++    }
++
++    @Override
++    public boolean isTagged(API api) {
++        return this.registry.wrapAsHolder(this.registry.get(CraftNamespacedKey.toMinecraft(api.getKey()))).is(this.tag);
++    }
++
++    public TagKey<NMS> getTagKey() {
++        return this.tag;
++    }
++
++    @Override
++    public Set<API> getValues() {
++        Set<API> values = new HashSet<>(this.values.size());
++        for (Holder<NMS> nms : this.values) {
++            values.add(this.apiRegistry.get(CraftNamespacedKey.fromMinecraft(nms.unwrapKey().orElseThrow().location())));
++        }
++        return Collections.unmodifiableSet(values);
++    }
++
++    @Override
++    @NotNull
++    public NamespacedKey getKey() {
++        return CraftNamespacedKey.fromMinecraft(this.tag.location());
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+index d6ae37baabf780abbd5d543b3c382237ac595360..76fdeb980946680a731f902642dbe32e461cc033 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+@@ -90,13 +90,15 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+     private final net.minecraft.core.Registry<M> minecraftRegistry;
+     private final BiFunction<? super NamespacedKey, M, B> minecraftToBukkit; // Paper
+     public final io.papermc.paper.registry.RegistryView<B> view; // Paper
+-    private boolean init;
++    private boolean init; // Paper - note ideally it might be better to split the registry api values and the api itself to avoid this trap
++    public final Map<net.kyori.adventure.key.Key, org.bukkit.Tag<B>> tags; // Paper
+ 
+     public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<? super NamespacedKey, M, B> minecraftToBukkit) { // Paper
+         this.bukkitClass = bukkitClass;
+         this.minecraftRegistry = minecraftRegistry;
+         this.minecraftToBukkit = minecraftToBukkit;
+         this.view = new io.papermc.paper.registry.event.PaperRegistryView<>(this.minecraftRegistry, this.minecraftToBukkit); // Paper
++        this.tags = new java.util.IdentityHashMap<>(); // Paper
+     }
+ 
+     @Override
+@@ -138,6 +140,28 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+         return bukkit;
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.Tag<B> getTag(net.kyori.adventure.key.Key key) {
++        return this.getTagIfPresent(key).orElseThrow(() -> new UnsupportedOperationException("Unknown tag"));
++    }
++
++    @Override
++    public java.util.Optional<org.bukkit.Tag<B>> getTagIfPresent(net.kyori.adventure.key.Key key) {
++        org.bukkit.Tag<B> tag = this.tags.get(key);
++        if (tag != null) {
++            return java.util.Optional.of(tag);
++        }
++
++        net.minecraft.tags.TagKey<M> tagKey = net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(key));
++        return this.minecraftRegistry.getTag(tagKey).map(tagValues -> {
++            org.bukkit.Tag<B> newtag = new io.papermc.paper.registry.RegistryTag<>(this.minecraftRegistry, tagKey, tagValues, this);
++            this.tags.put(key, newtag);
++            return newtag;
++        });
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public Stream<B> stream() {

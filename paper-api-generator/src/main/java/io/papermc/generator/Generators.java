@@ -3,6 +3,7 @@ package io.papermc.generator;
 import io.papermc.generator.types.GeneratedKeyType;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.goal.MobGoalGenerator;
+import io.papermc.paper.entity.damageorigin.type.DamageType;
 import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -25,6 +26,7 @@ public interface Generators {
         simpleKey("TrimMaterialKeys", TrimMaterial.class, Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL, true),
         simpleKey("TrimPatternKeys", TrimPattern.class, Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, true),
         simpleKey("StructureKeys", Structure.class, Registries.STRUCTURE, RegistryKey.STRUCTURE, true),
+        simpleKey("DamageTypeKeys", DamageType.class, Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, true),
         simpleKey("StructureTypeKeys", StructureType.class, Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, false),
         simpleKey("MusicInstrumentKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT, false),
         simpleKey("EnchantmentKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, false),
