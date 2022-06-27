@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: u9g <git@u9g.dev>
+Date: Mon, 27 Jun 2022 14:02:35 -0400
+Subject: [PATCH] Add api for disabling conduits attacking entities
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+index 05eab04e4aec4151018f25b59f92ddbbb4c09f87..5c614a1494e505c3cbc069e41227297ce3760279 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+@@ -51,6 +51,7 @@ public class ConduitBlockEntity extends BlockEntity {
+     @Nullable
+     private UUID destroyTargetUUID;
+     private long nextAmbientSoundActivation;
++    public boolean canAttackEntities = true; // Paper
+ 
+     public ConduitBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.CONDUIT, pos, state);
+@@ -64,6 +65,7 @@ public class ConduitBlockEntity extends BlockEntity {
+         } else {
+             this.destroyTargetUUID = null;
+         }
++        canAttackEntities = nbt.getBoolean("Paper.CanAttackEntities"); // Paper
+ 
+     }
+ 
+@@ -73,6 +75,7 @@ public class ConduitBlockEntity extends BlockEntity {
+         if (this.destroyTarget != null) {
+             nbt.putUUID("Target", this.destroyTarget.getUUID());
+         }
++        nbt.putBoolean("Paper.CanAttackEntities", this.canAttackEntities);
+ 
+     }
+ 
+@@ -214,6 +217,13 @@ public class ConduitBlockEntity extends BlockEntity {
+     }
+ 
+     private static void updateDestroyTarget(Level world, BlockPos pos, BlockState state, List<BlockPos> activatingBlocks, ConduitBlockEntity blockEntity) {
++        // Paper start
++        if (!blockEntity.canAttackEntities) {
++            blockEntity.destroyTarget = null;
++            blockEntity.destroyTargetUUID = null;
++            return;
++        }
++        // Paper end
+         LivingEntity entityliving = blockEntity.destroyTarget;
+         int i = activatingBlocks.size();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java b/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
+index a0b17670750f882846954e83a85a1dd59ac09d0f..8365876c50b119004d77b1ebac05f3f5fc4dd878 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
+@@ -9,4 +9,15 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
+     public CraftConduit(World world, ConduitBlockEntity tileEntity) {
+         super(world, tileEntity);
+     }
++    // Paper start
++    @Override
++    public void canAttackEntities(boolean canAttackEntities) {
++        getTileEntity().canAttackEntities = canAttackEntities;
++    }
++
++    @Override
++    public boolean canAttackEntities() {
++        return getTileEntity().canAttackEntities;
++    }
++    // Paper end
+ }
