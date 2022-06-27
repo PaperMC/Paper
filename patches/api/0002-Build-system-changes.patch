@@ -5,7 +5,7 @@ Subject: [PATCH] Build system changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index b81a893bd5418779544872eb4006adc6b3017a43..044b7c49b569e1170108c912e9307f7fec278762 100644
+index b81a893bd5418779544872eb4006adc6b3017a43..0b30b1f1be8818934ba530dd263fe6c9484983e8 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -14,15 +14,27 @@ dependencies {
@@ -46,3 +46,42 @@ index b81a893bd5418779544872eb4006adc6b3017a43..044b7c49b569e1170108c912e9307f7f
          "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
      )
  
+@@ -78,3 +90,14 @@ tasks.withType<Javadoc> {
+         }
+     }
+ }
++
++// Paper start
++val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
++    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
++    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
++    classpath.from(configurations.compileClasspath)
++}
++tasks.check {
++    dependsOn(scanJar)
++}
++// Paper end
+diff --git a/src/main/java/io/papermc/paper/annotation/DoNotUse.java b/src/main/java/io/papermc/paper/annotation/DoNotUse.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4766e49d819e75e5c2127c698b44078bf2fd6219
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/annotation/DoNotUse.java
+@@ -0,0 +1,18 @@
++package io.papermc.paper.annotation;
++
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Annotation used to mark methods or constructors which should not be called.
++ *
++ * <p>Separate from {@link Deprecated} to differentiate from the large amount of deprecations.</p>
++ */
++@ApiStatus.Internal
++@Retention(RetentionPolicy.RUNTIME)
++@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
++public @interface DoNotUse {
++}
