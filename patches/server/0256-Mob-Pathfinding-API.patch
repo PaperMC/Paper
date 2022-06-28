@@ -7,10 +7,10 @@ Implements Pathfinding API for mobs
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8c9f0c6c38627beded373ca29f1989ae3ba6f873
+index 0000000000000000000000000000000000000000..2d799fec40afe7dade649a294761d272c83157f0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,143 @@
 +package com.destroystokyo.paper.entity;
 +
 +import org.apache.commons.lang.Validate;
@@ -27,7 +27,7 @@ index 0000000000000000000000000000000000000000..8c9f0c6c38627beded373ca29f1989ae
 +
 +public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinder {
 +
-+    private final net.minecraft.world.entity.Mob entity;
++    private net.minecraft.world.entity.Mob entity;
 +
 +    public PaperPathfinder(net.minecraft.world.entity.Mob entity) {
 +        this.entity = entity;
@@ -36,6 +36,10 @@ index 0000000000000000000000000000000000000000..8c9f0c6c38627beded373ca29f1989ae
 +    @Override
 +    public Mob getEntity() {
 +        return entity.getBukkitMob();
++    }
++
++    public void setHandle(net.minecraft.world.entity.Mob entity) {
++        this.entity = entity;
 +    }
 +
 +    @Override
@@ -163,7 +167,7 @@ index 4ad2ac8d1e9111933fa58c47442fa1f5e8173fd3..2a335f277bd0e4b8ad0f60d8226eb8aa
      public Path(List<Node> nodes, BlockPos target, boolean reachesTarget) {
          this.nodes = nodes;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
-index 55c27a3d9b540c4c4d7701bd0cdf167bb7af3dd4..28d6e31bfdf31d3e56024c731b833c4424313307 100644
+index 55c27a3d9b540c4c4d7701bd0cdf167bb7af3dd4..14e7dce1c2529e0116e088a09bbe232803b9839c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 @@ -12,8 +12,11 @@ import org.bukkit.loot.LootTable;
@@ -178,3 +182,18 @@ index 55c27a3d9b540c4c4d7701bd0cdf167bb7af3dd4..28d6e31bfdf31d3e56024c731b833c44
      @Override
      public void setTarget(LivingEntity target) {
          Preconditions.checkState(!this.getHandle().generation, "Cannot set target during world generation");
+@@ -48,6 +51,14 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
+         return (net.minecraft.world.entity.Mob) entity;
+     }
+ 
++    // Paper start
++    @Override
++    public void setHandle(net.minecraft.world.entity.Entity entity) {
++        super.setHandle(entity);
++        paperPathfinder.setHandle(getHandle());
++    }
++    // Paper end
++
+     @Override
+     public String toString() {
+         return "CraftMob";
