@@ -60,10 +60,10 @@ index 0000000000000000000000000000000000000000..d926ad804355ee2fdc5910b2505e8671
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java b/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4c2351b03b58511b80017b58ee9b20ab5193adc9
+index 0000000000000000000000000000000000000000..84285d5235b66aee9a4059b1d4db4a99e296f22f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,121 @@
 +package com.destroystokyo.paper.network;
 +
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
@@ -140,13 +140,25 @@ index 0000000000000000000000000000000000000000..4c2351b03b58511b80017b58ee9b20ab
 +
 +    @SuppressWarnings("deprecation")
 +    public static void processRequest(MinecraftServer server, Connection networkManager) {
++        ServerStatus ping = getEventResponse(server, networkManager);
++
++        if (ping == null) {
++            networkManager.disconnect(null);
++            return;
++        }
++
++        // Send response
++        networkManager.send(new ClientboundStatusResponsePacket(ping));
++    }
++
++    @SuppressWarnings("deprecation")
++    public static ServerStatus getEventResponse(MinecraftServer server, Connection networkManager) {
 +        StandardPaperServerListPingEventImpl event = new StandardPaperServerListPingEventImpl(server, networkManager, server.getStatus());
 +        server.server.getPluginManager().callEvent(event);
 +
 +        // Close connection immediately if event is cancelled
 +        if (event.isCancelled()) {
-+            networkManager.disconnect(null);
-+            return;
++            return null;
 +        }
 +
 +        // Setup response
@@ -169,8 +181,7 @@ index 0000000000000000000000000000000000000000..4c2351b03b58511b80017b58ee9b20ab
 +            ping.setFavicon(event.getServerIcon().getData());
 +        }
 +
-+        // Send response
-+        networkManager.send(new ClientboundStatusResponsePacket(ping));
++        return ping;
 +    }
 +
 +}
@@ -235,6 +246,27 @@ index a426adfba3fccf1815177e0b8065684c9497ef45..29a22da1b94d51300481c071aa16bfd8
          }
      }
  
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 4a94be565a3a7f7b8b330a35d97a14ef52ac4e50..dc09ae50baa71358a714d33cfa94adb1382d2672 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -331,7 +331,15 @@ public abstract class PlayerList {
+         this.server.getServerResourcePack().ifPresent((minecraftserver_serverresourcepackinfo) -> {
+             player.sendTexturePack(minecraftserver_serverresourcepackinfo.url(), minecraftserver_serverresourcepackinfo.hash(), minecraftserver_serverresourcepackinfo.isRequired(), minecraftserver_serverresourcepackinfo.prompt());
+         });
+-        player.sendServerStatus(this.server.getStatus());
++        // Paper start - fire ServerListPingEvent
++        net.minecraft.server.MCUtil.scheduleAsyncTask(() -> {
++            if (player.hasDisconnected()) return;
++            net.minecraft.network.protocol.status.ServerStatus status = com.destroystokyo.paper.network.StandardPaperServerListPingEventImpl.getEventResponse(this.server, player.networkManager);
++            if (status != null) {
++                player.sendServerStatus(status);
++            }
++        });
++        // Paper end
+         Iterator iterator = player.getActiveEffects().iterator();
+ 
+         while (iterator.hasNext()) {
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 index c2e3d32e51902503af88f089e366e784f42d999a..645643d102118ad4916a152abfb9ab0d02751e11 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
