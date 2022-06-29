@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: theTd <i@thetd.me>
+Date: Wed, 29 Jun 2022 17:16:00 +0800
+Subject: [PATCH] Load classes from transitive depended plugins first
+
+
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 8ff78fad47f6086aa289e32590f4fbec24b3d500..26d4c7c4b8af459dcfff710f44e54e5ecc0ec381 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -11,6 +11,7 @@ import java.util.Arrays;
+ import java.util.Collection;
+ import java.util.HashMap;
+ import java.util.HashSet;
++import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Set;
+@@ -230,12 +231,25 @@ public final class JavaPluginLoader implements PluginLoader {
+             }
+             // Paper end
+         // Paper end
+-        for (PluginClassLoader loader : loaders) {
++        // Paper start - prioritize classes from transitive depended plugins
++            List<PluginClassLoader> later = new ArrayList<>();
++            for (PluginClassLoader loader : loaders) {
++                if (((SimplePluginManager) server.getPluginManager()).isTransitiveDepend(description, loader.plugin.getDescription())) {
++                    try {
++                        return loader.loadClass0(name, resolve, false, true);
++                    } catch (ClassNotFoundException cnfe) {
++                    }
++                } else {
++                    later.add(loader);
++                }
++            }
++        for (PluginClassLoader loader : later) {
+             try {
+-                return loader.loadClass0(name, resolve, false, ((SimplePluginManager) server.getPluginManager()).isTransitiveDepend(description, loader.plugin.getDescription()));
++                return loader.loadClass0(name, resolve, false, false);
+             } catch (ClassNotFoundException cnfe) {
+             }
+         }
++        // Paper end
+         // Paper start - make MT safe
+         } finally {
+             synchronized (classLoadLock) {
