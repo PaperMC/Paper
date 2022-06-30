@@ -5,10 +5,10 @@ Subject: [PATCH] More Teleport API
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 82204f6411e2155a13f6270a0d02369d7803e832..0da775d388dd3d618bf601db128a8fec0f946604 100644
+index 8e6045c51c46b8d8fa6f4b7fbe4b9478693bac82..cb8ec2df909504a320856a3a0779c43f78d6e843 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1629,11 +1629,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1660,11 +1660,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              return false; // CraftBukkit - Return event status
          }
  
@@ -29,10 +29,10 @@ index 82204f6411e2155a13f6270a0d02369d7803e832..0da775d388dd3d618bf601db128a8fec
              d0 = to.getX();
              d1 = to.getY();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index a92755211e3d42934b5efaa3f201c6c19ab7d2b4..9701e7dd36c0ffeca4ab267ddf70e807aedc1c59 100644
+index 5b92c2ca03baed38f7d41a73fae7dd23ce541d43..85c110c9460694f08ec80751b5f61773ce102c9e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -560,15 +560,33 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -571,15 +571,33 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
  
      @Override
      public boolean teleport(Location location, TeleportCause cause) {
@@ -69,29 +69,27 @@ index a92755211e3d42934b5efaa3f201c6c19ab7d2b4..9701e7dd36c0ffeca4ab267ddf70e807
          // Let the server handle cross world teleports
          if (!location.getWorld().equals(this.getWorld())) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index f12efe51b14ed3637a8ba45def9c94634a6f5e8f..81a911a3ebc8f2bb9c44c26bd2ec85ec1bb59ff5 100644
+index abcce6bd0b32d0188751393a6f56f2e82530912c..218e5096cc2b37deb0e78018cc4a1a07b482bd61 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1113,7 +1113,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1116,7 +1116,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setRotation(float yaw, float pitch) {
 -        throw new UnsupportedOperationException("Cannot set rotation of players. Consider teleporting instead.");
 +        // Paper start - Teleport API
-+        Location playerLocation = getEyeLocation();
-+
-+        Location targetLocation = playerLocation.clone();
++        Location targetLocation = this.getEyeLocation();
 +        targetLocation.setYaw(yaw);
 +        targetLocation.setPitch(pitch);
 +
 +        org.bukkit.util.Vector direction = targetLocation.getDirection();
 +        targetLocation.add(direction);
-+        lookAt(targetLocation, io.papermc.paper.entity.LookAnchor.EYES);
++        this.lookAt(targetLocation, io.papermc.paper.entity.LookAnchor.EYES);
 +        // Paper end
      }
  
      // Paper start - Chunk priority
-@@ -1128,8 +1138,79 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1131,8 +1139,79 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
@@ -106,7 +104,7 @@ index f12efe51b14ed3637a8ba45def9c94634a6f5e8f..81a911a3ebc8f2bb9c44c26bd2ec85ec
 +
 +    @Override
 +    public void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor) {
-+        getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
++        this.getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
 +    }
 +
 +    @Override
@@ -171,7 +169,7 @@ index f12efe51b14ed3637a8ba45def9c94634a6f5e8f..81a911a3ebc8f2bb9c44c26bd2ec85ec
          location.checkFinite();
  
          ServerPlayer entity = this.getHandle();
-@@ -1142,7 +1223,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1145,7 +1224,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
          }
  
@@ -180,7 +178,7 @@ index f12efe51b14ed3637a8ba45def9c94634a6f5e8f..81a911a3ebc8f2bb9c44c26bd2ec85ec
              return false;
          }
  
-@@ -1160,7 +1241,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1163,7 +1242,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          // If this player is riding another entity, we must dismount before teleporting.
@@ -189,12 +187,12 @@ index f12efe51b14ed3637a8ba45def9c94634a6f5e8f..81a911a3ebc8f2bb9c44c26bd2ec85ec
  
          // SPIGOT-5509: Wakeup, similar to riding
          if (this.isSleeping()) {
-@@ -1182,7 +1263,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1185,7 +1264,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
          // Check if the fromWorld and toWorld are the same.
          if (fromWorld == toWorld) {
 -            entity.connection.teleport(to);
 +            entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), relativeArguments, dismount); // Paper - Teleport API
          } else {
-             server.getHandle().respawn(entity, toWorld, true, to, !toWorld.paperConfig.disableTeleportationSuffocationCheck); // Paper
+             server.getHandle().respawn(entity, toWorld, true, to, !toWorld.paperConfig().environment.disableTeleportationSuffocationCheck); // Paper
          }
