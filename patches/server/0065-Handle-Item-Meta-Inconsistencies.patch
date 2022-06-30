@@ -70,21 +70,43 @@ index e937186aaf819a77c80beeb9e08413a1f781c13a..0e19f49ca2496b1c42d27289bcea15d2
  
      public boolean isEnchanted() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 4b79b96579efbc4dd9a10e7183ed08b73b488794..830c137326e284d796bc2d89c36327327184c558 100644
+index 4b79b96579efbc4dd9a10e7183ed08b73b488794..8c43819be849f5bc589051722e337b0d5c47c807 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -127,10 +127,6 @@ public final class CraftItemStack extends ItemStack {
+@@ -126,10 +126,28 @@ public final class CraftItemStack extends ItemStack {
+         } else if (this.handle == null) {
              this.handle = new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(type), 1);
          } else {
-             this.handle.setItem(CraftMagicNumbers.getItem(type));
+-            this.handle.setItem(CraftMagicNumbers.getItem(type));
 -            if (this.hasItemMeta()) {
 -                // This will create the appropriate item meta, which will contain all the data we intend to keep
 -                CraftItemStack.setItemMeta(this.handle, CraftItemStack.getItemMeta(this.handle));
--            }
++            // Paper start
++            Item item = CraftMagicNumbers.getItem(type);
++            Material oldType = getType();
++            this.handle.setItem(item);
++
++            if(this.handle.hasTag()) {
++                // Strip damage
++                if(this.handle.isDamageableItem() && !item.canBeDepleted()) {
++                    this.handle.getTag().remove(CraftMetaItem.DAMAGE.NBT);
++                } else {
++                    this.handle.getTag().putInt(CraftMetaItem.DAMAGE.NBT, 0);
++                }
++
++                // Strip invalid enchantments
++                for (Enchantment enchant : getEnchantments().keySet()) {
++                    if (((CraftEnchantment) enchant).getHandle().category.canEnchant(item)) continue;
++                    removeEnchantment(enchant);
++                }
++
++                // Strip invalid tags
++                CraftMetaItem.stripInvalidTags(oldType, type, this.handle.getTag());
++                // Paper end
+             }
          }
          setData(null);
-     }
-@@ -178,28 +174,11 @@ public final class CraftItemStack extends ItemStack {
+@@ -178,28 +196,13 @@ public final class CraftItemStack extends ItemStack {
      public void addUnsafeEnchantment(Enchantment ench, int level) {
          Validate.notNull(ench, "Cannot add null enchantment");
  
@@ -110,15 +132,17 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..830c137326e284d796bc2d89c3632732
 -        tag.putString(ENCHANTMENTS_ID.NBT, ench.getKey().toString());
 -        tag.putShort(ENCHANTMENTS_LVL.NBT, (short) level);
 -        list.add(tag);
-+        // Paper start - Replace whole method
-+        final ItemMeta itemMeta = this.getItemMeta();
-+        itemMeta.addEnchant(ench, level, true);
-+        this.setItemMeta(itemMeta);
++        // Paper start - replace entire method
++        if(!this.handle.hasTag()) return;
++        EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
++        if(map == null) map = new EnchantmentMap();
++        map.put(ench, level);
++        CraftMetaItem.applyEnchantments(map, this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
 +        // Paper end
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -232,50 +211,22 @@ public final class CraftItemStack extends ItemStack {
+@@ -232,50 +235,29 @@ public final class CraftItemStack extends ItemStack {
      public int removeEnchantment(Enchantment ench) {
          Validate.notNull(ench, "Cannot remove null enchantment");
  
@@ -150,36 +174,72 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..830c137326e284d796bc2d89c3632732
 -            }
 -            return level;
 -        }
--
++        // Paper start - replace entire method
++        if(!this.handle.hasTag()) return 0;
++        EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
++        if(map == null) return 0;
+ 
 -        // This is workaround for not having an index removal
 -        listCopy = new ListTag();
 -        for (int i = 0; i < size; i++) {
 -            if (i != index) {
 -                listCopy.add(list.get(i));
 -            }
-+        // Paper start - replace entire method
-+        final ItemMeta itemMeta = this.getItemMeta();
-+        if (itemMeta == null) return 0;
-+        int level = itemMeta.getEnchantLevel(ench);
-+        if (level > 0) {
-+            itemMeta.removeEnchant(ench);
-+            this.setItemMeta(itemMeta);
++        Integer previousLevel;
++        if((previousLevel = map.remove(ench)) != null && map.isEmpty()) {
++            map = null;
          }
 -        this.handle.getTag().put(ENCHANTMENTS.NBT, listCopy);
-+        // Paper end
++        CraftMetaItem.applyEnchantments(map, this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
  
-         return level;
+-        return level;
++        return previousLevel == null ? 0 : previousLevel;
++        // Paper end
      }
  
      @Override
      public Map<Enchantment, Integer> getEnchantments() {
 -        return CraftItemStack.getEnchantments(this.handle);
-+        return this.hasItemMeta() ? this.getItemMeta().getEnchants() : ImmutableMap.<Enchantment, Integer>of(); // Paper - use Item Meta
++        // Paper start - replace entire method
++        if(!this.handle.hasTag()) return ImmutableMap.of();
++        EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
++        if(map == null) return ImmutableMap.of();
++        return com.google.common.collect.ImmutableSortedMap.copyOfSorted(map);
++        // Paper end
      }
  
      static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index 3a8ff15d1c6ba21ce8bed030e84a9f85b702d72a..94b4638f296c5086198ae3e3866b8935e59c0a49 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -23,9 +23,23 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
+     static final ItemMetaKey BLOCK_ENTITY_TAG = new ItemMetaKey("BlockEntityTag");
+ 
+-    final Material material;
++    Material material; // Paper
+     CompoundTag blockEntityTag;
+ 
++    // Paper start
++    CraftMetaBlockState(CraftMetaItem meta) {
++        super(meta);
++
++        if (!(meta instanceof CraftMetaBlockState)) {
++            return;
++        }
++
++        CraftMetaBlockState state = (CraftMetaBlockState) meta;
++        this.material = state.material;
++        this.blockEntityTag = state.blockEntityTag.copy();
++    }
++    // Paper end
++
+     CraftMetaBlockState(CraftMetaItem meta, Material material) {
+         super(meta);
+         this.material = material;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..4d687fa31f4d889ac755c178b9afd2b927c78ee2 100644
+index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..9bfbd0a95769bfcb79a345a4bbc576cadbcf8284 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
@@ -265,7 +325,17 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..4d687fa31f4d889ac755c178b9afd2b9
          for (Map.Entry<?, ?> entry : ench.entrySet()) {
              // Doctor older enchants
              String enchantKey = entry.getKey().toString();
-@@ -828,14 +831,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -676,6 +679,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     static void applyEnchantments(Map<Enchantment, Integer> enchantments, CompoundTag tag, ItemMetaKey key) {
+         if (enchantments == null /*|| enchantments.size() == 0*/) { // Spigot - remove size check
++            if(key == CraftMetaItem.ENCHANTMENTS) {
++                tag.remove(key.NBT); // Paper delete the key when the list is empty
++            }
+             return;
+         }
+ 
+@@ -828,14 +834,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public Map<Enchantment, Integer> getEnchants() {
@@ -282,7 +352,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..4d687fa31f4d889ac755c178b9afd2b9
          }
  
          if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
-@@ -1223,7 +1226,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1223,7 +1229,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              clone.customModelData = this.customModelData;
              clone.blockData = this.blockData;
              if (this.enchantments != null) {
@@ -291,19 +361,147 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..4d687fa31f4d889ac755c178b9afd2b9
              }
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
-@@ -1458,4 +1461,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1404,6 +1410,127 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         this.version = version;
+     }
+ 
++    // Paper start
++    private static final CraftMetaArmorStand armorStandMeta = new CraftMetaArmorStand((CraftMetaItem) null);
++    private static final CraftMetaAxolotlBucket axolotlBucketMeta = new CraftMetaAxolotlBucket((CraftMetaItem) null);
++    private static final CraftMetaBanner bannerMeta = new CraftMetaBanner((CraftMetaItem) null);
++    private static final CraftMetaBlockState blockStateMeta = new CraftMetaBlockState((CraftMetaItem) null);
++    private static final CraftMetaBook bookMeta = new CraftMetaBook((CraftMetaItem) null);
++    private static final CraftMetaBundle bundleMeta = new CraftMetaBundle((CraftMetaItem) null);
++    private static final CraftMetaCharge chargeMeta = new CraftMetaCharge((CraftMetaItem) null);
++    private static final CraftMetaCompass compassMeta = new CraftMetaCompass((CraftMetaItem) null);
++    private static final CraftMetaCrossbow crossbowMeta = new CraftMetaCrossbow((CraftMetaItem) null);
++    private static final CraftMetaEnchantedBook enchantedBookMeta = new CraftMetaEnchantedBook((CraftMetaItem) null);
++    private static final CraftMetaEntityTag entityTagMeta = new CraftMetaEntityTag((CraftMetaItem) null);
++    private static final CraftMetaFirework fireworkMeta = new CraftMetaFirework((CraftMetaItem) null);
++    private static final CraftMetaKnowledgeBook recipeMeta = new CraftMetaKnowledgeBook((CraftMetaItem) null);
++    private static final CraftMetaLeatherArmor leatherArmorMeta = new CraftMetaLeatherArmor((CraftMetaItem) null);
++    private static final CraftMetaMap mapMeta = new CraftMetaMap((CraftMetaItem) null);
++    private static final CraftMetaPotion potionMeta = new CraftMetaPotion((CraftMetaItem) null);
++    private static final CraftMetaSkull skullMeta = new CraftMetaSkull((CraftMetaItem) null);
++    private static final CraftMetaSpawnEgg spawnEggMeta = new CraftMetaSpawnEgg((CraftMetaItem) null);
++    private static final CraftMetaSuspiciousStew stewMeta = new CraftMetaSuspiciousStew((CraftMetaItem) null);
++    private static final CraftMetaTropicalFishBucket fishBucketMeta = new CraftMetaTropicalFishBucket((CraftMetaItem) null);
++
++    public static void stripInvalidTags(Material mat, Material newMat, CompoundTag tag) {
++        if(bundleMeta.applicableTo(mat) && !bundleMeta.applicableTo(newMat)) {
++            tag.remove(bundleMeta.ITEMS.NBT);
++            return;
++        }
++        if(fishBucketMeta.applicableTo(mat) && !fishBucketMeta.applicableTo(newMat)) {
++            tag.remove(fishBucketMeta.VARIANT.NBT);
++            tag.remove(fishBucketMeta.ENTITY_TAG.NBT);
++            return;
++        }
++        if(axolotlBucketMeta.applicableTo(mat) && !axolotlBucketMeta.applicableTo(newMat)) {
++            tag.remove(axolotlBucketMeta.VARIANT.NBT);
++            tag.remove(axolotlBucketMeta.ENTITY_TAG.NBT);
++            return;
++        }
++        if(armorStandMeta.applicableTo(mat) && !armorStandMeta.applicableTo(newMat)) {
++            tag.remove(armorStandMeta.ENTITY_TAG.NBT);
++            return;
++        }
++        if(entityTagMeta.applicableTo(mat) && !entityTagMeta.applicableTo(newMat)) {
++            tag.remove(entityTagMeta.ENTITY_TAG.NBT);
++            return;
++        }
++        if(spawnEggMeta.applicableTo(mat) && !spawnEggMeta.applicableTo(newMat)) {
++            tag.remove(spawnEggMeta.ENTITY_TAG.NBT);
++            return;
++        }
++        if(bannerMeta.applicableTo(mat) && !bannerMeta.applicableTo(newMat)) {
++            tag.remove(bannerMeta.BASE.NBT);
++            tag.remove(bannerMeta.PATTERNS.NBT);
++            return;
++        }
++        if(blockStateMeta.applicableTo(mat) && !blockStateMeta.applicableTo(newMat)) {
++            tag.remove(blockStateMeta.BLOCK_ENTITY_TAG.NBT);
++            return;
++        }
++        if(bookMeta.applicableTo(mat) && !bookMeta.applicableTo(newMat)) {
++            tag.remove(bookMeta.BOOK_TITLE.NBT);
++            tag.remove(bookMeta.BOOK_AUTHOR.NBT);
++            tag.remove(bookMeta.BOOK_PAGES.NBT);
++            tag.remove(bookMeta.RESOLVED.NBT);
++            tag.remove(bookMeta.GENERATION.NBT);
++            return;
++        }
++        if(chargeMeta.applicableTo(mat) && !chargeMeta.applicableTo(newMat)) {
++            tag.remove(chargeMeta.EXPLOSION.NBT);
++            return;
++        }
++        if(compassMeta.applicableTo(mat) && !compassMeta.applicableTo(newMat)) {
++            tag.remove(compassMeta.LODESTONE_DIMENSION.NBT);
++            tag.remove(compassMeta.LODESTONE_POS.NBT);
++            tag.remove(compassMeta.LODESTONE_POS_WORLD.NBT);
++            tag.remove(compassMeta.LODESTONE_TRACKED.NBT);
++            return;
++        }
++        if(crossbowMeta.applicableTo(mat) && !crossbowMeta.applicableTo(newMat)) {
++            tag.remove(crossbowMeta.CHARGED.NBT);
++            tag.remove(crossbowMeta.CHARGED_PROJECTILES.NBT);
++            return;
++        }
++        if(enchantedBookMeta.applicableTo(mat) && !enchantedBookMeta.applicableTo(newMat)) {
++            tag.remove(enchantedBookMeta.STORED_ENCHANTMENTS.NBT);
++            return;
++        }
++        if(fireworkMeta.applicableTo(mat) && !fireworkMeta.applicableTo(newMat)) {
++            tag.remove(fireworkMeta.FIREWORKS.NBT);
++            return;
++        }
++        if(recipeMeta.applicableTo(mat) && !recipeMeta.applicableTo(newMat)) {
++            tag.remove(recipeMeta.BOOK_RECIPES.NBT);
++            return;
++        }
++        if(leatherArmorMeta.applicableTo(mat) && !leatherArmorMeta.applicableTo(newMat)) {
++            tag.remove(leatherArmorMeta.DISPLAY.NBT);
++            return;
++        }
++        if(mapMeta.applicableTo(mat) && !mapMeta.applicableTo(newMat)) {
++            tag.remove(mapMeta.MAP_SCALING.NBT);
++            tag.remove(mapMeta.DISPLAY.NBT);
++            tag.remove(mapMeta.MAP_ID.NBT);
++            return;
++        }
++        if(potionMeta.applicableTo(mat) && !potionMeta.applicableTo(newMat)) {
++            tag.remove(potionMeta.DEFAULT_POTION.NBT);
++            tag.remove(potionMeta.POTION_COLOR.NBT);
++            tag.remove(potionMeta.POTION_EFFECTS.NBT);
++            return;
++        }
++        if(skullMeta.applicableTo(mat) && !skullMeta.applicableTo(newMat)) {
++            tag.remove(skullMeta.SKULL_OWNER.NBT);
++            return;
++        }
++        if(stewMeta.applicableTo(mat) && !stewMeta.applicableTo(newMat)) {
++            tag.remove(stewMeta.EFFECTS.NBT);
++            return;
++        }
++    }
++    // Paper end
++
+     public static Set<String> getHandledTags() {
+         synchronized (CraftMetaItem.HANDLED_TAGS) {
+             if (CraftMetaItem.HANDLED_TAGS.isEmpty()) {
+@@ -1458,4 +1585,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              return CraftMetaItem.HANDLED_TAGS;
          }
      }
 +
 +    // Paper start
-+    private static class EnchantmentMap extends TreeMap<Enchantment, Integer> {
++    public static class EnchantmentMap extends TreeMap<Enchantment, Integer> {
 +        private EnchantmentMap(Map<Enchantment, Integer> enchantments) {
 +            this();
 +            putAll(enchantments);
 +        }
 +
-+        private EnchantmentMap() {
++        protected EnchantmentMap() {
 +            super(Comparator.comparing(o -> o.getKey().toString()));
 +        }
 +
