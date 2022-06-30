@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 10maurycy10 <10maurycy10@gmail.com>
+Date: Thu, 30 Jun 2022 12:20:42 -0700
+Subject: [PATCH] Fix block destroy desync
+
+It is quite common to have blocks get desynced between the client and
+server, Especially with the use of plugins. This patch reduces the
+consequences of such a desync, by sending a BlockUpdatePacket on a block action
+such as digging.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0b7923f67d27549f41c0d398d1b99737f0c8a746..ed6a814ac9f3d7dcceb2481f434a7748b8aec7db 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1769,6 +1769,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                 }
+                 this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level.getMaxBuildHeight());
+                 // Paper end - Don't allow digging in unloaded chunks
++		// Paper start - Fix block destroy desync
++		this.player.connection.send(new ClientboundBlockUpdatePacket(this.player.getLevel(), blockposition));
++		// Paper end - Fix block destroy desync
+                 return;
+             default:
+                 throw new IllegalArgumentException("Invalid player action");
