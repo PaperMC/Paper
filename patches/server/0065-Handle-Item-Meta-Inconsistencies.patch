@@ -70,18 +70,21 @@ index e937186aaf819a77c80beeb9e08413a1f781c13a..0e19f49ca2496b1c42d27289bcea15d2
  
      public boolean isEnchanted() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 4b79b96579efbc4dd9a10e7183ed08b73b488794..3745033afb8923ce06cbf13b55c4e96f2a89573f 100644
+index 4b79b96579efbc4dd9a10e7183ed08b73b488794..830c137326e284d796bc2d89c36327327184c558 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -6,7 +6,6 @@ import java.util.Map;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.ListTag;
- import net.minecraft.world.item.Item;
--import net.minecraft.world.item.enchantment.EnchantmentHelper;
- import org.apache.commons.lang.Validate;
- import org.bukkit.Material;
- import org.bukkit.NamespacedKey;
-@@ -178,28 +177,11 @@ public final class CraftItemStack extends ItemStack {
+@@ -127,10 +127,6 @@ public final class CraftItemStack extends ItemStack {
+             this.handle = new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(type), 1);
+         } else {
+             this.handle.setItem(CraftMagicNumbers.getItem(type));
+-            if (this.hasItemMeta()) {
+-                // This will create the appropriate item meta, which will contain all the data we intend to keep
+-                CraftItemStack.setItemMeta(this.handle, CraftItemStack.getItemMeta(this.handle));
+-            }
+         }
+         setData(null);
+     }
+@@ -178,28 +174,11 @@ public final class CraftItemStack extends ItemStack {
      public void addUnsafeEnchantment(Enchantment ench, int level) {
          Validate.notNull(ench, "Cannot add null enchantment");
  
@@ -115,25 +118,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..3745033afb8923ce06cbf13b55c4e96f
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -216,66 +198,34 @@ public final class CraftItemStack extends ItemStack {
- 
-     @Override
-     public boolean containsEnchantment(Enchantment ench) {
--        return this.getEnchantmentLevel(ench) > 0;
-+        return this.hasItemMeta() && this.getItemMeta().hasEnchant(ench); // Paper - use meta
-     }
- 
-     @Override
-     public int getEnchantmentLevel(Enchantment ench) {
--        Validate.notNull(ench, "Cannot find null enchantment");
--        if (this.handle == null) {
--            return 0;
--        }
--        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
-+        return this.hasItemMeta() ? this.getItemMeta().getEnchantLevel(ench) : 0; // Paper - replace entire method with meta
-     }
- 
-     @Override
+@@ -232,50 +211,22 @@ public final class CraftItemStack extends ItemStack {
      public int removeEnchantment(Enchantment ench) {
          Validate.notNull(ench, "Cannot remove null enchantment");
  
