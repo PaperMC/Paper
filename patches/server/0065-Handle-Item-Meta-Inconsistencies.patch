@@ -70,10 +70,10 @@ index e937186aaf819a77c80beeb9e08413a1f781c13a..0e19f49ca2496b1c42d27289bcea15d2
  
      public boolean isEnchanted() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 4b79b96579efbc4dd9a10e7183ed08b73b488794..8c43819be849f5bc589051722e337b0d5c47c807 100644
+index 4b79b96579efbc4dd9a10e7183ed08b73b488794..b4ed47b80b9ad664f01d20bddd7a6df71b79139c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -126,10 +126,28 @@ public final class CraftItemStack extends ItemStack {
+@@ -126,10 +126,37 @@ public final class CraftItemStack extends ItemStack {
          } else if (this.handle == null) {
              this.handle = new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(type), 1);
          } else {
@@ -86,12 +86,21 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..8c43819be849f5bc589051722e337b0d
 +            Material oldType = getType();
 +            this.handle.setItem(item);
 +
++            // Adjust size
++            if(this.handle.getCount() > item.getMaxStackSize()) {
++                this.handle.setCount(item.getMaxStackSize());
++            }
++
++            // Adjust damage
++            if(item.canBeDepleted()) {
++                this.handle.getTag().putInt(CraftMetaItem.DAMAGE.NBT, 0);
++            }
++
 +            if(this.handle.hasTag()) {
++
 +                // Strip damage
 +                if(this.handle.isDamageableItem() && !item.canBeDepleted()) {
 +                    this.handle.getTag().remove(CraftMetaItem.DAMAGE.NBT);
-+                } else {
-+                    this.handle.getTag().putInt(CraftMetaItem.DAMAGE.NBT, 0);
 +                }
 +
 +                // Strip invalid enchantments
@@ -106,7 +115,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..8c43819be849f5bc589051722e337b0d
              }
          }
          setData(null);
-@@ -178,28 +196,13 @@ public final class CraftItemStack extends ItemStack {
+@@ -178,28 +205,13 @@ public final class CraftItemStack extends ItemStack {
      public void addUnsafeEnchantment(Enchantment ench, int level) {
          Validate.notNull(ench, "Cannot add null enchantment");
  
@@ -142,7 +151,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..8c43819be849f5bc589051722e337b0d
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -232,50 +235,29 @@ public final class CraftItemStack extends ItemStack {
+@@ -232,50 +244,29 @@ public final class CraftItemStack extends ItemStack {
      public int removeEnchantment(Enchantment ench) {
          Validate.notNull(ench, "Cannot remove null enchantment");
  
@@ -239,7 +248,7 @@ index 3a8ff15d1c6ba21ce8bed030e84a9f85b702d72a..94b4638f296c5086198ae3e3866b8935
          super(meta);
          this.material = material;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..9bfbd0a95769bfcb79a345a4bbc576cadbcf8284 100644
+index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..d3334ffb931842afe3a906bbdedd80bec60afbc8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
@@ -325,17 +334,19 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..9bfbd0a95769bfcb79a345a4bbc576ca
          for (Map.Entry<?, ?> entry : ench.entrySet()) {
              // Doctor older enchants
              String enchantKey = entry.getKey().toString();
-@@ -676,6 +679,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -676,6 +679,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      static void applyEnchantments(Map<Enchantment, Integer> enchantments, CompoundTag tag, ItemMetaKey key) {
          if (enchantments == null /*|| enchantments.size() == 0*/) { // Spigot - remove size check
++            // Paper start
 +            if(key == CraftMetaItem.ENCHANTMENTS) {
-+                tag.remove(key.NBT); // Paper delete the key when the list is empty
++                tag.remove(key.NBT); // Paper delete the key when the list is empty because setItemMeta redraw the whole tag from scratch but other enchantment related methods in CraftItemStack doesn't use meta anymore
 +            }
++            // Paper end
              return;
          }
  
-@@ -828,14 +834,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -828,14 +836,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public Map<Enchantment, Integer> getEnchants() {
@@ -352,7 +363,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..9bfbd0a95769bfcb79a345a4bbc576ca
          }
  
          if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
-@@ -1223,7 +1229,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1223,7 +1231,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              clone.customModelData = this.customModelData;
              clone.blockData = this.blockData;
              if (this.enchantments != null) {
@@ -361,7 +372,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..9bfbd0a95769bfcb79a345a4bbc576ca
              }
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
-@@ -1404,6 +1410,127 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1404,6 +1412,127 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          this.version = version;
      }
  
@@ -489,7 +500,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..9bfbd0a95769bfcb79a345a4bbc576ca
      public static Set<String> getHandledTags() {
          synchronized (CraftMetaItem.HANDLED_TAGS) {
              if (CraftMetaItem.HANDLED_TAGS.isEmpty()) {
-@@ -1458,4 +1585,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1458,4 +1587,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              return CraftMetaItem.HANDLED_TAGS;
          }
      }
