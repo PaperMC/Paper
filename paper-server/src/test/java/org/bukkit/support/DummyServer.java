@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftLootTable;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -97,6 +98,14 @@ public final class DummyServer implements InvocationHandler {
                         }
                     }
                 );
+            methods.put(Server.class.getMethod("getRegistry", Class.class),
+                    new MethodHandler() {
+                        @Override
+                        public Object handle(DummyServer server, Object[] args) {
+                            return CraftRegistry.createRegistry((Class) args[0], AbstractTestingBase.REGISTRY_CUSTOM);
+                        }
+                    }
+            );
             Bukkit.setServer(Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(new DummyServer()));
         } catch (Throwable t) {
             throw new Error(t);

@@ -30,6 +30,7 @@ public abstract class AbstractTestingBase {
     public static final List<Material> INVALIDATED_MATERIALS;
 
     public static final DataPackResources DATA_PACK;
+    public static final IRegistryCustom.Dimension REGISTRY_CUSTOM;
 
     static {
         SharedConstants.tryDetectVersion();
@@ -37,11 +38,11 @@ public abstract class AbstractTestingBase {
         // Set up resource manager
         ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA, Collections.singletonList(new ResourcePackVanilla(ResourcePackSourceVanilla.BUILT_IN_METADATA, "minecraft")));
         // add tags and loot tables for unit tests
-        IRegistryCustom.Dimension registry = IRegistryCustom.builtinCopy().freeze();
+        REGISTRY_CUSTOM = IRegistryCustom.builtinCopy().freeze();
         // Register vanilla pack
-        DATA_PACK = DataPackResources.loadResources(resourceManager, registry, CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        DATA_PACK = DataPackResources.loadResources(resourceManager, REGISTRY_CUSTOM, CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
-        DATA_PACK.updateRegistryTags(registry);
+        DATA_PACK.updateRegistryTags(REGISTRY_CUSTOM);
 
         DummyServer.setup();
         DummyEnchantments.setup();
