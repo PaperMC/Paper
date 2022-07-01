@@ -555,6 +555,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void stopSound(org.bukkit.SoundCategory category) {
+        if (getHandle().connection == null) return;
+
+        getHandle().connection.send(new PacketPlayOutStopSound(null, net.minecraft.sounds.SoundCategory.valueOf(category.name())));
+    }
+
+    @Override
     public void stopAllSounds() {
         if (getHandle().connection == null) return;
 
