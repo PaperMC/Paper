@@ -18,6 +18,8 @@ public final class TestWorld implements InvocationHandler {
 
     static {
         try {
+            TestServer.getInstance();
+
             ImmutableMap.Builder<Method, MethodHandler> methodMap = ImmutableMap.builder();
             methodMap.put(
                     Object.class.getMethod("equals", Object.class),

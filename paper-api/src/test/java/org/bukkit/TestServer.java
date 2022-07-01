@@ -4,11 +4,14 @@ import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.SimplePluginManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class TestServer implements InvocationHandler {
     private static interface MethodHandler {
@@ -72,6 +75,27 @@ public final class TestServer implements InvocationHandler {
                         @Override
                         public Object handle(TestServer server, Object[] args) {
                             return "BukkitVersion_" + TestServer.class.getPackage().getImplementationVersion();
+                        }
+                    }
+                );
+            methodMap.put(
+                    Server.class.getMethod("getRegistry", Class.class),
+                    new MethodHandler() {
+                        @Override
+                        public Object handle(TestServer server, Object[] args) {
+                            return new Registry() {
+                                @NotNull
+                                @Override
+                                public Iterator iterator() {
+                                    return null;
+                                }
+
+                                @Nullable
+                                @Override
+                                public Keyed get(@NotNull NamespacedKey key) {
+                                    return null;
+                                }
+                            };
                         }
                     }
                 );

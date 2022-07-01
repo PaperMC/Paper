@@ -17,8 +17,13 @@ import org.jetbrains.annotations.Nullable;
  * Mansions, etc.
  * <br>
  * The registration of new {@link StructureType}s is case-sensitive.
+ *
+ * @deprecated This class does not represent the structures of a world well. Use
+ * {@link org.bukkit.generator.structure.Structure} or
+ * {@link org.bukkit.generator.structure.StructureType} instead.
  */
 // Order is retrieved from WorldGenFactory
+@Deprecated
 public final class StructureType implements Keyed {
 
     private static final Map<String, StructureType> structureTypeMap = new HashMap<>();

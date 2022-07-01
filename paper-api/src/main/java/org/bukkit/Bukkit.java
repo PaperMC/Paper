@@ -1904,6 +1904,23 @@ public final class Bukkit {
     }
 
     /**
+     * Returns the registry for the given class.
+     * <br>
+     * If no registry is present for the given class null will be returned.
+     * <br>
+     * Depending on the implementation not every registry present in
+     * {@link Registry} will be returned by this method.
+     *
+     * @param tClass of the registry to get
+     * @param <T> type of the registry
+     * @return the corresponding registry or null if not present
+     */
+    @Nullable
+    public static <T extends Keyed> Registry<T> getRegistry(@NotNull Class<T> tClass) {
+        return server.getRegistry(tClass);
+    }
+
+    /**
      * @return the unsafe values instance
      * @see UnsafeValues
      */
