@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.Position;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.chat.IChatBaseComponent;
@@ -508,7 +509,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean teleport(Location location, TeleportCause cause) {
-        Preconditions.checkArgument(location != null, "location");
+        Preconditions.checkArgument(location != null, "location cannot be null");
         location.checkFinite();
 
         if (entity.isVehicle() || entity.isRemoved()) {
@@ -519,10 +520,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.stopRiding();
 
         // Let the server handle cross world teleports
-        if (!location.getWorld().equals(getWorld())) {
+        if (location.getWorld() != null && !location.getWorld().equals(getWorld())) {
             // Prevent teleportation to an other world during world generation
             Preconditions.checkState(!entity.generation, "Cannot teleport entity to an other world during world generation");
-            entity.teleportTo(((CraftWorld) location.getWorld()).getHandle(), new BlockPosition(location.getX(), location.getY(), location.getZ()));
+            entity.teleportTo(((CraftWorld) location.getWorld()).getHandle(), new Position(location.getX(), location.getY(), location.getZ()));
             return true;
         }
 
