@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 8 Apr 2020 21:24:05 -0400
+Subject: [PATCH] Increase Light Queue Size
+
+Wiz mentioned that large WorldEdit operations cause light to run on
+main thread. The queue was small, set to 5.. this bumps it to 20
+but makes it configurable per-world.
+
+The main risk of increasing this higher is during shutdown, some
+queued light updates may be lost because mojang did not flush the
+light engine on shutdown...
+
+The queue size only puts a cap on max loss, doesn't solve that problem.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 4a9addec6c1f08718902da7d3f3628a0900e4c1d..f7427ea6bf11ef837dd38d25cd3abed57de5e8de 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -777,7 +777,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.executeModerately();
+         // CraftBukkit end
+         if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper
+-        chunkproviderserver.getLightEngine().setTaskPerBatch(5);
++        chunkproviderserver.getLightEngine().setTaskPerBatch(worldserver.paperConfig().misc.lightQueueSize); // Paper - increase light queue size
+         // CraftBukkit start
+         // this.updateMobSpawningFlags();
+         worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
