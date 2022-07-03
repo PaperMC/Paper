@@ -70,10 +70,10 @@ index e937186aaf819a77c80beeb9e08413a1f781c13a..0e19f49ca2496b1c42d27289bcea15d2
  
      public boolean isEnchanted() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e078977253805d42c0fda28fbb8525b6f4302a2d 100644
+index 4b79b96579efbc4dd9a10e7183ed08b73b488794..301b81ffd2fceee1fd28f9352c6d3cffc0a4672e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -126,10 +126,40 @@ public final class CraftItemStack extends ItemStack {
+@@ -126,10 +126,43 @@ public final class CraftItemStack extends ItemStack {
          } else if (this.handle == null) {
              this.handle = new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(type), 1);
          } else {
@@ -92,7 +92,6 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e078977253805d42c0fda28fbb8525b6
 +            }
 +
 +            if(this.handle.hasTag()) {
-+
 +                // Strip damage
 +                if(this.handle.isDamageableItem() && !item.canBeDepleted()) {
 +                    this.handle.getTag().remove(CraftMetaItem.DAMAGE.NBT);
@@ -102,9 +101,13 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e078977253805d42c0fda28fbb8525b6
 +                this.handle.getTag().remove(CraftMetaItem.CUSTOM_MODEL_DATA.NBT);
 +
 +                // Strip invalid enchantments
-+                for (Enchantment enchant : getEnchantments().keySet()) {
-+                    if (((CraftEnchantment) enchant).getHandle().category.canEnchant(item)) continue;
-+                    removeEnchantment(enchant);
++                EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
++                if(map != null) {
++                    for (Enchantment enchant : getEnchantments().keySet()) {
++                        if (((CraftEnchantment) enchant).getHandle().category.canEnchant(item)) continue;
++                        map.remove(enchant);
++                    }
++                    CraftMetaItem.applyEnchantments(map, this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
 +                }
 +
 +                // Strip invalid tags
@@ -118,7 +121,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e078977253805d42c0fda28fbb8525b6
              }
          }
          setData(null);
-@@ -178,28 +208,13 @@ public final class CraftItemStack extends ItemStack {
+@@ -178,28 +211,13 @@ public final class CraftItemStack extends ItemStack {
      public void addUnsafeEnchantment(Enchantment ench, int level) {
          Validate.notNull(ench, "Cannot add null enchantment");
  
@@ -154,7 +157,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e078977253805d42c0fda28fbb8525b6
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -232,50 +247,29 @@ public final class CraftItemStack extends ItemStack {
+@@ -232,50 +250,29 @@ public final class CraftItemStack extends ItemStack {
      public int removeEnchantment(Enchantment ench) {
          Validate.notNull(ench, "Cannot remove null enchantment");
  
