@@ -6,10 +6,10 @@ Subject: [PATCH] Implement regenerateChunk
 Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 335bf78d95418fbc7718177f012c71c392ab554c..d908eb6b1208cf69f2f1282ddf1c20dc04d092d1 100644
+index f68a1d5adac4d88c462371c484464bbea22d3147..6e36b6c722e647fe3672d782447a09030381137e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -133,6 +133,7 @@ import org.bukkit.util.Vector;
+@@ -139,6 +139,7 @@ import org.bukkit.util.Vector;
  public class CraftWorld extends CraftRegionAccessor implements World {
      public static final int CUSTOM_DIMENSION_OFFSET = 10;
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
@@ -17,7 +17,7 @@ index 335bf78d95418fbc7718177f012c71c392ab554c..d908eb6b1208cf69f2f1282ddf1c20dc
  
      private final ServerLevel world;
      private WorldBorder worldBorder;
-@@ -425,27 +426,61 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -431,27 +432,61 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean regenerateChunk(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
@@ -25,6 +25,10 @@ index 335bf78d95418fbc7718177f012c71c392ab554c..d908eb6b1208cf69f2f1282ddf1c20dc
 -        /*
 -        if (!unloadChunk0(x, z, false)) {
 -            return false;
+-        }
+-
+-        final long chunkKey = ChunkCoordIntPair.pair(x, z);
+-        world.getChunkProvider().unloadQueue.remove(chunkKey);
 +        // Paper start - implement regenerateChunk method
 +        final ServerLevel serverLevel = this.world;
 +        final net.minecraft.server.level.ServerChunkCache serverChunkCache = serverLevel.getChunkSource();
@@ -33,10 +37,8 @@ index 335bf78d95418fbc7718177f012c71c392ab554c..d908eb6b1208cf69f2f1282ddf1c20dc
 +        for (final BlockPos blockPos : BlockPos.betweenClosed(chunkPos.getMinBlockX(), serverLevel.getMinBuildHeight(), chunkPos.getMinBlockZ(), chunkPos.getMaxBlockX(), serverLevel.getMaxBuildHeight() - 1, chunkPos.getMaxBlockZ())) {
 +            levelChunk.removeBlockEntity(blockPos);
 +            serverLevel.setBlock(blockPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 16);
-         }
- 
--        final long chunkKey = ChunkCoordIntPair.pair(x, z);
--        world.getChunkProvider().unloadQueue.remove(chunkKey);
++        }
++
 +        for (final ChunkStatus chunkStatus : REGEN_CHUNK_STATUSES) {
 +            final List<ChunkAccess> list = new ArrayList<>();
 +            final int range = Math.max(1, chunkStatus.getRange());
