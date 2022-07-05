@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import org.bukkit.Material;
 import org.bukkit.TreeSpecies;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +13,9 @@ public interface Boat extends Vehicle {
      * Gets the wood type of the boat.
      *
      * @return the wood type
+     * @deprecated deprecated in favor of {@link #getBoatType()}
      */
+    @Deprecated
     @NotNull
     TreeSpecies getWoodType();
 
@@ -20,8 +23,25 @@ public interface Boat extends Vehicle {
      * Sets the wood type of the boat.
      *
      * @param species the new wood type
+     * @deprecated deprecated in favor of {@link #setBoatType(Type)}
      */
+    @Deprecated
     void setWoodType(@NotNull TreeSpecies species);
+
+    /**
+     * Gets the type of the boat.
+     *
+     * @return the boat type
+     */
+    @NotNull
+    Type getBoatType();
+
+    /**
+     * Sets the type of the boat.
+     *
+     * @param type the new type
+     */
+    void setBoatType(@NotNull Type type);
 
     /**
      * Gets the maximum speed of a boat. The speed is unrelated to the
@@ -103,4 +123,54 @@ public interface Boat extends Vehicle {
      */
     @Deprecated
     public void setWorkOnLand(boolean workOnLand);
+
+    /**
+     * Gets the status of the boat.
+     *
+     * @return the status
+     */
+    @NotNull
+    public Status getStatus();
+
+    /**
+     * Represents the type of boats.
+     */
+    public enum Type {
+        OAK(Material.OAK_PLANKS),
+        SPRUCE(Material.SPRUCE_PLANKS),
+        BIRCH(Material.BIRCH_PLANKS),
+        JUNGLE(Material.JUNGLE_PLANKS),
+        ACACIA(Material.ACACIA_PLANKS),
+        DARK_OAK(Material.DARK_OAK_PLANKS),
+        MANGROVE(Material.MANGROVE_PLANKS),
+        ;
+
+        private final Material materialBlock;
+
+        private Type(Material materialBlock) {
+            this.materialBlock = materialBlock;
+        }
+
+        /**
+         * Gets the material of the boat type.
+         *
+         * @return a material
+         */
+        @NotNull
+        public Material getMaterial() {
+            return this.materialBlock;
+        }
+    }
+
+    /**
+     * Represents the status of the boat.
+     */
+    public enum Status {
+
+        IN_WATER,
+        UNDER_WATER,
+        UNDER_FLOWING_WATER,
+        ON_LAND,
+        IN_AIR;
+    }
 }

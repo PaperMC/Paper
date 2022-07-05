@@ -6,7 +6,10 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the different species of trees regardless of size.
+ *
+ * @deprecated Deprecated, see usage methods for replacement(s)
  */
+@Deprecated
 public enum TreeSpecies {
 
     /**
