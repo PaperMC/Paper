@@ -50,19 +50,26 @@
  
              Objects.requireNonNull(piglin);
              optional.ifPresent(piglin::makeSound);
-@@ -235,23 +243,27 @@
+@@ -235,23 +243,32 @@
          PiglinAi.stopWalking(piglin);
          ItemStack itemstack;
  
 -        if (itemEntity.getItem().is(Items.GOLD_NUGGET)) {
-+        // CraftBukkit start
-+        if (itemEntity.getItem().is(Items.GOLD_NUGGET) && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, 0, false).isCancelled()) {
-             piglin.take(itemEntity, itemEntity.getItem().getCount());
-             itemstack = itemEntity.getItem();
+-            piglin.take(itemEntity, itemEntity.getItem().getCount());
+-            itemstack = itemEntity.getItem();
 -            itemEntity.discard();
 -        } else {
++        // CraftBukkit start
++        // Paper start - EntityPickupItemEvent fixes; fix event firing twice
++        if (itemEntity.getItem().is(Items.GOLD_NUGGET)/* && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, 0, false).isCancelled()*/) { // Paper
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, 0, false).isCancelled()) return;
++            piglin.onItemPickup(itemEntity); // Paper - moved from Piglin#pickUpItem - call prior to item entity modification
++            // Paper end
++            piglin.take(itemEntity, itemEntity.getItem().getCount());
++            itemstack = itemEntity.getItem();
 +            itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
 +        } else if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, itemEntity.getItem().getCount() - 1, false).isCancelled()) {
++            piglin.onItemPickup(itemEntity); // Paper - EntityPickupItemEvent fixes; moved from Piglin#pickUpItem - call prior to item entity modification
              piglin.take(itemEntity, 1);
              itemstack = PiglinAi.removeOneItemFromItemEntity(itemEntity);
 +        } else {
@@ -79,11 +86,11 @@
              PiglinAi.eat(piglin);
          } else {
 -            boolean flag = !piglin.equipItemIfPossible(world, itemstack).equals(ItemStack.EMPTY);
-+            boolean flag = !piglin.equipItemIfPossible(world, itemstack, itemEntity).equals(ItemStack.EMPTY); // CraftBukkit
++            boolean flag = !piglin.equipItemIfPossible(world, itemstack, null).equals(ItemStack.EMPTY); // CraftBukkit // Paper - pass null item entity to prevent duplicate pickup item event call - called above.
  
              if (!flag) {
                  PiglinAi.putInInventory(piglin, itemstack);
-@@ -261,7 +273,9 @@
+@@ -261,7 +278,9 @@
  
      private static void holdInOffhand(ServerLevel world, Piglin piglin, ItemStack stack) {
          if (PiglinAi.isHoldingItemInOffHand(piglin)) {
@@ -93,7 +100,7 @@
          }
  
          piglin.holdInOffHand(stack);
-@@ -272,7 +286,7 @@
+@@ -272,7 +291,7 @@
          ItemStack itemstack1 = itemstack.split(1);
  
          if (itemstack.isEmpty()) {
@@ -102,7 +109,7 @@
          } else {
              stack.setItem(itemstack);
          }
-@@ -287,9 +301,14 @@
+@@ -287,9 +306,14 @@
          boolean flag1;
  
          if (piglin.isAdult()) {
@@ -119,7 +126,7 @@
              } else if (!flag1) {
                  boolean flag2 = !piglin.equipItemIfPossible(world, itemstack).isEmpty();
  
-@@ -302,7 +321,7 @@
+@@ -302,7 +326,7 @@
              if (!flag1) {
                  ItemStack itemstack1 = piglin.getMainHandItem();
  
@@ -128,7 +135,7 @@
                      PiglinAi.putInInventory(piglin, itemstack1);
                  } else {
                      PiglinAi.throwItems(piglin, Collections.singletonList(itemstack1));
-@@ -316,7 +335,9 @@
+@@ -316,7 +340,9 @@
  
      protected static void cancelAdmiring(ServerLevel world, Piglin piglin) {
          if (PiglinAi.isAdmiringItem(piglin) && !piglin.getOffhandItem().isEmpty()) {
@@ -138,7 +145,7 @@
              piglin.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
          }
  
-@@ -379,15 +400,21 @@
+@@ -379,15 +405,21 @@
              return false;
          } else if (PiglinAi.isAdmiringDisabled(piglin) && piglin.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
              return false;
@@ -162,7 +169,7 @@
      protected static boolean isLovedItem(ItemStack stack) {
          return stack.is(ItemTags.PIGLIN_LOVED);
      }
-@@ -451,6 +478,7 @@
+@@ -451,6 +483,7 @@
      }
  
      public static void angerNearbyPiglins(ServerLevel world, Player player, boolean blockOpen) {
@@ -170,7 +177,7 @@
          List<Piglin> list = player.level().getEntitiesOfClass(Piglin.class, player.getBoundingBox().inflate(16.0D));
  
          list.stream().filter(PiglinAi::isIdle).filter((entitypiglin) -> {
-@@ -481,7 +509,7 @@
+@@ -481,7 +514,7 @@
      }
  
      protected static boolean canAdmire(Piglin piglin, ItemStack nearbyItems) {
@@ -179,7 +186,7 @@
      }
  
      protected static void wasHurtBy(ServerLevel world, Piglin piglin, LivingEntity attacker) {
-@@ -735,6 +763,12 @@
+@@ -735,6 +768,12 @@
          return entity.getBrain().hasMemoryValue(MemoryModuleType.ADMIRING_ITEM);
      }
  
@@ -192,7 +199,7 @@
      private static boolean isBarterCurrency(ItemStack stack) {
          return stack.is(PiglinAi.BARTERING_ITEM);
      }
-@@ -772,7 +806,7 @@
+@@ -772,7 +811,7 @@
      }
  
      private static boolean isNotHoldingLovedItemInOffHand(Piglin piglin) {
