@@ -1,9 +1,10 @@
 package io.papermc.paper.util;
 
+import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.java.PluginClassLoader;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class StackWalkerUtil {
@@ -12,11 +13,18 @@ public class StackWalkerUtil {
     public static JavaPlugin getFirstPluginCaller() {
         Optional<JavaPlugin> foundFrame = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
             .walk(stream -> stream
-                .filter(frame -> frame.getDeclaringClass().getClassLoader() instanceof PluginClassLoader)
                 .map((frame) -> {
-                    PluginClassLoader classLoader = (PluginClassLoader) frame.getDeclaringClass().getClassLoader();
-                    return classLoader.getPlugin();
+                    ClassLoader classLoader =  frame.getDeclaringClass().getClassLoader();
+                    JavaPlugin plugin;
+                    if (classLoader instanceof ConfiguredPluginClassLoader configuredPluginClassLoader) {
+                        plugin = configuredPluginClassLoader.getPlugin();
+                    } else {
+                        plugin = null;
+                    }
+
+                    return plugin;
                 })
+                .filter(Objects::nonNull)
                 .findFirst());
 
         return foundFrame.orElse(null);

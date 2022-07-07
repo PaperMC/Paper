@@ -280,7 +280,8 @@ public final class CraftServer implements Server {
     private final CraftCommandMap commandMap = new CraftCommandMap(this);
     private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
     private final StandardMessenger messenger = new StandardMessenger();
-    private final SimplePluginManager pluginManager = new SimplePluginManager(this, this.commandMap);
+    private final SimplePluginManager pluginManager = new SimplePluginManager(this, commandMap);
+    public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager); {this.pluginManager.paperPluginManager = this.paperPluginManager;} // Paper
     private final StructureManager structureManager;
     protected final DedicatedServer console;
     protected final DedicatedPlayerList playerList;
@@ -458,24 +459,7 @@ public final class CraftServer implements Server {
     }
 
     public void loadPlugins() {
-        this.pluginManager.registerInterface(JavaPluginLoader.class);
-
-        File pluginFolder = (File) this.console.options.valueOf("plugins");
-
-        if (pluginFolder.exists()) {
-            Plugin[] plugins = this.pluginManager.loadPlugins(pluginFolder);
-            for (Plugin plugin : plugins) {
-                try {
-                    String message = String.format("Loading %s", plugin.getDescription().getFullName());
-                    plugin.getLogger().info(message);
-                    plugin.onLoad();
-                } catch (Throwable ex) {
-                    Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, ex.getMessage() + " initializing " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
-                }
-            }
-        } else {
-            pluginFolder.mkdir();
-        }
+        io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.INSTANCE.enter(io.papermc.paper.plugin.entrypoint.Entrypoint.PLUGIN); // Paper - replace implementation
     }
 
     public void enablePlugins(PluginLoadOrder type) {
@@ -564,15 +548,17 @@ public final class CraftServer implements Server {
     private void enablePlugin(Plugin plugin) {
         try {
             List<Permission> perms = plugin.getDescription().getPermissions();
-
+            List<Permission> permsToLoad = new ArrayList<>(); // Paper
             for (Permission perm : perms) {
-                try {
-                    this.pluginManager.addPermission(perm, false);
-                } catch (IllegalArgumentException ex) {
-                    this.getLogger().log(Level.WARNING, "Plugin " + plugin.getDescription().getFullName() + " tried to register permission '" + perm.getName() + "' but it's already registered", ex);
+                // Paper start
+                if (this.paperPluginManager.getPermission(perm.getName()) == null) {
+                    permsToLoad.add(perm);
+                } else {
+                    this.getLogger().log(Level.WARNING, "Plugin " + plugin.getDescription().getFullName() + " tried to register permission '" + perm.getName() + "' but it's already registered");
+                // Paper end
                 }
             }
-            this.pluginManager.dirtyPermissibles();
+            this.paperPluginManager.addPermissions(permsToLoad); // Paper
 
             this.pluginManager.enablePlugin(plugin);
         } catch (Throwable ex) {
@@ -1015,6 +1001,7 @@ public final class CraftServer implements Server {
                 "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
             ));
         }
+        io.papermc.paper.plugin.PluginInitializerManager.reload(this.console); // Paper
         this.loadPlugins();
         this.enablePlugins(PluginLoadOrder.STARTUP);
         this.enablePlugins(PluginLoadOrder.POSTWORLD);
