@@ -1,0 +1,830 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Denery <dorofeevij@gmail.com>
+Date: Sat, 14 Jan 2023 17:55:32 +0300
+Subject: [PATCH] Registry and Lifecycle API
+
+
+diff --git a/src/main/java/io/papermc/paper/lifecycle/LifecyclePoint.java b/src/main/java/io/papermc/paper/lifecycle/LifecyclePoint.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ae07645186fc56431f7011ef71829eac5a76153
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/lifecycle/LifecyclePoint.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.lifecycle;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import org.jetbrains.annotations.NonBlocking;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.function.Consumer;
++
++/**
++ * Represents a point / stage of a server initialization which an API user can schedule to.
++ *
++ * @see LifecyclePointScheduler
++ * @param <C> A provided context at given initialization point.
++ */
++public interface LifecyclePoint<C> {
++
++    @NonBlocking
++    void schedule(@NotNull Consumer<C> consumer, @NotNull PluginMeta pluginMeta);
++
++    interface LifecyclePointFactory {
++        @NotNull
++        <C> LifecyclePoint<C> createSingleEnter(@NotNull String name);
++
++        @NotNull
++        <C> LifecyclePoint<C> createMultiEnter(@NotNull String name);
++    }
++
++    final class API {
++        static LifecyclePointFactory lifecyclePointFactory;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/lifecycle/LifecyclePointScheduler.java b/src/main/java/io/papermc/paper/lifecycle/LifecyclePointScheduler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4fc96e21a4dc690163a1266d443c3acd80b3748a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/lifecycle/LifecyclePointScheduler.java
+@@ -0,0 +1,72 @@
++package io.papermc.paper.lifecycle;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NonBlocking;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.function.Consumer;
++
++/**
++ * A class given in {@link io.papermc.paper.plugin.bootstrap.PluginProviderContext#getLifecyclePointScheduler()}.
++ * You can schedule various behaviors on {@link LifecyclePoint}s.
++ * But to get it work you need to build it with a given {@link PluginMeta} using {@link #build(PluginMeta)}.
++ * This class as well as {@link LifecyclePoint} is completely thread-safe,
++ * feel free to schedule actions on {@link LifecyclePoint} from different threads.
++ */
++public interface LifecyclePointScheduler {
++    /**
++     * Schedules given action with a context to a given {@link LifecyclePoint}.
++     * @param lifecyclePoint A {@link LifecyclePoint} you want to schedule an action to.
++     * @param consumer An action.
++     * @return An instance with a given action scheduled.
++     * @param <C> A type of context.
++     */
++    @NotNull
++    @NonBlocking
++    <C> LifecyclePointScheduler schedule(@NotNull LifecyclePoint<C> lifecyclePoint, @NotNull Consumer<C> consumer);
++
++    /**
++     * Schedules given community based implementation for handling contexts.
++     * @param holder A community implementation for scheduling
++     * @return An instance with given action scheduled.
++     * @param <C> A type of context.
++     */
++    @NotNull
++    @NonBlocking
++    <C> LifecyclePointScheduler schedule(@NotNull LifecyclePointHolder<C> holder);
++
++    /**
++     * Builds this {@link LifecyclePointScheduler} and makes it immutable. You can't schedule more actions after executing it.
++     * @param pluginMeta A given {@link PluginMeta}
++     */
++    @NonBlocking
++    void build(@NotNull PluginMeta pluginMeta);
++
++    /**
++     * Checks whether this {@link LifecyclePointScheduler} is built or not.
++     * @return true when built.
++     */
++    @NonBlocking
++    boolean isBuilt();
++
++    /**
++     * An interface which you can implement to make your own implementation for handling contexts of {@link LifecyclePoint}s.
++     * @param <C> A type of context.
++     */
++    @ApiStatus.OverrideOnly
++    interface LifecyclePointHolder<C> {
++        /**
++         * Gives {@link LifecyclePoint} which this holder schedules to.
++         * @return A {@link LifecyclePoint}.
++         */
++        @NotNull
++        LifecyclePoint<C> lifecyclePoint();
++
++        /**
++         * Called when the time of a given {@link LifecyclePoint} initialization has come.
++         * @param context A type of context.
++         */
++        void run(@NotNull C context);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java b/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..96f5646c49405ecfe70b205ff5f7d40277af99d6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.lifecycle;
++
++import io.papermc.paper.registry.access.RegistryAccess;
++import io.papermc.paper.registry.access.WritableRegistryAccess;
++import io.papermc.paper.registry.key.RegistryKey;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A class statically containing {@link LifecyclePoint}s which you can use.
++ */
++public final class ServerLifecyclePoints {
++    private ServerLifecyclePoints() {}
++
++    public static final LifecyclePoint<StaticRegistryInitializationContext> STATIC_REGISTRIES_INITIALIZED = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("STATIC_REGISTRIES_INITIALIZED");
++    public static final LifecyclePoint<StaticRegistryFrozenContext> STATIC_REGISTRIES_FROZEN = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("STATIC_REGISTRIES_FROZEN");
++    public static final LifecyclePoint<WorldgenRegistryInitializedContext> WORLDGEN_REGISTRIES_INITIALIZED = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("WORLDGEN_REGISTRIES_INITIALIZED");
++    public static final LifecyclePoint<WorldgenRegistryFrozenContext> WORLDGEN_REGISTRIES_FROZEN = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("WORLDGEN_REGISTRIES_FROZEN");
++
++    public record StaticRegistryInitializationContext(@NotNull WritableRegistryAccess<RegistryKey.RegistryLayerType.STATIC> writableRegistryAccess) {
++    }
++    
++    public record StaticRegistryFrozenContext(@NotNull RegistryAccess registryAccess) {
++    }
++
++    public record WorldgenRegistryInitializedContext(@NotNull WritableRegistryAccess<RegistryKey.RegistryLayerType.WORLDGEN> writableRegistryAccess) {
++    }
++
++    public record WorldgenRegistryFrozenContext(@NotNull RegistryAccess registryAccess) {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java
+index a4467fe1ba0dc348eab681900dbcac1770963591..ef90a6da9cbb913d2e4a5d62faa50f4bd1c17c48 100644
+--- a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java
++++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.plugin.bootstrap;
+ 
++import io.papermc.paper.lifecycle.LifecyclePointScheduler;
+ import io.papermc.paper.plugin.configuration.PluginMeta;
+ import org.jetbrains.annotations.ApiStatus;
+ import org.jetbrains.annotations.NotNull;
+@@ -50,4 +51,12 @@ public interface PluginProviderContext {
+     default org.slf4j.Logger getSLF4JLogger() {
+         return org.slf4j.LoggerFactory.getLogger(this.getLogger().getName());
+     }
++
++    /**
++     * Provides the {@link LifecyclePointScheduler} associated with this plugin.
++     *
++     * @return LifecyclePointScheduler
++     */
++    @NotNull
++    LifecyclePointScheduler getLifecyclePointScheduler();
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java b/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e25b3e553837654225e29559aee072f94cc2512
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
+@@ -0,0 +1,107 @@
++package io.papermc.paper.registry;
++
++import io.papermc.paper.registry.key.RegistryKey;
++import io.papermc.paper.registry.key.ResourceKey;
++import io.papermc.paper.registry.key.ResourceKeyed;
++import net.kyori.adventure.key.Key;
++import org.bukkit.block.Biome;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Map;
++import java.util.Optional;
++import java.util.Set;
++import java.util.stream.Stream;
++import java.util.stream.StreamSupport;
++
++/**
++ * Naming?
++ * @param <T>
++ */
++public interface ExtendedRegistry<T> extends ResourceKeyed<ExtendedRegistry<T>>, Iterable<T> {
++    Key ROOT_REGISTRY_KEY = Key.key("root");
++
++    // RegistryKey.ImmutableRegistryKey<RegistryKey.RegistryLayerType.STATIC, Material> ITEM_REGISTRY_KEY = API.registryKeyFactory.createImmutable(Material.class); // Is it even worth doing?
++    RegistryKey.EnumMutableRegistryKey<RegistryKey.RegistryLayerType.WORLDGEN, Biome> BIOME_REGISTRY_KEY = API.registryKeyFactory.createEnumMutable(Biome.class);
++
++    @NotNull
++    Optional<Reference<T>> getReference(@Nullable ResourceKey<T> resourceKey);
++
++    @NotNull
++    Optional<Reference<T>> getReference(int numericalKey);
++
++    @NotNull
++    default Reference<T> getReferenceOrThrow(@Nullable ResourceKey<T> resourceKey) {
++        return this.getReference(resourceKey)
++            .orElseThrow(() -> new IllegalStateException("Missing key in " + this.key() + " : " + resourceKey));
++    }
++
++    @Nullable
++    @Contract("null -> null")
++    Reference<T> asHolder(@Nullable T value);
++
++    @NotNull
++    default Optional<T> getOptional(@Nullable ResourceKey<T> resourceKey) {
++        return Optional.ofNullable(this.get(resourceKey));
++    }
++
++    @NotNull
++    default Optional<T> getOptional(@Nullable Key key) {
++        return Optional.ofNullable(this.get(key));
++    }
++
++    @NotNull
++    default T getOrThrow(@Nullable ResourceKey<T> resourceKey) {
++        final T value = this.get(resourceKey);
++        if (value == null) {
++            throw new IllegalStateException("Missing key in " + this.key() + " : " + resourceKey);
++        } else {
++            return value;
++        }
++    }
++
++    @Nullable
++    @Contract("null -> null")
++    T get(@Nullable ResourceKey<T> resourceKey);
++
++    @Nullable
++    @Contract("null -> null")
++    T get(@Nullable Key key);
++
++    @Nullable
++    @Contract("null -> null")
++    Key key(@Nullable T value);
++
++    @NotNull
++    Optional<ResourceKey<T>> resourceKey(@Nullable T value);
++
++    int numericalKey(@NotNull T value);
++
++    boolean containsKey(@NotNull Key key);
++
++    boolean containsKey(@NotNull ResourceKey<T> resourceKey);
++
++    @NotNull
++    Set<Key> keySet();
++
++    @NotNull
++    Set<ResourceKey<T>> resourceKeySet();
++
++    @NotNull
++    Set<Map.Entry<ResourceKey<T>, T>> entrySet();
++
++    @NotNull
++    Stream<Reference<T>> references();
++
++    @NotNull
++    default Stream<T> stream() {
++        return StreamSupport.stream(this.spliterator(), false);
++    }
++
++    final class API {
++        static ResourceKey.ResourceKeyFactory resourceKeyFactory;
++        static Reference.ReferenceFactory referenceFactory;
++        static RegistryKey.RegistryKeyFactory registryKeyFactory;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/Reference.java b/src/main/java/io/papermc/paper/registry/Reference.java
+index d880810cbf05bc45051fe29515054211572e33b4..d1136caa02952e5828ea8f6d4619d56551b0b9b1 100644
+--- a/src/main/java/io/papermc/paper/registry/Reference.java
++++ b/src/main/java/io/papermc/paper/registry/Reference.java
+@@ -1,5 +1,7 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.registry.key.ResourceKey;
++import net.kyori.adventure.key.Key;
+ import org.bukkit.Keyed;
+ import org.bukkit.NamespacedKey;
+ import org.bukkit.Registry;
+@@ -12,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
+  *
+  * @param <T> type of the value
+  */
+-public interface Reference<T extends Keyed> extends Keyed {
++public interface Reference<T> extends Keyed { // Removed "extends Keyed" on the generic, seem to not break anything.
+ 
+     /**
+      * Gets the value from the registry with the key.
+@@ -29,6 +31,12 @@ public interface Reference<T extends Keyed> extends Keyed {
+      */
+     @Nullable T valueOrNull();
+ 
++    boolean isBound();
++
++    boolean is(@NotNull Key key);
++
++    boolean is(@NotNull ResourceKey<T> resourceKey);
++
+     /**
+      * Creates a reference to a registered value.
+      *
+@@ -38,6 +46,11 @@ public interface Reference<T extends Keyed> extends Keyed {
+      * @return a reference
+      */
+     static <T extends Keyed> @NotNull Reference<T> create(@NotNull Registry<T> registry, @NotNull NamespacedKey key) {
+-        return new ReferenceImpl<>(registry, key);
++        return ExtendedRegistry.API.referenceFactory.create(registry, key);
++    }
++
++    interface ReferenceFactory {
++        @NotNull
++        <T extends Keyed> Reference<T> create(@NotNull Registry<T> registry, @NotNull Key key);
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/ReferenceImpl.java b/src/main/java/io/papermc/paper/registry/ReferenceImpl.java
+index f29e76a6b66ddfec12ddf8db6dcb2df6083b5982..8ebd28fb9709f789e9bc664c737bb9e1516dbc91 100644
+--- a/src/main/java/io/papermc/paper/registry/ReferenceImpl.java
++++ b/src/main/java/io/papermc/paper/registry/ReferenceImpl.java
+@@ -1,5 +1,7 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.registry.key.ResourceKey;
++import net.kyori.adventure.key.Key;
+ import org.bukkit.Keyed;
+ import org.bukkit.NamespacedKey;
+ import org.bukkit.Registry;
+@@ -8,6 +10,10 @@ import org.jetbrains.annotations.Nullable;
+ 
+ import java.util.NoSuchElementException;
+ 
++/**
++ * @deprecated Moved to internals. The ConfiguredStructure API is generally broken and was replaced by upstream one, this is also gonna be yeeted.
++ */
++@Deprecated
+ record ReferenceImpl<T extends Keyed>(@NotNull Registry<T> registry, @NotNull NamespacedKey key) implements Reference<T> {
+ 
+     @Override
+@@ -24,6 +30,21 @@ record ReferenceImpl<T extends Keyed>(@NotNull Registry<T> registry, @NotNull Na
+         return this.registry.get(this.key);
+     }
+ 
++    @Override
++    public boolean isBound() {
++        return false;
++    }
++
++    @Override
++    public boolean is(@NotNull Key key) {
++        return false;
++    }
++
++    @Override
++    public boolean is(@NotNull ResourceKey<T> resourceKey) {
++        return false;
++    }
++
+     @Override
+     public @NotNull NamespacedKey getKey() {
+         return this.key;
+diff --git a/src/main/java/io/papermc/paper/registry/WritableRegistry.java b/src/main/java/io/papermc/paper/registry/WritableRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8607507da91083c99cf918559ffd3b29b2938b61
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/WritableRegistry.java
+@@ -0,0 +1,18 @@
++package io.papermc.paper.registry;
++
++import io.papermc.paper.registry.key.ResourceKey;
++import net.kyori.adventure.key.Key;
++import org.jetbrains.annotations.NotNull;
++
++public interface WritableRegistry<T> extends ExtendedRegistry<T> {
++    @NotNull
++    Reference<T> registerMapping(int numericalKey, @NotNull ResourceKey<T> key, @NotNull T value);
++
++    @NotNull
++    Reference<T> register(@NotNull ResourceKey<T> key, @NotNull T value);
++
++    @NotNull
++    default Reference<T> register(@NotNull Key key, @NotNull T value) {
++        return this.register(ResourceKey.create(this.resourceKey(), key), value);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/access/LayeredRegistryAccess.java b/src/main/java/io/papermc/paper/registry/access/LayeredRegistryAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e4970741a98442d71afd28b6cd7b74685305b763
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/access/LayeredRegistryAccess.java
+@@ -0,0 +1,9 @@
++package io.papermc.paper.registry.access;
++
++import io.papermc.paper.registry.key.RegistryKey;
++import org.jetbrains.annotations.NotNull;
++
++public interface LayeredRegistryAccess {
++    @NotNull
++    RegistryAccess getLayer(@NotNull Class<? extends RegistryKey.RegistryLayerType> layer);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java b/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a542291581b8fe75f4bd17f27b8f9c436e2a677d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.registry.access;
++
++import io.papermc.paper.registry.ExtendedRegistry;
++import io.papermc.paper.registry.key.RegistryKey;
++import io.papermc.paper.registry.key.ResourceKey;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Optional;
++import java.util.stream.Stream;
++
++public interface RegistryAccess {
++    @NotNull
++    <E> Optional<ExtendedRegistry<E>> registry(@NotNull RegistryKey<? extends RegistryKey.RegistryLayerType, E> key);
++
++    @NotNull
++    Stream<RegistryEntry<?>> registries();
++
++    interface RegistryEntry<T> {
++        @NotNull
++        ResourceKey<? extends ExtendedRegistry<T>> key();
++
++        @NotNull
++        ExtendedRegistry<T> registry();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/access/WritableRegistryAccess.java b/src/main/java/io/papermc/paper/registry/access/WritableRegistryAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1a1cce78c6680ee6b1c02226c574072e8f78281f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/access/WritableRegistryAccess.java
+@@ -0,0 +1,16 @@
++package io.papermc.paper.registry.access;
++
++import io.papermc.paper.registry.WritableRegistry;
++import io.papermc.paper.registry.enums.EnumWritableRegistry;
++import io.papermc.paper.registry.key.RegistryKey;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.NotNull;
++
++public interface WritableRegistryAccess<L extends RegistryKey.RegistryLayerType> extends RegistryAccess {
++
++    @NotNull
++    <E> WritableRegistry<E> registry(@NotNull RegistryKey.MutableRegistryKey<L, E> key);
++
++    @NotNull
++    <E extends Enum<E> & Keyed> EnumWritableRegistry<E> registry(@NotNull RegistryKey.EnumMutableRegistryKey<L, E> key);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java b/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9a5d30491479e9bcf364daf4a64dd73277c5414b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java
+@@ -0,0 +1,19 @@
++package io.papermc.paper.registry.enums;
++
++import io.papermc.paper.registry.key.RegistryKey;
++import io.papermc.paper.registry.key.ResourceKey;
++import net.kyori.adventure.key.Key;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.function.Supplier;
++
++@ApiStatus.Internal
++public interface EnumCreator<T extends Enum<T> & Keyed> {
++    @NotNull
++    T create(@NotNull ResourceKey<T> resourceKey, @NotNull Object... params);
++
++    @NotNull
++    <P, API extends Enum<API> & Keyed> Supplier<P> param(@NotNull RegistryKey.EnumMutableRegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, @NotNull Class<P> type, @NotNull Key key);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java b/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d703aeac3185bf36aa5a6739f5a84f3434453eea
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.registry.enums;
++
++import io.papermc.paper.registry.ExtendedRegistry;
++import io.papermc.paper.registry.Reference;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.NotNull;
++
++public interface EnumWritableRegistry<T extends Enum<T> & Keyed> extends ExtendedRegistry<T> {
++    @NotNull
++    Reference<T> registerMapping(int numericalKey, @NotNull T value);
++
++    @NotNull
++    Reference<T> register(@NotNull T value);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/key/RegistryKey.java b/src/main/java/io/papermc/paper/registry/key/RegistryKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1290d0d2b330b3db1c282795fe9d29402d4be23c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/key/RegistryKey.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.registry.key;
++
++import io.papermc.paper.registry.ExtendedRegistry;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.NotNull;
++
++public interface RegistryKey<L extends RegistryKey.RegistryLayerType, E> extends ResourceKey<ExtendedRegistry<E>> {
++    interface ImmutableRegistryKey<L extends RegistryKey.RegistryLayerType, E> extends RegistryKey<L, E> {}
++
++    interface MutableRegistryKey<L extends RegistryKey.RegistryLayerType, E> extends RegistryKey<L, E> {}
++
++    interface EnumMutableRegistryKey<L extends RegistryKey.RegistryLayerType, E extends Enum<E> & Keyed> extends RegistryKey<L, E> {}
++
++    interface RegistryKeyFactory {
++        @NotNull
++        <L extends RegistryLayerType, E> ImmutableRegistryKey<L, E> createImmutable(@NotNull Class<E> clazz);
++
++        @NotNull
++        <L extends RegistryLayerType, E> MutableRegistryKey<L, E> createMutable(@NotNull Class<E> clazz);
++
++        @NotNull
++        <L extends RegistryLayerType, E extends Enum<E> & Keyed> EnumMutableRegistryKey<L, E> createEnumMutable(@NotNull Class<E> clazz);
++    }
++
++    interface RegistryLayerType {
++        interface STATIC extends RegistryLayerType {}
++        interface WORLDGEN extends RegistryLayerType {}
++        interface DIMENSION extends RegistryLayerType {}
++        interface RELOADABLE extends RegistryLayerType {}
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/key/ResourceKey.java b/src/main/java/io/papermc/paper/registry/key/ResourceKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5b01770830c0dfba93d95e6f9a9b6c8880983600
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/key/ResourceKey.java
+@@ -0,0 +1,39 @@
++package io.papermc.paper.registry.key;
++
++import io.papermc.paper.registry.ExtendedRegistry;
++import net.kyori.adventure.key.Key;
++import org.jetbrains.annotations.NotNull;
++
++public interface ResourceKey<T> {
++    @NotNull
++    Key key();
++
++    @NotNull
++    Key registry();
++
++    default boolean isFor(@NotNull ResourceKey<? extends ExtendedRegistry<T>> registryKey) {
++        return this.registry().equals(registryKey.key());
++    }
++
++    @NotNull
++    static <T> ResourceKey<T> create(@NotNull ResourceKey<? extends ExtendedRegistry<T>> registryKey, @NotNull Key key) {
++        return API.resourceKeyFactory.create(registryKey, key);
++    }
++
++    @NotNull
++    static <T> ResourceKey<? extends ExtendedRegistry<T>> create(@NotNull Key registryKey) {
++        return API.resourceKeyFactory.create(registryKey);
++    }
++
++    interface ResourceKeyFactory {
++        @NotNull
++        <T> ResourceKey<T> create(@NotNull ResourceKey<? extends ExtendedRegistry<T>> registryKey, @NotNull Key key);
++
++        @NotNull
++        <T> ResourceKey<? extends ExtendedRegistry<T>> create(@NotNull Key registryKey);
++    }
++
++    final class API {
++        static ResourceKey.ResourceKeyFactory resourceKeyFactory;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/key/ResourceKeyed.java b/src/main/java/io/papermc/paper/registry/key/ResourceKeyed.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f2441f66df36a9333e1980f81f44e9f7e8bfe9a5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/key/ResourceKeyed.java
+@@ -0,0 +1,15 @@
++package io.papermc.paper.registry.key;
++
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.Keyed;
++import org.jetbrains.annotations.NotNull;
++
++public interface ResourceKeyed<T> extends Keyed {
++    @NotNull
++    ResourceKey<? extends T> resourceKey();
++
++    @Override
++    default @NotNull Key key() {
++        return this.resourceKey().key();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffects.java b/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffects.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b6606698bb5119f2edb2d19542b544e79858b7a6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffects.java
+@@ -0,0 +1,65 @@
++package io.papermc.paper.world.biome;
++
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Optional;
++
++/**
++ *
++ */
++public interface BiomeSpecialEffects {
++    int skyColor();
++
++    int fogColor();
++
++    int waterColor();
++
++    int waterFogColor();
++
++    @NotNull
++    Optional<Integer> overriddenGrassColor();
++
++    @NotNull
++    Optional<Integer> overriddenFoliageColor();
++
++    @NotNull
++    static Builder builder() {
++        return API.builderFactory.builder();
++    }
++
++    interface Builder {
++
++        @NotNull
++        Builder skyColor(int skyColor);
++
++        @NotNull
++        Builder fogColor(int fogColor);
++
++        @NotNull
++        Builder waterColor(int waterColor);
++
++        @NotNull
++        Builder waterFogColor(int waterFogColor);
++
++        @NotNull
++        Builder grassColor(int grassColor);
++
++        @NotNull
++        Builder foliageColor(int foliageColor);
++
++        /**
++         * @return Constructed instance of biome special effects.
++         */
++        @NotNull
++        BiomeSpecialEffects build();
++    }
++
++    interface BuilderFactory {
++        @NotNull
++        Builder builder();
++    }
++
++    final class API {
++        static BuilderFactory builderFactory;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/biome/ClimateSettings.java b/src/main/java/io/papermc/paper/world/biome/ClimateSettings.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b331d56f3780618fdde5ef083b616b933e0df19d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/biome/ClimateSettings.java
+@@ -0,0 +1,66 @@
++package io.papermc.paper.world.biome;
++
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++@ApiStatus.Experimental
++public interface ClimateSettings {
++    float temperature();
++
++    float downfall();
++
++    @NotNull
++    Precipitation precipitation();
++
++    enum Precipitation {
++        NONE,
++        RAIN,
++        SNOW
++    }
++
++    @NotNull
++    static Builder builder() {
++        return API.builderFactory.create();
++    }
++
++    interface Builder {
++        /**
++         * Sets 0.7F by default.
++         * @param temperature temperature your biome has.
++         * @return builder
++         */
++        @NotNull
++        Builder temperature(float temperature);
++
++        /**
++         * Sets 0.8F by default.
++         * @param downfall downfall your biome has.
++         * @return builder
++         */
++        @NotNull
++        Builder downfall(float downfall);
++
++        /**
++         * Sets NONE by default.
++         * @param precipitation precipitation your biome has.
++         * @return builder
++         */
++        @NotNull
++        Builder precipitation(@NotNull Precipitation precipitation);
++
++        /**
++         * @return Constructed instance of climate settings.
++         */
++        @NotNull
++        ClimateSettings build();
++    }
++
++    interface BuilderFactory {
++        @NotNull
++        Builder create();
++    }
++
++    final class API {
++        static BuilderFactory builderFactory;
++    }
++}
+diff --git a/src/main/java/org/bukkit/block/Biome.java b/src/main/java/org/bukkit/block/Biome.java
+index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..d0f7ddd937b5a0411e442dfc59cce8eb6f0aaa9b 100644
+--- a/src/main/java/org/bukkit/block/Biome.java
++++ b/src/main/java/org/bukkit/block/Biome.java
+@@ -1,6 +1,8 @@
+ package org.bukkit.block;
+ 
+ import java.util.Locale;
++
++import com.google.common.base.Suppliers;
+ import org.bukkit.Keyed;
+ import org.bukkit.NamespacedKey;
+ import org.jetbrains.annotations.NotNull;
+@@ -78,9 +80,17 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
+     CUSTOM;
+ 
+     private final NamespacedKey key;
++    // Paper start - biome API
++    private final java.util.function.Supplier<io.papermc.paper.world.biome.ClimateSettings> climateSettings;
++    private final java.util.function.Supplier<io.papermc.paper.world.biome.BiomeSpecialEffects> biomeSpecialEffects;
++    // Paper end
+ 
+     private Biome() {
+         this.key = NamespacedKey.minecraft(name().toLowerCase(Locale.ROOT));
++        // Paper start - biome API
++        this.climateSettings = API.enumCreator.param(io.papermc.paper.registry.ExtendedRegistry.BIOME_REGISTRY_KEY, io.papermc.paper.world.biome.ClimateSettings.class, this.key);
++        this.biomeSpecialEffects = API.enumCreator.param(io.papermc.paper.registry.ExtendedRegistry.BIOME_REGISTRY_KEY, io.papermc.paper.world.biome.BiomeSpecialEffects.class, this.key);
++        // Paper end
+     }
+ 
+     @NotNull
+@@ -94,5 +104,29 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
+     public @NotNull String translationKey() {
+         return "biome.minecraft." + this.key.getKey();
+     }
++
++    public @NotNull io.papermc.paper.world.biome.ClimateSettings getClimateSettings() {
++        return this.climateSettings.get();
++    }
++
++    public @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects getBiomeSpecialEffects() {
++        return this.biomeSpecialEffects.get();
++    }
++
++    Biome(@NotNull NamespacedKey key, @NotNull io.papermc.paper.world.biome.ClimateSettings climateSettings, @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects biomeSpecialEffects) {
++        this.key = key;
++        this.climateSettings = Suppliers.memoize(() -> climateSettings);
++        this.biomeSpecialEffects = Suppliers.memoize(() -> biomeSpecialEffects);
++    }
++
++    @NotNull
++    public static Biome create(@NotNull io.papermc.paper.registry.key.ResourceKey<Biome> resourceKey, @NotNull io.papermc.paper.world.biome.ClimateSettings biomeConfiguration, @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects biomeSpecialEffects) {
++        return API.enumCreator.create(resourceKey, biomeConfiguration, biomeSpecialEffects);
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public static class API {
++        public static io.papermc.paper.registry.enums.EnumCreator<Biome> enumCreator;
++    }
+     // Paper end
+ }
