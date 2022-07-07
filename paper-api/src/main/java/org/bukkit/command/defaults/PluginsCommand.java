@@ -9,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+@Deprecated(forRemoval = true) // Paper
 public class PluginsCommand extends BukkitCommand {
     public PluginsCommand(@NotNull String name) {
         super(name);

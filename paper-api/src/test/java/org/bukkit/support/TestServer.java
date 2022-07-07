@@ -27,8 +27,7 @@ public final class TestServer {
         Thread creatingThread = Thread.currentThread();
         when(instance.isPrimaryThread()).then(mock -> Thread.currentThread().equals(creatingThread));
 
-        PluginManager pluginManager = new SimplePluginManager(instance, new SimpleCommandMap(instance));
-        when(instance.getPluginManager()).thenReturn(pluginManager);
+        // Paper - remove plugin manager for Paper Plugins
 
         Logger logger = Logger.getLogger(TestServer.class.getCanonicalName());
         when(instance.getLogger()).thenReturn(logger);

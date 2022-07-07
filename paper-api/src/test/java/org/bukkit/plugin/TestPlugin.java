@@ -32,6 +32,12 @@ public class TestPlugin extends PluginBase {
     public PluginDescriptionFile getDescription() {
         return new PluginDescriptionFile(pluginName, "1.0", "test.test");
     }
+    // Paper start
+    @Override
+    public io.papermc.paper.plugin.configuration.PluginMeta getPluginMeta() {
+        return getDescription();
+    }
+    // Paper end
 
     @Override
     public FileConfiguration getConfig() {

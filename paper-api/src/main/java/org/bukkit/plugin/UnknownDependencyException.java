@@ -43,4 +43,16 @@ public class UnknownDependencyException extends RuntimeException {
     public UnknownDependencyException() {
 
     }
+    // Paper start
+    /**
+     * Create a new {@link UnknownDependencyException} with a message informing
+     * about which dependencies are missing for what plugin.
+     *
+     * @param missingDependencies missing dependencies
+     * @param pluginName plugin which is missing said dependencies
+     */
+    public UnknownDependencyException(final @org.jetbrains.annotations.NotNull java.util.Collection<String> missingDependencies, final @org.jetbrains.annotations.NotNull String pluginName) {
+        this("Unknown/missing dependency plugins: [" + String.join(", ", missingDependencies) + "]. Please download and install these plugins to run '" + pluginName + "'.");
+    }
+    // Paper end
 }

@@ -146,4 +146,14 @@ public interface UnsafeValues {
 
     @ApiStatus.Internal
     Biome getCustomBiome();
+
+    // Paper start
+    @Deprecated(forRemoval = true)
+    boolean isSupportedApiVersion(String apiVersion);
+
+    @Deprecated(forRemoval = true)
+    static boolean isLegacyPlugin(org.bukkit.plugin.Plugin plugin) {
+        return !Bukkit.getUnsafe().isSupportedApiVersion(plugin.getDescription().getAPIVersion());
+    }
+    // Paper end
 }

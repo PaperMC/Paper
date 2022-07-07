@@ -66,7 +66,7 @@ dependencies {
     implementation("org.ow2.asm:asm-commons:9.7.1")
     // Paper end
 
-    compileOnly("org.apache.maven:maven-resolver-provider:3.9.6")
+    api("org.apache.maven:maven-resolver-provider:3.9.6") // Paper - make API dependency for Paper Plugins
     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
 
@@ -156,6 +156,7 @@ tasks.withType<Javadoc> {
         "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
         "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
         // Paper end
+        "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3", // Paper
     )
     options.tags("apiNote:a:API Note:")
 

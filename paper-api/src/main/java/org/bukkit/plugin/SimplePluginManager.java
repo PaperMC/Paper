@@ -44,6 +44,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Handles all plugin management from the Server
  */
+@Deprecated(forRemoval = true) // Paper - This implementation may be replaced in a future version of Paper.
+// Plugins may still reflect into this class to modify permission logic for the time being.
 public final class SimplePluginManager implements PluginManager {
     private final Server server;
     private final Map<Pattern, PluginLoader> fileAssociations = new HashMap<Pattern, PluginLoader>();
@@ -52,10 +54,13 @@ public final class SimplePluginManager implements PluginManager {
     private MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
     private File updateDirectory;
     private final SimpleCommandMap commandMap;
-    private final Map<String, Permission> permissions = new HashMap<String, Permission>();
-    private final Map<Boolean, Set<Permission>> defaultPerms = new LinkedHashMap<Boolean, Set<Permission>>();
-    private final Map<String, Map<Permissible, Boolean>> permSubs = new HashMap<String, Map<Permissible, Boolean>>();
-    private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
+    // Paper start
+    public final Map<String, Permission> permissions = new HashMap<String, Permission>();
+    public final Map<Boolean, Set<Permission>> defaultPerms = new LinkedHashMap<Boolean, Set<Permission>>();
+    public final Map<String, Map<Permissible, Boolean>> permSubs = new HashMap<String, Map<Permissible, Boolean>>();
+    public final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
+    public PluginManager paperPluginManager;
+    // Paper end
     private boolean useTimings = false;
 
     public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
@@ -112,6 +117,11 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @NotNull
     public Plugin[] loadPlugins(@NotNull File directory) {
+        if (true) {
+            List<Plugin> pluginList = new ArrayList<>();
+            java.util.Collections.addAll(pluginList, this.paperPluginManager.loadPlugins(directory));
+            return pluginList.toArray(new Plugin[0]);
+        }
         Preconditions.checkArgument(directory != null, "Directory cannot be null");
         Preconditions.checkArgument(directory.isDirectory(), "Directory must be a directory");
 
@@ -130,6 +140,7 @@ public final class SimplePluginManager implements PluginManager {
      */
     @NotNull
     public Plugin[] loadPlugins(@NotNull File[] files) {
+        // TODO Replace with Paper plugin loader
         Preconditions.checkArgument(files != null, "File list cannot be null");
 
         List<Plugin> result = new ArrayList<Plugin>();
@@ -390,6 +401,15 @@ public final class SimplePluginManager implements PluginManager {
     @Nullable
     public synchronized Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException {
         Preconditions.checkArgument(file != null, "File cannot be null");
+        // Paper start
+        if (true) {
+            try {
+                return this.paperPluginManager.loadPlugin(file);
+            } catch (org.bukkit.plugin.InvalidDescriptionException ignored) {
+                return null;
+            }
+        }
+        // Paper end
 
         checkUpdate(file);
 
@@ -440,12 +460,14 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @Nullable
     public synchronized Plugin getPlugin(@NotNull String name) {
+        if (true) {return this.paperPluginManager.getPlugin(name);} // Paper
         return lookupNames.get(name.replace(' ', '_'));
     }
 
     @Override
     @NotNull
     public synchronized Plugin[] getPlugins() {
+        if (true) {return this.paperPluginManager.getPlugins();} // Paper
         return plugins.toArray(new Plugin[plugins.size()]);
     }
 
@@ -459,6 +481,7 @@ public final class SimplePluginManager implements PluginManager {
      */
     @Override
     public boolean isPluginEnabled(@NotNull String name) {
+        if (true) {return this.paperPluginManager.isPluginEnabled(name);} // Paper
         Plugin plugin = getPlugin(name);
 
         return isPluginEnabled(plugin);
@@ -472,6 +495,7 @@ public final class SimplePluginManager implements PluginManager {
      */
     @Override
     public boolean isPluginEnabled(@Nullable Plugin plugin) {
+        if (true) {return this.paperPluginManager.isPluginEnabled(plugin);} // Paper
         if ((plugin != null) && (plugins.contains(plugin))) {
             return plugin.isEnabled();
         } else {
@@ -481,6 +505,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void enablePlugin(@NotNull final Plugin plugin) {
+        if (true) {this.paperPluginManager.enablePlugin(plugin); return;} // Paper
         if (!plugin.isEnabled()) {
             List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
 
@@ -500,6 +525,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void disablePlugins() {
+        if (true) {this.paperPluginManager.disablePlugins(); return;} // Paper
         Plugin[] plugins = getPlugins();
         for (int i = plugins.length - 1; i >= 0; i--) {
             disablePlugin(plugins[i]);
@@ -508,6 +534,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void disablePlugin(@NotNull final Plugin plugin) {
+        if (true) {this.paperPluginManager.disablePlugin(plugin); return;} // Paper
         if (plugin.isEnabled()) {
             try {
                 plugin.getPluginLoader().disablePlugin(plugin);
@@ -552,6 +579,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void clearPlugins() {
+        if (true) {this.paperPluginManager.clearPlugins(); return;} // Paper
         synchronized (this) {
             disablePlugins();
             plugins.clear();
@@ -572,6 +600,7 @@ public final class SimplePluginManager implements PluginManager {
      */
     @Override
     public void callEvent(@NotNull Event event) {
+        if (true) {this.paperPluginManager.callEvent(event); return;} // Paper
         if (event.isAsynchronous()) {
             if (Thread.holdsLock(this)) {
                 throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.");
@@ -620,6 +649,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void registerEvents(@NotNull Listener listener, @NotNull Plugin plugin) {
+        if (true) {this.paperPluginManager.registerEvents(listener, plugin); return;} // Paper
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register " + listener + " while not enabled");
         }
@@ -653,6 +683,7 @@ public final class SimplePluginManager implements PluginManager {
         Preconditions.checkArgument(priority != null, "Priority cannot be null");
         Preconditions.checkArgument(executor != null, "Executor cannot be null");
         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
+        if (true) {this.paperPluginManager.registerEvent(event, listener, priority, executor, plugin, ignoreCancelled); return;} // Paper
 
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
@@ -700,16 +731,19 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @Nullable
     public Permission getPermission(@NotNull String name) {
+        if (true) {return this.paperPluginManager.getPermission(name);} // Paper
         return permissions.get(name.toLowerCase(Locale.ROOT));
     }
 
     @Override
     public void addPermission(@NotNull Permission perm) {
+        if (true) {this.paperPluginManager.addPermission(perm); return;} // Paper
         addPermission(perm, true);
     }
 
     @Deprecated(since = "1.12")
     public void addPermission(@NotNull Permission perm, boolean dirty) {
+        if (true) {this.paperPluginManager.addPermission(perm); return;} // Paper - This just has a performance implication, use the better api to avoid this.
         String name = perm.getName().toLowerCase(Locale.ROOT);
 
         if (permissions.containsKey(name)) {
@@ -723,21 +757,25 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @NotNull
     public Set<Permission> getDefaultPermissions(boolean op) {
+        if (true) {return this.paperPluginManager.getDefaultPermissions(op);} // Paper
         return ImmutableSet.copyOf(defaultPerms.get(op));
     }
 
     @Override
     public void removePermission(@NotNull Permission perm) {
+        if (true) {this.paperPluginManager.removePermission(perm); return;} // Paper
         removePermission(perm.getName());
     }
 
     @Override
     public void removePermission(@NotNull String name) {
+        if (true) {this.paperPluginManager.removePermission(name); return;} // Paper
         permissions.remove(name.toLowerCase(Locale.ROOT));
     }
 
     @Override
     public void recalculatePermissionDefaults(@NotNull Permission perm) {
+        if (true) {this.paperPluginManager.recalculatePermissionDefaults(perm); return;} // Paper
         if (perm != null && permissions.containsKey(perm.getName().toLowerCase(Locale.ROOT))) {
             defaultPerms.get(true).remove(perm);
             defaultPerms.get(false).remove(perm);
@@ -777,6 +815,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void subscribeToPermission(@NotNull String permission, @NotNull Permissible permissible) {
+        if (true) {this.paperPluginManager.subscribeToPermission(permission, permissible); return;} // Paper
         String name = permission.toLowerCase(Locale.ROOT);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
@@ -790,6 +829,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void unsubscribeFromPermission(@NotNull String permission, @NotNull Permissible permissible) {
+        if (true) {this.paperPluginManager.unsubscribeFromPermission(permission, permissible); return;} // Paper
         String name = permission.toLowerCase(Locale.ROOT);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
@@ -805,6 +845,7 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @NotNull
     public Set<Permissible> getPermissionSubscriptions(@NotNull String permission) {
+        if (true) {return this.paperPluginManager.getPermissionSubscriptions(permission);} // Paper
         String name = permission.toLowerCase(Locale.ROOT);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
@@ -817,6 +858,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void subscribeToDefaultPerms(boolean op, @NotNull Permissible permissible) {
+        if (true) {this.paperPluginManager.subscribeToDefaultPerms(op, permissible); return;} // Paper
         Map<Permissible, Boolean> map = defSubs.get(op);
 
         if (map == null) {
@@ -829,6 +871,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void unsubscribeFromDefaultPerms(boolean op, @NotNull Permissible permissible) {
+        if (true) {this.paperPluginManager.unsubscribeFromDefaultPerms(op, permissible); return;} // Paper
         Map<Permissible, Boolean> map = defSubs.get(op);
 
         if (map != null) {
@@ -843,6 +886,7 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @NotNull
     public Set<Permissible> getDefaultPermSubscriptions(boolean op) {
+        if (true) {return this.paperPluginManager.getDefaultPermSubscriptions(op);} // Paper
         Map<Permissible, Boolean> map = defSubs.get(op);
 
         if (map == null) {
@@ -855,6 +899,7 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @NotNull
     public Set<Permission> getPermissions() {
+        if (true) {return this.paperPluginManager.getPermissions();} // Paper
         return new HashSet<Permission>(permissions.values());
     }
 
@@ -878,6 +923,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public boolean useTimings() {
+        if (true) {return this.paperPluginManager.useTimings();} // Paper
         return useTimings;
     }
 
@@ -889,4 +935,28 @@ public final class SimplePluginManager implements PluginManager {
     public void useTimings(boolean use) {
         useTimings = use;
     }
+
+    // Paper start
+    public void clearPermissions() {
+        if (true) {this.paperPluginManager.clearPermissions(); return;} // Paper
+        permissions.clear();
+        defaultPerms.get(true).clear();
+        defaultPerms.get(false).clear();
+    }
+
+    @Override
+    public boolean isTransitiveDependency(io.papermc.paper.plugin.configuration.PluginMeta pluginMeta, io.papermc.paper.plugin.configuration.PluginMeta dependencyConfig) {
+        return this.paperPluginManager.isTransitiveDependency(pluginMeta, dependencyConfig);
+    }
+
+    @Override
+    public void overridePermissionManager(@NotNull Plugin plugin, @Nullable io.papermc.paper.plugin.PermissionManager permissionManager) {
+        this.paperPluginManager.overridePermissionManager(plugin, permissionManager);
+    }
+
+    @Override
+    public void addPermissions(@NotNull List<Permission> perm) {
+        this.paperPluginManager.addPermissions(perm);
+    }
+    // Paper end
 }

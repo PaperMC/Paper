@@ -36,7 +36,10 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-class LibraryLoader
+// Paper start
+@org.jetbrains.annotations.ApiStatus.Internal
+public class LibraryLoader
+// Paper end
 {
 
     private final Logger logger;
@@ -55,6 +58,7 @@ class LibraryLoader
         this.repository = locator.getService( RepositorySystem.class );
         this.session = MavenRepositorySystemUtils.newSession();
 
+        session.setSystemProperties(System.getProperties()); // Paper - paper plugins, backport system properties fix for transitive dependency parsing, see #10116
         session.setChecksumPolicy( RepositoryPolicy.CHECKSUM_POLICY_FAIL );
         session.setLocalRepositoryManager( repository.newLocalRepositoryManager( session, new LocalRepository( "libraries" ) ) );
         session.setTransferListener( new AbstractTransferListener()
@@ -84,7 +88,7 @@ class LibraryLoader
         }
         logger.log( Level.INFO, "[{0}] Loading {1} libraries... please wait", new Object[]
         {
-            desc.getName(), desc.getLibraries().size()
+            java.util.Objects.requireNonNullElseGet(desc.getPrefix(), desc::getName), desc.getLibraries().size() // Paper - use configured log prefix
         } );
 
         List<Dependency> dependencies = new ArrayList<>();
@@ -122,7 +126,7 @@ class LibraryLoader
             jarFiles.add( url );
             logger.log( Level.INFO, "[{0}] Loaded library {1}", new Object[]
             {
-                desc.getName(), file
+                java.util.Objects.requireNonNullElseGet(desc.getPrefix(), desc::getName), file // Paper - use configured log prefix
             } );
         }
 

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Handles all plugin management from the Server
  */
-public interface PluginManager {
+public interface PluginManager extends io.papermc.paper.plugin.PermissionManager { // Paper
 
     /**
      * Registers the specified plugin loader
@@ -23,6 +23,7 @@ public interface PluginManager {
      * @throws IllegalArgumentException Thrown when the given Class is not a
      *     valid PluginLoader
      */
+    @Deprecated(forRemoval = true) // Paper - The PluginLoader system will not function in the near future
     public void registerInterface(@NotNull Class<? extends PluginLoader> loader) throws IllegalArgumentException;
 
     /**
@@ -312,4 +313,17 @@ public interface PluginManager {
      * @return True if event timings are to be used
      */
     public boolean useTimings();
+
+    // Paper start
+    @org.jetbrains.annotations.ApiStatus.Internal
+    boolean isTransitiveDependency(io.papermc.paper.plugin.configuration.PluginMeta pluginMeta, io.papermc.paper.plugin.configuration.PluginMeta dependencyConfig);
+
+    /**
+     * Sets the permission manager to be used for this server.
+     *
+     * @param permissionManager permission manager
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    void overridePermissionManager(@NotNull Plugin plugin, @Nullable io.papermc.paper.plugin.PermissionManager permissionManager);
+    // Paper end
 }
