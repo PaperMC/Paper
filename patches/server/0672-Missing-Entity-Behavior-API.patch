@@ -118,6 +118,32 @@ index 1f3506d38894fea224f3b2f125b45c3b68d705c7..bb2cb17e4e5ce142eeec18951c8948e3
      @Override
      protected boolean shouldDespawnInPeaceful() {
          return true;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java b/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
+index b75c0ff18aa7adb673fbb2b5ada7775dd8ac1e29..05cf30e6572c9bb7e11d71de1cd79df987bf062a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
+@@ -197,6 +197,12 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+     }
+ 
+     public void startConverting(@Nullable UUID uuid, int delay) {
++    // Paper start - missing entity behaviour api - converting without entity event
++        this.startConverting(uuid, delay, true);
++    }
++
++    public void startConverting(@Nullable UUID uuid, int delay, boolean broadcastEntityEvent) {
++    // Paper end - missing entity behaviour api - converting without entity event
+         this.conversionStarter = uuid;
+         this.villagerConversionTime = delay;
+         this.getEntityData().set(ZombieVillager.DATA_CONVERTING_ID, true);
+@@ -204,7 +210,7 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+         this.removeEffect(MobEffects.WEAKNESS, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
+         this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, delay, Math.min(this.level.getDifficulty().getId() - 1, 0)), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
+         // CraftBukkit end
+-        this.level.broadcastEntityEvent(this, (byte) 16);
++        if (broadcastEntityEvent) this.level.broadcastEntityEvent(this, (byte) 16); // Paper - missing entity behaviour api - converting without entity event
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
 index a367f50b0e3fe9e7a1b87892a8c98e88bd678f6f..1b31b32d42eeb54680b902cd7e82d10ba7daa5d0 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
@@ -563,6 +589,32 @@ index 2ba16e33dd21c3c72cb12244aa78c59bf53e76d1..634a5099fb6faea03615783f57e643ad
      // Paper end
  
      @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillagerZombie.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillagerZombie.java
+index 8a0a905f6701c6e94cbbf15793788350958fb728..2a74e6ecb4f57bc6879b37f7bc0675417223bcbf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillagerZombie.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillagerZombie.java
+@@ -72,13 +72,20 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
+ 
+     @Override
+     public void setConversionTime(int time) {
++    // Paper start - missing entity behaviour api - converting without entity event
++        this.setConversionTime(time, true);
++    }
++
++    @Override
++    public void setConversionTime(int time, boolean broadcastEntityEvent) {
++    // Paper stop - missing entity behaviour api - converting without entity event
+         if (time < 0) {
+             this.getHandle().villagerConversionTime = -1;
+             this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.ZombieVillager.DATA_CONVERTING_ID, false);
+             this.getHandle().conversionStarter = null;
+             this.getHandle().removeEffect(MobEffects.DAMAGE_BOOST, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
+         } else {
+-            this.getHandle().startConverting((UUID) null, time);
++            this.getHandle().startConverting((UUID) null, time, broadcastEntityEvent); // Paper - missing entity behaviour api - converting without entity event
+         }
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
 index e92355fa2042c4cf15354a11b7058cacbe996f0d..4cf3a374c9ee7c7bcf82e778aa094eb4f8463595 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
