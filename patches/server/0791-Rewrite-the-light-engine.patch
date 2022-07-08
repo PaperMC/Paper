@@ -4357,24 +4357,68 @@ index 0000000000000000000000000000000000000000..dd995e25ae620ae36cd5eecb2fe10ad0
 +    }
 +
 +}
-diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index a538473f4a75791c7c657f9f1e3ddf96042ab071..86c41f9ad92dc5fb762d56107f58e3acc07d8890 100644
---- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -709,6 +709,46 @@ public class PaperCommand extends Command {
-         }
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
+index 190df802cb24aa360f6cf4d291e38b4b3fe4a2ac..68645bbbab9b4225048b647252d8f462028a9c84 100644
+--- a/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
++++ b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
+@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.server.level.ThreadedLevelLightEngine;
+ import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.chunk.ChunkAccess;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+@@ -19,6 +20,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.checkerframework.framework.qual.DefaultQualifier;
+ 
+ import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
++import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
+ import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
+ import static net.kyori.adventure.text.format.NamedTextColor.RED;
+ 
+@@ -44,7 +47,7 @@ public final class FixLightCommand implements PaperSubcommand {
+                     sender.sendMessage(text("Radius cannot be negative!", RED));
+                     return;
+                 }
+-                final int maxRadius = 5;
++                final int maxRadius = 32; // Paper - MOOOOOORE
+                 radius = Math.min(maxRadius, parsed);
+                 if (radius != parsed) {
+                     post = () -> sender.sendMessage(text("Radius '" + parsed + "' was not in the required range [0, " + maxRadius + "], it was lowered to the maximum (" + maxRadius + " chunks).", RED));
+@@ -59,12 +62,67 @@ public final class FixLightCommand implements PaperSubcommand {
+         ServerPlayer handle = player.getHandle();
+         ServerLevel world = (ServerLevel) handle.level;
+         ThreadedLevelLightEngine lightengine = world.getChunkSource().getLightEngine();
++        // Paper start - rewrite light engine
++        if (true) {
++            this.starlightFixLight(handle, world, lightengine, radius, post);
++            return;
++        }
++        // Paper end - rewrite light engine
+ 
+         net.minecraft.core.BlockPos center = MCUtil.toBlockPosition(player.getLocation());
+         Deque<ChunkPos> queue = new ArrayDeque<>(MCUtil.getSpiralOutChunks(center, radius));
+         updateLight(sender, world, lightengine, queue, post);
      }
  
 +    // Paper start - rewrite light engine
-+    private void starlightFixLight(ServerPlayer sender, ServerLevel world, ThreadedLevelLightEngine lightengine, int radius) {
++    private void starlightFixLight(
++        final ServerPlayer sender,
++        final ServerLevel world,
++        final ThreadedLevelLightEngine lightengine,
++        final int radius,
++        final @Nullable Runnable done
++    ) {
 +        long start = System.nanoTime();
 +        java.util.LinkedHashSet<ChunkPos> chunks = new java.util.LinkedHashSet<>(MCUtil.getSpiralOutChunks(sender.blockPosition(), radius)); // getChunkCoordinates is actually just bad mappings, this function rets position as blockpos
 +
 +        int[] pending = new int[1];
-+        for (java.util.Iterator<ChunkPos> iterator = chunks.iterator(); iterator.hasNext();) {
++        for (java.util.Iterator<ChunkPos> iterator = chunks.iterator(); iterator.hasNext(); ) {
 +            final ChunkPos chunkPos = iterator.next();
 +
-+            final net.minecraft.world.level.chunk.ChunkAccess chunk = (net.minecraft.world.level.chunk.ChunkAccess) world.getChunkSource().getChunkForLighting(chunkPos.x, chunkPos.z);
++            final @Nullable ChunkAccess chunk = (ChunkAccess) world.getChunkSource().getChunkForLighting(chunkPos.x, chunkPos.z);
 +            if (chunk == null || !chunk.isLightCorrect() || !chunk.getStatus().isOrAfter(net.minecraft.world.level.chunk.ChunkStatus.LIGHT)) {
 +                // cannot relight this chunk
 +                iterator.remove();
@@ -4386,51 +4430,31 @@ index a538473f4a75791c7c657f9f1e3ddf96042ab071..86c41f9ad92dc5fb762d56107f58e3ac
 +
 +        int[] relitChunks = new int[1];
 +        lightengine.relight(chunks,
-+                (ChunkPos chunkPos) -> {
-+                    ++relitChunks[0];
-+                    sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
-+                        text("Relit chunk ", BLUE), text(chunkPos.toString()),
-+                        text(", progress: ", BLUE), text((int)(Math.round(100.0 * (double)(relitChunks[0])/(double)pending[0])) + "%")
-+                    ));
-+                },
-+                (int totalRelit) -> {
-+                    final long end = System.nanoTime();
-+                    final long diff = Math.round(1.0e-6*(end - start));
-+                    sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
-+                        text("Relit ", BLUE), text(totalRelit),
-+                        text(" chunks. Took ", BLUE), text(diff + "ms")
-+                    ));
-+                });
++            (ChunkPos chunkPos) -> {
++                ++relitChunks[0];
++                sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
++                    text("Relit chunk ", BLUE), text(chunkPos.toString()),
++                    text(", progress: ", BLUE), text((int) (Math.round(100.0 * (double) (relitChunks[0]) / (double) pending[0])) + "%")
++                ));
++            },
++            (int totalRelit) -> {
++                final long end = System.nanoTime();
++                final long diff = Math.round(1.0e-6 * (end - start));
++                sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
++                    text("Relit ", BLUE), text(totalRelit),
++                    text(" chunks. Took ", BLUE), text(diff + "ms")
++                ));
++                if (done != null) {
++                    done.run();
++                }
++            });
 +        sender.getBukkitEntity().sendMessage(text().color(BLUE).append(text("Relighting "), text(pending[0], DARK_AQUA), text(" chunks")));
 +    }
 +    // Paper end - rewrite light engine
 +
-     private void doFixLight(CommandSender sender, String[] args) {
-         if (!(sender instanceof Player)) {
-             sender.sendMessage("Only players can use this command");
-@@ -717,7 +757,7 @@ public class PaperCommand extends Command {
-         int radius = 2;
-         if (args.length > 1) {
-             try {
--                radius = Math.min(5, Integer.parseInt(args[1]));
-+                radius = Math.min(32, Integer.parseInt(args[1])); // Paper - MOOOOOORE
-             } catch (Exception e) {
-                 sender.sendMessage("Not a number");
-                 return;
-@@ -730,6 +770,13 @@ public class PaperCommand extends Command {
-         ServerLevel world = (ServerLevel) handle.level;
-         ThreadedLevelLightEngine lightengine = world.getChunkSource().getLightEngine();
- 
-+        // Paper start - rewrite light engine
-+        if (true) {
-+            this.starlightFixLight(handle, world, lightengine, radius);
-+            return;
-+        }
-+        // Paper end - rewrite light engine
-+
-         net.minecraft.core.BlockPos center = MCUtil.toBlockPosition(player.getLocation());
-         Deque<ChunkPos> queue = new ArrayDeque<>(MCUtil.getSpiralOutChunks(center, radius));
-         updateLight(sender, world, lightengine, queue);
+     private void updateLight(
+         final CommandSender sender,
+         final ServerLevel world,
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 index 5b4c3ca92dffff876af18db106310cb14e8612b1..5482be03a667939ff009b6810d5cc90c8601e983 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java

@@ -5,60 +5,88 @@ Subject: [PATCH] Paper dumpitem command
 
 Let's you quickly view the item in your hands NBT data
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index fb2cb76e4954d9d69b4a631d6e20bdcc511b6b3f..27c350c123b4349b8b401a06f204de46c88da7ac 100644
---- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -31,7 +31,9 @@ import org.bukkit.command.CommandSender;
- import org.bukkit.craftbukkit.CraftServer;
- import org.bukkit.craftbukkit.CraftWorld;
- import org.bukkit.craftbukkit.entity.CraftPlayer;
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+index 40cd55e610cbee25a7cff0e6001bad40b4418551..4c85d0a61ce508e4a0e3770f46242fb2b1d17420 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommand.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
+@@ -1,6 +1,7 @@
+ package io.papermc.paper.command;
+ 
+ import io.papermc.paper.command.subcommands.ChunkDebugCommand;
++import io.papermc.paper.command.subcommands.DumpItemCommand;
+ import io.papermc.paper.command.subcommands.EntityCommand;
+ import io.papermc.paper.command.subcommands.FixLightCommand;
+ import io.papermc.paper.command.subcommands.HeapDumpCommand;
+@@ -46,6 +47,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("debug", "chunkinfo"), new ChunkDebugCommand());
+         commands.put(Set.of("fixlight"), new FixLightCommand());
+         commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
++        commands.put(Set.of("dumpitem"), new DumpItemCommand());
+ 
+         return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpItemCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpItemCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..771503ff637fea10d4d8be0f37f3f146c41791d9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/DumpItemCommand.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper.command.subcommands;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.command.PaperSubcommand;
++import java.util.Objects;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.minecraft.core.Registry;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.world.item.ItemStack;
++import org.bukkit.Bukkit;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
- import org.bukkit.entity.Player;
-+import org.bukkit.inventory.ItemStack;
- 
- import java.io.File;
- import java.io.FileOutputStream;
-@@ -62,7 +64,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
- 
- public class PaperCommand extends Command {
-     private static final String BASE_PERM = "bukkit.command.paper.";
--    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight", "syncloadinfo").build();
-+    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight", "syncloadinfo", "dumpitem").build();
- 
-     public PaperCommand(String name) {
-         super(name);
-@@ -176,6 +178,9 @@ public class PaperCommand extends Command {
-             case "reload":
-                 doReload(sender);
-                 break;
-+            case "dumpitem":
-+                doDumpItem(sender);
-+                break;
-             case "debug":
-                 doDebug(sender, args);
-                 break;
-@@ -489,6 +494,23 @@ public class PaperCommand extends Command {
- 
-         Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
-     }
-+    private void doDumpItem(CommandSender sender) {
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
++import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
++import static net.kyori.adventure.text.format.TextDecoration.ITALIC;
++
++@DefaultQualifier(NonNull.class)
++public final class DumpItemCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        this.doDumpItem(sender);
++        return true;
++    }
++
++    private void doDumpItem(final CommandSender sender) {
 +        if (!(sender instanceof Player)) {
 +            sender.sendMessage("Only players can use this command");
 +            return;
 +        }
-+        ItemStack itemInHand = ((CraftPlayer) sender).getItemInHand();
-+        net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemInHand);
-+        net.minecraft.nbt.CompoundTag tag = itemStack.getTag();
-+        if (tag != null) {
-+            net.kyori.adventure.text.Component nbtComponent = io.papermc.paper.adventure.PaperAdventure.asAdventure(net.minecraft.nbt.NbtUtils.toPrettyComponent(tag));
-+            Bukkit.getConsoleSender().sendMessage(nbtComponent);
-+            sender.sendMessage(nbtComponent);
-+        } else {
-+            sender.sendMessage("Item does not have NBT");
-+        }
++        final ItemStack itemStack = CraftItemStack.asNMSCopy(((CraftPlayer) sender).getItemInHand());
++        final @Nullable CompoundTag tag = itemStack.getTag();
++        final @Nullable Component nbtComponent = tag == null ? null : PaperAdventure.asAdventure(net.minecraft.nbt.NbtUtils.toPrettyComponent(tag));
++        final String itemId = Objects.requireNonNull(((CraftWorld) ((CraftPlayer) sender).getWorld()).getHandle().registryAccess()
++            .registryOrThrow(Registry.ITEM_REGISTRY).getKey(itemStack.getItem())).toString();
++        final Component message = text()
++            .append(text(itemId, YELLOW))
++            .apply(b -> {
++                if (nbtComponent != null) {
++                    b.append(nbtComponent);
++                }
++            })
++            .build();
++        Bukkit.getConsoleSender().sendMessage(message);
++        sender.sendMessage(message);
++        sender.sendMessage(text().content("    Click to copy item to clipboard")
++            .color(GRAY)
++            .decorate(ITALIC)
++            .clickEvent(ClickEvent.copyToClipboard(tag == null ? itemId : (itemId + tag))));
 +    }
-+
-     private void doFixLight(CommandSender sender, String[] args) {
-         if (!(sender instanceof Player)) {
-             sender.sendMessage("Only players can use this command");
++}
