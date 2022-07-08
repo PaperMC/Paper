@@ -4358,10 +4358,18 @@ index 0000000000000000000000000000000000000000..dd995e25ae620ae36cd5eecb2fe10ad0
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
-index 190df802cb24aa360f6cf4d291e38b4b3fe4a2ac..efcae555333870fbaf25fd6d49f2d56168beba2d 100644
+index 190df802cb24aa360f6cf4d291e38b4b3fe4a2ac..68645bbbab9b4225048b647252d8f462028a9c84 100644
 --- a/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
 +++ b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
-@@ -19,6 +19,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
+@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.server.level.ThreadedLevelLightEngine;
+ import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.chunk.ChunkAccess;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+@@ -19,6 +20,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  import org.checkerframework.framework.qual.DefaultQualifier;
  
  import static net.kyori.adventure.text.Component.text;
@@ -4370,7 +4378,7 @@ index 190df802cb24aa360f6cf4d291e38b4b3fe4a2ac..efcae555333870fbaf25fd6d49f2d561
  import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
  import static net.kyori.adventure.text.format.NamedTextColor.RED;
  
-@@ -44,7 +46,7 @@ public final class FixLightCommand implements PaperSubcommand {
+@@ -44,7 +47,7 @@ public final class FixLightCommand implements PaperSubcommand {
                      sender.sendMessage(text("Radius cannot be negative!", RED));
                      return;
                  }
@@ -4379,7 +4387,7 @@ index 190df802cb24aa360f6cf4d291e38b4b3fe4a2ac..efcae555333870fbaf25fd6d49f2d561
                  radius = Math.min(maxRadius, parsed);
                  if (radius != parsed) {
                      post = () -> sender.sendMessage(text("Radius '" + parsed + "' was not in the required range [0, " + maxRadius + "], it was lowered to the maximum (" + maxRadius + " chunks).", RED));
-@@ -59,12 +61,67 @@ public final class FixLightCommand implements PaperSubcommand {
+@@ -59,12 +62,67 @@ public final class FixLightCommand implements PaperSubcommand {
          ServerPlayer handle = player.getHandle();
          ServerLevel world = (ServerLevel) handle.level;
          ThreadedLevelLightEngine lightengine = world.getChunkSource().getLightEngine();
@@ -4410,7 +4418,7 @@ index 190df802cb24aa360f6cf4d291e38b4b3fe4a2ac..efcae555333870fbaf25fd6d49f2d561
 +        for (java.util.Iterator<ChunkPos> iterator = chunks.iterator(); iterator.hasNext(); ) {
 +            final ChunkPos chunkPos = iterator.next();
 +
-+            final net.minecraft.world.level.chunk.ChunkAccess chunk = (net.minecraft.world.level.chunk.ChunkAccess) world.getChunkSource().getChunkForLighting(chunkPos.x, chunkPos.z);
++            final @Nullable ChunkAccess chunk = (ChunkAccess) world.getChunkSource().getChunkForLighting(chunkPos.x, chunkPos.z);
 +            if (chunk == null || !chunk.isLightCorrect() || !chunk.getStatus().isOrAfter(net.minecraft.world.level.chunk.ChunkStatus.LIGHT)) {
 +                // cannot relight this chunk
 +                iterator.remove();
