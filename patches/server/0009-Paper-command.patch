@@ -81,10 +81,10 @@ index 0000000000000000000000000000000000000000..953c30500892e5f0c55b8597bc708ea8
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ad819ef1c60ef48d548566dfc75f57f4a2193348
+index 0000000000000000000000000000000000000000..b3a58bf4b654e336826dc04da9e2f80ff8b9a9a7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,145 @@
 +package io.papermc.paper.command;
 +
 +import io.papermc.paper.command.subcommands.EntityCommand;
@@ -92,6 +92,7 @@ index 0000000000000000000000000000000000000000..ad819ef1c60ef48d548566dfc75f57f4
 +import io.papermc.paper.command.subcommands.ReloadCommand;
 +import io.papermc.paper.command.subcommands.VersionCommand;
 +import it.unimi.dsi.fastutil.Pair;
++import java.util.ArrayList;
 +import java.util.Arrays;
 +import java.util.Collections;
 +import java.util.HashMap;
@@ -101,9 +102,13 @@ index 0000000000000000000000000000000000000000..ad819ef1c60ef48d548566dfc75f57f4
 +import java.util.Set;
 +import java.util.stream.Collectors;
 +import net.minecraft.Util;
++import org.bukkit.Bukkit;
 +import org.bukkit.Location;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
++import org.bukkit.permissions.Permission;
++import org.bukkit.permissions.PermissionDefault;
++import org.bukkit.plugin.PluginManager;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -142,7 +147,14 @@ index 0000000000000000000000000000000000000000..ad819ef1c60ef48d548566dfc75f57f4
 +        super(name);
 +        this.description = "Paper related commands";
 +        this.usageMessage = "/paper [" + String.join(" | ", SUBCOMMANDS.keySet()) + "]";
-+        this.setPermission("bukkit.command.paper;" + SUBCOMMANDS.keySet().stream().map(s -> BASE_PERM + s).collect(Collectors.joining(";")));
++        final List<String> permissions = new ArrayList<>();
++        permissions.add("bukkit.command.paper");
++        permissions.addAll(SUBCOMMANDS.keySet().stream().map(s -> BASE_PERM + s).toList());
++        this.setPermission(String.join(";", permissions));
++        final PluginManager pluginManager = Bukkit.getServer().getPluginManager();
++        for (final String perm : permissions) {
++            pluginManager.addPermission(new Permission(perm, PermissionDefault.OP));
++        }
 +    }
 +
 +    private static boolean testPermission(final CommandSender sender, final String permission) {
