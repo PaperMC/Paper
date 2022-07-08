@@ -70,7 +70,7 @@ index e937186aaf819a77c80beeb9e08413a1f781c13a..0e19f49ca2496b1c42d27289bcea15d2
  
      public boolean isEnchanted() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46fd1339de0 100644
+index 4b79b96579efbc4dd9a10e7183ed08b73b488794..ff77f28bc26617b17587fea8c730a14f56820386 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -126,10 +126,48 @@ public final class CraftItemStack extends ItemStack {
@@ -87,13 +87,13 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46f
 +            this.handle.setItem(item);
 +
 +            // Adjust size
-+            if(this.handle.getCount() > item.getMaxStackSize()) {
++            if (this.handle.getCount() > item.getMaxStackSize()) {
 +                this.handle.setCount(item.getMaxStackSize());
 +            }
 +
-+            if(this.handle.hasTag()) {
++            if (this.handle.hasTag()) {
 +                // Strip damage
-+                if(this.handle.isDamageableItem() && !item.canBeDepleted()) {
++                if (this.handle.isDamageableItem() && !item.canBeDepleted()) {
 +                    this.handle.getTag().remove(CraftMetaItem.DAMAGE.NBT);
 +                    this.handle.getTag().remove(CraftMetaItem.UNBREAKABLE.NBT);
 +                }
@@ -102,7 +102,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46f
 +
 +                // Strip invalid enchantments
 +                EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
-+                if(map != null) {
++                if (map != null) {
 +                    for (Enchantment enchant : getEnchantments().keySet()) {
 +                        if (((CraftEnchantment) enchant).getHandle().category.canEnchant(item)) continue;
 +                        map.remove(enchant);
@@ -114,19 +114,19 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46f
 +                CraftMetaItem.stripInvalidTags(oldType, type, this.handle.getTag());
 +                // Paper end
 +
-+                if(this.handle.getTag().isEmpty()) {
++                if (this.handle.getTag().isEmpty()) {
 +                    handle.tag = null;
 +                    ((ItemStack) this).setItemMeta(null);
 +                }
 +            }
 +
 +            // Adjust damage
-+            if(item.canBeDepleted()) {
++            if (item.canBeDepleted()) {
 +                this.handle.getOrCreateTag().putInt(CraftMetaItem.DAMAGE.NBT, 0);
              }
          }
          setData(null);
-@@ -178,28 +216,12 @@ public final class CraftItemStack extends ItemStack {
+@@ -178,28 +216,13 @@ public final class CraftItemStack extends ItemStack {
      public void addUnsafeEnchantment(Enchantment ench, int level) {
          Validate.notNull(ench, "Cannot add null enchantment");
  
@@ -153,15 +153,16 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46f
 -        tag.putShort(ENCHANTMENTS_LVL.NBT, (short) level);
 -        list.add(tag);
 +        // Paper start - replace entire method
-+        EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getOrCreateTag(), CraftMetaItem.ENCHANTMENTS);
-+        if(map == null) map = new EnchantmentMap();
++        if (!this.handle.hasTag()) return;
++        EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
++        if (map == null) map = new EnchantmentMap();
 +        map.put(ench, level);
 +        CraftMetaItem.applyEnchantments(map, this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
 +        // Paper end
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -232,50 +254,32 @@ public final class CraftItemStack extends ItemStack {
+@@ -232,50 +255,32 @@ public final class CraftItemStack extends ItemStack {
      public int removeEnchantment(Enchantment ench) {
          Validate.notNull(ench, "Cannot remove null enchantment");
  
@@ -183,9 +184,9 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46f
 -            }
 -        }
 +        // Paper start - replace entire method
-+        if(!this.handle.hasTag()) return 0;
++        if (!this.handle.hasTag()) return 0;
 +        EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
-+        if(map == null) return 0;
++        if (map == null) return 0;
  
 -        if (index == Integer.MIN_VALUE) {
 -            return 0;
@@ -197,7 +198,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46f
 -            }
 -            return level;
 +        Integer previousLevel;
-+        if((previousLevel = map.remove(ench)) != null && map.isEmpty()) {
++        if ((previousLevel = map.remove(ench)) != null && map.isEmpty()) {
 +            map = null;
          }
 -
@@ -208,7 +209,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46f
 -                listCopy.add(list.get(i));
 -            }
 +        CraftMetaItem.applyEnchantments(map, this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
-+        if(map == null) {
++        if (map == null) {
 +            this.handle.getTag().remove(CraftMetaItem.ENCHANTMENTS.NBT);
          }
 -        this.handle.getTag().put(ENCHANTMENTS.NBT, listCopy);
@@ -222,9 +223,9 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..e42a88dee9f1813d76a0c7c62bb8e46f
      public Map<Enchantment, Integer> getEnchantments() {
 -        return CraftItemStack.getEnchantments(this.handle);
 +        // Paper start - replace entire method
-+        if(!this.handle.hasTag()) return ImmutableMap.of();
++        if (!this.handle.hasTag()) return ImmutableMap.of();
 +        EnchantmentMap map = CraftMetaItem.buildEnchantments(this.handle.getTag(), CraftMetaItem.ENCHANTMENTS);
-+        if(map == null) return ImmutableMap.of();
++        if (map == null) return ImmutableMap.of();
 +        return com.google.common.collect.ImmutableSortedMap.copyOfSorted(map);
 +        // Paper end
      }
@@ -260,7 +261,7 @@ index 3a8ff15d1c6ba21ce8bed030e84a9f85b702d72a..94b4638f296c5086198ae3e3866b8935
          super(meta);
          this.material = material;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c67667a39d28e 100644
+index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..388f987a3bf2098a1c8ffb25fef7d71c449ca02d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
@@ -271,51 +272,48 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
  import com.google.common.collect.Lists;
  import com.google.common.collect.Multimap;
  import com.google.common.collect.SetMultimap;
-@@ -19,20 +20,8 @@ import java.lang.annotation.RetentionPolicy;
- import java.lang.annotation.Target;
- import java.lang.reflect.Constructor;
- import java.lang.reflect.InvocationTargetException;
--import java.util.ArrayList;
--import java.util.Arrays;
--import java.util.Base64;
--import java.util.Collection;
--import java.util.EnumSet;
--import java.util.HashMap;
--import java.util.Iterator;
--import java.util.LinkedHashMap;
--import java.util.List;
--import java.util.Locale;
--import java.util.Map;
--import java.util.NoSuchElementException;
--import java.util.Objects;
--import java.util.Set;
-+import java.util.*;
-+import java.util.function.BiConsumer;
+@@ -23,6 +24,7 @@ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Base64;
+ import java.util.Collection;
++import java.util.Comparator; // Paper
+ import java.util.EnumSet;
+ import java.util.HashMap;
+ import java.util.Iterator;
+@@ -33,6 +35,7 @@ import java.util.Map;
+ import java.util.NoSuchElementException;
+ import java.util.Objects;
+ import java.util.Set;
++import java.util.TreeMap; // Paper
  import java.util.logging.Level;
  import java.util.logging.Logger;
  import javax.annotation.Nonnull;
-@@ -272,7 +261,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -272,7 +275,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      private List<String> lore; // null and empty are two different states internally
      private Integer customModelData;
      private CompoundTag blockData;
 -    private Map<Enchantment, Integer> enchantments;
 +    private EnchantmentMap enchantments; // Paper
-+    private final LinkedList<CompoundTag> rawEnchants = new LinkedList<>(); // Paper
++    private final java.util.LinkedList<CompoundTag> rawEnchants = new java.util.LinkedList<>(); // Paper
      private Multimap<Attribute, AttributeModifier> attributeModifiers;
      private int repairCost;
      private int hideFlag;
-@@ -283,7 +273,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -283,8 +287,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
  
      private CompoundTag internalTag;
 -    final Map<String, Tag> unhandledTags = new HashMap<String, Tag>(); // Visible for testing only
 +    final Map<String, Tag> unhandledTags = new TreeMap<String, Tag>(); // Visible for testing only // Paper
      private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftMetaItem.DATA_TYPE_REGISTRY);
++    private boolean serialized = false; // Paper
  
      private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
-@@ -304,8 +294,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+@@ -303,9 +308,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         this.customModelData = meta.customModelData;
          this.blockData = meta.blockData;
  
++        this.serialized = meta.serialized; // Paper
          if (meta.enchantments != null) { // Spigot
 -            this.enchantments = new LinkedHashMap<Enchantment, Integer>(meta.enchantments);
 +            this.enchantments = new EnchantmentMap(meta.enchantments); // Paper
@@ -324,7 +322,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
  
          if (meta.hasAttributeModifiers()) {
              this.attributeModifiers = LinkedHashMultimap.create(meta.attributeModifiers);
-@@ -355,7 +346,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -355,7 +362,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              this.blockData = tag.getCompound(BLOCK_DATA.NBT).copy();
          }
  
@@ -333,7 +331,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
          this.attributeModifiers = CraftMetaItem.buildModifiers(tag, CraftMetaItem.ATTRIBUTES);
  
          if (tag.contains(REPAIR.NBT)) {
-@@ -387,19 +378,25 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -387,19 +394,25 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
  
@@ -343,7 +341,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
 +        return buildEnchantments(tag, key, null);
 +    }
 +    // Paper end
-+    static EnchantmentMap buildEnchantments(CompoundTag tag, ItemMetaKey key, BiConsumer<Enchantment, CompoundTag> callback) { // Paper
++    static EnchantmentMap buildEnchantments(CompoundTag tag, ItemMetaKey key, java.util.function.BiConsumer<Enchantment, CompoundTag> callback) { // Paper
          if (!tag.contains(key.NBT)) {
              return null;
          }
@@ -357,11 +355,19 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
              int level = 0xffff & ((CompoundTag) ench.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
  
              Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
-+            if(callback != null) callback.accept(enchant, (CompoundTag) ench.get(i)); // Paper
++            if (callback != null) callback.accept(enchant, (CompoundTag) ench.get(i)); // Paper
              if (enchant != null) {
                  enchantments.put(enchant, level);
              }
-@@ -546,13 +543,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -485,6 +498,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             this.blockData = (CompoundTag) CraftNBTTagConfigSerializer.deserialize(blockData);
+         }
+ 
++        this.serialized = true; // Paper
+         this.enchantments = CraftMetaItem.buildEnchantments(map, CraftMetaItem.ENCHANTMENTS);
+         this.attributeModifiers = CraftMetaItem.buildModifiers(map, CraftMetaItem.ATTRIBUTES);
+ 
+@@ -546,13 +560,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
  
@@ -377,16 +383,22 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
          for (Map.Entry<?, ?> entry : ench.entrySet()) {
              // Doctor older enchants
              String enchantKey = entry.getKey().toString();
-@@ -630,7 +627,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -630,7 +644,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              itemTag.putInt(HIDEFLAGS.NBT, hideFlag);
          }
  
 -        CraftMetaItem.applyEnchantments(this.enchantments, itemTag, CraftMetaItem.ENCHANTMENTS);
-+        applySafeEnchantments(itemTag, CraftMetaItem.ENCHANTMENTS); // Paper
++        // Paper start
++        if (!serialized) {
++            applySafeEnchantments(itemTag, CraftMetaItem.ENCHANTMENTS);
++        } else {
++            CraftMetaItem.applyEnchantments(enchantments, itemTag, CraftMetaItem.ENCHANTMENTS);
++        }
++        // Paper end
          CraftMetaItem.applyModifiers(this.attributeModifiers, itemTag, CraftMetaItem.ATTRIBUTES);
  
          if (this.hasRepairCost()) {
-@@ -674,13 +671,37 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -674,13 +694,37 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return tagList;
      }
  
@@ -400,7 +412,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
          ListTag list = new ListTag();
 +        Iterator<Map.Entry<Enchantment, Integer>> it = enchantments.entrySet().iterator();
 +        for (CompoundTag el : rawEnchants) {
-+            if(el == null) {
++            if (el == null) {
 +                Map.Entry<Enchantment, Integer> entry = it.next();
 +                CompoundTag subtag = new CompoundTag();
 +
@@ -412,7 +424,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
 +                list.add(el);
 +            }
 +        }
- 
++
 +        tag.put(key.NBT, list);
 +    }
 +    // Paper end
@@ -420,12 +432,12 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
 +        if (enchantments == null /*|| enchantments.size() == 0*/) { // Spigot - remove size check
 +            return;
 +        }
-+
+ 
 +        ListTag list = new ListTag();
          for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
              CompoundTag subtag = new CompoundTag();
  
-@@ -828,14 +849,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -828,14 +872,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public Map<Enchantment, Integer> getEnchants() {
@@ -442,7 +454,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
          }
  
          if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
-@@ -1223,7 +1244,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1223,7 +1267,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              clone.customModelData = this.customModelData;
              clone.blockData = this.blockData;
              if (this.enchantments != null) {
@@ -451,7 +463,7 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
              }
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
-@@ -1404,6 +1425,126 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1404,6 +1448,126 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          this.version = version;
      }
  
@@ -478,41 +490,41 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
 +    private static final CraftMetaTropicalFishBucket fishBucketMeta = new CraftMetaTropicalFishBucket((CraftMetaItem) null);
 +
 +    public static void stripInvalidTags(Material mat, Material newMat, CompoundTag tag) {
-+        if(bundleMeta.applicableTo(mat) && !bundleMeta.applicableTo(newMat)) {
++        if (bundleMeta.applicableTo(mat) && !bundleMeta.applicableTo(newMat)) {
 +            tag.remove(bundleMeta.ITEMS.NBT);
 +            return;
 +        }
-+        if(fishBucketMeta.applicableTo(mat) && !fishBucketMeta.applicableTo(newMat)) {
++        if (fishBucketMeta.applicableTo(mat) && !fishBucketMeta.applicableTo(newMat)) {
 +            tag.remove(fishBucketMeta.VARIANT.NBT);
 +            tag.remove(fishBucketMeta.ENTITY_TAG.NBT);
 +            return;
 +        }
-+        if(axolotlBucketMeta.applicableTo(mat) && !axolotlBucketMeta.applicableTo(newMat)) {
++        if (axolotlBucketMeta.applicableTo(mat) && !axolotlBucketMeta.applicableTo(newMat)) {
 +            tag.remove(axolotlBucketMeta.VARIANT.NBT);
 +            tag.remove(axolotlBucketMeta.ENTITY_TAG.NBT);
 +            return;
 +        }
-+        if(armorStandMeta.applicableTo(mat) && !armorStandMeta.applicableTo(newMat)) {
++        if (armorStandMeta.applicableTo(mat) && !armorStandMeta.applicableTo(newMat)) {
 +            tag.remove(armorStandMeta.ENTITY_TAG.NBT);
 +            return;
 +        }
-+        if(entityTagMeta.applicableTo(mat) && !entityTagMeta.applicableTo(newMat)) {
++        if (entityTagMeta.applicableTo(mat) && !entityTagMeta.applicableTo(newMat)) {
 +            tag.remove(entityTagMeta.ENTITY_TAG.NBT);
 +            return;
 +        }
-+        if(spawnEggMeta.applicableTo(mat) && !spawnEggMeta.applicableTo(newMat)) {
++        if (spawnEggMeta.applicableTo(mat) && !spawnEggMeta.applicableTo(newMat)) {
 +            tag.remove(spawnEggMeta.ENTITY_TAG.NBT);
 +            return;
 +        }
-+        if(bannerMeta.applicableTo(mat) && !bannerMeta.applicableTo(newMat)) {
++        if (bannerMeta.applicableTo(mat) && !bannerMeta.applicableTo(newMat)) {
 +            tag.remove("BlockEntityTag");
 +            return;
 +        }
-+        if(blockStateMeta.applicableTo(mat) && !blockStateMeta.applicableTo(newMat)) {
++        if (blockStateMeta.applicableTo(mat) && !blockStateMeta.applicableTo(newMat)) {
 +            tag.remove(blockStateMeta.BLOCK_ENTITY_TAG.NBT);
 +            return;
 +        }
-+        if(bookMeta.applicableTo(mat) && !bookMeta.applicableTo(newMat)) {
++        if (bookMeta.applicableTo(mat) && !bookMeta.applicableTo(newMat)) {
 +            tag.remove(bookMeta.BOOK_TITLE.NBT);
 +            tag.remove(bookMeta.BOOK_AUTHOR.NBT);
 +            tag.remove(bookMeta.BOOK_PAGES.NBT);
@@ -520,55 +532,55 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
 +            tag.remove(bookMeta.GENERATION.NBT);
 +            return;
 +        }
-+        if(chargeMeta.applicableTo(mat) && !chargeMeta.applicableTo(newMat)) {
++        if (chargeMeta.applicableTo(mat) && !chargeMeta.applicableTo(newMat)) {
 +            tag.remove(chargeMeta.EXPLOSION.NBT);
 +            return;
 +        }
-+        if(compassMeta.applicableTo(mat) && !compassMeta.applicableTo(newMat)) {
++        if (compassMeta.applicableTo(mat) && !compassMeta.applicableTo(newMat)) {
 +            tag.remove(compassMeta.LODESTONE_DIMENSION.NBT);
 +            tag.remove(compassMeta.LODESTONE_POS.NBT);
 +            tag.remove(compassMeta.LODESTONE_POS_WORLD.NBT);
 +            tag.remove(compassMeta.LODESTONE_TRACKED.NBT);
 +            return;
 +        }
-+        if(crossbowMeta.applicableTo(mat) && !crossbowMeta.applicableTo(newMat)) {
++        if (crossbowMeta.applicableTo(mat) && !crossbowMeta.applicableTo(newMat)) {
 +            tag.remove(crossbowMeta.CHARGED.NBT);
 +            tag.remove(crossbowMeta.CHARGED_PROJECTILES.NBT);
 +            return;
 +        }
-+        if(enchantedBookMeta.applicableTo(mat) && !enchantedBookMeta.applicableTo(newMat)) {
++        if (enchantedBookMeta.applicableTo(mat) && !enchantedBookMeta.applicableTo(newMat)) {
 +            tag.remove(enchantedBookMeta.STORED_ENCHANTMENTS.NBT);
 +            return;
 +        }
-+        if(fireworkMeta.applicableTo(mat) && !fireworkMeta.applicableTo(newMat)) {
++        if (fireworkMeta.applicableTo(mat) && !fireworkMeta.applicableTo(newMat)) {
 +            tag.remove(fireworkMeta.FIREWORKS.NBT);
 +            return;
 +        }
-+        if(recipeMeta.applicableTo(mat) && !recipeMeta.applicableTo(newMat)) {
++        if (recipeMeta.applicableTo(mat) && !recipeMeta.applicableTo(newMat)) {
 +            tag.remove(recipeMeta.BOOK_RECIPES.NBT);
 +            return;
 +        }
-+        if(leatherArmorMeta.applicableTo(mat) && !leatherArmorMeta.applicableTo(newMat)) {
++        if (leatherArmorMeta.applicableTo(mat) && !leatherArmorMeta.applicableTo(newMat)) {
 +            tag.remove(leatherArmorMeta.DISPLAY.NBT);
 +            return;
 +        }
-+        if(mapMeta.applicableTo(mat) && !mapMeta.applicableTo(newMat)) {
++        if (mapMeta.applicableTo(mat) && !mapMeta.applicableTo(newMat)) {
 +            tag.remove(mapMeta.MAP_SCALING.NBT);
 +            tag.remove(mapMeta.DISPLAY.NBT);
 +            tag.remove(mapMeta.MAP_ID.NBT);
 +            return;
 +        }
-+        if(potionMeta.applicableTo(mat) && !potionMeta.applicableTo(newMat)) {
++        if (potionMeta.applicableTo(mat) && !potionMeta.applicableTo(newMat)) {
 +            tag.remove(potionMeta.DEFAULT_POTION.NBT);
 +            tag.remove(potionMeta.POTION_COLOR.NBT);
 +            tag.remove(potionMeta.POTION_EFFECTS.NBT);
 +            return;
 +        }
-+        if(skullMeta.applicableTo(mat) && !skullMeta.applicableTo(newMat)) {
++        if (skullMeta.applicableTo(mat) && !skullMeta.applicableTo(newMat)) {
 +            tag.remove(skullMeta.SKULL_OWNER.NBT);
 +            return;
 +        }
-+        if(stewMeta.applicableTo(mat) && !stewMeta.applicableTo(newMat)) {
++        if (stewMeta.applicableTo(mat) && !stewMeta.applicableTo(newMat)) {
 +            tag.remove(stewMeta.EFFECTS.NBT);
 +            return;
 +        }
@@ -578,19 +590,19 @@ index 0a5f063bc74e1dae67167537437ebd7e4ddf113a..1fed6ffbec64be3d33045faddc3c6766
      public static Set<String> getHandledTags() {
          synchronized (CraftMetaItem.HANDLED_TAGS) {
              if (CraftMetaItem.HANDLED_TAGS.isEmpty()) {
-@@ -1458,4 +1599,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1458,4 +1622,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              return CraftMetaItem.HANDLED_TAGS;
          }
      }
 +
 +    // Paper start
-+    public static class EnchantmentMap extends TreeMap<Enchantment, Integer> {
++    public static class EnchantmentMap extends TreeMap<Enchantment, Integer> { // Paper private -> public
 +        private EnchantmentMap(Map<Enchantment, Integer> enchantments) {
 +            this();
 +            putAll(enchantments);
 +        }
 +
-+        protected EnchantmentMap() {
++        protected EnchantmentMap() { // Paper private -> protected
 +            super(Comparator.comparing(o -> o.getKey().toString()));
 +        }
 +
