@@ -7,7 +7,7 @@ This lets you run /paper fixlight <chunkRadius> (max 5) to automatically
 fix all light data in the chunks.
 
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index b7b0d134e3a99a630e493aceb06f6188b2c538c3..b5b4025c0ec07fbd0ec9bf6f6812d6422f549289 100644
+index 395c43f6440c1e0e47919eef096ea8a8d552ccec..f44ab1d71210e84328661c0feb662989a5635b6d 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
 @@ -2,6 +2,7 @@ package io.papermc.paper.command;
@@ -28,10 +28,10 @@ index b7b0d134e3a99a630e493aceb06f6188b2c538c3..b5b4025c0ec07fbd0ec9bf6f6812d642
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..05794056c89feb7049e18053712e06def37494f5
+index 0000000000000000000000000000000000000000..190df802cb24aa360f6cf4d291e38b4b3fe4a2ac
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,121 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import io.papermc.paper.command.PaperSubcommand;
@@ -52,6 +52,10 @@ index 0000000000000000000000000000000000000000..05794056c89feb7049e18053712e06de
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++
 +@DefaultQualifier(NonNull.class)
 +public final class FixLightCommand implements PaperSubcommand {
 +    @Override
@@ -62,18 +66,27 @@ index 0000000000000000000000000000000000000000..05794056c89feb7049e18053712e06de
 +
 +    private void doFixLight(final CommandSender sender, final String[] args) {
 +        if (!(sender instanceof Player)) {
-+            sender.sendMessage("Only players can use this command");
++            sender.sendMessage(text("Only players can use this command", RED));
 +            return;
 +        }
++        @Nullable Runnable post = null;
 +        int radius = 2;
 +        if (args.length > 0) {
 +            try {
-+                radius = Math.min(5, Integer.parseInt(args[0]));
-+            } catch (Exception e) {
-+                sender.sendMessage("Not a number");
++                final int parsed = Integer.parseInt(args[0]);
++                if (parsed < 0) {
++                    sender.sendMessage(text("Radius cannot be negative!", RED));
++                    return;
++                }
++                final int maxRadius = 5;
++                radius = Math.min(maxRadius, parsed);
++                if (radius != parsed) {
++                    post = () -> sender.sendMessage(text("Radius '" + parsed + "' was not in the required range [0, " + maxRadius + "], it was lowered to the maximum (" + maxRadius + " chunks).", RED));
++                }
++            } catch (final Exception e) {
++                sender.sendMessage(text("'" + args[0] + "' is not a valid number.", RED));
 +                return;
 +            }
-+
 +        }
 +
 +        CraftPlayer player = (CraftPlayer) sender;
@@ -83,33 +96,37 @@ index 0000000000000000000000000000000000000000..05794056c89feb7049e18053712e06de
 +
 +        net.minecraft.core.BlockPos center = MCUtil.toBlockPosition(player.getLocation());
 +        Deque<ChunkPos> queue = new ArrayDeque<>(MCUtil.getSpiralOutChunks(center, radius));
-+        updateLight(sender, world, lightengine, queue);
++        updateLight(sender, world, lightengine, queue, post);
 +    }
 +
 +    private void updateLight(
 +        final CommandSender sender,
 +        final ServerLevel world,
 +        final ThreadedLevelLightEngine lightengine,
-+        final Deque<ChunkPos> queue
++        final Deque<ChunkPos> queue,
++        final @Nullable Runnable done
 +    ) {
 +        @Nullable ChunkPos coord = queue.poll();
 +        if (coord == null) {
-+            sender.sendMessage("All Chunks Light updated");
++            sender.sendMessage(text("All Chunks Light updated", GREEN));
++            if (done != null) {
++                done.run();
++            }
 +            return;
 +        }
 +        world.getChunkSource().getChunkAtAsynchronously(coord.x, coord.z, false, false).whenCompleteAsync((either, ex) -> {
 +            if (ex != null) {
-+                sender.sendMessage("Error loading chunk " + coord);
-+                updateLight(sender, world, lightengine, queue);
++                sender.sendMessage(text("Error loading chunk " + coord, RED));
++                updateLight(sender, world, lightengine, queue, done);
 +                return;
 +            }
 +            @Nullable LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) either.left().orElse(null);
 +            if (chunk == null) {
-+                updateLight(sender, world, lightengine, queue);
++                updateLight(sender, world, lightengine, queue, done);
 +                return;
 +            }
 +            lightengine.setTaskPerBatch(world.paperConfig().misc.lightQueueSize + 16 * 256); // ensure full chunk can fit into queue
-+            sender.sendMessage("Updating Light " + coord);
++            sender.sendMessage(text("Updating Light " + coord));
 +            int cx = chunk.getPos().x << 4;
 +            int cz = chunk.getPos().z << 4;
 +            for (int y = 0; y < world.getHeight(); y++) {
@@ -126,11 +143,11 @@ index 0000000000000000000000000000000000000000..05794056c89feb7049e18053712e06de
 +                world.getChunkSource().chunkMap.addLightTask(visibleChunk, () -> {
 +                    MinecraftServer.getServer().processQueue.add(() -> {
 +                        visibleChunk.broadcast(new net.minecraft.network.protocol.game.ClientboundLightUpdatePacket(chunk.getPos(), lightengine, null, null, true), false);
-+                        updateLight(sender, world, lightengine, queue);
++                        updateLight(sender, world, lightengine, queue, done);
 +                    });
 +                });
 +            } else {
-+                updateLight(sender, world, lightengine, queue);
++                updateLight(sender, world, lightengine, queue, done);
 +            }
 +            lightengine.setTaskPerBatch(world.paperConfig().misc.lightQueueSize);
 +        }, MinecraftServer.getServer());
