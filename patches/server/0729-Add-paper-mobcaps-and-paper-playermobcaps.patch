@@ -10,10 +10,10 @@ Also has a hover text on each mob category listing what entity types are
 in said category
 
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index d2536f4ffae721f4df714b5345fa3329c3b8e3f5..60b0ce4557390ee7030efe4c90933402c57bab59 100644
+index 84c5a4f4202b39c641c4f20cdb09ba114a71c8e0..e949474a6f070cb23c63091a87eb46e01554850f 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -5,6 +5,7 @@ import io.papermc.paper.command.subcommands.DumpItemCommand;
+@@ -14,6 +14,7 @@ import io.papermc.paper.command.subcommands.DumpItemCommand;
  import io.papermc.paper.command.subcommands.EntityCommand;
  import io.papermc.paper.command.subcommands.FixLightCommand;
  import io.papermc.paper.command.subcommands.HeapDumpCommand;
@@ -21,7 +21,7 @@ index d2536f4ffae721f4df714b5345fa3329c3b8e3f5..60b0ce4557390ee7030efe4c90933402
  import io.papermc.paper.command.subcommands.ReloadCommand;
  import io.papermc.paper.command.subcommands.SyncLoadInfoCommand;
  import io.papermc.paper.command.subcommands.VersionCommand;
-@@ -48,6 +49,7 @@ public final class PaperCommand extends Command {
+@@ -62,6 +63,7 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("fixlight"), new FixLightCommand());
          commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
          commands.put(Set.of("dumpitem"), new DumpItemCommand());
@@ -31,13 +31,14 @@ index d2536f4ffae721f4df714b5345fa3329c3b8e3f5..60b0ce4557390ee7030efe4c90933402
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/MobcapsCommand.java b/src/main/java/io/papermc/paper/command/subcommands/MobcapsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e02d94e2903c48f6d08e743c1cf8bad9f9662df
+index 0000000000000000000000000000000000000000..f4c76aa2c647fc39504bb33a6761ee4d815e7442
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/MobcapsCommand.java
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,248 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.google.common.collect.ImmutableMap;
++import com.mojang.brigadier.builder.ArgumentBuilder;
 +import io.papermc.paper.command.CommandUtil;
 +import io.papermc.paper.command.PaperSubcommand;
 +import java.util.ArrayList;
@@ -51,6 +52,7 @@ index 0000000000000000000000000000000000000000..2e02d94e2903c48f6d08e743c1cf8bad
 +import net.kyori.adventure.text.TextComponent;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.format.TextColor;
++import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.core.Registry;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
@@ -66,6 +68,9 @@ index 0000000000000000000000000000000000000000..2e02d94e2903c48f6d08e743c1cf8bad
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
++import static net.minecraft.commands.Commands.argument;
++
 +@DefaultQualifier(NonNull.class)
 +public final class MobcapsCommand implements PaperSubcommand {
 +    static final Map<MobCategory, TextColor> MOB_CATEGORY_COLORS = ImmutableMap.<MobCategory, TextColor>builder()
@@ -80,6 +85,19 @@ index 0000000000000000000000000000000000000000..2e02d94e2903c48f6d08e743c1cf8bad
 +        .build();
 +
 +    @Override
++    public List<ArgumentBuilder<CommandSourceStack, ?>> nodes(final String subCommand) {
++        switch (subCommand) {
++            case "mobcaps" -> {
++                return List.of(argument("worlds", greedyString()));
++            }
++            case "playermobcaps" -> {
++                return List.of(argument("player", greedyString()));
++            }
++        }
++        throw new IllegalArgumentException();
++    }
++
++    @Override
 +    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
 +        switch (subCommand) {
 +            case "mobcaps" -> this.printMobcaps(sender, args);
@@ -92,7 +110,8 @@ index 0000000000000000000000000000000000000000..2e02d94e2903c48f6d08e743c1cf8bad
 +    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
 +        return switch (subCommand) {
 +            case "mobcaps" -> CommandUtil.getListMatchingLast(sender, args, this.suggestMobcaps(args));
-+            case "playermobcaps" -> CommandUtil.getListMatchingLast(sender, args, this.suggestPlayerMobcaps(sender, args));
++            case "playermobcaps" ->
++                CommandUtil.getListMatchingLast(sender, args, this.suggestPlayerMobcaps(sender, args));
 +            default -> throw new IllegalArgumentException();
 +        };
 +    }

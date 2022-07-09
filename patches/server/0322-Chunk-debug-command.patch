@@ -32,17 +32,18 @@ https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528273&page=com.atlass
 https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528577&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-528577
 
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index cd4936ef114b504df8649fba8f1823d94a4bb2a2..395c43f6440c1e0e47919eef096ea8a8d552ccec 100644
+index bb4e6f78bb5514356d22a66a1d56f7e3ea04994e..548d2f29a4d18ebff379dca2e078d8b5a1358169 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -1,5 +1,6 @@
- package io.papermc.paper.command;
- 
+@@ -9,6 +9,7 @@ import com.mojang.brigadier.suggestion.Suggestions;
+ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+ import com.mojang.brigadier.tree.ArgumentCommandNode;
+ import com.mojang.brigadier.tree.CommandNode;
 +import io.papermc.paper.command.subcommands.ChunkDebugCommand;
  import io.papermc.paper.command.subcommands.EntityCommand;
  import io.papermc.paper.command.subcommands.HeapDumpCommand;
  import io.papermc.paper.command.subcommands.ReloadCommand;
-@@ -40,6 +41,7 @@ public final class PaperCommand extends Command {
+@@ -54,6 +55,7 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("entity"), new EntityCommand());
          commands.put(Set.of("reload"), new ReloadCommand());
          commands.put(Set.of("version"), new VersionCommand());
@@ -52,12 +53,13 @@ index cd4936ef114b504df8649fba8f1823d94a4bb2a2..395c43f6440c1e0e47919eef096ea8a8
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..029ad37df71e74d9feb57e4b31b3602e55d49113
+index 0000000000000000000000000000000000000000..651afdf380e28f93f8277d913d698f214c7eca89
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,185 @@
 +package io.papermc.paper.command.subcommands;
 +
++import com.mojang.brigadier.builder.ArgumentBuilder;
 +import io.papermc.paper.command.CommandUtil;
 +import io.papermc.paper.command.PaperSubcommand;
 +import java.io.File;
@@ -67,6 +69,7 @@ index 0000000000000000000000000000000000000000..029ad37df71e74d9feb57e4b31b3602e
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.Locale;
++import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.server.MCUtil;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ChunkHolder;
@@ -78,14 +81,30 @@ index 0000000000000000000000000000000000000000..029ad37df71e74d9feb57e4b31b3602e
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
 +import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
 +import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.minecraft.commands.Commands.argument;
++import static net.minecraft.commands.Commands.literal;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class ChunkDebugCommand implements PaperSubcommand {
++    @Override
++    public List<ArgumentBuilder<CommandSourceStack, ?>> nodes(final String subCommand) {
++        switch (subCommand) {
++            case "debug" -> {
++                return List.of(literal("help"), literal("chunks"));
++            }
++            case "chunkinfo" -> {
++                return List.of(argument("worlds", greedyString()));
++            }
++        }
++        throw new IllegalArgumentException();
++    }
++
 +    @Override
 +    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
 +        switch (subCommand) {
@@ -217,7 +236,8 @@ index 0000000000000000000000000000000000000000..029ad37df71e74d9feb57e4b31b3602e
 +                }
 +            }
 +            // "help" & default
-+            default -> sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
++            default ->
++                sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
 +        }
 +    }
 +

@@ -194,18 +194,18 @@ index 0000000000000000000000000000000000000000..0bb4aaa546939b67a5d22865190f3047
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index f44ab1d71210e84328661c0feb662989a5635b6d..25f6d1c15cdfb4abdf1edd2ad9bbdc0e37b546f3 100644
+index 3d8d8b02b4271c1e7cd13c8c1b6cfe31b794c153..7c2b6c2134207cbeae64534c1ebf7b25b2321e6f 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -5,6 +5,7 @@ import io.papermc.paper.command.subcommands.EntityCommand;
+@@ -14,6 +14,7 @@ import io.papermc.paper.command.subcommands.EntityCommand;
  import io.papermc.paper.command.subcommands.FixLightCommand;
  import io.papermc.paper.command.subcommands.HeapDumpCommand;
  import io.papermc.paper.command.subcommands.ReloadCommand;
 +import io.papermc.paper.command.subcommands.SyncLoadInfoCommand;
  import io.papermc.paper.command.subcommands.VersionCommand;
  import it.unimi.dsi.fastutil.Pair;
- import java.util.ArrayList;
-@@ -44,6 +45,7 @@ public final class PaperCommand extends Command {
+ import java.lang.reflect.Field;
+@@ -58,6 +59,7 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("version"), new VersionCommand());
          commands.put(Set.of("debug", "chunkinfo"), new ChunkDebugCommand());
          commands.put(Set.of("fixlight"), new FixLightCommand());
@@ -215,16 +215,17 @@ index f44ab1d71210e84328661c0feb662989a5635b6d..25f6d1c15cdfb4abdf1edd2ad9bbdc0e
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java b/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e1198552a
+index 0000000000000000000000000000000000000000..4b8e9a7421907611986e926bbdfd11e8638a37a2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,86 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.destroystokyo.paper.io.SyncLoadFinder;
 +import com.google.gson.JsonObject;
 +import com.google.gson.internal.Streams;
 +import com.google.gson.stream.JsonWriter;
++import com.mojang.brigadier.builder.ArgumentBuilder;
 +import io.papermc.paper.command.CommandUtil;
 +import io.papermc.paper.command.PaperSubcommand;
 +import java.io.File;
@@ -234,6 +235,7 @@ index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e
 +import java.time.LocalDateTime;
 +import java.time.format.DateTimeFormatter;
 +import java.util.List;
++import net.minecraft.commands.CommandSourceStack;
 +import org.bukkit.command.CommandSender;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -242,9 +244,15 @@ index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e
 +import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
 +import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.minecraft.commands.Commands.literal;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class SyncLoadInfoCommand implements PaperSubcommand {
++    @Override
++    public List<ArgumentBuilder<CommandSourceStack, ?>> nodes(final String subCommand) {
++        return List.of(literal("clear"));
++    }
++
 +    @Override
 +    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
 +        this.doSyncLoadInfo(sender, args);

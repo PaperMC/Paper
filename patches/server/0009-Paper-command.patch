@@ -3,6 +3,7 @@ From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper command
 
+Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
 
 diff --git a/src/main/java/io/papermc/paper/command/CommandUtil.java b/src/main/java/io/papermc/paper/command/CommandUtil.java
 new file mode 100644
@@ -81,17 +82,27 @@ index 0000000000000000000000000000000000000000..953c30500892e5f0c55b8597bc708ea8
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b3a58bf4b654e336826dc04da9e2f80ff8b9a9a7
+index 0000000000000000000000000000000000000000..84f3cfbee470f2e219f59b38b378a8f05c66b845
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,243 @@
 +package io.papermc.paper.command;
 +
++import com.mojang.brigadier.builder.ArgumentBuilder;
++import com.mojang.brigadier.builder.LiteralArgumentBuilder;
++import com.mojang.brigadier.builder.RequiredArgumentBuilder;
++import com.mojang.brigadier.context.CommandContext;
++import com.mojang.brigadier.suggestion.SuggestionProvider;
++import com.mojang.brigadier.suggestion.Suggestions;
++import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import com.mojang.brigadier.tree.ArgumentCommandNode;
++import com.mojang.brigadier.tree.CommandNode;
 +import io.papermc.paper.command.subcommands.EntityCommand;
 +import io.papermc.paper.command.subcommands.HeapDumpCommand;
 +import io.papermc.paper.command.subcommands.ReloadCommand;
 +import io.papermc.paper.command.subcommands.VersionCommand;
 +import it.unimi.dsi.fastutil.Pair;
++import java.lang.reflect.Field;
 +import java.util.ArrayList;
 +import java.util.Arrays;
 +import java.util.Collections;
@@ -100,12 +111,15 @@ index 0000000000000000000000000000000000000000..b3a58bf4b654e336826dc04da9e2f80f
 +import java.util.Locale;
 +import java.util.Map;
 +import java.util.Set;
++import java.util.concurrent.CompletableFuture;
 +import java.util.stream.Collectors;
 +import net.minecraft.Util;
++import net.minecraft.commands.CommandSourceStack;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Location;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.command.BukkitCommandWrapper;
 +import org.bukkit.permissions.Permission;
 +import org.bukkit.permissions.PermissionDefault;
 +import org.bukkit.plugin.PluginManager;
@@ -115,6 +129,7 @@ index 0000000000000000000000000000000000000000..b3a58bf4b654e336826dc04da9e2f80f
 +
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.minecraft.commands.Commands.literal;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class PaperCommand extends Command {
@@ -229,6 +244,90 @@ index 0000000000000000000000000000000000000000..b3a58bf4b654e336826dc04da9e2f80f
 +
 +        return null;
 +    }
++
++    public LiteralArgumentBuilder<CommandSourceStack> brigadierNode(final String label, final BukkitCommandWrapper bukkitCommandWrapper) {
++        return new BrigadierMapper(bukkitCommandWrapper).brigadierNode(label);
++    }
++
++    private record BrigadierMapper(BukkitCommandWrapper bukkitCommandWrapper) {
++        LiteralArgumentBuilder<CommandSourceStack> brigadierNode(final String label) {
++            final LiteralArgumentBuilder<CommandSourceStack> paperNode = literal(label);
++            SUBCOMMANDS.forEach((subLabel, cmd) -> paperNode.then(subcommandNode(subLabel, subLabel, cmd)));
++            ALIASES.forEach((alias, cmdName) -> paperNode.then(subcommandNode(alias, cmdName, SUBCOMMANDS.get(cmdName))));
++            this.decorate(paperNode);
++            return paperNode;
++        }
++
++        void decorate(final ArgumentBuilder<?, ?> node) {
++            this.decorate((Object) node);
++        }
++
++        void decorate(final Object node) {
++            if (node instanceof ArgumentBuilder<?, ?> argumentBuilder) {
++                this.decorateBuilder(argumentBuilder);
++            } else if (node instanceof CommandNode<?> commandNode) {
++                this.decorateNode(commandNode);
++            } else {
++                throw new IllegalArgumentException();
++            }
++        }
++
++        @SuppressWarnings("rawtypes")
++        void decorateNode(final CommandNode<?> commandNode) {
++            // yes this is ugly, but it seemed like the easiest solution
++            try {
++                if (commandNode instanceof ArgumentCommandNode<?, ?> argumentCommandNode && argumentCommandNode.getCustomSuggestions() == null) {
++                    final Field commandField = ArgumentCommandNode.class.getDeclaredField("customSuggestions");
++                    commandField.setAccessible(true);
++                    commandField.set(argumentCommandNode, (SuggestionProvider) BrigadierMapper::bukkitSuggestions);
++                }
++                final Field commandField = CommandNode.class.getDeclaredField("command");
++                commandField.setAccessible(true);
++                commandField.set(commandNode, this.bukkitCommandWrapper);
++            } catch (final ReflectiveOperationException e) {
++                throw new RuntimeException(e);
++            }
++            commandNode.getChildren().forEach(this::decorate);
++        }
++
++        @SuppressWarnings({"rawtypes", "unchecked"})
++        void decorateBuilder(final ArgumentBuilder<?, ?> argumentBuilder) {
++            if (argumentBuilder instanceof RequiredArgumentBuilder<?, ?> requiredArgumentBuilder && requiredArgumentBuilder.getSuggestionsProvider() == null) {
++                requiredArgumentBuilder.suggests(BrigadierMapper::bukkitSuggestions);
++            }
++            argumentBuilder.executes((com.mojang.brigadier.Command) this.bukkitCommandWrapper);
++            argumentBuilder.getArguments().forEach(this::decorate);
++        }
++
++        static LiteralArgumentBuilder<CommandSourceStack> subcommandNode(
++            final String alias,
++            final String cmdName,
++            final PaperSubcommand cmd
++        ) {
++            final LiteralArgumentBuilder<CommandSourceStack> subCommandNode = literal(alias);
++            subCommandNode.requires(stack -> testPermission(stack.getBukkitSender(), cmdName));
++            for (final ArgumentBuilder<CommandSourceStack, ?> arg : cmd.nodes(cmdName)) {
++                subCommandNode.then(arg);
++            }
++            return subCommandNode;
++        }
++
++        static CompletableFuture<Suggestions> bukkitSuggestions(
++            final CommandContext<?> ctx,
++            final SuggestionsBuilder builder
++        ) {
++            final CommandSourceStack stack = (CommandSourceStack) ctx.getSource();
++            final List<String> completions = stack.getServer().server.tabComplete(
++                stack.getBukkitSender(),
++                builder.getInput(),
++                stack.getLevel(),
++                stack.getPosition(),
++                true
++            );
++            completions.forEach(builder::suggest);
++            return builder.buildFuture();
++        }
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommands.java b/src/main/java/io/papermc/paper/command/PaperCommands.java
 new file mode 100644
@@ -265,14 +364,16 @@ index 0000000000000000000000000000000000000000..6a00f3d38da8107825ab1d405f337fd0
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperSubcommand.java b/src/main/java/io/papermc/paper/command/PaperSubcommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6ff5d42a866d2752c73a766815aa190b2b0dc36f
+index 0000000000000000000000000000000000000000..38e9c11f99464f86c4569af175adaff526a4692e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/PaperSubcommand.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,22 @@
 +package io.papermc.paper.command;
 +
++import com.mojang.brigadier.builder.ArgumentBuilder;
 +import java.util.Collections;
 +import java.util.List;
++import net.minecraft.commands.CommandSourceStack;
 +import org.bukkit.command.CommandSender;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -284,16 +385,21 @@ index 0000000000000000000000000000000000000000..6ff5d42a866d2752c73a766815aa190b
 +    default List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
 +        return Collections.emptyList();
 +    }
++
++    default List<ArgumentBuilder<CommandSourceStack, ?>> nodes(final String subCommand) {
++        return Collections.emptyList();
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..68f99e93ed3e843b4001a7a27620f88a48b85e67
+index 0000000000000000000000000000000000000000..ec0b9917a5085365ce5655614324310118748594
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,158 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.google.common.collect.Maps;
++import com.mojang.brigadier.builder.ArgumentBuilder;
 +import io.papermc.paper.command.CommandUtil;
 +import io.papermc.paper.command.PaperSubcommand;
 +import java.util.Collections;
@@ -302,6 +408,7 @@ index 0000000000000000000000000000000000000000..68f99e93ed3e843b4001a7a27620f88a
 +import java.util.Map;
 +import java.util.Set;
 +import java.util.stream.Collectors;
++import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.level.ServerChunkCache;
@@ -319,11 +426,22 @@ index 0000000000000000000000000000000000000000..68f99e93ed3e843b4001a7a27620f88a
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.minecraft.commands.Commands.argument;
++import static net.minecraft.commands.Commands.literal;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class EntityCommand implements PaperSubcommand {
++    @Override
++    public List<ArgumentBuilder<CommandSourceStack, ?>> nodes(final String subCommand) {
++        return List.of(
++            literal("help"),
++            literal("list").then(argument("args", greedyString()))
++        );
++    }
++
 +    @Override
 +    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
 +        this.listEntities(sender, args);
@@ -605,3 +723,19 @@ index 837fb51698e6650c6df720f798b7196322b6e7bb..80333fe069e417ef692cb7b80292ed42
      private Iterable<? extends net.kyori.adventure.audience.Audience> adventure$audiences;
      @Override
      public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+index 21971d52fa8ed92c946c519ba93a39aceae10f5f..815c4ee79a11bd4b3064ba42ba8678f13278d9bf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+@@ -28,6 +28,11 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
+     }
+ 
+     public LiteralCommandNode<CommandSourceStack> register(CommandDispatcher<CommandSourceStack> dispatcher, String label) {
++        // Paper start - brig meta for Paper command
++        if (this.command instanceof io.papermc.paper.command.PaperCommand paperCommand) {
++            return dispatcher.register(paperCommand.brigadierNode(label, this).requires(this));
++        }
++        // Paper end
+         return dispatcher.register(
+                 LiteralArgumentBuilder.<CommandSourceStack>literal(label).requires(this).executes(this)
+                 .then(RequiredArgumentBuilder.<CommandSourceStack, String>argument("args", StringArgumentType.greedyString()).suggests(this).executes(this))

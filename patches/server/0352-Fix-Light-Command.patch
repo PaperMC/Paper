@@ -7,18 +7,18 @@ This lets you run /paper fixlight <chunkRadius> (max 5) to automatically
 fix all light data in the chunks.
 
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index 395c43f6440c1e0e47919eef096ea8a8d552ccec..f44ab1d71210e84328661c0feb662989a5635b6d 100644
+index 548d2f29a4d18ebff379dca2e078d8b5a1358169..3d8d8b02b4271c1e7cd13c8c1b6cfe31b794c153 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -2,6 +2,7 @@ package io.papermc.paper.command;
- 
+@@ -11,6 +11,7 @@ import com.mojang.brigadier.tree.ArgumentCommandNode;
+ import com.mojang.brigadier.tree.CommandNode;
  import io.papermc.paper.command.subcommands.ChunkDebugCommand;
  import io.papermc.paper.command.subcommands.EntityCommand;
 +import io.papermc.paper.command.subcommands.FixLightCommand;
  import io.papermc.paper.command.subcommands.HeapDumpCommand;
  import io.papermc.paper.command.subcommands.ReloadCommand;
  import io.papermc.paper.command.subcommands.VersionCommand;
-@@ -42,6 +43,7 @@ public final class PaperCommand extends Command {
+@@ -56,6 +57,7 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("reload"), new ReloadCommand());
          commands.put(Set.of("version"), new VersionCommand());
          commands.put(Set.of("debug", "chunkinfo"), new ChunkDebugCommand());
@@ -28,15 +28,18 @@ index 395c43f6440c1e0e47919eef096ea8a8d552ccec..f44ab1d71210e84328661c0feb662989
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..190df802cb24aa360f6cf4d291e38b4b3fe4a2ac
+index 0000000000000000000000000000000000000000..d9d4bda504bf28b9a3b33c1b3e47235c31e6e06c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,132 @@
 +package io.papermc.paper.command.subcommands;
 +
++import com.mojang.brigadier.builder.ArgumentBuilder;
 +import io.papermc.paper.command.PaperSubcommand;
 +import java.util.ArrayDeque;
 +import java.util.Deque;
++import java.util.List;
++import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.server.MCUtil;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ChunkHolder;
@@ -52,12 +55,21 @@ index 0000000000000000000000000000000000000000..190df802cb24aa360f6cf4d291e38b4b
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.minecraft.commands.Commands.argument;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class FixLightCommand implements PaperSubcommand {
++    private static final int MAX_RADIUS = 2;
++
++    @Override
++    public List<ArgumentBuilder<CommandSourceStack, ?>> nodes(final String subCommand) {
++        return List.of(argument("radius", integer(0, MAX_RADIUS)));
++    }
++
 +    @Override
 +    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
 +        this.doFixLight(sender, args);
@@ -78,10 +90,9 @@ index 0000000000000000000000000000000000000000..190df802cb24aa360f6cf4d291e38b4b
 +                    sender.sendMessage(text("Radius cannot be negative!", RED));
 +                    return;
 +                }
-+                final int maxRadius = 5;
-+                radius = Math.min(maxRadius, parsed);
++                radius = Math.min(MAX_RADIUS, parsed);
 +                if (radius != parsed) {
-+                    post = () -> sender.sendMessage(text("Radius '" + parsed + "' was not in the required range [0, " + maxRadius + "], it was lowered to the maximum (" + maxRadius + " chunks).", RED));
++                    post = () -> sender.sendMessage(text("Radius '" + parsed + "' was not in the required range [0, " + MAX_RADIUS + "], it was lowered to the maximum (" + MAX_RADIUS + " chunks).", RED));
 +                }
 +            } catch (final Exception e) {
 +                sender.sendMessage(text("'" + args[0] + "' is not a valid number.", RED));
