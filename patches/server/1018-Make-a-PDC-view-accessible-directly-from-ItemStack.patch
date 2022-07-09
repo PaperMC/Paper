@@ -6,23 +6,28 @@ Subject: [PATCH] Make a PDC view accessible directly from ItemStack
 
 diff --git a/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java b/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fac401280d3f3689b00e16c19155ca753faa06e0
+index 0000000000000000000000000000000000000000..710a147791bed25fa6441d33683361ccd2830c58
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,115 @@
 +package io.papermc.paper.persistence;
 +
 +import com.google.common.base.Preconditions;
 +import java.io.ByteArrayOutputStream;
 +import java.io.DataOutputStream;
 +import java.io.IOException;
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.Set;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.NbtIo;
 +import net.minecraft.nbt.Tag;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.persistence.CraftPersistentDataAdapterContext;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 +import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 +import org.bukkit.persistence.PersistentDataAdapterContext;
++import org.bukkit.persistence.PersistentDataContainer;
 +import org.bukkit.persistence.PersistentDataType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
@@ -76,9 +81,33 @@ index 0000000000000000000000000000000000000000..fac401280d3f3689b00e16c19155ca75
 +    }
 +
 +    @Override
-+    public <P, C> C getOrDefault(final NamespacedKey key, final PersistentDataType<P, C> type, final C defaultValue) {
-+        final C c = this.get(key, type);
-+        return c != null ? c : defaultValue;
++    public Set<NamespacedKey> getKeys() {
++        final Set<String> names = this.toTagCompound().getAllKeys();
++        final Set<NamespacedKey> keys = new HashSet<>(names.size());
++        names.forEach(key -> {
++            final String[] keyPart = key.split(":", 2);
++            if (keyPart.length == 2) {
++                keys.add(new NamespacedKey(keyPart[0], keyPart[1]));
++            }
++        });
++        return Collections.unmodifiableSet(keys);
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.toTagCompound().isEmpty();
++    }
++
++    @Override
++    public void copyTo(final PersistentDataContainer other, final boolean replace) {
++        Preconditions.checkArgument(other != null, "The target container cannot be null");
++        final CraftPersistentDataContainer target = (CraftPersistentDataContainer) other;
++        final CompoundTag tag = this.toTagCompound();
++        for (final String key : tag.getAllKeys()) {
++            if (replace || !target.getRaw().containsKey(key)) {
++                target.getRaw().put(key, tag.get(key).copy());
++            }
++        }
 +    }
 +
 +    @Override
@@ -88,7 +117,7 @@ index 0000000000000000000000000000000000000000..fac401280d3f3689b00e16c19155ca75
 +
 +    @Override
 +    public byte[] serializeToBytes() throws IOException {
-+        final net.minecraft.nbt.CompoundTag root = this.toTagCompound();
++        final CompoundTag root = this.toTagCompound();
 +        final ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
 +        try (final DataOutputStream dataOutput = new DataOutputStream(byteArrayOutput)) {
 +            NbtIo.write(root, dataOutput);
@@ -127,35 +156,6 @@ index db0fe1b755f59eafca6e57917429fb7889889c3a..454d1ad710159a47f2112f77ea4b6c87
 +        @Override
 +        public net.minecraft.nbt.Tag getTag(final String key) {
 +            return CraftItemStack.this.getPdcTag().get(key);
-+        }
-+
-+        @Override
-+        public java.util.Set<org.bukkit.NamespacedKey> getKeys() {
-+            java.util.Set<org.bukkit.NamespacedKey> keys = new java.util.HashSet<>();
-+            CraftItemStack.this.getPdcTag().getAllKeys().forEach(key -> {
-+                final String[] keyData = key.split(":", 2);
-+                if (keyData.length == 2) {
-+                    keys.add(new org.bukkit.NamespacedKey(keyData[0], keyData[1]));
-+                }
-+            });
-+            return java.util.Collections.unmodifiableSet(keys);
-+        };
-+
-+        @Override
-+        public boolean isEmpty() {
-+            return CraftItemStack.this.getPdcTag().isEmpty();
-+        }
-+
-+        @Override
-+        public void copyTo(final org.bukkit.persistence.PersistentDataContainer other, final boolean replace) {
-+            Preconditions.checkArgument(other != null, "The target container cannot be null");
-+            final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer target = (org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer) other;
-+            final net.minecraft.nbt.CompoundTag pdcTag = org.bukkit.craftbukkit.inventory.CraftItemStack.this.getPdcTag();
-+            for (final String key : pdcTag.getAllKeys()) {
-+                if (replace || !target.getRaw().containsKey(key)) {
-+                    target.getRaw().put(key, pdcTag.get(key).copy());
-+                }
-+            }
 +        }
 +    };
 +    @Override
