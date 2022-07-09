@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * player that is stored on the disk and can, thus, be retrieved without the
  * player needing to be online.
  */
-public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable {
+public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper - Add Offline PDC API
 
     /**
      * Checks if this player is currently online
@@ -557,4 +557,20 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      */
     @Nullable
     public Location getLocation();
+    // Paper start - add pdc to offline player
+    /**
+     * Yields a view of the persistent data container for this offline player.
+     * In case this {@link OfflinePlayer} instance was created for an offline player, the returned view will wrap the persistent
+     * data on disk.
+     * <p>
+     * As such, this method as well as queries to the {@link io.papermc.paper.persistence.PersistentDataContainerView}
+     * may produce blocking IO requests to read the requested data from disk.
+     * Caution in its usage is hence advised.
+     *
+     * @return the persistent data container view
+     * @see io.papermc.paper.persistence.PersistentDataViewHolder#getPersistentDataContainer()
+     */
+    @Override
+    io.papermc.paper.persistence.@NotNull PersistentDataContainerView getPersistentDataContainer();
+    // Paper end - add pdc to offline player
 }
