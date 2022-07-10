@@ -25,6 +25,7 @@ import org.bukkit.block.data.Snowable;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.AmethystCluster;
 import org.bukkit.block.data.type.Bamboo;
+import org.bukkit.block.data.type.Barrel;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Beehive;
 import org.bukkit.block.data.type.Bell;
@@ -2543,9 +2544,9 @@ public enum Material implements Keyed {
      */
     COMPOSTER(31247, Levelled.class),
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link Barrel}
      */
-    BARREL(22396, Directional.class),
+    BARREL(22396, Barrel.class),
     /**
      * BlockData: {@link Furnace}
      */

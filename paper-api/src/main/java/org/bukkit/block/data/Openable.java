@@ -1,7 +1,7 @@
 package org.bukkit.block.data;
 
 /**
- * 'open' denotes whether this door-like block is currently opened.
+ * 'open' denotes whether this block is currently opened.
  */
 public interface Openable extends BlockData {
 
