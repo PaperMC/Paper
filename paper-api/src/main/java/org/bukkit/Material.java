@@ -81,6 +81,7 @@ import org.bukkit.block.data.type.Scaffolding;
 import org.bukkit.block.data.type.SculkCatalyst;
 import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.block.data.type.SculkShrieker;
+import org.bukkit.block.data.type.SculkVein;
 import org.bukkit.block.data.type.SeaPickle;
 import org.bukkit.block.data.type.Sign;
 import org.bukkit.block.data.type.Slab;
@@ -889,9 +890,9 @@ public enum Material implements Keyed {
     NETHER_BRICK_STAIRS(12085, Stairs.class),
     SCULK(17870),
     /**
-     * BlockData: {@link Waterlogged}
+     * BlockData: {@link SculkVein}
      */
-    SCULK_VEIN(11615, Waterlogged.class),
+    SCULK_VEIN(11615, SculkVein.class),
     /**
      * BlockData: {@link SculkCatalyst}
      */
