@@ -3,7 +3,7 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftBarrel extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.Directional {
+public final class CraftBarrel extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.Barrel, org.bukkit.block.data.Directional, org.bukkit.block.data.Openable {
 
     public CraftBarrel() {
         super();
@@ -30,5 +30,19 @@ public final class CraftBarrel extends org.bukkit.craftbukkit.block.data.CraftBl
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getFaces() {
         return getValues(FACING, org.bukkit.block.BlockFace.class);
+    }
+
+    // org.bukkit.craftbukkit.block.data.CraftOpenable
+
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean OPEN = getBoolean(net.minecraft.world.level.block.BlockBarrel.class, "open");
+
+    @Override
+    public boolean isOpen() {
+        return get(OPEN);
+    }
+
+    @Override
+    public void setOpen(boolean open) {
+        set(OPEN, open);
     }
 }
