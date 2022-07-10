@@ -65,7 +65,21 @@
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
-@@ -133,12 +144,15 @@
+@@ -61,7 +72,12 @@
+     }
+ 
+     public ItemEntity(Level world, double x, double y, double z, ItemStack stack) {
+-        this(world, x, y, z, stack, world.random.nextDouble() * 0.2D - 0.1D, 0.2D, world.random.nextDouble() * 0.2D - 0.1D);
++        // Paper start - Don't use level random in entity constructors (to make them thread-safe)
++        this(EntityType.ITEM, world);
++        this.setPos(x, y, z);
++        this.setDeltaMovement(this.random.nextDouble() * 0.2D - 0.1D, 0.2D, this.random.nextDouble() * 0.2D - 0.1D);
++        this.setItem(stack);
++        // Paper end - Don't use level random in entity constructors
+     }
+ 
+     public ItemEntity(Level world, double x, double y, double z, ItemStack stack, double velocityX, double velocityY, double velocityZ) {
+@@ -133,12 +149,15 @@
      @Override
      public void tick() {
          if (this.getItem().isEmpty()) {
@@ -85,7 +99,7 @@
  
              this.xo = this.getX();
              this.yo = this.getY();
-@@ -162,7 +176,7 @@
+@@ -162,7 +181,7 @@
                  }
              }
  
@@ -94,7 +108,7 @@
                  this.move(MoverType.SELF, this.getDeltaMovement());
                  this.applyEffectsFromBlocks();
                  float f = 0.98F;
-@@ -188,9 +202,11 @@
+@@ -188,9 +207,11 @@
                  this.mergeWithNeighbours();
              }
  
@@ -106,7 +120,7 @@
  
              this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
              if (!this.level().isClientSide) {
-@@ -201,14 +217,42 @@
+@@ -201,14 +222,42 @@
                  }
              }
  
@@ -151,7 +165,7 @@
      public BlockPos getBlockPosBelowThatAffectsMyMovement() {
          return this.getOnPos(0.999999F);
      }
-@@ -229,7 +273,10 @@
+@@ -229,7 +278,10 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -163,7 +177,7 @@
                  return entityitem != this && entityitem.isMergable();
              });
              Iterator iterator = list.iterator();
-@@ -238,6 +285,14 @@
+@@ -238,6 +290,14 @@
                  ItemEntity entityitem = (ItemEntity) iterator.next();
  
                  if (entityitem.isMergable()) {
@@ -178,7 +192,7 @@
                      this.tryToMerge(entityitem);
                      if (this.isRemoved()) {
                          break;
-@@ -251,7 +306,7 @@
+@@ -251,7 +311,7 @@
      private boolean isMergable() {
          ItemStack itemstack = this.getItem();
  
@@ -187,7 +201,7 @@
      }
  
      private void tryToMerge(ItemEntity other) {
-@@ -259,7 +314,7 @@
+@@ -259,7 +319,7 @@
          ItemStack itemstack1 = other.getItem();
  
          if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
@@ -196,7 +210,7 @@
                  ItemEntity.merge(this, itemstack, other, itemstack1);
              } else {
                  ItemEntity.merge(other, itemstack1, this, itemstack);
-@@ -287,11 +342,16 @@
+@@ -287,11 +347,16 @@
      }
  
      private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
@@ -214,7 +228,7 @@
          }
  
      }
-@@ -320,12 +380,17 @@
+@@ -320,12 +385,17 @@
          } else if (!this.getItem().canBeHurtBy(source)) {
              return false;
          } else {
@@ -233,7 +247,7 @@
              }
  
              return true;
-@@ -382,22 +447,86 @@
+@@ -382,22 +452,86 @@
          }
  
          if (this.getItem().isEmpty()) {
@@ -323,7 +337,7 @@
                      itemstack.setCount(i);
                  }
  
-@@ -438,6 +567,7 @@
+@@ -438,6 +572,7 @@
  
      public void setItem(ItemStack stack) {
          this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
@@ -331,7 +345,7 @@
      }
  
      @Override
-@@ -492,7 +622,7 @@
+@@ -492,7 +627,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();
