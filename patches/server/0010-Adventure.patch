@@ -2891,7 +2891,7 @@ index a60fef571c94858998a91711b17d3670c28a81bd..04a728a16bb629adbae1cd8586764a6d
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 04344fd06419ed849f4e49b89a34d48141410b4e..07161d7d2a16d75497ef4d15af12e0ac09163ad2 100644
+index 04344fd06419ed849f4e49b89a34d48141410b4e..36e659171d299b116b48cae868a20be467ce4ae2 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -44,6 +44,7 @@ import net.minecraft.nbt.ListTag;
@@ -2940,13 +2940,16 @@ index 04344fd06419ed849f4e49b89a34d48141410b4e..07161d7d2a16d75497ef4d15af12e0ac
  
                          this.broadcastChatMessage(playerchatmessage1);
                      });
-@@ -1931,7 +1936,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1931,7 +1936,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              this.handleCommand(s);
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
              // Do nothing, this is coming from a plugin
 -        } else {
 +        // Paper start
 +        } else if (true) {
++            if (!async && !org.bukkit.Bukkit.isPrimaryThread()) {
++                org.spigotmc.AsyncCatcher.catchOp("Asynchronous player chat is not allowed here");
++            }
 +            final ChatProcessor cp = new ChatProcessor(this.server, this.player, original, async);
 +            cp.process();
 +            // Paper end
@@ -2954,7 +2957,7 @@ index 04344fd06419ed849f4e49b89a34d48141410b4e..07161d7d2a16d75497ef4d15af12e0ac
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
-@@ -2918,6 +2928,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2918,6 +2931,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          this.player.updateOptions(packet.information());
