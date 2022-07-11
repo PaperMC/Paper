@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
+Date: Mon, 11 Jul 2022 20:39:05 +0200
+Subject: [PATCH] Add copper clear on lightning strike to EntityBlockFormEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+index 359c78b4f98c38c81af27a2c4cf0939da51e5a0b..10185ec7228c66b20beea287c2c6789cdf28a5a7 100644
+--- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
++++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+@@ -100,7 +100,7 @@ public class LightningBolt extends Entity {
+                 }
+ 
+                 this.powerLightningRod();
+-                LightningBolt.clearCopperOnLightningStrike(this.level, this.getStrikePosition());
++                LightningBolt.clearCopperOnLightningStrike(this.level, this.getStrikePosition(), this); // Paper - transmit LightningBolt instance to call EntityBlockFormEvent
+                 this.gameEvent(GameEvent.LIGHTNING_STRIKE);
+             }
+         }
+@@ -194,7 +194,7 @@ public class LightningBolt extends Entity {
+         }
+     }
+ 
+-    private static void clearCopperOnLightningStrike(Level world, BlockPos pos) {
++    private static void clearCopperOnLightningStrike(Level world, BlockPos pos, Entity cause) { // Paper - transmit LightningBolt instance to call EntityBlockFormEvent
+         BlockState iblockdata = world.getBlockState(pos);
+         BlockPos blockposition1;
+         BlockState iblockdata1;
+@@ -208,24 +208,24 @@ public class LightningBolt extends Entity {
+         }
+ 
+         if (iblockdata1.getBlock() instanceof WeatheringCopper) {
+-            world.setBlockAndUpdate(blockposition1, WeatheringCopper.getFirst(world.getBlockState(blockposition1)));
++            CraftEventFactory.handleBlockFormEvent(world, blockposition1, WeatheringCopper.getFirst(world.getBlockState(blockposition1)), cause); // Paper - catch copper clearing, instead of 'world.setBlockAndUpdate'
+             BlockPos.MutableBlockPos blockposition_mutableblockposition = pos.mutable();
+             int i = world.random.nextInt(3) + 3;
+ 
+             for (int j = 0; j < i; ++j) {
+                 int k = world.random.nextInt(8) + 1;
+ 
+-                LightningBolt.randomWalkCleaningCopper(world, blockposition1, blockposition_mutableblockposition, k);
++                LightningBolt.randomWalkCleaningCopper(world, blockposition1, blockposition_mutableblockposition, k, cause); // Paper - transmit the cause
+             }
+ 
+         }
+     }
+ 
+-    private static void randomWalkCleaningCopper(Level world, BlockPos pos, BlockPos.MutableBlockPos mutablePos, int count) {
++    private static void randomWalkCleaningCopper(Level world, BlockPos pos, BlockPos.MutableBlockPos mutablePos, int count, Entity cause) { // Paper - transmit LightningBolt instance to call EntityBlockFormEvent
+         mutablePos.set(pos);
+ 
+         for (int j = 0; j < count; ++j) {
+-            Optional<BlockPos> optional = LightningBolt.randomStepCleaningCopper(world, mutablePos);
++            Optional<BlockPos> optional = LightningBolt.randomStepCleaningCopper(world, mutablePos, cause); // Paper - transmit LightningBolt instance to call EntityBlockFormEvent
+ 
+             if (!optional.isPresent()) {
+                 break;
+@@ -236,7 +236,7 @@ public class LightningBolt extends Entity {
+ 
+     }
+ 
+-    private static Optional<BlockPos> randomStepCleaningCopper(Level world, BlockPos pos) {
++    private static Optional<BlockPos> randomStepCleaningCopper(Level world, BlockPos pos, Entity cause) { // Paper - transmit LightningBolt instance to call EntityBlockFormEvent
+         Iterator iterator = BlockPos.randomInCube(world.random, 10, pos, 1).iterator();
+ 
+         BlockPos blockposition1;
+@@ -253,7 +253,7 @@ public class LightningBolt extends Entity {
+ 
+         BlockPos blockposition1Final = blockposition1; // CraftBukkit - decompile error
+         WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
+-            world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
++            CraftEventFactory.handleBlockFormEvent(world, blockposition1Final, iblockdata1, cause); // Paper - catch copper clearing, instead of 'world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error'
+         });
+         world.levelEvent(3002, blockposition1, -1);
+         return Optional.of(blockposition1);
