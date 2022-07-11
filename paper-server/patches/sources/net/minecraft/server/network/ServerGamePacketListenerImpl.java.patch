@@ -48,7 +48,7 @@
  import net.minecraft.world.level.GameRules;
  import net.minecraft.world.level.GameType;
  import net.minecraft.world.level.Level;
-@@ -192,11 +196,72 @@
+@@ -192,12 +196,73 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.BlockHitResult;
@@ -59,7 +59,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
 +import org.bukkit.NamespacedKey;
  import org.slf4j.Logger;
-+
+ 
 +// CraftBukkit start
 +import io.papermc.paper.adventure.ChatProcessor; // Paper
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
@@ -118,9 +118,10 @@
 +import org.bukkit.inventory.InventoryView;
 +import org.bukkit.inventory.SmithingInventory;
 +// CraftBukkit end
- 
++
  public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerGamePacketListener, ServerPlayerConnection, TickablePacketListener {
  
+     static final Logger LOGGER = LogUtils.getLogger();
 @@ -212,7 +277,9 @@
      private int tickCount;
      private int ackBlockChangesUpTo = -1;
@@ -323,7 +324,7 @@
                  boolean flag1 = entity.verticalCollisionBelow;
  
                  if (entity instanceof LivingEntity) {
-@@ -449,20 +599,73 @@
+@@ -449,19 +599,72 @@
                  d10 = d6 * d6 + d7 * d7 + d8 * d8;
                  boolean flag2 = false;
  
@@ -342,8 +343,8 @@
 +                    this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-                 }
- 
++                }
++
 +                // CraftBukkit start - fire PlayerMoveEvent
 +                Player player = this.getCraftPlayer();
 +                if (!this.hasMoved) {
@@ -392,12 +393,11 @@
 +                        this.justTeleported = false;
 +                        return;
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
-+
+ 
                  this.player.serverLevel().getChunkSource().move(this.player);
                  entity.recordMovementThroughBlocks(new Vec3(d0, d1, d2), entity.position());
-                 Vec3 vec3d = new Vec3(entity.getX() - d0, entity.getY() - d1, entity.getZ() - d2);
 @@ -489,16 +692,17 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (packet.getId() == this.awaitingTeleport) {
@@ -1131,7 +1131,7 @@
                                  InteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
  
                                  if (enuminteractionresult.consumesAction()) {
-@@ -1257,7 +1885,7 @@
+@@ -1257,11 +1885,11 @@
                                  } else if (enuminteractionresult instanceof InteractionResult.Success) {
                                      InteractionResult.Success enuminteractionresult_d = (InteractionResult.Success) enuminteractionresult;
  
@@ -1140,6 +1140,11 @@
                                          this.player.swing(enumhand, true);
                                      }
                                  }
+-                            }
++                            } else { this.player.containerMenu.sendAllDataToRemote(); } // Paper - Fix inventory desync; MC-99075
+                         } else {
+                             MutableComponent ichatmutablecomponent1 = Component.translatable("build.tooHigh", i).withStyle(ChatFormatting.RED);
+ 
 @@ -1281,6 +1909,8 @@
      @Override
      public void handleUseItem(ServerboundUseItemPacket packet) {
@@ -1436,10 +1441,12 @@
              }
  
              return optional;
-@@ -1566,6 +2324,127 @@
-         return false;
-     }
+@@ -1564,8 +2322,129 @@
+         }
  
+         return false;
++    }
++
 +    // CraftBukkit start - add method
 +    public void chat(String s, PlayerChatMessage original, boolean async) {
 +        if (s.isEmpty() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
@@ -1532,8 +1539,8 @@
 +                this.server.console.sendMessage(s);
 +            }
 +        }
-+    }
-+
+     }
+ 
 +    private void handleCommand(String s) {
 +        org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + s); // Paper - Add async catcher
 +        if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot

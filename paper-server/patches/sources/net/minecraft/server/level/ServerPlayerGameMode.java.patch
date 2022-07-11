@@ -63,6 +63,7 @@
 -            return false;
 +            return null; // Paper - Expand PlayerGameModeChangeEvent
          } else {
+-            this.setGameModeForPlayer(gameMode, this.previousGameModeForPlayer);
 +            // CraftBukkit start
 +            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this.player.getBukkitEntity(), GameMode.getByValue(gameMode.getId()), cause, cancelMessage); // Paper
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
@@ -70,7 +71,7 @@
 +                return event; // Paper - Expand PlayerGameModeChangeEvent
 +            }
 +            // CraftBukkit end
-             this.setGameModeForPlayer(gameMode, this.previousGameModeForPlayer);
++            this.setGameModeForPlayer(gameMode, this.gameModeForPlayer); // Paper - Fix MC-259571
              this.player.onUpdateAbilities();
 -            this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player));
 +            this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
@@ -134,9 +135,9 @@
 +                    // Update any tile entity data for this block
 +                    capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
 +                    // CraftBukkit end
-+                    return;
-+                }
-+
+                     return;
+                 }
+ 
 +                // CraftBukkit start
 +                PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, pos, direction, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
 +                if (event.isCancelled()) {
@@ -144,10 +145,10 @@
 +                    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
 +                    // Update any tile entity data for this block
 +                    capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
-                     return;
-                 }
++                    return;
++                }
 +                // CraftBukkit end
- 
++
                  if (this.isCreative()) {
                      this.destroyAndAck(pos, sequence, "creative destroy");
                      return;
