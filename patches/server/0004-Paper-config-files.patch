@@ -416,7 +416,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..456595e4b7e0c7f50617aa2694b0d2dfc368ab81
+index 0000000000000000000000000000000000000000..59cecc0d03c6d9b9730b9b3a1dca873b9526d902
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 @@ -0,0 +1,265 @@
@@ -466,7 +466,7 @@ index 0000000000000000000000000000000000000000..456595e4b7e0c7f50617aa2694b0d2df
 +            public Component flyingVehicle = Component.translatable("multiplayer.disconnect.flying");
 +        }
 +
-+        public Component noPermission = Component.text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", NamedTextColor.RED);
++        public Component noPermission = Component.text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is an error.", NamedTextColor.RED);
 +        public boolean useDisplayNameInQuitMessage = false;
 +    }
 +
@@ -687,10 +687,10 @@ index 0000000000000000000000000000000000000000..456595e4b7e0c7f50617aa2694b0d2df
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/InnerClassFieldDiscoverer.java b/src/main/java/io/papermc/paper/configuration/InnerClassFieldDiscoverer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a0aa1f1a7adf986d500a2135aa42e138aa3c4f08
+index 0000000000000000000000000000000000000000..b1bd78e8e6a3254059d690852303bbb3fdc7f595
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/InnerClassFieldDiscoverer.java
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,143 @@
 +package io.papermc.paper.configuration;
 +
 +import io.leangen.geantyref.GenericTypeReflector;
@@ -717,20 +717,22 @@ index 0000000000000000000000000000000000000000..a0aa1f1a7adf986d500a2135aa42e138
 +    @SuppressWarnings("unchecked")
 +    private final FieldDiscoverer<Map<Field, Object>> delegate = (FieldDiscoverer<Map<Field, Object>>) FieldDiscoverer.object(target -> {
 +        final Class<?> type = erase(target.getType());
-+        if (this.overrides().containsKey(type)) {
-+            this.instanceMap.put(type, this.overrides().get(type));
++        final Object overridesValue = overrides().get(type);
++        if (overridesValue != null) {
++            this.instanceMap.put(type, overridesValue);
 +            return () -> this.overrides().get(type);
 +        }
 +        if (ConfigurationPart.class.isAssignableFrom(type) && !this.instanceMap.containsKey(type)) {
 +            try {
 +                final Constructor<?> constructor;
 +                final CheckedSupplier<Object, ReflectiveOperationException> instanceSupplier;
-+                if (type.getEnclosingClass() != null && !Modifier.isStatic(type.getModifiers())) {
-+                    final @Nullable Object instance = this.instanceMap.get(type.getEnclosingClass());
++                final Class<?> enclosingClass = type.getEnclosingClass();
++                if (enclosingClass != null && !Modifier.isStatic(type.getModifiers())) {
++                    final @Nullable Object instance = this.instanceMap.get(enclosingClass);
 +                    if (instance == null) {
-+                        throw new SerializationException("Cannot create a new instance of an inner class " + type.getName() + " without an instance of its enclosing class " + type.getEnclosingClass().getName());
++                        throw new SerializationException("Cannot create a new instance of an inner class " + type.getName() + " without an instance of its enclosing class " + enclosingClass.getName());
 +                    }
-+                    constructor = type.getDeclaredConstructor(type.getEnclosingClass());
++                    constructor = type.getDeclaredConstructor(enclosingClass);
 +                    instanceSupplier = () -> constructor.newInstance(instance);
 +                } else {
 +                    constructor = type.getDeclaredConstructor();
@@ -743,9 +745,8 @@ index 0000000000000000000000000000000000000000..a0aa1f1a7adf986d500a2135aa42e138
 +            } catch (ReflectiveOperationException e) {
 +                throw new SerializationException(ConfigurationPart.class, target + " must be a valid ConfigurationPart", e);
 +            }
-+        } else {
-+            throw new SerializationException(target + " must be a valid ConfigurationPart");
 +        }
++        throw new SerializationException(target + " must be a valid ConfigurationPart");
 +    }, "Object must be a unique ConfigurationPart");
 +
 +    InnerClassFieldDiscoverer(Map<Class<?>, Object> overrides) {
@@ -860,10 +861,10 @@ index 0000000000000000000000000000000000000000..a977b80cb196b7345bdfcb0b65ee2021
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/NestedSetting.java b/src/main/java/io/papermc/paper/configuration/NestedSetting.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1893356c1
+index 0000000000000000000000000000000000000000..d0b9054df4ec79807b961494af6bff3c251784fa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/NestedSetting.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.configuration;
 +
 +import org.checkerframework.checker.nullness.qual.Nullable;
@@ -886,9 +887,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +    class Factory implements NodeResolver.Factory {
 +        @Override
 +        public @Nullable NodeResolver make(String name, AnnotatedElement element) {
-+            if (element.isAnnotationPresent(NestedSetting.class)) {
-+                Object[] path = element.getAnnotation(NestedSetting.class).value();
-+                if (path.length > 0) {
++           final NestedSetting nestedSetting = element.getAnnotation(NestedSetting.class);
++            if (nestedSetting != null) {
++                Object[] path = nestedSetting.value();
++                if (path.length != 0) {
 +                    return node -> node.node(path);
 +                }
 +            }
@@ -2009,10 +2011,10 @@ index 0000000000000000000000000000000000000000..62b43280f59163f7910f79cc901b50d0
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/legacy/RequiresSpigotInitialization.java b/src/main/java/io/papermc/paper/configuration/legacy/RequiresSpigotInitialization.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..611bdbcef3d52e09179aa8b1677ab1e198c70b02
+index 0000000000000000000000000000000000000000..6e9d42014ac0a35592acebbc45f55ce8cc4cf3b9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/legacy/RequiresSpigotInitialization.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.configuration.legacy;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -2028,8 +2030,6 @@ index 0000000000000000000000000000000000000000..611bdbcef3d52e09179aa8b1677ab1e1
 +import java.lang.annotation.Target;
 +import java.lang.reflect.AnnotatedElement;
 +import java.lang.reflect.Constructor;
-+import java.util.Map;
-+import java.util.concurrent.ConcurrentHashMap;
 +
 +@Documented
 +@Retention(RetentionPolicy.RUNTIME)
@@ -2049,10 +2049,11 @@ index 0000000000000000000000000000000000000000..611bdbcef3d52e09179aa8b1677ab1e1
 +
 +        @Override
 +        public @Nullable NodeResolver make(String name, AnnotatedElement element) {
-+            if (element.isAnnotationPresent(RequiresSpigotInitialization.class)) {
-+                return this.cache.row(element.getAnnotation(RequiresSpigotInitialization.class).value()).computeIfAbsent(name, key -> {
++            final RequiresSpigotInitialization requiresSpigotInitialization = element.getAnnotation(RequiresSpigotInitialization.class);
++            if (requiresSpigotInitialization != null) {
++                return this.cache.row(requiresSpigotInitialization.value()).computeIfAbsent(name, key -> {
 +                    try {
-+                        final Constructor<? extends NodeResolver> constructor = element.getAnnotation(RequiresSpigotInitialization.class).value().getDeclaredConstructor(String.class, SpigotWorldConfig.class);
++                        final Constructor<? extends NodeResolver> constructor = requiresSpigotInitialization.value().getDeclaredConstructor(String.class, SpigotWorldConfig.class);
 +                        constructor.trySetAccessible();
 +                        return constructor.newInstance(key, this.spigotWorldConfig);
 +                    } catch (final ReflectiveOperationException e) {
