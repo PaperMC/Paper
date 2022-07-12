@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
+Date: Tue, 12 Jul 2022 10:46:23 +0200
+Subject: [PATCH] Copper clear on lightning strike calls EntityChangeBlockEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+index 359c78b4f98c38c81af27a2c4cf0939da51e5a0b..ed28e519d9d27aa280e94efd572bd85e392c7d96 100644
+--- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
++++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+@@ -100,7 +100,7 @@ public class LightningBolt extends Entity {
+                 }
+ 
+                 this.powerLightningRod();
+-                LightningBolt.clearCopperOnLightningStrike(this.level, this.getStrikePosition());
++                LightningBolt.clearCopperOnLightningStrike(this.level, this.getStrikePosition(), this); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+                 this.gameEvent(GameEvent.LIGHTNING_STRIKE);
+             }
+         }
+@@ -194,7 +194,7 @@ public class LightningBolt extends Entity {
+         }
+     }
+ 
+-    private static void clearCopperOnLightningStrike(Level world, BlockPos pos) {
++    private static void clearCopperOnLightningStrike(Level world, BlockPos pos, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+         BlockState iblockdata = world.getBlockState(pos);
+         BlockPos blockposition1;
+         BlockState iblockdata1;
+@@ -208,24 +208,29 @@ public class LightningBolt extends Entity {
+         }
+ 
+         if (iblockdata1.getBlock() instanceof WeatheringCopper) {
+-            world.setBlockAndUpdate(blockposition1, WeatheringCopper.getFirst(world.getBlockState(blockposition1)));
++            // Paper start - call EntityChangeBlockEvent
++            BlockState newBlock = WeatheringCopper.getFirst(world.getBlockState(blockposition1));
++            if (!CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1, newBlock).isCancelled()) {
++                world.setBlockAndUpdate(blockposition1, newBlock);
++            }
++            // Paper end
+             BlockPos.MutableBlockPos blockposition_mutableblockposition = pos.mutable();
+             int i = world.random.nextInt(3) + 3;
+ 
+             for (int j = 0; j < i; ++j) {
+                 int k = world.random.nextInt(8) + 1;
+ 
+-                LightningBolt.randomWalkCleaningCopper(world, blockposition1, blockposition_mutableblockposition, k);
++                LightningBolt.randomWalkCleaningCopper(world, blockposition1, blockposition_mutableblockposition, k, lightning); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+             }
+ 
+         }
+     }
+ 
+-    private static void randomWalkCleaningCopper(Level world, BlockPos pos, BlockPos.MutableBlockPos mutablePos, int count) {
++    private static void randomWalkCleaningCopper(Level world, BlockPos pos, BlockPos.MutableBlockPos mutablePos, int count, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+         mutablePos.set(pos);
+ 
+         for (int j = 0; j < count; ++j) {
+-            Optional<BlockPos> optional = LightningBolt.randomStepCleaningCopper(world, mutablePos);
++            Optional<BlockPos> optional = LightningBolt.randomStepCleaningCopper(world, mutablePos, lightning); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+ 
+             if (!optional.isPresent()) {
+                 break;
+@@ -236,7 +241,7 @@ public class LightningBolt extends Entity {
+ 
+     }
+ 
+-    private static Optional<BlockPos> randomStepCleaningCopper(Level world, BlockPos pos) {
++    private static Optional<BlockPos> randomStepCleaningCopper(Level world, BlockPos pos, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+         Iterator iterator = BlockPos.randomInCube(world.random, 10, pos, 1).iterator();
+ 
+         BlockPos blockposition1;
+@@ -253,7 +258,9 @@ public class LightningBolt extends Entity {
+ 
+         BlockPos blockposition1Final = blockposition1; // CraftBukkit - decompile error
+         WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
+-            world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
++            if (!CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1Final, iblockdata1).isCancelled()) { // Paper - call EntityChangeBlockEvent
++                world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
++            }
+         });
+         world.levelEvent(3002, blockposition1, -1);
+         return Optional.of(blockposition1);
