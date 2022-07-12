@@ -8,6 +8,7 @@ import com.google.common.graph.MutableGraph;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -656,9 +657,14 @@ public final class SimplePluginManager implements PluginManager {
         try {
             Method method = getRegistrationClass(type).getDeclaredMethod("getHandlerList");
             method.setAccessible(true);
+
+            if (!Modifier.isStatic(method.getModifiers())) {
+                throw new IllegalAccessException("getHandlerList must be static");
+            }
+
             return (HandlerList) method.invoke(null);
         } catch (Exception e) {
-            throw new IllegalPluginAccessException(e.toString());
+            throw new IllegalPluginAccessException("Error while registering listener for event type " + type.toString() + ": " + e.toString());
         }
     }
 
