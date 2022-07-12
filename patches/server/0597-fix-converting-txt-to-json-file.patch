@@ -21,22 +21,22 @@ index d83bed436d2ad51cef83ecbf0c7df227a67ff404..dc96b30c70cd79d7b2a0322f32b9399a
          this.saveUserBanList();
          this.loadIpBanList();
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index ae45abf66d2e7b24d316a5db3d00c0b52f402b7f..0414974fc773a30810f88b54867034f5922eaa55 100644
+index ae45abf66d2e7b24d316a5db3d00c0b52f402b7f..7a2ef21a78c25e18ed61bd989b759783d89b54d5 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -199,6 +199,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-         org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
-         org.spigotmc.SpigotConfig.registerCommands();
-         // Spigot end
+@@ -203,6 +203,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // Paper - load mappings for stacktrace deobf and etc.
+         paperConfigurations.initializeGlobalConfiguration();
+         paperConfigurations.initializeWorldDefaultsConfiguration();
 +        // Paper start - moved up to right after PlayerList creation but before file load/save
 +        if (this.convertOldUsers()) {
 +            this.getProfileCache().save(false); // Paper
 +        }
 +        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
-+        // Paper end
-         // Paper start
-         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // Paper - load mappings for stacktrace deobf and etc.
-         paperConfigurations.initializeGlobalConfiguration();
++        // Paper end - moved up
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
+         io.papermc.paper.command.PaperCommands.registerCommands(this);
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics();
 @@ -258,9 +264,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
          }
