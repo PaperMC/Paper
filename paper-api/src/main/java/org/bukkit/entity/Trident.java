@@ -57,5 +57,23 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * @param hasDealtDamage has dealt damage or hit the floor
      */
     void setHasDealtDamage(boolean hasDealtDamage);
+
+    /**
+     * Sets the base amount of damage this trident will do.
+     *
+     * @param damage new damage amount
+     */
+    void setDamage(double damage);
+
+    /**
+     * Gets the base amount of damage this trident will do.
+     *
+     * Defaults to 8.0 for a normal trident with
+     * <code>0.5 * (1 + power level)</code> added for trident fired from
+     * damage enchanted bows.
+     *
+     * @return base damage amount
+     */
+    double getDamage();
 }
 // Paper end
