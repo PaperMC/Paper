@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Thu, 14 Jul 2022 16:10:20 +0200
+Subject: [PATCH] Configurable restart and shutdown exit code
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 840aaf9e8fc828b5a7ea02252038c6524680f2e0..1fdaa172122ccc40cc61431b52edbb5440b7f8ea 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1180,6 +1180,19 @@ public final class Bukkit {
+     }
+ 
+     // Paper start
++    /**
++     * Shutdowns the server, stopping everything providing an exit code.
++     * <p>
++     * Generally a non-zero exit code means that an error has happened.
++     * Also when the server has stopped to respond for X ticks
++     * the watchdog thread will shutdown the server with a 70 exit code.
++     * The plugins shouldn't use that code to avoid potential conflict.
++     * </p>
++     */
++    public static void abnormalShutdown(int exitCode) {
++        server.abnormalShutdown(exitCode);
++    }
++
+     /**
+      * Broadcast a message to all players.
+      * <p>
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index da5cab4246bd253fcc4e4d9574bdae1867ebb5ab..fc95436a820909e30e16fe4946ccf549af029d4f 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -980,6 +980,19 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     public void shutdown();
+ 
++    // Paper start
++    /**
++     * Shutdowns the server, stopping everything providing an exit code.
++     * <p>
++     * Generally a non-zero exit code means that an error has happened.
++     * Also when the server has stopped to respond for X ticks
++     * the watchdog thread will shutdown the server with a 70 exit code.
++     * The plugins shouldn't use that code to avoid potential conflict.
++     * </p>
++     */
++    void abnormalShutdown(int exitCode);
++    // Paper end
++
+     /**
+      * Broadcasts the specified message to every user with the given
+      * permission name.
+@@ -1976,6 +1989,16 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+         public void restart() {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
++
++        // Paper start
++        /**
++         * Restart the server. Plugin MUST execute another process during this hook
++         * via the shell or any other platform.
++         */
++        public void restart(@NotNull Runnable onRestart) {
++            throw new UnsupportedOperationException("Not supported yet.");
++        }
++        // Paper end
+     }
+ 
+     @NotNull
