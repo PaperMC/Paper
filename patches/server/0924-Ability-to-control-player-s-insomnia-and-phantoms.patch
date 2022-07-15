@@ -4,59 +4,49 @@ Date: Sat, 22 Jan 2022 17:56:19 +0100
 Subject: [PATCH] Ability to control player's insomnia and phantoms
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d7dcf36c8c972e30320c56e447822cf26f6d5fb3..48a87aee52e5fc183ba4243d729348706f095f32 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -871,6 +871,27 @@ public class PaperWorldConfig {
-         phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
-     }
- 
-+    public int playerInsomniaStartTicks = 72000;
-+    private void playerInsomniaStartTicks() {
-+        playerInsomniaStartTicks = getInt("player-insomnia-start-ticks", playerInsomniaStartTicks);
-+    }
-+
-+    public int phantomsSpawnAttemptMinSeconds = 60;
-+    public int phantomsSpawnAttemptMaxSeconds = 119;
-+    public boolean phantomSpawnerEnabled = false;
-+    private void phantomsSpawnAttemptSettings() {
-+        phantomsSpawnAttemptMinSeconds = getInt("game-mechanics.phantoms-spawn-attempt-seconds.min", phantomsSpawnAttemptMinSeconds);
-+        phantomsSpawnAttemptMaxSeconds = getInt("game-mechanics.phantoms-spawn-attempt-seconds.max", phantomsSpawnAttemptMaxSeconds);
-+
-+        if (phantomsSpawnAttemptMinSeconds > phantomsSpawnAttemptMaxSeconds) {
-+            int temp = phantomsSpawnAttemptMinSeconds;
-+            phantomsSpawnAttemptMinSeconds = phantomsSpawnAttemptMaxSeconds;
-+            phantomsSpawnAttemptMaxSeconds = temp;
-+        }
-+
-+        phantomSpawnerEnabled = (phantomsSpawnAttemptMinSeconds >= 0 && phantomsSpawnAttemptMaxSeconds >= 0) && (phantomsSpawnAttemptMinSeconds != 0 || phantomsSpawnAttemptMaxSeconds != 0);
-+    }
-+
-     public boolean zombiesAlwaysCanPickUpLoot;
-     public boolean skeletonsAlwaysCanPickUpLoot;
-     private void setMobsAlwaysCanPickUpLoot() {
+diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+index 32f0cd29d1198fe320d10ccfe0b02f8632ac12aa..60a2201cb80cb608f17f22867d2ebbeac634deaa 100644
+--- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+@@ -242,6 +242,9 @@ public class WorldConfiguration extends ConfigurationPart {
+             public boolean enderDragonsDeathAlwaysPlacesDragonEgg = false;
+             public boolean phantomsDoNotSpawnOnCreativePlayers = true;
+             public boolean phantomsOnlyAttackInsomniacs = true;
++            public int playerInsomniaStartTicks = 72000;
++            public int phantomsSpawnAttemptMinSeconds = 60;
++            public int phantomsSpawnAttemptMaxSeconds = 119;
+             public boolean parrotsAreUnaffectedByPlayerMovement = false;
+             public double zombieVillagerInfectionChance = -1.0;
+             public MobsCanAlwaysPickUpLoot mobsCanAlwaysPickUpLoot;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index a2abb8aa1a257ccd2b5dbddc037fffc6eb600758..d6aeee46f88af6448e12b5dbfb763bf8bd8a2548 100644
+index 1a918eabbaaed26d9bdf5c01e0488b5a117ba516..a072b3b9ced505bbaf91fca2fa906d4547c13908 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -495,7 +495,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -504,7 +504,21 @@ public class ServerLevel extends Level implements WorldGenLevel {
          this.dragonParts = new Int2ObjectOpenHashMap();
          this.tickTime = flag1;
          this.server = minecraftserver;
 -        this.customSpawners = list;
 +        // Paper start
-+        if (this.paperConfig.phantomSpawnerEnabled) {
++        int phantomsSpawnAttemptMinSeconds = super.paperConfig().entities.behavior.phantomsSpawnAttemptMinSeconds;
++        int phantomsSpawnAttemptMaxSeconds = super.paperConfig().entities.behavior.phantomsSpawnAttemptMaxSeconds;
++        if (phantomsSpawnAttemptMinSeconds > phantomsSpawnAttemptMaxSeconds) {
++            int temp = phantomsSpawnAttemptMinSeconds;
++            phantomsSpawnAttemptMinSeconds = phantomsSpawnAttemptMaxSeconds;
++            phantomsSpawnAttemptMaxSeconds = temp;
++        }
++        boolean phantomSpawnerEnabled = (phantomsSpawnAttemptMinSeconds >= 0 && phantomsSpawnAttemptMaxSeconds >= 0) && (phantomsSpawnAttemptMinSeconds != 0 || phantomsSpawnAttemptMaxSeconds != 0);
++        if (phantomSpawnerEnabled) {
 +            this.customSpawners = list;
 +        } else {
 +            this.customSpawners = List.copyOf(list.stream().filter(s -> !(s instanceof net.minecraft.world.level.levelgen.PhantomSpawner)).toList());
 +        }
 +        // Paper end
+         this.serverLevelData = iworlddataserver;
+         ChunkGenerator chunkgenerator = worlddimension.generator();
          // CraftBukkit start
-         this.serverLevelData = (PrimaryLevelData) iworlddataserver;
-         serverLevelData.world = this;
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index e39965c2e50bc8ee424ea07819346e0611398e28..a09d02d454d165136649b142cf9e88724a62e284 100644
+index e39965c2e50bc8ee424ea07819346e0611398e28..8680cb68a7b197ad71a118ec708841107d9696d4 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 @@ -27,7 +27,18 @@ public final class EntitySelector {
@@ -67,7 +57,7 @@ index e39965c2e50bc8ee424ea07819346e0611398e28..a09d02d454d165136649b142cf9e8872
 +    // Paper start
 +    public static Predicate<Player> isInsomniac = (player) -> {
 +        net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
-+        int playerInsomniaTicks = serverPlayer.getLevel().paperConfig.playerInsomniaStartTicks;
++        int playerInsomniaTicks = serverPlayer.getLevel().paperConfig().entities.behavior.playerInsomniaStartTicks;
 +
 +        if (playerInsomniaTicks <= 0) {
 +            return false;
@@ -80,18 +70,18 @@ index e39965c2e50bc8ee424ea07819346e0611398e28..a09d02d454d165136649b142cf9e8872
      private EntitySelector() {}
      // Paper start
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
-index 1e21d6cf2f03219fb2b7217c9a72bdd83c2146f7..b91af480dbe866c0c73f9102b331bc5b13f94ab7 100644
+index 6b5c31470499e25d01936106839c2fff21b113c8..622a525c252c2e1734124cadd7c18457ed3e31ff 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 @@ -41,7 +41,11 @@ public class PhantomSpawner implements CustomSpawner {
              if (this.nextTick > 0) {
                  return 0;
              } else {
--                this.nextTick += (60 + random.nextInt(60)) * 20;
+-                this.nextTick += (60 + randomsource.nextInt(60)) * 20;
 +                // Paper start
-+                int spawnAttemptMinSeconds = world.getLevel().paperConfig.phantomsSpawnAttemptMinSeconds;
-+                int spawnAttemptMaxSeconds = world.getLevel().paperConfig.phantomsSpawnAttemptMaxSeconds;
-+                this.nextTick += (spawnAttemptMinSeconds + random.nextInt(spawnAttemptMaxSeconds - spawnAttemptMinSeconds + 1)) * 20;
++                int spawnAttemptMinSeconds = world.getLevel().paperConfig().entities.behavior.phantomsSpawnAttemptMinSeconds;
++                int spawnAttemptMaxSeconds = world.getLevel().paperConfig().entities.behavior.phantomsSpawnAttemptMaxSeconds;
++                this.nextTick += (spawnAttemptMinSeconds + randomsource.nextInt(spawnAttemptMaxSeconds - spawnAttemptMinSeconds + 1)) * 20;
 +                // Paper end
                  if (world.getSkyDarken() < 5 && world.dimensionType().hasSkyLight()) {
                      return 0;
@@ -100,8 +90,8 @@ index 1e21d6cf2f03219fb2b7217c9a72bdd83c2146f7..b91af480dbe866c0c73f9102b331bc5b
                                      int j = Mth.clamp(serverstatisticmanager.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), (int) 1, Integer.MAX_VALUE);
                                      boolean flag2 = true;
  
--                                    if (random.nextInt(j) >= 72000) {
-+                                    if (random.nextInt(j) >= world.paperConfig.playerInsomniaStartTicks) { // Paper
-                                         BlockPos blockposition1 = blockposition.above(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
+-                                    if (randomsource.nextInt(j) >= 72000) {
++                                    if (randomsource.nextInt(j) >= world.paperConfig().entities.behavior.playerInsomniaStartTicks) { // Paper
+                                         BlockPos blockposition1 = blockposition.above(20 + randomsource.nextInt(15)).east(-10 + randomsource.nextInt(21)).south(-10 + randomsource.nextInt(21));
                                          BlockState iblockdata = world.getBlockState(blockposition1);
                                          FluidState fluid = world.getFluidState(blockposition1);
