@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PSNRigner <loic.frasse-mathon@epitech.eu>
+Date: Sat, 16 Jul 2022 17:55:42 +0200
+Subject: [PATCH] Add signature info to async chat event
+
+
+diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
+index b13d516d91788713768b5c336537ffe31653b074..d0713d9b01bfbfa90070dd165f829f4e001a39dd 100644
+--- a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
++++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
+@@ -48,13 +48,15 @@ public final class ChatProcessor {
+     final String message;
+     final boolean async;
+     final Component originalMessage;
++    final ChatSignatureImpl chatSignature;
+ 
+-    public ChatProcessor(final MinecraftServer server, final ServerPlayer player, final String message, final boolean async) {
++    public ChatProcessor(final MinecraftServer server, final ServerPlayer player, final String message, final boolean async, final ChatSignatureImpl chatSignature) {
+         this.server = server;
+         this.player = player;
+         this.message = message;
+         this.async = async;
+         this.originalMessage = Component.text(message);
++        this.chatSignature = chatSignature;
+     }
+ 
+     @SuppressWarnings("deprecated")
+@@ -101,7 +103,7 @@ public final class ChatProcessor {
+ 
+     private void processModern(final ChatRenderer renderer, final Set<Audience> viewers, final Component message, final boolean cancelled) {
+         final CraftPlayer player = this.player.getBukkitEntity();
+-        final AsyncChatEvent ae = new AsyncChatEvent(this.async, player, viewers, renderer, message, this.originalMessage);
++        final AsyncChatEvent ae = new AsyncChatEvent(this.async, player, viewers, renderer, message, this.originalMessage, this.chatSignature);
+         ae.setCancelled(cancelled); // propagate cancelled state
+         this.post(ae);
+         final boolean listenersOnSyncEvent = canYouHearMe(ChatEvent.getHandlerList());
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 1290f1c33062b2ea821abca33433a53662b6d340..54ea9fda06f65a07fe3ae4d83b7ae262e4144267 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -12,6 +12,7 @@ import com.mojang.brigadier.tree.CommandNode;
+ import com.mojang.logging.LogUtils;
+ import io.netty.util.concurrent.Future;
+ import io.netty.util.concurrent.GenericFutureListener;
++import io.papermc.paper.adventure.ChatSignatureImpl;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+@@ -2248,7 +2249,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+                 this.send(new ClientboundSystemChatPacket(Component.translatable("chat.cannotSend").withStyle(ChatFormatting.RED), i));
+             } else {
+-                this.chat(s, true);
++                this.chat(s, true, filteredtext.raw().signedContent(), filteredtext.raw().signature());
+             }
+             // this.server.getPlayerList().broadcastChatMessage(playerchatmessage, filteredtext, this.player, ChatMessageType.CHAT);
+             this.detectRateSpam(false, s); // Spigot
+@@ -2258,6 +2259,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+     // CraftBukkit start - add method
+     public void chat(String s, boolean async) {
++        // Paper Start
++        this.chat(s, async, null, null);
++    }
++
++    public void chat(String s, boolean async, Component signedContent, MessageSignature signature) {
++        // Paper End
+         if (s.isEmpty() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
+             return;
+         }
+@@ -2291,7 +2298,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             // Do nothing, this is coming from a plugin
+         // Paper start
+         } else if (true) {
+-            final ChatProcessor cp = new ChatProcessor(this.server, this.player, s, async);
++            ChatSignatureImpl chatSignature = signedContent != null && signature != null ? new ChatSignatureImpl(signedContent, signature) : null;
++            final ChatProcessor cp = new ChatProcessor(this.server, this.player, s, async, chatSignature);
+             cp.process();
+             // Paper end
+         } else if (false) { // Paper
