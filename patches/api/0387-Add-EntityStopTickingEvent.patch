@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Sun Jul 17 00:00:00 2001
+From: Oliver Kent <support@newwindserver.com>
+Date: Sun, Jul 17 2022 13:57:33 -0100
+Subject: [PATCH] Add EntityStopTickingEvent
+
+Adds a new event that is called when an entity stops ticking.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 1a918eabb..896d90194 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -16,6 +16,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
++
++import java.awt.print.Paper;
+ import java.io.BufferedWriter;
+ import java.io.IOException;
+ import java.io.Writer;
+@@ -2512,6 +2514,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                 pearl.ownerUUID = null;
+             }
+             // Paper end
++
++            // Paper start - Call EntityStopTickingEvent
++            getCraftServer().getPluginManager().callEvent(new io.papermc.paper.event.entity.EntityStopTickingEvent(entity.getBukkitEntity()));
++            // Paper end
+         }
+ 
+         public void onTrackingStart(Entity entity) {
+
+diff --git a/src/main/java/io/papermc/paper/event/entity/EntityStopTickingEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityStopTickingEvent.java
+index e69de29b..d5990919 100644
+--- a/src/main/java/io/papermc/paper/event/entity/EntityStopTickingEvent.java
++++ b/src/main/java/io/papermc/paper/event/entity/EntityStopTickingEvent.java
+@@ -0,0 +1,29 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.entity.Entity;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when an entity stops ticking, for example, when it crosses into a non-ticking chunk.
++ */
++public class EntityStopTickingEvent extends EntityEvent {
++
++    private static final HandlerList handlers = new HandlerList();
++
++    public EntityStopTickingEvent(@NotNull final Entity entity) {
++        super(entity);
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+
