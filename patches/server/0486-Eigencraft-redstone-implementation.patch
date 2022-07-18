@@ -982,10 +982,10 @@ index 0000000000000000000000000000000000000000..22a2547810d0c029f29685faddf7ac21
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 74241146a034c5817cddc608c095d829d765f06a..fdee6b7ba4e5e2ab7c4eec8ee0d402f76e7e9a41 100644
+index 74241146a034c5817cddc608c095d829d765f06a..3cba4921daad4b346a3f964f0fa48e1bb4d634a3 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -253,6 +253,124 @@ public class RedStoneWireBlock extends Block {
+@@ -253,6 +253,116 @@ public class RedStoneWireBlock extends Block {
          return floor.isFaceSturdy(world, pos, Direction.UP) || floor.is(Blocks.HOPPER);
      }
  
@@ -1081,6 +1081,10 @@ index 74241146a034c5817cddc608c095d829d765f06a..fdee6b7ba4e5e2ab7c4eec8ee0d402f7
 +        }
 +
 +        if (i != j) {
++            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(worldIn.getWorld().getBlockAt(pos1.getX(), pos1.getY(), pos1.getZ()), i, j);
++            worldIn.getCraftServer().getPluginManager().callEvent(event);
++
++            j = event.getNewCurrent();
 +            state = state.setValue(POWER, j);
 +
 +            if (worldIn.getBlockState(pos1) == iblockstate) {
@@ -1089,18 +1093,6 @@ index 74241146a034c5817cddc608c095d829d765f06a..fdee6b7ba4e5e2ab7c4eec8ee0d402f7
 +                if (worldIn.setBlock(pos1, state, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS))
 +                    turbo.updateNeighborShapes(worldIn, pos1, state);
 +            }
-+
-+            // 1.16(.1?) dropped the need for blocks needing updates.
-+            // Whether this is necessary after all is to be seen.
-+//            if (!worldIn.paperConfig.useEigencraftRedstone) {
-+//                // The new search algorithm keeps track of blocks needing updates in its own data structures,
-+//                // so only add anything to blocksNeedingUpdate if we're using the vanilla update algorithm.
-+//                this.getBlocksNeedingUpdate().add(pos1);
-+//
-+//                for (EnumDirection enumfacing1 : EnumDirection.values()) {
-+//                    this.getBlocksNeedingUpdate().add(pos1.shift(enumfacing1));
-+//                }
-+//            }
 +        }
 +
 +        return state;
@@ -1110,7 +1102,7 @@ index 74241146a034c5817cddc608c095d829d765f06a..fdee6b7ba4e5e2ab7c4eec8ee0d402f7
      private void updatePowerStrength(Level world, BlockPos pos, BlockState state) {
          int i = this.calculateTargetStrength(world, pos);
  
-@@ -322,6 +440,7 @@ public class RedStoneWireBlock extends Block {
+@@ -322,6 +432,7 @@ public class RedStoneWireBlock extends Block {
          return Math.max(i, j - 1);
      }
  
@@ -1118,7 +1110,7 @@ index 74241146a034c5817cddc608c095d829d765f06a..fdee6b7ba4e5e2ab7c4eec8ee0d402f7
      private int getWireSignal(BlockState state) {
          return state.is((Block) this) ? (Integer) state.getValue(RedStoneWireBlock.POWER) : 0;
      }
-@@ -344,7 +463,7 @@ public class RedStoneWireBlock extends Block {
+@@ -344,7 +455,7 @@ public class RedStoneWireBlock extends Block {
      @Override
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
          if (!oldState.is(state.getBlock()) && !world.isClientSide) {
@@ -1127,7 +1119,7 @@ index 74241146a034c5817cddc608c095d829d765f06a..fdee6b7ba4e5e2ab7c4eec8ee0d402f7
              Iterator iterator = Direction.Plane.VERTICAL.iterator();
  
              while (iterator.hasNext()) {
-@@ -371,7 +490,7 @@ public class RedStoneWireBlock extends Block {
+@@ -371,7 +482,7 @@ public class RedStoneWireBlock extends Block {
                      world.updateNeighborsAt(pos.relative(enumdirection), this);
                  }
  
@@ -1136,7 +1128,7 @@ index 74241146a034c5817cddc608c095d829d765f06a..fdee6b7ba4e5e2ab7c4eec8ee0d402f7
                  this.updateNeighborsOfNeighboringWires(world, pos);
              }
          }
-@@ -406,7 +525,7 @@ public class RedStoneWireBlock extends Block {
+@@ -406,7 +517,7 @@ public class RedStoneWireBlock extends Block {
      public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
          if (!world.isClientSide) {
              if (state.canSurvive(world, pos)) {
