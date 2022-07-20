@@ -1,11 +1,12 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Xemorr <31805746+Xemorr@users.noreply.github.com>
 Date: Fri, 1 Apr 2022 19:57:40 +0100
-Subject: [PATCH] Update Folder Uses Plugin Name
+Subject: [PATCH] Update Folder Uses Plugin Name (Fixed)
 
+Fixes errors where exceptions occurred when the file names were the same
 
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 45114d587a8f201778adcba16c8a019f9959f472..5270e43c629fe63f42691d10c6f77dc1cc987457 100644
+index 45114d587a8f201778adcba16c8a019f9959f472..86ea58866d908a19cf2e9dd7db9da8bafd905fa7 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -395,7 +395,7 @@ public final class SimplePluginManager implements PluginManager {
@@ -17,7 +18,7 @@ index 45114d587a8f201778adcba16c8a019f9959f472..5270e43c629fe63f42691d10c6f77dc1
  
          Set<Pattern> filters = fileAssociations.keySet();
          Plugin result = null;
-@@ -422,16 +422,61 @@ public final class SimplePluginManager implements PluginManager {
+@@ -422,16 +422,72 @@ public final class SimplePluginManager implements PluginManager {
          return result;
      }
  
@@ -48,16 +49,27 @@ index 45114d587a8f201778adcba16c8a019f9959f472..5270e43c629fe63f42691d10c6f77dc1
 +                    continue;
 +                }
 +                if (!pluginName.equals(updatePluginName)) continue;
++
++                File tempFile = new File(file.getParentFile(), updateFile.getName() + ".tmp");
++
 +                try {
-+                    java.nio.file.Files.copy(updateFile.toPath(), file.toPath());
++                    // FileAreadyExistsException occurs when a file with the same name exists
++//                    java.nio.file.Files.copy(updateFile.toPath(), tempFile.toPath());
++                    java.nio.file.Files.copy(updateFile.toPath(), tempFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 +                } catch (java.io.IOException exception) {
-+                    server.getLogger().log(Level.SEVERE, "Could not copy '" + updateFile.getPath() + "' to '" + file.getPath() + "' in update plugin process", exception);
++                    server.getLogger().log(Level.SEVERE, "Could not copy '" + updateFile.getPath() + "' to '" + tempFile.getPath() + "' in update plugin process", exception);
 +                    continue;
 +                }
-+                File newName = new File(file.getParentFile(), updateFile.getName());
-+                file.renameTo(newName);
++                File newPluginFile = new File(file.getParentFile(), updateFile.getName());
++
++                file.delete();
 +                updateFile.delete();
-+                return newName;
++                newPluginFile.delete();
++
++                // Failed if a file with the same name exists
++                tempFile.renameTo(newPluginFile);
++
++                return newPluginFile;
 +            }
          }
 +        catch (InvalidDescriptionException e) {
