@@ -115,4 +115,9 @@ public class CraftFox extends CraftAnimals implements Fox {
 
         getHandle().getEntityData().set(EntityFox.DATA_TRUSTED_ID_1, player == null ? Optional.empty() : Optional.of(player.getUniqueId()));
     }
+
+    @Override
+    public boolean isFaceplanted() {
+        return getHandle().isFaceplanted();
+    }
 }

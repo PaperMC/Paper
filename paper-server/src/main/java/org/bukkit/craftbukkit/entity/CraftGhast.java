@@ -25,4 +25,14 @@ public class CraftGhast extends CraftFlying implements Ghast {
     public EntityType getType() {
         return EntityType.GHAST;
     }
+
+    @Override
+    public boolean isCharging() {
+        return getHandle().isCharging();
+    }
+
+    @Override
+    public void setCharging(boolean flag) {
+        getHandle().setCharging(flag);
+    }
 }

@@ -39,4 +39,9 @@ public class CraftParrot extends CraftTameableAnimal implements Parrot {
     public EntityType getType() {
         return EntityType.PARROT;
     }
+
+    @Override
+    public boolean isDancing() {
+        return getHandle().isPartyParrot();
+    }
 }

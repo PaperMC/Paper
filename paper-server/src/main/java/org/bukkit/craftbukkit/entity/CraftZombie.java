@@ -123,4 +123,14 @@ public class CraftZombie extends CraftMonster implements Zombie {
     @Override
     public void setBreed(boolean b) {
     }
+
+    @Override
+    public boolean canBreakDoors() {
+        return getHandle().canBreakDoors();
+    }
+
+    @Override
+    public void setCanBreakDoors(boolean flag) {
+        getHandle().setCanBreakDoors(flag);
+    }
 }
