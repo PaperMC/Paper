@@ -23,6 +23,13 @@ public interface Parrot extends Tameable, Sittable {
     public void setVariant(@NotNull Variant variant);
 
     /**
+     * Gets whether a parrot is dancing
+     *
+     * @return Whether the parrot is dancing
+     */
+    public boolean isDancing();
+
+    /**
      * Represents the variant of a parrot - ie its color.
      */
     public enum Variant {

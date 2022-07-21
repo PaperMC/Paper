@@ -79,6 +79,13 @@ public interface Fox extends Animals, Sittable {
     public void setSecondTrustedPlayer(@Nullable AnimalTamer player);
 
     /**
+     * Gets whether the fox is faceplanting the ground
+     *
+     * @return Whether the fox is faceplanting the ground
+     */
+    boolean isFaceplanted();
+
+    /**
      * Represents the various different fox types there are.
      */
     public enum Type {

@@ -39,4 +39,32 @@ public interface Wolf extends Tameable, Sittable {
      * @param color the color to apply
      */
     public void setCollarColor(@NotNull DyeColor color);
+
+    /**
+     * Gets whether the wolf is wet
+     *
+     * @return Whether the wolf is wet
+     */
+    public boolean isWet();
+
+    /**
+     * Gets the wolf's tail angle in radians
+     *
+     * @return The angle of the wolf's tail in radians
+     */
+    public float getTailAngle();
+
+    /**
+     * Gets if the wolf is interested
+     *
+     * @return Whether the wolf is interested
+     */
+    public boolean isInterested();
+
+    /**
+     * Set wolf to be interested
+     *
+     * @param interested Whether the wolf is interested
+     */
+    public void setInterested(boolean interested);
 }

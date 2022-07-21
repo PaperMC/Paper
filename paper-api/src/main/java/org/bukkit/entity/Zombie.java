@@ -90,4 +90,21 @@ public interface Zombie extends Monster, Ageable {
      * @param time new conversion time
      */
     void setConversionTime(int time);
+
+    /**
+     * Gets whether this zombie can break doors
+     *
+     * @return Whether this zombie can break doors
+     */
+    boolean canBreakDoors();
+
+    /**
+     * Sets whether this zombie can break doors
+     *
+     * This will be ignored if the entity is a Drowned. Will also stop the action if
+     * the entity is currently breaking a door.
+     *
+     * @param flag Whether this zombie can break doors
+     */
+    void setCanBreakDoors(boolean flag);
 }
