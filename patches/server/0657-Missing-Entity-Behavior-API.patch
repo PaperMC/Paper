@@ -5,9 +5,10 @@ Subject: [PATCH] Missing Entity Behavior API
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
-index ed93f8a7b16b73304d2667ed7aa132593a8fb30a..d05d900527c83f8be386533b9aa068610a2d04c7 100644
+index 66293e620dcf2c7ee3e2fc91f8a7cf52f2950de1..f2243f65cdf0e4b327e8597dfefe5b2de8912cef 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
 @@ -540,11 +540,13 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
@@ -55,6 +56,19 @@ index 04a119e6641898454253e2478bc1b4dff181b5ee..a8da601b8342aa6e4902b452eb588c76
      public void setStanding(boolean angry) {
          if (angry) {
              this.setEating(false);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+index 5ffae9d3be22b5e78645da57a6bd0e7350749ef1..9aec9f80c564fa3ae03e445423d9e50afc45f837 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+@@ -67,7 +67,7 @@ public class Llama extends AbstractChestedHorse implements RangedAttackMob {
+     @Nullable
+     private Llama caravanHead;
+     @Nullable
+-    private Llama caravanTail;
++    public Llama caravanTail; // Paper
+ 
+     public Llama(EntityType<? extends Llama> type, Level world) {
+         super(type, world);
 diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 index 1fc862a3b5d40a45cf91703051bcfb06ec1b177a..02d7cd9cd27ff9254c3e99e3e94309a8cb8b243d 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
@@ -145,7 +159,7 @@ index e93a2634cd80cd4f1caf6bd60e569783bc6b577c..fb0a77b4cf1ba47c73c00993bd9b7454
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
-index a367f50b0e3fe9e7a1b87892a8c98e88bd678f6f..1b31b32d42eeb54680b902cd7e82d10ba7daa5d0 100644
+index c5b82dcf6c9da9d6699f699c3e13d9b949128cc8..d890446315787b7aaa2869637e905c25c93558aa 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
 @@ -105,6 +105,20 @@ public class ThrownTrident extends AbstractArrow {
@@ -465,6 +479,47 @@ index 7adda5c93e7c172ea0ba4a3f15828b5e54a283e7..fffaf4108b632ceabac4186d93b34ad0
 +    public void setExplosionPower(int explosionPower) {
 +        com.google.common.base.Preconditions.checkArgument(explosionPower >= 0 && explosionPower <= 127, "The explosion power has to be between 0 and 127");
 +        this.getHandle().setExplosionPower(explosionPower);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
+index ae05f526f9ec70a2992ef3ee66b7f57eca2351fc..15e2c2653d7d41e8bafa0ffe1afaa733c569b2ab 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
+@@ -64,4 +64,36 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
+     public EntityType getType() {
+         return EntityType.LLAMA;
+     }
++
++    // Paper start
++    @Override
++    public boolean inCaravan() {
++        return this.getHandle().inCaravan();
++    }
++
++    @Override
++    public void joinCaravan(@org.jetbrains.annotations.NotNull Llama llama) {
++        this.getHandle().joinCaravan(((CraftLlama) llama).getHandle());
++    }
++
++    @Override
++    public void leaveCaravan() {
++        this.getHandle().leaveCaravan();
++    }
++
++    @Override
++    public boolean hasCaravanTail() {
++        return this.getHandle().hasCaravanTail();
++    }
++
++    @Override
++    public Llama getCaravanHead() {
++        return this.getHandle().getCaravanHead() == null ? null : (Llama) this.getHandle().getCaravanHead().getBukkitEntity();
++    }
++
++    @Override
++    public Llama getCaravanTail() {
++        return this.getHandle().caravanTail == null ? null : (Llama) this.getHandle().caravanTail.getBukkitEntity();
 +    }
 +    // Paper end
  }
