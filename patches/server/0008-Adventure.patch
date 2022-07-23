@@ -1367,6 +1367,37 @@ index 762a9392ffac3042356709dddd15bb3516048bed..3544e2dc2522e9d6305d727d56e73490
          buf.writeComponent(this.header);
          buf.writeComponent(this.footer);
      }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 1ad7797dbef61f8e8011ae6db3089939a279071c..327a8f3806d4b3a42f0a7691d578725bf47742fa 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -227,6 +227,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private boolean allowFlight;
+     @Nullable
+     private String motd;
++    @Nullable private net.kyori.adventure.text.Component cachedMotd; // Paper
+     private int playerIdleTimeout;
+     public final long[] tickTimes;
+     @Nullable
+@@ -1590,8 +1591,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         return this.motd;
+     }
+ 
++    public net.kyori.adventure.text.Component getComponentMotd() {
++        net.kyori.adventure.text.Component component = cachedMotd;
++        if (this.motd != null && this.cachedMotd == null) {
++            component = cachedMotd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.motd);
++        }
++
++        return component != null ? component : net.kyori.adventure.text.Component.empty();
++    }
++
+     public void setMotd(String motd) {
+         this.motd = motd;
++        this.cachedMotd = null; // Paper
+     }
+ 
+     public boolean previewsChat() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d58357162 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
@@ -1442,7 +1473,7 @@ index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 519895351790f8a85d32a6dd87ea8693cae492b7..a22008c6534c78a751dcd69f217db305b13d2c56 100644
+index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad730221c7319cd 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -172,6 +172,8 @@ import org.apache.commons.lang3.StringUtils;
@@ -1839,7 +1870,7 @@ index 595b56b2ab9a813ba71399d306117294fa90dc65..3527d40102d512d0e276edc969ea3c18
                  }
                  collection = icons;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a850bb8a4268c0210ee7af98f51131759ff95f30..d7a6371c3913a1021beffd8dc3189083f74a84d4 100644
+index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b7196322b6e7bb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -590,8 +590,10 @@ public final class CraftServer implements Server {
@@ -1958,7 +1989,7 @@ index a850bb8a4268c0210ee7af98f51131759ff95f30..d7a6371c3913a1021beffd8dc3189083
 +    // Paper start
 +    @Override
 +    public net.kyori.adventure.text.Component motd() {
-+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(console.getMotd());
++        return console.getComponentMotd();
 +    }
 +    // Paper end
      @Override
