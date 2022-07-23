@@ -7904,10 +7904,10 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkFullTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkFullTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fab57ffe3c737afec8db9d1faa740de0572e811b
+index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a7b55630c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkFullTask.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,125 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -7985,6 +7985,11 @@ index 0000000000000000000000000000000000000000..fab57ffe3c737afec8db9d1faa740de0
 +    protected static final VarHandle SCHEDULED_HANDLE = ConcurrentUtil.getVarHandle(ChunkFullTask.class, "scheduled", boolean.class);
 +
 +    @Override
++    public boolean isScheduled() {
++        return this.scheduled;
++    }
++
++    @Override
 +    public void schedule() {
 +        if ((boolean)SCHEDULED_HANDLE.getAndSet((ChunkFullTask)this, true)) {
 +            throw new IllegalStateException("Cannot double call schedule()");
@@ -8030,10 +8035,10 @@ index 0000000000000000000000000000000000000000..fab57ffe3c737afec8db9d1faa740de0
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df078a1f454a
+index 0000000000000000000000000000000000000000..e564a215f5916ce0d0f97ffce5283d0bc7578000
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,932 @@
+@@ -0,0 +1,950 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -8680,6 +8685,7 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +
 +        // TODO performance thresholds
 +        final List<NewChunkHolder.UnloadState> unloadQueue;
++        final List<ChunkProgressionTask> scheduleList = new ArrayList<>();
 +        synchronized (this.ticketUpdateLock) {
 +            synchronized (this.taskScheduler.scheduleLock) {
 +                if (this.unloadQueue.isEmpty()) {
@@ -8687,7 +8693,7 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +                }
 +                // in order to ensure all chunks in the unload queue do not have a pending ticket level update,
 +                // process them now
-+                this.processTicketUpdates(false, false);
++                this.processTicketUpdates(false, false, scheduleList);
 +                unloadQueue = new ArrayList<>(this.unloadQueue.size());
 +                for (final Iterator<NewChunkHolder> iterator = this.unloadQueue.iterator(); iterator.hasNext();) {
 +                    final NewChunkHolder chunkHolder = iterator.next();
@@ -8706,6 +8712,10 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +                }
 +                this.unloadQueue.clear();
 +            }
++        }
++        // schedule tasks, we can't let processTicketUpdates do this because we call it holding the schedule lock
++        for (int i = 0, len = scheduleList.size(); i < len; ++i) {
++            scheduleList.get(i).schedule();
 +        }
 +
 +        final List<NewChunkHolder> toRemove = new ArrayList<>(unloadQueue.size());
@@ -8744,10 +8754,10 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +    private final ThreadLocal<Boolean> BLOCK_TICKET_UPDATES = ThreadLocal.withInitial(() -> Boolean.FALSE);
 +
 +    public boolean processTicketUpdates() {
-+        return this.processTicketUpdates(true, true);
++        return this.processTicketUpdates(true, true, null);
 +    }
 +
-+    private boolean processTicketUpdates(final boolean checkLocks, final boolean processFullUpdates) {
++    private boolean processTicketUpdates(final boolean checkLocks, final boolean processFullUpdates, List<ChunkProgressionTask> scheduledTasks) {
 +        if (BLOCK_TICKET_UPDATES.get() == Boolean.TRUE) {
 +            throw new IllegalStateException("Cannot update ticket level while unloading chunks");
 +        }
@@ -8758,12 +8768,13 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +            throw new IllegalStateException("Cannot update ticket levels from a scheduler context!");
 +        }
 +
-+        List<ChunkProgressionTask> scheduledTasks = null;
 +        List<NewChunkHolder> changedFullStatus = null;
 +
 +        final boolean isTickThread = TickThread.isTickThread();
 +
 +        boolean ret = false;
++        final boolean canProcessFullUpdates = processFullUpdates & isTickThread;
++        final boolean canProcessScheduling = scheduledTasks == null;
 +
 +        // TODO put chunks with ticket level > max into unload check queue, which is checked every 1s or so or something
 +        // for unloading
@@ -8805,7 +8816,9 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +                        }
 +                    }
 +
-+                    scheduledTasks = new ArrayList<>();
++                    if (scheduledTasks == null) {
++                        scheduledTasks = new ArrayList<>();
++                    }
 +                    changedFullStatus = new ArrayList<>();
 +
 +                    // allow the chunkholders to process ticket level updates without needing to acquire the schedule lock every time
@@ -8823,7 +8836,7 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +                        }
 +                    }
 +
-+                    if (!isTickThread && !changedFullStatus.isEmpty()) {
++                    if (!canProcessFullUpdates && !changedFullStatus.isEmpty()) {
 +                        // if we have changed full status, and we're NOT on main, we need to add the changed chunks to
 +                        // the pending full load update to preserve legacy behavior that if a chunk is brought up to
 +                        // full status (level 33) and is completed generation, that the chunk has the plugin events loaded
@@ -8842,18 +8855,20 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +
 +        if (ret) {
 +            // only schedule tasks while holding no locks
-+            for (int i = 0, len = scheduledTasks.size(); i < len; ++i) {
-+                scheduledTasks.get(i).schedule();
++            if (canProcessScheduling) {
++                for (int i = 0, len = scheduledTasks.size(); i < len; ++i) {
++                    scheduledTasks.get(i).schedule();
++                }
 +            }
 +
-+            if (isTickThread && processFullUpdates) {
++            if (canProcessFullUpdates) {
 +                this.processPendingFullUpdate();
 +                this.handleChunkChangedFullStatuses(changedFullStatus);
 +            } else {
 +                this.taskScheduler.scheduleChunkTask(this::processPendingFullUpdate, PrioritisedExecutor.Priority.HIGHEST);
 +            }
 +        } else {
-+            if (isTickThread && processFullUpdates) {
++            if (canProcessFullUpdates) {
 +                ret |= this.processPendingFullUpdate();
 +            }
 +        }
@@ -8893,73 +8908,81 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +    public JsonObject getDebugJson() {
 +        final JsonObject ret = new JsonObject();
 +
-+        synchronized (this.ticketUpdateLock) {
-+            synchronized (this.taskScheduler.scheduleLock) {
-+                this.processTicketUpdates(false, false);
++        final List<ChunkProgressionTask> scheduleList = new ArrayList<>();
++        try {
++            synchronized (this.ticketUpdateLock) {
++                synchronized (this.taskScheduler.scheduleLock) {
++                    this.processTicketUpdates(false, false, scheduleList);
 +
-+                ret.addProperty("current_tick", Long.valueOf(this.currentTick));
++                    ret.addProperty("current_tick", Long.valueOf(this.currentTick));
 +
-+                final JsonArray holders = new JsonArray();
-+                ret.add("chunkholders", holders);
++                    final JsonArray holders = new JsonArray();
++                    ret.add("chunkholders", holders);
 +
-+                for (final NewChunkHolder holder : this.getChunkHolders()) {
-+                    holders.add(holder.getDebugJson());
-+                }
++                    for (final NewChunkHolder holder : this.getChunkHolders()) {
++                        holders.add(holder.getDebugJson());
++                    }
 +
-+                final JsonArray removeTickToChunkExpireTicketCount = new JsonArray();
-+                ret.add("remove_tick_to_chunk_expire_ticket_count", removeTickToChunkExpireTicketCount);
++                    final JsonArray removeTickToChunkExpireTicketCount = new JsonArray();
++                    ret.add("remove_tick_to_chunk_expire_ticket_count", removeTickToChunkExpireTicketCount);
 +
-+                for (final Long2ObjectMap.Entry<Long2IntOpenHashMap> tickEntry : this.removeTickToChunkExpireTicketCount.long2ObjectEntrySet()) {
-+                    final long tick = tickEntry.getLongKey();
-+                    final Long2IntOpenHashMap coordinateToCount = tickEntry.getValue();
++                    for (final Long2ObjectMap.Entry<Long2IntOpenHashMap> tickEntry : this.removeTickToChunkExpireTicketCount.long2ObjectEntrySet()) {
++                        final long tick = tickEntry.getLongKey();
++                        final Long2IntOpenHashMap coordinateToCount = tickEntry.getValue();
 +
-+                    final JsonObject tickJson = new JsonObject();
-+                    removeTickToChunkExpireTicketCount.add(tickJson);
++                        final JsonObject tickJson = new JsonObject();
++                        removeTickToChunkExpireTicketCount.add(tickJson);
 +
-+                    tickJson.addProperty("tick", Long.valueOf(tick));
++                        tickJson.addProperty("tick", Long.valueOf(tick));
 +
-+                    final JsonArray tickEntries = new JsonArray();
-+                    tickJson.add("entries", tickEntries);
++                        final JsonArray tickEntries = new JsonArray();
++                        tickJson.add("entries", tickEntries);
 +
-+                    for (final Long2IntMap.Entry entry : coordinateToCount.long2IntEntrySet()) {
-+                        final long coordinate = entry.getLongKey();
-+                        final int count = entry.getIntValue();
++                        for (final Long2IntMap.Entry entry : coordinateToCount.long2IntEntrySet()) {
++                            final long coordinate = entry.getLongKey();
++                            final int count = entry.getIntValue();
 +
-+                        final JsonObject entryJson = new JsonObject();
-+                        tickEntries.add(entryJson);
++                            final JsonObject entryJson = new JsonObject();
++                            tickEntries.add(entryJson);
 +
-+                        entryJson.addProperty("chunkX", Long.valueOf(CoordinateUtils.getChunkX(coordinate)));
-+                        entryJson.addProperty("chunkZ", Long.valueOf(CoordinateUtils.getChunkZ(coordinate)));
-+                        entryJson.addProperty("count", Integer.valueOf(count));
++                            entryJson.addProperty("chunkX", Long.valueOf(CoordinateUtils.getChunkX(coordinate)));
++                            entryJson.addProperty("chunkZ", Long.valueOf(CoordinateUtils.getChunkZ(coordinate)));
++                            entryJson.addProperty("count", Integer.valueOf(count));
++                        }
++                    }
++
++                    final JsonArray allTicketsJson = new JsonArray();
++                    ret.add("tickets", allTicketsJson);
++
++                    for (final Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>> coordinateTickets : this.tickets.long2ObjectEntrySet()) {
++                        final long coordinate = coordinateTickets.getLongKey();
++                        final SortedArraySet<Ticket<?>> tickets = coordinateTickets.getValue();
++
++                        final JsonObject coordinateJson = new JsonObject();
++                        allTicketsJson.add(coordinateJson);
++
++                        coordinateJson.addProperty("chunkX", Long.valueOf(CoordinateUtils.getChunkX(coordinate)));
++                        coordinateJson.addProperty("chunkZ", Long.valueOf(CoordinateUtils.getChunkZ(coordinate)));
++
++                        final JsonArray ticketsSerialized = new JsonArray();
++                        coordinateJson.add("tickets", ticketsSerialized);
++
++                        for (final Ticket<?> ticket : tickets) {
++                            final JsonObject ticketSerialized = new JsonObject();
++                            ticketsSerialized.add(ticketSerialized);
++
++                            ticketSerialized.addProperty("type", ticket.getType().toString());
++                            ticketSerialized.addProperty("level", Integer.valueOf(ticket.getTicketLevel()));
++                            ticketSerialized.addProperty("identifier", Objects.toString(ticket.key));
++                            ticketSerialized.addProperty("remove_tick", Long.valueOf(ticket.removalTick));
++                        }
 +                    }
 +                }
-+
-+                final JsonArray allTicketsJson = new JsonArray();
-+                ret.add("tickets", allTicketsJson);
-+
-+                for (final Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>> coordinateTickets : this.tickets.long2ObjectEntrySet()) {
-+                    final long coordinate = coordinateTickets.getLongKey();
-+                    final SortedArraySet<Ticket<?>> tickets = coordinateTickets.getValue();
-+
-+                    final JsonObject coordinateJson = new JsonObject();
-+                    allTicketsJson.add(coordinateJson);
-+
-+                    coordinateJson.addProperty("chunkX", Long.valueOf(CoordinateUtils.getChunkX(coordinate)));
-+                    coordinateJson.addProperty("chunkZ", Long.valueOf(CoordinateUtils.getChunkZ(coordinate)));
-+
-+                    final JsonArray ticketsSerialized = new JsonArray();
-+                    coordinateJson.add("tickets", ticketsSerialized);
-+
-+                    for (final Ticket<?> ticket : tickets) {
-+                        final JsonObject ticketSerialized = new JsonObject();
-+                        ticketsSerialized.add(ticketSerialized);
-+
-+                        ticketSerialized.addProperty("type", ticket.getType().toString());
-+                        ticketSerialized.addProperty("level", Integer.valueOf(ticket.getTicketLevel()));
-+                        ticketSerialized.addProperty("identifier", Objects.toString(ticket.key));
-+                        ticketSerialized.addProperty("remove_tick", Long.valueOf(ticket.removalTick));
-+                    }
-+                }
++            }
++        } finally {
++            // schedule tasks, we can't let processTicketUpdates do this because we call it holding the schedule lock
++            for (int i = 0, len = scheduleList.size(); i < len; ++i) {
++                scheduleList.get(i).schedule();
 +            }
 +        }
 +
@@ -8968,10 +8991,10 @@ index 0000000000000000000000000000000000000000..e992edf58eecd863020a32fa9634df07
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLightTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLightTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6d33f1c5da4799b478feb08001f277a8a584285d
+index 0000000000000000000000000000000000000000..53ddd7e9ac05e6a9eb809f329796e6d4f6bb2ab1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLightTask.java
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,181 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -9003,6 +9026,11 @@ index 0000000000000000000000000000000000000000..6d33f1c5da4799b478feb08001f277a8
 +        }
 +        this.priorityHolder = new LightTaskPriorityHolder(priority, this);
 +        this.fromChunk = chunk;
++    }
++
++    @Override
++    public boolean isScheduled() {
++        return this.priorityHolder.isScheduled();
 +    }
 +
 +    @Override
@@ -9150,10 +9178,10 @@ index 0000000000000000000000000000000000000000..6d33f1c5da4799b478feb08001f277a8
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLoadTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLoadTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..43fc61cc20664ab73a292de2231e8d2b7a6d9524
+index 0000000000000000000000000000000000000000..47b49c4f252b2d2c6e7e404ee0fe84e809a51f66
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLoadTask.java
-@@ -0,0 +1,446 @@
+@@ -0,0 +1,451 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -9210,6 +9238,11 @@ index 0000000000000000000000000000000000000000..43fc61cc20664ab73a292de2231e8d2b
 +    }
 +
 +    private boolean scheduled;
++
++    @Override
++    public boolean isScheduled() {
++        return this.scheduled;
++    }
 +
 +    @Override
 +    public void schedule() {
@@ -9602,10 +9635,10 @@ index 0000000000000000000000000000000000000000..43fc61cc20664ab73a292de2231e8d2b
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkProgressionTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkProgressionTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9de2cdaa7f2ca6fe30f497ef2dd6f633341c3058
+index 0000000000000000000000000000000000000000..322675a470eacbf0e5452f4009c643f2d0b4ce24
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkProgressionTask.java
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,105 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -9638,6 +9671,9 @@ index 0000000000000000000000000000000000000000..9de2cdaa7f2ca6fe30f497ef2dd6f633
 +        this.chunkX = chunkX;
 +        this.chunkZ = chunkZ;
 +    }
++
++    // Used only for debug json
++    public abstract boolean isScheduled();
 +
 +    // Note: It is the responsibility of the task to set the chunk's status once it has completed
 +    public abstract ChunkStatus getTargetStatus();
@@ -9705,7 +9741,7 @@ index 0000000000000000000000000000000000000000..9de2cdaa7f2ca6fe30f497ef2dd6f633
 +    public String toString() {
 +        return "ChunkProgressionTask{class: " + this.getClass().getName() + ", for world: " + this.world.getWorld().getName() +
 +            ", chunk: (" + this.chunkX + "," + this.chunkZ + "), hashcode: " + System.identityHashCode(this) + ", priority: " + this.getPriority() +
-+            ", status: " + this.getTargetStatus().toString() + "}";
++            ", status: " + this.getTargetStatus().toString() + ", scheduled: " + this.isScheduled() + "}";
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
@@ -10423,10 +10459,10 @@ index 0000000000000000000000000000000000000000..bf00d079c3f0047c2e764441c9abb2dc
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..30893b1fcb0dc144463a52e79f18c5c303a8dec3
+index 0000000000000000000000000000000000000000..22d79f98b585f788f55ef9ae494ee4c0867b4508
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,207 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -10578,6 +10614,11 @@ index 0000000000000000000000000000000000000000..30893b1fcb0dc144463a52e79f18c5c3
 +
 +    protected volatile boolean scheduled;
 +    protected static final VarHandle SCHEDULED_HANDLE = ConcurrentUtil.getVarHandle(ChunkUpgradeGenericStatusTask.class, "scheduled", boolean.class);
++
++    @Override
++    public boolean isScheduled() {
++        return this.scheduled;
++    }
 +
 +    @Override
 +    public void schedule() {
@@ -11365,10 +11406,10 @@ index 0000000000000000000000000000000000000000..401c83f37682da0255317f3dad99a684
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1e360fc7d557fe1c47a956119a071e26ca1a47a9
+index 0000000000000000000000000000000000000000..5608273e1b855fd7616ebb358aca2d1945da0d7e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1891 @@
+@@ -0,0 +1,1893 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -12433,7 +12474,7 @@ index 0000000000000000000000000000000000000000..1e360fc7d557fe1c47a956119a071e26
 +            // must clamp to neighbours level, as we don't have the ticket level for it
 +            toSet = byNeighbours;
 +        } else {
-+            // must clamp to ticket level, as we don't have the neighbours for it
++            // must clamp to ticket level, even though we have the neighbours
 +            toSet = newState;
 +        }
 +
@@ -13156,7 +13197,7 @@ index 0000000000000000000000000000000000000000..1e360fc7d557fe1c47a956119a071e26
 +            ", chunkX=" + this.chunkX +
 +            ", chunkZ=" + this.chunkZ +
 +            ", entityChunkFromDisk=" + this.entityChunkFromDisk +
-+            ", lastChunkCompletion={chunk_class=" + (lastCompletion.chunk() == null ? "null" : lastCompletion.chunk().getClass().getName()) + ",status=" + lastCompletion.genStatus() + "}" +
++            ", lastChunkCompletion={chunk_class=" + (lastCompletion == null || lastCompletion.chunk() == null ? "null" : lastCompletion.chunk().getClass().getName()) + ",status=" + (lastCompletion == null ? "null" : lastCompletion.genStatus()) + "}" +
 +            ", currentGenStatus=" + this.currentGenStatus +
 +            ", requestedGenStatus=" + this.requestedGenStatus +
 +            ", generationTask=" + this.generationTask +
@@ -13206,6 +13247,7 @@ index 0000000000000000000000000000000000000000..1e360fc7d557fe1c47a956119a071e26
 +        ret.addProperty("completed_gen_status", lastCompletion == null ? "null" : lastCompletion.genStatus().toString());
 +        ret.addProperty("priority", Objects.toString(this.priority));
 +        ret.addProperty("neighbour_requested_priority", Objects.toString(this.neighbourRequestedPriority));
++        ret.addProperty("generation_task", Objects.toString(this.generationTask));
 +        ret.addProperty("is_safe_unload", Objects.toString(this.isSafeToUnload()));
 +        ret.addProperty("old_ticket_level", Integer.valueOf(this.oldTicketLevel));
 +        ret.addProperty("current_ticket_level", Integer.valueOf(this.currentTicketLevel));
@@ -13240,6 +13282,7 @@ index 0000000000000000000000000000000000000000..1e360fc7d557fe1c47a956119a071e26
 +        }
 +
 +        ret.addProperty("fullchunkstatus", Objects.toString(this.getChunkStatus()));
++        ret.addProperty("fullchunkstatus_raw", Long.valueOf(this.chunkStatus));
 +        ret.addProperty("generation_task", Objects.toString(this.generationTask));
 +        ret.addProperty("requested_generation", Objects.toString(this.requestedGenStatus));
 +        ret.addProperty("has_entity_load_task", Boolean.valueOf(this.entityDataLoadTask != null));
@@ -13262,10 +13305,10 @@ index 0000000000000000000000000000000000000000..1e360fc7d557fe1c47a956119a071e26
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/PriorityHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/PriorityHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..79a4475bf2fc2b6263f01b17bea7f8ff68286256
+index 0000000000000000000000000000000000000000..b4c56bf12dc8dd17452210ece4fd67411cc6b2fd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/PriorityHolder.java
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,215 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -13301,6 +13344,11 @@ index 0000000000000000000000000000000000000000..79a4475bf2fc2b6263f01b17bea7f8ff
 +            throw new IllegalArgumentException("Invalid priority " + priority);
 +        }
 +        this.setPriorityPlain(priority.priority);
++    }
++
++    // used only for debug json
++    public boolean isScheduled() {
++        return (this.getPriorityVolatile() & PRIORITY_SCHEDULED) != 0;
 +    }
 +
 +    // returns false if cancelled
