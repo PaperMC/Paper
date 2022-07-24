@@ -8043,10 +8043,10 @@ index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6d29a42bf752bd62f85af2ee5b4b963a16c92bfd
+index 0000000000000000000000000000000000000000..8195c3b654e3e39fcb5f9545d6ae34853795ac44
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,961 @@
+@@ -0,0 +1,968 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -8702,7 +8702,13 @@ index 0000000000000000000000000000000000000000..6d29a42bf752bd62f85af2ee5b4b963a
 +    public void processUnloads() {
 +        TickThread.ensureTickThread("Cannot unload chunks off-main");
 +
-+        // TODO performance thresholds
++        if (Thread.holdsLock(this.ticketUpdateLock)) {
++            throw new IllegalStateException("Cannot hold ticket update lock while calling processUnloads");
++        }
++        if (Thread.holdsLock(this.taskScheduler.scheduleLock)) {
++            throw new IllegalStateException("Cannot hold scheduling lock while calling processUnloads");
++        }
++
 +        final List<NewChunkHolder.UnloadState> unloadQueue;
 +        final List<ChunkProgressionTask> scheduleList = new ArrayList<>();
 +        synchronized (this.ticketUpdateLock) {
@@ -8714,8 +8720,10 @@ index 0000000000000000000000000000000000000000..6d29a42bf752bd62f85af2ee5b4b963a
 +                // process them now
 +                this.processTicketUpdates(false, false, scheduleList);
 +                unloadQueue = new ArrayList<>(this.unloadQueue.size());
-+                for (final Iterator<NewChunkHolder> iterator = this.unloadQueue.iterator(); iterator.hasNext();) {
-+                    final NewChunkHolder chunkHolder = iterator.next();
++
++                final int unloadCount = Math.max(50, (int)(this.unloadQueue.size() * 0.05));
++                for (int i = 0; i < unloadCount && !this.unloadQueue.isEmpty(); ++i) {
++                    final NewChunkHolder chunkHolder = this.unloadQueue.removeFirst();
 +                    if (chunkHolder.isSafeToUnload() != null) {
 +                        LOGGER.error("Chunkholder " + chunkHolder + " is not safe to unload but is inside the unload queue?");
 +                        continue;
@@ -8729,7 +8737,6 @@ index 0000000000000000000000000000000000000000..6d29a42bf752bd62f85af2ee5b4b963a
 +                    }
 +                    unloadQueue.add(state);
 +                }
-+                this.unloadQueue.clear();
 +            }
 +        }
 +        // schedule tasks, we can't let processTicketUpdates do this because we call it holding the schedule lock
