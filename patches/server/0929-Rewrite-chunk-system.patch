@@ -1742,10 +1742,10 @@ index 0000000000000000000000000000000000000000..11449056361bb6c5a055f543cdd135c4
 +}
 diff --git a/src/main/java/ca/spottedleaf/concurrentutil/executor/standard/DelayedPrioritisedTask.java b/src/main/java/ca/spottedleaf/concurrentutil/executor/standard/DelayedPrioritisedTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d587de7520f12bfff228c186574b5c96d690b385
+index 0000000000000000000000000000000000000000..3ce10053d4ec51855ad7012abb5d97df1c0e557a
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/concurrentutil/executor/standard/DelayedPrioritisedTask.java
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,170 @@
 +package ca.spottedleaf.concurrentutil.executor.standard;
 +
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
@@ -1781,6 +1781,10 @@ index 0000000000000000000000000000000000000000..d587de7520f12bfff228c186574b5c96
 +        return (PrioritisedExecutor.PrioritisedTask)TASK_HANDLE.get((DelayedPrioritisedTask)this);
 +    }
 +
++    protected PrioritisedExecutor.PrioritisedTask getTaskVolatile() {
++        return (PrioritisedExecutor.PrioritisedTask)TASK_HANDLE.getVolatile((DelayedPrioritisedTask)this);
++    }
++
 +    protected final PrioritisedExecutor.PrioritisedTask compareAndExchangeTaskVolatile(final PrioritisedExecutor.PrioritisedTask expect, final PrioritisedExecutor.PrioritisedTask update) {
 +        return (PrioritisedExecutor.PrioritisedTask)TASK_HANDLE.compareAndExchange((DelayedPrioritisedTask)this, (PrioritisedExecutor.PrioritisedTask)expect, (PrioritisedExecutor.PrioritisedTask)update);
 +    }
@@ -1792,6 +1796,10 @@ index 0000000000000000000000000000000000000000..d587de7520f12bfff228c186574b5c96
 +    // only public for debugging
 +    public int getPriorityInternal() {
 +        return this.getPriorityVolatile();
++    }
++
++    public PrioritisedExecutor.PrioritisedTask getTask() {
++        return this.getTaskVolatile();
 +    }
 +
 +    public void setTask(final PrioritisedExecutor.PrioritisedTask task) {
@@ -8035,7 +8043,7 @@ index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b2940ba96fa9ea8172ff0ce7e93aca13c6e0bd1d
+index 0000000000000000000000000000000000000000..6d29a42bf752bd62f85af2ee5b4b963a16c92bfd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 @@ -0,0 +1,961 @@
@@ -8177,7 +8185,7 @@ index 0000000000000000000000000000000000000000..b2940ba96fa9ea8172ff0ce7e93aca13
 +        }
 +    }
 +
-+    public void saveAllChunks(final boolean flush, final boolean saveProtoChunk, final boolean logProgress) {
++    public void saveAllChunks(final boolean flush, final boolean shutdown, final boolean logProgress) {
 +        final List<NewChunkHolder> holders = new ArrayList<>(this.chunkHolders.size());
 +        holders.addAll(this.chunkHolders.values()); // TODO replace map
 +
@@ -8199,7 +8207,7 @@ index 0000000000000000000000000000000000000000..b2940ba96fa9ea8172ff0ce7e93aca13
 +        for (int i = 0, len = holders.size(); i < len; ++i) {
 +            final NewChunkHolder holder = holders.get(i);
 +            try {
-+                if (holder.save(saveProtoChunk, false)) {
++                if (holder.save(shutdown, false)) {
 +                    ++saved;
 +                    needsFlush = true;
 +                }
@@ -11417,10 +11425,10 @@ index 0000000000000000000000000000000000000000..401c83f37682da0255317f3dad99a684
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5608273e1b855fd7616ebb358aca2d1945da0d7e
+index 0000000000000000000000000000000000000000..4e35caf7870f060aba4e1b35318cd719d6b83498
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1893 @@
+@@ -0,0 +1,1914 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -12130,6 +12138,8 @@ index 0000000000000000000000000000000000000000..5608273e1b855fd7616ebb358aca2d19
 +        }
 +    }
 +
++    private UnloadState unloadState;
++
 +    // holds schedule lock
 +    UnloadState unloadStage1() {
 +        // because we hold the scheduling lock, we cannot actually unload anything
@@ -12164,7 +12174,7 @@ index 0000000000000000000000000000000000000000..5608273e1b855fd7616ebb358aca2d19
 +            this.poiDataUnload = new Completable<>();
 +        }
 +
-+        return (chunk != null || entityChunk != null || poiChunk != null) ? new UnloadState(this, chunk, entityChunk, poiChunk) : null;
++        return this.unloadState = (chunk != null || entityChunk != null || poiChunk != null) ? new UnloadState(this, chunk, entityChunk, poiChunk) : null;
 +    }
 +
 +    // data is null if failed
@@ -12182,6 +12192,7 @@ index 0000000000000000000000000000000000000000..5608273e1b855fd7616ebb358aca2d19
 +    }
 +
 +    void unloadStage2(final UnloadState state) {
++        this.unloadState = null;
 +        final ChunkAccess chunk = state.chunk();
 +        final ChunkEntitySlices entityChunk = state.entityChunk();
 +        final PoiChunk poiChunk = state.poiChunk();
@@ -12997,9 +13008,27 @@ index 0000000000000000000000000000000000000000..5608273e1b855fd7616ebb358aca2d19
 +    public boolean save(final boolean shutdown, final boolean unloading) {
 +        TickThread.ensureTickThread(this.chunkX, this.chunkZ, "Cannot save data off-main");
 +
-+        final ChunkAccess chunk = this.getCurrentChunk();
-+        final PoiChunk poi = this.getPoiChunk();
-+        final ChunkEntitySlices entities = this.getEntityChunk();
++        ChunkAccess chunk = this.getCurrentChunk();
++        PoiChunk poi = this.getPoiChunk();
++        ChunkEntitySlices entities = this.getEntityChunk();
++        boolean executedUnloadTask = false;
++
++        if (shutdown) {
++            // make sure that the async unloads complete
++            if (this.unloadState != null) {
++                // must have errored during unload
++                chunk = this.unloadState.chunk();
++                poi = this.unloadState.poiChunk();
++                entities = this.unloadState.entityChunk();
++            }
++            final DelayedPrioritisedTask chunkDataUnloadTask = this.chunkDataUnloadTask;
++            if (chunkDataUnloadTask != null) {
++                final PrioritisedExecutor.PrioritisedTask unloadTask = chunkDataUnloadTask.getTask();
++                if (unloadTask != null) {
++                    executedUnloadTask = unloadTask.execute();
++                }
++            }
++        }
 +
 +        if (chunk instanceof LevelChunk levelChunk && levelChunk.mustNotSave) {
 +            return false;
@@ -13024,7 +13053,7 @@ index 0000000000000000000000000000000000000000..5608273e1b855fd7616ebb358aca2d19
 +            }
 +        }
 +
-+        return canSaveChunk | canSaveEntities | canSavePOI;
++        return executedUnloadTask | canSaveChunk | canSaveEntities | canSavePOI;
 +    }
 +
 +    static final class AsyncChunkSerializeTask implements Runnable {
