@@ -8035,10 +8035,10 @@ index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e564a215f5916ce0d0f97ffce5283d0bc7578000
+index 0000000000000000000000000000000000000000..b2940ba96fa9ea8172ff0ce7e93aca13c6e0bd1d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,950 @@
+@@ -0,0 +1,961 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -8591,6 +8591,11 @@ index 0000000000000000000000000000000000000000..e564a215f5916ce0d0f97ffce5283d0b
 +                        isCompleted.set(true);
 +                        LockSupport.unpark(waiter);
 +                    });
++                    final ChunkLoadTask.EntityDataLoadTask entityLoad = current.getEntityDataLoadTask();
++
++                    if (entityLoad != null) {
++                        entityLoad.raisePriority(PrioritisedExecutor.Priority.BLOCKING);
++                    }
 +                }
 +            }
 +        }
@@ -8624,6 +8629,7 @@ index 0000000000000000000000000000000000000000..e564a215f5916ce0d0f97ffce5283d0b
 +    }
 +
 +    public PoiChunk loadPoiChunk(final int chunkX, final int chunkZ) {
++        TickThread.ensureTickThread(chunkX, chunkZ, "Cannot create poi chunk off-main");
 +        final PoiChunk ret;
 +
 +        NewChunkHolder current = this.getChunkHolder(chunkX, chunkZ);
@@ -8646,6 +8652,11 @@ index 0000000000000000000000000000000000000000..e564a215f5916ce0d0f97ffce5283d0b
 +                    isCompleted.set(true);
 +                    LockSupport.unpark(waiter);
 +                });
++                final ChunkLoadTask.PoiDataLoadTask poiLoad = current.getPoiDataLoadTask();
++
++                if (poiLoad != null) {
++                    poiLoad.raisePriority(PrioritisedExecutor.Priority.BLOCKING);
++                }
 +            }
 +        }
 +
