@@ -58,7 +58,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
 -        if (playerChunk != null) {
 -            playerChunk.chunk = chunk;
-+            final com.mojang.datafixers.util.Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = chunkStatus.generate(
++            final java.util.concurrent.CompletableFuture<com.mojang.datafixers.util.Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = chunkStatus.generate(
 +                Runnable::run,
 +                serverLevel,
 +                serverChunkCache.getGenerator(),
@@ -69,9 +69,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                },
 +                list,
 +                true
-+            ).join();
++            );
++            serverChunkCache.mainThreadProcessor.managedBlock(future::isDone);
 +            if (chunkStatus == ChunkStatus.NOISE) {
-+                either.left().ifPresent(chunk -> net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, ChunkStatus.POST_FEATURES));
++                future.join().left().ifPresent(chunk -> net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, ChunkStatus.POST_FEATURES));
 +            }
          }
  
