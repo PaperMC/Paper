@@ -13723,18 +13723,22 @@ index 456595e4b7e0c7f50617aa2694b0d2dfc368ab81..34ecd95145c99e0dc794ada29da6a7a7
  
      public class UnsupportedSettings extends ConfigurationPart {
 diff --git a/src/main/java/io/papermc/paper/util/TickThread.java b/src/main/java/io/papermc/paper/util/TickThread.java
-index c92f7e59f490f7b289325d9cc2bf7c2cf1750c7a..49375eb45d459fa23ecfa628fac43c67480d0f61 100644
+index c92f7e59f490f7b289325d9cc2bf7c2cf1750c7a..ebe684c816a9b6f8e46ccc891a668811e36c8438 100644
 --- a/src/main/java/io/papermc/paper/util/TickThread.java
 +++ b/src/main/java/io/papermc/paper/util/TickThread.java
-@@ -1,6 +1,7 @@
+@@ -1,9 +1,9 @@
  package io.papermc.paper.util;
  
  import net.minecraft.server.MinecraftServer;
-+import net.minecraft.world.entity.Entity;
- import org.bukkit.Bukkit;
+-import org.bukkit.Bukkit;
++import java.util.concurrent.atomic.AtomicInteger;
  
- public final class TickThread extends Thread {
-@@ -13,6 +14,10 @@ public final class TickThread extends Thread {
+-public final class TickThread extends Thread {
++public class TickThread extends Thread {
+ 
+     public static final boolean STRICT_THREAD_CHECKS = Boolean.getBoolean("paper.strict-thread-checks");
+ 
+@@ -13,6 +13,10 @@ public final class TickThread extends Thread {
          }
      }
  
@@ -13745,7 +13749,7 @@ index c92f7e59f490f7b289325d9cc2bf7c2cf1750c7a..49375eb45d459fa23ecfa628fac43c67
      public static void softEnsureTickThread(final String reason) {
          if (!STRICT_THREAD_CHECKS) {
              return;
-@@ -21,6 +26,10 @@ public final class TickThread extends Thread {
+@@ -21,8 +25,19 @@ public final class TickThread extends Thread {
      }
  
  
@@ -13754,33 +13758,48 @@ index c92f7e59f490f7b289325d9cc2bf7c2cf1750c7a..49375eb45d459fa23ecfa628fac43c67
 +     */
 +    @Deprecated
      public static void ensureTickThread(final String reason) {
-         if (!Bukkit.isPrimaryThread()) {
-             MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
-@@ -28,6 +37,13 @@ public final class TickThread extends Thread {
-         }
-     }
- 
-+    public static void ensureTickThread(final int chunkX, final int chunkZ, final String reason) {
-+        if (!isTickThreadFor(chunkX, chunkZ)) {
+-        if (!Bukkit.isPrimaryThread()) {
++        if (!isTickThread()) {
 +            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
 +            throw new IllegalStateException(reason);
 +        }
 +    }
 +
++    public static void ensureTickThread(final int chunkX, final int chunkZ, final String reason) {
++        if (!isTickThreadFor(chunkX, chunkZ)) {
+             MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+             throw new IllegalStateException(reason);
+         }
+@@ -30,7 +45,17 @@ public final class TickThread extends Thread {
+ 
      public final int id; /* We don't override getId as the spec requires that it be unique (with respect to all other threads) */
  
-     public TickThread(final Runnable run, final String name, final int id) {
-@@ -38,4 +54,12 @@ public final class TickThread extends Thread {
+-    public TickThread(final Runnable run, final String name, final int id) {
++    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
++
++    public TickThread(final String name) {
++        this(null, name);
++    }
++
++    public TickThread(final Runnable run, final String name) {
++        this(run, name, ID_GENERATOR.incrementAndGet());
++    }
++
++    private TickThread(final Runnable run, final String name, final int id) {
+         super(run, name);
+         this.id = id;
+     }
+@@ -38,4 +63,12 @@ public final class TickThread extends Thread {
      public static TickThread getCurrentTickThread() {
          return (TickThread)Thread.currentThread();
      }
 +
 +    public static boolean isTickThread() {
-+        return Bukkit.isPrimaryThread(); // TODO change later
++        return Thread.currentThread() instanceof TickThread;
 +    }
 +
 +    public static boolean isTickThreadFor(final int chunkX, final int chunkZ) {
-+        return Bukkit.isPrimaryThread(); // TODO change later
++        return Thread.currentThread() instanceof TickThread;
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
@@ -14044,7 +14063,7 @@ index 3ba094e640d7fe7803e2bbdab8ff3beb6f50e8a0..6608e54922a1e35a8719742e30201105
          }
      }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..dae347bb122cb2515466396c15613596aace7540 100644
+index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..b66cda2b1bd2a40f65e93af8f70fe21a9f473253 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -39,6 +39,7 @@ import org.spigotmc.AsyncCatcher;
@@ -14055,6 +14074,24 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..dae347bb122cb2515466396c15613596
  import java.util.ArrayList;
  import java.util.List;
  import java.util.Queue;
+@@ -331,7 +332,7 @@ public final class MCUtil {
+      * @return
+      */
+     public static void ensureMain(String reason, Runnable run) {
+-        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread) {
++        if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+             if (reason != null) {
+                 new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
+             }
+@@ -356,7 +357,7 @@ public final class MCUtil {
+      * @return
+      */
+     public static <T> T ensureMain(String reason, Supplier<T> run) {
+-        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread) {
++        if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+             if (reason != null) {
+                 new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
+             }
 @@ -559,64 +560,17 @@ public final class MCUtil {
      }
  
@@ -14219,9 +14256,18 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..dae347bb122cb2515466396c15613596
          }
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 35a5cc8ed861401d3dd28b08ebc5d40aad82b0df..26dc09a6247988dc6319affbfd2afbcedef62fbf 100644
+index 35a5cc8ed861401d3dd28b08ebc5d40aad82b0df..c86567c0e3892b33de2dee706368312d7fd20cf7 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -299,7 +299,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+-        Thread thread = new Thread(() -> {
++        Thread thread = new io.papermc.paper.util.TickThread(() -> { // Paper - rewrite chunk system
+             ((MinecraftServer) atomicreference.get()).runServer();
+         }, "Server thread");
+ 
 @@ -613,7 +613,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.forceDifficulty();
          for (ServerLevel worldserver : this.getAllLevels()) {
@@ -14341,6 +14387,24 @@ index 35a5cc8ed861401d3dd28b08ebc5d40aad82b0df..26dc09a6247988dc6319affbfd2afbce
                  long i = ((curTime = System.nanoTime()) / (1000L * 1000L)) - this.nextTickTime; // Paper
  
                  if (i > 5000L && this.nextTickTime - this.lastOverloadWarning >= 30000L) { // CraftBukkit
+@@ -2052,7 +2042,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper
+             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
+             // Paper start
+-            if (Thread.currentThread() != this.serverThread) {
++            if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+                 return;
+             }
+             // this.getPlayerList().saveAll(); // Paper - we don't need to save everything, just advancements
+@@ -2460,7 +2450,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     // CraftBukkit start
+     @Override
+     public boolean isSameThread() {
+-        return super.isSameThread() /*|| this.isStopped()*/; // CraftBukkit - MC-142590 // Paper - causes issues elsewhere
++        return io.papermc.paper.util.TickThread.isTickThread(); // Paper - rewrite chunk system
+     }
+ 
+     public boolean isDebugging() {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 index 11cd31691307749e925930c4b6e10e3f3b4fad25..a62b8a9f0afdcd94801dac7d02ceb1545958bf0b 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
@@ -16889,9 +16953,45 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..9dff3a10ce0d4285c41826e741061e64
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 59acbf6249f8f5285504c0ddea448a3433d1d68d..7d7e6429a9b515a2b3e4dbb499d86199d0aaf2ea 100644
+index 59acbf6249f8f5285504c0ddea448a3433d1d68d..47eab1a3a2b971f9ff720aec32f31b7348574bfd 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -144,7 +144,7 @@ public class ServerChunkCache extends ChunkSource {
+     long chunkFutureAwaitCounter; // Paper - private -> package private
+ 
+     public void getEntityTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getEntityTickingChunkAsync(x, z, onLoad);
+             });
+@@ -154,7 +154,7 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
+     public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getTickingChunkAsync(x, z, onLoad);
+             });
+@@ -164,7 +164,7 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
+     public void getFullChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getFullChunkAsync(x, z, onLoad);
+             });
+@@ -174,7 +174,7 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
+     private void getChunkFutureAsynchronously(int x, int z, int ticketLevel, java.util.function.Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>> futureGet, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+             throw new IllegalStateException();
+         }
+         ChunkPos chunkPos = new ChunkPos(x, z);
 @@ -232,94 +232,7 @@ public class ServerChunkCache extends ChunkSource {
          return holder.getLastAvailable();
      }
@@ -17067,6 +17167,15 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..7d7e6429a9b515a2b3e4dbb499d86199
      // Paper end
  
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
+@@ -470,7 +320,7 @@ public class ServerChunkCache extends ChunkSource {
+     public LevelChunk getChunkAtIfLoadedImmediately(int x, int z) {
+         long k = ChunkPos.asLong(x, z);
+ 
+-        if (Thread.currentThread() == this.mainThread) {
++        if (io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+             return this.getChunkAtIfLoadedMainThread(x, z);
+         }
+ 
 @@ -492,132 +342,28 @@ public class ServerChunkCache extends ChunkSource {
          return ret;
      }
@@ -17171,14 +17280,6 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..7d7e6429a9b515a2b3e4dbb499d86199
 -            return CompletableFuture.completedFuture(either);
 -        }, this.mainThreadProcessor);
 -    }
--
--    public boolean markUrgent(ChunkPos coords) {
--        return this.distanceManager.markUrgent(coords);
--    }
--
--    public boolean markHighPriority(ChunkPos coords, int priority) {
--        return this.distanceManager.markHighPriority(coords, priority);
--    }
 +        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> ret = new CompletableFuture<>();
 +        Consumer<ChunkAccess> consumer = (ChunkAccess chunk) -> {
 +            ret.complete(Either.left(chunk));
@@ -17189,6 +17290,14 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..7d7e6429a9b515a2b3e4dbb499d86199
 +            consumer
 +        );
  
+-    public boolean markUrgent(ChunkPos coords) {
+-        return this.distanceManager.markUrgent(coords);
+-    }
+-
+-    public boolean markHighPriority(ChunkPos coords, int priority) {
+-        return this.distanceManager.markHighPriority(coords, priority);
+-    }
+-
 -    public void markAreaHighPriority(ChunkPos center, int priority, int radius) {
 -        this.distanceManager.markAreaHighPriority(center, priority, radius);
 -    }
@@ -17208,7 +17317,8 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..7d7e6429a9b515a2b3e4dbb499d86199
      @Override
      public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
          final int x1 = x; final int z1 = z; // Paper - conflict on variable change
-         if (Thread.currentThread() != this.mainThread) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
 +            // TODO stop making this fucking trash block the main fucking thread from stupid ass plugins
              return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunk(x, z, leastStatus, create);
@@ -17234,6 +17344,24 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..7d7e6429a9b515a2b3e4dbb499d86199
              } // Paper
              ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                  return ichunkaccess1;
+@@ -681,7 +424,7 @@ public class ServerChunkCache extends ChunkSource {
+     @Nullable
+     @Override
+     public LevelChunk getChunkNow(int chunkX, int chunkZ) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (!io.papermc.paper.util.TickThread.isTickThread()) { // Paper - rewrite chunk system
+             return null;
+         } else {
+             return this.getChunkAtIfLoadedMainThread(chunkX, chunkZ); // Paper - optimise for loaded chunks
+@@ -695,7 +438,7 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
+     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFuture(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
+-        boolean flag1 = Thread.currentThread() == this.mainThread;
++        boolean flag1 = io.papermc.paper.util.TickThread.isTickThread(); // Paper - rewrite chunk system
+         CompletableFuture completablefuture;
+ 
+         if (flag1) {
 @@ -715,74 +458,53 @@ public class ServerChunkCache extends ChunkSource {
          return completablefuture;
      }
@@ -18706,7 +18834,7 @@ index b71a4027a0eed467a3707c59315092ddecfd6bf3..2e410b21564a067ed04f4179908fba83
          this.setDirty = updateListener;
          this.isValid = valid;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 9467ccaa1d73e1913495a46919aee530e749977d..ed4fe91d988007565d12a2be22135b5f568dc048 100644
+index 9467ccaa1d73e1913495a46919aee530e749977d..cbe16c8cb3515359c3777179285b5d30fcb84ecf 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -356,7 +356,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -18718,6 +18846,15 @@ index 9467ccaa1d73e1913495a46919aee530e749977d..ed4fe91d988007565d12a2be22135b5f
      }
  
      // Paper start
+@@ -960,7 +960,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         }
+         // Paper end
+         // CraftBukkit end
+-        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
++        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && !io.papermc.paper.util.TickThread.isTickThread() ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE)); // Paper - rewrite chunk system
+     }
+ 
+     public void setBlockEntity(BlockEntity blockEntity) {
 @@ -1051,7 +1051,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
          this.getProfiler().incrementCounter("getEntities");
@@ -19267,7 +19404,7 @@ index 947b0b10fb965f30513fd0df5bc0910fb9cb9a71..01e15c7b70dd60f6ad417c8bb81edfa5
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..d9fc5e3450ca4dde988fe9e4f733eaae4afbad61 100644
+index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..fadd4866e2a529b01a2dca3d6adaa5bff6ca79b6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1249,7 +1249,7 @@ public final class CraftServer implements Server {
@@ -19288,6 +19425,15 @@ index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..d9fc5e3450ca4dde988fe9e4f733eaae
              handle.convertable.close();
          } catch (Exception ex) {
              this.getLogger().log(Level.SEVERE, null, ex);
+@@ -2178,7 +2178,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean isPrimaryThread() {
+-        return Thread.currentThread().equals(console.serverThread) || Thread.currentThread().equals(net.minecraft.server.MinecraftServer.getServer().shutdownThread); // Paper - Fix issues with detecting main thread properly, the only time Watchdog will be used is during a crash shutdown which is a "try our best" scenario
++        return io.papermc.paper.util.TickThread.isTickThread(); // Paper - rewrite chunk system
+     }
+ 
+     // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 00fbf9ffdfa1c0d821ff86108c33e8b62a3d1268..48c00491603e40d4d3400ed8b6b48da5c1d2a086 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
@@ -19466,3 +19612,29 @@ index 0bdf17f7a5879379c7da6446ad2e56c79338ed84..8b7661218c4435d2cf68d4396dcab007
      }
  
      @Override
+diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
+index 0c41413ad32f8f6a094462fcd637dd3229abda45..c02a04d284734b5f545b64307ed4aea337c1465f 100644
+--- a/src/main/java/org/spigotmc/AsyncCatcher.java
++++ b/src/main/java/org/spigotmc/AsyncCatcher.java
+@@ -10,7 +10,7 @@ public class AsyncCatcher
+ 
+     public static void catchOp(String reason)
+     {
+-        if ( (AsyncCatcher.enabled || io.papermc.paper.util.TickThread.STRICT_THREAD_CHECKS) && Thread.currentThread() != MinecraftServer.getServer().serverThread ) // Paper
++        if ( !io.papermc.paper.util.TickThread.isTickThread() ) // Paper // Paper - rewrite chunk system
+         {
+             MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable()); // Paper
+             throw new IllegalStateException( "Asynchronous " + reason + "!" );
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index d568fc92d03c313a782796cc720a1ebb1a5ad8be..dc02212f34f5fed15e201f0ef78171409932c7a7 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -8,7 +8,7 @@ import java.util.logging.Logger;
+ import net.minecraft.server.MinecraftServer;
+ import org.bukkit.Bukkit;
+ 
+-public class WatchdogThread extends Thread
++public final class WatchdogThread extends io.papermc.paper.util.TickThread // Paper - rewrite chunk system
+ {
+ 
+     public static final boolean DISABLE_WATCHDOG = Boolean.getBoolean("disable.watchdog"); // Paper
