@@ -10,6 +10,7 @@ import net.minecraft.world.item.trading.MerchantRecipe;
 import net.minecraft.world.item.trading.MerchantRecipeList;
 import net.minecraft.world.level.World;
 import org.apache.commons.lang.Validate;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftMerchantCustom extends CraftMerchant {
 
@@ -38,7 +39,7 @@ public class CraftMerchantCustom extends CraftMerchant {
 
         public MinecraftMerchant(String title) {
             Validate.notNull(title, "Title cannot be null");
-            this.title = IChatBaseComponent.literal(title);
+            this.title = CraftChatMessage.fromString(title)[0];
         }
 
         @Override
