@@ -105,6 +105,42 @@ index 0000000000000000000000000000000000000000..30e62719e0a83525daa33cf41cb61df3
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/network/ConnectionEvent.java b/src/main/java/io/papermc/paper/network/ConnectionEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d7e7db9e37ef0183c32b217bd944fb4f41ab83a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/ConnectionEvent.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.network;
++
++/**
++ * Internal connection pipeline events.
++ */
++public enum ConnectionEvent {
++
++    COMPRESSION_THRESHOLD_SET,
++    COMPRESSION_DISABLED
++}
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 91556b52edaa1d5c4dc73a825c77b9a66b002c61..91cf0a6b5061bf4731731fdd69beb80fb30c6b51 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -555,6 +555,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             } else {
+                 this.channel.pipeline().addBefore("encoder", "compress", new CompressionEncoder(compressionThreshold));
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper
+         } else {
+             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
+                 this.channel.pipeline().remove("decompress");
+@@ -563,6 +564,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
+                 this.channel.pipeline().remove("compress");
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_DISABLED); // Paper
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 index 72fbc58f7d003b7af3c35e5fc504010307c7086b..076c1d5fb69a4a30b3e412e85b17db09fd9a1def 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
