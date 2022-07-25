@@ -34,7 +34,6 @@ public class CraftMerchantCustom extends CraftMerchant {
         private final IChatBaseComponent title;
         private final MerchantRecipeList trades = new MerchantRecipeList();
         private EntityHuman tradingPlayer;
-        private World tradingWorld;
         protected CraftMerchant craftMerchant;
 
         public MinecraftMerchant(String title) {
@@ -50,9 +49,6 @@ public class CraftMerchantCustom extends CraftMerchant {
         @Override
         public void setTradingPlayer(EntityHuman entityhuman) {
             this.tradingPlayer = entityhuman;
-            if (entityhuman != null) {
-                this.tradingWorld = entityhuman.level;
-            }
         }
 
         @Override
