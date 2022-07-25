@@ -105,6 +105,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/network/ConnectionEvent.java b/src/main/java/io/papermc/paper/network/ConnectionEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/ConnectionEvent.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.network;
++
++/**
++ * Internal connection pipeline events.
++ */
++public enum ConnectionEvent {
++
++    COMPRESSION_THRESHOLD_SET,
++    COMPRESSION_DISABLED
++}
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             } else {
+                 this.channel.pipeline().addBefore("encoder", "compress", new CompressionEncoder(compressionThreshold));
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper
+         } else {
+             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
+                 this.channel.pipeline().remove("decompress");
+@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
+                 this.channel.pipeline().remove("compress");
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_DISABLED); // Paper
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
