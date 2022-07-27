@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Mon, 3 Jun 2019 02:02:39 -0400
+Subject: [PATCH] Implement alternative item-despawn-rate
+
+Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index ebcf58fe51d1fd0cb8a0f5a84cdd349f29c9442e..7e293167e73238f42fc213ee29d89aa775cf9e60 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -54,6 +54,7 @@ public class ItemEntity extends Entity {
+     public final float bobOffs;
+     private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
+     public boolean canMobPickup = true; // Paper
++    private int despawnRate = -1; // Paper
+ 
+     public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
+         super(type, world);
+@@ -182,7 +183,7 @@ public class ItemEntity extends Entity {
+                 }
+             }
+ 
+-            if (!this.level.isClientSide && this.age >= level.spigotConfig.itemDespawnRate) { // Spigot
++            if (!this.level.isClientSide && this.age >= this.despawnRate) { // Spigot // Paper
+                 // CraftBukkit start - fire ItemDespawnEvent
+                 if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                     this.age = 0;
+@@ -206,7 +207,7 @@ public class ItemEntity extends Entity {
+         this.lastTick = MinecraftServer.currentTick;
+         // CraftBukkit end
+ 
+-        if (!this.level.isClientSide && this.age >= level.spigotConfig.itemDespawnRate) { // Spigot
++        if (!this.level.isClientSide && this.age >= this.despawnRate) { // Spigot // Paper
+             // CraftBukkit start - fire ItemDespawnEvent
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                 this.age = 0;
+@@ -257,7 +258,7 @@ public class ItemEntity extends Entity {
+     private boolean isMergable() {
+         ItemStack itemstack = this.getItem();
+ 
+-        return this.isAlive() && this.pickupDelay != 32767 && this.age != -32768 && this.age < 6000 && itemstack.getCount() < itemstack.getMaxStackSize();
++        return this.isAlive() && this.pickupDelay != 32767 && this.age != -32768 && this.age < this.despawnRate && itemstack.getCount() < itemstack.getMaxStackSize(); // Paper - respect despawn rate in pickup check.
+     }
+ 
+     private void tryToMerge(ItemEntity other) {
+@@ -501,6 +502,7 @@ public class ItemEntity extends Entity {
+         com.google.common.base.Preconditions.checkArgument(!stack.isEmpty(), "Cannot drop air"); // CraftBukkit
+         this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
+         this.getEntityData().markDirty(ItemEntity.DATA_ITEM); // CraftBukkit - SPIGOT-4591, must mark dirty
++        this.despawnRate = level.paperConfig().entities.spawning.altItemDespawnRate.enabled ? level.paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(stack.getItem(), level.spigotConfig.itemDespawnRate) : level.spigotConfig.itemDespawnRate; // Paper
+     }
+ 
+     @Override
+@@ -564,7 +566,7 @@ public class ItemEntity extends Entity {
+ 
+     public void makeFakeItem() {
+         this.setNeverPickUp();
+-        this.age = level.spigotConfig.itemDespawnRate - 1; // Spigot
++        this.age = this.despawnRate - 1; // Spigot
+     }
+ 
+     public float getSpin(float tickDelta) {
