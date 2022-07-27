@@ -5,7 +5,7 @@ Subject: [PATCH] Add config option for logging player ip addresses
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index c8012de68b997d6270ba4a5d79bc93c09ff4354f..1429f938c36d5a3a33e71837f440b2303d60cfe7 100644
+index d6f3869f5725c7f081efb7f486f74dbb99d4d005..8bc0cb9ad5bb4e76d962ff54305e2c08e279a17b 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 @@ -51,10 +51,11 @@ public class PacketUtils {
@@ -21,7 +21,7 @@ index c8012de68b997d6270ba4a5d79bc93c09ff4354f..1429f938c36d5a3a33e71837f440b230
 +                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, playerIP, exception); // Paper
                          }
                          net.minecraft.network.chat.Component error = net.minecraft.network.chat.Component.literal("Packet processing error");
-                         networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), (future) -> {
+                         networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), net.minecraft.network.PacketSendListener.thenRun(() -> networkmanager.disconnect(error)));
 diff --git a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
 index 37cd7b44559e5705b31296df87c94d2ab200138d..37e52ea9ab694b466358981bc2a3c99f28a70c7d 100644
 --- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
@@ -49,7 +49,7 @@ index 2985271132c9ae822dcb0d7a7e6f0c268d1736cc..cfdbcd024de6ad0f9d4e83b2f912b36e
  
                              networkmanager.send(new ClientboundDisconnectPacket(ichatmutablecomponent), PacketSendListener.thenRun(() -> {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 547abc18f1e03945977bd38947d9db5e201045c4..303981c9b873eee07052fbe607690d12074cd1d1 100644
+index c246fbd3c155d74684c3a105818abef833f1ed96..c1cb1406bf00843568e94c5d72cf60b3e5455720 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -241,7 +241,10 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
@@ -65,7 +65,7 @@ index 547abc18f1e03945977bd38947d9db5e201045c4..303981c9b873eee07052fbe607690d12
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index dda357b4f52030435c012f10b11f1ccb3f6688be..1548df4057b34fe6bad2c51fb5a77ce118b36566 100644
+index 76fa5e31701bc0e504d8e7b6ebfa737f3a10dc3b..75c64d23eb15368f8a40ebf9026d54604d450f91 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -241,7 +241,7 @@ public abstract class PlayerList {
