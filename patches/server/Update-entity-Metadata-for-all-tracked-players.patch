@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AgentTroll <woodyc40@gmail.com>
+Date: Fri, 22 Mar 2019 22:24:03 -0700
+Subject: [PATCH] Update entity Metadata for all tracked players
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -0,0 +0,0 @@ public class ServerEntity {
+ 
+     }
+ 
++    // Paper start - Add broadcast method
++    void broadcast(Packet<?> packet) {
++        this.broadcast.accept(packet);
++    }
++    // Paper end
++
+     private void broadcastAndSend(Packet<?> packet) {
+         this.broadcast.accept(packet);
+         if (this.entity instanceof ServerPlayer) {
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                         if (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem) {
+                             // Refresh the current entity metadata
+-                            ServerGamePacketListenerImpl.this.send(new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData(), true));
++                            // Paper start - update entity for all players
++                            ClientboundSetEntityDataPacket packet1 = new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData(), true);
++                            if (entity.tracker != null) {
++                                entity.tracker.broadcast(packet1);
++                            } else {
++                                ServerGamePacketListenerImpl.this.send(packet1);
++                            }
++                            // Paper end
+                         }
+ 
+                         if (event.isCancelled()) {
