@@ -34,21 +34,23 @@ how PlayerPreLoginEvent interacts with PlayerConnectionCloseEvent
 is undefined.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 83c5264e4af146d3712cee4550d84c824a3a96d6..66274a749af1e77363190fda99b5999efac40bdb 100644
+index 83c5264e4af146d3712cee4550d84c824a3a96d6..f6162d65d341ef3df1a9b3f45d7d0c25d52f35cf 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -439,6 +439,24 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -439,6 +439,26 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      this.getPacketListener().onDisconnect(Component.translatable("multiplayer.disconnect.generic"));
                  }
                  this.queue.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent
 +                final PacketListener packetListener = this.getPacketListener();
-+                if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl playerConnection) {
++                if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl) {
 +                    /* Player was logged in */
++                    final net.minecraft.server.network.ServerGamePacketListenerImpl playerConnection = (net.minecraft.server.network.ServerGamePacketListenerImpl) packetListener;
 +                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(playerConnection.player.getUUID(),
 +                        playerConnection.player.getScoreboardName(), ((java.net.InetSocketAddress)address).getAddress(), false).callEvent();
-+                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener) {
++                } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl) {
 +                    /* Player is login stage */
++                    final net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener = (net.minecraft.server.network.ServerLoginPacketListenerImpl) packetListener;
 +                    switch (loginListener.state) {
 +                        case READY_TO_ACCEPT:
 +                        case DELAY_ACCEPT:
