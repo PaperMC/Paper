@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -158,6 +158,28 @@
+@@ -157,6 +157,31 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
  
@@ -23,13 +23,16 @@
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.Main;
 +import org.bukkit.craftbukkit.generator.CustomWorldChunkManager;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.craftbukkit.util.LazyPlayerSet;
++import org.bukkit.event.player.AsyncPlayerChatPreviewEvent;
 +import org.bukkit.event.server.ServerLoadEvent;
 +// CraftBukkit end
 +
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements ICommandListener, AutoCloseable {
  
      public static final Logger LOGGER = LogUtils.getLogger();
-@@ -240,6 +262,21 @@
+@@ -239,6 +264,21 @@
      protected SaveData worldData;
      private volatile boolean isSaving;
  
@@ -51,7 +54,7 @@
      public static <S extends MinecraftServer> S spin(Function<Thread, S> function) {
          AtomicReference<S> atomicreference = new AtomicReference();
          Thread thread = new Thread(() -> {
-@@ -253,14 +290,14 @@
+@@ -252,14 +292,14 @@
              thread.setPriority(8);
          }
  
@@ -68,7 +71,7 @@
          super("Server");
          this.metricsRecorder = InactiveMetricsRecorder.INSTANCE;
          this.profiler = this.metricsRecorder.getProfiler();
-@@ -272,7 +309,7 @@
+@@ -271,7 +311,7 @@
          this.status = new ServerPing();
          this.random = RandomSource.create();
          this.port = -1;
@@ -77,7 +80,7 @@
          this.running = true;
          this.tickTimes = new long[100];
          this.nextTickTime = SystemUtils.getMillis();
-@@ -281,7 +318,7 @@
+@@ -280,7 +320,7 @@
          this.frameTimer = new CircularTimer();
          this.registryHolder = worldstem.registryAccess();
          this.worldData = worldstem.worldData();
@@ -86,7 +89,7 @@
              throw new IllegalStateException("Missing Overworld dimension data");
          } else {
              this.proxy = proxy;
-@@ -302,13 +339,41 @@
+@@ -301,13 +341,41 @@
              this.serverThread = thread;
              this.executor = SystemUtils.backgroundExecutor();
          }
@@ -129,7 +132,7 @@
          ScoreboardServer scoreboardserver1 = this.getScoreboard();
  
          Objects.requireNonNull(scoreboardserver1);
-@@ -317,7 +382,7 @@
+@@ -316,7 +384,7 @@
  
      protected abstract boolean initServer() throws IOException;
  
@@ -138,7 +141,7 @@
          if (!JvmProfiler.INSTANCE.isRunning()) {
              ;
          }
-@@ -325,12 +390,8 @@
+@@ -324,12 +392,8 @@
          boolean flag = false;
          ProfiledDuration profiledduration = JvmProfiler.INSTANCE.onWorldLoadedStarted();
  
@@ -152,7 +155,7 @@
          if (profiledduration != null) {
              profiledduration.finish();
          }
-@@ -345,25 +406,189 @@
+@@ -344,25 +408,189 @@
  
      }
  
@@ -317,14 +320,10 @@
 +
 +            worlddata.setModdedInfo(this.getServerModName(), this.getModdedStatus().shouldReportAsModified());
 +            this.initWorld(world, worlddata, worldData, worlddata.worldGenSettings());
- 
--        this.levels.put(World.OVERWORLD, worldserver);
--        WorldPersistentData worldpersistentdata = worldserver.getDataStorage();
++
 +            this.levels.put(world.dimension(), world);
 +            this.getPlayerList().addWorldborderListener(world);
- 
--        this.readScoreboard(worldpersistentdata);
--        this.commandStorage = new PersistentCommandStorage(worldpersistentdata);
++
 +            if (worlddata.getCustomBossEvents() != null) {
 +                this.getCustomBossEvents().load(worlddata.getCustomBossEvents());
 +            }
@@ -335,7 +334,9 @@
 +            worldserver.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
 +            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
 +        }
-+
+ 
+-        this.levels.put(World.OVERWORLD, worldserver);
+-        WorldPersistentData worldpersistentdata = worldserver.getDataStorage();
 +        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
 +        this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
 +        this.connection.acceptConnections();
@@ -343,7 +344,9 @@
 +    // CraftBukkit end
 +
 +    protected void forceDifficulty() {}
-+
+ 
+-        this.readScoreboard(worldpersistentdata);
+-        this.commandStorage = new PersistentCommandStorage(worldpersistentdata);
 +    // CraftBukkit start
 +    public void initWorld(WorldServer worldserver, IWorldDataServer iworlddataserver, SaveData saveData, GeneratorSettings generatorsettings) {
 +        boolean flag = generatorsettings.isDebug();
@@ -357,7 +360,7 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -387,29 +612,8 @@
+@@ -386,29 +614,8 @@
              iworlddataserver.setInitialized(true);
          }
  
@@ -388,7 +391,7 @@
  
      private static void setInitialSpawn(WorldServer worldserver, IWorldDataServer iworlddataserver, boolean flag, boolean flag1) {
          if (flag1) {
-@@ -417,6 +621,21 @@
+@@ -416,6 +623,21 @@
          } else {
              ChunkProviderServer chunkproviderserver = worldserver.getChunkSource();
              ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(chunkproviderserver.randomState().sampler().findSpawnPosition());
@@ -410,7 +413,7 @@
              int i = chunkproviderserver.getGenerator().getSpawnHeight(worldserver);
  
              if (i < worldserver.getMinBuildHeight()) {
-@@ -474,8 +693,11 @@
+@@ -473,8 +695,11 @@
          iworlddataserver.setGameType(EnumGamemode.SPECTATOR);
      }
  
@@ -424,7 +427,7 @@
  
          MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.dimension().location());
          BlockPosition blockposition = worldserver.getSharedSpawnPos();
-@@ -485,19 +707,23 @@
+@@ -484,19 +709,23 @@
  
          chunkproviderserver.getLightEngine().setTaskPerBatch(500);
          this.nextTickTime = SystemUtils.getMillis();
@@ -457,7 +460,7 @@
              ForcedChunk forcedchunk = (ForcedChunk) worldserver1.getDataStorage().get(ForcedChunk::load, "chunks");
  
              if (forcedchunk != null) {
-@@ -512,11 +738,18 @@
+@@ -511,11 +740,18 @@
              }
          }
  
@@ -479,7 +482,7 @@
      }
  
      public EnumGamemode getDefaultGameType() {
-@@ -546,12 +779,16 @@
+@@ -545,12 +781,16 @@
              worldserver.save((IProgressUpdate) null, flag1, worldserver.noSave && !flag2);
          }
  
@@ -496,7 +499,7 @@
          if (flag1) {
              Iterator iterator1 = this.getAllLevels().iterator();
  
-@@ -586,12 +823,33 @@
+@@ -585,12 +825,33 @@
          this.stopServer();
      }
  
@@ -530,7 +533,7 @@
          if (this.getConnection() != null) {
              this.getConnection().stop();
          }
-@@ -601,6 +859,7 @@
+@@ -600,6 +861,7 @@
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.saveAll();
              this.playerList.removeAll();
@@ -538,7 +541,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -696,9 +955,10 @@
+@@ -696,9 +958,10 @@
              while (this.running) {
                  long i = SystemUtils.getMillis() - this.nextTickTime;
  
@@ -550,7 +553,7 @@
                      MinecraftServer.LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", i, j);
                      this.nextTickTime += j * 50L;
                      this.lastOverloadWarning = this.nextTickTime;
-@@ -709,6 +969,7 @@
+@@ -709,6 +972,7 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(SystemUtils.getNanos(), this.tickCount);
                  }
  
@@ -558,7 +561,7 @@
                  this.nextTickTime += 50L;
                  this.startMetricsRecordingTick();
                  this.profiler.push("tick");
-@@ -750,6 +1011,12 @@
+@@ -747,6 +1011,12 @@
                      this.services.profileCache().clearExecutor();
                  }
  
@@ -571,7 +574,7 @@
                  this.onServerExit();
              }
  
-@@ -783,8 +1050,15 @@
+@@ -780,8 +1050,15 @@
      }
  
      private boolean haveTime() {
@@ -588,7 +591,7 @@
  
      protected void waitUntilNextTick() {
          this.runAllTasks();
-@@ -830,7 +1104,7 @@
+@@ -827,7 +1104,7 @@
          }
      }
  
@@ -597,7 +600,7 @@
          this.getProfiler().incrementCounter("runTask");
          super.doRunTask(ticktask);
      }
-@@ -901,7 +1175,7 @@
+@@ -898,7 +1175,7 @@
              }
          }
  
@@ -606,7 +609,7 @@
              MinecraftServer.LOGGER.debug("Autosave started");
              this.profiler.push("save");
              this.saveEverything(true, false, false);
-@@ -920,22 +1194,39 @@
+@@ -917,22 +1194,39 @@
      }
  
      public void tickChildren(BooleanSupplier booleansupplier) {
@@ -646,7 +649,7 @@
  
              this.profiler.push("tick");
  
-@@ -1024,7 +1315,7 @@
+@@ -1021,7 +1315,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -655,7 +658,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport systemreport) {
-@@ -1375,11 +1666,11 @@
+@@ -1372,11 +1666,11 @@
      public CompletableFuture<Void> reloadResources(Collection<String> collection) {
          IRegistryCustom.Dimension iregistrycustom_dimension = this.registryAccess();
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -669,7 +672,7 @@
          }, this).thenCompose((immutablelist) -> {
              ResourceManager resourcemanager = new ResourceManager(EnumResourcePackType.SERVER_DATA, immutablelist);
  
-@@ -1394,6 +1685,7 @@
+@@ -1391,6 +1685,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -677,7 +680,7 @@
              this.packRepository.setSelected(collection);
              this.worldData.setDataPackConfig(getSelectedPacks(this.packRepository));
              this.resources.managers.updateRegistryTags(this.registryAccess());
-@@ -1743,7 +2035,7 @@
+@@ -1740,7 +2035,7 @@
              try {
                  label51:
                  {
@@ -686,7 +689,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -1793,6 +2085,22 @@
+@@ -1790,6 +2085,22 @@
  
      }
  
@@ -709,3 +712,30 @@
      private void startMetricsRecordingTick() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(SystemUtils.timeSource, this.isDedicatedServer()), SystemUtils.timeSource, SystemUtils.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
+@@ -1912,8 +2223,25 @@
+ 
+     }
+ 
++    // CraftBukkit start
++    public final java.util.concurrent.ExecutorService chatExecutor = java.util.concurrent.Executors.newCachedThreadPool(
++            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").build());
++
+     public ChatDecorator getChatDecorator() {
+-        return ChatDecorator.PLAIN;
++        return (entityplayer, ichatbasecomponent) -> {
++            return CompletableFuture.supplyAsync(() -> {
++                AsyncPlayerChatPreviewEvent event = new AsyncPlayerChatPreviewEvent(true, entityplayer.getBukkitEntity(), CraftChatMessage.fromComponent(ichatbasecomponent), new LazyPlayerSet(this));
++                String originalFormat = event.getFormat(), originalMessage = event.getMessage();
++                this.server.getPluginManager().callEvent(event);
++
++                if (originalFormat.equals(event.getFormat()) && originalMessage.equals(event.getMessage()) && event.getPlayer().getName().equalsIgnoreCase(event.getPlayer().getDisplayName())) {
++                    return ichatbasecomponent;
++                }
++
++                return CraftChatMessage.fromStringOrNull(String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()));
++            }, chatExecutor);
++        };
++        // CraftBukkit end
+     }
+ 
+     public static record ReloadableResources(IReloadableResourceManager resourceManager, DataPackResources managers) implements AutoCloseable {
