@@ -56,19 +56,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              net.minecraft.server.MCUtil.isMainThread() && packet.isReady() && this.queue.isEmpty() &&
              (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
          ))) {
--            this.sendPacket(packet, callback);
-+            this.writePacket(packet, callback, null); // Paper
+-            this.sendPacket(packet, packetsendlistener);
++            this.sendPacket(packet, packetsendlistener, null); // Paper
              return;
          }
          // write the packets to the queue, then flush - antixray hooks there already
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
-     private void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback) {
+     private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
 +        // Paper start - add flush parameter
-+        this.writePacket(packet, callback, Boolean.TRUE);
++        this.sendPacket(packet, packetsendlistener, Boolean.TRUE);
 +    }
-+    private void writePacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, Boolean flushConditional) {
++    private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, Boolean flushConditional) {
 +        this.packetWrites.getAndIncrement(); // must be befeore using canFlush
 +        boolean effectiveFlush = flushConditional == null ? this.canFlush : flushConditional.booleanValue();
 +        final boolean flush = effectiveFlush || packet instanceof net.minecraft.network.protocol.game.ClientboundKeepAlivePacket || packet instanceof ClientboundDisconnectPacket; // no delay for certain packets
@@ -80,22 +80,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          if (this.channel.eventLoop().inEventLoop()) {
--            this.doSendPacket(packet, callback, enumprotocol, enumprotocol1);
-+            this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+-            this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1);
++            this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
          } else {
              this.channel.eventLoop().execute(() -> {
--                this.doSendPacket(packet, callback, enumprotocol, enumprotocol1);
-+                this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+-                this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1);
++                this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
              });
          }
  
      }
  
-     private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol packetState, ConnectionProtocol currentState) {
+     private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, ConnectionProtocol packetState, ConnectionProtocol currentState) {
 +        // Paper start - add flush parameter
-+        this.doSendPacket(packet, callback, packetState, currentState, true);
++        this.doSendPacket(packet, packetsendlistener, packetState, currentState, true);
 +    }
-+    private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol packetState, ConnectionProtocol currentState, boolean flush) {
++    private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, ConnectionProtocol packetState, ConnectionProtocol currentState, boolean flush) {
 +        // Paper end - add flush parameter
          if (packetState != currentState) {
              this.setProtocol(packetState);
@@ -107,8 +107,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
 +        ChannelFuture channelfuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - add flush parameter
  
-         if (callback != null) {
-             channelfuture.addListener(callback);
+         if (packetsendlistener != null) {
+             channelfuture.addListener((future) -> {
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
      private boolean processQueue() {
