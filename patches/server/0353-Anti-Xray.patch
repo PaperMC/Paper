@@ -1247,7 +1247,7 @@ index ae37e97e52557b48f129cc02eeea395378a48444..785fbcf9bafcdec1c5be213de3d85126
  
      public int getSerializedSize() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-index 78e20871e4bd8d92c4475f797a55733c68f6aeb4..34d8fbb441def2e89415729a2f39b9a32eec95c7 100644
+index 78e20871e4bd8d92c4475f797a55733c68f6aeb4..723608946947fa2792c7284fa5faa85ab9507897 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -29,6 +29,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
@@ -1258,22 +1258,30 @@ index 78e20871e4bd8d92c4475f797a55733c68f6aeb4..34d8fbb441def2e89415729a2f39b9a3
      private volatile PalettedContainer.Data<T> data;
      private final PalettedContainer.Strategy strategy;
      private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer");
-@@ -41,7 +42,13 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -41,14 +42,19 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          this.threadingDetector.checkAndUnlock();
      }
  
 -    public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {
+-        PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = PalettedContainer::unpack;
 +    // Paper start - Anti-Xray - Add preset values
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {return codecRW(idList, entryCodec, paletteProvider, defaultValue, null);}
 +    public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues) {
 +        PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = (idMapx, strategyx, packedData) -> {
-+            return unpack(idMapx, strategyx, packedData, object, presetValues);
++            return unpack(idMapx, strategyx, packedData, defaultValue, presetValues);
 +        };
 +        // Paper end
-         PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = PalettedContainer::unpack;
          return codec(idList, entryCodec, paletteProvider, defaultValue, unpacker);
      }
-@@ -65,19 +72,52 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+ 
+     public static <T> Codec<PalettedContainerRO<T>> codecRO(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {
+         PalettedContainerRO.Unpacker<T, PalettedContainerRO<T>> unpacker = (idListx, paletteProviderx, serialized) -> {
+-            return unpack(idListx, paletteProviderx, serialized).map((result) -> {
++            return unpack(idListx, paletteProviderx, serialized, defaultValue, null).map((result) -> { // Paper - Anti-Xray - Add preset values
+                 return result;
+             });
+         };
+@@ -65,19 +71,52 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          });
      }
  
@@ -1329,7 +1337,7 @@ index 78e20871e4bd8d92c4475f797a55733c68f6aeb4..34d8fbb441def2e89415729a2f39b9a3
          this.strategy = paletteProvider;
          this.registry = idList;
          this.data = this.createOrReuseData((PalettedContainer.Data<T>)null, 0);
-@@ -92,11 +132,33 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -92,11 +131,33 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      @Override
      public int onResize(int newBits, T object) {
          PalettedContainer.Data<T> data = this.data;
@@ -1364,7 +1372,7 @@ index 78e20871e4bd8d92c4475f797a55733c68f6aeb4..34d8fbb441def2e89415729a2f39b9a3
  
      public T getAndSet(int x, int y, int z, T value) {
          this.acquire();
-@@ -166,25 +228,36 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -166,25 +227,36 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              data.palette.read(buf);
              buf.readLongArray(data.storage.getRaw());
              this.data = data;
@@ -1404,7 +1412,7 @@ index 78e20871e4bd8d92c4475f797a55733c68f6aeb4..34d8fbb441def2e89415729a2f39b9a3
          List<T> list = serialized.paletteEntries();
          int i = paletteProvider.size();
          int j = paletteProvider.calculateBitsForSerialization(idList, list.size());
-@@ -220,7 +293,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -220,7 +292,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              }
          }
  
@@ -1413,7 +1421,7 @@ index 78e20871e4bd8d92c4475f797a55733c68f6aeb4..34d8fbb441def2e89415729a2f39b9a3
      }
  
      @Override
-@@ -280,12 +353,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -280,12 +352,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      }
  
      public PalettedContainer<T> copy() {
@@ -1428,7 +1436,7 @@ index 78e20871e4bd8d92c4475f797a55733c68f6aeb4..34d8fbb441def2e89415729a2f39b9a3
      }
  
      @Override
-@@ -329,9 +402,20 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -329,9 +401,20 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
              return 1 + this.palette.getSerializedSize() + FriendlyByteBuf.getVarIntSize(this.storage.getSize()) + this.storage.getRaw().length * 8;
          }
  

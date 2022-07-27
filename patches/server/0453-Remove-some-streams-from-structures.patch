@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Mon, 29 Jun 2020 17:03:06 -0400
+Subject: [PATCH] Remove some streams from structures
+
+This showed up a lot in the spark profiler, should have a low-medium performance improvement.
+
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java b/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java
+index 24f58441ae7b43a62d74aa55e9808c1c65f466e4..8ec886a10fc901a964f626a350b39c3fda0e59d9 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/Beardifier.java
+@@ -36,10 +36,11 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
+         int j = pos.getMinBlockZ();
+         ObjectList<Beardifier.Rigid> objectList = new ObjectArrayList<>(10);
+         ObjectList<JigsawJunction> objectList2 = new ObjectArrayList<>(32);
+-        world.startsForStructure(pos, (structure) -> {
++        // Paper start - replace for each
++        for (net.minecraft.world.level.levelgen.structure.StructureStart structureStart : structureManager.startsForStructure(pos, (structure) -> {
+             return structure.terrainAdaptation() != TerrainAdjustment.NONE;
+-        }).forEach((start) -> {
+-            TerrainAdjustment terrainAdjustment = start.getStructure().terrainAdaptation();
++        })) { // Paper end
++            TerrainAdjustment terrainAdjustment = structureStart.getStructure().terrainAdaptation();
+ 
+             for(StructurePiece structurePiece : start.getPieces()) {
+                 if (structurePiece.isCloseToChunk(pos, 12)) {
+@@ -63,7 +64,7 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
+                 }
+             }
+ 
+-        });
++        } // Paper
+         return new Beardifier(objectList.iterator(), objectList2.iterator());
+     }
+ 
