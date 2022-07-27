@@ -62,6 +62,8 @@ public final class GameEvent implements Keyed {
     public static final GameEvent INSTRUMENT_PLAY = getEvent("instrument_play");
     public static final GameEvent ITEM_INTERACT_FINISH = getEvent("item_interact_finish");
     public static final GameEvent ITEM_INTERACT_START = getEvent("item_interact_start");
+    public static final GameEvent JUKEBOX_PLAY = getEvent("jukebox_play");
+    public static final GameEvent JUKEBOX_STOP_PLAY = getEvent("jukebox_stop_play");
     public static final GameEvent LIGHTNING_STRIKE = getEvent("lightning_strike");
     @Deprecated
     public static final GameEvent MOB_INTERACT = getEvent("entity_interact");

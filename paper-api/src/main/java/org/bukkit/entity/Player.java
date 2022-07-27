@@ -39,6 +39,13 @@ import org.jetbrains.annotations.Nullable;
 public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient {
 
     /**
+     * {@inheritDoc}
+     */
+    @NotNull
+    @Override
+    public String getName();
+
+    /**
      * Gets the "friendly" name to display of this player. This may include
      * color.
      * <p>
