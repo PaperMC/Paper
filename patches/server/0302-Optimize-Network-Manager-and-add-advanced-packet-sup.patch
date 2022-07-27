@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 5ec25b729d1e7fce232ecdc723b8286c4eaf182c..a18e2146c4398b45ae50623fc6800a78718f4c81 100644
+index 66274a749af1e77363190fda99b5999efac40bdb..26849a8af6149b710df8a7e0a335d98df2e2a4d2 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -93,6 +93,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -55,9 +55,9 @@ index 5ec25b729d1e7fce232ecdc723b8286c4eaf182c..a18e2146c4398b45ae50623fc6800a78
          this.packetListener = listener;
      }
 +    // Paper start
-+    public net.minecraft.server.level.ServerPlayer getPlayer() {
-+        if (packetListener instanceof ServerGamePacketListenerImpl) {
-+            return ((ServerGamePacketListenerImpl) packetListener).player;
++    public @Nullable net.minecraft.server.level.ServerPlayer getPlayer() {
++        if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl serverGamePacketListener) {
++            return serverGamePacketListener.player;
 +        } else {
 +            return null;
 +        }
@@ -127,7 +127,7 @@ index 5ec25b729d1e7fce232ecdc723b8286c4eaf182c..a18e2146c4398b45ae50623fc6800a78
 +        java.util.List<Packet> extraPackets = InnerUtil.buildExtraPackets(packet);
 +        boolean hasExtraPackets = extraPackets != null && !extraPackets.isEmpty();
 +        if (!hasExtraPackets) {
-+            this.queue.add(new Connection.PacketHolder(packet, callback));
++            this.queue.add(new Connection.PacketHolder(packet, packetsendlistener));
 +        } else {
 +            java.util.List<Connection.PacketHolder> packets = new java.util.ArrayList<>(1 + extraPackets.size());
 +            packets.add(new Connection.PacketHolder(packet, null)); // delay the future listener until the end of the extra packets
@@ -135,7 +135,7 @@ index 5ec25b729d1e7fce232ecdc723b8286c4eaf182c..a18e2146c4398b45ae50623fc6800a78
 +            for (int i = 0, len = extraPackets.size(); i < len;) {
 +                Packet extra = extraPackets.get(i);
 +                boolean end = ++i == len;
-+                packets.add(new Connection.PacketHolder(extra, end ? callback : null)); // append listener to the end
++                packets.add(new Connection.PacketHolder(extra, end ? packetsendlistener : null)); // append listener to the end
 +            }
 +            this.queue.addAll(packets); // atomic
 +        }
@@ -275,7 +275,7 @@ index 5ec25b729d1e7fce232ecdc723b8286c4eaf182c..a18e2146c4398b45ae50623fc6800a78
 +                clearPacketQueue(); // Paper
                  // Paper start - Add PlayerConnectionCloseEvent
                  final PacketListener packetListener = this.getPacketListener();
-                 if (packetListener instanceof ServerGamePacketListenerImpl) {
+                 if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl playerConnection) {
 diff --git a/src/main/java/net/minecraft/network/protocol/Packet.java b/src/main/java/net/minecraft/network/protocol/Packet.java
 index 74bfe0d3942259c45702b099efdc4e101a4e3022..e8fcd56906d26f6dc87959e32c4c7c78cfea9658 100644
 --- a/src/main/java/net/minecraft/network/protocol/Packet.java
