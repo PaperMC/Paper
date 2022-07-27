@@ -1263,16 +1263,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {
+-        PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = PalettedContainer::unpack;
 +    // Paper start - Anti-Xray - Add preset values
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {return codecRW(idList, entryCodec, paletteProvider, defaultValue, null);}
 +    public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues) {
 +        PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = (idMapx, strategyx, packedData) -> {
-+            return unpack(idMapx, strategyx, packedData, object, presetValues);
++            return unpack(idMapx, strategyx, packedData, defaultValue, presetValues);
 +        };
 +        // Paper end
-         PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = PalettedContainer::unpack;
          return codec(idList, entryCodec, paletteProvider, defaultValue, unpacker);
      }
+ 
+     public static <T> Codec<PalettedContainerRO<T>> codecRO(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {
+         PalettedContainerRO.Unpacker<T, PalettedContainerRO<T>> unpacker = (idListx, paletteProviderx, serialized) -> {
+-            return unpack(idListx, paletteProviderx, serialized).map((result) -> {
++            return unpack(idListx, paletteProviderx, serialized, defaultValue, null).map((result) -> { // Paper - Anti-Xray - Add preset values
+                 return result;
+             });
+         };
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          });
      }
