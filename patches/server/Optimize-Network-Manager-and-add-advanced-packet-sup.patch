@@ -55,9 +55,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.packetListener = listener;
      }
 +    // Paper start
-+    public net.minecraft.server.level.ServerPlayer getPlayer() {
-+        if (packetListener instanceof ServerGamePacketListenerImpl) {
-+            return ((ServerGamePacketListenerImpl) packetListener).player;
++    public @Nullable net.minecraft.server.level.ServerPlayer getPlayer() {
++        if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl serverGamePacketListener) {
++            return serverGamePacketListener.player;
 +        } else {
 +            return null;
 +        }
@@ -127,7 +127,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        java.util.List<Packet> extraPackets = InnerUtil.buildExtraPackets(packet);
 +        boolean hasExtraPackets = extraPackets != null && !extraPackets.isEmpty();
 +        if (!hasExtraPackets) {
-+            this.queue.add(new Connection.PacketHolder(packet, callback));
++            this.queue.add(new Connection.PacketHolder(packet, packetsendlistener));
 +        } else {
 +            java.util.List<Connection.PacketHolder> packets = new java.util.ArrayList<>(1 + extraPackets.size());
 +            packets.add(new Connection.PacketHolder(packet, null)); // delay the future listener until the end of the extra packets
@@ -135,7 +135,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            for (int i = 0, len = extraPackets.size(); i < len;) {
 +                Packet extra = extraPackets.get(i);
 +                boolean end = ++i == len;
-+                packets.add(new Connection.PacketHolder(extra, end ? callback : null)); // append listener to the end
++                packets.add(new Connection.PacketHolder(extra, end ? packetsendlistener : null)); // append listener to the end
 +            }
 +            this.queue.addAll(packets); // atomic
 +        }
@@ -275,7 +275,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                clearPacketQueue(); // Paper
                  // Paper start - Add PlayerConnectionCloseEvent
                  final PacketListener packetListener = this.getPacketListener();
-                 if (packetListener instanceof ServerGamePacketListenerImpl) {
+                 if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl playerConnection) {
 diff --git a/src/main/java/net/minecraft/network/protocol/Packet.java b/src/main/java/net/minecraft/network/protocol/Packet.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/Packet.java
