@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 6 Jul 2022 05:52:22 +0100
+Subject: [PATCH] Add some minimal debug information to chat packet errors
+
+TODO: potentially add some kick leeway
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index ea47d8f0275a99920c6e3f5c7a9c09ccb2341139..3b3a60bbc4547ae7e89ce40ae1572dbe1c028416 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2294,7 +2294,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+     private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
+         if (!this.updateChatOrder(timestamp)) {
+-            ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
++            ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}': {} > {}", this.player.getName().getString(), message, this.lastChatTimeStamp.get().getEpochSecond(), timestamp.getEpochSecond()); // Paper
+             this.server.scheduleOnMain(() -> { // Paper - push to main
+             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
+             }); // Paper - push to main
+@@ -2551,7 +2551,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             return false;
+         } else {
+             if (message.hasExpiredServer(Instant.now())) {
+-                ServerGamePacketListenerImpl.LOGGER.warn("{} sent expired chat: '{}'. Is the client/server system time unsynchronized?", this.player.getName().getString(), message.signedContent().plain());
++                ServerGamePacketListenerImpl.LOGGER.warn("{} sent expired chat: '{}'. Is the client/server system time unsynchronized? c: {} s: {}", this.player.getName().getString(), message.signedContent().plain(), message.timeStamp().getEpochSecond(), Instant.now().getEpochSecond()); // Paper
+             }
+ 
+             return true;
