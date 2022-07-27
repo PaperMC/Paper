@@ -7,18 +7,19 @@ Subject: [PATCH] Detail more information in watchdog dumps
 - Dump player name, player uuid, position, and world for packet handling
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 05b1b2bdc5396d7f95106bd7c75c4e319e7975a2..05a15b2da76a6d246b705e682b61a7c40c5dade7 100644
+index dc6b467f51b6e17aa46ccce75aa40788afcdf010..28471311a992f5183c39b1a692e0251eb1fee1df 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -465,7 +465,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-         }
+@@ -475,9 +475,15 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         PacketListener packetlistener = this.packetListener;
  
-         if (this.packetListener instanceof ServerGamePacketListenerImpl) {
+         if (packetlistener instanceof TickablePacketListener) {
 +            // Paper start - detailed watchdog information
 +            net.minecraft.network.protocol.PacketUtils.packetProcessing.push(this.packetListener);
-+            try {
-+            // Paper end - detailed watchdog information
-             ((ServerGamePacketListenerImpl) this.packetListener).tick();
++            try { // Paper end - detailed watchdog information
+             TickablePacketListener tickablepacketlistener = (TickablePacketListener) packetlistener;
+ 
+             tickablepacketlistener.tick();
 +            } finally { // Paper start - detailed watchdog information
 +                net.minecraft.network.protocol.PacketUtils.packetProcessing.pop();
 +            } // Paper start - detailed watchdog information
@@ -26,7 +27,7 @@ index 05b1b2bdc5396d7f95106bd7c75c4e319e7975a2..05a15b2da76a6d246b705e682b61a7c4
  
          if (!this.isConnected() && !this.disconnectionHandled) {
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index a34f22cadc09e53ea4de787b04d050b99dddbcac..c8012de68b997d6270ba4a5d79bc93c09ff4354f 100644
+index acfa1907bfc9c29d261cfccc00d65bad9ad1a002..d6f3869f5725c7f081efb7f486f74dbb99d4d005 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 @@ -15,6 +15,24 @@ public class PacketUtils {
@@ -63,7 +64,7 @@ index a34f22cadc09e53ea4de787b04d050b99dddbcac..c8012de68b997d6270ba4a5d79bc93c0
                  if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerGamePacketListenerImpl && ((ServerGamePacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
                  if (listener.getConnection().isConnected()) {
                      co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
-@@ -45,6 +65,12 @@ public class PacketUtils {
+@@ -43,6 +63,12 @@ public class PacketUtils {
                  } else {
                      PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
                  }
@@ -77,10 +78,10 @@ index a34f22cadc09e53ea4de787b04d050b99dddbcac..c8012de68b997d6270ba4a5d79bc93c0
              });
              throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index a82c81f8a4178fc049ffaa2e5a837836ef5b42a6..9ab6f7df04b56012413f2485dd5a8785f95390dc 100644
+index 53105ca96f5056adbba6a97ac428587e7c3b683a..a9b23308c89aef277394821cb883540a0c9e7056 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1001,7 +1001,26 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1002,7 +1002,26 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
      }
  
@@ -107,7 +108,7 @@ index a82c81f8a4178fc049ffaa2e5a837836ef5b42a6..9ab6f7df04b56012413f2485dd5a8785
          ++TimingHistory.entityTicks; // Paper - timings
          // Spigot start
          co.aikar.timings.Timing timer; // Paper
-@@ -1041,7 +1060,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1042,7 +1061,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
              this.tickPassenger(entity, entity1);
          }
          // } finally { timer.stopTiming(); } // Paper - timings - move up
@@ -123,7 +124,7 @@ index a82c81f8a4178fc049ffaa2e5a837836ef5b42a6..9ab6f7df04b56012413f2485dd5a8785
  
      private void tickPassenger(Entity vehicle, Entity passenger) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 146bfce3dd90e68c4f5a0589722995acbed005e7..5ffe466d0be59baa99adddf5d052a40ee64f7002 100644
+index 9567822f314cd3978ed63bb867e57b610d76228e..37123198bdf0188f59f289a31570663938fdc3c1 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -971,7 +971,42 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
@@ -183,7 +184,7 @@ index 146bfce3dd90e68c4f5a0589722995acbed005e7..5ffe466d0be59baa99adddf5d052a40e
      }
  
      protected boolean isHorizontalCollisionMinor(Vec3 adjustedMovement) {
-@@ -3951,7 +3993,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -3948,7 +3990,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      }
  
      public void setDeltaMovement(Vec3 velocity) {
@@ -193,7 +194,7 @@ index 146bfce3dd90e68c4f5a0589722995acbed005e7..5ffe466d0be59baa99adddf5d052a40e
      }
  
      public void setDeltaMovement(double x, double y, double z) {
-@@ -4027,7 +4071,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -4024,7 +4068,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          }
          // Paper end - fix MC-4
          if (this.position.x != x || this.position.y != y || this.position.z != z) {

@@ -5,10 +5,10 @@ Subject: [PATCH] incremental chunk and player saving
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3496da11b02d823f6445b6b50d44ee2d2d7435af..2257a93b9f28a3b30f03ecb08e21346e0deeb8bf 100644
+index b80b2674077f23a5fe33d20e771b0e8b0968dc69..b8b82e9fe3273e3b53c4877e47b74f0db4dd8630 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -852,7 +852,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -854,7 +854,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          try {
              this.isSaving = true;
@@ -120,10 +120,10 @@ index 4e8a79f2d3b6f52c6284bc9b0ce2423dc43a154f..36a9d52d9af3bc398010c52dc16ab23e
          for (int i = 0; i < this.futures.length(); ++i) {
              CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(i);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 86cdc8951544c16f8dc5148bc2c7bf9bbf920c60..c468b012197b2c3444ad8bb0d8a9f41c7ab17b10 100644
+index 6188f35e2b5300b6ff4a16e4d6e0e4a846261f8a..4d74eb7883c72fb42275fc5358917244bb36181d 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -106,6 +106,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
+@@ -103,6 +103,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  import net.minecraft.world.level.storage.DimensionDataStorage;
  import net.minecraft.world.level.storage.LevelStorageSource;
  import net.minecraft.world.phys.Vec3;
@@ -131,7 +131,7 @@ index 86cdc8951544c16f8dc5148bc2c7bf9bbf920c60..c468b012197b2c3444ad8bb0d8a9f41c
  import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.apache.commons.lang3.mutable.MutableObject;
  import org.slf4j.Logger;
-@@ -715,6 +716,64 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -712,6 +713,64 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      }
  
@@ -196,7 +196,7 @@ index 86cdc8951544c16f8dc5148bc2c7bf9bbf920c60..c468b012197b2c3444ad8bb0d8a9f41c
      protected void saveAllChunks(boolean flush) {
          if (flush) {
              List<ChunkHolder> list = (List) this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList());
-@@ -799,13 +858,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -796,13 +855,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          int l = 0;
@@ -211,7 +211,7 @@ index 86cdc8951544c16f8dc5148bc2c7bf9bbf920c60..c468b012197b2c3444ad8bb0d8a9f41c
  
      }
  
-@@ -843,6 +896,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -840,6 +893,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                          this.level.unload(chunk);
                      }
@@ -219,7 +219,7 @@ index 86cdc8951544c16f8dc5148bc2c7bf9bbf920c60..c468b012197b2c3444ad8bb0d8a9f41c
  
                      this.lightEngine.updateChunkStatus(ichunkaccess.getPos());
                      this.lightEngine.tryScheduleUpdate();
-@@ -1263,6 +1317,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1260,6 +1314,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              asyncSaveData, chunk);
  
          chunk.setUnsaved(false);
@@ -227,7 +227,7 @@ index 86cdc8951544c16f8dc5148bc2c7bf9bbf920c60..c468b012197b2c3444ad8bb0d8a9f41c
      }
      // Paper end
  
-@@ -1272,6 +1327,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1269,6 +1324,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (!chunk.isUnsaved()) {
              return false;
          } else {
@@ -256,10 +256,10 @@ index 1d9a0f6effa1654609f4d0752ec69eed6ab7134b..585892f19bc0aea89889a358c0407f29
      public void close() throws IOException {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 443044aa09b80bdbbcd202b53d265c635b50015f..848690e6dfaec00ec9b8a8397d2a6d37f24c8d12 100644
+index c3db29bc1b24a976617068a4ddae062857d61097..c7221d169badfae6653d64cb39e1435372ea179a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1082,6 +1082,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1083,6 +1083,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
          return !this.server.isUnderSpawnProtection(this, pos, player) && this.getWorldBorder().isWithinBounds(pos);
      }
  
@@ -298,10 +298,10 @@ index 443044aa09b80bdbbcd202b53d265c635b50015f..848690e6dfaec00ec9b8a8397d2a6d37
          ServerChunkCache chunkproviderserver = this.getChunkSource();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index ea1f0477f416f9e852ea92083781d7eb6ab24861..58c67cc9a4c9c238fae89e165dc6ad01e569476f 100644
+index b0dffb7c7c8fece2528ac218acef428731145b92..8faa5ccd643158c59d55a6bf8e0e07a44881e6e9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -177,6 +177,7 @@ import org.bukkit.inventory.MainHand;
+@@ -179,6 +179,7 @@ import org.bukkit.inventory.MainHand;
  public class ServerPlayer extends Player {
  
      private static final Logger LOGGER = LogUtils.getLogger();
@@ -310,10 +310,10 @@ index ea1f0477f416f9e852ea92083781d7eb6ab24861..58c67cc9a4c9c238fae89e165dc6ad01
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      public ServerGamePacketListenerImpl connection;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 4b9e030016bef762c01ace5181ade7d1480b8702..c1e62a0d1655993430da7e4cbd8075cd4239adb4 100644
+index 4e662c672a554528dca7cdd31ae39957288943e3..0696528f804b1b1b6e80d0bb3611725be6c8318c 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -561,6 +561,7 @@ public abstract class PlayerList {
+@@ -562,6 +562,7 @@ public abstract class PlayerList {
      protected void save(ServerPlayer player) {
          if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
          if (!player.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
@@ -321,7 +321,7 @@ index 4b9e030016bef762c01ace5181ade7d1480b8702..c1e62a0d1655993430da7e4cbd8075cd
          this.playerIo.save(player);
          ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
  
-@@ -1163,10 +1164,22 @@ public abstract class PlayerList {
+@@ -1164,10 +1165,22 @@ public abstract class PlayerList {
      }
  
      public void saveAll() {
@@ -346,7 +346,7 @@ index 4b9e030016bef762c01ace5181ade7d1480b8702..c1e62a0d1655993430da7e4cbd8075cd
          MinecraftTimings.savePlayers.stopTiming(); // Paper
          return null; }); // Paper - ensure main
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-index 8dd9879d52ba9bd816fcfa5413ef3bfc25d562c7..44e1fdbf6798034b9092fe151568ff392da8af08 100644
+index dc164608bfb2fb18a1adf83fa10bac4028dcac0a..a97909e77b9b28aede8c8716831c3f9a90618f09 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 @@ -457,6 +457,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom

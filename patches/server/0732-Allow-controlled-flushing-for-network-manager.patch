@@ -9,10 +9,10 @@ This patch will be used to optimise out flush calls in later
 patches.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 00abdd5bba02b7cdf8dbdc423594f0fde890dd84..05b1b2bdc5396d7f95106bd7c75c4e319e7975a2 100644
+index 25d26ba482edac4158ba247e105d8c5fac0729e4..b8e127f19c38d51baaa1a2c47a0d2eab62d71e90 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -103,6 +103,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -99,6 +99,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public ConnectionProtocol protocol;
      // Paper end
  
@@ -52,23 +52,23 @@ index 00abdd5bba02b7cdf8dbdc423594f0fde890dd84..05b1b2bdc5396d7f95106bd7c75c4e31
      public Connection(PacketFlow side) {
          this.receiving = side;
      }
-@@ -268,7 +301,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -264,7 +297,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              net.minecraft.server.MCUtil.isMainThread() && packet.isReady() && this.queue.isEmpty() &&
              (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
          ))) {
--            this.sendPacket(packet, callback);
-+            this.writePacket(packet, callback, null); // Paper
+-            this.sendPacket(packet, packetsendlistener);
++            this.sendPacket(packet, packetsendlistener, null); // Paper
              return;
          }
          // write the packets to the queue, then flush - antixray hooks there already
-@@ -292,6 +325,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -288,6 +321,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
-     private void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback) {
+     private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
 +        // Paper start - add flush parameter
-+        this.writePacket(packet, callback, Boolean.TRUE);
++        this.sendPacket(packet, packetsendlistener, Boolean.TRUE);
 +    }
-+    private void writePacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, Boolean flushConditional) {
++    private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, Boolean flushConditional) {
 +        this.packetWrites.getAndIncrement(); // must be befeore using canFlush
 +        boolean effectiveFlush = flushConditional == null ? this.canFlush : flushConditional.booleanValue();
 +        final boolean flush = effectiveFlush || packet instanceof net.minecraft.network.protocol.game.ClientboundKeepAlivePacket || packet instanceof ClientboundDisconnectPacket; // no delay for certain packets
@@ -76,40 +76,40 @@ index 00abdd5bba02b7cdf8dbdc423594f0fde890dd84..05b1b2bdc5396d7f95106bd7c75c4e31
          ConnectionProtocol enumprotocol = ConnectionProtocol.getProtocolForPacket(packet);
          ConnectionProtocol enumprotocol1 = this.getCurrentProtocol();
  
-@@ -302,16 +343,21 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -298,16 +339,21 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
  
          if (this.channel.eventLoop().inEventLoop()) {
--            this.doSendPacket(packet, callback, enumprotocol, enumprotocol1);
-+            this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+-            this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1);
++            this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
          } else {
              this.channel.eventLoop().execute(() -> {
--                this.doSendPacket(packet, callback, enumprotocol, enumprotocol1);
-+                this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+-                this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1);
++                this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
              });
          }
  
      }
  
-     private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol packetState, ConnectionProtocol currentState) {
+     private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, ConnectionProtocol packetState, ConnectionProtocol currentState) {
 +        // Paper start - add flush parameter
-+        this.doSendPacket(packet, callback, packetState, currentState, true);
++        this.doSendPacket(packet, packetsendlistener, packetState, currentState, true);
 +    }
-+    private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol packetState, ConnectionProtocol currentState, boolean flush) {
++    private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, ConnectionProtocol packetState, ConnectionProtocol currentState, boolean flush) {
 +        // Paper end - add flush parameter
          if (packetState != currentState) {
              this.setProtocol(packetState);
          }
-@@ -325,7 +371,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -321,7 +367,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
          try {
              // Paper end
 -        ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
 +        ChannelFuture channelfuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - add flush parameter
  
-         if (callback != null) {
-             channelfuture.addListener(callback);
-@@ -367,6 +413,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         if (packetsendlistener != null) {
+             channelfuture.addListener((future) -> {
+@@ -376,6 +422,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
      private boolean processQueue() {
          if (this.queue.isEmpty()) return true;
@@ -120,7 +120,7 @@ index 00abdd5bba02b7cdf8dbdc423594f0fde890dd84..05b1b2bdc5396d7f95106bd7c75c4e31
          // If we are on main, we are safe here in that nothing else should be processing queue off main anymore
          // But if we are not on main due to login/status, the parent is synchronized on packetQueue
          java.util.Iterator<PacketHolder> iterator = this.queue.iterator();
-@@ -374,16 +424,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -383,16 +433,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              PacketHolder queued = iterator.next(); // poll -> peek
  
              // Fix NPE (Spigot bug caused by handleDisconnection())
@@ -140,7 +140,7 @@ index 00abdd5bba02b7cdf8dbdc423594f0fde890dd84..05b1b2bdc5396d7f95106bd7c75c4e31
              } else {
                  iterator.remove();
 -                this.sendPacket(packet, queued.listener);
-+                this.writePacket(packet, queued.listener, (!iterator.hasNext() && (needsFlush || this.canFlush)) ? Boolean.TRUE : Boolean.FALSE); // Paper - make only one flush call per sendPacketQueue() call
++                this.sendPacket(packet, queued.listener, (!iterator.hasNext() && (needsFlush || this.canFlush)) ? Boolean.TRUE : Boolean.FALSE); // Paper - make only one flush call per sendPacketQueue() call
 +                hasWrotePacket = true; // Paper - make only one flush call per sendPacketQueue() call
              }
          }

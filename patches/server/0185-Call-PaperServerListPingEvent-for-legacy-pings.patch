@@ -84,10 +84,10 @@ index 0000000000000000000000000000000000000000..74c012fd40491f1d870fbc1aa8c318a2
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
-index c4f1de1413e37e91492e7dd3fa33da5ef87fdbd5..0d35e9ff88542b02bb948aa10e064911e73a6913 100644
+index e35f4121280ca81dc78121d9aa65e9b7d0c41932..37cd7b44559e5705b31296df87c94d2ab200138d 100644
 --- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
 +++ b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
-@@ -47,12 +47,19 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+@@ -48,13 +48,21 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
              MinecraftServer minecraftserver = this.serverConnectionListener.getServer();
              int i = bytebuf.readableBytes();
              String s;
@@ -98,34 +98,36 @@ index c4f1de1413e37e91492e7dd3fa33da5ef87fdbd5..0d35e9ff88542b02bb948aa10e064911
              switch (i) {
                  case 0:
                      LegacyQueryHandler.LOGGER.debug("Ping: (<1.3.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
--                    s = String.format("%s\u00a7%d\u00a7%d", event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
-+                // Paper start - Call PaperServerListPingEvent and use results
-+                event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 39, null);
-+                if (event == null) {
-+                    channelhandlercontext.close();
-+                    break;
-+                }
-+                s = String.format("%s\u00a7%d\u00a7%d", com.destroystokyo.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
+-                    s = String.format(Locale.ROOT, "%s\u00a7%d\u00a7%d", event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
++                    // Paper start - Call PaperServerListPingEvent and use results
++                    event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 39, null);
++                    if (event == null) {
++                        channelhandlercontext.close();
++                        break;
++                    }
++                    s = String.format(Locale.ROOT, "%s\u00a7%d\u00a7%d", com.destroystokyo.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
                      this.sendFlushAndClose(channelhandlercontext, this.createReply(s));
++                    // Paper end
                      break;
                  case 1:
-@@ -61,7 +68,14 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+                     if (bytebuf.readUnsignedByte() != 1) {
+@@ -62,7 +70,14 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
                      }
  
                      LegacyQueryHandler.LOGGER.debug("Ping: (1.4-1.5.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
--                    s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
-+                // Paper start - Call PaperServerListPingEvent and use results
-+                event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 127, null); // Paper
-+                if (event == null) {
-+                    channelhandlercontext.close();
-+                    break;
-+                }
-+                s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] { event.getProtocolVersion(), minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()}); // CraftBukkit
-+                // Paper end
+-                    s = String.format(Locale.ROOT, "\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
++                    // Paper start - Call PaperServerListPingEvent and use results
++                    event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 127, null); // Paper
++                    if (event == null) {
++                        channelhandlercontext.close();
++                        break;
++                    }
++                    s = String.format(Locale.ROOT, "\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] { event.getProtocolVersion(), minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()}); // CraftBukkit
++                    // Paper end
                      this.sendFlushAndClose(channelhandlercontext, this.createReply(s));
                      break;
                  default:
-@@ -171,8 +185,16 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+@@ -172,8 +187,16 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
  
          LOGGER.debug("Ping: (1.6) from {}", ctx.channel().remoteAddress());
  

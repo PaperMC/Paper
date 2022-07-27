@@ -88,18 +88,18 @@ index 0000000000000000000000000000000000000000..980e2b4dc308adf9a6cb2596b28eaeee
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 1b075033f0640433341957f6e26ebe25f18928ee..8b5eddce4845619603ccfeec158d97cb86568e0d 100644
+index 7c3c76b7ef169e0c0832e26212775111deb505c0..63abdc84bbd8d3ef78e18ffe792f2f1e5035e2ff 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -69,6 +69,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -70,6 +70,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
      @Nullable
-     private ProfilePublicKey playerProfilePublicKey;
+     private ProfilePublicKey.Data profilePublicKeyData;
      public String hostname = ""; // CraftBukkit - add field
 +    private int velocityLoginMessageId = -1; // Paper - Velocity support
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -279,6 +280,16 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -279,6 +280,16 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
              } else {
@@ -116,7 +116,7 @@ index 1b075033f0640433341957f6e26ebe25f18928ee..8b5eddce4845619603ccfeec158d97cb
                  // Spigot start
              // Paper start - Cache authenticator threads
              authenticatorPool.execute(new Runnable() {
-@@ -388,6 +399,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -390,6 +401,12 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
      public class LoginHandler {
  
          public void fireEvents() throws Exception {
@@ -129,7 +129,7 @@ index 1b075033f0640433341957f6e26ebe25f18928ee..8b5eddce4845619603ccfeec158d97cb
                          String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
                          java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
                          java.util.UUID uniqueId = ServerLoginPacketListenerImpl.this.gameProfile.getId();
-@@ -435,6 +452,58 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -437,6 +454,59 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
      // Spigot end
  
      public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
@@ -164,9 +164,10 @@ index 1b075033f0640433341957f6e26ebe25f18928ee..8b5eddce4845619603ccfeec158d97cb
 +            //noinspection NonStrictComparisonCanBeEquality
 +            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY) {
 +                final ProfilePublicKey.Data forwardedKey = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
-+                if (this.playerProfilePublicKey == null) {
++                if (this.profilePublicKeyData == null) {
 +                    try {
-+                        this.playerProfilePublicKey = ProfilePublicKey.createValidated(this.server.getServiceSignatureValidator(), forwardedKey);
++                        ProfilePublicKey.createValidated(this.server.getServiceSignatureValidator(), this.gameProfile.getId(), forwardedKey);
++                        this.profilePublicKeyData = forwardedKey;
 +                    } catch (CryptException e) {
 +                        this.disconnect("Unable to validate forwarded player key");
 +                    }
@@ -189,7 +190,7 @@ index 1b075033f0640433341957f6e26ebe25f18928ee..8b5eddce4845619603ccfeec158d97cb
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 97f7d0f144e9b0bd40ed714ea04153bf538bf36e..f1af15d229424bcb570c1cea0cde9aec94841b6b 100644
+index 21f0e1a23d6e9c6c76abfa9af555642fadeba69c..59ce840dadcecf9c6aed77747a06519eca5fea90 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -764,7 +764,7 @@ public final class CraftServer implements Server {

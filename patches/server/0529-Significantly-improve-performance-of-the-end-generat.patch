@@ -12,7 +12,7 @@ Co-authored-by: Dylan Xaldin <Puremin0rez515@gmail.com>
 Co-authored-by: pop4959 <pop4959@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java b/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
-index 6825feea42667a0f14c4c730e5f1ac970c654c56..1d00c019eb976de22be6e5e1f3632ca0c00d77ea 100644
+index 683474cd96d3a0cdfb3b22d0111c8d3231f01d92..f09fd5027535d2fc4d4afae010f08e7accff45b3 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/DensityFunctions.java
 @@ -489,6 +489,16 @@ public final class DensityFunctions {
@@ -33,31 +33,31 @@ index 6825feea42667a0f14c4c730e5f1ac970c654c56..1d00c019eb976de22be6e5e1f3632ca0
          public EndIslandDensityFunction(long seed) {
              RandomSource randomSource = new LegacyRandomSource(seed);
 @@ -504,12 +514,26 @@ public final class DensityFunctions {
-             float f = 100.0F - Mth.sqrt((long) i * (long) i + (long) j * (long) j) * 8.0F; // Paper - cast ints to long to avoid integer overflow
+             float f = 100.0F - Mth.sqrt((long) x * (long) x + (long) z * (long) z) * 8.0F; // Paper - cast ints to long to avoid integer overflow
              f = Mth.clamp(f, -100.0F, 80.0F);
  
-+            NoiseCache cache = noiseCache.get().computeIfAbsent(simplexNoise, noiseKey -> new NoiseCache()); // Paper
-             for(int o = -12; o <= 12; ++o) {
-                 for(int p = -12; p <= 12; ++p) {
-                     long q = (long)(k + o);
-                     long r = (long)(l + p);
--                    if (q * q + r * r > 4096L && simplexNoise.getValue((double)q, (double)r) < (double)-0.9F) {
--                        float g = (Mth.abs((float)q) * 3439.0F + Mth.abs((float)r) * 147.0F) % 13.0F + 9.0F;
++            NoiseCache cache = noiseCache.get().computeIfAbsent(sampler, noiseKey -> new NoiseCache()); // Paper
+             for(int m = -12; m <= 12; ++m) {
+                 for(int n = -12; n <= 12; ++n) {
+                     long o = (long)(i + m);
+                     long p = (long)(j + n);
+-                    if (o * o + p * p > 4096L && sampler.getValue((double)o, (double)p) < (double)-0.9F) {
+-                        float g = (Mth.abs((float)o) * 3439.0F + Mth.abs((float)p) * 147.0F) % 13.0F + 9.0F;
 +                    // Paper start - Significantly improve end generation performance by using a noise cache
-+                    long key = net.minecraft.world.level.ChunkPos.asLong((int) q, (int) r);
++                    long key = net.minecraft.world.level.ChunkPos.asLong((int) o, (int) p);
 +                    int index = (int) it.unimi.dsi.fastutil.HashCommon.mix(key) & 8191;
 +                    float g = Float.MIN_VALUE;
 +                    if (cache.keys[index] == key) {
 +                        g = cache.values[index];
 +                    } else {
-+                        if (q * q + r * r > 4096L && simplexNoise.getValue((double)q, (double)r) < (double)-0.9F) {
-+                            g = (Mth.abs((float) q) * 3439.0F + Mth.abs((float) r) * 147.0F) % 13.0F + 9.0F;
++                        if (o * o + p * p > 4096L && sampler.getValue((double)o, (double)p) < (double)-0.9F) {
++                            g = (Mth.abs((float) o) * 3439.0F + Mth.abs((float) p) * 147.0F) % 13.0F + 9.0F;
 +                        }
 +                        cache.keys[index] = key;
 +                        cache.values[index] = g;
 +                    }
 +                    if (g != Float.MIN_VALUE) {
 +                        // Paper end
-                         float h = (float)(m - o * 2);
-                         float s = (float)(n - p * 2);
-                         float t = 100.0F - Mth.sqrt(h * h + s * s) * g;
+                         float h = (float)(k - m * 2);
+                         float q = (float)(l - n * 2);
+                         float r = 100.0F - Mth.sqrt(h * h + q * q) * g;

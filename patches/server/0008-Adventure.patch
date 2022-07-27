@@ -1148,7 +1148,7 @@ index 021a26a6b1c258deffc26c035ab52a4ea027d9a1..00d432bd395e7f7fb6ee24e371818d13
                  try {
                      int i = friendlyByteBuf.writerIndex();
 diff --git a/src/main/java/net/minecraft/network/chat/Component.java b/src/main/java/net/minecraft/network/chat/Component.java
-index d19b8ccc791c3f135603b950008136ae6d2f0bfb..bbfb98618a0b87406cc48465bdda15a0a4974b7e 100644
+index 06736982f7625c1a532315afe94e5e0c45ec1331..e7d9e2d8c87ddf3658b1c2e0f2a3e98ef8080cec 100644
 --- a/src/main/java/net/minecraft/network/chat/Component.java
 +++ b/src/main/java/net/minecraft/network/chat/Component.java
 @@ -1,6 +1,7 @@
@@ -1159,7 +1159,7 @@ index d19b8ccc791c3f135603b950008136ae6d2f0bfb..bbfb98618a0b87406cc48465bdda15a0
  import com.google.gson.Gson;
  import com.google.gson.GsonBuilder;
  import com.google.gson.JsonArray;
-@@ -200,6 +201,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
+@@ -216,6 +217,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
              GsonBuilder gsonbuilder = new GsonBuilder();
  
              gsonbuilder.disableHtmlEscaping();
@@ -1167,7 +1167,7 @@ index d19b8ccc791c3f135603b950008136ae6d2f0bfb..bbfb98618a0b87406cc48465bdda15a0
              gsonbuilder.registerTypeHierarchyAdapter(Component.class, new Component.Serializer());
              gsonbuilder.registerTypeHierarchyAdapter(Style.class, new Style.Serializer());
              gsonbuilder.registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory());
-@@ -375,6 +377,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
+@@ -391,6 +393,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
          }
  
          public JsonElement serialize(Component ichatbasecomponent, Type type, JsonSerializationContext jsonserializationcontext) {
@@ -1175,48 +1175,6 @@ index d19b8ccc791c3f135603b950008136ae6d2f0bfb..bbfb98618a0b87406cc48465bdda15a0
              JsonObject jsonobject = new JsonObject();
  
              if (!ichatbasecomponent.getStyle().isEmpty()) {
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
-index fc2d39d93f88d71af503c20c497be7385ec312eb..285c9197bd716febb158464a1c791337e1d43995 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
-@@ -14,9 +14,20 @@ import net.minecraft.network.chat.PlayerChatMessage;
- import net.minecraft.network.protocol.Packet;
- import net.minecraft.util.Crypt;
- 
--public record ClientboundPlayerChatPacket(Component signedContent, Optional<Component> unsignedContent, int typeId, ChatSender sender, Instant timeStamp, Crypt.SaltSignaturePair saltSignature) implements Packet<ClientGamePacketListener> {
-+// Paper start
-+public record ClientboundPlayerChatPacket(@org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component adventure$message, Component signedContent, Optional<Component> unsignedContent, int typeId, ChatSender sender, Instant timeStamp, Crypt.SaltSignaturePair saltSignature) implements Packet<ClientGamePacketListener> {
-     private static final Duration MESSAGE_EXPIRES_AFTER = ServerboundChatPacket.MESSAGE_EXPIRES_AFTER.plus(Duration.ofMinutes(2L));
- 
-+    public ClientboundPlayerChatPacket(Component signedContent, Optional<Component> unsignedContent, int typeId, ChatSender sender, Instant timeStamp, Crypt.SaltSignaturePair saltSignature) {
-+        this(null, signedContent, unsignedContent, typeId, sender, timeStamp, saltSignature);
-+    }
-+
-+    @Deprecated // doesn't support signed messages
-+    public ClientboundPlayerChatPacket(net.kyori.adventure.text.Component adventure$message, int typeId, ChatSender sender, Instant timeStamp) {
-+        this(adventure$message, Component.empty(), Optional.empty(), typeId, sender, timeStamp, net.minecraft.util.Crypt.SaltSignaturePair.EMPTY);
-+    }
-+    // Paper end
-+
-     public ClientboundPlayerChatPacket(FriendlyByteBuf buf) {
-         this(buf.readComponent(), buf.readOptional(FriendlyByteBuf::readComponent), buf.readVarInt(), new ChatSender(buf), buf.readInstant(), new Crypt.SaltSignaturePair(buf));
-     }
-@@ -24,7 +35,15 @@ public record ClientboundPlayerChatPacket(Component signedContent, Optional<Comp
-     @Override
-     public void write(FriendlyByteBuf buf) {
-         buf.writeComponent(this.signedContent);
-+        // Paper start
-+        //TODO Proper API and writing signed contents
-+        if (this.adventure$message != null) {
-+            buf.writeBoolean(true);
-+            buf.writeComponent(this.adventure$message);
-+        } else {
-         buf.writeOptional(this.unsignedContent, FriendlyByteBuf::writeComponent);
-+        }
-+        // Paper end
-         buf.writeVarInt(this.typeId);
-         this.sender.write(buf);
-         buf.writeInstant(this.timeStamp);
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
 index 02183c810f9968621b9b20c1f7b54258b620c507..32ef3edebe94a2014168b7e438752a80b2687e5f 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
@@ -1290,24 +1248,24 @@ index 1fb62779527a228f748b49a4d2ddfc57ccb80cf8..bd808eb312ade7122973a47f4b965058
      }
  
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
-index 32b391d7c4c21813db204957286a11970267a3bd..cfcdb21f48f74ea1638907e966f06c4aee072d34 100644
+index fd5cdc33c4cc8f24265b450621a13d3ab03644c2..b0052398d7ff954c2a7943ea4618d26f45d701da 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
-@@ -9,16 +9,25 @@ import net.minecraft.network.chat.Component;
+@@ -6,16 +6,25 @@ import net.minecraft.network.chat.Component;
  import net.minecraft.network.protocol.Packet;
  
  // Spigot start
--public record ClientboundSystemChatPacket(String content, int typeId) implements Packet<ClientGamePacketListener> {
-+public record ClientboundSystemChatPacket(@javax.annotation.Nullable net.kyori.adventure.text.Component adventure$content, @javax.annotation.Nullable String content, int typeId) implements Packet<ClientGamePacketListener> { // Paper - Adventure
+-public record ClientboundSystemChatPacket(String content, boolean overlay) implements Packet<ClientGamePacketListener> {
++public record ClientboundSystemChatPacket(@javax.annotation.Nullable net.kyori.adventure.text.Component adventure$content, @javax.annotation.Nullable String content, boolean overlay) implements Packet<ClientGamePacketListener> { // Paper - Adventure
  
-     public ClientboundSystemChatPacket(Component content, int typeId) {
--        this(Component.Serializer.toJson(content), typeId);
-+        this(null, Component.Serializer.toJson(content), typeId); // Paper - Adventure
+     public ClientboundSystemChatPacket(Component content, boolean overlay) {
+-        this(Component.Serializer.toJson(content), overlay);
++        this(null, Component.Serializer.toJson(content), overlay); // Paper - Adventure
      }
  
-     public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, int typeId) {
--        this(net.md_5.bungee.chat.ComponentSerializer.toString(content), typeId);
-+        this(null, net.md_5.bungee.chat.ComponentSerializer.toString(content), typeId); // Paper - Adventure
+     public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, boolean overlay) {
+-        this(net.md_5.bungee.chat.ComponentSerializer.toString(content), overlay);
++        this(null, net.md_5.bungee.chat.ComponentSerializer.toString(content), overlay); // Paper - Adventure
      }
      // Spigot end
 +    // Paper start
@@ -1315,14 +1273,14 @@ index 32b391d7c4c21813db204957286a11970267a3bd..cfcdb21f48f74ea1638907e966f06c4a
 +        com.google.common.base.Preconditions.checkArgument(!(adventure$content == null && content == null), "Component adventure$content and String (json) content cannot both be null");
 +    }
 +
-+    public ClientboundSystemChatPacket(net.kyori.adventure.text.Component content, int typeId) {
-+        this(content, null, typeId);
++    public ClientboundSystemChatPacket(net.kyori.adventure.text.Component content, boolean overlay) {
++        this(content, null, overlay);
 +    }
 +    // Paper end
  
      public ClientboundSystemChatPacket(FriendlyByteBuf buf) {
-         this(buf.readComponent(), buf.readVarInt());
-@@ -26,7 +35,15 @@ public record ClientboundSystemChatPacket(String content, int typeId) implements
+         this(buf.readComponent(), buf.readBoolean());
+@@ -23,7 +32,15 @@ public record ClientboundSystemChatPacket(String content, boolean overlay) imple
  
      @Override
      public void write(FriendlyByteBuf buf) {
@@ -1335,7 +1293,7 @@ index 32b391d7c4c21813db204957286a11970267a3bd..cfcdb21f48f74ea1638907e966f06c4a
 +            throw new IllegalArgumentException("Must supply either adventure component or string json content");
 +        }
 +        // Paper end
-         buf.writeVarInt(this.typeId);
+         buf.writeBoolean(this.overlay);
      }
  
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundTabListPacket.java
@@ -1368,10 +1326,10 @@ index 762a9392ffac3042356709dddd15bb3516048bed..3544e2dc2522e9d6305d727d56e73490
          buf.writeComponent(this.footer);
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1ad7797dbef61f8e8011ae6db3089939a279071c..327a8f3806d4b3a42f0a7691d578725bf47742fa 100644
+index 3aadba90ab32388b9e8ef96f182fa263c760f53b..acc5ce86ae8aa5ada21e6c97f7921caca4b0bd00 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -227,6 +227,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -229,6 +229,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private boolean allowFlight;
      @Nullable
      private String motd;
@@ -1399,10 +1357,10 @@ index 1ad7797dbef61f8e8011ae6db3089939a279071c..327a8f3806d4b3a42f0a7691d578725b
  
      public boolean previewsChat() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d58357162 100644
+index 4759a0eceeccf28b62cb8865b423235d47d07443..58aea845e8ce6e46e52fc3bdfa9c64153c32a750 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -152,6 +152,7 @@ import net.minecraft.world.scores.Score;
+@@ -154,6 +154,7 @@ import net.minecraft.world.scores.Score;
  import net.minecraft.world.scores.Scoreboard;
  import net.minecraft.world.scores.Team;
  import net.minecraft.world.scores.criteria.ObjectiveCriteria;
@@ -1410,7 +1368,7 @@ index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d
  import org.bukkit.Bukkit;
  import org.bukkit.Location;
  import org.bukkit.WeatherType;
-@@ -228,6 +229,7 @@ public class ServerPlayer extends Player {
+@@ -230,6 +231,7 @@ public class ServerPlayer extends Player {
  
      // CraftBukkit start
      public String displayName;
@@ -1418,7 +1376,7 @@ index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d
      public Component listName;
      public org.bukkit.Location compassTarget;
      public int newExp = 0;
-@@ -310,6 +312,7 @@ public class ServerPlayer extends Player {
+@@ -312,6 +314,7 @@ public class ServerPlayer extends Player {
  
          // CraftBukkit start
          this.displayName = this.getScoreboardName();
@@ -1426,7 +1384,7 @@ index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d
          this.bukkitPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
      }
-@@ -786,22 +789,17 @@ public class ServerPlayer extends Player {
+@@ -788,22 +791,17 @@ public class ServerPlayer extends Player {
  
          String deathmessage = defaultMessage.getString();
          this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
@@ -1451,9 +1409,9 @@ index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d
 +        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
 +            Component ichatbasecomponent = PaperAdventure.asVanilla(deathMessage); // Paper - Adventure
  
-             this.connection.send(new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent), (future) -> {
-                 if (!future.isSuccess()) {
-@@ -1757,6 +1755,7 @@ public class ServerPlayer extends Player {
+             this.connection.send(new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
+                 boolean flag1 = true;
+@@ -1751,6 +1749,7 @@ public class ServerPlayer extends Player {
      }
  
      public String locale = "en_us"; // CraftBukkit - add, lowercase
@@ -1461,7 +1419,7 @@ index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d
      public void updateOptions(ServerboundClientInformationPacket packet) {
          // CraftBukkit start
          if (getMainArm() != packet.mainHand()) {
-@@ -1768,6 +1767,10 @@ public class ServerPlayer extends Player {
+@@ -1762,6 +1761,10 @@ public class ServerPlayer extends Player {
              this.server.server.getPluginManager().callEvent(event);
          }
          this.locale = packet.language;
@@ -1473,10 +1431,10 @@ index 56996af65ef7478adb90d3b2f4cd3351fc49200b..7002d5f5700570e32ebf0b63e340d87d
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad730221c7319cd 100644
+index 13f996d163739f419b701854b5248a02edfc93c0..59932a4f83461280ab3c097add951e5a138eb53d 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -172,6 +172,8 @@ import org.apache.commons.lang3.StringUtils;
+@@ -187,6 +187,8 @@ import org.apache.commons.lang3.StringUtils;
  import org.slf4j.Logger;
  
  // CraftBukkit start
@@ -1484,8 +1442,8 @@ index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad73022
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
  import java.util.concurrent.ExecutionException;
  import java.util.concurrent.atomic.AtomicInteger;
- import net.minecraft.world.entity.animal.Bucketable;
-@@ -413,21 +415,24 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ import net.minecraft.network.chat.OutgoingPlayerChatMessage;
+@@ -441,14 +443,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          return this.server.isSingleplayerOwner(this.player.getGameProfile());
      }
  
@@ -1509,7 +1467,19 @@ index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad73022
          // CraftBukkit start - fire PlayerKickEvent
          if (this.processedDisconnect) {
              return;
+@@ -457,7 +462,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             Waitable waitable = new Waitable() {
+                 @Override
+                 protected Object evaluate() {
+-                    ServerGamePacketListenerImpl.this.disconnect(s);
++                    ServerGamePacketListenerImpl.this.disconnect(reason, cause); // Paper - adventure
+                     return null;
+                 }
+             };
+@@ -474,9 +479,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             return;
          }
+ 
 -        String leaveMessage = ChatFormatting.YELLOW + this.player.getScoreboardName() + " left the game.";
 +        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? this.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(this.player.getScoreboardName())); // Paper - Adventure
  
@@ -1518,17 +1488,16 @@ index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad73022
  
          if (this.cserver.getServer().isRunning()) {
              this.cserver.getPluginManager().callEvent(event);
-@@ -439,8 +444,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -488,7 +493,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          }
          this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
          // Send the possibly modified leave message
--        s = event.getReason();
--        final Component ichatbasecomponent = CraftChatMessage.fromString(s, true)[0];
+-        final Component ichatbasecomponent = CraftChatMessage.fromString(event.getReason(), true)[0];
 +        final Component ichatbasecomponent = PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
          // CraftBukkit end
  
-         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), (future) -> {
-@@ -1720,9 +1724,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
+@@ -1785,9 +1790,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          */
  
          this.player.disconnect();
@@ -1538,12 +1507,12 @@ index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad73022
 +        // Paper start - Adventure
 +        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().remove(this.player);
 +        if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
-+            this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), ChatType.SYSTEM);
++            this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), false);
 +            // Paper end
          }
          // CraftBukkit end
          this.player.getTextFilter().leave();
-@@ -1947,7 +1953,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -2039,7 +2046,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              this.handleCommand(s);
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
              // Do nothing, this is coming from a plugin
@@ -1556,8 +1525,8 @@ index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad73022
 +        } else if (false) { // Paper
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
-             this.cserver.getPluginManager().callEvent(event);
-@@ -2861,30 +2872,30 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             String originalFormat = event.getFormat(), originalMessage = event.getMessage();
+@@ -3076,30 +3088,30 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  return;
              }
  
@@ -1571,14 +1540,14 @@ index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad73022
 +            List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
  
              for (int i = 0; i < signText.size(); ++i) {
-                 FilteredText<Component> filteredtext = (signText.get(i)).map(Component::literal); // CraftBukkit - decompile error
+                 FilteredText filteredtext = (FilteredText) signText.get(i);
  
                  if (this.player.isTextFilteringEnabled()) {
--                    lines[i] = ChatFormatting.stripFormatting(filteredtext.filteredOrElse(CommonComponents.EMPTY).getString());
-+                    lines.add(net.kyori.adventure.text.Component.text(filteredtext.filteredOrElse(CommonComponents.EMPTY).getString())); // Paper - adventure
+-                    lines[i] = ChatFormatting.stripFormatting(filteredtext.filteredOrEmpty());
++                    lines.add(net.kyori.adventure.text.Component.text(filteredtext.filteredOrEmpty())); // Paper - adventure
                  } else {
--                    lines[i] = ChatFormatting.stripFormatting(filteredtext.raw().getString());
-+                    lines.add(net.kyori.adventure.text.Component.text(filteredtext.raw().getString())); // Paper - adventure
+-                    lines[i] = ChatFormatting.stripFormatting(filteredtext.raw());
++                    lines.add(net.kyori.adventure.text.Component.text(filteredtext.raw())); // Paper - adventure
                  }
              }
              SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.player.getBukkitEntity(), lines);
@@ -1596,10 +1565,10 @@ index 3e1a2faf97eeb376daef139ac8eb51c0bf2246f6..2e690a50420386690fa78d107ad73022
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index fc2910ee691da96591811e4c97987ebd2cb93ac3..ff8773f3671970bd759303f7a4bbc17d4df5a1de 100644
+index fed3a8c5a23f3a7b279f209aaaab5f6ffa3f137c..5054c3208d1723a33a96d23edcbc9f1483b879e5 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -377,7 +377,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -379,7 +379,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
                          if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
                              final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
                              if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
@@ -1608,7 +1577,7 @@ index fc2910ee691da96591811e4c97987ebd2cb93ac3..ff8773f3671970bd759303f7a4bbc17d
                              }
                              Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
                                  @Override
-@@ -388,12 +388,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -390,12 +390,12 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
  
                              ServerLoginPacketListenerImpl.this.server.processQueue.add(waitable);
                              if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
@@ -1637,7 +1606,7 @@ index 3a587073dbe5e8a599d342c5f758d842b7b6cddb..a426adfba3fccf1815177e0b8065684c
  
                  @Override
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054efb108b8 100644
+index ba6f4e9f74a524201390bd0e9106a6cf6afe0375..946b2b7341a10c25fae71d76f7b181b555fe38b6 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -8,6 +8,7 @@ import com.mojang.logging.LogUtils;
@@ -1648,15 +1617,7 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054
  import java.io.File;
  import java.net.SocketAddress;
  import java.nio.file.Path;
-@@ -100,6 +101,7 @@ import net.minecraft.world.scores.Team;
- import org.slf4j.Logger;
- 
- // CraftBukkit start
-+import io.papermc.paper.adventure.PaperAdventure; // Paper
- import com.google.common.base.Predicate;
- import java.util.stream.Collectors;
- import net.minecraft.server.dedicated.DedicatedServer;
-@@ -262,7 +264,7 @@ public abstract class PlayerList {
+@@ -264,7 +265,7 @@ public abstract class PlayerList {
          }
          // CraftBukkit start
          ichatmutablecomponent.withStyle(ChatFormatting.YELLOW);
@@ -1665,7 +1626,7 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054
  
          playerconnection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
          this.players.add(player);
-@@ -276,19 +278,18 @@ public abstract class PlayerList {
+@@ -278,19 +279,18 @@ public abstract class PlayerList {
          // Ensure that player inventory is populated with its viewer
          player.containerMenu.transferTo(player.containerMenu, bukkitPlayer);
  
@@ -1682,15 +1643,15 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054
  
 -        if (joinMessage != null && joinMessage.length() > 0) {
 -            for (Component line : org.bukkit.craftbukkit.util.CraftChatMessage.fromString(joinMessage)) {
--                this.server.getPlayerList().broadcastSystemMessage(line, ChatType.SYSTEM);
+-                this.server.getPlayerList().broadcastSystemMessage(line, false);
 -            }
 +        if (jm != null && !jm.equals(net.kyori.adventure.text.Component.empty())) { // Paper - Adventure
 +            joinMessage = PaperAdventure.asVanilla(jm); // Paper - Adventure
-+            this.server.getPlayerList().broadcastSystemMessage(joinMessage, ChatType.SYSTEM); // Paper - Adventure
++            this.server.getPlayerList().broadcastSystemMessage(joinMessage, false); // Paper - Adventure
          }
          // CraftBukkit end
  
-@@ -485,7 +486,7 @@ public abstract class PlayerList {
+@@ -487,7 +487,7 @@ public abstract class PlayerList {
  
      }
  
@@ -1699,7 +1660,7 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054
          ServerLevel worldserver = entityplayer.getLevel();
  
          entityplayer.awardStat(Stats.LEAVE_GAME);
-@@ -496,7 +497,7 @@ public abstract class PlayerList {
+@@ -498,7 +498,7 @@ public abstract class PlayerList {
              entityplayer.closeContainer();
          }
  
@@ -1708,7 +1669,7 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054
          this.cserver.getPluginManager().callEvent(playerQuitEvent);
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
-@@ -549,7 +550,7 @@ public abstract class PlayerList {
+@@ -551,7 +551,7 @@ public abstract class PlayerList {
          this.cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
          // CraftBukkit end
  
@@ -1717,7 +1678,7 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054
      }
  
      // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-@@ -595,10 +596,10 @@ public abstract class PlayerList {
+@@ -597,10 +597,10 @@ public abstract class PlayerList {
              }
  
              // return chatmessage;
@@ -1730,7 +1691,7 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054
          } else if (this.getIpBans().isBanned(socketaddress) && !this.getIpBans().get(socketaddress).hasExpired()) {
              IpBanListEntry ipbanentry = this.ipBans.get(socketaddress);
  
-@@ -608,17 +609,17 @@ public abstract class PlayerList {
+@@ -610,17 +610,17 @@ public abstract class PlayerList {
              }
  
              // return chatmessage;
@@ -1751,7 +1712,7 @@ index 2fc5519020af0f18e93bf11cc0d33f65f1b23b55..9e0c61b63cc402c26ca1306313ca6054
              return null;
          }
          return entity;
-@@ -1126,7 +1127,7 @@ public abstract class PlayerList {
+@@ -1128,7 +1128,7 @@ public abstract class PlayerList {
      public void removeAll() {
          // CraftBukkit start - disconnect safely
          for (ServerPlayer player : this.players) {
@@ -2525,7 +2486,7 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..f9863e138994f6c7a7975a852f106faa
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index b5842cc22df06d6d8d984d6378fcf791e9c8bfe3..6da824e20f960414d0a183943366cec5f8c693c0 100644
+index cadafdfd3469b6f813f5e0add116640313fb6209..3fe120364ac61d40d6d8b16339e3086a3c0ac512 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -269,14 +269,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2771,7 +2732,7 @@ index b5842cc22df06d6d8d984d6378fcf791e9c8bfe3..6da824e20f960414d0a183943366cec5
 +    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
 +        if (getHandle().connection == null) return;
 +        final net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.Registry.CHAT_TYPE_REGISTRY);
-+        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(message, chatTypeRegistry.getId(chatTypeRegistry.get(net.minecraft.network.chat.ChatType.SYSTEM))));
++        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(message, type == net.kyori.adventure.audience.MessageType.SYSTEM));
 +    }
 +
 +    @Override
@@ -3115,10 +3076,10 @@ index c7503805bb2358996fb704288b8e4320aee6f425..a06f9775a43a245380edabde63e79990
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
-index 2669644228037f7447ddf98a48a58bbbf6129c37..eaec84147d3023c71865a6b2236879511e9f3685 100644
+index a0334ec0a80dfc4f1e68c2e338aa486faaefb29e..257776a12ca26c1e75be22a67c94b0aa012fd687 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
-@@ -13,10 +13,17 @@ import org.apache.commons.lang.Validate;
+@@ -13,10 +13,17 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
  
  public class CraftMerchantCustom extends CraftMerchant {
  
@@ -3136,14 +3097,14 @@ index 2669644228037f7447ddf98a48a58bbbf6129c37..eaec84147d3023c71865a6b223687951
  
      @Override
      public String toString() {
-@@ -36,10 +43,17 @@ public class CraftMerchantCustom extends CraftMerchant {
-         private Level tradingWorld;
+@@ -35,10 +42,17 @@ public class CraftMerchantCustom extends CraftMerchant {
+         private Player tradingPlayer;
          protected CraftMerchant craftMerchant;
  
 +        @Deprecated // Paper - Adventure
          public MinecraftMerchant(String title) {
              Validate.notNull(title, "Title cannot be null");
-             this.title = Component.literal(title);
+             this.title = CraftChatMessage.fromString(title)[0];
          }
 +        // Paper start
 +        public MinecraftMerchant(net.kyori.adventure.text.Component title) {
@@ -3712,7 +3673,7 @@ index 78ea79b66cc9e90402ef5cdc2e5e04e0c74b1c26..4fede2161792ba3e7cdf0cc5a1f53318
  
          boolean hadFormat = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 0d0a5b436ff68d49cf7a043127818bd474562b4b..43e31362a980a4f300864321224bdf3ca92110ff 100644
+index 8c5165c449f740e51aad3f41405aaad1cfe5c657..a9a900f09b95d84b53adbe0405c322d36b6edad1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -69,6 +69,38 @@ public final class CraftMagicNumbers implements UnsafeValues {

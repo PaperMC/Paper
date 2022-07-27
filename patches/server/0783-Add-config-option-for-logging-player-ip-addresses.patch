@@ -5,7 +5,7 @@ Subject: [PATCH] Add config option for logging player ip addresses
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index c8012de68b997d6270ba4a5d79bc93c09ff4354f..1429f938c36d5a3a33e71837f440b2303d60cfe7 100644
+index d6f3869f5725c7f081efb7f486f74dbb99d4d005..8bc0cb9ad5bb4e76d962ff54305e2c08e279a17b 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 @@ -51,10 +51,11 @@ public class PacketUtils {
@@ -21,12 +21,12 @@ index c8012de68b997d6270ba4a5d79bc93c09ff4354f..1429f938c36d5a3a33e71837f440b230
 +                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, playerIP, exception); // Paper
                          }
                          net.minecraft.network.chat.Component error = net.minecraft.network.chat.Component.literal("Packet processing error");
-                         networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), (future) -> {
+                         networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), net.minecraft.network.PacketSendListener.thenRun(() -> networkmanager.disconnect(error)));
 diff --git a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
-index 0d35e9ff88542b02bb948aa10e064911e73a6913..31a4cd5010cd4ed8eb64b2bad86dc3adfd8ecca8 100644
+index 37cd7b44559e5705b31296df87c94d2ab200138d..37e52ea9ab694b466358981bc2a3c99f28a70c7d 100644
 --- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
 +++ b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
-@@ -183,7 +183,7 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+@@ -185,7 +185,7 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
          buf.release();
          this.buf = null;
  
@@ -36,10 +36,10 @@ index 0d35e9ff88542b02bb948aa10e064911e73a6913..31a4cd5010cd4ed8eb64b2bad86dc3ad
          InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
          com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index af3e70920221b6bd127bb3aed7f1e0a7e9e4c322..597c7660bd517322d8bc9c5acef6956c40067405 100644
+index 2985271132c9ae822dcb0d7a7e6f0c268d1736cc..cfdbcd024de6ad0f9d4e83b2f912b36ef3299458 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-@@ -205,7 +205,7 @@ public class ServerConnectionListener {
+@@ -206,7 +206,7 @@ public class ServerConnectionListener {
                                  throw new ReportedException(CrashReport.forThrowable(exception, "Ticking memory connection"));
                              }
  
@@ -47,12 +47,12 @@ index af3e70920221b6bd127bb3aed7f1e0a7e9e4c322..597c7660bd517322d8bc9c5acef6956c
 +                            ServerConnectionListener.LOGGER.warn("Failed to handle packet for {}", io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>", exception); // Paper
                              MutableComponent ichatmutablecomponent = Component.literal("Internal server error");
  
-                             networkmanager.send(new ClientboundDisconnectPacket(ichatmutablecomponent), (future) -> {
+                             networkmanager.send(new ClientboundDisconnectPacket(ichatmutablecomponent), PacketSendListener.thenRun(() -> {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 5064ea6767ce17dde271e80f4360549462f6cca0..c098a602ce840db0099b15bd108ea873c7f111d4 100644
+index c246fbd3c155d74684c3a105818abef833f1ed96..c1cb1406bf00843568e94c5d72cf60b3e5455720 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -229,7 +229,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -241,7 +241,10 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
      }
  
      public String getUserName() {
@@ -65,10 +65,10 @@ index 5064ea6767ce17dde271e80f4360549462f6cca0..c098a602ce840db0099b15bd108ea873
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index bf2888b678567ace5959d989e5dd119c65a9500d..d74d6669005d0669503253787636756a0c6590f4 100644
+index 76fa5e31701bc0e504d8e7b6ebfa737f3a10dc3b..75c64d23eb15368f8a40ebf9026d54604d450f91 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -240,7 +240,7 @@ public abstract class PlayerList {
+@@ -241,7 +241,7 @@ public abstract class PlayerList {
          final String s1;
  
          if (connection.getRemoteAddress() != null) {

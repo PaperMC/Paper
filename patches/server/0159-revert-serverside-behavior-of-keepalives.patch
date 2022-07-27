@@ -17,10 +17,10 @@ from networking or during connections flood of chunk packets on slower clients,
  at the cost of dead connections being kept open for longer.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index a38061ba575a2603b6b04382cb2f5c8396b05bdd..86f9991cfe6aca5923c64d8cdde6e90b9ba5591d 100644
+index 1be835e21c1400bbd4f6b793061c3d9f9c0625cd..0a2a55979ee58458928f78f1383a653717d0a18a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -240,7 +240,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -253,7 +253,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      public ServerPlayer player;
      private int tickCount;
      private int ackBlockChangesUpTo = -1;
@@ -29,29 +29,28 @@ index a38061ba575a2603b6b04382cb2f5c8396b05bdd..86f9991cfe6aca5923c64d8cdde6e90b
      private boolean keepAlivePending;
      private long keepAliveChallenge;
      // CraftBukkit start - multithreaded fields
-@@ -273,6 +273,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-     private int knownMovePacketCount;
-     private final ChatPreviewThrottler chatPreviewThrottler = new ChatPreviewThrottler();
-     private final AtomicReference<Instant> lastChatTimeStamp;
+@@ -290,6 +290,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     private final SignedMessageChain.Decoder signedMessageDecoder;
+     private final LastSeenMessagesValidator lastSeenMessagesValidator;
+     private final FutureChain chatMessageChain;
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
          this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
-@@ -360,18 +361,25 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -388,18 +389,25 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          }
  
          this.server.getProfiler().push("keepAlive");
 -        long i = Util.getMillis();
--
--        if (i - this.keepAliveTime >= 25000L) { // CraftBukkit
--            if (this.keepAlivePending) {
--                this.disconnect(Component.translatable("disconnect.timeout"));
--            } else {
 +        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
 +        long currentTime = Util.getMillis();
 +        long elapsedTime = currentTime - this.keepAliveTime;
-+
+ 
+-        if (i - this.keepAliveTime >= 25000L) { // CraftBukkit
+-            if (this.keepAlivePending) {
+-                this.disconnect(Component.translatable("disconnect.timeout"));
+-            } else {
 +        if (this.keepAlivePending) {
 +            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info

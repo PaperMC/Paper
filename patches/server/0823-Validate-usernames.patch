@@ -5,18 +5,18 @@ Subject: [PATCH] Validate usernames
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index c098a602ce840db0099b15bd108ea873c7f111d4..55b7e18507eb68d66b107a1716df948040e659d6 100644
+index 303981c9b873eee07052fbe607690d12074cd1d1..aabd8916470290045832e0fc1895d099c8553dd4 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -70,6 +70,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-     private ProfilePublicKey playerProfilePublicKey;
+@@ -71,6 +71,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+     private ProfilePublicKey.Data profilePublicKeyData;
      public String hostname = ""; // CraftBukkit - add field
      private int velocityLoginMessageId = -1; // Paper - Velocity support
 +    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -262,10 +263,38 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -272,10 +273,38 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
          }
      }
  
@@ -52,14 +52,14 @@ index c098a602ce840db0099b15bd108ea873c7f111d4..55b7e18507eb68d66b107a1716df9480
 +            }
 +        }
 +        // Paper end - validate usernames
+         this.profilePublicKeyData = (ProfilePublicKey.Data) packet.publicKey().orElse(null); // CraftBukkit - decompile error
+         GameProfile gameprofile = this.server.getSingleplayerProfile();
  
-         try {
-             this.playerProfilePublicKey = ServerLoginPacketListenerImpl.validatePublicKey(packet, this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 6d013360d35c54d1493849b22c9d65b18147cc33..c0ed1103e649e619c58f59c7bedd6a18a58f71ea 100644
+index 132ce6a997540c3f67f12be068883bd990e7bd63..dd514cc59b28fdc49dbb4c9641f11e8835b8fb1a 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -707,7 +707,7 @@ public abstract class PlayerList {
+@@ -708,7 +708,7 @@ public abstract class PlayerList {
  
          for (int i = 0; i < this.players.size(); ++i) {
              entityplayer = (ServerPlayer) this.players.get(i);

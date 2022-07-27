@@ -24,10 +24,10 @@ and an action can be defined: DROP or KICK
 If interval or rate are less-than 0, the limit is ignored
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 05a15b2da76a6d246b705e682b61a7c40c5dade7..1d98e328982255b6dab8e24223c97eaea2612a45 100644
+index 30f8053547ebbe05549ede851835a707793f8e45..e5b7145efddefb8bf756c3b0f115c92306830ae4 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -135,6 +135,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -131,6 +131,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
      }
      // Paper end - allow controlled flushing
@@ -40,9 +40,9 @@ index 05a15b2da76a6d246b705e682b61a7c40c5dade7..1d98e328982255b6dab8e24223c97eae
 +
 +    private boolean stopReadingPackets;
 +    private void killForPacketSpam() {
-+        this.sendPacket(new ClientboundDisconnectPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.kickMessage)), (future) -> {
++        this.sendPacket(new ClientboundDisconnectPacket(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.kickMessage)), PacketSendListener.thenRun(() -> {
 +            this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.kickMessage));
-+        });
++        }));
 +        this.setReadOnly();
 +        this.stopReadingPackets = true;
 +    }
@@ -50,7 +50,7 @@ index 05a15b2da76a6d246b705e682b61a7c40c5dade7..1d98e328982255b6dab8e24223c97eae
  
      public Connection(PacketFlow side) {
          this.receiving = side;
-@@ -215,6 +231,45 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -211,6 +227,45 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
          if (this.channel.isOpen()) {

@@ -105,11 +105,47 @@ index 0000000000000000000000000000000000000000..30e62719e0a83525daa33cf41cb61df3
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/network/ConnectionEvent.java b/src/main/java/io/papermc/paper/network/ConnectionEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d7e7db9e37ef0183c32b217bd944fb4f41ab83a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/ConnectionEvent.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.network;
++
++/**
++ * Internal connection pipeline events.
++ */
++public enum ConnectionEvent {
++
++    COMPRESSION_THRESHOLD_SET,
++    COMPRESSION_DISABLED
++}
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index cc1aa02fdf214b63aa105f3b0b12723dc359d287..023c564248adb2c5c4b679be9075ca88cb2d5b62 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -567,6 +567,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             } else {
+                 this.channel.pipeline().addBefore("encoder", "compress", new CompressionEncoder(compressionThreshold));
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper
+         } else {
+             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
+                 this.channel.pipeline().remove("decompress");
+@@ -575,6 +576,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
+                 this.channel.pipeline().remove("compress");
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_DISABLED); // Paper
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 72fbc58f7d003b7af3c35e5fc504010307c7086b..076c1d5fb69a4a30b3e412e85b17db09fd9a1def 100644
+index 1b38326c9a709536dc4cccf9af93aede98a1a782..83af90fb0dcb4b1a5a68f655cf66d101b472e8e7 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-@@ -113,6 +113,7 @@ public class ServerConnectionListener {
+@@ -114,6 +114,7 @@ public class ServerConnectionListener {
                      pending.add((Connection) object); // Paper
                      channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
                      ((Connection) object).setListener(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
