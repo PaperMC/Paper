@@ -3079,18 +3079,19 @@ index 0000000000000000000000000000000000000000..9d263ab3afb938c215c0b64d9171345f
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index e195e74c48c69047aa825b75fad95419c505b41f..f99d71301ceaa3af07ff0525f7d657ac6253d0e6 100644
+index e195e74c48c69047aa825b75fad95419c505b41f..3d8a5a66fdf66f46f772f0b2ebf7896eca099c6e 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -15,7 +15,6 @@ import org.bukkit.command.defaults.BukkitCommand;
+@@ -15,7 +15,7 @@ import org.bukkit.command.defaults.BukkitCommand;
  import org.bukkit.command.defaults.HelpCommand;
  import org.bukkit.command.defaults.PluginsCommand;
  import org.bukkit.command.defaults.ReloadCommand;
 -import org.bukkit.command.defaults.TimingsCommand;
++//import org.bukkit.command.defaults.TimingsCommand; // Paper - Timings v2
  import org.bukkit.command.defaults.VersionCommand;
  import org.bukkit.entity.Player;
  import org.bukkit.util.StringUtil;
-@@ -35,7 +34,7 @@ public class SimpleCommandMap implements CommandMap {
+@@ -35,7 +35,7 @@ public class SimpleCommandMap implements CommandMap {
          register("bukkit", new VersionCommand("version"));
          register("bukkit", new ReloadCommand("reload"));
          register("bukkit", new PluginsCommand("plugins"));
@@ -3099,7 +3100,7 @@ index e195e74c48c69047aa825b75fad95419c505b41f..f99d71301ceaa3af07ff0525f7d657ac
      }
  
      public void setFallbackCommands() {
-@@ -67,6 +66,7 @@ public class SimpleCommandMap implements CommandMap {
+@@ -67,6 +67,7 @@ public class SimpleCommandMap implements CommandMap {
       */
      @Override
      public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
@@ -3107,7 +3108,7 @@ index e195e74c48c69047aa825b75fad95419c505b41f..f99d71301ceaa3af07ff0525f7d657ac
          label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
          fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
          boolean registered = register(label, command, false, fallbackPrefix);
-@@ -143,16 +143,22 @@ public class SimpleCommandMap implements CommandMap {
+@@ -143,16 +144,22 @@ public class SimpleCommandMap implements CommandMap {
              return false;
          }
  
@@ -3527,33 +3528,25 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..6148b69af39344f758b05a28c7c572be
      private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
      private final PluginDescriptionFile description;
 diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
-index 5ca863b3692b2e1b58e7fb4d82f554a92cc4f01e..612958a331575d1da2715531ebdf6b1168f2e860 100644
+index 5ca863b3692b2e1b58e7fb4d82f554a92cc4f01e..7dc9651853fd56b734bd8a0f49d5af9f2d8eede3 100644
 --- a/src/main/java/org/bukkit/util/CachedServerIcon.java
 +++ b/src/main/java/org/bukkit/util/CachedServerIcon.java
-@@ -2,6 +2,7 @@ package org.bukkit.util;
- 
- import org.bukkit.Server;
- import org.bukkit.event.server.ServerListPingEvent;
-+import org.jetbrains.annotations.Nullable;
- 
- /**
-  * This is a cached version of a server-icon. It's internal representation
-@@ -12,4 +13,9 @@ import org.bukkit.event.server.ServerListPingEvent;
+@@ -12,4 +12,9 @@ import org.bukkit.event.server.ServerListPingEvent;
   * @see Server#loadServerIcon(java.io.File)
   * @see ServerListPingEvent#setServerIcon(CachedServerIcon)
   */
 -public interface CachedServerIcon {}
 +public interface CachedServerIcon {
 +
-+    @Nullable
++    @org.jetbrains.annotations.Nullable
 +    public String getData(); // Paper
 +
 +}
 diff --git a/src/main/java/org/spigotmc/CustomTimingsHandler.java b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d58ee7c82 100644
+index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..00ae32b105507edc57ad34008b669d2426e40eda 100644
 --- a/src/main/java/org/spigotmc/CustomTimingsHandler.java
 +++ b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-@@ -1,137 +1,67 @@
+@@ -1,3 +1,26 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -3579,21 +3572,15 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 + */
  package org.spigotmc;
  
--import java.io.PrintStream;
--import java.util.Queue;
--import java.util.concurrent.ConcurrentLinkedQueue;
+ import java.io.PrintStream;
+@@ -5,133 +28,39 @@ import java.util.Queue;
+ import java.util.concurrent.ConcurrentLinkedQueue;
  import org.bukkit.Bukkit;
--import org.bukkit.World;
+ import org.bukkit.World;
 -import org.bukkit.command.defaults.TimingsCommand;
++//import org.bukkit.command.defaults.TimingsCommand; // Paper - Timings v2
  import org.jetbrains.annotations.NotNull;
--import org.jetbrains.annotations.Nullable;
-+import org.bukkit.plugin.AuthorNagException;
-+import co.aikar.timings.Timing;
-+import co.aikar.timings.Timings;
-+import co.aikar.timings.TimingsManager;
-+
-+import java.lang.reflect.Method;
-+import java.util.logging.Level;
+ import org.jetbrains.annotations.Nullable;
  
  /**
 - * Provides custom timing sections for /timings merged.
@@ -3618,7 +3605,7 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -    private long violations = 0;
 +@Deprecated
 +public final class CustomTimingsHandler {
-+    private final Timing handler;
++    private final co.aikar.timings.Timing handler;
  
      public CustomTimingsHandler(@NotNull String name) {
 -        this(name, null);
@@ -3629,7 +3616,8 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -        this.parent = parent;
 -        HANDLERS.add(this);
 -    }
--
++        co.aikar.timings.Timing timing;
+ 
 -    /**
 -     * Prints the timings and extra data to the given stream.
 -     *
@@ -3653,11 +3641,21 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -        for (World world : Bukkit.getWorlds()) {
 -            entities += world.getEntities().size();
 -            livingEntities += world.getLivingEntities().size();
--        }
++        new org.bukkit.plugin.AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
++        try {
++            final java.lang.reflect.Method ofSafe = co.aikar.timings.TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, co.aikar.timings.Timing.class);
++            ofSafe.setAccessible(true);
++            timing = (co.aikar.timings.Timing) ofSafe.invoke(null,"Minecraft", "(Deprecated API) " + name, null);
++        } catch (Exception e) {
++            e.printStackTrace();
++            Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "This handler could not be registered");
++            timing = co.aikar.timings.Timings.NULL_HANDLER;
+         }
 -        printStream.println("# Entities " + entities);
 -        printStream.println("# LivingEntities " + livingEntities);
--    }
--
++        handler = timing;
+     }
+ 
 -    /**
 -     * Resets all timings.
 -     */
@@ -3669,7 +3667,9 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -        }
 -        TimingsCommand.timingStart = System.nanoTime();
 -    }
--
++    public void startTiming() { handler.startTiming(); }
++    public void stopTiming() { handler.stopTiming(); }
+ 
 -    /**
 -     * Ticked every tick by CraftBukkit to count the number of times a timer
 -     * caused TPS loss.
@@ -3685,8 +3685,7 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            }
 -        }
 -    }
-+        Timing timing;
- 
+-
 -    /**
 -     * Starts timing to track a section of code.
 -     */
@@ -3697,19 +3696,9 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            if (parent != null && ++parent.timingDepth == 1) {
 -                parent.start = start;
 -            }
-+        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
-+        try {
-+            final Method ofSafe = TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, Timing.class);
-+            ofSafe.setAccessible(true);
-+            timing = (Timing) ofSafe.invoke(null,"Minecraft", "(Deprecated API) " + name, null);
-+        } catch (Exception e) {
-+            e.printStackTrace();
-+            Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
-+            timing = Timings.NULL_HANDLER;
-         }
-+        handler = timing;
-     }
- 
+-        }
+-    }
+-
 -    /**
 -     * Stops timing a section of code.
 -     */
@@ -3728,9 +3717,7 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            }
 -        }
 -    }
-+    public void startTiming() { handler.startTiming(); }
-+    public void stopTiming() { handler.stopTiming(); }
- 
+-
 -    /**
 -     * Reset this timer, setting all values to zero.
 -     */

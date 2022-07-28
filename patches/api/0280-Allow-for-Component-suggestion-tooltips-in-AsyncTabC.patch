@@ -6,36 +6,16 @@ Subject: [PATCH] Allow for Component suggestion tooltips in
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
-index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077dedadcef9f5d 100644
+index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..d22e86460e4332e19908690662e2d1c98cb394fc 100644
 --- a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
 +++ b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
-@@ -24,6 +24,11 @@
- package com.destroystokyo.paper.event.server;
- 
- import com.google.common.base.Preconditions;
-+import io.papermc.paper.util.TransformingRandomAccessList;
-+import net.kyori.adventure.text.Component;
-+import net.kyori.examination.Examinable;
-+import net.kyori.examination.ExaminableProperty;
-+import net.kyori.examination.string.StringExaminer;
- import org.bukkit.Location;
- import org.bukkit.command.Command;
- import org.bukkit.command.CommandSender;
-@@ -33,6 +38,7 @@ import org.bukkit.event.HandlerList;
- 
- import java.util.ArrayList;
- import java.util.List;
-+import java.util.stream.Stream;
- import org.jetbrains.annotations.NotNull;
- import org.jetbrains.annotations.Nullable;
- 
-@@ -47,15 +53,29 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
+@@ -47,15 +47,29 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
      private final boolean isCommand;
      @Nullable
      private final Location loc;
 -    @NotNull private List<String> completions;
 +    private final List<Completion> completions = new ArrayList<>();
-+    private final List<String> stringCompletions = new TransformingRandomAccessList<>(
++    private final List<String> stringCompletions = new io.papermc.paper.util.TransformingRandomAccessList<>(
 +        this.completions,
 +        Completion::suggestion,
 +        Completion::completion
@@ -61,7 +41,7 @@ index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077deda
          this.buffer = buffer;
          this.isCommand = isCommand;
          this.loc = loc;
-@@ -83,7 +103,7 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
+@@ -83,7 +97,7 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
       */
      @NotNull
      public List<String> getCompletions() {
@@ -70,7 +50,7 @@ index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077deda
      }
  
      /**
-@@ -97,8 +117,42 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
+@@ -97,8 +111,42 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
       * @param completions the new completions
       */
      public void setCompletions(@NotNull List<String> completions) {
@@ -114,7 +94,7 @@ index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077deda
      }
  
      /**
-@@ -173,4 +227,102 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
+@@ -173,4 +221,102 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
      public static HandlerList getHandlerList() {
          return handlers;
      }
@@ -128,9 +108,9 @@ index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077deda
 +    }
 +
 +    /**
-+     * A rich tab completion, consisting of a string suggestion, and a nullable {@link Component} tooltip.
++     * A rich tab completion, consisting of a string suggestion, and a nullable {@link net.kyori.adventure.text.Component} tooltip.
 +     */
-+    public interface Completion extends Examinable {
++    public interface Completion extends net.kyori.examination.Examinable {
 +        /**
 +         * Get the suggestion string for this {@link Completion}.
 +         *
@@ -141,13 +121,13 @@ index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077deda
 +        /**
 +         * Get the suggestion tooltip for this {@link Completion}.
 +         *
-+         * @return tooltip component
++         * @return tooltip net.kyori.adventure.text.Component
 +         */
-+        @Nullable Component tooltip();
++        @Nullable net.kyori.adventure.text.Component tooltip();
 +
 +        @Override
-+        default @NotNull Stream<? extends ExaminableProperty> examinableProperties() {
-+            return Stream.of(ExaminableProperty.of("suggestion", this.suggestion()), ExaminableProperty.of("tooltip", this.tooltip()));
++        default @NotNull java.util.stream.Stream<? extends net.kyori.examination.ExaminableProperty> examinableProperties() {
++            return java.util.stream.Stream.of(net.kyori.examination.ExaminableProperty.of("suggestion", this.suggestion()), net.kyori.examination.ExaminableProperty.of("tooltip", this.tooltip()));
 +        }
 +
 +        /**
@@ -161,24 +141,24 @@ index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077deda
 +        }
 +
 +        /**
-+         * Create a new {@link Completion} from a suggestion string and a tooltip {@link Component}.
++         * Create a new {@link Completion} from a suggestion string and a tooltip {@link net.kyori.adventure.text.Component}.
 +         *
-+         * <p>If the provided component is null, the suggestion will not have a tooltip.</p>
++         * <p>If the provided net.kyori.adventure.text.Component is null, the suggestion will not have a tooltip.</p>
 +         *
 +         * @param suggestion suggestion string
-+         * @param tooltip    tooltip component, or null
++         * @param tooltip    tooltip net.kyori.adventure.text.Component, or null
 +         * @return new completion instance
 +         */
-+        static @NotNull Completion completion(final @NotNull String suggestion, final @Nullable Component tooltip) {
++        static @NotNull Completion completion(final @NotNull String suggestion, final @Nullable net.kyori.adventure.text.Component tooltip) {
 +            return new CompletionImpl(suggestion, tooltip);
 +        }
 +    }
 +
 +    static final class CompletionImpl implements Completion {
 +        private final String suggestion;
-+        private final Component tooltip;
++        private final net.kyori.adventure.text.Component tooltip;
 +
-+        CompletionImpl(final @NotNull String suggestion, final @Nullable Component tooltip) {
++        CompletionImpl(final @NotNull String suggestion, final @Nullable net.kyori.adventure.text.Component tooltip) {
 +            this.suggestion = suggestion;
 +            this.tooltip = tooltip;
 +        }
@@ -189,7 +169,7 @@ index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077deda
 +        }
 +
 +        @Override
-+        public @Nullable Component tooltip() {
++        public @Nullable net.kyori.adventure.text.Component tooltip() {
 +            return this.tooltip;
 +        }
 +
@@ -213,7 +193,7 @@ index a135a9bfb2ccc8842baa9d5760fa05b7b1a529b1..9be64a95c2345433b6142d611077deda
 +
 +        @Override
 +        public @NotNull String toString() {
-+            return StringExaminer.simpleEscaping().examine(this);
++            return net.kyori.examination.string.StringExaminer.simpleEscaping().examine(this);
 +        }
 +    }
  }

@@ -73,22 +73,15 @@ index c9ecd5b1908e05a1b39dadcded27241672adcddf..355c46f1c1f08072446f3cc92c0d2289
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c2f46935f 100644
+index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..bcbdf7d6d6da9a73c6116aa9599d760a76e641c2 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-@@ -1,5 +1,6 @@
- package org.bukkit.command.defaults;
- 
-+import com.destroystokyo.paper.util.VersionFetcher; // Paper - version supplier
- import com.google.common.base.Charsets;
- import com.google.common.base.Preconditions;
- import com.google.common.collect.ImmutableList;
-@@ -26,6 +27,15 @@ import org.bukkit.util.StringUtil;
+@@ -26,6 +26,15 @@ import org.bukkit.util.StringUtil;
  import org.jetbrains.annotations.NotNull;
  
  public class VersionCommand extends BukkitCommand {
-+    private VersionFetcher versionFetcher;
-+    private VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration
++    private com.destroystokyo.paper.util.VersionFetcher versionFetcher;
++    private com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration
 +        if (versionFetcher == null) {
 +            versionFetcher = Bukkit.getUnsafe().getVersionFetcher();
 +        }
@@ -99,7 +92,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c
      public VersionCommand(@NotNull String name) {
          super(name);
  
-@@ -40,7 +50,7 @@ public class VersionCommand extends BukkitCommand {
+@@ -40,7 +49,7 @@ public class VersionCommand extends BukkitCommand {
          if (!testPermission(sender)) return true;
  
          if (args.length == 0) {
@@ -108,7 +101,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c
              sendVersion(sender);
          } else {
              StringBuilder name = new StringBuilder();
-@@ -146,14 +156,14 @@ public class VersionCommand extends BukkitCommand {
+@@ -146,14 +155,14 @@ public class VersionCommand extends BukkitCommand {
  
      private final ReentrantLock versionLock = new ReentrantLock();
      private boolean hasVersion = false;
@@ -125,7 +118,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c
                  lastCheck = System.currentTimeMillis();
                  hasVersion = false;
              } else {
-@@ -168,7 +178,7 @@ public class VersionCommand extends BukkitCommand {
+@@ -168,7 +177,7 @@ public class VersionCommand extends BukkitCommand {
                  return;
              }
              versionWaiters.add(sender);
@@ -134,7 +127,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c
              if (!versionTaskStarted) {
                  versionTaskStarted = true;
                  new Thread(new Runnable() {
-@@ -186,6 +196,13 @@ public class VersionCommand extends BukkitCommand {
+@@ -186,6 +195,13 @@ public class VersionCommand extends BukkitCommand {
  
      private void obtainVersion() {
          String version = Bukkit.getVersion();
@@ -148,7 +141,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c
          if (version == null) version = "Custom";
          String[] parts = version.substring(0, version.indexOf(' ')).split("-");
          if (parts.length == 4) {
-@@ -215,11 +232,24 @@ public class VersionCommand extends BukkitCommand {
+@@ -215,11 +231,24 @@ public class VersionCommand extends BukkitCommand {
          } else {
              setVersionMessage("Unknown version, custom build?");
          }
