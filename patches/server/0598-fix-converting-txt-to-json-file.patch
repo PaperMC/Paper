@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 4 Jan 2021 19:49:15 -0800
+Subject: [PATCH] fix converting txt to json file
+
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
+index d83bed436d2ad51cef83ecbf0c7df227a67ff404..dc96b30c70cd79d7b2a0322f32b9399a0f2faa41 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
+@@ -17,6 +17,11 @@ public class DedicatedPlayerList extends PlayerList {
+         this.setViewDistance(dedicatedServerProperties.viewDistance);
+         this.setSimulationDistance(dedicatedServerProperties.simulationDistance);
+         super.setUsingWhiteList(dedicatedServerProperties.whiteList.get());
++        // Paper start - moved from constructor
++    }
++    @Override
++    public void loadAndSaveFiles() {
++        // Paper end
+         this.loadUserBanList();
+         this.saveUserBanList();
+         this.loadIpBanList();
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index da83f111199a6b4c712a9bb8ab6f1d1b5c6ae77c..ef02ceba53943d34bd45070297c72beedd6e1883 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -203,6 +203,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // Paper - load mappings for stacktrace deobf and etc.
+         paperConfigurations.initializeGlobalConfiguration();
+         paperConfigurations.initializeWorldDefaultsConfiguration();
++        // Paper start - moved up to right after PlayerList creation but before file load/save
++        if (this.convertOldUsers()) {
++            this.getProfileCache().save(false); // Paper
++        }
++        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
++        // Paper end - moved up
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
+         io.papermc.paper.command.PaperCommands.registerCommands(this);
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics();
+@@ -258,9 +264,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
+         }
+ 
+-        if (this.convertOldUsers()) {
+-            this.getProfileCache().save(false); // Paper
+-        }
+ 
+         if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
+             return false;
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 88d5762afddc3329c6e9e1ba7139be2b12f20839..104ee9a1890f4a15de4559169f3897a9a1218d43 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -177,6 +177,7 @@ public abstract class PlayerList {
+         this.maxPlayers = maxPlayers;
+         this.playerIo = saveHandler;
+     }
++    abstract public void loadAndSaveFiles(); // Paper - moved from DedicatedPlayerList constructor
+ 
+     public void placeNewPlayer(Connection connection, ServerPlayer player) {
+         player.isRealPlayer = true; // Paper - Chunk priority

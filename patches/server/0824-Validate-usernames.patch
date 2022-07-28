@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 1 Jan 2022 05:19:37 -0800
+Subject: [PATCH] Validate usernames
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 1c58f5d0c16adba3c03f11474cfff1b77e682780..a4ad8f1d14e840403e14c319472d095fe6e7452f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -71,6 +71,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+     private ProfilePublicKey profilePublicKey; // Paper - Key auth refactor
+     public String hostname = ""; // CraftBukkit - add field
+     private int velocityLoginMessageId = -1; // Paper - Velocity support
++    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
+ 
+     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
+         this.state = ServerLoginPacketListenerImpl.State.HELLO;
+@@ -284,10 +285,38 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+         }
+     }
+ 
++    // Paper start - validate usernames
++    public static boolean validateUsername(String in) {
++        if (in == null || in.isEmpty() || in.length() > 16) {
++            return false;
++        }
++
++        for (int i = 0, len = in.length(); i < len; ++i) {
++            char c = in.charAt(i);
++
++            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_' || c == '.')) {
++                continue;
++            }
++
++            return false;
++        }
++
++        return true;
++    }
++    // Paper end - validate usernames
++
+     @Override
+     public void handleHello(ServerboundHelloPacket packet) {
+         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
+         Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
++        // Paper start - validate usernames
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation) {
++            if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(packet.name())) {
++                ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
++                return;
++            }
++        }
++        // Paper end - validate usernames
+         ProfilePublicKey.Data profilePublicKeyData = packet.publicKey().orElse(null); // CraftBukkit - decompile error  // Paper - Key auth refactor
+         GameProfile gameprofile = this.server.getSingleplayerProfile();
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index dbf855a66ee572e69f682197e61b04826e3cebf2..6a6eb6eff275ba5668d71337e2fc9215d76e1552 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -708,7 +708,7 @@ public abstract class PlayerList {
+ 
+         for (int i = 0; i < this.players.size(); ++i) {
+             entityplayer = (ServerPlayer) this.players.get(i);
+-            if (entityplayer.getUUID().equals(uuid)) {
++            if (entityplayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && entityplayer.getGameProfile().getName().equalsIgnoreCase(gameprofile.getName()))) { // Paper - validate usernames
+                 list.add(entityplayer);
+             }
+         }

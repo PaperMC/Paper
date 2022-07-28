@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "FivePB (Xer)" <admin@fivepb.me>
+Date: Thu, 28 Jul 2022 11:36:36 +0000
+Subject: [PATCH] Verify player key early
+
+This patch refactors authentication with the player key in a way
+that forces the key to be verified early using the (currently unused)
+player UUID provided in the Server hello packet.
+This helps verify connections early and may reduce requests to the session
+service
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 7c3c76b7ef169e0c0832e26212775111deb505c0..8d4a5e4dfc395dfefb9353c1ddfd821e8c066fe6 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -68,7 +68,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+     @Nullable
+     private ServerPlayer delayedAcceptPlayer;
+     @Nullable
+-    private ProfilePublicKey.Data profilePublicKeyData;
++    private ProfilePublicKey profilePublicKey; // Paper - Key auth refactor
+     public String hostname = ""; // CraftBukkit - add field
+ 
+     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
+@@ -175,6 +175,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+             // this.gameProfile = this.createFakeProfile(this.gameProfile); // Spigot - Moved to initUUID
+             // Spigot end
+         } else {
++            // Paper start - Key auth refactor
++            /*
+             try {
+                 SignatureValidator signaturevalidator = this.server.getServiceSignatureValidator();
+ 
+@@ -186,6 +188,16 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+                     return;
+                 }
+             }
++            */
++            if (this.profilePublicKey != null) {
++                profilepublickey = this.profilePublicKey;
++            } else {
++                if (this.server.enforceSecureProfile()) {
++                    this.disconnect(MISSING_PROFILE_PUBLIC_KEY);
++                    return;
++                }
++            }
++            // Paper end - Key auth refactor
+         }
+ 
+         // CraftBukkit start - fire PlayerLoginEvent
+@@ -267,7 +279,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+     public void handleHello(ServerboundHelloPacket packet) {
+         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
+         Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
+-        this.profilePublicKeyData = (ProfilePublicKey.Data) packet.publicKey().orElse(null); // CraftBukkit - decompile error
++        ProfilePublicKey.Data profilePublicKeyData = packet.publicKey().orElse(null); // CraftBukkit - decompile error  // Paper - Key auth refactor
+         GameProfile gameprofile = this.server.getSingleplayerProfile();
+ 
+         if (gameprofile != null && packet.name().equalsIgnoreCase(gameprofile.getName())) {
+@@ -276,6 +288,22 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+         } else {
+             this.gameProfile = new GameProfile((UUID) null, packet.name());
+             if (this.server.usesAuthentication() && !this.connection.isMemoryConnection()) {
++                // Paper start - Key auth refactor
++                if (profilePublicKeyData != null) {
++                    if (packet.profileId().isEmpty()) {
++                        this.disconnect(INVALID_PUBLIC_KEY);
++                        return;
++                    }
++                    try {
++                        this.profilePublicKey = ServerLoginPacketListenerImpl.validatePublicKey(profilePublicKeyData,
++                            packet.profileId().get(), this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
++                    } catch (ServerLoginPacketListenerImpl.PublicKeyValidationException err) {
++                        ServerLoginPacketListenerImpl.LOGGER.error(err.getMessage(), err.getCause());
++                        this.disconnect(err.getComponent());
++                        return;
++                    }
++                }
++                // Paper end - Key auth refactor
+                 this.state = ServerLoginPacketListenerImpl.State.KEY;
+                 this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
+             } else {
+@@ -315,10 +343,10 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+         try {
+             PrivateKey privatekey = this.server.getKeyPair().getPrivate();
+ 
+-            if (this.profilePublicKeyData != null) {
+-                ProfilePublicKey profilepublickey = ProfilePublicKey.createTrusted(this.profilePublicKeyData);
++            if (this.profilePublicKey != null) { // Paper start - Key auth refactor
++                //ProfilePublicKey profilepublickey = ProfilePublicKey.createTrusted(this.profilePublicKeyData);
+ 
+-                if (!packet.isChallengeSignatureValid(this.nonce, profilepublickey)) {
++                if (!packet.isChallengeSignatureValid(this.nonce, profilePublicKey)) { // Paper end - Key auth refactor
+                     throw new IllegalStateException("Protocol error");
+                 }
+             } else if (!packet.isNonceValid(this.nonce, privatekey)) {

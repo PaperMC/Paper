@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sidorov <jonmagon@gmail.com>
+Date: Thu, 4 Feb 2021 20:32:01 +0300
+Subject: [PATCH] Drop carried item when player has disconnected
+
+Fixes disappearance of held items, when a player gets disconnected and PlayerDropItemEvent is cancelled.
+Closes #5036
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 104ee9a1890f4a15de4559169f3897a9a1218d43..794cbfa5bae9d9b8eae6466e89bc139bef243951 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -619,6 +619,14 @@ public abstract class PlayerList {
+         }
+         // Paper end
+ 
++        // Paper - Drop carried item when player has disconnected
++        if (!entityplayer.containerMenu.getCarried().isEmpty()) {
++            net.minecraft.world.item.ItemStack carried = entityplayer.containerMenu.getCarried();
++            entityplayer.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
++            entityplayer.drop(carried, false);
++        }
++        // Paper end
++
+         this.save(entityplayer);
+         if (entityplayer.isPassenger()) {
+             Entity entity = entityplayer.getRootVehicle();
