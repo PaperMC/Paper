@@ -100,10 +100,10 @@ index 0000000000000000000000000000000000000000..07cd02c6f9df00844b808218be2afd79
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..71fe53c0763e6f4e1e215740afb5bdc34d3ea8d4
+index 0000000000000000000000000000000000000000..cd152c75357edeb7e42c3bc660fd7b600866d123
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,238 @@
+@@ -0,0 +1,252 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatRenderer;
@@ -139,10 +139,11 @@ index 0000000000000000000000000000000000000000..71fe53c0763e6f4e1e215740afb5bdc3
 +    final PlayerChatMessage message;
 +    final boolean async;
 +    final Component originalMessage;
-+    static final int MESSAGE = 1 << 0;
-+    static final int FORMAT = 1 << 1;
-+    static final int SENDER = 1 << 2;
-+    int modifications = 0b0;
++    static final int MESSAGE_CHANGED = 1 << 0;
++    static final int FORMAT_CHANGED = 1 << 1;
++    static final int SENDER_CHANGED = 1 << 2;
++    static final int USE_RAW_TYPE = 1 << 3;
++    private int flags = 0b0;
 +
 +    public ChatProcessor(final MinecraftServer server, final ServerPlayer player, final PlayerChatMessage message, final boolean async) {
 +        this.server = server;
@@ -150,6 +151,18 @@ index 0000000000000000000000000000000000000000..71fe53c0763e6f4e1e215740afb5bdc3
 +        this.message = message;
 +        this.async = async;
 +        this.originalMessage = PaperAdventure.asAdventure(message.serverContent());
++    }
++
++    private void setFlag(final int flag, final boolean value) {
++        if (value) {
++            this.flags |= flag;
++        } else {
++            this.flags &= ~flag;
++        }
++    }
++
++    private boolean isFlagSet(final int flag) {
++        return (this.flags & flag) == flag;
 +    }
 +
 +    @SuppressWarnings("deprecated")
@@ -170,35 +183,21 @@ index 0000000000000000000000000000000000000000..71fe53c0763e6f4e1e215740afb5bdc3
 +                        return null;
 +                    }
 +                });
-+                if (!se.getMessage().equals(this.message.signedContent().plain())) {
-+                    this.modifications |= MESSAGE;
-+                }
-+                if (!se.getFormat().equals(DEFAULT_LEGACY_FORMAT)) {
-+                    this.modifications |= FORMAT;
-+                }
-+                if (se.getPlayer() != player) {
-+                    this.modifications |= SENDER;
-+                }
++                this.readLegacyModifications(se.getMessage(), se.getFormat(), se.getPlayer());
 +                this.processModern(
-+                    (this.modifications & FORMAT) == FORMAT ? legacyRenderer(se.getFormat()) : ChatRenderer.defaultRenderer(),
++                    this.isFlagSet(FORMAT_CHANGED) ? legacyRenderer(se.getFormat()) : ChatRenderer.defaultRenderer(),
 +                    this.viewersFromLegacy(se.getRecipients()),
-+                    (this.modifications & MESSAGE) == MESSAGE ? LegacyComponentSerializer.legacySection().deserialize(se.getMessage()) : PaperAdventure.asAdventure(this.message.signedContent().decorated()),
++                    this.isFlagSet(MESSAGE_CHANGED) ? LegacyComponentSerializer.legacySection().deserialize(se.getMessage()) : PaperAdventure.asAdventure(this.message.signedContent().decorated()),
++                    se.getPlayer(),
 +                    se.isCancelled()
 +                );
 +            } else {
-+                if (!ae.getMessage().equals(this.message.signedContent().plain())) {
-+                    this.modifications |= MESSAGE;
-+                }
-+                if (!ae.getFormat().equals(DEFAULT_LEGACY_FORMAT)) {
-+                    this.modifications |= FORMAT;
-+                }
-+                if (ae.getPlayer() != player) {
-+                    this.modifications |= SENDER;
-+                }
++                this.readLegacyModifications(ae.getMessage(), ae.getFormat(), ae.getPlayer());
 +                this.processModern(
-+                    (this.modifications & FORMAT) == FORMAT ? legacyRenderer(ae.getFormat()) : ChatRenderer.defaultRenderer(),
++                    this.isFlagSet(FORMAT_CHANGED) ? legacyRenderer(ae.getFormat()) : ChatRenderer.defaultRenderer(),
 +                    this.viewersFromLegacy(ae.getRecipients()),
-+                    (this.modifications & MESSAGE) == MESSAGE ? LegacyComponentSerializer.legacySection().deserialize(ae.getMessage()) : PaperAdventure.asAdventure(this.message.signedContent().decorated()),
++                    this.isFlagSet(MESSAGE_CHANGED) ? LegacyComponentSerializer.legacySection().deserialize(ae.getMessage()) : PaperAdventure.asAdventure(this.message.signedContent().decorated()),
++                    ae.getPlayer(),
 +                    ae.isCancelled()
 +                );
 +            }
@@ -207,13 +206,26 @@ index 0000000000000000000000000000000000000000..71fe53c0763e6f4e1e215740afb5bdc3
 +                ChatRenderer.defaultRenderer(),
 +                new LazyChatAudienceSet(this.server),
 +                PaperAdventure.asAdventure(this.message.signedContent().decorated()),
++                this.player.getBukkitEntity(),
 +                false
 +            );
 +        }
 +    }
 +
-+    private void processModern(final ChatRenderer renderer, final Set<Audience> viewers, final Component message, final boolean cancelled) {
-+        final CraftPlayer player = this.player.getBukkitEntity();
++    private void readLegacyModifications(final String message, final String format, final Player playerSender) {
++        if (this.message.signedContent().isDecorated()) {
++            final String originalMessage = this.message.signedContent().decorated().getString();
++            this.setFlag(MESSAGE_CHANGED, !legacyFormat(format, playerSender, message).equals(originalMessage));
++            this.setFlag(FORMAT_CHANGED, this.isFlagSet(MESSAGE_CHANGED)); // there is no way of telling what changed it, the format or message, so assume the worst (format)
++        } else {
++            this.setFlag(MESSAGE_CHANGED, !message.equals(this.message.signedContent().plain()));
++            this.setFlag(FORMAT_CHANGED, !format.equals(DEFAULT_LEGACY_FORMAT));
++        }
++        this.setFlag(USE_RAW_TYPE, !format.equals(DEFAULT_LEGACY_FORMAT));
++        this.setFlag(SENDER_CHANGED, playerSender != this.player.getBukkitEntity());
++    }
++
++    private void processModern(final ChatRenderer renderer, final Set<Audience> viewers, final Component message, final Player player, final boolean cancelled) {
 +        final AsyncChatEvent ae = new AsyncChatEvent(this.async, player, viewers, renderer, message, this.originalMessage);
 +        ae.setCancelled(cancelled); // propagate cancelled state
 +        this.post(ae);
@@ -225,24 +237,22 @@ index 0000000000000000000000000000000000000000..71fe53c0763e6f4e1e215740afb5bdc3
 +                    final ChatEvent se = new ChatEvent(player, ae.viewers(), ae.renderer(), ae.message(), ChatProcessor.this.originalMessage);
 +                    se.setCancelled(ae.isCancelled()); // propagate cancelled state
 +                    ChatProcessor.this.post(se);
-+                    if (se.message() != message) {
-+                        ChatProcessor.this.modifications |= MESSAGE;
-+                    }
-+                    if (se.renderer() != renderer) {
-+                        ChatProcessor.this.modifications |= FORMAT;
-+                    }
++                    ChatProcessor.this.readModernModifications(se.message(), renderer, se.renderer());
 +                    ChatProcessor.this.complete(se);
 +                    return null;
 +                }
 +            });
 +        } else {
-+            if (ae.message() != message) {
-+                ChatProcessor.this.modifications |= MESSAGE;
-+            }
-+            if (ae.renderer() != renderer) {
-+                ChatProcessor.this.modifications |= FORMAT;
-+            }
++            this.readModernModifications(ae.message(), renderer, ae.renderer());
 +            this.complete(ae);
++        }
++    }
++
++    private void readModernModifications(final Component message, final ChatRenderer originalRenderer, final ChatRenderer renderer) {
++        final Component originalMessage = PaperAdventure.asAdventure(this.message.signedContent().decorated());
++        this.setFlag(MESSAGE_CHANGED, !message.equals(originalMessage));
++        if (originalRenderer != renderer) { // don't set to false if it hasn't changed
++            this.setFlag(FORMAT_CHANGED, true);
 +        }
 +    }
 +
@@ -253,33 +263,33 @@ index 0000000000000000000000000000000000000000..71fe53c0763e6f4e1e215740afb5bdc3
 +            return;
 +        }
 +
-+        final CraftPlayer player = this.player.getBukkitEntity();
++        final CraftPlayer player = ((CraftPlayer) event.getPlayer());
 +        final Component displayName = displayName(player);
 +        final Component message = event.message();
 +        final ChatRenderer renderer = event.renderer();
 +
 +        final Set<Audience> viewers = event.viewers();
++        ChatType.Bound chatType = ChatType.bind(this.isFlagSet(USE_RAW_TYPE) ? ChatType.RAW : ChatType.CHAT, player.getHandle());
 +
 +        if (viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy()) {
-+            if ((this.modifications & FORMAT) == FORMAT) {
++            if (this.isFlagSet(FORMAT_CHANGED)) {
 +                if (renderer instanceof ChatRenderer.ViewerUnaware unaware) {
 +                    final Component renderedMessage = unaware.render(player, displayName, message);
-+                    this.server.getPlayerList().broadcastChatMessage(this.message.withUnsignedContent(PaperAdventure.asVanilla(renderedMessage)), this.player, ChatType.bind(ChatType.RAW, player.getHandle()));
++                    this.server.getPlayerList().broadcastChatMessage(this.message.withUnsignedContent(PaperAdventure.asVanilla(renderedMessage)), this.player, chatType);
 +                } else {
-+                    final ChatType.Bound chatType = ChatType.bind(ChatType.RAW, player.getHandle());
 +                    final PlayerChatMessage toConsoleMessage = this.message.withUnsignedContent(PaperAdventure.asVanilla(renderer.render(player, displayName, message, this.server.console)));
 +                    this.server.logChatMessage(toConsoleMessage.serverContent(), chatType, this.server.getPlayerList().verifyChatTrusted(toConsoleMessage, this.player.asChatSender()) ? null : "Not Secure"); // copied from PlayerList#broadcastChatMessage
 +                    for (final ServerPlayer viewer : this.server.getPlayerList().getPlayers()) {
-+                        OutgoingPlayerChatMessage.create(this.message.withUnsignedContent(PaperAdventure.asVanilla(renderer.render(player, displayName, message, viewer.getBukkitEntity())))).sendToPlayer(viewer, this.player.shouldFilterMessageTo(viewer), chatType);
++                        outgoingMessage.sendToPlayer(viewer, this.player.shouldFilterMessageTo(viewer), chatType, renderer.render(player, displayName, message, viewer.getBukkitEntity()));
 +                    }
 +                }
-+            } else if ((this.modifications & MESSAGE) == MESSAGE) {
-+                this.server.getPlayerList().broadcastChatMessage(this.message.withUnsignedContent(PaperAdventure.asVanilla(message)), this.player, ChatType.bind(ChatType.CHAT, player.getHandle()));
-+            } else if ((this.modifications & SENDER) == SENDER || this.modifications == 0) {
-+                this.server.getPlayerList().broadcastChatMessage(this.message, this.player, ChatType.bind(ChatType.CHAT, player.getHandle()));
++            } else if (this.isFlagSet(MESSAGE_CHANGED)) {
++                this.server.getPlayerList().broadcastChatMessage(this.message.withUnsignedContent(PaperAdventure.asVanilla(message)), this.player, chatType);
++            } else {
++                this.server.getPlayerList().broadcastChatMessage(this.message, this.player, chatType);
 +            }
 +        } else {
-+            final ChatType.Bound chatType = ChatType.bind(ChatType.RAW, player.getHandle());
++            chatType = ChatType.bind(ChatType.RAW, player.getHandle()); // force raw
 +            for (final Audience viewer : viewers) {
 +                if (viewer instanceof CraftServer craftServer) {
 +                    final PlayerChatMessage toConsoleMessage = this.message.withUnsignedContent(PaperAdventure.asVanilla(renderer.render(player, displayName, message, this.server.console)));
@@ -316,7 +326,11 @@ index 0000000000000000000000000000000000000000..71fe53c0763e6f4e1e215740afb5bdc3
 +        if (DEFAULT_LEGACY_FORMAT.equals(format)) {
 +            return ChatRenderer.defaultRenderer();
 +        }
-+        return ChatRenderer.viewerUnaware((player, displayName, message) -> LegacyComponentSerializer.legacySection().deserialize(String.format(format, legacyDisplayName((CraftPlayer) player), LegacyComponentSerializer.legacySection().serialize(message))));
++        return ChatRenderer.viewerUnaware((player, displayName, message) -> LegacyComponentSerializer.legacySection().deserialize(legacyFormat(format, player, LegacyComponentSerializer.legacySection().serialize(message))));
++    }
++
++    private static String legacyFormat(final String format, Player player, String message) {
++        return String.format(format, legacyDisplayName((CraftPlayer) player), message);
 +    }
 +
 +    private void queueIfAsyncOrRunImmediately(final Waitable<Void> waitable) {
