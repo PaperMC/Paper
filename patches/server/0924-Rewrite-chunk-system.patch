@@ -8024,10 +8024,10 @@ index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0f0fa84cb0203c6fffa00ad3685ab06c19245f3e
+index 0000000000000000000000000000000000000000..71d0494d860a35736b5ac68d15f47e8bd4d5b114
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,969 @@
+@@ -0,0 +1,1029 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -8048,8 +8048,10 @@ index 0000000000000000000000000000000000000000..0f0fa84cb0203c6fffa00ad3685ab06c
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 +import it.unimi.dsi.fastutil.longs.LongArrayList;
 +import it.unimi.dsi.fastutil.longs.LongIterator;
++import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
 +import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 +import net.minecraft.nbt.CompoundTag;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ChunkHolder;
 +import net.minecraft.server.level.ChunkMap;
 +import net.minecraft.server.level.ServerLevel;
@@ -8100,6 +8102,26 @@ index 0000000000000000000000000000000000000000..0f0fa84cb0203c6fffa00ad3685ab06c
 +    private long currentTick;
 +
 +    private final ReferenceLinkedOpenHashSet<NewChunkHolder> pendingFullLoadUpdate = new ReferenceLinkedOpenHashSet<>();
++    private final ObjectRBTreeSet<NewChunkHolder> autoSaveQueue = new ObjectRBTreeSet<>((final NewChunkHolder c1, final NewChunkHolder c2) -> {
++        if (c1 == c2) {
++            return 0;
++        }
++
++        final int saveTickCompare = Long.compare(c1.lastAutoSave, c2.lastAutoSave);
++
++        if (saveTickCompare != 0) {
++            return saveTickCompare;
++        }
++
++        final long coord1 = CoordinateUtils.getChunkKey(c1.chunkX, c1.chunkZ);
++        final long coord2 = CoordinateUtils.getChunkKey(c2.chunkX, c2.chunkZ);
++
++        if (coord1 == coord2) {
++            throw new IllegalStateException("Duplicate chunkholder in auto save queue");
++        }
++
++        return Long.compare(coord1, coord2);
++    });
 +
 +    public ChunkHolderManager(final ServerLevel world, final ChunkTaskScheduler taskScheduler) {
 +        this.world = world;
@@ -8163,6 +8185,43 @@ index 0000000000000000000000000000000000000000..0f0fa84cb0203c6fffa00ad3685ab06c
 +            this.world.poiDataControllerNew.getCache().close();
 +        } catch (final IOException ex) {
 +            LOGGER.error("Failed to close poi regionfile cache for world '" + this.world.getWorld().getName() + "'", ex);
++        }
++    }
++
++    void ensureInAutosave(final NewChunkHolder holder) {
++        if (!this.autoSaveQueue.contains(holder)) {
++            holder.lastAutoSave = MinecraftServer.currentTick;
++            this.autoSaveQueue.add(holder);
++        }
++    }
++
++    public void autoSave() {
++        final List<NewChunkHolder> reschedule = new ArrayList<>();
++        final long currentTick = MinecraftServer.currentTickLong;
++        final long maxSaveTime = currentTick - this.world.paperConfig().chunks.autoSaveInterval.value();
++        for (int autoSaved = 0; autoSaved < this.world.paperConfig().chunks.maxAutoSaveChunksPerTick && !this.autoSaveQueue.isEmpty();) {
++            final NewChunkHolder holder = this.autoSaveQueue.first();
++
++            if (holder.lastAutoSave > maxSaveTime) {
++                break;
++            }
++
++            this.autoSaveQueue.remove(holder);
++
++            if (holder.save(false, false)) {
++                ++autoSaved;
++            }
++            holder.lastAutoSave = currentTick;
++
++            if (holder.getChunkStatus().isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
++                reschedule.add(holder);
++            }
++        }
++
++        for (final NewChunkHolder holder : reschedule) {
++            if (holder.getChunkStatus().isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
++                this.autoSaveQueue.add(holder);
++            }
 +        }
 +    }
 +
@@ -8682,6 +8741,7 @@ index 0000000000000000000000000000000000000000..0f0fa84cb0203c6fffa00ad3685ab06c
 +    private void removeChunkHolder(final NewChunkHolder holder) {
 +        // TODO replace map
 +        holder.vanillaChunkHolder.onChunkRemove();
++        this.autoSaveQueue.remove(holder);
 +        this.chunkHolders.remove(CoordinateUtils.getChunkKey(holder.chunkX, holder.chunkZ));
 +    }
 +
@@ -11410,10 +11470,10 @@ index 0000000000000000000000000000000000000000..b4fd00150d8ea566aea626fa6714efa3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..43838e21f642d6d79c03faed0bc7a8e59b944534
+index 0000000000000000000000000000000000000000..ab4317c43a0b2b2608381524b1d12eb7764d6264
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1911 @@
+@@ -0,0 +1,1913 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -12604,6 +12664,7 @@ index 0000000000000000000000000000000000000000..43838e21f642d6d79c03faed0bc7a8e5
 +                    if (!currState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && nextState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
 +                        // specifically for chunk loading, we set it to loaded before the callback so that plugins see it as loaded
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.BORDER);
++                        this.scheduler.chunkHolderManager.ensureInAutosave(this);
 +                        chunk.onChunkLoad(this);
 +                        this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.BORDER, chunk);
 +                    }
@@ -12978,7 +13039,6 @@ index 0000000000000000000000000000000000000000..43838e21f642d6d79c03faed0bc7a8e5
 +        });
 +    }
 +
-+
 +    public PoiChunk getPoiChunk() {
 +        return this.poiChunk;
 +    }
@@ -12986,6 +13046,8 @@ index 0000000000000000000000000000000000000000..43838e21f642d6d79c03faed0bc7a8e5
 +    public ChunkEntitySlices getEntityChunk() {
 +        return this.entityChunk;
 +    }
++
++    public long lastAutoSave;
 +
 +    public boolean save(final boolean shutdown, final boolean unloading) {
 +        TickThread.ensureTickThread(this.chunkX, this.chunkZ, "Cannot save data off-main");
@@ -13029,7 +13091,7 @@ index 0000000000000000000000000000000000000000..43838e21f642d6d79c03faed0bc7a8e5
 +            if (canSaveEntities) {
 +                // on shutdown, we need to force transient entity chunks to save
 +                canSaveEntities = this.saveEntities(entities, unloading || shutdown);
-+                if (shutdown) {
++                if (unloading || shutdown) {
 +                    this.lastEntityUnload = null;
 +                }
 +            }
@@ -15213,7 +15275,7 @@ index 11cd31691307749e925930c4b6e10e3f3b4fad25..a62b8a9f0afdcd94801dac7d02ceb154
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..eb152c0caf80276a783d3bd53407bef88ee65666 100644
+index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..c51c97c620368dec265e0e9982e66f23f5566afe 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -124,37 +124,33 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -15606,7 +15668,7 @@ index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..eb152c0caf80276a783d3bd53407bef8
 -            playerchunk.lastAutoSaveTime = this.level.getGameTime();
 -            this.autoSaveQueue.add(playerchunk);
 -        }
-+        // Paper - rewrite chunk system - TODO later
++        this.level.chunkTaskScheduler.chunkHolderManager.autoSave(); // Paper - rewrite chunk system
      }
      // Paper end
  
@@ -19585,7 +19647,7 @@ index b80cc0938b2b3928f4450f1314a9fbd7ea9c116b..de9bf6ce98f0bfb0aa2339fa2d2adb32
      // Paper end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 0cb2b0bda179f90ec8bf8bc4d9be092290eccba0..b043b1348545d3a8af7be0753ab1fb566c5a0fd5 100644
+index 819c1eaf3f36b5a485dfb663eff6ea8aa5061159..5eb8c2f26b5e9b0c9f0dc014864c43acd7503208 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1137,9 +1137,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
