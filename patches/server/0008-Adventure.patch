@@ -100,21 +100,18 @@ index 0000000000000000000000000000000000000000..07cd02c6f9df00844b808218be2afd79
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatPreviewProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatPreviewProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..adb5ed1f63f1f56b2c3ebfcf73e996f11febaad7
+index 0000000000000000000000000000000000000000..63d702dca23c11d122493c2089847a10e6138219
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatPreviewProcessor.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,73 @@
 +package io.papermc.paper.adventure;
 +
 +import java.util.concurrent.CompletableFuture;
 +import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.minecraft.network.chat.ChatDecorator;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.world.entity.Entity;
-+import org.bukkit.ChatColor;
-+import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.util.LazyPlayerSet;
 +import org.bukkit.entity.Player;
@@ -124,10 +121,11 @@ index 0000000000000000000000000000000000000000..adb5ed1f63f1f56b2c3ebfcf73e996f1
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static io.papermc.paper.adventure.ChatProcessor.DEFAULT_LEGACY_FORMAT;
++import static net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection;
++
 +@DefaultQualifier(NonNull.class)
 +public final class ChatPreviewProcessor {
-+
-+    private static final String DEFAULT_LEGACY_FORMAT = "<%1$s> %2$s"; // copied from PlayerChatEvent/AsyncPlayerChatEvent
 +
 +    final MinecraftServer server;
 +    final @Nullable Entity sender;
@@ -152,14 +150,14 @@ index 0000000000000000000000000000000000000000..adb5ed1f63f1f56b2c3ebfcf73e996f1
 +    private ChatDecorator.Result processLegacy(final ChatDecorator.Result input) {
 +        if (this.sender instanceof ServerPlayer serverPlayer) {
 +            final CraftPlayer player = serverPlayer.getBukkitEntity();
-+            final String originalMessage = LegacyComponentSerializer.legacySection().serialize(this.originalMessage);
++            final String originalMessage = legacySection().serialize(this.originalMessage);
 +            final AsyncPlayerChatPreviewEvent event = new AsyncPlayerChatPreviewEvent(true, player, originalMessage, new LazyPlayerSet(this.server));
 +            this.post(event);
 +
 +            if (DEFAULT_LEGACY_FORMAT.equals(event.getFormat()) && originalMessage.equals(event.getMessage()) /* TODO(Paper): Why? && event.getPlayer().getName().equalsIgnoreCase(event.getPlayer().getDisplayName()) */) {
 +                return input;
 +            } else {
-+                final Component component = DEFAULT_LEGACY_FORMAT.equals(event.getFormat()) ? LegacyComponentSerializer.legacySection().deserialize(event.getMessage()) : legacyFormat(event.getFormat(), event.getPlayer(), event.getMessage());
++                final Component component = DEFAULT_LEGACY_FORMAT.equals(event.getFormat()) ? legacySection().deserialize(event.getMessage()) : legacyFormat(event.getFormat(), event.getPlayer(), event.getMessage());
 +                return new ChatDecorator.LegacyResult(component, event.getFormat(), event.getMessage());
 +            }
 +        }
@@ -176,22 +174,15 @@ index 0000000000000000000000000000000000000000..adb5ed1f63f1f56b2c3ebfcf73e996f1
 +    }
 +
 +    private static Component legacyFormat(final String format, Player player, String message) {
-+        return LegacyComponentSerializer.legacySection().deserialize(String.format(format, legacyDisplayName((CraftPlayer) player), message));
-+    }
-+
-+    private static String legacyDisplayName(final CraftPlayer player) {
-+        if (((CraftWorld) player.getWorld()).getHandle().paperConfig().scoreboards.useVanillaWorldScoreboardNameColoring) {
-+            return LegacyComponentSerializer.legacySection().serialize(player.teamDisplayName()) + ChatColor.RESET;
-+        }
-+        return player.getDisplayName();
++        return legacySection().deserialize(ChatProcessor.legacyFormat(format, player, message));
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a78d5f0700
+index 0000000000000000000000000000000000000000..3899e709b9b328866f59cf495ceb3d85ad26c80a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,378 @@
+@@ -0,0 +1,388 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatRenderer;
@@ -212,6 +203,7 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +import net.minecraft.network.chat.ChatType;
 +import net.minecraft.network.chat.OutgoingPlayerChatMessage;
 +import net.minecraft.network.chat.PlayerChatMessage;
++import net.minecraft.resources.ResourceKey;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerPlayer;
 +import org.bukkit.command.ConsoleCommandSender;
@@ -223,16 +215,19 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.AsyncPlayerChatEvent;
 +import org.bukkit.event.player.PlayerChatEvent;
++import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.jetbrains.annotations.NotNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
++@DefaultQualifier(NonNull.class)
 +public final class ChatProcessor {
-+    private static final String DEFAULT_LEGACY_FORMAT = "<%1$s> %2$s"; // copied from PlayerChatEvent/AsyncPlayerChatEvent
++    static final String DEFAULT_LEGACY_FORMAT = "<%1$s> %2$s"; // copied from PlayerChatEvent/AsyncPlayerChatEvent
 +    final MinecraftServer server;
 +    final ServerPlayer player;
 +    final @Nullable Component unsignedContent;
 +    final PlayerChatMessage message;
 +    final boolean async;
++    final String craftbukkit$originalMessage;
 +    final Component paper$originalMessage;
 +    final OutgoingPlayerChatMessage outgoing;
 +
@@ -240,7 +235,7 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +    static final int MESSAGE_CHANGED = 1 << 0;
 +    static final int FORMAT_CHANGED = 1 << 1;
 +    static final int SENDER_CHANGED = 1 << 2;
-+    static final int USE_RAW_TYPE = 1 << 3;
++    // static final int USE_RAW_TYPE = 1 << 3;
 +    static final int FORCE_PREVIEW_USE = 1 << 4; // TODO (future)
 +    private int flags = 0b0;
 +
@@ -258,6 +253,7 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +        this.unsignedContent = message.unsignedContent().map(PaperAdventure::asAdventure).orElse(null);
 +        this.message = message.removeUnsignedContent();
 +        this.async = async;
++        this.craftbukkit$originalMessage = message.signedContent().plain();
 +        this.paper$originalMessage = Component.text(message.signedContent().plain());
 +        this.outgoing = OutgoingPlayerChatMessage.create(this.message);
 +    }
@@ -280,7 +276,7 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +        final boolean listenersOnSyncEvent = canYouHearMe(PlayerChatEvent.getHandlerList());
 +        if (listenersOnAsyncEvent || listenersOnSyncEvent) {
 +            final CraftPlayer player = this.player.getBukkitEntity();
-+            final AsyncPlayerChatEvent ae = new AsyncPlayerChatEvent(this.async, player, this.message.signedContent().plain(), new LazyPlayerSet(this.server));
++            final AsyncPlayerChatEvent ae = new AsyncPlayerChatEvent(this.async, player, this.craftbukkit$originalMessage, new LazyPlayerSet(this.server));
 +            this.post(ae);
 +            if (listenersOnSyncEvent) {
 +                final PlayerChatEvent se = new PlayerChatEvent(player, ae.getMessage(), ae.getFormat(), ae.getRecipients());
@@ -344,22 +340,18 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +    private void readLegacyModifications(final String message, final String format, final Player playerSender) {
 +        if (this.message.signedContent().isDecorated()) {
 +            if (this.message.signedContent().previewResult() instanceof ChatDecorator.LegacyResult legacyResult) {
++                // if the legacy preview event made a change
 +                this.setFlag(MESSAGE_CHANGED, !message.equals(legacyResult.message()));
 +                this.setFlag(FORMAT_CHANGED, !format.equals(legacyResult.format()));
-+                this.setFlag(USE_RAW_TYPE, !DEFAULT_LEGACY_FORMAT.equals(format) || this.isFlagSet(FORMAT_CHANGED));
 +            } else {
-+                this.setFlag(MESSAGE_CHANGED, !message.equals(this.message.signedContent().plain()));
++                // if a modern preview event made a change
++                if (true) throw new IllegalStateException("Shouldn't happen yet"); // TODO (remove in future)
++                this.setFlag(MESSAGE_CHANGED, !message.equals(this.craftbukkit$originalMessage));
 +                this.setFlag(FORMAT_CHANGED, false); // if modern, there is no formatting
-+                this.setFlag(USE_RAW_TYPE, false); // if modern, use actual chat types
 +            }
-+        } else if (this.unsignedContent != null) {
-+            this.setFlag(MESSAGE_CHANGED, !message.equals(this.message.signedContent().plain()));
-+            this.setFlag(FORMAT_CHANGED, !DEFAULT_LEGACY_FORMAT.equals(format));
-+            this.setFlag(USE_RAW_TYPE, this.isFlagSet(FORMAT_CHANGED));
 +        } else {
-+            this.setFlag(MESSAGE_CHANGED, !message.equals(this.message.signedContent().plain()));
++            this.setFlag(MESSAGE_CHANGED, !message.equals(this.craftbukkit$originalMessage));
 +            this.setFlag(FORMAT_CHANGED, !format.equals(DEFAULT_LEGACY_FORMAT));
-+            this.setFlag(USE_RAW_TYPE, this.isFlagSet(MESSAGE_CHANGED) || this.isFlagSet(FORMAT_CHANGED));
 +        }
 +        this.setFlag(SENDER_CHANGED, playerSender != this.player.getBukkitEntity());
 +    }
@@ -415,7 +407,8 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +        final ChatRenderer renderer = event.renderer();
 +
 +        final Set<Audience> viewers = event.viewers();
-+        final ChatType.Bound chatType = ChatType.bind(this.isFlagSet(USE_RAW_TYPE) && !this.isFlagSet(FORCE_PREVIEW_USE) ? ChatType.RAW : ChatType.CHAT, player.getHandle());
++        final ResourceKey<ChatType> chatTypeKey = renderer instanceof DefaultChatRenderer ? ChatType.CHAT : ChatType.RAW;
++        final ChatType.Bound chatType = ChatType.bind(chatTypeKey, player.getHandle());
 +
 +        if (viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy()) {
 +            if (false && this.isFlagSet(FORCE_PREVIEW_USE)) { // TODO (future)
@@ -436,7 +429,7 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +                    });
 +               }
 +            } else if (this.isFlagSet(MESSAGE_CHANGED) && renderer instanceof LegacyChatRenderer unaware) {
-+                final Component renderedComponent = renderer instanceof DefaultChatRenderer ? message : unaware.renderUnaware(player, displayName, message);
++                final Component renderedComponent = chatTypeKey == ChatType.CHAT ? message : unaware.renderUnaware(player, displayName, message);
 +                this.server.getPlayerList().broadcastChatMessage(this.message.withUnsignedContent(PaperAdventure.asVanilla(renderedComponent)), this.player, chatType);
 +            } else {
 +                this.server.getPlayerList().broadcastChatMessage(this.message, this.player, chatType);
@@ -489,7 +482,7 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +        return viewers;
 +    }
 +
-+    private static String legacyDisplayName(final CraftPlayer player) {
++    static String legacyDisplayName(final CraftPlayer player) {
 +        return player.getDisplayName();
 +    }
 +
@@ -508,7 +501,7 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +        return new LegacyChatRenderer(format);
 +    }
 +
-+    private static String legacyFormat(final String format, Player player, String message) {
++    static String legacyFormat(final String format, Player player, String message) {
 +        return String.format(format, legacyDisplayName((CraftPlayer) player), message);
 +    }
 +
@@ -537,35 +530,43 @@ index 0000000000000000000000000000000000000000..42439fbe7d4477f21eada76bf66a10a7
 +
 +    static class DefaultChatRenderer extends LegacyChatRenderer {
 +
-+        private final ChatRenderer delegate;
-+
 +        DefaultChatRenderer() {
-+            super(DEFAULT_LEGACY_FORMAT);
-+            this.delegate = ChatRenderer.defaultRenderer();
++            super(DEFAULT_LEGACY_FORMAT, DefaultChatRenderer::defaultUnaware);
 +        }
 +
-+        @Override
-+        public @NotNull Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message, @NotNull Audience viewer) {
-+            return this.delegate.render(source, sourceDisplayName, message, viewer);
++        static Component defaultUnaware(Player player, Component playerDisplayName, Component message) {
++            return Component.translatable("chat.type.text", playerDisplayName, message);
 +        }
 +    }
 +
 +    static class LegacyChatRenderer implements ChatRenderer {
 +
 +        final String format;
++        final ChatRenderer.ViewerUnaware unaware;
 +        final ChatRenderer delegate;
 +
 +        LegacyChatRenderer(String format) {
 +            this.format = format;
-+            this.delegate = ChatRenderer.viewerUnaware(this::renderUnaware);
++            this.unaware = legacyUnaware(format);
++            this.delegate = ChatRenderer.viewerUnaware(this.unaware);
 +        }
 +
-+        public @NotNull Component renderUnaware(@NotNull Player player, @NotNull Component sourceDisplayName, @NotNull Component message) {
-+            return LegacyComponentSerializer.legacySection().deserialize(legacyFormat(this.format, player, LegacyComponentSerializer.legacySection().serialize(message)));
++        LegacyChatRenderer(String format, ChatRenderer.ViewerUnaware unaware) {
++            this.format = format;
++            this.unaware = unaware;
++            this.delegate = ChatRenderer.viewerUnaware(unaware);
++        }
++
++        public Component renderUnaware(Player player, Component sourceDisplayName, Component message) {
++            return this.unaware.render(player, sourceDisplayName, message);
++        }
++
++        static ViewerUnaware legacyUnaware(final String format) {
++            return (player, sourceDisplayName, message) -> LegacyComponentSerializer.legacySection().deserialize(legacyFormat(format, player, LegacyComponentSerializer.legacySection().serialize(message)));
 +        }
 +
 +        @Override
-+        public @NotNull Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message, @NotNull Audience viewer) {
++        public @NonNull Component render(Player source, Component sourceDisplayName, Component message, Audience viewer) {
 +            return this.delegate.render(source, sourceDisplayName, message, viewer);
 +        }
 +    }
