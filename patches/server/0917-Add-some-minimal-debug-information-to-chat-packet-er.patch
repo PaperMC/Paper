@@ -6,19 +6,19 @@ Subject: [PATCH] Add some minimal debug information to chat packet errors
 TODO: potentially add some kick leeway
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ad083a1e57e15568d05f54f5606f7c9b355c1927..66fa86f67a835b7a4c2de6c5111367d1ab6034fb 100644
+index c00443e73cd31f79679f8e4ba45a6f551349bb85..cdf7ed204cf6216337ab9667158b33143c82a819 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2294,7 +2294,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2296,7 +2296,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
          if (!this.updateChatOrder(timestamp)) {
 -            ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
 +            ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}': {} > {}", this.player.getName().getString(), message, this.lastChatTimeStamp.get().getEpochSecond(), timestamp.getEpochSecond()); // Paper
              this.server.scheduleOnMain(() -> { // Paper - push to main
-             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
+             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event cause
              }); // Paper - push to main
-@@ -2550,7 +2550,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2552,7 +2552,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              return false;
          } else {
              if (message.hasExpiredServer(Instant.now())) {
