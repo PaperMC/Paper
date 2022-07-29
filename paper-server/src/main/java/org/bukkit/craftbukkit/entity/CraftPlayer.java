@@ -30,8 +30,7 @@ import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketDataSerializer;
-import net.minecraft.network.chat.ChatMessageType;
-import net.minecraft.network.chat.ChatSender;
+import net.minecraft.network.chat.ChatMessageContent;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
@@ -381,7 +380,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void chat(String msg) {
         if (getHandle().connection == null) return;
 
-        getHandle().connection.chat(msg, null, false);
+        getHandle().connection.chat(msg, PlayerChatMessage.system(new ChatMessageContent(msg)), false);
     }
 
     @Override
