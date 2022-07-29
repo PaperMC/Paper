@@ -161,7 +161,7 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fe87d52fa93f539ad054f815de75ca860667aec8
+index 0000000000000000000000000000000000000000..bd9328790efc91ae438d8c5732c9f27d89b46ce4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 @@ -0,0 +1,139 @@
@@ -187,16 +187,16 @@ index 0000000000000000000000000000000000000000..fe87d52fa93f539ad054f815de75ca86
 +    private final Component originalMessage;
 +    private ChatRenderer renderer;
 +    private Component message;
-+    private boolean usePreviewComponent;
++    // private boolean usePreviewComponent;
 +    private boolean cancelled = false;
 +
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final boolean usePreviewComponent) {
++    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage/*, final boolean usePreviewComponent*/) {
 +        super(player, async);
 +        this.viewers = viewers;
 +        this.renderer = renderer;
 +        this.message = message;
 +        this.originalMessage = originalMessage;
-+        this.usePreviewComponent = usePreviewComponent;
++        // this.usePreviewComponent = usePreviewComponent;
 +    }
 +
 +    /**
@@ -270,29 +270,29 @@ index 0000000000000000000000000000000000000000..fe87d52fa93f539ad054f815de75ca86
 +        return this.originalMessage;
 +    }
 +
-+    /**
-+     * If true, this acts as an override, preventing this event
-+     * from making any changes to the already previewed component
-+     * (assuming there is one).
-+     *
-+     * @return true to force use of previewed component
-+     */
-+    @ApiStatus.Experimental
-+    public boolean usePreviewComponent() {
-+        return this.usePreviewComponent;
-+    }
-+
-+    /**
-+     * Sets the event behavior to prevent this event from
-+     * making any changes to the already previewed component
-+     * (assuming there is one).
-+     *
-+     * @param usePreviewComponent true to enable override
-+     */
-+    @ApiStatus.Experimental
-+    public void usePreviewComponent(final boolean usePreviewComponent) {
-+        this.usePreviewComponent = usePreviewComponent;
-+    }
++    // /**
++    //  * If true, this acts as an override, preventing this event
++    //  * from making any changes to the already previewed component
++    //  * (assuming there is one).
++    //  *
++    //  * @return true to force use of previewed component
++    //  */
++    // @ApiStatus.Experimental
++    // public boolean usePreviewComponent() {
++    //     return this.usePreviewComponent;
++    // }
++    //
++    // /**
++    //  * Sets the event behavior to prevent this event from
++    //  * making any changes to the already previewed component
++    //  * (assuming there is one).
++    //  *
++    //  * @param usePreviewComponent true to enable override
++    //  */
++    // @ApiStatus.Experimental
++    // public void usePreviewComponent(final boolean usePreviewComponent) {
++    //     this.usePreviewComponent = usePreviewComponent;
++    // }
 +
 +    @Override
 +    public final boolean isCancelled() {
@@ -306,7 +306,7 @@ index 0000000000000000000000000000000000000000..fe87d52fa93f539ad054f815de75ca86
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e5c1505eff10cdf19dea1252028b1d105128a8a1
+index 0000000000000000000000000000000000000000..51bbeaf31f64b77cb73d563872bd8e5fff26c340
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 @@ -0,0 +1,31 @@
@@ -327,7 +327,7 @@ index 0000000000000000000000000000000000000000..e5c1505eff10cdf19dea1252028b1d10
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
-+        super(async, player, viewers, renderer, message, originalMessage, false);
++        super(async, player, viewers, renderer, message, originalMessage/*, false*/);
 +    }
 +
 +    @NotNull
@@ -343,14 +343,15 @@ index 0000000000000000000000000000000000000000..e5c1505eff10cdf19dea1252028b1d10
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatPreviewEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatPreviewEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f0f50d89791d0f34e33d5c3b302b5a1f0ac70054
+index 0000000000000000000000000000000000000000..074dd20033f645aa0813b0067d502c597964952a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatPreviewEvent.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,64 @@
 +package io.papermc.paper.event.player;
 +
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.server.ServerEvent;
@@ -363,20 +364,20 @@ index 0000000000000000000000000000000000000000..f0f50d89791d0f34e33d5c3b302b5a1f
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    private final Entity sender;
++    private final Player player;
 +    private final Component originalMessage;
 +    private Component result;
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public AsyncChatPreviewEvent(final @Nullable Entity sender, final @NotNull Component originalMessage, final @NotNull Component result) {
-+        this.sender = sender;
++    public AsyncChatPreviewEvent(final @Nullable Player player, final @NotNull Component originalMessage, final @NotNull Component result) {
++        this.player = player;
 +        this.originalMessage = originalMessage;
 +        this.result = result;
 +    }
 +
-+    public @Nullable Entity getSender() {
-+        return this.sender;
++    public @Nullable Player getPlayer() {
++        return this.player;
 +    }
 +
 +    public @NotNull Component getOriginalMessage() {
@@ -412,7 +413,7 @@ index 0000000000000000000000000000000000000000..f0f50d89791d0f34e33d5c3b302b5a1f
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ec5229370cdd44140673d59ef51003da3343d61f
+index 0000000000000000000000000000000000000000..9a9ef39696c32e19b7511aabb5fc418dad68117c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 @@ -0,0 +1,36 @@
@@ -437,8 +438,8 @@ index 0000000000000000000000000000000000000000..ec5229370cdd44140673d59ef51003da
 +public final class ChatEvent extends AbstractChatEvent {
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final boolean usePreviewComponent) {
-+        super(false, player, viewers, renderer, message, originalMessage, usePreviewComponent);
++    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage/*, final boolean usePreviewComponent*/) {
++        super(false, player, viewers, renderer, message, originalMessage/*, usePreviewComponent*/);
 +    }
 +
 +    @NotNull
