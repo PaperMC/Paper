@@ -6,10 +6,10 @@ Subject: [PATCH] Optimise collision checking in player move packet handling
 Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e195824110e018 100644
+index 331c700ec85d84417bf734f30a3870659c5da2e9..abd9ee4c2cddf0fd1e31bffbb60db025491e8315 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -656,7 +656,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -658,7 +658,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                      return;
                  }
  
@@ -18,7 +18,7 @@ index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e19582
  
                  d6 = d3 - this.vehicleLastGoodX; // Paper - diff on change, used for checking large move vectors above
                  d7 = d4 - this.vehicleLastGoodY - 1.0E-6D; // Paper - diff on change, used for checking large move vectors above
-@@ -664,6 +664,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -666,6 +666,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  boolean flag1 = entity.verticalCollisionBelow;
  
                  entity.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
@@ -26,7 +26,7 @@ index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e19582
                  double d11 = d7;
  
                  d6 = d3 - entity.getX();
-@@ -677,16 +678,24 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -679,16 +680,24 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  boolean flag2 = false;
  
                  if (d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
@@ -54,7 +54,7 @@ index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e19582
                      entity.absMoveTo(d0, d1, d2, f, f1);
                      this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.connection.send(new ClientboundMoveVehiclePacket(entity));
-@@ -772,7 +781,32 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -774,7 +783,32 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      }
  
      private boolean noBlocksAround(Entity entity) {
@@ -88,7 +88,7 @@ index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e19582
      }
  
      @Override
-@@ -1348,7 +1382,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1350,7 +1384,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  }
  
                  if (this.awaitingPositionFromClient != null) {
@@ -97,7 +97,7 @@ index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e19582
                          this.awaitingTeleportTime = this.tickCount;
                          this.teleport(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
                      }
-@@ -1442,7 +1476,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1444,7 +1478,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                                  }
                              }
  
@@ -106,7 +106,7 @@ index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e19582
  
                              d7 = d0 - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
                              d8 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
-@@ -1483,6 +1517,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1485,6 +1519,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                              boolean flag1 = this.player.verticalCollisionBelow;
  
                              this.player.move(MoverType.PLAYER, new Vec3(d7, d8, d9));
@@ -114,7 +114,7 @@ index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e19582
                              this.player.onGround = packet.isOnGround(); // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
                              // Paper start - prevent position desync
                              if (this.awaitingPositionFromClient != null) {
-@@ -1502,12 +1537,23 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1504,12 +1539,23 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                              boolean flag2 = false;
  
                              if (!this.player.isChangingDimension() && d11 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot
@@ -140,7 +140,7 @@ index ac09598d2152b5dc9be004a6088ed65f3d1d6f59..e31f1fc855da5dcde77f0bced4e19582
                                  this.internalTeleport(d3, d4, d5, f, f1, Collections.emptySet(), false); // CraftBukkit - SPIGOT-1807: Don't call teleport event, when the client thinks the player is falling, because the chunks are not loaded on the client yet.
                              } else {
                                  // CraftBukkit start - fire PlayerMoveEvent
-@@ -1593,6 +1639,27 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1595,6 +1641,27 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          }
      }
  
