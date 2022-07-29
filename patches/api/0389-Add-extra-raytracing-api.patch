@@ -1,0 +1,282 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PrimordialMoros <mail@moros.me>
+Date: Fri, 29 Jul 2022 16:04:32 +0300
+Subject: [PATCH] Add extra raytracing api
+
+Adds the option to ignore specific blocks (based on their position) when performing a raytrace.
+
+diff --git a/src/main/java/io/papermc/paper/raytrace/RayTraceBuilder.java b/src/main/java/io/papermc/paper/raytrace/RayTraceBuilder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..99a45534f9c4b61fbae1abfb79c810ef419f730c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/raytrace/RayTraceBuilder.java
+@@ -0,0 +1,187 @@
++package io.papermc.paper.raytrace;
++
++import java.util.Collection;
++import java.util.Set;
++import java.util.function.Predicate;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.FluidCollisionMode;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.block.Block;
++import org.bukkit.entity.Entity;
++import org.bukkit.util.RayTraceResult;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Helps prepare a raytrace to be cast.
++ *
++ * Usage of the builder is preferred over the super long {@link World#rayTrace(Location, Vector, double, FluidCollisionMode, boolean, double, Predicate, Collection)} API
++ */
++public class RayTraceBuilder {
++  public static final double MAX_RANGE = 100;
++
++  private Vector origin;
++  private Vector direction;
++
++  private double range;
++  private double raySize = 0;
++
++  private boolean ignorePassable = true;
++
++  private FluidCollisionMode mode = FluidCollisionMode.NEVER;
++  private Predicate<Entity> entityPredicate = x -> true;
++  private Set<Block> ignoreBlocks = Set.of();
++
++  private RayTraceBuilder() {
++  }
++
++  /**
++   * Sets the raytrace origin.
++   *
++   * @param origin the new origin
++   * @return the modified builder
++   */
++  @NotNull
++  public RayTraceBuilder origin(@NotNull Vector origin) {
++    Preconditions.checkArgument(origin != null, "Origin cannot be null");
++    this.origin = origin.clone();
++    return this;
++  }
++
++  /**
++   * Override the raytrace direction.
++   *
++   * @param direction the new direction
++   * @return the modified builder
++   */
++  @NotNull
++  public RayTraceBuilder direction(@NotNull Vector direction) {
++    Preconditions.checkArgument(direction != null, "Direction cannot be null");
++    this.direction = direction.clone();
++    return this;
++  }
++
++  /**
++   * Override the raytrace range.
++   * <p>Note: range is clamped at [1, 100].
++   *
++   * @param range the new range
++   * @return the modified builder
++   */
++  @NotNull
++  public RayTraceBuilder range(double range) {
++    this.range = Math.min(MAX_RANGE, Math.max(1, range));
++    return this;
++  }
++
++  /**
++   * Override the raytrace ray size.
++   * Ray size effectively grows the ray's collider when checked against entities.
++   * Default value is 0.
++   *
++   * @param raySize the new non-negative ray size
++   * @return the modified builder
++   */
++  @NotNull
++  public RayTraceBuilder raySize(double raySize) {
++    this.raySize = Math.max(0, raySize);
++    return this;
++  }
++
++  /**
++   * Override the fluid collision mode for the raytrace.
++   * Default value is {@link FluidCollisionMode#NEVER}.
++   *
++   * @param mode the new mode
++   * @return the modified builder
++   */
++  @NotNull
++  public RayTraceBuilder fluids(@NotNull FluidCollisionMode mode) {
++    Preconditions.checkArgument(mode != null, "Mode cannot be null");
++    this.mode = mode;
++    return this;
++  }
++
++  /**
++   * Override whether the raytrace should ignore passable blocks (blocks that the player can move through).
++   * Default value is true.
++   *
++   * @param ignorePassable the new value
++   * @return the modified builder
++   */
++  @NotNull
++  public RayTraceBuilder ignorePassable(boolean ignorePassable) {
++    this.ignorePassable = ignorePassable;
++    return this;
++  }
++
++  /**
++   * Define a set of specific blocks the raytrace should ignore.
++   * Default value is an empty set.
++   *
++   * @param ignoreBlocks the new set of blocks to ignore
++   * @return the modified builder
++   */
++  @NotNull
++  public RayTraceBuilder ignore(@NotNull Collection<Block> ignoreBlocks) {
++    Preconditions.checkArgument(ignoreBlocks != null, "Collection cannot be null");
++    this.ignoreBlocks = Set.copyOf(ignoreBlocks);
++    return this;
++  }
++
++  /**
++   * Define a predicate of entities to filter when casting the raytrace. All other entities will be ignored.
++   * Default value is colliding with all entities.
++   *
++   * @param entityPredicate the new predicate
++   * @return the modified builder
++   */
++  @NotNull
++  public RayTraceBuilder filter(@NotNull Predicate<Entity> entityPredicate) {
++    Preconditions.checkArgument(entityPredicate != null, "Predicate cannot be null");
++    this.entityPredicate = entityPredicate;
++    return this;
++  }
++
++  /**
++   * Build and cast the raytrace checking only blocks.
++   *
++   * @param world the world to cast the raytrace in
++   * @return the result
++   */
++  @Nullable
++  public RayTraceResult blocks(@NotNull World world) {
++    Preconditions.checkArgument(world != null, "World cannot be null");
++    Location start = new Location(world, origin.getX(), origin.getY(), origin.getZ());
++    return world.rayTraceBlocks(start, direction, range, mode, ignorePassable, ignoreBlocks);
++  }
++
++  /**
++   * Build and cast the raytrace checking both blocks and entities.
++   *
++   * @param world the world to cast the raytrace in
++   * @return the result
++   */
++  @Nullable
++  public RayTraceResult entities(@NotNull World world) {
++    Preconditions.checkArgument(world != null, "World cannot be null");
++    Location start = new Location(world, origin.getX(), origin.getY(), origin.getZ());
++    return world.rayTrace(start, direction, range, mode, ignorePassable, raySize, entityPredicate, ignoreBlocks);
++  }
++
++  /**
++   * Create a new builder instance using the specified origin and direction.
++   * <p>Note: The range is calculated based on the length of the direction vector.
++   *
++   * @param origin the origin of the raytrace
++   * @param direction the direction of the raytrace
++   * @return a new builder instance
++   */
++  @NotNull
++  public static RayTraceBuilder of(@NotNull Vector origin, @NotNull Vector direction) {
++    return new RayTraceBuilder().origin(origin).direction(direction).range(direction.length());
++  }
++}
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index e8c0c853eb52d1473c20231660355f77b1f7e016..15f9cf10f61c818417b6e063d1df64b8be8cff21 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -1791,6 +1791,34 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+     @Nullable
+     public RayTraceResult rayTraceBlocks(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks);
+ 
++    // Paper start
++    /**
++     * Performs a ray trace that checks for block collisions using the blocks'
++     * precise collision shapes.
++     * <p>
++     * If collisions with passable blocks are ignored, fluid collisions are
++     * ignored as well regardless of the fluid collision mode.
++     * <p>
++     * Portal blocks are only considered passable if the ray starts within
++     * them. Apart from that collisions with portal blocks will be considered
++     * even if collisions with passable blocks are otherwise ignored.
++     * <p>
++     * This may cause loading of chunks! Some implementations may impose
++     * artificial restrictions on the maximum distance.
++     *
++     * @param start the start location
++     * @param direction the ray direction
++     * @param maxDistance the maximum distance
++     * @param fluidCollisionMode the fluid collision mode
++     * @param ignorePassableBlocks whether to ignore passable but collidable
++     *     blocks (ex. tall grass, signs, fluids, ..)
++     * @param ignored a collection of blocks to ignore
++     * @return the ray trace hit result, or <code>null</code> if there is no hit
++     */
++    @Nullable
++    public RayTraceResult rayTraceBlocks(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @NotNull Collection<Block> ignored);
++    // Paper end
++
+     /**
+      * Performs a ray trace that checks for both block and entity collisions.
+      * <p>
+@@ -1824,6 +1852,42 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+     @Nullable
+     public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<Entity> filter);
+ 
++    // Paper start
++    /**
++     * Performs a ray trace that checks for both block and entity collisions.
++     * <p>
++     * Block collisions use the blocks' precise collision shapes. The
++     * <code>raySize</code> parameter is only taken into account for entity
++     * collision checks.
++     * <p>
++     * If collisions with passable blocks are ignored, fluid collisions are
++     * ignored as well regardless of the fluid collision mode.
++     * <p>
++     * Portal blocks are only considered passable if the ray starts within them.
++     * Apart from that collisions with portal blocks will be considered even if
++     * collisions with passable blocks are otherwise ignored.
++     * <p>
++     * This may cause loading of chunks! Some implementations may impose
++     * artificial restrictions on the maximum distance.
++     *
++     * @param start the start location
++     * @param direction the ray direction
++     * @param maxDistance the maximum distance
++     * @param fluidCollisionMode the fluid collision mode
++     * @param ignorePassableBlocks whether to ignore passable but collidable
++     *     blocks (ex. tall grass, signs, fluids, ..)
++     * @param raySize entity bounding boxes will be uniformly expanded (or
++     *     shrinked) by this value before doing collision checks
++     * @param filter only entities that fulfill this predicate are considered,
++     *     or <code>null</code> to consider all entities
++     * @param ignored a collection of blocks to ignore
++     * @return the closest ray trace hit result with either a block or an
++     *     entity, or <code>null</code> if there is no hit
++     */
++    @Nullable
++    public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<Entity> filter, @NotNull Collection<Block> ignored);
++    // Paper end
++
+     /**
+      * Gets the default spawn {@link Location} of this world
+      *
