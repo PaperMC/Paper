@@ -18,10 +18,10 @@ index 9467ccaa1d73e1913495a46919aee530e749977d..5a2a1d394852d39ea576624586f7fa73
  
      private static boolean isOutsideSpawnableHeight(int y) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..569825e93393a5f1eeb7d4abd1dc66040440af12 100644
+index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..70390eb6248d32eb6ed85306c8d9713c29352843 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -314,9 +314,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -314,9 +314,24 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public boolean setSpawnLocation(int x, int y, int z) {
          return this.setSpawnLocation(x, y, z, 0.0F);
      }
@@ -32,6 +32,9 @@ index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..569825e93393a5f1eeb7d4abd1dc6604
 +            Plugin plugin = io.papermc.paper.util.StackWalkerUtil.getFirstPluginCaller();
 +            if (plugin != null) {
 +                plugin.getLogger().warning("Plugin is %s at (%s, %s), this might cause issues.".formatted(reason, x, z));
++                if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) {
++                    io.papermc.paper.util.TraceUtil.dumpTraceForThread("Dangerous chunk retrieval by plugin");
++                }
 +            }
 +        }
 +    }
@@ -43,7 +46,7 @@ index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..569825e93393a5f1eeb7d4abd1dc6604
          // Paper start - add ticket to hold chunk for a little while longer if plugin accesses it
          net.minecraft.world.level.chunk.LevelChunk chunk = world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
          if (chunk == null) {
-@@ -432,6 +444,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -432,6 +447,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean regenerateChunk(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
@@ -51,7 +54,7 @@ index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..569825e93393a5f1eeb7d4abd1dc6604
          // Paper start - implement regenerateChunk method
          final ServerLevel serverLevel = this.world;
          final net.minecraft.server.level.ServerChunkCache serverChunkCache = serverLevel.getChunkSource();
-@@ -525,6 +538,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -525,6 +541,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean loadChunk(int x, int z, boolean generate) {
          org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
@@ -59,7 +62,7 @@ index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..569825e93393a5f1eeb7d4abd1dc6604
          // Paper start - Optimize this method
          ChunkPos chunkPos = new ChunkPos(x, z);
          ChunkAccess immediate = world.getChunkSource().getChunkAtIfLoadedImmediately(x, z); // Paper
-@@ -589,6 +603,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -589,6 +606,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean addPluginChunkTicket(int x, int z, Plugin plugin) {
@@ -67,7 +70,7 @@ index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..569825e93393a5f1eeb7d4abd1dc6604
          Preconditions.checkArgument(plugin != null, "null plugin");
          Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
  
-@@ -670,6 +685,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -670,6 +688,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setChunkForceLoaded(int x, int z, boolean forced) {
@@ -75,7 +78,7 @@ index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..569825e93393a5f1eeb7d4abd1dc6604
          this.getHandle().setChunkForced(x, z, forced);
      }
  
-@@ -981,6 +997,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -981,6 +1000,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public int getHighestBlockYAt(int x, int z, org.bukkit.HeightMap heightMap) {
@@ -83,7 +86,7 @@ index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..569825e93393a5f1eeb7d4abd1dc6604
          // Transient load for this tick
          return this.world.getChunk(x >> 4, z >> 4).getHeight(CraftHeightMap.toNMS(heightMap), x, z);
      }
-@@ -2238,6 +2255,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2238,6 +2258,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      // Paper start
      @Override
      public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
