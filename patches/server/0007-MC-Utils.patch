@@ -3009,6 +3009,36 @@ index 0000000000000000000000000000000000000000..cea9c098ade00ee87b8efc8164ab72f5
 +        return this.sum;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/util/StackWalkerUtil.java b/src/main/java/io/papermc/paper/util/StackWalkerUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f7114d5b8f2f93f62883e24da29afaf9f74ee1a6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/StackWalkerUtil.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.util;
++
++import org.bukkit.plugin.java.JavaPlugin;
++import org.bukkit.plugin.java.PluginClassLoader;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Optional;
++
++public class StackWalkerUtil {
++
++    @Nullable
++    public static JavaPlugin getFirstPluginCaller() {
++        Optional<JavaPlugin> foundFrame = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
++            .walk(stream -> stream
++                .filter(frame -> frame.getDeclaringClass().getClassLoader() instanceof PluginClassLoader)
++                .map((frame) -> {
++                    PluginClassLoader classLoader = (PluginClassLoader) frame.getDeclaringClass().getClassLoader();
++                    return classLoader.getPlugin();
++                })
++                .findFirst());
++
++        return foundFrame.orElse(null);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/util/WorldUtil.java b/src/main/java/io/papermc/paper/util/WorldUtil.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..67bb91fcfb532a919954cd9d7733d09a6c3fec35
