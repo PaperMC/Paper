@@ -13,8 +13,11 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import net.minecraft.commands.CommandListenerWrapper;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandException;
+import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class BukkitCommandWrapper implements com.mojang.brigadier.Command<CommandListenerWrapper>, Predicate<CommandListenerWrapper>, SuggestionProvider<CommandListenerWrapper> {
@@ -41,7 +44,15 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
 
     @Override
     public int run(CommandContext<CommandListenerWrapper> context) throws CommandSyntaxException {
-        return server.dispatchCommand(context.getSource().getBukkitSender(), context.getInput()) ? 1 : 0;
+        CommandSender sender = context.getSource().getBukkitSender();
+
+        try {
+            return server.dispatchCommand(sender, context.getInput()) ? 1 : 0;
+        } catch (CommandException ex) {
+            sender.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
+            server.getLogger().log(Level.SEVERE, null, ex);
+            return 0;
+        }
     }
 
     @Override
