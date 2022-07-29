@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <jahnke.nassim@gmail.com>
+Date: Thu, 28 Jul 2022 01:57:24 +0200
+Subject: [PATCH] Dont fire preview event for console
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 6a81076239080ae6457308ca2e3628c3d32691bf..e7d1ccffd4b783518a7b200d440f6f12f2ed0c86 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2600,6 +2600,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     public ChatDecorator getChatDecorator() {
+         return (entityplayer, ichatbasecomponent) -> {
++            // Paper start - fix non-player sender
++            if (entityplayer == null) {
++                return CompletableFuture.completedFuture(ichatbasecomponent);
++            }
++            // Paper end
+             return CompletableFuture.supplyAsync(() -> {
+                 AsyncPlayerChatPreviewEvent event = new AsyncPlayerChatPreviewEvent(true, entityplayer.getBukkitEntity(), CraftChatMessage.fromComponent(ichatbasecomponent), new LazyPlayerSet(this));
+                 String originalFormat = event.getFormat(), originalMessage = event.getMessage();
