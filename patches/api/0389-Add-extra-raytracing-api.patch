@@ -5,17 +5,13 @@ Subject: [PATCH] Add extra raytracing api
 
 Adds the option to ignore specific blocks (based on their position) when performing a raytrace.
 
-diff --git a/src/main/java/io/papermc/paper/raytrace/RayTraceBuilder.java b/src/main/java/io/papermc/paper/raytrace/RayTraceBuilder.java
+diff --git a/src/main/java/io/papermc/paper/raytrace/RayTraceContext.java b/src/main/java/io/papermc/paper/raytrace/RayTraceContext.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..99a45534f9c4b61fbae1abfb79c810ef419f730c
+index 0000000000000000000000000000000000000000..0b3a490df1e114f81fcedc04343d4b105cb498fb
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/raytrace/RayTraceBuilder.java
-@@ -0,0 +1,187 @@
++++ b/src/main/java/io/papermc/paper/raytrace/RayTraceContext.java
+@@ -0,0 +1,320 @@
 +package io.papermc.paper.raytrace;
-+
-+import java.util.Collection;
-+import java.util.Set;
-+import java.util.function.Predicate;
 +
 +import com.google.common.base.Preconditions;
 +import org.bukkit.FluidCollisionMode;
@@ -28,175 +24,312 @@ index 0000000000000000000000000000000000000000..99a45534f9c4b61fbae1abfb79c810ef
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
++import java.util.Collection;
++import java.util.Set;
++import java.util.function.Predicate;
++
 +/**
-+ * Helps prepare a raytrace to be cast.
-+ *
-+ * Usage of the builder is preferred over the super long {@link World#rayTrace(Location, Vector, double, FluidCollisionMode, boolean, double, Predicate, Collection)} API
++ * Represents the immutable context for performing a raytrace.
++ * <p>Usage of the {@link Builder} is preferred over the super long
++ * {@link World#rayTrace(Location, Vector, double, FluidCollisionMode, boolean, double, Predicate, Collection)} API.
 + */
-+public class RayTraceBuilder {
-+  public static final double MAX_RANGE = 100;
++public class RayTraceContext {
++    public static final double MAX_RANGE = 100;
 +
-+  private Vector origin;
-+  private Vector direction;
++    private final Vector origin;
++    private final Vector direction;
 +
-+  private double range;
-+  private double raySize = 0;
++    private final double range;
++    private final double raySize;
 +
-+  private boolean ignorePassable = true;
++    private final boolean ignorePassable;
 +
-+  private FluidCollisionMode mode = FluidCollisionMode.NEVER;
-+  private Predicate<Entity> entityPredicate = x -> true;
-+  private Set<Block> ignoreBlocks = Set.of();
++    private final FluidCollisionMode fluidMode;
++    private final Predicate<Entity> entityPredicate;
++    private final Set<Block> ignoreBlocks;
 +
-+  private RayTraceBuilder() {
-+  }
++    private RayTraceContext(Builder builder) {
++        this.origin = builder.origin;
++        this.direction = builder.direction;
++        this.range = builder.range;
++        this.raySize = builder.raySize;
++        this.ignorePassable = builder.ignorePassable;
++        this.fluidMode = builder.fluidMode;
++        this.entityPredicate = builder.entityPredicate;
++        this.ignoreBlocks = builder.ignoreBlocks;
++    }
 +
-+  /**
-+   * Sets the raytrace origin.
-+   *
-+   * @param origin the new origin
-+   * @return the modified builder
-+   */
-+  @NotNull
-+  public RayTraceBuilder origin(@NotNull Vector origin) {
-+    Preconditions.checkArgument(origin != null, "Origin cannot be null");
-+    this.origin = origin.clone();
-+    return this;
-+  }
++    /**
++     * Get this context's origin.
++     *
++     * @return a copy of the origin
++     */
++    @NotNull
++    public Vector origin() {
++        return origin.clone();
++    }
 +
-+  /**
-+   * Override the raytrace direction.
-+   *
-+   * @param direction the new direction
-+   * @return the modified builder
-+   */
-+  @NotNull
-+  public RayTraceBuilder direction(@NotNull Vector direction) {
-+    Preconditions.checkArgument(direction != null, "Direction cannot be null");
-+    this.direction = direction.clone();
-+    return this;
-+  }
++    /**
++     * Get this context's direction.
++     *
++     * @return a copy of the direction
++     */
++    @NotNull
++    public Vector direction() {
++        return direction.clone();
++    }
 +
-+  /**
-+   * Override the raytrace range.
-+   * <p>Note: range is clamped at [1, 100].
-+   *
-+   * @param range the new range
-+   * @return the modified builder
-+   */
-+  @NotNull
-+  public RayTraceBuilder range(double range) {
-+    this.range = Math.min(MAX_RANGE, Math.max(1, range));
-+    return this;
-+  }
++    /**
++     * Get this context's range.
++     *
++     * @return the range
++     */
++    public double range() {
++        return range;
++    }
 +
-+  /**
-+   * Override the raytrace ray size.
-+   * Ray size effectively grows the ray's collider when checked against entities.
-+   * Default value is 0.
-+   *
-+   * @param raySize the new non-negative ray size
-+   * @return the modified builder
-+   */
-+  @NotNull
-+  public RayTraceBuilder raySize(double raySize) {
-+    this.raySize = Math.max(0, raySize);
-+    return this;
-+  }
++    /**
++     * Get this context's ray size.
++     *
++     * @return the ray size
++     */
++    public double raySize() {
++        return raySize;
++    }
 +
-+  /**
-+   * Override the fluid collision mode for the raytrace.
-+   * Default value is {@link FluidCollisionMode#NEVER}.
-+   *
-+   * @param mode the new mode
-+   * @return the modified builder
-+   */
-+  @NotNull
-+  public RayTraceBuilder fluids(@NotNull FluidCollisionMode mode) {
-+    Preconditions.checkArgument(mode != null, "Mode cannot be null");
-+    this.mode = mode;
-+    return this;
-+  }
++    /**
++     * Get this context's option for ignoring passable blocks.
++     *
++     * @return the option
++     */
++    public boolean ignorePassable() {
++        return ignorePassable;
++    }
 +
-+  /**
-+   * Override whether the raytrace should ignore passable blocks (blocks that the player can move through).
-+   * Default value is true.
-+   *
-+   * @param ignorePassable the new value
-+   * @return the modified builder
-+   */
-+  @NotNull
-+  public RayTraceBuilder ignorePassable(boolean ignorePassable) {
-+    this.ignorePassable = ignorePassable;
-+    return this;
-+  }
++    /**
++     * Get this context's fluid mode.
++     *
++     * @return the fluid mode
++     */
++    @NotNull
++    public FluidCollisionMode fluidMode() {
++        return fluidMode;
++    }
 +
-+  /**
-+   * Define a set of specific blocks the raytrace should ignore.
-+   * Default value is an empty set.
-+   *
-+   * @param ignoreBlocks the new set of blocks to ignore
-+   * @return the modified builder
-+   */
-+  @NotNull
-+  public RayTraceBuilder ignore(@NotNull Collection<Block> ignoreBlocks) {
-+    Preconditions.checkArgument(ignoreBlocks != null, "Collection cannot be null");
-+    this.ignoreBlocks = Set.copyOf(ignoreBlocks);
-+    return this;
-+  }
++    /**
++     * Get this context's entity filter.
++     *
++     * @return the filter
++     */
++    @NotNull
++    public Predicate<Entity> filter() {
++        return entityPredicate;
++    }
 +
-+  /**
-+   * Define a predicate of entities to filter when casting the raytrace. All other entities will be ignored.
-+   * Default value is colliding with all entities.
-+   *
-+   * @param entityPredicate the new predicate
-+   * @return the modified builder
-+   */
-+  @NotNull
-+  public RayTraceBuilder filter(@NotNull Predicate<Entity> entityPredicate) {
-+    Preconditions.checkArgument(entityPredicate != null, "Predicate cannot be null");
-+    this.entityPredicate = entityPredicate;
-+    return this;
-+  }
++    /**
++     * Get this context's ignored blocks.
++     *
++     * @return an immutable collection of ignored blocks
++     */
++    @NotNull
++    public Set<Block> ignoreBlocks() {
++        return ignoreBlocks;
++    }
 +
-+  /**
-+   * Build and cast the raytrace checking only blocks.
-+   *
-+   * @param world the world to cast the raytrace in
-+   * @return the result
-+   */
-+  @Nullable
-+  public RayTraceResult blocks(@NotNull World world) {
-+    Preconditions.checkArgument(world != null, "World cannot be null");
-+    Location start = new Location(world, origin.getX(), origin.getY(), origin.getZ());
-+    return world.rayTraceBlocks(start, direction, range, mode, ignorePassable, ignoreBlocks);
-+  }
++    /**
++     * Create a builder from this context.
++     *
++     * @return the builder
++     */
++    @NotNull
++    public Builder toBuilder() {
++        return new Builder(this);
++    }
 +
-+  /**
-+   * Build and cast the raytrace checking both blocks and entities.
-+   *
-+   * @param world the world to cast the raytrace in
-+   * @return the result
-+   */
-+  @Nullable
-+  public RayTraceResult entities(@NotNull World world) {
-+    Preconditions.checkArgument(world != null, "World cannot be null");
-+    Location start = new Location(world, origin.getX(), origin.getY(), origin.getZ());
-+    return world.rayTrace(start, direction, range, mode, ignorePassable, raySize, entityPredicate, ignoreBlocks);
-+  }
++    /**
++     * Create a new builder instance using the specified origin and direction.
++     * <p>Note: The range is calculated based on the length of the direction vector.
++     *
++     * @param origin    the origin of the raytrace
++     * @param direction the direction of the raytrace
++     * @return a new builder instance
++     */
++    @NotNull
++    public static Builder builder(@NotNull Vector origin, @NotNull Vector direction) {
++        return new Builder().origin(origin).direction(direction).range(direction.length());
++    }
 +
-+  /**
-+   * Create a new builder instance using the specified origin and direction.
-+   * <p>Note: The range is calculated based on the length of the direction vector.
-+   *
-+   * @param origin the origin of the raytrace
-+   * @param direction the direction of the raytrace
-+   * @return a new builder instance
-+   */
-+  @NotNull
-+  public static RayTraceBuilder of(@NotNull Vector origin, @NotNull Vector direction) {
-+    return new RayTraceBuilder().origin(origin).direction(direction).range(direction.length());
-+  }
++    public static class Builder {
++        private Vector origin;
++        private Vector direction;
++
++        private double range;
++        private double raySize = 0;
++
++        private boolean ignorePassable = true;
++
++        private FluidCollisionMode fluidMode = FluidCollisionMode.NEVER;
++        private Predicate<Entity> entityPredicate = x -> true;
++        private Set<Block> ignoreBlocks = Set.of();
++
++        private Builder() {
++        }
++
++        private Builder(RayTraceContext context) {
++            this.origin = context.origin;
++            this.direction = context.direction;
++            this.range = context.range;
++            this.raySize = context.raySize;
++            this.ignorePassable = context.ignorePassable;
++            this.fluidMode = context.fluidMode;
++            this.entityPredicate = context.entityPredicate;
++            this.ignoreBlocks = context.ignoreBlocks;
++        }
++
++        /**
++         * Override the raytrace origin.
++         *
++         * @param origin the new origin
++         * @return the modified builder
++         */
++        @NotNull
++        public Builder origin(@NotNull Vector origin) {
++            Preconditions.checkArgument(origin != null, "Origin cannot be null");
++            this.origin = origin.clone();
++            return this;
++        }
++
++        /**
++         * Override the raytrace direction.
++         *
++         * @param direction the new direction
++         * @return the modified builder
++         */
++        @NotNull
++        public Builder direction(@NotNull Vector direction) {
++            Preconditions.checkArgument(direction != null, "Direction cannot be null");
++            this.direction = direction.clone();
++            return this;
++        }
++
++        /**
++         * Override the raytrace range.
++         * <p>Note: range is clamped at [1, 100].
++         *
++         * @param range the new range
++         * @return the modified builder
++         */
++        @NotNull
++        public Builder range(double range) {
++            this.range = Math.min(MAX_RANGE, Math.max(1, range));
++            return this;
++        }
++
++        /**
++         * Override the raytrace ray size.
++         * Ray size effectively grows the ray's collider when checked against entities.
++         * Default value is 0.
++         *
++         * @param raySize the new non-negative ray size
++         * @return the modified builder
++         */
++        @NotNull
++        public Builder raySize(double raySize) {
++            this.raySize = Math.max(0, raySize);
++            return this;
++        }
++
++        /**
++         * Override the fluid collision mode for the raytrace.
++         * Default value is {@link FluidCollisionMode#NEVER}.
++         *
++         * @param fluidMode the new mode
++         * @return the modified builder
++         */
++        @NotNull
++        public Builder fluidMode(@NotNull FluidCollisionMode fluidMode) {
++            Preconditions.checkArgument(fluidMode != null, "Mode cannot be null");
++            this.fluidMode = fluidMode;
++            return this;
++        }
++
++        /**
++         * Override whether the raytrace should ignore passable blocks (blocks that the player can move through).
++         * Default value is true.
++         *
++         * @param ignorePassable the new value
++         * @return the modified builder
++         */
++        @NotNull
++        public Builder ignorePassable(boolean ignorePassable) {
++            this.ignorePassable = ignorePassable;
++            return this;
++        }
++
++        /**
++         * Define a set of specific blocks the raytrace should ignore.
++         * Default value is an empty set.
++         *
++         * @param ignoreBlocks the new set of blocks to ignore
++         * @return the modified builder
++         */
++        @NotNull
++        public Builder ignore(@NotNull Collection<Block> ignoreBlocks) {
++            Preconditions.checkArgument(ignoreBlocks != null, "Collection cannot be null");
++            this.ignoreBlocks = Set.copyOf(ignoreBlocks);
++            return this;
++        }
++
++        /**
++         * Define a predicate of entities to filter when casting the raytrace. All other entities will be ignored.
++         * Default value is colliding with all entities.
++         *
++         * @param entityPredicate the new predicate
++         * @return the modified builder
++         */
++        @NotNull
++        public Builder filter(@NotNull Predicate<Entity> entityPredicate) {
++            Preconditions.checkArgument(entityPredicate != null, "Predicate cannot be null");
++            this.entityPredicate = entityPredicate;
++            return this;
++        }
++
++        /**
++         * Build a raytrace context from this builder.
++         *
++         * @return the built context
++         */
++        @Nullable
++        public RayTraceContext build() {
++            return new RayTraceContext(this);
++        }
++
++        /**
++         * Build and cast the raytrace checking only blocks.
++         *
++         * @param world the world to cast the raytrace in
++         * @return the result
++         */
++        @Nullable
++        public RayTraceResult blocks(@NotNull World world) {
++            Preconditions.checkArgument(world != null, "World cannot be null");
++            Location start = new Location(world, origin.getX(), origin.getY(), origin.getZ());
++            return world.rayTraceBlocks(start, direction, range, fluidMode, ignorePassable, ignoreBlocks);
++        }
++
++        /**
++         * Build and cast the raytrace checking both blocks and entities.
++         *
++         * @param world the world to cast the raytrace in
++         * @return the result
++         */
++        @Nullable
++        public RayTraceResult entities(@NotNull World world) {
++            Preconditions.checkArgument(world != null, "World cannot be null");
++            Location start = new Location(world, origin.getX(), origin.getY(), origin.getZ());
++            return world.rayTrace(start, direction, range, fluidMode, ignorePassable, raySize, entityPredicate, ignoreBlocks);
++        }
++    }
 +}
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
 index e8c0c853eb52d1473c20231660355f77b1f7e016..15f9cf10f61c818417b6e063d1df64b8be8cff21 100644

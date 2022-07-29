@@ -1,30 +1,28 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: PrimordialMoros <mail@moros.me>
-Date: Fri, 29 Jul 2022 04:18:57 +0300
+Date: Sat, 30 Jul 2022 02:43:27 +0300
 Subject: [PATCH] Add extra raytracing api
 
 Adds the option to ignore specific blocks (based on their position) when performing a raytrace.
 
 diff --git a/src/main/java/net/minecraft/world/level/BlockGetter.java b/src/main/java/net/minecraft/world/level/BlockGetter.java
-index d1eefa6ef3e9abfe7af4d8310aa64465fa2d5463..bcce89bd15bc182b612a9a372f9197786e3a3af8 100644
+index d1eefa6ef3e9abfe7af4d8310aa64465fa2d5463..c04d09523bb02a37d0fef907965375b3acb82e63 100644
 --- a/src/main/java/net/minecraft/world/level/BlockGetter.java
 +++ b/src/main/java/net/minecraft/world/level/BlockGetter.java
-@@ -72,9 +72,13 @@ public interface BlockGetter extends LevelHeightAccessor {
-             return BlockHitResult.miss(clipblockstatecontext1.getTo(), Direction.getNearest(vec3d.x, vec3d.y, vec3d.z), new BlockPos(clipblockstatecontext1.getTo()));
-         });
-     }
-+    // Paper start
-+    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
-+      return clip(raytrace1, blockposition, java.util.Set.of());
-+    }
+@@ -75,6 +75,12 @@ public interface BlockGetter extends LevelHeightAccessor {
  
      // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
--    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
-+    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition, java.util.Set<BlockPos> ignored) { // Paper end
+     default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
++        // Paper start
++        return clip(raytrace1, blockposition, java.util.Set.of());
++    }
++    // Paper end
++
++    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition, java.util.Set<BlockPos> ignored) { // Paper add overload
              // Paper start - Prevent raytrace from loading chunks
              BlockState iblockdata = this.getBlockStateIfLoaded(blockposition);
              if (iblockdata == null) {
-@@ -84,7 +88,7 @@ public interface BlockGetter extends LevelHeightAccessor {
+@@ -84,7 +90,7 @@ public interface BlockGetter extends LevelHeightAccessor {
                  return BlockHitResult.miss(raytrace1.getTo(), Direction.getNearest(vec3d.x, vec3d.y, vec3d.z), new BlockPos(raytrace1.getTo()));
              }
              // Paper end
@@ -33,64 +31,67 @@ index d1eefa6ef3e9abfe7af4d8310aa64465fa2d5463..bcce89bd15bc182b612a9a372f919778
              FluidState fluid = iblockdata.getFluidState(); // Paper - don't need to go to world state again
              Vec3 vec3d = raytrace1.getFrom();
              Vec3 vec3d1 = raytrace1.getTo();
-@@ -98,10 +102,14 @@ public interface BlockGetter extends LevelHeightAccessor {
-             return d0 <= d1 ? movingobjectpositionblock : movingobjectpositionblock1;
-     }
+@@ -100,8 +106,14 @@ public interface BlockGetter extends LevelHeightAccessor {
      // CraftBukkit end
--
-+    // Paper start
+
      default BlockHitResult clip(ClipContext context) {
-+      return clip(context, java.util.Set.of());
++        // Paper start
++        return clip(context, java.util.Set.of());
 +    }
 +
 +    default BlockHitResult clip(ClipContext context, java.util.Set<BlockPos> ignored) {
++        // Paper end
          return (BlockHitResult) BlockGetter.traverseBlocks(context.getFrom(), context.getTo(), context, (raytrace1, blockposition) -> {
 -            return this.clip(raytrace1, blockposition); // CraftBukkit - moved into separate method
-+            return this.clip(raytrace1, blockposition, ignored); // CraftBukkit - moved into separate method // Paper end
++            return this.clip(raytrace1, blockposition, ignored); // CraftBukkit - moved into separate method // Paper use overloaded method
          }, (raytrace1) -> {
              Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..d4b60400ea2c175edb0c15efed05e547ac180a49 100644
+index a5d8dfc77475845be7c6d37eed04fb19eeef1c0c..7ded413dcbecfe8440b8ad5151d6826e63287563 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1169,8 +1169,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-         return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, false);
-     }
+@@ -1171,6 +1171,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
-+    // Paper start
      @Override
      public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
-+      return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, Set.of());
++        // Paper start
++        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, Set.of());
 +    }
 +
 +    @Override
 +    public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, Collection<Block> ignored) {
++        // Paper end
          Validate.notNull(start, "Start location is null!");
          Validate.isTrue(this.equals(start.getWorld()), "Start location is from different world!");
          start.checkFinite();
-@@ -1188,13 +1194,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1188,14 +1195,27 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          Vector dir = direction.clone().normalize().multiply(maxDistance);
          Vec3 startPos = new Vec3(start.getX(), start.getY(), start.getZ());
          Vec3 endPos = new Vec3(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
 -        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null));
--
++        // Paper start
 +        Set<BlockPos> ignoredBlockPositions = new HashSet<>();
 +        for (Block block : ignored) {
 +          ignoredBlockPositions.add(new BlockPos(block.getX(), block.getY(), block.getZ()));
 +        }
 +        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null), ignoredBlockPositions);
 +        // Paper end
+
          return CraftRayTraceResult.fromNMS(this, nmsHitResult);
      }
  
      @Override
      public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<Entity> filter) {
-+        return rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, Set.of()); // Paper start - add overload method
+-        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks);
++        // Paper start - add overload method
++        return rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, Set.of());
 +    }
 +
 +    @Override
-+    public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<Entity> filter, Collection<Block> ignored) { // Paper end
-         RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks);
++    public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<Entity> filter, Collection<Block> ignored) {
++        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, ignored);
++        // Paper end
          Vector startVec = null;
          double blockHitDistance = maxDistance;
+ 
