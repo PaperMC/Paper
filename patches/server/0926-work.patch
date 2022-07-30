@@ -1,0 +1,282 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 30 Jul 2022 10:47:06 -0700
+Subject: [PATCH] work
+
+
+diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
+index 0a13ff11558f4c1ad6ffaac5c8ca24b92b17ab22..5f5077e4ac22c18e58f9bae0836543b96535e825 100644
+--- a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
++++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.adventure;
+ 
++import com.google.common.base.Suppliers;
+ import io.papermc.paper.chat.ChatRenderer;
+ import io.papermc.paper.event.player.AbstractChatEvent;
+ import io.papermc.paper.event.player.AsyncChatEvent;
+@@ -10,6 +11,7 @@ import java.util.HashSet;
+ import java.util.Set;
+ import java.util.concurrent.ExecutionException;
+ import java.util.function.Function;
++import java.util.function.Supplier;
+ import net.kyori.adventure.audience.Audience;
+ import net.kyori.adventure.audience.MessageType;
+ import net.kyori.adventure.text.Component;
+@@ -22,7 +24,9 @@ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ServerPlayer;
+ import org.bukkit.ChatColor;
++import org.bukkit.command.CommandSender;
+ import org.bukkit.command.ConsoleCommandSender;
++import org.bukkit.conversations.Conversable;
+ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ import org.bukkit.craftbukkit.util.LazyPlayerSet;
+@@ -226,14 +230,32 @@ public final class ChatProcessor {
+         final ResourceKey<ChatType> chatTypeKey = renderer instanceof DefaultChatRenderer ? ChatType.CHAT : ChatType.RAW;
+         final ChatType.Bound chatType = ChatType.bind(chatTypeKey, player.getHandle());
+ 
+-        if (viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy()) {
+-            /*if (this.flags.get(FORCE_PREVIEW_USE)) { // TODO (future)
++        OutgoingChat outgoingChat = viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy() ? new ServerOutgoingChat() : new ViewersOutgoingChat();
++        /* if (this.flags.get(FORCE_PREVIEW_USE)) { // TODO (future, maybe?)
++            outgoingChat.sendOriginal(player, viewers, chatType);
++        } else */
++        if (this.flags.get(FORMAT_CHANGED)) {
++            if (renderer instanceof LegacyChatRenderer unaware) {
++                outgoingChat.sendFormatChangedViewerUnaware(player, PaperAdventure.asVanilla(unaware.renderUnaware(player, displayName, message)), viewers, chatType);
++            } else {
++                outgoingChat.sendFormatChangedViewerAware(player, displayName, message, renderer, viewers, chatType);
++            }
++        } else if (this.flags.get(MESSAGE_CHANGED)) {
++            if (!(renderer instanceof LegacyChatRenderer unaware)) {
++                throw new IllegalStateException("BUG: There should not be a non-legacy renderer at this point");
++            }
++            final Component renderedComponent = chatTypeKey == ChatType.CHAT ? message : unaware.renderUnaware(player, displayName, message);
++            outgoingChat.sendMessageChanged(player, PaperAdventure.asVanilla(renderedComponent), viewers, chatType);
++        } else {
++            outgoingChat.sendOriginal(player, viewers, chatType);
++        }
++/*         if (viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy()) {
++             *//*if (this.flags.get(FORCE_PREVIEW_USE)) { // TODO (future)
+                 this.server.getPlayerList().broadcastChatMessage(this.legacyMessage, this.player, chatType);
+-            } else */
++            } else *//*
+             if (this.flags.get(FORMAT_CHANGED)) {
+                 if (renderer instanceof LegacyChatRenderer unaware) {
+-                    final Component renderedMessage = unaware.renderUnaware(player, displayName, message);
+-                    this.server.getPlayerList().broadcastChatMessage(this.message.withUnsignedContent(PaperAdventure.asVanilla(renderedMessage)), this.player, chatType);
++                    this.server.getPlayerList().broadcastChatMessage(this.message.withUnsignedContent(PaperAdventure.asVanilla(unaware.renderUnaware(player, displayName, message))), this.player, chatType);
+                 } else {
+                     this.server.getPlayerList().broadcastChatMessage(this.message, this.player, chatType, viewer -> {
+                         if (viewer instanceof ConsoleCommandSender consoleCommandSender) {
+@@ -255,12 +277,12 @@ public final class ChatProcessor {
+                 this.server.getPlayerList().broadcastChatMessage(this.message, this.player, chatType);
+             }
+         } else {
+-           /* if (this.flags.get(FORCE_PREVIEW_USE)) { // TODO (future)
++            *//* if (this.flags.get(FORCE_PREVIEW_USE)) { // TODO (future)
+                 this.broadcastToViewers(viewers, player, chatType, v -> legacyMessage);
+-            } else */
++            } else *//*
+             if (this.flags.get(FORMAT_CHANGED)) {
+-                if (renderer instanceof ChatRenderer.ViewerUnaware unaware) {
+-                    this.broadcastToViewers(viewers, player, chatType, v -> unaware.render(player, displayName, message));
++                if (renderer instanceof LegacyChatRenderer unaware) {
++                    this.broadcastToViewers(viewers, player, chatType, v -> unaware.renderUnaware(player, displayName, message));
+                 } else {
+                     this.broadcastToViewers(viewers, player, chatType, viewer -> renderer.render(player, displayName, message, viewer));
+                 }
+@@ -269,33 +291,93 @@ public final class ChatProcessor {
+                     throw new IllegalStateException("BUG: There should not be a non-legacy renderer at this point");
+                 }
+                 final Component renderedComponent = chatTypeKey == ChatType.CHAT ? message : unaware.renderUnaware(player, displayName, message);
+-                this.broadcastToViewers(viewers, player, chatType, v -> message);
++                this.broadcastToViewers(viewers, player, chatType, v -> renderedComponent);
+             } else {
+                 this.broadcastToViewers(viewers, player, chatType, null);
+             }
+             this.outgoing.sendHeadersToRemainingPlayers(this.server.getPlayerList());
+-        }
++        } */
+     }
+ 
+-    private void broadcastToViewers(Collection<Audience> viewers, final Player source, final ChatType.Bound chatType, final @Nullable Function<Audience, Component> msgFunction) {
+-        for (Audience viewer : viewers) {
+-            this.sendToViewer(source, viewer, chatType, msgFunction);
++    interface OutgoingChat {
++        default void sendFormatChangedViewerUnaware(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType) {
++            this.sendMessageChanged(player, renderedMessage, viewers, chatType);
+         }
++
++        void sendFormatChangedViewerAware(CraftPlayer player, Component displayName, Component message, ChatRenderer renderer, Set<Audience> viewers, ChatType.Bound chatType);
++
++        void sendMessageChanged(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType);
++
++        void sendOriginal(CraftPlayer player, Set<Audience> viewers, ChatType.Bound chatType);
+     }
+ 
+-    private void sendToViewer(final Player source, final Audience viewer, final ChatType.Bound chatType, final @Nullable Function<Audience, Component> msgFunction) {
+-        if (viewer instanceof ConsoleCommandSender) {
+-            this.sendToServer(chatType, msgFunction);
+-        } else if (viewer instanceof CraftPlayer craftPlayer) {
+-            craftPlayer.getHandle().sendChatMessage(this.outgoing, this.player.shouldFilterMessageTo(craftPlayer.getHandle()), chatType, Util.mapNullable(msgFunction, f -> f.apply(viewer)));
+-        } else {
+-            viewer.sendMessage(source, msgFunction == null ? PaperAdventure.asAdventure(this.message.serverContent()) : msgFunction.apply(viewer), MessageType.CHAT); // TODO maybe something more needs to be done here?
++    final class ServerOutgoingChat implements OutgoingChat {
++        @Override
++        public void sendFormatChangedViewerAware(CraftPlayer player, Component displayName, Component message, ChatRenderer renderer, Set<Audience> viewers, ChatType.Bound chatType) {
++            ChatProcessor.this.server.getPlayerList().broadcastChatMessage(ChatProcessor.this.message, ChatProcessor.this.player, chatType, viewer -> renderer.render(player, displayName, message, viewer));
++        }
++
++        @Override
++        public void sendMessageChanged(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType) {
++            ChatProcessor.this.server.getPlayerList().broadcastChatMessage(ChatProcessor.this.message.withUnsignedContent(renderedMessage), ChatProcessor.this.player, chatType);
++        }
++
++        @Override
++        public void sendOriginal(CraftPlayer player, Set<Audience> viewers, ChatType.Bound chatType) {
++            ChatProcessor.this.server.getPlayerList().broadcastChatMessage(ChatProcessor.this.message, ChatProcessor.this.player, chatType);
+         }
+     }
+ 
+-    private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, Component> msgFunction) {
+-        final PlayerChatMessage toConsoleMessage = msgFunction == null ? this.message : this.message.withUnsignedContent(PaperAdventure.asVanilla(msgFunction.apply(this.server.console)));
+-        this.server.logChatMessage(toConsoleMessage.serverContent(), chatType, this.server.getPlayerList().verifyChatTrusted(toConsoleMessage, this.player.asChatSender()) ? null : "Not Secure");
++    final class ViewersOutgoingChat implements OutgoingChat {
++        @Override
++        public void sendFormatChangedViewerAware(CraftPlayer player, Component displayName, Component message, ChatRenderer renderer, Set<Audience> viewers, ChatType.Bound chatType) {
++            this.broadcastToViewers(viewers, player, chatType, v -> PaperAdventure.asVanilla(renderer.render(player, displayName, message, v)));
++        }
++
++        @Override
++        public void sendMessageChanged(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType) {
++            this.broadcastToViewers(viewers, player, chatType, new ConstantFunction(renderedMessage));
++        }
++
++        @Override
++        public void sendOriginal(CraftPlayer player, Set<Audience> viewers, ChatType.Bound chatType) {
++            this.broadcastToViewers(viewers, player, chatType, null);
++        }
++
++        private void broadcastToViewers(Collection<Audience> viewers, final Player source, final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
++            final Supplier<Component>  fallbackSupplier = Suppliers.memoize(() -> PaperAdventure.asAdventure(msgFunction instanceof ConstantFunction constantFunction ? constantFunction.component : ChatProcessor.this.message.serverContent()));
++            final Function<Audience, Component> audienceMsgFunction = !(msgFunction instanceof ConstantFunction || msgFunction == null) ? msgFunction.andThen(PaperAdventure::asAdventure) : viewer -> fallbackSupplier.get();
++            for (Audience viewer : viewers) {
++                if (viewer instanceof Player || viewer instanceof ConsoleCommandSender) {
++                    // players and console have builtin PlayerChatMessage sending support while other audiences do not
++                    this.sendToViewer((CommandSender) viewer, chatType, msgFunction);
++                } else {
++                    viewer.sendMessage(source, audienceMsgFunction.apply(viewer), MessageType.CHAT);
++                }
++            }
++        }
++
++        private void sendToViewer(final CommandSender viewer, final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
++            if (viewer instanceof ConsoleCommandSender) {
++                this.sendToServer(chatType, msgFunction);
++            } else if (viewer instanceof CraftPlayer craftPlayer) {
++                craftPlayer.getHandle().sendChatMessage(ChatProcessor.this.outgoing, ChatProcessor.this.player.shouldFilterMessageTo(craftPlayer.getHandle()), chatType, Util.mapNullable(msgFunction, f -> f.apply(viewer)));
++            } else {
++                throw new IllegalStateException("Should only be a Player or Console");
++            }
++        }
++
++        private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
++            final PlayerChatMessage toConsoleMessage = msgFunction == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(msgFunction.apply(ChatProcessor.this.server.console));
++            ChatProcessor.this.server.logChatMessage(toConsoleMessage.serverContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage, ChatProcessor.this.player.asChatSender()) ? null : "Not Secure");
++        }
++
++        record ConstantFunction(net.minecraft.network.chat.Component component) implements Function<Audience, net.minecraft.network.chat.Component> {
++            @Override
++            public net.minecraft.network.chat.Component apply(Audience audience) {
++                return this.component;
++            }
++        }
+     }
+ 
+     private Set<Audience> viewersFromLegacy(final Set<Player> recipients) {
+diff --git a/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java
+index f85a4b3a9c78a303b7dd6cbab273772f7345dad1..fc43cc6f5bbb3485b9ddcc441a13399e57289586 100644
+--- a/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java
++++ b/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java
+@@ -14,7 +14,7 @@ public interface OutgoingPlayerChatMessage {
+ 
+     void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound);
+     // Paper start
+-    default void sendToPlayer(ServerPlayer serverPlayer, boolean shouldFilter, ChatType.Bound bound, @javax.annotation.Nullable net.kyori.adventure.text.Component unsigned) {
++    default void sendToPlayer(ServerPlayer serverPlayer, boolean shouldFilter, ChatType.Bound bound, @javax.annotation.Nullable Component unsigned) {
+         this.sendToPlayer(serverPlayer, shouldFilter, bound);
+     }
+     // Paper end
+@@ -44,10 +44,10 @@ public interface OutgoingPlayerChatMessage {
+         }
+ 
+         @Override
+-        public void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound, @javax.annotation.Nullable net.kyori.adventure.text.Component unsigned) {
++        public void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound, @javax.annotation.Nullable Component unsigned) {
+             // Paper end
+             PlayerChatMessage playerChatMessage = this.message.filter(bl);
+-            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(io.papermc.paper.adventure.PaperAdventure.asVanilla(unsigned)) : playerChatMessage; // Paper
++            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(unsigned) : playerChatMessage; // Paper
+             if (!playerChatMessage.isFullyFiltered()) {
+                 RegistryAccess registryAccess = serverPlayer.level.registryAccess();
+                 ChatType.BoundNetwork boundNetwork = bound.toNetwork(registryAccess);
+@@ -82,10 +82,10 @@ public interface OutgoingPlayerChatMessage {
+         }
+ 
+         @Override
+-        public void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound, @javax.annotation.Nullable net.kyori.adventure.text.Component unsigned) {
++        public void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound, @javax.annotation.Nullable Component unsigned) {
+             // Paper end
+             PlayerChatMessage playerChatMessage = this.message.filter(bl);
+-            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(io.papermc.paper.adventure.PaperAdventure.asVanilla(unsigned)) : playerChatMessage; // Paper
++            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(unsigned) : playerChatMessage; // Paper
+             if (!playerChatMessage.isFullyFiltered()) {
+                 this.playersWithFullMessage.add(serverPlayer);
+                 RegistryAccess registryAccess = serverPlayer.level.registryAccess();
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 5eced20d31f8fb9d0116716fbd3b2d8b9076fa81..6cbd839cc7529eb0095485c4ef4a0d81a3cd9b19 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1888,7 +1888,7 @@ public class ServerPlayer extends Player {
+         // Paper start
+         this.sendChatMessage(message, flag, chatmessagetype_a, null);
+     }
+-    public void sendChatMessage(OutgoingPlayerChatMessage message, boolean flag, ChatType.Bound chatmessagetype_a, @Nullable net.kyori.adventure.text.Component unsigned) {
++    public void sendChatMessage(OutgoingPlayerChatMessage message, boolean flag, ChatType.Bound chatmessagetype_a, @Nullable Component unsigned) {
+         // Paper end
+         if (this.acceptsChatMessages()) {
+             message.sendToPlayer(this, flag, chatmessagetype_a, unsigned); // Paper
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index d9c914bd10f37d4d64ecd919ab7deaa6c40fa6cf..02ad0f463511a43774d040cc2666c5a5ce88d239 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1418,7 +1418,7 @@ public abstract class PlayerList {
+         // Paper start
+         this.broadcastChatMessage(playerchatmessage, sender, params, null);
+     }
+-    public void broadcastChatMessage(PlayerChatMessage playerchatmessage, ServerPlayer sender, ChatType.Bound params, @Nullable Function<Object, net.kyori.adventure.text.Component> unsignedFunction) {
++    public void broadcastChatMessage(PlayerChatMessage playerchatmessage, ServerPlayer sender, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, net.kyori.adventure.text.Component> unsignedFunction) {
+         // Paper end
+         Objects.requireNonNull(sender);
+         this.broadcastChatMessage(playerchatmessage, sender::shouldFilterMessageTo, sender, sender.asChatSender(), params, unsignedFunction); // Paper
+@@ -1429,7 +1429,7 @@ public abstract class PlayerList {
+         this.broadcastChatMessage(playerchatmessage, shouldSendFiltered, entityplayer, chatsender, chatmessagetype_a, null);
+     }
+ 
+-    private void broadcastChatMessage(PlayerChatMessage playerchatmessage, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer entityplayer, ChatSender chatsender, ChatType.Bound chatmessagetype_a, @Nullable Function<Object, net.kyori.adventure.text.Component> unsignedFunction) {
++    private void broadcastChatMessage(PlayerChatMessage playerchatmessage, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer entityplayer, ChatSender chatsender, ChatType.Bound chatmessagetype_a, @Nullable Function<net.kyori.adventure.audience.Audience, net.kyori.adventure.text.Component> unsignedFunction) {
+         // Paper end
+         boolean flag = this.verifyChatTrusted(playerchatmessage, chatsender);
+ 
+@@ -1443,7 +1443,7 @@ public abstract class PlayerList {
+             ServerPlayer entityplayer1 = (ServerPlayer) iterator.next();
+             boolean flag3 = shouldSendFiltered.test(entityplayer1);
+ 
+-            entityplayer1.sendChatMessage(outgoingplayerchatmessage, flag3, chatmessagetype_a, unsignedFunction == null ? null : unsignedFunction.apply(entityplayer1));
++            entityplayer1.sendChatMessage(outgoingplayerchatmessage, flag3, chatmessagetype_a, unsignedFunction == null ? null : unsignedFunction.apply(entityplayer1.getBukkitEntity()));
+             if (entityplayer != entityplayer1) {
+                 flag2 |= flag1 && flag3;
+             }
