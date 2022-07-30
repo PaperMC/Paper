@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tim Zimmermann <tim@linux4.de>
+Date: Sat, 30 Jul 2022 07:37:37 +0200
+Subject: [PATCH] Allow disabling chat message signatures
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index 456595e4b7e0c7f50617aa2694b0d2dfc368ab81..2ba81343881a6a0800efb5784592c6d7d1e9a34f 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -261,5 +261,6 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public boolean lagCompensateBlockBreaking = true;
+         public boolean useDimensionTypeForCustomSpawners = false;
+         public boolean strictAdvancementDimensionCheck = false;
++        public boolean disableChatMessageSignatures = false;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 94944ba458178f9e5b772224da329bb5d85f4394..04ac6563bd96be7497df4577711c721cf0565d1d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1956,7 +1956,8 @@ public class ServerPlayer extends Player {
+     }
+ 
+     public void sendServerStatus(ServerStatus metadata) {
+-        this.connection.send(new ClientboundServerDataPacket(metadata.getDescription(), metadata.getFavicon(), metadata.previewsChat(), metadata.enforcesSecureChat()));
++        this.connection.send(new ClientboundServerDataPacket(metadata.getDescription(), metadata.getFavicon(), metadata.previewsChat(), metadata.enforcesSecureChat()
++                || io.papermc.paper.configuration.GlobalConfiguration.get().misc.disableChatMessageSignatures)); // Paper - Allow disabling chat message signatures
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 37d8a797bb590c30bf42ab04128489a9390684d3..c446a2cadf5992b256489966aaf08b3ee28f6677 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1422,6 +1422,13 @@ public abstract class PlayerList {
+     private void broadcastChatMessage(PlayerChatMessage playerchatmessage, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer entityplayer, ChatSender chatsender, ChatType.Bound chatmessagetype_a) {
+         boolean flag = this.verifyChatTrusted(playerchatmessage, chatsender);
+ 
++        // Paper start - Allow disabling chat message signatures
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.disableChatMessageSignatures) {
++            flag = true;
++            playerchatmessage = PlayerChatMessage.system(playerchatmessage.signedContent());
++        }
++        // Paper end
++
+         this.server.logChatMessage(playerchatmessage.serverContent(), chatmessagetype_a, flag ? null : "Not Secure");
+         OutgoingPlayerChatMessage outgoingplayerchatmessage = OutgoingPlayerChatMessage.create(playerchatmessage);
+         boolean flag1 = playerchatmessage.isFullyFiltered();
