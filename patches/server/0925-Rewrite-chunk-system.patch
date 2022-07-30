@@ -10522,10 +10522,10 @@ index 0000000000000000000000000000000000000000..1f5c984f09595a8b1b84c2992f7a39e0
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..84ca7d24f98b392ede81a8af81bef2c825f7ded6
+index 0000000000000000000000000000000000000000..e96ecf351a1952b4e23e9a352f32d326146380e7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java
-@@ -0,0 +1,207 @@
+@@ -0,0 +1,209 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -10601,7 +10601,9 @@ index 0000000000000000000000000000000000000000..84ca7d24f98b392ede81a8af81bef2c8
 +            generation = !chunk.getStatus().isOrAfter(this.toStatus);
 +            if (generation) {
 +                if (this.toStatus.isEmptyGenStatus()) {
-+                    ((ProtoChunk)chunk).setStatus(this.toStatus);
++                    if (chunk instanceof ProtoChunk) {
++                        ((ProtoChunk)chunk).setStatus(this.toStatus);
++                    }
 +                    completing = true;
 +                    this.complete(chunk, null);
 +                    return;
@@ -10610,7 +10612,7 @@ index 0000000000000000000000000000000000000000..84ca7d24f98b392ede81a8af81bef2c8
 +                    serverChunkCache.getLightEngine(), null, this.neighbours, false)
 +                    .whenComplete((final Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either, final Throwable throwable) -> {
 +                        final ChunkAccess newChunk = (either == null) ? null : either.left().orElse(null);
-+                        if (newChunk != null) {
++                        if (newChunk instanceof ProtoChunk) {
 +                            ((ProtoChunk)newChunk).setStatus(ChunkUpgradeGenericStatusTask.this.toStatus);
 +                        }
 +                    }
