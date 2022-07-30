@@ -5280,15 +5280,11 @@ index ef8dcbb6bbc0769e9ccfdadb05e6a46c070eda98..f6dfaaa0ccd8caeb4bd4b94254aebe7e
  
      protected static final class LightQueue {
 diff --git a/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
-index 7c89a96d54641904e2d4562fe28c59deecfb5444..5e5ecd3aac657bfd9beb3a02fa274de6fdcad707 100644
+index 7c89a96d54641904e2d4562fe28c59deecfb5444..7b95b599c29ddb9c249ab1f8e51b69789c63bdc4 100644
 --- a/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
 +++ b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
-@@ -42,10 +42,10 @@ public final class PaperFileIOThread extends QueueExecutorThread {
- 
-     public static final class Holder {
- 
--        public static final PaperFileIOThread INSTANCE = new PaperFileIOThread();
-+        public static final PaperFileIOThread INSTANCE = null; // Paper - fail hard on usage
+@@ -45,7 +45,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+         public static final PaperFileIOThread INSTANCE = new PaperFileIOThread();
  
          static {
 -            INSTANCE.start();
@@ -5296,69 +5292,277 @@ index 7c89a96d54641904e2d4562fe28c59deecfb5444..5e5ecd3aac657bfd9beb3a02fa274de6
          }
      }
  
-@@ -95,8 +95,8 @@ public final class PaperFileIOThread extends QueueExecutorThread {
- 
-         final Long key = Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ));
- 
+@@ -89,39 +89,16 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+      * @param priority Priority level to try to bump to
+      */
+     public void bumpPriority(final ServerLevel world, final int chunkX, final int chunkZ, final int priority) {
+-        if (!PrioritizedTaskQueue.validPriority(priority)) {
+-            throw new IllegalArgumentException("Invalid priority: " + priority);
+-        }
+-
+-        final Long key = Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ));
+-
 -        final ChunkDataTask poiTask = world.poiDataController.tasks.get(key);
 -        final ChunkDataTask chunkTask = world.chunkDataController.tasks.get(key);
-+        final ChunkDataTask poiTask = null; // Paper - TODO rewrite chunk system
-+        final ChunkDataTask chunkTask = null; // Paper - TODO rewrite chunk system
- 
-         if (poiTask != null) {
-             poiTask.raisePriority(priority);
-@@ -107,7 +107,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+-
+-        if (poiTask != null) {
+-            poiTask.raisePriority(priority);
+-        }
+-        if (chunkTask != null) {
+-            chunkTask.raisePriority(priority);
+-        }
++        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
      }
  
      public CompoundTag getPendingWrite(final ServerLevel world, final int chunkX, final int chunkZ, final boolean poiData) {
 -        final ChunkDataController taskController = poiData ? world.poiDataController : world.chunkDataController;
-+        final ChunkDataController taskController = null; // Paper - TODO rewrite chunk system
- 
-         final ChunkDataTask dataTask = taskController.tasks.get(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)));
- 
-@@ -138,8 +138,8 @@ public final class PaperFileIOThread extends QueueExecutorThread {
- 
-         final Long key = Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ));
- 
--        final ChunkDataTask poiTask = world.poiDataController.tasks.get(key);
--        final ChunkDataTask chunkTask = world.chunkDataController.tasks.get(key);
-+        final ChunkDataTask poiTask = null; // Paper - TODO rewrite chunk system
-+        final ChunkDataTask chunkTask = null; // Paper - TODO rewrite chunk system
- 
-         if (poiTask != null) {
-             poiTask.updatePriority(priority);
-@@ -180,10 +180,10 @@ public final class PaperFileIOThread extends QueueExecutorThread {
-         final long writeCounter = this.writeCounter.getAndIncrement();
- 
-         if (poiData != null) {
--            this.scheduleWrite(world.poiDataController, world, chunkX, chunkZ, poiData, priority, writeCounter);
-+            this.scheduleWrite(null, world, chunkX, chunkZ, poiData, priority, writeCounter); // Paper - TODO rewrite chunk system
-         }
-         if (chunkData != null) {
--            this.scheduleWrite(world.chunkDataController, world, chunkX, chunkZ, chunkData, priority, writeCounter);
-+            this.scheduleWrite(null, world, chunkX, chunkZ, chunkData, priority, writeCounter); // Paper - TODO rewrite chunk system
-         }
+-
+-        final ChunkDataTask dataTask = taskController.tasks.get(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)));
+-
+-        if (dataTask == null) {
+-            return null;
+-        }
+-
+-        final ChunkDataController.InProgressWrite write = dataTask.inProgressWrite;
+-
+-        if (write == null) {
+-            return null;
+-        }
+-
+-        return write.data;
++        // Paper start - rewrite chunk system
++        return io.papermc.paper.chunk.system.io.RegionFileIOThread.getPendingWrite(
++            world, chunkX, chunkZ, poiData ? io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA :
++                io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA
++            );
++        // Paper end - rewrite chunk system
      }
  
-@@ -286,7 +286,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
-         final boolean[] requireCompletion = new boolean[] { readPoiData, readChunkData };
+     /**
+@@ -132,21 +109,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+      * @param priority Priority level to set to
+      */
+     public void setPriority(final ServerLevel world, final int chunkX, final int chunkZ, final int priority) {
+-        if (!PrioritizedTaskQueue.validPriority(priority)) {
+-            throw new IllegalArgumentException("Invalid priority: " + priority);
+-        }
+-
+-        final Long key = Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ));
+-
+-        final ChunkDataTask poiTask = world.poiDataController.tasks.get(key);
+-        final ChunkDataTask chunkTask = world.chunkDataController.tasks.get(key);
+-
+-        if (poiTask != null) {
+-            poiTask.updatePriority(priority);
+-        }
+-        if (chunkTask != null) {
+-            chunkTask.updatePriority(priority);
+-        }
++        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
+     }
  
-         if (readPoiData) {
--            this.scheduleRead(world.poiDataController, world, chunkX, chunkZ, (final CompoundTag poiData) -> {
-+            this.scheduleRead(null, world, chunkX, chunkZ, (final CompoundTag poiData) -> { // Paper - TODO rewrite chunk system
-                 complete.poiData = poiData;
+     /**
+@@ -173,58 +136,12 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+     public void scheduleSave(final ServerLevel world, final int chunkX, final int chunkZ,
+                              final CompoundTag poiData, final CompoundTag chunkData,
+                              final int priority) throws IllegalArgumentException {
+-        if (!PrioritizedTaskQueue.validPriority(priority)) {
+-            throw new IllegalArgumentException("Invalid priority: " + priority);
+-        }
+-
+-        final long writeCounter = this.writeCounter.getAndIncrement();
+-
+-        if (poiData != null) {
+-            this.scheduleWrite(world.poiDataController, world, chunkX, chunkZ, poiData, priority, writeCounter);
+-        }
+-        if (chunkData != null) {
+-            this.scheduleWrite(world.chunkDataController, world, chunkX, chunkZ, chunkData, priority, writeCounter);
+-        }
++        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
+     }
  
-                 final boolean finished;
-@@ -305,7 +305,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+     private void scheduleWrite(final ChunkDataController dataController, final ServerLevel world,
+                                final int chunkX, final int chunkZ, final CompoundTag data, final int priority, final long writeCounter) {
+-        dataController.tasks.compute(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)), (final Long keyInMap, final ChunkDataTask taskRunning) -> {
+-            if (taskRunning == null) {
+-                // no task is scheduled
+-
+-                // create task
+-                final ChunkDataTask newTask = new ChunkDataTask(priority, world, chunkX, chunkZ, dataController);
+-                newTask.inProgressWrite = new ChunkDataController.InProgressWrite();
+-                newTask.inProgressWrite.writeCounter = writeCounter;
+-                newTask.inProgressWrite.data = data;
+-
+-                PaperFileIOThread.this.queueTask(newTask); // schedule
+-                return newTask;
+-            }
+-
+-            taskRunning.raisePriority(priority);
+-
+-            if (taskRunning.inProgressWrite == null) {
+-                taskRunning.inProgressWrite = new ChunkDataController.InProgressWrite();
+-            }
+-
+-            boolean reschedule = taskRunning.inProgressWrite.writeCounter == -1L;
+-
+-            // synchronize for readers
+-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+-            synchronized (taskRunning) {
+-                taskRunning.inProgressWrite.data = data;
+-                taskRunning.inProgressWrite.writeCounter = writeCounter;
+-            }
+-
+-            if (reschedule) {
+-                // We need to reschedule this task since the previous one is not currently scheduled since it failed
+-                taskRunning.reschedule(priority);
+-            }
+-
+-            return taskRunning;
+-        });
++        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
+     }
+ 
+     /**
+@@ -283,45 +200,45 @@ public final class PaperFileIOThread extends QueueExecutorThread {
          }
  
+         final ChunkData complete = new ChunkData();
+-        final boolean[] requireCompletion = new boolean[] { readPoiData, readChunkData };
+-
++        // Paper start - rewrite chunk system
++        final java.util.List<io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType> types = new java.util.ArrayList<>();
+         if (readPoiData) {
+-            this.scheduleRead(world.poiDataController, world, chunkX, chunkZ, (final CompoundTag poiData) -> {
+-                complete.poiData = poiData;
+-
+-                final boolean finished;
+-
+-                // avoid a race condition where the file io thread completes and we complete synchronously
+-                // Note: Synchronization can be elided if both of the accesses are volatile
+-                synchronized (requireCompletion) {
+-                    requireCompletion[0] = false; // 0 -> poi data
+-                    finished = !requireCompletion[1]; // 1 -> chunk data
+-                }
+-
+-                if (finished) {
+-                    onComplete.accept(complete);
+-                }
+-            }, priority, intendingToBlock);
++            types.add(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA);
+         }
+-
          if (readChunkData) {
 -            this.scheduleRead(world.chunkDataController, world, chunkX, chunkZ, (final CompoundTag chunkData) -> {
-+            this.scheduleRead(null, world, chunkX, chunkZ, (final CompoundTag chunkData) -> { // Paper - TODO rewrite chunk system
-                 complete.chunkData = chunkData;
+-                complete.chunkData = chunkData;
+-
+-                final boolean finished;
+-
+-                // avoid a race condition where the file io thread completes and we complete synchronously
+-                // Note: Synchronization can be elided if both of the accesses are volatile
+-                synchronized (requireCompletion) {
+-                    requireCompletion[1] = false; // 1 -> chunk data
+-                    finished = !requireCompletion[0]; // 0 -> poi data
++            types.add(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA);
++        }
++        final ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority newPriority;
++        switch (priority) {
++            case PrioritizedTaskQueue.HIGHEST_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.BLOCKING;
++            case PrioritizedTaskQueue.HIGHER_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHEST;
++            case PrioritizedTaskQueue.HIGH_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGH;
++            case PrioritizedTaskQueue.NORMAL_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL;
++            case PrioritizedTaskQueue.LOW_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.LOW;
++            case PrioritizedTaskQueue.LOWEST_PRIORITY -> newPriority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.IDLE;
++            default -> throw new IllegalStateException("Legacy priority " + priority + " should be valid");
++        }
++        final Consumer<io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileData> transformComplete = (io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileData data) -> {
++            if (readPoiData) {
++                if (data.getThrowable(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA) != null) {
++                    complete.poiData = FAILURE_VALUE;
++                } else {
++                    complete.poiData = data.getData(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.POI_DATA);
+                 }
++            }
  
-                 final boolean finished;
-@@ -471,7 +471,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+-                if (finished) {
+-                    onComplete.accept(complete);
++            if (readChunkData) {
++                if (data.getThrowable(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA) != null) {
++                    complete.chunkData = FAILURE_VALUE;
++                } else {
++                    complete.chunkData = data.getData(io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType.CHUNK_DATA);
+                 }
+-            }, priority, intendingToBlock);
+-        }
++            }
++
++            onComplete.accept(complete);
++        };
++        io.papermc.paper.chunk.system.io.RegionFileIOThread.loadChunkData(world, chunkX, chunkZ, transformComplete, intendingToBlock, newPriority, types.toArray(new io.papermc.paper.chunk.system.io.RegionFileIOThread.RegionFileType[0]));
++        // Paper end - rewrite chunk system
+ 
+     }
+ 
+@@ -329,49 +246,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+     private void scheduleRead(final ChunkDataController dataController, final ServerLevel world,
+                               final int chunkX, final int chunkZ, final Consumer<CompoundTag> onComplete, final int priority,
+                               final boolean intendingToBlock) {
+-
+-        Function<RegionFile, Boolean> tryLoadFunction = (final RegionFile file) -> {
+-            if (file == null) {
+-                return Boolean.TRUE;
+-            }
+-            return Boolean.valueOf(file.hasChunk(new ChunkPos(chunkX, chunkZ)));
+-        };
+-
+-        dataController.tasks.compute(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)), (final Long keyInMap, final ChunkDataTask running) -> {
+-            if (running == null) {
+-                // not scheduled
+-
+-                final Boolean shouldSchedule = intendingToBlock ? dataController.computeForRegionFile(chunkX, chunkZ, tryLoadFunction) :
+-                    dataController.computeForRegionFileIfLoaded(chunkX, chunkZ, tryLoadFunction);
+-
+-                if (shouldSchedule == Boolean.FALSE) {
+-                    // not on disk
+-                    onComplete.accept(null);
+-                    return null;
+-                }
+-
+-                // set up task
+-                final ChunkDataTask newTask = new ChunkDataTask(priority, world, chunkX, chunkZ, dataController);
+-                newTask.inProgressRead = new ChunkDataController.InProgressRead();
+-                newTask.inProgressRead.readFuture.thenAccept(onComplete);
+-
+-                PaperFileIOThread.this.queueTask(newTask); // schedule task
+-                return newTask;
+-            }
+-
+-            running.raisePriority(priority);
+-
+-            if (running.inProgressWrite == null) {
+-                // chain to the read future
+-                running.inProgressRead.readFuture.thenAccept(onComplete);
+-                return running;
+-            }
+-
+-            // at this stage we have to use the in progress write's data to avoid an order issue
+-            // we don't synchronize since all writes to data occur in the compute() call
+-            onComplete.accept(running.inProgressWrite.data);
+-            return running;
+-        });
++        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
+     }
+ 
+     /**
+@@ -391,7 +266,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+      * </p>
+      */
+     public void runTask(final int priority, final Runnable runnable) {
+-        this.queueTask(new GeneralTask(priority, runnable));
++        throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
+     }
+ 
+     static final class GeneralTask extends PrioritizedTaskQueue.PrioritizedTask implements Runnable {
+@@ -471,7 +346,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
          @Override
          public String toString() {
              return "Task for world: '" + this.world.getWorld().getName() + "' at " + this.x + "," + this.z +
@@ -5367,6 +5571,14 @@ index 7c89a96d54641904e2d4562fe28c59deecfb5444..5e5ecd3aac657bfd9beb3a02fa274de6
          }
  
          /*
+@@ -501,6 +376,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+ 
+         @Override
+         public void run() {
++            if (true) throw new IllegalStateException("Shouldn't get here, use RegionFileIOThread"); // Paper - rewrite chunk system, fail hard on usage
+             ChunkDataController.InProgressRead read = this.inProgressRead;
+             if (read != null) {
+                 CompoundTag compound = PaperFileIOThread.FAILURE_VALUE;
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 index 68860a3b6db2aa50373d71aec9502c18d48ab8b9..75af9b42510c068b0159671bc5efa2fcc28ef216 100644
 --- a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
