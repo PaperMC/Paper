@@ -8236,10 +8236,10 @@ index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..71d0494d860a35736b5ac68d15f47e8bd4d5b114
+index 0000000000000000000000000000000000000000..eabba43b81ff6064d6ff108c216ae6e97cf4b911
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1029 @@
+@@ -0,0 +1,1039 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -9195,6 +9195,16 @@ index 0000000000000000000000000000000000000000..71d0494d860a35736b5ac68d15f47e8b
 +                    this.processTicketUpdates(false, false, scheduleList);
 +
 +                    ret.addProperty("current_tick", Long.valueOf(this.currentTick));
++
++                    final JsonArray unloadQueue = new JsonArray();
++                    ret.add("unload_queue", unloadQueue);
++                    for (final NewChunkHolder holder : this.unloadQueue) {
++                        final JsonObject coordinate = new JsonObject();
++                        unloadQueue.add(coordinate);
++
++                        coordinate.addProperty("chunkX", Integer.valueOf(holder.chunkX));
++                        coordinate.addProperty("chunkZ", Integer.valueOf(holder.chunkZ));
++                    }
 +
 +                    final JsonArray holders = new JsonArray();
 +                    ret.add("chunkholders", holders);
@@ -13836,7 +13846,7 @@ index 60b0ce4557390ee7030efe4c90933402c57bab59..0167864dd8fbc8145af31597040d187a
          commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
          commands.put(Set.of("dumpitem"), new DumpItemCommand());
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
-index 4b367982fae4662c326aa247824e9c4185896de1..332445e20e15270bc148653213e798a7e09bff6f 100644
+index 4b367982fae4662c326aa247824e9c4185896de1..583ed12c820a6d9a5827f4ef385ac28b63105cbc 100644
 --- a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 +++ b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 @@ -13,6 +13,10 @@ import net.minecraft.server.MCUtil;
@@ -13892,7 +13902,7 @@ index 4b367982fae4662c326aa247824e9c4185896de1..332445e20e15270bc148653213e798a7
  
                  switch (state) {
                      case INACCESSIBLE -> ++inactive;
-@@ -134,6 +149,80 @@ public final class ChunkDebugCommand implements PaperSubcommand {
+@@ -134,6 +149,89 @@ public final class ChunkDebugCommand implements PaperSubcommand {
          }
      }
  
@@ -13913,6 +13923,7 @@ index 4b367982fae4662c326aa247824e9c4185896de1..332445e20e15270bc148653213e798a7
 +        }
 +
 +        int accumulatedTotal = 0;
++        int accumulatedCanUnload = 0;
 +        int accumulatedNull = 0;
 +        int accumulatedReadOnly = 0;
 +        int accumulatedProtoChunk = 0;
@@ -13922,6 +13933,7 @@ index 4b367982fae4662c326aa247824e9c4185896de1..332445e20e15270bc148653213e798a7
 +            final ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
 +
 +            int total = 0;
++            int canUnload = 0;
 +            int nullChunks = 0;
 +            int readOnly = 0;
 +            int protoChunk = 0;
@@ -13941,9 +13953,14 @@ index 4b367982fae4662c326aa247824e9c4185896de1..332445e20e15270bc148653213e798a7
 +                } else if (lastChunk instanceof LevelChunk) {
 +                    ++fullChunk;
 +                }
++
++                if (chunk.newChunkHolder.isSafeToUnload() == null) {
++                    ++canUnload;
++                }
 +            }
 +
 +            accumulatedTotal += total;
++            accumulatedCanUnload += canUnload;
 +            accumulatedNull += nullChunks;
 +            accumulatedReadOnly += readOnly;
 +            accumulatedProtoChunk += protoChunk;
@@ -13952,6 +13969,7 @@ index 4b367982fae4662c326aa247824e9c4185896de1..332445e20e15270bc148653213e798a7
 +            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.getName(), GREEN), text(":")));
 +            sender.sendMessage(text().color(DARK_AQUA).append(
 +                text("Total: ", BLUE), text(total),
++                text(" Unloadable: ", BLUE), text(canUnload),
 +                text(" Null: ", BLUE), text(nullChunks),
 +                text(" ReadOnly: ", BLUE), text(readOnly),
 +                text(" Proto: ", BLUE), text(protoChunk),
@@ -13962,6 +13980,7 @@ index 4b367982fae4662c326aa247824e9c4185896de1..332445e20e15270bc148653213e798a7
 +            sender.sendMessage(text().append(text("Chunks in ", BLUE), text("all listed worlds", GREEN), text(":", DARK_AQUA)));
 +            sender.sendMessage(text().color(DARK_AQUA).append(
 +                text("Total: ", BLUE), text(accumulatedTotal),
++                text(" Unloadable: ", BLUE), text(accumulatedCanUnload),
 +                text(" Null: ", BLUE), text(accumulatedNull),
 +                text(" ReadOnly: ", BLUE), text(accumulatedReadOnly),
 +                text(" Proto: ", BLUE), text(accumulatedProtoChunk),
