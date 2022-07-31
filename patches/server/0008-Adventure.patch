@@ -100,10 +100,10 @@ index 0000000000000000000000000000000000000000..07cd02c6f9df00844b808218be2afd79
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6e8d615f6a3f81612ea2a6a447ea82b1f8fc5276
+index 0000000000000000000000000000000000000000..4143da332985b78bf67149b233f3b0788a052f9f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java
-@@ -0,0 +1,130 @@
+@@ -0,0 +1,131 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.event.player.AsyncChatDecorateEvent;
@@ -161,6 +161,7 @@ index 0000000000000000000000000000000000000000..6e8d615f6a3f81612ea2a6a447ea82b1
 +        }, this.server.chatExecutor);
 +    }
 +
++    @SuppressWarnings("deprecation")
 +    private ChatDecorator.Result processLegacy(final ChatDecorator.Result input) {
 +        if (this.player != null) {
 +            final CraftPlayer player = this.player.getBukkitEntity();
@@ -236,10 +237,10 @@ index 0000000000000000000000000000000000000000..6e8d615f6a3f81612ea2a6a447ea82b1
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..23586671e4ccf786d506246b3e93c6890bdb3775
+index 0000000000000000000000000000000000000000..bc37199f1d181f572da518d9b93b2980504024b1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,433 @@
+@@ -0,0 +1,419 @@
 +package io.papermc.paper.adventure;
 +
 +import com.google.common.base.Suppliers;
@@ -259,6 +260,7 @@ index 0000000000000000000000000000000000000000..23586671e4ccf786d506246b3e93c689
 +import net.kyori.adventure.text.Component;
 +import net.minecraft.Util;
 +import net.minecraft.network.chat.ChatDecorator;
++import net.minecraft.network.chat.ChatMessageContent;
 +import net.minecraft.network.chat.ChatType;
 +import net.minecraft.network.chat.OutgoingPlayerChatMessage;
 +import net.minecraft.network.chat.PlayerChatMessage;
@@ -311,25 +313,17 @@ index 0000000000000000000000000000000000000000..23586671e4ccf786d506246b3e93c689
 +         */
 +        this.message = message;
 +        this.async = async;
-+        // this.craftbukkit$originalMessage = message.signedContent().plain();
 +        if (this.message.signedContent().decorationResult().modernized()) {
 +            this.craftbukkit$originalMessage = this.message.signedContent().decorationResult().message().legacyMessage();
 +        } else {
 +            this.craftbukkit$originalMessage = message.signedContent().plain();
 +        }
 +        /*
-+        this.paper$originalMessage is the input to paper's chat events. Depending on whether formatting is present in the decorated component,
-+        the value is either initialized to the decorated result (if no formatting) or the legacyMessage (if formatting).
++        this.paper$originalMessage is the input to paper's chat events. This should be the decorated message component.
++        Even if the legacy preview event modified the format, and the client signed the formatted message, this should
++        still just be the message component.
 +         */
-+        if (this.message.signedContent().isDecorated()) {
-+            if (this.message.signedContent().decorationResult().hasNoFormatting()) {
-+                this.paper$originalMessage = PaperAdventure.WRAPPER_AWARE_SERIALIZER.deserialize(this.message.signedContent().decorationResult().component());
-+            } else {
-+                this.paper$originalMessage = this.message.signedContent().decorationResult().message().component();
-+            }
-+        } else {
-+            this.paper$originalMessage = this.message.unsignedContent().map(PaperAdventure::asAdventure).orElse(this.message.signedContent().decorationResult().message().component());
-+        }
++        this.paper$originalMessage = this.message.signedContent().decorationResult().message().component();
 +        this.outgoing = OutgoingPlayerChatMessage.create(this.message);
 +    }
 +
@@ -383,7 +377,7 @@ index 0000000000000000000000000000000000000000..23586671e4ccf786d506246b3e93c689
 +    private ChatRenderer modernRenderer(final String format) {
 +        if (this.flags.get(FORMAT_CHANGED)) {
 +            return legacyRenderer(format);
-+        } else if (this.message.unsignedContent().isEmpty() && this.message.signedContent().decorationResult() instanceof ChatDecorator.LegacyResult legacyResult) {
++        } else if (this.message.signedContent().decorationResult() instanceof ChatDecorator.LegacyResult legacyResult) {
 +            return legacyRenderer(legacyResult.format());
 +        } else {
 +            return defaultRenderer();
@@ -401,23 +395,16 @@ index 0000000000000000000000000000000000000000..23586671e4ccf786d506246b3e93c689
 +    }
 +
 +    private void readLegacyModifications(final String message, final String format, final Player playerSender) {
-+        if (this.message.signedContent().isDecorated()) {
-+            if (this.message.signedContent().decorationResult() instanceof ChatDecorator.LegacyResult legacyResult) {
-+                if (legacyResult.modernized()) {
-+                    // if modernized, compare the legacyMessage to the exact input of the legacy chat events
-+                    this.flags.set(MESSAGE_CHANGED, !message.equals(this.craftbukkit$originalMessage));
-+                } else {
-+                    // if not modernized, compare to the result of the preview
-+                    this.flags.set(MESSAGE_CHANGED, !message.equals(legacyResult.message().legacyMessage()));
-+                }
-+                this.flags.set(FORMAT_CHANGED, !format.equals(legacyResult.format()));
++        final ChatMessageContent content = this.message.signedContent();
++        if (content.decorationResult() instanceof ChatDecorator.LegacyResult result) {
++            if ((content.isDecorated() || this.message.unsignedContent().isPresent()) && !result.modernized()) {
++                this.flags.set(MESSAGE_CHANGED, !message.equals(result.message().legacyMessage()));
 +            } else {
 +                this.flags.set(MESSAGE_CHANGED, !message.equals(this.craftbukkit$originalMessage));
-+                this.flags.set(FORMAT_CHANGED, !format.equals(DEFAULT_LEGACY_FORMAT));
 +            }
++            this.flags.set(FORMAT_CHANGED, !format.equals(result.format()));
 +        } else {
 +            this.flags.set(MESSAGE_CHANGED, !message.equals(this.craftbukkit$originalMessage));
-+            // this.flags.set(MESSAGE_CHANGED, !message.equals(this.message.signedContent().decorationResult().message().));
 +            this.flags.set(FORMAT_CHANGED, !format.equals(DEFAULT_LEGACY_FORMAT));
 +        }
 +        this.flags.set(SENDER_CHANGED, playerSender != this.player.getBukkitEntity());
