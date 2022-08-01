@@ -152,6 +152,50 @@ index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af
 +        Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9adeb880f7948f937891d83e256c808b5eb40a27
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.chat;
++
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.jetbrains.annotations.NotNull;
++
++sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnaware permits ViewerUnawareImpl.Default {
++
++    private final ViewerUnaware unaware;
++
++    private @MonotonicNonNull Component message;
++
++    ViewerUnawareImpl(final ViewerUnaware unaware) {
++        this.unaware = unaware;
++    }
++
++    @Override
++    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
++        return this.render(source, sourceDisplayName, message);
++    }
++
++    @Override
++    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message) {
++        if (this.message == null) {
++            this.message = this.unaware.render(source, sourceDisplayName, message);
++        }
++        return this.message;
++    }
++
++    static final class Default extends ViewerUnawareImpl implements ChatRenderer.Default {
++
++        Default(final ViewerUnaware unaware) {
++            super(unaware);
++        }
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c454f81da
@@ -268,6 +312,39 @@ index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c
 +    @Override
 +    public final void setCancelled(final boolean cancelled) {
 +        this.cancelled = cancelled;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd216f7333795fc6bc5bec593f9cc0e3c2c1a27e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.Experimental
++public class AsyncChatCommandDecorateEvent extends AsyncChatDecorateEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    public AsyncChatCommandDecorateEvent(boolean async, @Nullable Player player, @NotNull Component originalMessage, boolean isPreview, @NotNull Component result) {
++        super(async, player, originalMessage, isPreview, result);
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
