@@ -100,7 +100,7 @@ index 0000000000000000000000000000000000000000..07cd02c6f9df00844b808218be2afd79
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0267199001f5e0762a2353178e3a7542fc2c43a5
+index 0000000000000000000000000000000000000000..87e791801b624859477025df49824637eb347dec
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java
 @@ -0,0 +1,141 @@
@@ -130,6 +130,7 @@ index 0000000000000000000000000000000000000000..0267199001f5e0762a2353178e3a7542
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +import static io.papermc.paper.adventure.ChatProcessor.DEFAULT_LEGACY_FORMAT;
++import static io.papermc.paper.adventure.ChatProcessor.canYouHearMe;
 +import static io.papermc.paper.adventure.ChatProcessor.displayName;
 +import static net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection;
 +
@@ -158,14 +159,13 @@ index 0000000000000000000000000000000000000000..0267199001f5e0762a2353178e3a7542
 +    public CompletableFuture<ChatDecorator.Result> process() {
 +        return CompletableFuture.supplyAsync(() -> {
 +            ChatDecorator.Result result = new ChatDecorator.ModernResult(this.originalMessage, true, false);
-+            if (AsyncPlayerChatPreviewEvent.getHandlerList().getRegisteredListeners().length > 0) {
++            if (canYouHearMe(AsyncPlayerChatPreviewEvent.getHandlerList())) {
 +                result = this.processLegacy(result);
 +            }
 +            return this.processModern(result);
 +        }, this.server.chatExecutor);
 +    }
 +
-+    @SuppressWarnings("deprecation")
 +    private ChatDecorator.Result processLegacy(final ChatDecorator.Result input) {
 +        if (this.player != null) {
 +            final CraftPlayer player = this.player.getBukkitEntity();
@@ -247,10 +247,10 @@ index 0000000000000000000000000000000000000000..0267199001f5e0762a2353178e3a7542
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bc37199f1d181f572da518d9b93b2980504024b1
+index 0000000000000000000000000000000000000000..f8586ae7fe41cce772745bab2a1482c424d0b28f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,419 @@
+@@ -0,0 +1,376 @@
 +package io.papermc.paper.adventure;
 +
 +import com.google.common.base.Suppliers;
@@ -467,7 +467,7 @@ index 0000000000000000000000000000000000000000..bc37199f1d181f572da518d9b93b2980
 +        final ChatRenderer renderer = event.renderer();
 +
 +        final Set<Audience> viewers = event.viewers();
-+        final ResourceKey<ChatType> chatTypeKey = renderer instanceof DefaultChatRenderer ? ChatType.CHAT : ChatType.RAW;
++        final ResourceKey<ChatType> chatTypeKey = renderer instanceof ChatRenderer.Default ? ChatType.CHAT : ChatType.RAW;
 +        final ChatType.Bound chatType = ChatType.bind(chatTypeKey, this.player.level.registryAccess(), PaperAdventure.asVanilla(displayName(player)));
 +
 +        OutgoingChat outgoingChat = viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy() ? new ServerOutgoingChat() : new ViewersOutgoingChat();
@@ -475,16 +475,16 @@ index 0000000000000000000000000000000000000000..bc37199f1d181f572da518d9b93b2980
 +            outgoingChat.sendOriginal(player, viewers, chatType);
 +        } else */
 +        if (this.flags.get(FORMAT_CHANGED)) {
-+            if (renderer instanceof LegacyChatRenderer unaware) {
-+                outgoingChat.sendFormatChangedViewerUnaware(player, PaperAdventure.asVanilla(unaware.renderUnaware(player, displayName, message)), viewers, chatType);
++            if (renderer instanceof ChatRenderer.ViewerUnaware unaware) {
++                outgoingChat.sendFormatChangedViewerUnaware(player, PaperAdventure.asVanilla(unaware.render(player, displayName, message)), viewers, chatType);
 +            } else {
 +                outgoingChat.sendFormatChangedViewerAware(player, displayName, message, renderer, viewers, chatType);
 +            }
 +        } else if (this.flags.get(MESSAGE_CHANGED)) {
-+            if (!(renderer instanceof LegacyChatRenderer unaware)) {
++            if (!(renderer instanceof ChatRenderer.ViewerUnaware unaware)) {
 +                throw new IllegalStateException("BUG: There should not be a non-legacy renderer at this point");
 +            }
-+            final Component renderedComponent = chatTypeKey == ChatType.CHAT ? message : unaware.renderUnaware(player, displayName, message);
++            final Component renderedComponent = chatTypeKey == ChatType.CHAT ? message : unaware.render(player, displayName, message);
 +            outgoingChat.sendMessageChanged(player, PaperAdventure.asVanilla(renderedComponent), viewers, chatType);
 +        } else {
 +            outgoingChat.sendOriginal(player, viewers, chatType);
@@ -589,15 +589,15 @@ index 0000000000000000000000000000000000000000..bc37199f1d181f572da518d9b93b2980
 +        return player.displayName();
 +    }
 +
-+    private static DefaultChatRenderer defaultRenderer() {
-+        return new DefaultChatRenderer();
++    private static ChatRenderer.Default defaultRenderer() {
++        return (ChatRenderer.Default) ChatRenderer.defaultRenderer();
 +    }
 +
 +    private static ChatRenderer legacyRenderer(final String format) {
 +        if (DEFAULT_LEGACY_FORMAT.equals(format)) {
 +            return defaultRenderer();
 +        }
-+        return new LegacyChatRenderer(format);
++        return ChatRenderer.viewerUnaware((player, sourceDisplayName, message) -> legacySection().deserialize(legacyFormat(format, player, legacySection().serialize(message))));
 +    }
 +
 +    static String legacyFormat(final String format, Player player, String message) {
@@ -623,51 +623,8 @@ index 0000000000000000000000000000000000000000..bc37199f1d181f572da518d9b93b2980
 +        this.server.server.getPluginManager().callEvent(event);
 +    }
 +
-+    private static boolean canYouHearMe(final HandlerList handlers) {
++    static boolean canYouHearMe(final HandlerList handlers) {
 +        return handlers.getRegisteredListeners().length > 0;
-+    }
-+
-+    static class DefaultChatRenderer extends LegacyChatRenderer {
-+
-+        DefaultChatRenderer() {
-+            super(DEFAULT_LEGACY_FORMAT, DefaultChatRenderer::defaultUnaware);
-+        }
-+
-+        static Component defaultUnaware(Player player, Component playerDisplayName, Component message) {
-+            return Component.translatable("chat.type.text", playerDisplayName, message);
-+        }
-+    }
-+
-+    static class LegacyChatRenderer implements ChatRenderer {
-+
-+        final String format;
-+        final ChatRenderer.ViewerUnaware unaware;
-+        final ChatRenderer delegate;
-+
-+        LegacyChatRenderer(String format) {
-+            this.format = format;
-+            this.unaware = legacyUnaware(format);
-+            this.delegate = ChatRenderer.viewerUnaware(this.unaware);
-+        }
-+
-+        LegacyChatRenderer(String format, ChatRenderer.ViewerUnaware unaware) {
-+            this.format = format;
-+            this.unaware = unaware;
-+            this.delegate = ChatRenderer.viewerUnaware(unaware);
-+        }
-+
-+        public Component renderUnaware(Player player, Component sourceDisplayName, Component message) {
-+            return this.unaware.render(player, sourceDisplayName, message);
-+        }
-+
-+        static ViewerUnaware legacyUnaware(final String format) {
-+            return (player, sourceDisplayName, message) -> legacySection().deserialize(legacyFormat(format, player, legacySection().serialize(message)));
-+        }
-+
-+        @Override
-+        public @NonNull Component render(Player source, Component sourceDisplayName, Component message, Audience viewer) {
-+            return this.delegate.render(source, sourceDisplayName, message, viewer);
-+        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/DisplayNames.java b/src/main/java/io/papermc/paper/adventure/DisplayNames.java

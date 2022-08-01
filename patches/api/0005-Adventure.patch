@@ -77,16 +77,15 @@ index 79bf95d5a19046b142d0162dd6b739b7f0f52e59..84432bf9dd99332098f952ea777ee97d
      doLast {
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88ad3bab097
+index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af85e287a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.chat;
 +
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
-+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -115,7 +114,11 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +     */
 +    @NotNull
 +    static ChatRenderer defaultRenderer() {
-+        return viewerUnaware((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++        return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++    }
++
++    @ApiStatus.Internal
++    sealed interface Default extends ChatRenderer, ViewerUnaware permits ViewerUnawareImpl.Default {
 +    }
 +
 +    /**
@@ -127,17 +130,7 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +     */
 +    @NotNull
 +    static ChatRenderer viewerUnaware(final @NotNull ViewerUnaware renderer) {
-+        return new ChatRenderer() {
-+            private @MonotonicNonNull Component message;
-+
-+            @Override
-+            public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
-+                if (this.message == null) {
-+                    this.message = renderer.render(source, sourceDisplayName, message);
-+                }
-+                return this.message;
-+            }
-+        };
++        return new ViewerUnawareImpl(renderer);
 +    }
 +
 +    /**
@@ -161,10 +154,10 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..047bb3b582001584ac701f234a588206e334e887
+index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c454f81da
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,112 @@
 +package io.papermc.paper.event.player;
 +
 +import java.util.Set;
@@ -174,7 +167,6 @@ index 0000000000000000000000000000000000000000..047bb3b582001584ac701f234a588206
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.player.PlayerEvent;
-+import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +import static java.util.Objects.requireNonNull;
@@ -187,7 +179,6 @@ index 0000000000000000000000000000000000000000..047bb3b582001584ac701f234a588206
 +    private final Component originalMessage;
 +    private ChatRenderer renderer;
 +    private Component message;
-+    // private boolean usePreviewComponent;
 +    private boolean cancelled = false;
 +
 +    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
