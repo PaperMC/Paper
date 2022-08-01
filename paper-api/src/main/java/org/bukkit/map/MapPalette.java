@@ -23,6 +23,11 @@ public final class MapPalette {
         return new Color(r, g, b);
     }
 
+    @NotNull
+    private static Color c(int r, int g, int b, int a) {
+        return new Color(r, g, b, a);
+    }
+
     private static double getDistance(@NotNull Color c1, @NotNull Color c2) {
         double rmean = (c1.getRed() + c2.getRed()) / 2.0;
         double r = c1.getRed() - c2.getRed();
@@ -36,7 +41,7 @@ public final class MapPalette {
 
     @NotNull
     static final Color[] colors = {
-        c(0, 0, 0), c(0, 0, 0), c(0, 0, 0), c(0, 0, 0),
+        c(0, 0, 0, 0), c(0, 0, 0, 0), c(0, 0, 0, 0), c(0, 0, 0, 0),
         c(89, 125, 39), c(109, 153, 48), c(127, 178, 56), c(67, 94, 29),
         c(174, 164, 115), c(213, 201, 140), c(247, 233, 163), c(130, 123, 86),
         c(140, 140, 140), c(171, 171, 171), c(199, 199, 199), c(105, 105, 105),
