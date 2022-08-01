@@ -161,10 +161,10 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bd9328790efc91ae438d8c5732c9f27d89b46ce4
+index 0000000000000000000000000000000000000000..047bb3b582001584ac701f234a588206e334e887
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,114 @@
 +package io.papermc.paper.event.player;
 +
 +import java.util.Set;
@@ -190,13 +190,12 @@ index 0000000000000000000000000000000000000000..bd9328790efc91ae438d8c5732c9f27d
 +    // private boolean usePreviewComponent;
 +    private boolean cancelled = false;
 +
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage/*, final boolean usePreviewComponent*/) {
++    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
 +        super(player, async);
 +        this.viewers = viewers;
 +        this.renderer = renderer;
 +        this.message = message;
 +        this.originalMessage = originalMessage;
-+        // this.usePreviewComponent = usePreviewComponent;
 +    }
 +
 +    /**
@@ -270,30 +269,6 @@ index 0000000000000000000000000000000000000000..bd9328790efc91ae438d8c5732c9f27d
 +        return this.originalMessage;
 +    }
 +
-+    // /**
-+    //  * If true, this acts as an override, preventing this event
-+    //  * from making any changes to the already previewed component
-+    //  * (assuming there is one).
-+    //  *
-+    //  * @return true to force use of previewed component
-+    //  */
-+    // @ApiStatus.Experimental
-+    // public boolean usePreviewComponent() {
-+    //     return this.usePreviewComponent;
-+    // }
-+    //
-+    // /**
-+    //  * Sets the event behavior to prevent this event from
-+    //  * making any changes to the already previewed component
-+    //  * (assuming there is one).
-+    //  *
-+    //  * @param usePreviewComponent true to enable override
-+    //  */
-+    // @ApiStatus.Experimental
-+    // public void usePreviewComponent(final boolean usePreviewComponent) {
-+    //     this.usePreviewComponent = usePreviewComponent;
-+    // }
-+
 +    @Override
 +    public final boolean isCancelled() {
 +        return this.cancelled;
@@ -306,10 +281,10 @@ index 0000000000000000000000000000000000000000..bd9328790efc91ae438d8c5732c9f27d
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f508ad81e6966d79cfee619e70af4a6c79b21b4f
+index 0000000000000000000000000000000000000000..347122b12ad98115133ef98db69b271ee0cec194
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,119 @@
 +package io.papermc.paper.event.player;
 +
 +import net.kyori.adventure.text.Component;
@@ -332,6 +307,7 @@ index 0000000000000000000000000000000000000000..f508ad81e6966d79cfee619e70af4a6c
 + *     that when this is the case, the message will show up as modified as the decorated component wasn't signed
 + *     by the client.</li>
 + * </ul>
++ * @see AsyncChatCommandDecorateEvent for the decoration of messages sent via commands
 + */
 +@ApiStatus.Experimental
 +public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
@@ -430,7 +406,7 @@ index 0000000000000000000000000000000000000000..f508ad81e6966d79cfee619e70af4a6c
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..51bbeaf31f64b77cb73d563872bd8e5fff26c340
+index 0000000000000000000000000000000000000000..0d9e3c23027e3af90cb70e4bb6fb0ac1da35fc4d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 @@ -0,0 +1,31 @@
@@ -451,7 +427,7 @@ index 0000000000000000000000000000000000000000..51bbeaf31f64b77cb73d563872bd8e5f
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
-+        super(async, player, viewers, renderer, message, originalMessage/*, false*/);
++        super(async, player, viewers, renderer, message, originalMessage);
 +    }
 +
 +    @NotNull
@@ -467,7 +443,7 @@ index 0000000000000000000000000000000000000000..51bbeaf31f64b77cb73d563872bd8e5f
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9a9ef39696c32e19b7511aabb5fc418dad68117c
+index 0000000000000000000000000000000000000000..eb179aae1e1d2ce842442e49fe275827a430ccd0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 @@ -0,0 +1,36 @@
@@ -492,8 +468,8 @@ index 0000000000000000000000000000000000000000..9a9ef39696c32e19b7511aabb5fc418d
 +public final class ChatEvent extends AbstractChatEvent {
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage/*, final boolean usePreviewComponent*/) {
-+        super(false, player, viewers, renderer, message, originalMessage/*, usePreviewComponent*/);
++    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(false, player, viewers, renderer, message, originalMessage);
 +    }
 +
 +    @NotNull
