@@ -82,34 +82,36 @@ index 685e04b1f17938d49cd126bcfe2f488f21afbea2..54bf5558c9048c215aee518874f3d96a
          event.getPlayer().getServer().getPluginManager().callEvent(event);
  
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 67399b8881ff24b3465ae23aa6008639abcb4d8e..ed272499b40a96efd83f1a09a063e4d65dbe48e8 100644
+index 0a03fbbf8decfeedaa0fb54c6e257c1643cd19a6..1a2eb9190324a03f6fa0a2fc583c7544e21234e5 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -832,8 +832,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -831,8 +831,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                      ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
  
                      this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
 -                        if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
 -                        this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
-+                        // Paper start
++                        // Paper start - Brigadier API
 +                        com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, buffer);
 +                        suggestEvent.setCancelled(suggestions.isEmpty());
 +                        if (!suggestEvent.callEvent()) return;
-+                        this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), (com.mojang.brigadier.suggestion.Suggestions) suggestEvent.getSuggestions())); // CraftBukkit - decompile error // Paper
-+                        // Paper end
++                        this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
++                        // Paper end - Brigadier API
                      });
                  });
              }
-@@ -842,7 +846,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
- 
-             builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
-             completions.forEach(builder::suggest);
+@@ -848,7 +852,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                     builder.suggest(completion.suggestion(), PaperAdventure.asVanilla(completion.tooltip()));
+                 }
+             });
 -            player.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), builder.buildFuture().join()));
++            // Paper start - Brigadier API
 +            com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
 +            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, buffer);
 +            suggestEvent.setCancelled(suggestions.isEmpty());
 +            if (!suggestEvent.callEvent()) return;
 +            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
++            // Paper end - Brigadier API
          }
          // Paper end - async tab completion
      }
