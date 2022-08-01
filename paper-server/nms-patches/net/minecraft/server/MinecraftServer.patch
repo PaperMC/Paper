@@ -342,11 +342,11 @@
 +        this.connection.acceptConnections();
 +    }
 +    // CraftBukkit end
-+
-+    protected void forceDifficulty() {}
  
 -        this.readScoreboard(worldpersistentdata);
 -        this.commandStorage = new PersistentCommandStorage(worldpersistentdata);
++    protected void forceDifficulty() {}
++
 +    // CraftBukkit start
 +    public void initWorld(WorldServer worldserver, IWorldDataServer iworlddataserver, SaveData saveData, GeneratorSettings generatorsettings) {
 +        boolean flag = generatorsettings.isDebug();
@@ -712,7 +712,7 @@
      private void startMetricsRecordingTick() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(SystemUtils.timeSource, this.isDedicatedServer()), SystemUtils.timeSource, SystemUtils.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -1912,8 +2223,25 @@
+@@ -1912,8 +2223,30 @@
  
      }
  
@@ -723,6 +723,11 @@
      public ChatDecorator getChatDecorator() {
 -        return ChatDecorator.PLAIN;
 +        return (entityplayer, ichatbasecomponent) -> {
++            // SPIGOT-7127: Console /say and similar
++            if (entityplayer == null) {
++                return CompletableFuture.completedFuture(ichatbasecomponent);
++            }
++
 +            return CompletableFuture.supplyAsync(() -> {
 +                AsyncPlayerChatPreviewEvent event = new AsyncPlayerChatPreviewEvent(true, entityplayer.getBukkitEntity(), CraftChatMessage.fromComponent(ichatbasecomponent), new LazyPlayerSet(this));
 +                String originalFormat = event.getFormat(), originalMessage = event.getMessage();
