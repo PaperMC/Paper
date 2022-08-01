@@ -1,0 +1,147 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Sat, 4 Apr 2020 15:27:44 -0700
+Subject: [PATCH] Allow controlled flushing for network manager
+
+Only make one flush call when emptying the packet queue too
+
+This patch will be used to optimise out flush calls in later
+patches.
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index ec1fa6b6cb386542d9c83f5c49c1e8e98c87d417..dc6b467f51b6e17aa46ccce75aa40788afcdf010 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -99,6 +99,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     public ConnectionProtocol protocol;
+     // Paper end
+ 
++    // Paper start - allow controlled flushing
++    volatile boolean canFlush = true;
++    private final java.util.concurrent.atomic.AtomicInteger packetWrites = new java.util.concurrent.atomic.AtomicInteger();
++    private int flushPacketsStart;
++    private final Object flushLock = new Object();
++
++    public void disableAutomaticFlush() {
++        synchronized (this.flushLock) {
++            this.flushPacketsStart = this.packetWrites.get(); // must be volatile and before canFlush = false
++            this.canFlush = false;
++        }
++    }
++
++    public void enableAutomaticFlush() {
++        synchronized (this.flushLock) {
++            this.canFlush = true;
++            if (this.packetWrites.get() != this.flushPacketsStart) { // must be after canFlush = true
++                this.flush(); // only make the flush call if we need to
++            }
++        }
++    }
++
++    private final void flush() {
++        if (this.channel.eventLoop().inEventLoop()) {
++            this.channel.flush();
++        } else {
++            this.channel.eventLoop().execute(() -> {
++                this.channel.flush();
++            });
++        }
++    }
++    // Paper end - allow controlled flushing
++
+     public Connection(PacketFlow side) {
+         this.receiving = side;
+     }
+@@ -264,7 +297,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             net.minecraft.server.MCUtil.isMainThread() && packet.isReady() && this.queue.isEmpty() &&
+             (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
+         ))) {
+-            this.sendPacket(packet, packetsendlistener);
++            this.sendPacket(packet, packetsendlistener, null); // Paper
+             return;
+         }
+         // write the packets to the queue, then flush - antixray hooks there already
+@@ -288,6 +321,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+ 
+     private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
++        // Paper start - add flush parameter
++        this.sendPacket(packet, packetsendlistener, Boolean.TRUE);
++    }
++    private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, Boolean flushConditional) {
++        this.packetWrites.getAndIncrement(); // must be befeore using canFlush
++        boolean effectiveFlush = flushConditional == null ? this.canFlush : flushConditional.booleanValue();
++        final boolean flush = effectiveFlush || packet instanceof net.minecraft.network.protocol.game.ClientboundKeepAlivePacket || packet instanceof ClientboundDisconnectPacket; // no delay for certain packets
++        // Paper end - add flush parameter
+         ConnectionProtocol enumprotocol = ConnectionProtocol.getProtocolForPacket(packet);
+         ConnectionProtocol enumprotocol1 = this.getCurrentProtocol();
+ 
+@@ -298,16 +339,21 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         }
+ 
+         if (this.channel.eventLoop().inEventLoop()) {
+-            this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1);
++            this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+         } else {
+             this.channel.eventLoop().execute(() -> {
+-                this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1);
++                this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+             });
+         }
+ 
+     }
+ 
+     private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, ConnectionProtocol packetState, ConnectionProtocol currentState) {
++        // Paper start - add flush parameter
++        this.doSendPacket(packet, packetsendlistener, packetState, currentState, true);
++    }
++    private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, ConnectionProtocol packetState, ConnectionProtocol currentState, boolean flush) {
++        // Paper end - add flush parameter
+         if (packetState != currentState) {
+             this.setProtocol(packetState);
+         }
+@@ -321,7 +367,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+         try {
+             // Paper end
+-        ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
++        ChannelFuture channelfuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - add flush parameter
+ 
+         if (packetsendlistener != null) {
+             channelfuture.addListener((future) -> {
+@@ -376,6 +422,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+     private boolean processQueue() {
+         if (this.queue.isEmpty()) return true;
++        // Paper start - make only one flush call per sendPacketQueue() call
++        final boolean needsFlush = this.canFlush;
++        boolean hasWrotePacket = false;
++        // Paper end - make only one flush call per sendPacketQueue() call
+         // If we are on main, we are safe here in that nothing else should be processing queue off main anymore
+         // But if we are not on main due to login/status, the parent is synchronized on packetQueue
+         java.util.Iterator<PacketHolder> iterator = this.queue.iterator();
+@@ -383,16 +433,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             PacketHolder queued = iterator.next(); // poll -> peek
+ 
+             // Fix NPE (Spigot bug caused by handleDisconnection())
+-            if (queued == null) {
++            if (false && queued == null) { // Paper - diff on change, this logic is redundant: iterator guarantees ret of an element - on change, hook the flush logic here
+                 return true;
+             }
+ 
+             Packet<?> packet = queued.packet;
+             if (!packet.isReady()) {
++                // Paper start - make only one flush call per sendPacketQueue() call
++                if (hasWrotePacket && (needsFlush || this.canFlush)) {
++                    this.flush();
++                }
++                // Paper end - make only one flush call per sendPacketQueue() call
+                 return false;
+             } else {
+                 iterator.remove();
+-                this.sendPacket(packet, queued.listener);
++                this.sendPacket(packet, queued.listener, (!iterator.hasNext() && (needsFlush || this.canFlush)) ? Boolean.TRUE : Boolean.FALSE); // Paper - make only one flush call per sendPacketQueue() call
++                hasWrotePacket = true; // Paper - make only one flush call per sendPacketQueue() call
+             }
+         }
+         return true;

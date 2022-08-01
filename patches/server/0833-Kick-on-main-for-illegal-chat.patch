@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Mon, 17 Jan 2022 19:47:19 +0100
+Subject: [PATCH] Kick on main for illegal chat
+
+Makes the PlayerKickEvent fire on the main thread for
+illegal characters or chat out-of-order errors.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 7933bdb29056ddf8cb29a12166598cd15c155b3a..3bf7bcf3d5a57175a1ac8b886734ca869a407f05 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2177,7 +2177,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         }
+         // CraftBukkit end
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.message())) {
++            this.server.scheduleOnMain(() -> { // Paper - push to main for event firing
+             this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add cause
++            }); // Paper - push to main for event firing
+         } else {
+             if (this.tryHandleChat(packet.message(), packet.timeStamp(), packet.lastSeenMessages())) {
+                 // this.server.submit(() -> { // CraftBukkit - async chat
+@@ -2205,7 +2207,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     @Override
+     public void handleChatCommand(ServerboundChatCommandPacket packet) {
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.command())) {
++            this.server.scheduleOnMain(() -> { // Paper - push to main for event firing
+             this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper
++            }); // Paper - push to main for event firing
+         } else {
+             if (this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages())) {
+                 this.server.submit(() -> {
+@@ -2291,7 +2295,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
+         if (!this.updateChatOrder(timestamp)) {
+             ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
++            this.server.scheduleOnMain(() -> { // Paper - push to main
+             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event cause
++            }); // Paper - push to main
+             return false;
+         } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
+             this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
