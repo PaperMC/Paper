@@ -898,10 +898,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e446542ff64670e368c8515d1716af5407f98c7a
+index 0000000000000000000000000000000000000000..b2e961bbd33c6ecb7f049365b7aff6c5caa262ff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,414 @@
+@@ -0,0 +1,431 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -1022,6 +1022,14 @@ index 0000000000000000000000000000000000000000..e446542ff64670e368c8515d1716af54
 +        map.require(WORLD_NAME),
 +        map.require(WORLD_KEY)
 +    );
++
++    private static final String MOVED_NOTICE = """
++        The global and world default configuration files have moved to %s
++        and the world-specific configuration file has been moved inside
++        the respective world folder.
++        
++        See https://docs.papermc.io/paper/configuration for more information.
++        """;
 +
 +    private static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
 +        @Override // override to ensure "verbose" is false
@@ -1200,6 +1208,12 @@ index 0000000000000000000000000000000000000000..e446542ff64670e368c8515d1716af54
 +    }
 +
 +    public static PaperConfigurations setup(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
++        final Path legacy = Files.isSymbolicLink(legacyConfig) ? Files.readSymbolicLink(legacyConfig) : legacyConfig;
++        final Path replacementFile = legacy.resolveSibling(legacyConfig.getFileName() + "-README.txt");
++        if (Files.notExists(replacementFile)) {
++            Files.createFile(replacementFile);
++            Files.writeString(replacementFile, String.format(MOVED_NOTICE, configDir.toAbsolutePath()));
++        }
 +        if (needsConverting(legacyConfig)) {
 +            try {
 +                if (Files.exists(configDir) && !Files.isDirectory(configDir)) {
@@ -1215,7 +1229,10 @@ index 0000000000000000000000000000000000000000..e446542ff64670e368c8515d1716af54
 +                if (Files.exists(legacyConfigBackup) && !Files.isRegularFile(legacyConfigBackup)) {
 +                    throw new RuntimeException("Paper needs to create a '" + backupFileName + "' file in the '" + BACKUP_DIR + "' folder. You already have a non-file named '" + backupFileName + "'. Please remove it and restart the server.");
 +                }
-+                Files.move(legacyConfig, legacyConfigBackup, StandardCopyOption.REPLACE_EXISTING); // make backup
++                Files.move(legacyConfig.toRealPath(), legacyConfigBackup, StandardCopyOption.REPLACE_EXISTING); // make backup
++                if (Files.isSymbolicLink(legacyConfig)) {
++                    Files.delete(legacyConfig);
++                }
 +                convert(legacyConfigBackup, configDir, worldFolder, spigotConfig);
 +            } catch (final IOException ex) {
 +                throw new RuntimeException("Could not convert '" + legacyConfig.getFileName().toString() + "' to the new configuration format", ex);
@@ -1309,7 +1326,7 @@ index 0000000000000000000000000000000000000000..e446542ff64670e368c8515d1716af54
 +        return BasicConfigurationNode.root(options);
 +    }
 +
-+    // Sym links are not correctly checked in createDirectories
++    // Symlinks are not correctly checked in createDirectories
 +    static void createDirectoriesSymlinkAware(Path path) throws IOException {
 +        if (!Files.isDirectory(path)) {
 +            Files.createDirectories(path);
