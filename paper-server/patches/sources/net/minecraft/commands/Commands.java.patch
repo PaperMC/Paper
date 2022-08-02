@@ -19,30 +19,45 @@
      private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
      public Commands(Commands.CommandSelection environment, CommandBuildContext commandRegistryAccess) {
-+        this(); // CraftBukkit
++        // Paper
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, commandRegistryAccess);
          ExecuteCommand.register(this.dispatcher, commandRegistryAccess);
-@@ -252,6 +261,18 @@
-             PublishCommand.register(this.dispatcher);
-         }
+@@ -250,8 +259,33 @@
  
+         if (environment.includeIntegrated) {
+             PublishCommand.register(this.dispatcher);
++        }
++
 +        // Paper start - Vanilla command permission fixes
 +        for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
 +            if (node.getRequirement() == com.mojang.brigadier.builder.ArgumentBuilder.<CommandSourceStack>defaultRequirement()) {
 +                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(node));
 +            }
-+        }
+         }
 +        // Paper end - Vanilla command permission fixes
-+        // CraftBukkit start
-+    }
-+
-+    public Commands() {
-+        // CraftBukkkit end
++        // Paper start - Brigadier Command API
++        // Create legacy minecraft namespace commands
++        for (final CommandNode<CommandSourceStack> node : new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren())) {
++            // The brigadier dispatcher is not able to resolve nested redirects.
++            // E.g. registering the alias minecraft:tp cannot redirect to tp, as tp itself redirects to teleport.
++            // Instead, target the first none redirecting node.
++            CommandNode<CommandSourceStack> flattenedAliasTarget = node;
++            while (flattenedAliasTarget.getRedirect() != null) flattenedAliasTarget = flattenedAliasTarget.getRedirect();
+ 
++            this.dispatcher.register(
++                com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
++                    .executes(flattenedAliasTarget.getCommand())
++                    .requires(flattenedAliasTarget.getRequirement())
++                    .redirect(flattenedAliasTarget)
++            );
++        }
++        // Paper end - Brigadier Command API
++        // Paper - remove public constructor, no longer needed
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -262,30 +283,69 @@
+@@ -262,30 +296,75 @@
          return new ParseResults(commandcontextbuilder1, parseResults.getReader(), parseResults.getExceptions());
      }
  
@@ -75,14 +90,14 @@
 +
 +        String newCommand = joiner.join(args);
 +        this.performPrefixedCommand(sender, newCommand, newCommand);
-     }
++    }
 +    // CraftBukkit end
- 
++
 +    public void performPrefixedCommand(CommandSourceStack source, String command) {
 +        // CraftBukkit start
 +        this.performPrefixedCommand(source, command, command);
-+    }
-+
+     }
+ 
 +    public void performPrefixedCommand(CommandSourceStack commandlistenerwrapper, String s, String label) {
 +        s = s.startsWith("/") ? s.substring(1) : s;
 +        this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s, label);
@@ -95,6 +110,11 @@
 +    }
  
 +    public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label) { // CraftBukkit
++        // Paper start
++        this.performCommand(parseresults, s, label, false);
++    }
++    public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label, boolean throwCommandError) {
++        // Paper end
 +        CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseresults.getContext().getSource();
 +
          Profiler.get().push(() -> {
@@ -112,16 +132,17 @@
                  });
              }
          } catch (Exception exception) {
++            if (throwCommandError) throw exception;
              MutableComponent ichatmutablecomponent = Component.literal(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
  
 -            if (Commands.LOGGER.isDebugEnabled()) {
 -                Commands.LOGGER.error("Command exception: /{}", command, exception);
++            Commands.LOGGER.error("Command exception: /{}", s, exception); // Paper - always show execution exception in console log
 +            if (commandlistenerwrapper.getServer().isDebugging() || Commands.LOGGER.isDebugEnabled()) { // Paper - Debugging
-+                Commands.LOGGER.error("Command exception: /{}", s, exception);
                  StackTraceElement[] astacktraceelement = exception.getStackTrace();
  
                  for (int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
-@@ -298,7 +358,7 @@
+@@ -298,7 +377,7 @@
              }));
              if (SharedConstants.IS_RUNNING_IN_IDE) {
                  commandlistenerwrapper.sendFailure(Component.literal(Util.describeError(exception)));
@@ -130,7 +151,7 @@
              }
          } finally {
              Profiler.get().pop();
-@@ -307,18 +367,22 @@
+@@ -307,18 +386,22 @@
      }
  
      @Nullable
@@ -159,7 +180,7 @@
                  });
  
                  if (i > 10) {
-@@ -333,8 +397,18 @@
+@@ -333,8 +416,18 @@
                  }
  
                  ichatmutablecomponent.append((Component) Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -179,7 +200,7 @@
  
              return null;
          }
-@@ -368,7 +442,7 @@
+@@ -368,7 +461,7 @@
  
                  executioncontext1.close();
              } finally {
@@ -188,7 +209,7 @@
              }
          } else {
              callback.accept(executioncontext);
-@@ -377,22 +451,89 @@
+@@ -377,23 +470,121 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -221,13 +242,7 @@
 +    private void sendAsync(ServerPlayer player, Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
 +        // Paper end - Perf: Async command map building
 +        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
-+        RootCommandNode vanillaRoot = new RootCommandNode();
-+
-+        RootCommandNode<CommandSourceStack> vanilla = player.server.vanillaCommandDispatcher.getDispatcher().getRoot();
-+        map.put(vanilla, vanillaRoot);
-+        this.fillUsableCommands(vanilla, vanillaRoot, player.createCommandSourceStack(), (Map) map);
-+
-+        // Now build the global commands in a second pass
++        // Paper - brigadier API removes the need to fill the map twice
          RootCommandNode<SharedSuggestionProvider> rootcommandnode = new RootCommandNode();
  
          map.put(this.dispatcher.getRoot(), rootcommandnode);
@@ -265,6 +280,7 @@
 -        Iterator iterator = tree.getChildren().iterator();
 +    // Paper start - Perf: Async command map building; pass copy of children
 +    private void fillUsableCommands(Collection<CommandNode<CommandSourceStack>> children, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
++        resultNodes.keySet().removeIf((node) -> !org.spigotmc.SpigotConfig.sendNamespaced && node.getName().contains( ":" )); // Paper - Remove namedspaced from result nodes to prevent redirect trimming ~ see comment below
 +        Iterator iterator = children.iterator();
 +        // Paper end - Perf: Async command map building
  
@@ -280,10 +296,47 @@
              if (commandnode2.canUse(source)) {
 -                ArgumentBuilder<SharedSuggestionProvider, ?> argumentbuilder = commandnode2.createBuilder();
 +                ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error
++                // Paper start
++                /*
++                Because of how commands can be yeeted right left and center due to bad bukkit practices
++                we need to be able to ensure that ALL commands are registered (even redirects).
  
++                What this will do is IF the redirect seems to be "dead" it will create a builder and essentially populate (flatten)
++                all the children from the dead redirect to the node.
++
++                So, if minecraft:msg redirects to msg but the original msg node has been overriden minecraft:msg will now act as msg and will explicilty inherit its children.
++
++                The only way to fix this is to either:
++                - Send EVERYTHING flattened, don't use redirects
++                - Don't allow command nodes to be deleted
++                - Do this :)
++                 */
++
++                // Is there an invalid command redirect?
++                if (argumentbuilder.getRedirect() != null && (CommandNode) resultNodes.get(argumentbuilder.getRedirect()) == null) {
++                    // Create the argument builder with the same values as the specified node, but with a different literal and populated children
++
++                    CommandNode<CommandSourceStack> redirect = argumentbuilder.getRedirect();
++                    // Diff copied from LiteralCommand#createBuilder
++                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandnode2.getName());
++                    builder.requires(redirect.getRequirement());
++                    // builder.forward(redirect.getRedirect(), redirect.getRedirectModifier(), redirect.isFork()); We don't want to migrate the forward, since it's invalid.
++                    if (redirect.getCommand() != null) {
++                        builder.executes(redirect.getCommand());
++                    }
++                    // Diff copied from LiteralCommand#createBuilder
++                    for (CommandNode<CommandSourceStack> child : redirect.getChildren()) {
++                        builder.then(child);
++                    }
++
++                    argumentbuilder = builder;
++                }
++                // Paper end
++
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
-@@ -415,12 +556,12 @@
+                 });
+@@ -415,12 +606,12 @@
                      argumentbuilder.redirect((CommandNode) resultNodes.get(argumentbuilder.getRedirect()));
                  }
  
@@ -298,7 +351,7 @@
                  }
              }
          }
-@@ -481,7 +622,7 @@
+@@ -481,7 +672,7 @@
              }
  
              private <T> HolderLookup.RegistryLookup.Delegate<T> createLookup(final HolderLookup.RegistryLookup<T> original) {

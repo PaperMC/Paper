@@ -24,14 +24,26 @@ import org.bukkit.craftbukkit.entity.CraftMinecartCommand;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.minecart.CommandMinecart;
 
-public final class VanillaCommandWrapper extends BukkitCommand {
+public class VanillaCommandWrapper extends BukkitCommand { // Paper
 
-    private final Commands dispatcher;
+    //private final Commands dispatcher; // Paper
     public final CommandNode<CommandSourceStack> vanillaCommand;
 
+    // Paper start
+    public VanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> vanillaCommand) {
+        super(name, description, usageMessage, aliases);
+        //this.dispatcher = dispatcher; // Paper
+        this.vanillaCommand = vanillaCommand;
+    }
+
+    Commands commands() {
+        return net.minecraft.server.MinecraftServer.getServer().getCommands();
+    }
+
+    // Paper end
     public VanillaCommandWrapper(Commands dispatcher, CommandNode<CommandSourceStack> vanillaCommand) {
         super(vanillaCommand.getName(), "A Mojang provided command.", vanillaCommand.getUsageText(), Collections.EMPTY_LIST);
-        this.dispatcher = dispatcher;
+        // this.dispatcher = dispatcher; // Paper
         this.vanillaCommand = vanillaCommand;
         this.setPermission(VanillaCommandWrapper.getPermission(vanillaCommand));
     }
@@ -41,7 +53,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         if (!this.testPermission(sender)) return true;
 
         CommandSourceStack icommandlistener = VanillaCommandWrapper.getListener(sender);
-        this.dispatcher.performPrefixedCommand(icommandlistener, this.toDispatcher(args, this.getName()), this.toDispatcher(args, commandLabel));
+        this.commands().performPrefixedCommand(icommandlistener, this.toDispatcher(args, this.getName()), this.toDispatcher(args, commandLabel)); // Paper
         return true;
     }
 
@@ -52,10 +64,10 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         Preconditions.checkArgument(alias != null, "Alias cannot be null");
 
         CommandSourceStack icommandlistener = VanillaCommandWrapper.getListener(sender);
-        ParseResults<CommandSourceStack> parsed = this.dispatcher.getDispatcher().parse(this.toDispatcher(args, this.getName()), icommandlistener);
+        ParseResults<CommandSourceStack> parsed = this.commands().getDispatcher().parse(this.toDispatcher(args, this.getName()), icommandlistener); // Paper
 
         List<String> results = new ArrayList<>();
-        this.dispatcher.getDispatcher().getCompletionSuggestions(parsed).thenAccept((suggestions) -> {
+        this.commands().getDispatcher().getCompletionSuggestions(parsed).thenAccept((suggestions) -> { // Paper
             suggestions.getList().forEach((s) -> results.add(s.getText()));
         });
 
@@ -116,4 +128,15 @@ public final class VanillaCommandWrapper extends BukkitCommand {
     private String toDispatcher(String[] args, String name) {
         return name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
     }
+    // Paper start
+    @Override
+    public boolean canBeOverriden() {
+        return true;
+    }
+
+    @Override
+    public boolean isRegistered() {
+        return true;
+    }
+    // Paper end
 }

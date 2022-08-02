@@ -275,11 +275,11 @@ public final class CraftServer implements Server {
     private final Logger logger = Logger.getLogger("Minecraft");
     private final ServicesManager servicesManager = new SimpleServicesManager();
     private final CraftScheduler scheduler = new CraftScheduler();
-    private final CraftCommandMap commandMap = new CraftCommandMap(this);
+    private final CraftCommandMap commandMap; // Paper - Move down
     private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
     private final StandardMessenger messenger = new StandardMessenger();
-    private final SimplePluginManager pluginManager = new SimplePluginManager(this, commandMap);
-    public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager); {this.pluginManager.paperPluginManager = this.paperPluginManager;} // Paper
+    private final SimplePluginManager pluginManager; // Paper - Move down
+    public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager; // Paper
     private final StructureManager structureManager;
     protected final DedicatedServer console;
     protected final DedicatedPlayerList playerList;
@@ -419,6 +419,12 @@ public final class CraftServer implements Server {
         this.serverLinks = new CraftServerLinks(console);
 
         Bukkit.setServer(this);
+        // Paper start
+        this.commandMap = new CraftCommandMap(this);
+        this.pluginManager = new SimplePluginManager(this, commandMap);
+        this.paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager);
+        this.pluginManager.paperPluginManager = this.paperPluginManager;
+         // Paper end
 
         CraftRegistry.setMinecraftRegistry(console.registryAccess());
 
@@ -617,48 +623,11 @@ public final class CraftServer implements Server {
     }
 
     private void setVanillaCommands(boolean first) { // Spigot
-        Commands dispatcher = this.console.vanillaCommandDispatcher;
-
-        // Build a list of all Vanilla commands and create wrappers
-        for (CommandNode<CommandSourceStack> cmd : dispatcher.getDispatcher().getRoot().getChildren()) {
-            // Spigot start
-            VanillaCommandWrapper wrapper = new VanillaCommandWrapper(dispatcher, cmd);
-            if (org.spigotmc.SpigotConfig.replaceCommands.contains( wrapper.getName() ) ) {
-                if (first) {
-                    this.commandMap.register("minecraft", wrapper);
-                }
-            } else if (!first) {
-                this.commandMap.register("minecraft", wrapper);
-            }
-            // Spigot end
-        }
+        // Paper - Replace implementation
     }
 
     public void syncCommands() {
-        // Clear existing commands
-        Commands dispatcher = this.console.resources.managers().commands = new Commands();
-
-        // Register all commands, vanilla ones will be using the old dispatcher references
-        for (Map.Entry<String, Command> entry : this.commandMap.getKnownCommands().entrySet()) {
-            String label = entry.getKey();
-            Command command = entry.getValue();
-
-            if (command instanceof VanillaCommandWrapper) {
-                LiteralCommandNode<CommandSourceStack> node = (LiteralCommandNode<CommandSourceStack>) ((VanillaCommandWrapper) command).vanillaCommand;
-                if (!node.getLiteral().equals(label)) {
-                    LiteralCommandNode<CommandSourceStack> clone = new LiteralCommandNode(label, node.getCommand(), node.getRequirement(), node.getRedirect(), node.getRedirectModifier(), node.isFork());
-
-                    for (CommandNode<CommandSourceStack> child : node.getChildren()) {
-                        clone.addChild(child);
-                    }
-                    node = clone;
-                }
-
-                dispatcher.getDispatcher().getRoot().addChild(node);
-            } else {
-                new BukkitCommandWrapper(this, entry.getValue()).register(dispatcher.getDispatcher(), label);
-            }
-        }
+        Commands dispatcher = this.getHandle().getServer().getCommands(); // Paper - We now register directly to the dispatcher.
 
         // Refresh commands
         for (ServerPlayer player : this.getHandle().players) {
@@ -1045,17 +1014,31 @@ public final class CraftServer implements Server {
             return true;
         }
 
-        // Spigot start
-        if (!org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty()) {
-            // Paper start
-            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(sender, commandLine, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.unknownCommandMessage));
-            this.getPluginManager().callEvent(event);
-            if (event.message() != null) {
-                sender.sendMessage(event.message());
-            }
-            // Paper end
+        return this.dispatchCommand(VanillaCommandWrapper.getListener(sender), commandLine);
+    }
+
+    public boolean dispatchCommand(CommandSourceStack sourceStack, String commandLine) {
+        net.minecraft.commands.Commands commands = this.getHandle().getServer().getCommands();
+        com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = commands.getDispatcher();
+        com.mojang.brigadier.ParseResults<CommandSourceStack> results = dispatcher.parse(commandLine, sourceStack);
+
+        CommandSender sender = sourceStack.getBukkitSender();
+        String[] args = org.apache.commons.lang3.StringUtils.split(commandLine, ' '); // Paper - fix adjacent spaces (from console/plugins) causing empty array elements
+        Command target = this.commandMap.getCommand(args[0].toLowerCase(java.util.Locale.ENGLISH));
+
+        try {
+            commands.performCommand(results, commandLine, commandLine, true);
+        } catch (CommandException ex) {
+            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            //target.timings.stopTiming(); // Spigot // Paper
+            throw ex;
+        } catch (Throwable ex) {
+            //target.timings.stopTiming(); // Spigot // Paper
+            String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
+            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            throw new CommandException(msg, ex);
         }
-        // Spigot end
+        // Paper end
 
         return false;
     }
@@ -1064,7 +1047,7 @@ public final class CraftServer implements Server {
     public void reload() {
         // Paper start - lifecycle events
         if (io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.blocksPluginReloading()) {
-            throw new IllegalStateException("A lifecycle event handler has been registered which makes reloading plugins not possible");
+            throw new IllegalStateException(org.bukkit.command.defaults.ReloadCommand.RELOADING_DISABLED_MESSAGE);
         }
         // Paper end - lifecycle events
         org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
@@ -1119,8 +1102,9 @@ public final class CraftServer implements Server {
         }
 
         Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
+        this.commandMap.clearCommands(); // Paper - Move command reloading up
         this.pluginManager.clearPlugins();
-        this.commandMap.clearCommands();
+        // Paper - move up
         // Paper start
         for (Plugin plugin : pluginClone) {
             entityMetadata.removeAll(plugin);
@@ -1160,6 +1144,12 @@ public final class CraftServer implements Server {
         this.enablePlugins(PluginLoadOrder.STARTUP);
         this.enablePlugins(PluginLoadOrder.POSTWORLD);
         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
+        // Paper start - brigadier command API
+        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // to clear invalid state for event fire below
+        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // call commands event for regular plugins
+        this.helpMap.initializeCommands();
+        this.syncCommands(); // Refresh commands after event
+        // Paper end - brigadier command API
         this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
     }

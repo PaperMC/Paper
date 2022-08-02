@@ -1,17 +1,18 @@
 --- a/net/minecraft/commands/CommandSourceStack.java
 +++ b/net/minecraft/commands/CommandSourceStack.java
-@@ -45,8 +45,9 @@
+@@ -45,9 +45,9 @@
  import net.minecraft.world.level.dimension.DimensionType;
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
 +import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
  
 -public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider {
-+public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper - Brigadier API
- 
+-
++public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
      public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
      public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
-@@ -65,6 +66,8 @@
+     public final CommandSource source;
+@@ -65,6 +65,8 @@
      private final Vec2 rotation;
      private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
@@ -20,31 +21,9 @@
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
          this(output, pos, rot, world, level, name, displayName, server, entity, false, CommandResultCallback.EMPTY, EntityAnchorArgument.Anchor.FEET, CommandSigningContext.ANONYMOUS, TaskChainer.immediate(server));
-@@ -169,11 +172,66 @@
-         return this.textName;
-     }
+@@ -171,8 +173,43 @@
  
-+    // Paper start - Brigadier API
      @Override
-+    public org.bukkit.entity.Entity getBukkitEntity() {
-+        return getEntity() != null ? getEntity().getBukkitEntity() : null;
-+    }
-+
-+    @Override
-+    public org.bukkit.World getBukkitWorld() {
-+        return getLevel() != null ? getLevel().getWorld() : null;
-+    }
-+
-+    @Override
-+    public org.bukkit.Location getBukkitLocation() {
-+        Vec3 pos = getPosition();
-+        org.bukkit.World world = getBukkitWorld();
-+        Vec2 rot = getRotation();
-+        return world != null && pos != null ? new org.bukkit.Location(world, pos.x, pos.y, pos.z, rot != null ? rot.y : 0, rot != null ? rot.x : 0) : null;
-+    }
-+    // Paper end - Brigadier API
-+
-+    @Override
      public boolean hasPermission(int level) {
 +        // CraftBukkit start
 +        // Paper start - Thread Safe Vanilla Command permission checking
@@ -56,8 +35,8 @@
 +        // CraftBukkit end
 +
          return this.permissionLevel >= level;
-     }
- 
++    }
++
 +    // Paper start - Fix permission levels for command blocks
 +    private boolean forceRespectPermissionLevel() {
 +        return this.source == CommandSource.NULL || (this.source instanceof final net.minecraft.world.level.BaseCommandBlock commandBlock && commandBlock.getLevel().paperConfig().commandBlocks.forceFollowPermLevel);
@@ -81,13 +60,12 @@
 +        }
 +        return hasBukkitPerm.getAsBoolean();
 +        // Paper end - Fix permission levels for command blocks
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public Vec3 getPosition() {
          return this.worldPosition;
-     }
-@@ -302,21 +360,26 @@
+@@ -302,21 +339,26 @@
              while (iterator.hasNext()) {
                  ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
@@ -117,11 +95,17 @@
          }
  
      }
-@@ -400,4 +463,10 @@
+@@ -400,4 +442,16 @@
      public boolean isSilent() {
          return this.silent;
      }
 +
++    // Paper start
++    @Override
++    public CommandSourceStack getHandle() {
++        return this;
++    }
++    // Paper end
 +    // CraftBukkit start
 +    public org.bukkit.command.CommandSender getBukkitSender() {
 +        return this.source.getBukkitSender(this);

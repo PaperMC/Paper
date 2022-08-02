@@ -53,7 +53,13 @@ public final class CraftCriteria implements Criteria {
         return RenderType.values()[this.criteria.getDefaultRenderType().ordinal()];
     }
 
-    static CraftCriteria getFromNMS(Objective objective) {
+    // Paper start
+    public static CraftCriteria getFromNMS(ObjectiveCriteria criteria) {
+        return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(criteria.getName()), () -> new CraftCriteria(criteria));
+    }
+    // Paper end
+
+    public static CraftCriteria getFromNMS(Objective objective) {
         return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(objective.getCriteria().getName()), () -> new CraftCriteria(objective.getCriteria())); // Paper
     }
 
