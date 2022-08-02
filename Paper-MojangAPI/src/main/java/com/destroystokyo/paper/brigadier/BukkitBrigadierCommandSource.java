@@ -6,6 +6,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated For removal, use the new brigadier api.
+ */
+@Deprecated(forRemoval = true) // Paper
 public interface BukkitBrigadierCommandSource {
 
     @Nullable

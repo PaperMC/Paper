@@ -20,8 +20,10 @@ import org.jetbrains.annotations.NotNull;
  * run at a later point in the server lifetime due to plugins, a server reload, etc.</p>
  *
  * <p>This is a draft/experimental API and is subject to change.</p>
+ * @deprecated For removal, use the new brigadier api.
  */
 @ApiStatus.Experimental
+@Deprecated
 public class CommandRegisteredEvent<S extends BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
