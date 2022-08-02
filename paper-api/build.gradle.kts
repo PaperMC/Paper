@@ -39,6 +39,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 // Paper end - configure mockito agent that is needed in newer java versions
 
 dependencies {
+    api("com.mojang:brigadier:1.2.9") // Paper - Brigadier command api
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")
     api("com.google.code.gson:gson:2.11.0")
@@ -108,9 +109,33 @@ sourceSets {
     }
 }
 // Paper end
+// Paper start - brigadier API
+val outgoingVariants = arrayOf("runtimeElements", "apiElements", "sourcesElements", "javadocElements")
+val mainCapability = "${project.group}:${project.name}:${project.version}"
+configurations {
+    val outgoing = outgoingVariants.map { named(it) }
+    for (config in outgoing) {
+        config {
+            attributes {
+                attribute(io.papermc.paperweight.util.mainCapabilityAttribute, mainCapability)
+            }
+            outgoing {
+                capability(mainCapability)
+                capability("io.papermc.paper:paper-mojangapi:${project.version}")
+                capability("com.destroystokyo.paper:paper-mojangapi:${project.version}")
+            }
+        }
+    }
+}
+// Paper end
 
 configure<PublishingExtension> {
     publications.create<MavenPublication>("maven") {
+        // Paper start - brigadier API
+        outgoingVariants.forEach {
+            suppressPomMetadataWarningsFor(it)
+        }
+        // Paper end
         from(components["java"])
     }
 }

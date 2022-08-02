@@ -18,6 +18,8 @@ import org.jetbrains.annotations.NotNull;
  * themselves. Plugins wishing to remove commands from tab completion are
  * advised to ensure the client does not have permission for the relevant
  * commands, or use {@link PlayerCommandSendEvent}.
+ * @apiNote Only called for bukkit API commands {@link org.bukkit.command.Command} and
+ * {@link org.bukkit.command.CommandExecutor} and not for brigadier commands ({@link io.papermc.paper.command.brigadier.Commands}).
  */
 public class TabCompleteEvent extends Event implements Cancellable {
 

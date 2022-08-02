@@ -18,6 +18,9 @@ public class ReloadCommand extends BukkitCommand {
         this.setAliases(Arrays.asList("rl"));
     }
 
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    public static final String RELOADING_DISABLED_MESSAGE = "A lifecycle event handler has been registered which makes reloading plugins not possible"; // Paper
+
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) { // Paper
         if (!testPermission(sender)) return true;
@@ -51,7 +54,16 @@ public class ReloadCommand extends BukkitCommand {
 
         Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
         Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
-        Bukkit.reload();
+        // Paper start - lifecycle events
+        try {
+            Bukkit.reload();
+        } catch (final IllegalStateException ex) {
+            if (ex.getMessage().equals(RELOADING_DISABLED_MESSAGE)) {
+                Command.broadcastCommandMessage(sender, ChatColor.RED + RELOADING_DISABLED_MESSAGE);
+                return true;
+            }
+        }
+        // Paper end - lifecycle events
         Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Reload complete.");
 
         return true;

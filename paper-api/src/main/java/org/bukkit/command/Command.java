@@ -520,4 +520,9 @@ public abstract class Command {
     public String toString() {
         return getClass().getName() + '(' + name + ')';
     }
+
+    // Paper start
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public boolean canBeOverriden() { return false; }
+    // Paper end
 }
