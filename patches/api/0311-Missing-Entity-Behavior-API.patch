@@ -7,6 +7,72 @@ Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
+diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/VanillaGoal.java b/src/main/java/com/destroystokyo/paper/entity/ai/VanillaGoal.java
+index 8fd399f791b45eb7fc62693ca954eea0c68e2881..2e9006700782924aa8f79e48194200cb1f13110f 100644
+--- a/src/main/java/com/destroystokyo/paper/entity/ai/VanillaGoal.java
++++ b/src/main/java/com/destroystokyo/paper/entity/ai/VanillaGoal.java
+@@ -23,7 +23,7 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
+     GoalKey<Creature> FLEE_SUN = GoalKey.of(Creature.class, NamespacedKey.minecraft("flee_sun"));
+     GoalKey<Mob> FLOAT = GoalKey.of(Mob.class, NamespacedKey.minecraft("float"));
+     GoalKey<Creature> FOLLOW_BOAT = GoalKey.of(Creature.class, NamespacedKey.minecraft("follow_boat"));
+-    GoalKey<Fish> FOLLOW_FLOCK_LEADER = GoalKey.of(Fish.class, NamespacedKey.minecraft("follow_flock_leader"));
++    GoalKey<io.papermc.paper.entity.SchoolableFish> FOLLOW_FLOCK_LEADER = GoalKey.of(io.papermc.paper.entity.SchoolableFish.class, NamespacedKey.minecraft("follow_flock_leader"));
+     GoalKey<Mob> FOLLOW_MOB = GoalKey.of(Mob.class, NamespacedKey.minecraft("follow_mob"));
+     GoalKey<Tameable> FOLLOW_OWNER = GoalKey.of(Tameable.class, NamespacedKey.minecraft("follow_owner"));
+     GoalKey<Animals> FOLLOW_PARENT = GoalKey.of(Animals.class, NamespacedKey.minecraft("follow_parent"));
+diff --git a/src/main/java/io/papermc/paper/entity/SchoolableFish.java b/src/main/java/io/papermc/paper/entity/SchoolableFish.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..39ad7d283609d7e427a2ab35b6fad839e032fe92
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/SchoolableFish.java
+@@ -0,0 +1,47 @@
++package io.papermc.paper.entity;
++
++import org.bukkit.entity.Fish;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Represents a fish that can school with other fish.
++ */
++public interface SchoolableFish extends Fish {
++
++    /**
++     * Forces this fish to follow the given fish.
++     *
++     * @param leader fish to follow
++     */
++    void startFollowing(@NotNull SchoolableFish leader);
++
++    /**
++     * Causes the fish to stop following their current
++     * leader.
++     */
++    void stopFollowing();
++
++    /**
++     * Gets the amount of fish currently following this fish.
++     *
++     * @return school size
++     */
++    int getSchoolSize();
++
++    /**
++     * Gets the maximum number of fish that will naturally follow this fish.
++     *
++     * @return max school size
++     */
++    int getMaxSchoolSize();
++
++    /**
++     * Gets the fish that this entity is currently following.
++     *
++     * @return following fish
++     */
++    @Nullable
++    SchoolableFish getSchoolLeader();
++
++}
 diff --git a/src/main/java/org/bukkit/entity/AbstractHorse.java b/src/main/java/org/bukkit/entity/AbstractHorse.java
 index 0d88dce9978243a1f995c5fb448c5d71b01136eb..8b1048c94dffd058eb9fd9144f7f59fc9bd219ad 100644
 --- a/src/main/java/org/bukkit/entity/AbstractHorse.java
@@ -254,6 +320,16 @@ index cb3ec6ef6c38c2071cb6ad91da094fca2de8d5c6..b4c1a262602d4ca5ffc9fcc21d6aa79a
 +    void setEggLayTime(int eggLayTime);
 +}
 +// Paper end
+diff --git a/src/main/java/org/bukkit/entity/Cod.java b/src/main/java/org/bukkit/entity/Cod.java
+index 191ce6c0e32ab3d05b1376e0fa56d1292c2d442c..8de09075e14a08a6c68f9c24e8960cc04a018036 100644
+--- a/src/main/java/org/bukkit/entity/Cod.java
++++ b/src/main/java/org/bukkit/entity/Cod.java
+@@ -4,4 +4,4 @@ package org.bukkit.entity;
+ /**
+  * Represents a cod fish.
+  */
+-public interface Cod extends Fish { }
++public interface Cod extends io.papermc.paper.entity.SchoolableFish { } // Paper - Schooling Fish API
 diff --git a/src/main/java/org/bukkit/entity/Enderman.java b/src/main/java/org/bukkit/entity/Enderman.java
 index 94f3a8c4bf8cf14263d34d866db66728e98dfdb0..7937a0e082199554d3e8db1f9811be29abc9b3fd 100644
 --- a/src/main/java/org/bukkit/entity/Enderman.java
@@ -782,6 +858,16 @@ index 4374d5206d4d15a4d8d228c137ed9a96821a1f02..0eb7214472f3a43641a3526000af6bee
 +
 +}
 +// Paper end
+diff --git a/src/main/java/org/bukkit/entity/Salmon.java b/src/main/java/org/bukkit/entity/Salmon.java
+index a52a7af219633d575dcbe8ac4b219834bfd4d4d2..1e839b247182af6873a4d74b236d6412817c18bf 100644
+--- a/src/main/java/org/bukkit/entity/Salmon.java
++++ b/src/main/java/org/bukkit/entity/Salmon.java
+@@ -4,4 +4,4 @@ package org.bukkit.entity;
+ /**
+  * Represents a salmon fish.
+  */
+-public interface Salmon extends Fish { }
++public interface Salmon extends io.papermc.paper.entity.SchoolableFish { } // Paper - Schooling Fish API
 diff --git a/src/main/java/org/bukkit/entity/Trident.java b/src/main/java/org/bukkit/entity/Trident.java
 index 28cdb3b544572ba7aeb9061e3163e3895ac7d4e6..c8015ff610e3c1222cb368ea1d8a0c2f3785d9c7 100644
 --- a/src/main/java/org/bukkit/entity/Trident.java
@@ -828,6 +914,19 @@ index 28cdb3b544572ba7aeb9061e3163e3895ac7d4e6..c8015ff610e3c1222cb368ea1d8a0c2f
 +    void setLoyaltyLevel(int loyaltyLevel);
 +}
 +// Paper end
+diff --git a/src/main/java/org/bukkit/entity/TropicalFish.java b/src/main/java/org/bukkit/entity/TropicalFish.java
+index bc5055f2d96addb722d576a9ed1dfad3deb203ed..bbe4324370812fdac1190242122762a55910626a 100644
+--- a/src/main/java/org/bukkit/entity/TropicalFish.java
++++ b/src/main/java/org/bukkit/entity/TropicalFish.java
+@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Tropical fish.
+  */
+-public interface TropicalFish extends Fish {
++public interface TropicalFish extends io.papermc.paper.entity.SchoolableFish { // Paper - Schooling Fish API
+ 
+     /**
+      * Gets the color of the fish's pattern.
 diff --git a/src/main/java/org/bukkit/entity/Vex.java b/src/main/java/org/bukkit/entity/Vex.java
 index 627e3c1a96ae3331f5aa2dd7803dd2a31c7204be..3c447d2300c866ae605eeca97bd869f400d6be6f 100644
 --- a/src/main/java/org/bukkit/entity/Vex.java
