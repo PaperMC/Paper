@@ -1,0 +1,249 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "FivePB (Xer)" <admin@fivepb.me>
+Date: Wed, 3 Aug 2022 19:57:17 +0000
+Subject: [PATCH] Signed message proxy sync
+
+This patch adds support for the new, now necessary, presync of chat
+message data for players that may have been on another server before this one.
+This protocol ensures continutity with the signed messages across servers in v1.
+
+diff --git a/src/main/java/io/papermc/paper/proxy/ProxyChatData.java b/src/main/java/io/papermc/paper/proxy/ProxyChatData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..34cc5e20a7b585a871528884d4abc9f06a5089d0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/proxy/ProxyChatData.java
+@@ -0,0 +1,23 @@
++package io.papermc.paper.proxy;
++
++import net.minecraft.network.FriendlyByteBuf;
++import net.minecraft.network.chat.LastSeenMessages;
++import net.minecraft.network.chat.MessageSignature;
++
++import java.util.Optional;
++
++public record ProxyChatData(ServerInfo proxyInfo,
++                            Optional<ServerInfo> previousServer, MessageSignature lastSignature,
++                            LastSeenMessages lastSeenMessages, Optional<LastSeenMessages.Entry> lastMessage) {
++
++    public ProxyChatData(FriendlyByteBuf buf) {
++        this(new ServerInfo(buf), buf.readOptional(ServerInfo::new), new MessageSignature(buf),
++            new LastSeenMessages(buf), buf.readOptional(LastSeenMessages.Entry::new));
++    }
++
++    public record ServerInfo(boolean enforceSecureProfiles, boolean previewsChat) {
++        public ServerInfo(FriendlyByteBuf buf) {
++            this(buf.readBoolean(), buf.readBoolean());
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/proxy/ProxyChatSyncHelper.java b/src/main/java/io/papermc/paper/proxy/ProxyChatSyncHelper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e49f987ea09dfbb80ab929a8ec2aec834c729cc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/proxy/ProxyChatSyncHelper.java
+@@ -0,0 +1,12 @@
++package io.papermc.paper.proxy;
++
++import io.netty.buffer.ByteBuf;
++import net.minecraft.resources.ResourceLocation;
++
++public final class ProxyChatSyncHelper {
++
++    public static final int CHAT_SYNC_VERSION = 1;
++    public static final int CHAT_SYNC_MAX_VERSION = CHAT_SYNC_VERSION;
++    public static final ResourceLocation CHAT_SYNC_CHANNEL = new ResourceLocation("proxy:chatsync");
++
++}
+diff --git a/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java b/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
+index 5d9c47e944510c2ec0150d17d31ce25bb61cd8e7..231e351ae48cc8a1f24e9b5ad9cdc6d3dfb1f10b 100644
+--- a/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
++++ b/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
+@@ -129,4 +129,12 @@ public class LastSeenMessagesValidator {
+             return this.message;
+         }
+     }
++
++    // Paper start - Proxy message sync
++    public void setProxyData(io.papermc.paper.proxy.ProxyChatData proxyChatData) {
++        if (this.lastSeenMessages == LastSeenMessages.EMPTY) {
++            this.lastSeenMessages = proxyChatData.lastSeenMessages();
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
+index b9c7c9d477a13cb753e31e802706059df56f52d5..d7919e874822ffad1c430a14d07aa166a35961b2 100644
+--- a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
++++ b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
+@@ -60,4 +60,12 @@ public class SignedMessageChain {
+ 
+     public static record Link(MessageSignature signature) {
+     }
++
++    // Paper start - Proxy message sync
++    public void setProxyData(io.papermc.paper.proxy.ProxyChatData proxyChatData) {
++        if (this.previousSignature == null && !proxyChatData.lastSignature().isEmpty()) {
++            this.previousSignature = proxyChatData.lastSignature();
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index bdd6560fe85950b0a857a949cb38c044da44ca6b..755daf118be0b7a800c3ea4c6f54445aaf7d1fda 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -614,7 +614,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public boolean enforceSecureProfile() {
+-        return this.getProperties().enforceSecureProfile && this.getProperties().onlineMode;
++        return this.getProperties().enforceSecureProfile && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Proxy message sync
+     }
+ 
+     protected boolean convertOldUsers() {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 6cbd839cc7529eb0095485c4ef4a0d81a3cd9b19..5caa6921c928e085bda51779bfa2a6e67067a61a 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -266,6 +266,7 @@ public class ServerPlayer extends Player {
+     public double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
+     public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - there are a lot of changes to do if we change all methods leading to the event
++    private @Nullable io.papermc.paper.proxy.ProxyChatData proxyChatData; // Paper - Proxy message sync
+ 
+     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, @Nullable ProfilePublicKey publicKey) {
+         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile, publicKey);
+@@ -2484,4 +2485,9 @@ public class ServerPlayer extends Player {
+     // CraftBukkit end
+ 
+     public final int getViewDistance() { throw new UnsupportedOperationException("Use PlayerChunkLoader"); } // Paper - placeholder
++
++    // Paper start - Proxy message sync
++    public io.papermc.paper.proxy.ProxyChatData getProxyChatData() { return proxyChatData; }
++    public void setProxyChatData(io.papermc.paper.proxy.ProxyChatData proxyChatData) { this.proxyChatData = proxyChatData; }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index c39e6a96a120cd9c5f7734ead5dac2091fed7fc8..27ae5d5d43d452fc32b2eee2a9fe3bdb51ecb074 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -298,6 +298,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
+ 
+     private String clientBrandName = null; // Paper - Brand name
++    private @Nullable io.papermc.paper.proxy.ProxyChatData proxyChatData; // Paper - Proxy message sync
++    private SignedMessageChain signedMessageChain; // Paper - Proxy message sync
+ 
+     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
+         this.lastChatTimeStamp = new AtomicReference(Instant.EPOCH);
+@@ -312,7 +314,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         ProfilePublicKey profilepublickey = player.getProfilePublicKey();
+ 
+         if (profilepublickey != null) {
+-            this.signedMessageDecoder = (new SignedMessageChain()).decoder();
++            this.signedMessageDecoder = (this.signedMessageChain = new SignedMessageChain()).decoder(); // Paper - Proxy message sync
+         } else {
+             this.signedMessageDecoder = SignedMessageChain.Decoder.UNSIGNED;
+         }
+@@ -3717,4 +3719,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+         InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
+     }
++
++    // Paper start - Proxy message sync
++    public void setProxyChatData(io.papermc.paper.proxy.ProxyChatData proxyChatData) {
++        if (proxyChatData != null) {
++            this.proxyChatData = proxyChatData;
++            this.lastSeenMessagesValidator.setProxyData(proxyChatData);
++            this.signedMessageChain.setProxyData(proxyChatData);
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 9fed10a77808e565c9e8b2ebe5f4114917a33187..69ccab9f3a2bf8230105fe4bc7b71e8ae592d2cf 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -72,6 +72,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+     public String hostname = ""; // CraftBukkit - add field
+     public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
+     private int velocityLoginMessageId = -1; // Paper - Velocity support
++    private int chatForwardMessageId = -1; // Paper - Proxy message sync
++    @Nullable private io.papermc.paper.proxy.ProxyChatData proxyData; // Paper - Proxy message sync
+ 
+     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
+         this.state = ServerLoginPacketListenerImpl.State.HELLO;
+@@ -173,7 +175,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+     public void handleAcceptedLogin() {
+         ProfilePublicKey profilepublickey = null;
+ 
+-        if (!this.server.usesAuthentication()) {
++        if (!this.server.usesAuthentication() && !io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) { // Paper - Proxy message sync
+             // this.gameProfile = this.createFakeProfile(this.gameProfile); // Spigot - Moved to initUUID
+             // Spigot end
+         } else {
+@@ -192,6 +194,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+ 
+         // CraftBukkit start - fire PlayerLoginEvent
+         ServerPlayer s = this.server.getPlayerList().canPlayerLogin(this, this.gameProfile, profilepublickey, hostname);
++        if (this.proxyData != null) s.setProxyChatData(this.proxyData); // Paper - Proxy message sync
+ 
+         if (s == null) {
+             // this.disconnect(ichatbasecomponent);
+@@ -487,6 +490,16 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+                             }
+                         }
+                         // CraftBukkit end
++                        // Paper start - Proxy message sync
++                        if (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
++                            ServerLoginPacketListenerImpl.this.chatForwardMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
++                            net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
++                            buf.writeVarInt(io.papermc.paper.proxy.ProxyChatSyncHelper.CHAT_SYNC_VERSION);
++                            net.minecraft.network.protocol.login.ClientboundCustomQueryPacket response = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(ServerLoginPacketListenerImpl.this.chatForwardMessageId, io.papermc.paper.proxy.ProxyChatSyncHelper.CHAT_SYNC_CHANNEL, buf);
++                            ServerLoginPacketListenerImpl.this.connection.send(response);
++                            return;
++                        }
++                        // Paper end
+                         ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", ServerLoginPacketListenerImpl.this.gameProfile.getName(), ServerLoginPacketListenerImpl.this.gameProfile.getId());
+                         ServerLoginPacketListenerImpl.this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
+         }
+@@ -548,6 +561,27 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+             return;
+         }
+         // Paper end
++        // Paper start - Proxy message sync
++        if ((org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) && packet.getTransactionId() == this.chatForwardMessageId) {
++            if (packet.getData() != null && packet.getData().readableBytes() > 0) {
++                net.minecraft.network.FriendlyByteBuf data = packet.getData();
++                int ver = data.readVarInt();
++                if (ver > io.papermc.paper.proxy.ProxyChatSyncHelper.CHAT_SYNC_MAX_VERSION) {
++                    this.disconnect(Component.literal("Too new chat forwarding response received!"));
++                    return;
++                }
++                this.proxyData = new io.papermc.paper.proxy.ProxyChatData(data);
++            } else {
++                if (this.server.enforceSecureProfile()) {
++                    this.disconnect(Component.literal("This server requires a proxy that supports at least chat forwarding v" + io.papermc.paper.proxy.ProxyChatSyncHelper.CHAT_SYNC_MAX_VERSION + "."));
++                    return;
++                }
++            }
++            LOGGER.info("UUID of player {} is {}", this.gameProfile.getName(), this.gameProfile.getId());
++            this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
++            return;
++        }
++        // Paper end
+         this.disconnect(Component.translatable("multiplayer.disconnect.unexpected_query_response"));
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index d63bfd9d3194a2972a984ec3a817767a683a940d..afcc22763d282963bc5752704786e89a705bdb2c 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -269,6 +269,7 @@ public abstract class PlayerList {
+ 
+         player.loadGameTypes(nbttagcompound);
+         ServerGamePacketListenerImpl playerconnection = new ServerGamePacketListenerImpl(this.server, connection, player);
++        playerconnection.setProxyChatData(player.getProxyChatData()); // Paper - Proxy message sync
+         GameRules gamerules = worldserver1.getGameRules();
+         boolean flag = gamerules.getBoolean(GameRules.RULE_DO_IMMEDIATE_RESPAWN);
+         boolean flag1 = gamerules.getBoolean(GameRules.RULE_REDUCEDDEBUGINFO);
