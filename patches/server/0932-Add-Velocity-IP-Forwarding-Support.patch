@@ -93,50 +93,8 @@ index 0000000000000000000000000000000000000000..5de2dabbc076a9482b1d6c299f1cff74
 +        return buf.readBoolean() ? buf.readUUID() : orElse;
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java b/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
-index 5d9c47e944510c2ec0150d17d31ce25bb61cd8e7..3d1f60f84af381c3aa167d129d58b3fa88407260 100644
---- a/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
-+++ b/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
-@@ -14,6 +14,7 @@ public class LastSeenMessagesValidator {
-     private static final int NOT_FOUND = Integer.MIN_VALUE;
-     private LastSeenMessages lastSeenMessages = LastSeenMessages.EMPTY;
-     private final ObjectList<LastSeenMessages.Entry> pendingEntries = new ObjectArrayList<>();
-+    private boolean skipFirstValidationProxyFlag = io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled); // Paper - Velocity support
- 
-     public void addPending(LastSeenMessages.Entry entry) {
-         this.pendingEntries.add(entry);
-@@ -70,6 +71,16 @@ public class LastSeenMessagesValidator {
-         LastSeenMessages lastSeenMessages = acknowledgment.lastSeen();
-         LastSeenMessages.Entry entry = acknowledgment.lastReceived().orElse((LastSeenMessages.Entry)null);
-         List<LastSeenMessages.Entry> list = lastSeenMessages.entries();
-+        // Paper start - Velocity support
-+        if (this.skipFirstValidationProxyFlag) {
-+            this.skipFirstValidationProxyFlag = false;
-+            this.lastSeenMessages = lastSeenMessages;
-+            if (this.hasDuplicateProfiles(lastSeenMessages)) {
-+                enumSet.add(LastSeenMessagesValidator.ErrorCondition.DUPLICATED_PROFILES);
-+            }
-+            return enumSet;
-+        }
-+        // Paper end
-         int i = this.lastSeenMessages.entries().size();
-         int j = Integer.MIN_VALUE;
-         int k = list.size();
-diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index bdd6560fe85950b0a857a949cb38c044da44ca6b..b2b8953f59e778697ca823b957b1b7c9a0e6c45a 100644
---- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-+++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -614,7 +614,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
- 
-     @Override
-     public boolean enforceSecureProfile() {
--        return this.getProperties().enforceSecureProfile && this.getProperties().onlineMode;
-+        return this.getProperties().enforceSecureProfile && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Velocity support
-     }
- 
-     protected boolean convertOldUsers() {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 1010c2a649256eb850f5094290934de27544a76a..a6aae41fc052516227235769b1adfe1c469600c4 100644
+index 1010c2a649256eb850f5094290934de27544a76a..9fed10a77808e565c9e8b2ebe5f4114917a33187 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -71,6 +71,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
@@ -147,15 +105,6 @@ index 1010c2a649256eb850f5094290934de27544a76a..a6aae41fc052516227235769b1adfe1c
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -172,7 +173,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
-     public void handleAcceptedLogin() {
-         ProfilePublicKey profilepublickey = null;
- 
--        if (!this.server.usesAuthentication()) {
-+        if (!this.server.usesAuthentication() && !io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) { // Paper - Velocity support
-             // this.gameProfile = this.createFakeProfile(this.gameProfile); // Spigot - Moved to initUUID
-             // Spigot end
-         } else {
 @@ -316,6 +317,16 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
