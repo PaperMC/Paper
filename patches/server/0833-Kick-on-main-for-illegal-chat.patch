@@ -7,7 +7,7 @@ Makes the PlayerKickEvent fire on the main thread for
 illegal characters or chat out-of-order errors.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 7933bdb29056ddf8cb29a12166598cd15c155b3a..3bf7bcf3d5a57175a1ac8b886734ca869a407f05 100644
+index dfc4a0d7a5d91d6fb874203c88d051bf42cb7e5c..aedea81d08c2fb0df6471481c89c706c614e9a2f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2177,7 +2177,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -30,8 +30,8 @@ index 7933bdb29056ddf8cb29a12166598cd15c155b3a..3bf7bcf3d5a57175a1ac8b886734ca86
          } else {
              if (this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages())) {
                  this.server.submit(() -> {
-@@ -2291,7 +2295,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-     private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
+@@ -2298,7 +2302,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         // Paper end
          if (!this.updateChatOrder(timestamp)) {
              ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
 +            this.server.scheduleOnMain(() -> { // Paper - push to main
