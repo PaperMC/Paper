@@ -93,6 +93,43 @@ index 0000000000000000000000000000000000000000..5de2dabbc076a9482b1d6c299f1cff74
 +        return buf.readBoolean() ? buf.readUUID() : orElse;
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java b/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
+index 5d9c47e944510c2ec0150d17d31ce25bb61cd8e7..fcab6f0f7af703f0762f4f2ac8e7b670ec651cc2 100644
+--- a/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
++++ b/src/main/java/net/minecraft/network/chat/LastSeenMessagesValidator.java
+@@ -14,6 +14,7 @@ public class LastSeenMessagesValidator {
+     private static final int NOT_FOUND = Integer.MIN_VALUE;
+     private LastSeenMessages lastSeenMessages = LastSeenMessages.EMPTY;
+     private final ObjectList<LastSeenMessages.Entry> pendingEntries = new ObjectArrayList<>();
++    private boolean skipFirstValidationProxyFlag = io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled); // Paper - Velocity support
+ 
+     public void addPending(LastSeenMessages.Entry entry) {
+         this.pendingEntries.add(entry);
+@@ -22,7 +23,6 @@ public class LastSeenMessagesValidator {
+     public int pendingMessagesCount() {
+         return this.pendingEntries.size();
+     }
+-
+     private boolean hasDuplicateProfiles(LastSeenMessages messages) {
+         Set<UUID> set = new HashSet<>(messages.entries().size());
+ 
+@@ -70,6 +70,16 @@ public class LastSeenMessagesValidator {
+         LastSeenMessages lastSeenMessages = acknowledgment.lastSeen();
+         LastSeenMessages.Entry entry = acknowledgment.lastReceived().orElse((LastSeenMessages.Entry)null);
+         List<LastSeenMessages.Entry> list = lastSeenMessages.entries();
++        // Paper start - Velocity support
++        if (this.skipFirstValidationProxyFlag) {
++            this.skipFirstValidationProxyFlag = false;
++            this.lastSeenMessages = lastSeenMessages;
++            if (this.hasDuplicateProfiles(lastSeenMessages)) {
++                enumSet.add(LastSeenMessagesValidator.ErrorCondition.DUPLICATED_PROFILES);
++            }
++            return enumSet;
++        }
++        // Paper end
+         int i = this.lastSeenMessages.entries().size();
+         int j = Integer.MIN_VALUE;
+         int k = list.size();
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index bdd6560fe85950b0a857a949cb38c044da44ca6b..b2b8953f59e778697ca823b957b1b7c9a0e6c45a 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
