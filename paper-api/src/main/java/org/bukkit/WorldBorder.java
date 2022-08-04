@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +31,8 @@ public interface WorldBorder {
      * Sets the border to a square region with the specified side length in blocks.
      *
      * @param newSize The new size of the border.
+     *
+     * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
      */
     public void setSize(double newSize);
 
@@ -38,8 +41,21 @@ public interface WorldBorder {
      *
      * @param newSize The new side length of the border.
      * @param seconds The time in seconds in which the border grows or shrinks from the previous size to that being set.
+     *
+     * @throws IllegalArgumentException if newSize is less than 1.0D or greater than {@link #getMaxSize()}
      */
     public void setSize(double newSize, long seconds);
+
+    /**
+     * Sets the border to a square region with the specified side length in blocks.
+     *
+     * @param newSize The new side length of the border.
+     * @param unit The time unit.
+     * @param time The time in which the border grows or shrinks from the previous size to that being set.
+     *
+     * @throws IllegalArgumentException if unit is <code>null</code> or newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     */
+    public void setSize(double newSize, @NotNull TimeUnit unit, long time);
 
     /**
      * Gets the current border center.
@@ -54,6 +70,8 @@ public interface WorldBorder {
      *
      * @param x The new center x-coordinate.
      * @param z The new center z-coordinate.
+     *
+     * @throws IllegalArgumentException if the absolute value of x or z is higher than {@link #getMaxCenterCoordinate()}
      */
     public void setCenter(double x, double z);
 
@@ -61,6 +79,8 @@ public interface WorldBorder {
      * Sets the new border center.
      *
      * @param location The new location of the border center. (Only x/z used)
+     *
+     * @throws IllegalArgumentException if location is <code>null</code> or the absolute value of {@link Location#getX()} or {@link Location#getZ()} is higher than {@link #getMaxCenterCoordinate()}
      */
     public void setCenter(@NotNull Location location);
 
@@ -127,4 +147,19 @@ public interface WorldBorder {
      * @return if this location is inside the border or not
      */
     public boolean isInside(@NotNull Location location);
+
+    /**
+     * Gets the maximum possible size of a WorldBorder.
+     *
+     * @return The maximum size the WorldBorder
+     */
+    public double getMaxSize();
+
+    /**
+     * Gets the absolute value of the maximum x/z center coordinate of a
+     * WorldBorder.
+     *
+     * @return The absolute maximum center coordinate of the WorldBorder
+     */
+    public double getMaxCenterCoordinate();
 }
