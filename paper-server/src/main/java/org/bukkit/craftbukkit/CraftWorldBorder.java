@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import java.util.concurrent.TimeUnit;
 import net.minecraft.core.BlockPosition;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -28,12 +29,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void reset() {
-        this.setSize(6.0E7D);
-        this.setDamageAmount(0.2D);
-        this.setDamageBuffer(5.0D);
-        this.setWarningDistance(5);
-        this.setWarningTime(15);
-        this.setCenter(0, 0);
+        this.getHandle().applySettings(net.minecraft.world.level.border.WorldBorder.DEFAULT_SETTINGS);
     }
 
     @Override
@@ -48,12 +44,17 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void setSize(double newSize, long time) {
-        // PAIL: TODO: Magic Values
-        newSize = Math.min(6.0E7D, Math.max(1.0D, newSize));
-        time = Math.min(9223372036854775L, Math.max(0L, time));
+        setSize(Math.min(getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.min(9223372036854775L, Math.max(0L, time)));
+    }
+
+    @Override
+    public void setSize(double newSize, TimeUnit unit, long time) {
+        Preconditions.checkArgument(unit != null, "TimeUnit cannot be null.");
+        Preconditions.checkArgument(time >= 0, "time cannot be lower than 0");
+        Preconditions.checkArgument(newSize >= 1.0D && newSize <= this.getMaxSize(), "newSize must be between 1.0D and %s", this.getMaxSize());
 
         if (time > 0L) {
-            this.handle.lerpSizeBetween(this.handle.getSize(), newSize, time * 1000L);
+            this.handle.lerpSizeBetween(this.handle.getSize(), newSize, unit.toMillis(time));
         } else {
             this.handle.setSize(newSize);
         }
@@ -69,9 +70,8 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void setCenter(double x, double z) {
-        // PAIL: TODO: Magic Values
-        x = Math.min(3.0E7D, Math.max(-3.0E7D, x));
-        z = Math.min(3.0E7D, Math.max(-3.0E7D, z));
+        Preconditions.checkArgument(Math.abs(x) <= this.getMaxCenterCoordinate(), "x coordinate cannot be outside +- %s", this.getMaxCenterCoordinate());
+        Preconditions.checkArgument(Math.abs(z) <= this.getMaxCenterCoordinate(), "z coordinate cannot be outside +- %s", this.getMaxCenterCoordinate());
 
         this.handle.setCenter(x, z);
     }
@@ -123,9 +123,19 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public boolean isInside(Location location) {
-        Preconditions.checkArgument(location != null, "location");
+        Preconditions.checkArgument(location != null, "location cannot be null");
 
         return (world == null || location.getWorld().equals(this.world)) && this.handle.isWithinBounds(new BlockPosition(location.getX(), location.getY(), location.getZ()));
+    }
+
+    @Override
+    public double getMaxSize() {
+        return net.minecraft.world.level.border.WorldBorder.MAX_SIZE;
+    }
+
+    @Override
+    public double getMaxCenterCoordinate() {
+        return net.minecraft.world.level.border.WorldBorder.MAX_CENTER_COORDINATE;
     }
 
     public net.minecraft.world.level.border.WorldBorder getHandle() {
