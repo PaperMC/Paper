@@ -111,6 +111,9 @@ public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> ext
      * sending the command tree to the client. For execution purposes, the default
      * greedy string execution of a standard Bukkit {@link Command} is used.</p>
      *
+     * <p>On older versions of Paper, this was the default and only behavior of this
+     * event.</p>
+     *
      * @param rawCommand whether this command should be treated as "raw"
      */
     public void setRawCommand(final boolean rawCommand) {
