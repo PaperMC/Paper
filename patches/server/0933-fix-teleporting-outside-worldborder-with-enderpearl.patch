@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: zJanny <jan.trummer@hotmail.com>
+Date: Fri, 5 Aug 2022 18:42:01 +0200
+Subject: [PATCH] fix teleporting outside worldborder with enderpearl
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+index 23f77dfc6df93ef6a70e14a7e410263d39fae2cb..cdf2f250eb3b91d9583a89a63d78812dadb6ba3a 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+@@ -18,6 +18,8 @@ import net.minecraft.world.phys.EntityHitResult;
+ import net.minecraft.world.phys.HitResult;
+ // CraftBukkit start
+ import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.WorldBorder;
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.event.entity.CreatureSpawnEvent;
+ import org.bukkit.event.player.PlayerTeleportEvent;
+@@ -65,6 +67,17 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+                     location.setPitch(player.getLocation().getPitch());
+                     location.setYaw(player.getLocation().getYaw());
+ 
++                    // Paper start - Check if enderpearl lands outside worldborder
++                    double size = getBukkitEntity().getWorld().getWorldBorder().getSize() / 2;
++                    Location center = getBukkitEntity().getWorld().getWorldBorder().getCenter();
++                    double x = location.getX() - center.getX();
++                    double z = location.getZ() - center.getZ();
++
++                    if((x > size || (-x) > size) || (z > size || (-z) > size)){
++                        return;
++                    }
++                    // Paper end
++
+                     PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
+                     Bukkit.getPluginManager().callEvent(teleEvent);
+ 
