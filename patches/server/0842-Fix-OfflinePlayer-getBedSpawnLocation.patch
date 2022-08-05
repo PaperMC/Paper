@@ -7,8 +7,12 @@ When calling getBedSpawnLocation on an
 instance of CraftOfflinePlayer the world was incorrect
 due to the logic for reading the NBT not being up-to-date.
 
+This also fix the inconsistencies between offline and online
+implementation which either load the chunk and check the validity of
+the spawn block or just get the spawn block without any check.
+
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
-index 17b3d5de58a9ef3acc67624c46cd6bbd96394f87..714afc98b5150907b45a00060be4e41582333204 100644
+index 17b3d5de58a9ef3acc67624c46cd6bbd96394f87..5ace17409cccc2b4007ddf2b2ba888e8fe151df9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
 @@ -31,6 +31,7 @@ import org.bukkit.profile.PlayerProfile;
@@ -19,14 +23,20 @@ index 17b3d5de58a9ef3acc67624c46cd6bbd96394f87..714afc98b5150907b45a00060be4e415
      private final GameProfile profile;
      private final CraftServer server;
      private final PlayerDataStorage storage;
-@@ -319,11 +320,20 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+@@ -314,16 +315,33 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+     }
+ 
+     @Override
+-    public Location getBedSpawnLocation() {
++    public Location getBedSpawnLocation(boolean load) { // Paper
+         CompoundTag data = this.getData();
          if (data == null) return null;
  
          if (data.contains("SpawnX") && data.contains("SpawnY") && data.contains("SpawnZ")) {
 -            String spawnWorld = data.getString("SpawnWorld");
 -            if (spawnWorld.equals("")) {
 -                spawnWorld = this.server.getWorlds().get(0).getName();
-+            // Paper start - fix wrong world
++            // Paper start - fix wrong world and position
 +            final float respawnAngle = data.getFloat("SpawnAngle");
 +            org.bukkit.World spawnWorld = this.server.getWorld(data.getString("SpawnWorld")); // legacy
 +            if (data.contains("SpawnDimension")) {
@@ -39,8 +49,38 @@ index 17b3d5de58a9ef3acc67624c46cd6bbd96394f87..714afc98b5150907b45a00060be4e415
 +            if (spawnWorld == null) {
 +                return null;
 +            }
-+            return new Location(spawnWorld, data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"), respawnAngle, 0);
++            if (!load) {
++                return new Location(spawnWorld, data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"), respawnAngle, 0);
++            }
++            net.minecraft.core.BlockPos bed = new net.minecraft.core.BlockPos(data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"));
++            java.util.Optional<net.minecraft.world.phys.Vec3> spawnLoc = net.minecraft.world.entity.player.Player.findRespawnPositionAndUseSpawnBlock(((CraftWorld) spawnWorld).getHandle(), bed, respawnAngle, true, true);
++            if (spawnLoc.isPresent()) {
++                net.minecraft.world.phys.Vec3 vec = spawnLoc.get();
++                return new Location(spawnWorld, vec.x, vec.y, vec.z, respawnAngle, 0);
++            }
 +            // Paper end
          }
          return null;
      }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 51ddd6f0265c64241ff9d8b85959346e8106fa5e..aa0807dbf23a6eeb5f4a922eea7249e1c429b125 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1348,11 +1348,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     @Override
+-    public Location getBedSpawnLocation() {
++    public Location getBedSpawnLocation(boolean load) { // Paper
+         ServerLevel world = this.getHandle().server.getLevel(this.getHandle().getRespawnDimension());
+         BlockPos bed = this.getHandle().getRespawnPosition();
+ 
+         if (world != null && bed != null) {
++            // Paper start
++            if (!load) {
++                return new Location(world.getWorld(), bed.getX(), bed.getY(), bed.getZ(), this.getHandle().getRespawnAngle(), 0);
++            }
++            // Paper end
+             Optional<Vec3> spawnLoc = net.minecraft.world.entity.player.Player.findRespawnPositionAndUseSpawnBlock(world, bed, this.getHandle().getRespawnAngle(), this.getHandle().isRespawnForced(), true);
+             if (spawnLoc.isPresent()) {
+                 Vec3 vec = spawnLoc.get();
