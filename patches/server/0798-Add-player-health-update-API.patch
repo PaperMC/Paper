@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SamB440 <sam@islandearth.net>
+Date: Wed, 17 Nov 2021 12:31:42 +0000
+Subject: [PATCH] Add player health update API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 58d9f425187b791d8b36b55a89b37e0f2ba56357..9f6a26f1fb53c14b68ce7bc2a69a59cabd00de7f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2152,9 +2152,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.getHandle().maxHealthCache = getMaxHealth();
+     }
+ 
+-    public void sendHealthUpdate() {
++    // Paper start
++    @Override
++    public void sendHealthUpdate(final double health, final int foodLevel, final float saturationLevel) {
+         // Paper start - cancellable death event
+-        ClientboundSetHealthPacket packet = new ClientboundSetHealthPacket(this.getScaledHealth(), this.getHandle().getFoodData().getFoodLevel(), this.getHandle().getFoodData().getSaturationLevel());
++        ClientboundSetHealthPacket packet = new ClientboundSetHealthPacket((float) health, foodLevel, saturationLevel);
+         if (this.getHandle().queueHealthUpdatePacket) {
+             this.getHandle().queuedHealthUpdatePacket = packet;
+         } else {
+@@ -2162,7 +2164,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+         // Paper end
+     }
+-
++    
++    @Override
++    public void sendHealthUpdate() {
++        this.sendHealthUpdate(this.getScaledHealth(), this.getHandle().getFoodData().getFoodLevel(), this.getHandle().getFoodData().getSaturationLevel());
++    }
++    // Paper end
++    
+     public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
+         if (!this.scaledHealth && !force) {
+             return;

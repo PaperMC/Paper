@@ -77,16 +77,15 @@ index 79bf95d5a19046b142d0162dd6b739b7f0f52e59..84432bf9dd99332098f952ea777ee97d
      doLast {
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88ad3bab097
+index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af85e287a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.chat;
 +
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
-+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -115,7 +114,11 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +     */
 +    @NotNull
 +    static ChatRenderer defaultRenderer() {
-+        return viewerUnaware((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++        return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++    }
++
++    @ApiStatus.Internal
++    sealed interface Default extends ChatRenderer, ViewerUnaware permits ViewerUnawareImpl.Default {
 +    }
 +
 +    /**
@@ -127,17 +130,7 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +     */
 +    @NotNull
 +    static ChatRenderer viewerUnaware(final @NotNull ViewerUnaware renderer) {
-+        return new ChatRenderer() {
-+            private @MonotonicNonNull Component message;
-+
-+            @Override
-+            public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
-+                if (this.message == null) {
-+                    this.message = renderer.render(source, sourceDisplayName, message);
-+                }
-+                return this.message;
-+            }
-+        };
++        return new ViewerUnawareImpl(renderer);
 +    }
 +
 +    /**
@@ -157,6 +150,50 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +        @ApiStatus.OverrideOnly
 +        @NotNull
 +        Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9adeb880f7948f937891d83e256c808b5eb40a27
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.chat;
++
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.jetbrains.annotations.NotNull;
++
++sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnaware permits ViewerUnawareImpl.Default {
++
++    private final ViewerUnaware unaware;
++
++    private @MonotonicNonNull Component message;
++
++    ViewerUnawareImpl(final ViewerUnaware unaware) {
++        this.unaware = unaware;
++    }
++
++    @Override
++    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
++        return this.render(source, sourceDisplayName, message);
++    }
++
++    @Override
++    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message) {
++        if (this.message == null) {
++            this.message = this.unaware.render(source, sourceDisplayName, message);
++        }
++        return this.message;
++    }
++
++    static final class Default extends ViewerUnawareImpl implements ChatRenderer.Default {
++
++        Default(final ViewerUnaware unaware) {
++            super(unaware);
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
@@ -275,6 +312,164 @@ index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c
 +    @Override
 +    public final void setCancelled(final boolean cancelled) {
 +        this.cancelled = cancelled;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd216f7333795fc6bc5bec593f9cc0e3c2c1a27e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.Experimental
++public class AsyncChatCommandDecorateEvent extends AsyncChatDecorateEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    public AsyncChatCommandDecorateEvent(boolean async, @Nullable Player player, @NotNull Component originalMessage, boolean isPreview, @NotNull Component result) {
++        super(async, player, originalMessage, isPreview, result);
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..347122b12ad98115133ef98db69b271ee0cec194
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
+@@ -0,0 +1,119 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.server.ServerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * This event is fired when the server decorates a component for chat purposes. It can be called
++ * under the following circumstances:
++ * <ul>
++ *     <li><b>Previewing:</b> If the client requests a preview response, this event is fired to decorate the component
++ *     before it is sent back to the client for signing.</li>
++ *     <li><b>Chat:</b> If the client sends a chat packet without having signed a preview (the client could have previews
++ *     disabled or they sent the message too quickly) this event is fired to generated the decorated component. Note
++ *     that when this is the case, the message will show up as modified as the decorated component wasn't signed
++ *     by the client.</li>
++ * </ul>
++ * @see AsyncChatCommandDecorateEvent for the decoration of messages sent via commands
++ */
++@ApiStatus.Experimental
++public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Player player;
++    private final Component originalMessage;
++    private final boolean isPreview;
++    private Component result;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public AsyncChatDecorateEvent(final boolean async, final @Nullable Player player, final @NotNull Component originalMessage, final boolean isPreview, final @NotNull Component result) {
++        super(async);
++        this.player = player;
++        this.originalMessage = originalMessage;
++        this.isPreview = isPreview;
++        this.result = result;
++    }
++
++    /**
++     * Gets the player (if available) associated with this event.
++     * <p>
++     * Certain commands request decorations without a player context
++     * which is why this is possibly null.
++     *
++     * @return the player or null
++     */
++    public @Nullable Player player() {
++        return this.player;
++    }
++
++    /**
++     * Gets the original decoration input
++     *
++     * @return the input
++     */
++    public @NotNull Component originalMessage() {
++        return this.originalMessage;
++    }
++
++    /**
++     * Gets the decoration result. This may already be different from
++     * {@link #originalMessage()} if some other listener to this event
++     * <b>OR</b> the legacy preview event ({@link org.bukkit.event.player.AsyncPlayerChatPreviewEvent}
++     * changed the result.
++     *
++     * @return the result
++     */
++    public @NotNull Component result() {
++        return this.result;
++    }
++
++    /**
++     * Sets the resulting decorated component.
++     *
++     * @param result the result
++     */
++    public void result(@NotNull Component result) {
++        this.result = result;
++    }
++
++    /**
++     * If this decorating is part of a preview request/response.
++     *
++     * @return true if part of previewing
++     */
++    public boolean isPreview() {
++        return this.isPreview;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * A cancelled decorating event means that no changes to the result component
++     * will have any effect. The decorated component will be equal to the original
++     * component.
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java

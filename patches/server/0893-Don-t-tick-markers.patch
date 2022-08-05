@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Fri, 7 Jan 2022 11:58:26 +0100
+Subject: [PATCH] Don't tick markers
+
+Fixes https://github.com/PaperMC/Paper/issues/7276 by not adding markers to the entity
+tick list at all and ignoring them in Spigot's activation range checks. The entity tick
+list is only used in the tick and tickPassenger methods, so we can safely not add the
+markers to it.
+
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
+index 68f99e93ed3e843b4001a7a27620f88a48b85e67..0dc96c39151ec4dbeec3947cb17606f53a6392d4 100644
+--- a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
++++ b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
+@@ -103,7 +103,7 @@ public final class EntityCommand implements PaperSubcommand {
+                 ChunkPos chunk = e.chunkPosition();
+                 info.left++;
+                 info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
+-                if (!chunkProviderServer.isPositionTicking(e)) {
++                if (!chunkProviderServer.isPositionTicking(e) || e instanceof net.minecraft.world.entity.Marker) { // Markers aren't ticked.
+                     nonEntityTicking.merge(key, 1, Integer::sum);
+                 }
+             });
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 802b929a16b6a8aeee608caeb524e268f8df53bd..5b3a7626579ff6bcf3ad32f7193bf905aa1b70bc 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2490,6 +2490,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         }
+ 
+         public void onTickingStart(Entity entity) {
++            if (entity instanceof net.minecraft.world.entity.Marker) return; // Paper - Don't tick markers
+             ServerLevel.this.entityTickList.add(entity);
+             ServerLevel.this.entityManager.addNavigatorsIfPathingToRegion(entity); // Paper - optimise notify
+         }
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index b1ed97618d08d7691d24f89e9e9b0ed0f2bddd09..40b382c2e0e33fe5c24a51b211cd2f9557a60c5e 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -212,7 +212,7 @@ public class ActivationRange
+             // Paper end
+ 
+             // Paper start
+-            java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, null);
++            java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, (e) -> !(e instanceof net.minecraft.world.entity.Marker)); // Don't tick markers
+             for (int i = 0; i < entities.size(); i++) {
+                 Entity entity = entities.get(i);
+                 ActivationRange.activateEntity(entity);
