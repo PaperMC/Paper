@@ -13,12 +13,11 @@ import org.bukkit.event.server.ServerEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Fired anytime the server synchronizes Bukkit CommandMap to Brigadier.
+ * Fired anytime the server synchronizes Bukkit commands to Brigadier.
  *
- * Allows a plugin to control the Literal and Argument nodes for this command to be
- * sent to the client.
- * This is done at Plugin Enable time after commands have been registered, but some
- * plugins may use reflection to retrigger this rebuild during runtime.
+ * Allows a plugin to control the command node structure for it's commands.
+ * This is done at Plugin Enable time after commands have been registered, but may also
+ * run at a later point in the server lifetime due to plugins, a server reload, etc.
  *
  * @deprecated Draft API - Subject to change until confirmed solves desired use cases
  */
@@ -33,6 +32,7 @@ public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> ext
     private final RootCommandNode<S> root;
     private final ArgumentCommandNode<S, String> defaultArgs;
     private LiteralCommandNode<S> literal;
+    private boolean legacyBehavior = false;
     private boolean cancelled = false;
 
     public CommandRegisteredEvent(String commandLabel, BukkitBrigadierCommand<S> brigadierCommand, Command command, RootCommandNode<S> root, LiteralCommandNode<S> literal, ArgumentCommandNode<S, String> defaultArgs) {
@@ -92,6 +92,27 @@ public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> ext
      */
     public void setLiteral(LiteralCommandNode<S> literal) {
         this.literal = literal;
+    }
+
+    /**
+     * Gets whether to use legacy behavior.
+     *
+     * @see #setLegacyBehavior(boolean)
+     * @return whether to use legacy behavior
+     */
+    public boolean getLegacyBehavior() {
+        return this.legacyBehavior;
+    }
+
+    /**
+     * In older versions of Paper, the behavior this event was to provide Brigadier meta to the client
+     * without actually using Brigadier for command execution. This method allows opting-in to the old
+     * behavior.
+     *
+     * @param legacyBehavior whether to use legacy behavior
+     */
+    public void setLegacyBehavior(final boolean legacyBehavior) {
+        this.legacyBehavior = legacyBehavior;
     }
 
     /**
