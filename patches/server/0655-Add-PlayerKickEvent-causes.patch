@@ -57,7 +57,7 @@ index 65637a33ba171a4b598f70cd943d24b0ee44a69f..57a9146bf2dee7a60aab16716e25348f
          }
  
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dccd8d9c52a 100644
+index f54a2fd855c0a901ee72258b7a315d0c1caf4ff0..1b1bf6fdc29a78b70eb39ce0770056a0b92d5e55 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -372,7 +372,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -258,8 +258,8 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
          } else {
              if (this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages())) {
                  this.server.submit(() -> {
-@@ -2212,7 +2222,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         // Paper end
+@@ -2205,7 +2215,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
          if (!this.updateChatOrder(timestamp)) {
              ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
 -            this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
@@ -268,15 +268,15 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
          } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
 @@ -2464,7 +2474,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         ChatSender chatsender = this.player.asChatSender();
+             }
  
-         if (chatsender.profilePublicKey() != null && !message.verify(chatsender)) {
--            this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"));
-+            this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event cause
-             return false;
-         } else {
-             if (message.hasExpiredServer(Instant.now())) {
-@@ -2491,7 +2501,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             if (!playerchatmessage.verify(chatsender)) {
+-                this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"));
++                this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event cause
+                 return false;
+             }
+         }
+@@ -2492,7 +2502,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // this.chatSpamTickCount += 20;
          if (this.chatSpamTickCount.addAndGet(20) > 200 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
              // CraftBukkit end
@@ -285,7 +285,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
          }
  
      }
-@@ -2594,7 +2604,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2595,7 +2605,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      private void handleValidationFailure(Set<LastSeenMessagesValidator.ErrorCondition> reasons) {
          ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message from {}, reasons: {}", this.player.getName().getString(), reasons.stream().map(LastSeenMessagesValidator.ErrorCondition::message).collect(Collectors.joining(",")));
@@ -294,7 +294,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
      }
  
      @Override
-@@ -2741,7 +2751,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2742,7 +2752,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              }
  
              if (i > 4096) {
@@ -303,7 +303,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
              }
  
          }
-@@ -2756,7 +2766,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2757,7 +2767,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // Spigot Start
          if ( entity == this.player && !this.player.isSpectator() )
          {
@@ -312,7 +312,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
              return;
          }
          // Spigot End
-@@ -2849,7 +2859,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2850,7 +2860,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                              }
                              // CraftBukkit end
                          } else {
@@ -321,7 +321,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
                              ServerGamePacketListenerImpl.LOGGER.warn("Player {} tried to attack an invalid entity", ServerGamePacketListenerImpl.this.player.getName().getString());
                          }
                      }
-@@ -3257,7 +3267,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3258,7 +3268,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // Paper start
          if (!org.bukkit.Bukkit.isPrimaryThread()) {
              if (recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
@@ -330,7 +330,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
                  return;
              }
          }
-@@ -3460,7 +3470,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3461,7 +3471,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          } else if (!this.isSingleplayerOwner()) {
              // Paper start - This needs to be handled on the main thread for plugins
              server.submit(() -> {
@@ -339,7 +339,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
              });
              // Paper end
          }
-@@ -3506,7 +3516,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3507,7 +3517,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  }
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t register custom payload", ex);
@@ -348,7 +348,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
              }
          } else if (packet.identifier.equals(CUSTOM_UNREGISTER)) {
              try {
-@@ -3516,7 +3526,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3517,7 +3527,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  }
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t unregister custom payload", ex);
@@ -357,7 +357,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
              }
          } else {
              try {
-@@ -3534,7 +3544,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3535,7 +3545,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), packet.identifier.toString(), data);
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
@@ -367,7 +367,7 @@ index 8b11a59c915b606b4b377dc335c6eae540314798..5d237142e5dfb0b0bd4a764dca924dcc
          }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 1cac9e3074551567960ae2e991414e62f7e089ee..8147396dc18fe199ffbb59437d0873c2f79b3ee7 100644
+index 63f92d68b91f1049802a1541c7ec4efaa324ac11..c332750833cccee1264a3399ed0539f6fee6af44 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -720,7 +720,7 @@ public abstract class PlayerList {
