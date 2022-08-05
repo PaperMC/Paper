@@ -3440,646 +3440,67 @@ index 0000000000000000000000000000000000000000..b71404be2c82f7db35272b367af861e9
 +        }
 +    }
 +}
-diff --git a/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRBasicLong2ObjectMap.java b/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRBasicLong2ObjectMap.java
+diff --git a/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRHashTable.java b/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRHashTable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d70143e7056e5e7b024b3f0f52b7d297ca0692fb
+index 0000000000000000000000000000000000000000..a037bb57bedc0cde6b979f5c1f9669678fa7bd16
 --- /dev/null
-+++ b/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRBasicLong2ObjectMap.java
-@@ -0,0 +1,678 @@
++++ b/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRHashTable.java
+@@ -0,0 +1,1673 @@
 +package ca.spottedleaf.concurrentutil.map;
 +
 +import ca.spottedleaf.concurrentutil.util.ArrayUtil;
++import ca.spottedleaf.concurrentutil.util.CollectionUtil;
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
 +import ca.spottedleaf.concurrentutil.util.Validate;
 +import io.papermc.paper.util.IntegerUtil;
 +import java.lang.invoke.VarHandle;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Collection;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++import java.util.NoSuchElementException;
++import java.util.Set;
++import java.util.Spliterator;
++import java.util.Spliterators;
++import java.util.function.BiConsumer;
++import java.util.function.BiFunction;
++import java.util.function.BiPredicate;
++import java.util.function.Consumer;
++import java.util.function.Function;
++import java.util.function.IntFunction;
++import java.util.function.Predicate;
 +
 +/**
-+ * TODO UNFINISHED
++ * <p>
++ * Note: Not really tested, use at your own risk.
++ * </p>
++ * This map is safe for reading from multiple threads, however it is only safe to write from a single thread.
++ * {@code null} keys or values are not permitted. Writes to values in this map are guaranteed to be ordered by release semantics,
++ * however immediate visibility to other threads is not guaranteed. However, writes are guaranteed to be made visible eventually.
++ * Reads are ordered by acquire semantics.
++ * <p>
++ * Iterators cannot be modified concurrently, and its backing map cannot be modified concurrently. There is no
++ * fast-fail attempt made by iterators, thus modifying the iterator's backing map while iterating will have undefined
++ * behaviour.
++ * </p>
++ * <p>
++ * Subclasses should override {@link #clone()} to return correct instances of this class.
++ * </p>
++ * @param <K> {@inheritDoc}
++ * @param <V> {@inheritDoc}
 + */
-+public class SWMRBasicLong2ObjectMap<V> {
++public class SWMRHashTable<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 +
-+    protected long[] keys;
-+
-+    protected V[] values;
-+
-+    protected V zeroKeyValue;
-+
-+    /** size excluding zero key value */
 +    protected int size;
 +
-+    protected int threshold;
++    protected TableEntry<K, V>[] table;
 +
 +    protected final float loadFactor;
 +
-+    protected static final int DEFAULT_CAPACITY = 32;
-+    protected static final int MAXIMUM_CAPACITY = Integer.MIN_VALUE >>> 1;
-+    protected static final float DEFAULT_LOAD_FACTOR = 0.75f;
-+
-+    // IntegerUtil#hash1
-+    public static int hash1(long x) {
-+        x ^= x >>> 27;
-+        x *= 0xb24924b71d2d354bL;
-+        x ^= x >>> 28;
-+        return (int)x;
-+    }
-+
-+    protected SWMRBasicLong2ObjectMap(final long[] keys, final V[] values, final V zeroKeyValue,
-+                                      final int size, final int threshold, final float loadFactor) {
-+        this.keys = keys;
-+        this.values = values;
-+        this.zeroKeyValue = zeroKeyValue;
-+        this.size = size;
-+        this.threshold = threshold;
-+        this.loadFactor = loadFactor;
-+        VarHandle.releaseFence();
-+    }
-+
-+    public SWMRBasicLong2ObjectMap() {
-+        this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
-+    }
-+
-+    public SWMRBasicLong2ObjectMap(final int capacity) {
-+        this(capacity, DEFAULT_LOAD_FACTOR);
-+    }
-+
-+    public SWMRBasicLong2ObjectMap(final int capacity, final float loadFactor) {
-+        if (capacity <= 1) {
-+            throw new IllegalArgumentException("Capacity is invalid (must be greater-than 1): " + capacity);
-+        }
-+
-+        final int realCapacity;
-+        if (capacity >= MAXIMUM_CAPACITY) {
-+            realCapacity = MAXIMUM_CAPACITY;
-+        } else {
-+            realCapacity = IntegerUtil.roundCeilLog2(capacity);
-+        }
-+
-+        if (loadFactor <= 0.0f || loadFactor > 1.0f || !Float.isFinite(loadFactor)) {
-+            throw new IllegalArgumentException("Invalid load factor (must be in (0.0, 1.0] : " + loadFactor);
-+        }
-+        this.threshold = realCapacity == MAXIMUM_CAPACITY ? -1 : Math.min(realCapacity - 2, (int)(loadFactor * realCapacity));
-+
-+        final V[] values = (V[])new Object[realCapacity];
-+        final long[] keys = new long[realCapacity];
-+
-+        this.loadFactor = loadFactor;
-+        this.setKeysPlain(keys);
-+        this.setValuesRelease(values);
-+    }
-+
-+    public int size() {
-+        return this.size + (this.zeroKeyValue != null ? 1 : 0);
-+    }
-+
-+    protected static <V> void copyTable(final long[] dstKeys, final V[] dstValues, final long[] srcKeys, final V[] srcValues) {
-+        // presume dstKeys.length >= srcKeys.length
-+        final int srcLen = srcKeys.length;
-+        final int dstMask = dstKeys.length - 1;
-+
-+        for (int i = 0; i < srcLen; ++i) {
-+            final long key = srcKeys[i];
-+            final V value = srcValues[i];
-+            if (key == 0L) {
-+                continue;
-+            }
-+
-+            final int hash = hash1(key);
-+
-+            for (int currIndex = hash & dstMask;;currIndex = (currIndex + 1) & dstMask) {
-+                final long currKey = dstKeys[currIndex];
-+                if (currKey == 0) {
-+                    dstKeys[currIndex] = key;
-+                    dstValues[currIndex] = value;
-+                    break;
-+                }
-+            }
-+        }
-+    }
-+
-+    protected final void removeFromSizeRelaxed(final int num) {
-+        this.setSizePlain(this.getSizePlain() - num);
-+    }
-+
-+    protected final void removeFromSize(final int num) {
-+        this.setSizeOpaque(this.getSizePlain() - num); // diff from relaxed: opaque write
-+    }
-+
-+    protected final void addToSizeRelaxed(final int num) {
-+        final int prevSize = this.getSizePlain();
-+        final int newSize = prevSize + num;
-+        if (newSize < 0 || newSize >= MAXIMUM_CAPACITY) { // overflow detection
-+            throw new IllegalStateException("too many entries: curr size: " + this.getSizePlain() + ", adding: " + num);
-+        }
-+        this.setSizePlain(newSize);
-+
-+        if (newSize >= (MAXIMUM_CAPACITY - 2)) {
-+            throw new IllegalStateException("Maximum capacity reached: " + newSize);
-+        }
-+
-+        if (this.threshold == -1 || newSize < this.threshold) {
-+            return;
-+        }
-+
-+        // now we must rebuild the table
-+
-+        int nextCapacity = IntegerUtil.roundCeilLog2(newSize);
-+
-+        if (nextCapacity < 0) {
-+            nextCapacity = MAXIMUM_CAPACITY;
-+        }
-+
-+        final long[] currKeys = this.getKeysPlain();
-+        final V[] currValues = this.getValuesPlain();
-+
-+        final long[] nextKeys = new long[nextCapacity];
-+        //noinspection unchecked
-+        final V[] nextValues = (V[])new Object[nextCapacity];
-+
-+        copyTable(nextKeys, nextValues, currKeys, currValues);
-+
-+        if (nextCapacity == MAXIMUM_CAPACITY) {
-+            this.threshold = -1; /* No more resizing */
-+        } else {
-+            this.threshold = Math.min(nextCapacity - 2, (int)(nextCapacity * (double)this.loadFactor));
-+        }
-+
-+        this.setKeysPlain(nextKeys);
-+        this.setValuesPlain(nextValues);
-+    }
-+
-+    protected final void addToSize(final int num) {
-+        final int prevSize = this.getSizePlain();
-+        final int newSize = prevSize + num;
-+        if (newSize < 0 || newSize >= MAXIMUM_CAPACITY) { // overflow detection
-+            throw new IllegalStateException("too many entries: curr size: " + this.getSizePlain() + ", adding: " + num);
-+        }
-+        this.setSizeOpaque(newSize); // diff from relaxed: opaque
-+
-+        if (newSize >= (MAXIMUM_CAPACITY - 2)) {
-+            throw new IllegalStateException("Maximum capacity reached: " + newSize);
-+        }
-+
-+        if (this.threshold == -1 || newSize < this.threshold) {
-+            return;
-+        }
-+
-+        // now we must rebuild the table
-+
-+        int nextCapacity = IntegerUtil.roundCeilLog2(newSize);
-+
-+        if (nextCapacity < 0) {
-+            nextCapacity = MAXIMUM_CAPACITY;
-+        }
-+
-+        final long[] currKeys = this.getKeysPlain();
-+        final V[] currValues = this.getValuesPlain();
-+
-+        final long[] nextKeys = new long[nextCapacity];
-+        //noinspection unchecked
-+        final V[] nextValues = (V[])new Object[nextCapacity];
-+
-+        copyTable(nextKeys, nextValues, currKeys, currValues);
-+
-+        if (nextCapacity == MAXIMUM_CAPACITY) {
-+            this.threshold = -1; /* No more resizing */
-+        } else {
-+            this.threshold = Math.min(nextCapacity - 2, (int)(nextCapacity * (double)this.loadFactor));
-+        }
-+
-+        this.setKeysPlain(nextKeys);
-+        this.setValuesRelease(nextValues); // diff from relaxed: release write
-+    }
-+
-+    public final V put(final long key, final V value) {
-+        Validate.notNull(value, "Value may not be null");
-+
-+        if (key == 0L) {
-+            final V prev = this.getZeroKeyValuePlain();
-+            this.setZeroKeyValueRelease(value); // diff from relaxed: release write
-+            return prev;
-+        }
-+
-+        final long[] keys = this.getKeysPlain();
-+        final V[] values = this.getValuesPlain();
-+        final int capacity = keys.length;
-+        final int capacityMask = capacity - 1;
-+
-+        final int hash = hash1(key);
-+
-+        for (int currIndex = hash & capacityMask;;) {
-+            /* threshold + 1 < table length, so we must eventually find 0 */
-+            final long currKey = keys[currIndex];
-+
-+            if (currKey == 0L) {
-+                values[currIndex] = value;
-+                ArrayUtil.setRelease(keys, currIndex, key); // diff from relaxed: release write
-+
-+                this.addToSize(1); // diff from relaxed: non-relaxed addToSize
-+                return null;
-+            }
-+
-+            if (currKey == key) {
-+                final V prev = values[currIndex];
-+                ArrayUtil.setRelease(values, currIndex, value); // diff from relaxed: release write
-+                return prev;
-+            }
-+
-+            currIndex = (currIndex + 1) & capacityMask;
-+        }
-+    }
-+
-+    public final V putRelaxed(final long key, final V value) {
-+        Validate.notNull(value, "Value may not be null");
-+
-+        if (key == 0L) {
-+            final V prev = this.getZeroKeyValuePlain();
-+            this.setZeroKeyValuePlain(value);
-+            return prev;
-+        }
-+
-+        final long[] keys = this.getKeysPlain();
-+        final V[] values = this.getValuesPlain();
-+        final int capacity = keys.length;
-+        final int capacityMask = capacity - 1;
-+
-+        final int hash = hash1(key);
-+
-+        for (int currIndex = hash & capacityMask;;) {
-+            /* threshold + 1 < table length, so we must eventually find 0 */
-+            final long currKey = keys[currIndex];
-+
-+            if (currKey == 0L) {
-+                values[currIndex] = value;
-+                keys[currIndex] = key;
-+
-+                this.addToSizeRelaxed(1);
-+                return null;
-+            }
-+
-+            if (currKey == key) {
-+                final V prev = values[currIndex];
-+                values[currIndex] = value;
-+                return prev;
-+            }
-+
-+            currIndex = (currIndex + 1) & capacityMask;
-+        }
-+    }
-+
-+    protected static <V> void removeEntryAtRelaxed(final long[] keys, final V[] values, final int capacityMask, final int index) {
-+        for (int lastMigrated = index, currIndex = ((index + 1) & capacityMask);;currIndex = ((currIndex + 1) & capacityMask)) {
-+            final long currKey = keys[currIndex];
-+            if (currKey == 0L) {
-+                values[lastMigrated] = null;
-+                keys[lastMigrated] = 0;
-+
-+                return;
-+            }
-+
-+            final int hash = hash1(currKey);
-+            final int expectedIndex = hash & capacityMask;
-+
-+            // Ensure that if we move this element to 'lastMigrated', that it is "reachable"
-+            // reachable: it's index in the map is after (including wrapped, that is, 0 is after capacityMask) or equal
-+            // to its expectedIndex (expectedIndex = hash & capacityMask)
-+
-+            // if we're not dealing with wrapped indices:
-+            // reachable = map index >= expected index
-+            // if we are dealing with wrapped indices:
-+            // reachable = map index >= expected index && expectedIndex >= startIndex
-+            // the second condition ensures we do not move, for example:
-+            // lastMigrated = map index
-+            // currIndex < lastMigrated (wrapped)
-+            // currIndex is a key with expectedIndex 0
-+            // without the second condition we would move the key, but it would be unreachable.
-+            // TODO verify this
-+            if (lastMigrated >= expectedIndex && (currIndex >= lastMigrated || expectedIndex >= index)) {
-+                values[lastMigrated] = values[currIndex];
-+                keys[lastMigrated] = currKey;
-+                lastMigrated = currIndex;
-+            }
-+        }
-+    }
-+
-+    protected static <V> boolean removeEntryAt(final long[] keys, final V[] values, final int capacityMask, final int index) {
-+        boolean modified = false;
-+        for (int lastMigrated = index, currIndex = ((index + 1) & capacityMask);;currIndex = ((currIndex + 1) & capacityMask)) {
-+            final long currKey = keys[currIndex];
-+            if (currKey == 0L) {
-+                ArrayUtil.setOpaque(keys, lastMigrated, 0L);
-+                ArrayUtil.setRelease(values, lastMigrated, null);
-+
-+                return modified;
-+            }
-+
-+            final int hash = hash1(currKey);
-+            final int expectedIndex = hash & capacityMask;
-+
-+            // Ensure that if we move this element to 'lastMigrated', that it is "reachable"
-+            // reachable: it's index in the map is after (including wrapped, that is, 0 is after capacityMask) or equal
-+            // to its expectedIndex (expectedIndex = hash & capacityMask)
-+
-+            // if we're not dealing with wrapped indices:
-+            // reachable = map index >= expected index
-+            // if we are dealing with wrapped indices:
-+            // reachable = map index >= expected index && expectedIndex >= startIndex
-+            // the second condition ensures we do not move, for example:
-+            // lastMigrated = map index
-+            // currIndex < lastMigrated (wrapped)
-+            // currIndex is a key with expectedIndex 0
-+            // without the second condition we would move the key, but it would be unreachable.
-+            // TODO verify this
-+            if (lastMigrated >= expectedIndex && (currIndex >= lastMigrated || expectedIndex >= index)) {
-+                modified = true;
-+                // we write to the value as null so that iterators can spinwait on the value
-+                // that is, the null value is used to indicate the value is changing
-+                // the iterator would then wait until the null value is lifted
-+                ArrayUtil.setRelease(values, lastMigrated, null);
-+                // note: all we need is a store-store barrier for the above write, however release is faster on x86 (as ALL writes on x86 are release).
-+                ArrayUtil.setRelease(keys, lastMigrated, currKey);
-+                // note: all we need is a store-store barrier for the above write, however release is faster on x86 (as ALL writes on x86 are release).
-+                ArrayUtil.setRelease(values, lastMigrated, values[currIndex]);
-+
-+                lastMigrated = currIndex;
-+            }
-+        }
-+    }
-+
-+    public final V removeRelaxed(final long key) {
-+        if (key == 0L) {
-+            final V prev = this.getZeroKeyValuePlain();
-+            this.setZeroKeyValuePlain(null);
-+            return prev;
-+        }
-+
-+        final long[] keys = this.getKeysPlain();
-+        final V[] values = this.getValuesPlain();
-+        final int capacity = keys.length;
-+        final int capacityMask = capacity - 1;
-+
-+        final int hash = hash1(key);
-+        final int index = hash & capacityMask;
-+
-+        for (int currIndex = index;;) {
-+            /* threshold < table length so we must eventually find 0 */
-+            final long currKey = keys[currIndex];
-+
-+            if (currKey == 0L) {
-+                return null;
-+            }
-+
-+            final int nextIndex = (currIndex + 1) & capacityMask;
-+
-+            if (currKey != key) {
-+                currIndex = nextIndex;
-+                continue;
-+            }
-+
-+            final V ret = values[currIndex];
-+
-+            removeEntryAtRelaxed(keys, values, capacityMask, currIndex);
-+            this.removeFromSize(1);
-+
-+            return ret;
-+        }
-+    }
-+
-+    public final V remove(final long key) {
-+        if (key == 0L) {
-+            final V prev = this.getZeroKeyValuePlain();
-+            this.setZeroKeyValueRelease(null);
-+            return prev;
-+        }
-+
-+        final long[] keys = this.getKeysPlain();
-+        final V[] values = this.getValuesPlain();
-+        final int capacity = keys.length;
-+        final int capacityMask = capacity - 1;
-+
-+        final int hash = hash1(key);
-+        final int index = hash & capacityMask;
-+
-+        for (int currIndex = index;;) {
-+            /* threshold < table length so we must eventually find 0 */
-+            final long currKey = keys[currIndex];
-+
-+            if (currKey == 0L) {
-+                this.removeFromSize(1);
-+                return null;
-+            }
-+
-+            final int nextIndex = (currIndex + 1) & capacityMask;
-+
-+            if (currKey != key) {
-+                currIndex = nextIndex;
-+                continue;
-+            }
-+
-+            final V ret = values[currIndex];
-+
-+            /* We effectively need to re-insert elements below this one until a divisor is reached */
-+
-+            removeEntryAt(keys, values, capacityMask, currIndex);
-+
-+            this.removeFromSize(1);
-+            return ret;
-+        }
-+    }
-+
-+    public final V getRelaxed(final long key) {
-+        if (key == 0L) {
-+            return this.getZeroKeyValuePlain();
-+        }
-+
-+        final long[] keys = this.getKeysPlain();
-+        final V[] values = this.getValuesPlain();
-+        final int capacity = keys.length;
-+        final int capacityMask = capacity - 1;
-+
-+        final int hash = hash1(key);
-+
-+        for (int currIndex = hash & capacityMask;;currIndex = (currIndex + 1) & capacityMask) {
-+            /* threshold < table length so we must eventually find 0 */
-+            final long currKey = keys[currIndex];
-+
-+            if (currKey == key) {
-+                return values[currIndex];
-+            }
-+
-+            if (currKey == 0L) {
-+                return null;
-+            }
-+        }
-+    }
-+
-+    public final V get(final long key) {
-+        if (key == 0L) {
-+            return this.getZeroKeyValueAcquire();
-+        }
-+
-+        long[] keys;
-+        V[] values;
-+        int capacity;
-+        int capacityMask;
-+
-+        // spinwait until the sizes are equal
-+        for (;;) {
-+            keys = this.getKeysPlain();
-+            values = this.getValuesAcquire();
-+            capacity = keys.length;
-+            capacityMask = capacity - 1;
-+            if (capacity == values.length) {
-+                break;
-+            }
-+        }
-+
-+        final int hash = hash1(key);
-+        final int startIndex = hash & capacityMask;
-+
-+        /* First find the divisor for the group */
-+        /* Reading backwards ensures no values are lost if the writer thread shifts an entry back during removal */
-+
-+        int divisorIndex = startIndex;
-+
-+        for (;;divisorIndex = (divisorIndex + 1) & capacityMask) {
-+            if (ArrayUtil.getOpaque(keys, divisorIndex) == 0L) {
-+                break;
-+            }
-+        }
-+
-+        if (divisorIndex == startIndex) {
-+            /* no possible key */
-+            return null;
-+        }
-+
-+        /* Now we need to search from the divisor index to the start index (backwards) */
-+
-+        /*
-+          There are three states that the key and value can be in:
-+          1. key=unset (0),value =null (no entry) (valid state)
-+          2. key=unset (0),value=set (initial write)
-+          3. key=set,value=set (valid state)
-+          4. key=set,value=null (indication of moving)
-+          5. key=migrated,value=null (indication of moving)
-+          6. key=migrated,value=migrated (valid state)
-+
-+          as far as we care, we only want valid states here, the rest must be treated as invalid
-+
-+          if key is 0, we don't need to care and can skip it, as it is either unset or being initially written to.
-+          that rules out 1&2
-+
-+          however, due to the non-atomicity of reading two values from two different arrays, it gets complicated to rule out 4 and 5
-+          it is possible to read the key as set and then read the value as migrated for example, and vice versa
-+
-+          in order to deal with this problem, first the migration of entries must be specified:
-+          first, the value is set to null, followed by a store-store barrier
-+          secondly, the key is set to its migrated value, followed by a store-store barrier
-+          finally, the value is set to null, followed by a store-store barrier
-+
-+
-+          first, the key and value are read from the arrays. then a load-load is performed.
-+          if the key is zero, it can be skipped? TODO
-+       */
-+
-+        main_loop:
-+        for (int endIndex = (startIndex - 1) & capacityMask, currIndex = divisorIndex, failures = 0; currIndex != endIndex; currIndex = (currIndex - 1) & capacityMask) {
-+            // on x86 acquire is free, so replace the load-load fences with them
-+            long lastKey = ArrayUtil.getAcquire(keys, currIndex);
-+            V lastVal = ArrayUtil.getAcquire(values, currIndex);
-+            //VarHandle.loadLoadFence(); // acquire on keyCheck acts as this fence here (need to acquire on value reads)
-+
-+            // rules out key = 0
-+            if (lastKey == 0L) {
-+                continue;
-+            }
-+
-+            for (;;) {
-+                final long keyCheck = ArrayUtil.getAcquire(keys, currIndex);
-+                final V valueCheck = ArrayUtil.getAcquire(values, currIndex);
-+                //VarHandle.loadLoadFence(); // acquire on the lastKey/keyCheck first read acts as load-load here
-+
-+                if (keyCheck == 0L) {
-+                    continue main_loop;
-+                }
-+
-+                final long tempKey = lastKey;
-+                final V tempVal = lastVal;
-+
-+                lastKey = keyCheck;
-+                lastVal = valueCheck;
-+
-+                // make sure we update key/value if they change (otherwise we would loop an extra time)
-+                if (tempKey != keyCheck || tempVal != valueCheck || lastVal == null) {
-+                    ++failures;
-+
-+                    for (int i = 0; i < failures; ++i) {
-+                        ConcurrentUtil.backoff();
-+                    }
-+
-+                    continue;
-+                }
-+
-+                if (keyCheck != key) {
-+                    continue main_loop;
-+                }
-+
-+                return valueCheck;
-+            }
-+        }
-+
-+        return null;
-+    }
-+
-+    protected static final VarHandle KEYS_HANDLE =
-+        ConcurrentUtil.getVarHandle(SWMRBasicLong2ObjectMap.class, "keys", int[].class);
-+
-+    protected static final VarHandle VALUES_HANDLE =
-+        ConcurrentUtil.getVarHandle(SWMRBasicLong2ObjectMap.class, "values", Object[].class);
-+
-+    protected static final VarHandle SIZE_HANDLE =
-+        ConcurrentUtil.getVarHandle(SWMRBasicLong2ObjectMap.class, "size", int.class);
-+
-+    protected static final VarHandle ZERO_KEY_VALUE =
-+        ConcurrentUtil.getVarHandle(SWMRBasicLong2ObjectMap.class, "zeroKeyValue", Object.class);
-+
-+    /* keys */
-+
-+    protected final long[] getKeysPlain() {
-+        return (long[])KEYS_HANDLE.get(this);
-+    }
-+
-+    protected final long[] getKeysOpaque() {
-+        return (long[])KEYS_HANDLE.getOpaque(this);
-+    }
-+
-+    protected final long[] getKeysAcquire() {
-+        return (long[])KEYS_HANDLE.getAcquire(this);
-+    }
-+
-+    protected final void setKeysPlain(final long[] keys) {
-+        KEYS_HANDLE.set(this, keys);
-+    }
-+
-+    /* values */
-+
-+    @SuppressWarnings("unchecked")
-+    protected final V[] getValuesPlain() {
-+        return (V[])VALUES_HANDLE.get(this);
-+    }
-+
-+    @SuppressWarnings("unchecked")
-+    protected final V[] getValuesAcquire() {
-+        return (V[])VALUES_HANDLE.getAcquire(this);
-+    }
-+
-+    protected final void setValuesPlain(final V[] values) {
-+        VALUES_HANDLE.set(this, values);
-+    }
-+
-+    protected final void setValuesRelease(final V[] values) {
-+        VALUES_HANDLE.setRelease(this, values);
-+    }
++    protected static final VarHandle SIZE_HANDLE = ConcurrentUtil.getVarHandle(SWMRHashTable.class, "size", int.class);
++    protected static final VarHandle TABLE_HANDLE = ConcurrentUtil.getVarHandle(SWMRHashTable.class, "table", TableEntry[].class);
 +
 +    /* size */
 +
@@ -4091,37 +3512,2289 @@ index 0000000000000000000000000000000000000000..d70143e7056e5e7b024b3f0f52b7d297
 +        return (int)SIZE_HANDLE.getOpaque(this);
 +    }
 +
-+    protected final void setSizePlain(final int size) {
-+        SIZE_HANDLE.set(this, size);
++    protected final int getSizeAcquire() {
++        return (int)SIZE_HANDLE.getAcquire(this);
 +    }
 +
-+    protected final void setSizeOpaque(final int size) {
-+        SIZE_HANDLE.setOpaque(this, size);
++    protected final void setSizePlain(final int value) {
++        SIZE_HANDLE.set(this, value);
 +    }
 +
-+    /* zero key value */
-+
-+    @SuppressWarnings("unchecked")
-+    protected final V getZeroKeyValuePlain() {
-+        return (V)ZERO_KEY_VALUE.get(this);
++    protected final void setSizeOpaque(final int value) {
++        SIZE_HANDLE.setOpaque(this, value);
 +    }
 +
-+    @SuppressWarnings("unchecked")
-+    protected final V getZeroKeyValueOpaque() {
-+        return (V)ZERO_KEY_VALUE.getOpaque(this);
++    protected final void setSizeRelease(final int value) {
++        SIZE_HANDLE.setRelease(this, value);
 +    }
 +
-+    @SuppressWarnings("unchecked")
-+    protected final V getZeroKeyValueAcquire() {
-+        return (V)ZERO_KEY_VALUE.getAcquire(this);
++    /* table */
++
++    protected final TableEntry<K, V>[] getTablePlain() {
++        //noinspection unchecked
++        return (TableEntry<K, V>[])TABLE_HANDLE.get(this);
 +    }
 +
-+    protected final void setZeroKeyValuePlain(final V value) {
-+        ZERO_KEY_VALUE.set(this, (Object)value);
++    protected final TableEntry<K, V>[] getTableAcquire() {
++        //noinspection unchecked
++        return (TableEntry<K, V>[])TABLE_HANDLE.getAcquire(this);
 +    }
 +
-+    protected final void setZeroKeyValueRelease(final V value) {
-+        ZERO_KEY_VALUE.setRelease(this, (Object)value);
++    protected final void setTablePlain(final TableEntry<K, V>[] table) {
++        TABLE_HANDLE.set(this, table);
++    }
++
++    protected final void setTableRelease(final TableEntry<K, V>[] table) {
++        TABLE_HANDLE.setRelease(this, table);
++    }
++
++    protected static final int DEFAULT_CAPACITY = 16;
++    protected static final float DEFAULT_LOAD_FACTOR = 0.75f;
++    protected static final int MAXIMUM_CAPACITY = Integer.MIN_VALUE >>> 1;
++
++    /**
++     * Constructs this map with a capacity of {@code 16} and load factor of {@code 0.75f}.
++     */
++    public SWMRHashTable() {
++        this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
++    }
++
++    /**
++     * Constructs this map with the specified capacity and load factor of {@code 0.75f}.
++     * @param capacity specified initial capacity, > 0
++     */
++    public SWMRHashTable(final int capacity) {
++        this(capacity, DEFAULT_LOAD_FACTOR);
++    }
++
++    /**
++     * Constructs this map with the specified capacity and load factor.
++     * @param capacity specified capacity, > 0
++     * @param loadFactor specified load factor, > 0 && finite
++     */
++    public SWMRHashTable(final int capacity, final float loadFactor) {
++        final int tableSize = getCapacityFor(capacity);
++
++        if (loadFactor <= 0.0 || !Float.isFinite(loadFactor)) {
++            throw new IllegalArgumentException("Invalid load factor: " + loadFactor);
++        }
++
++        //noinspection unchecked
++        final TableEntry<K, V>[] table = new TableEntry[tableSize];
++        this.setTablePlain(table);
++
++        if (tableSize == MAXIMUM_CAPACITY) {
++            this.threshold = -1;
++        } else {
++            this.threshold = getTargetCapacity(tableSize, loadFactor);
++        }
++
++        this.loadFactor = loadFactor;
++    }
++
++    /**
++     * Constructs this map with a capacity of {@code 16} or the specified map's size, whichever is larger, and
++     * with a load factor of {@code 0.75f}.
++     * All of the specified map's entries are copied into this map.
++     * @param other The specified map.
++     */
++    public SWMRHashTable(final Map<K, V> other) {
++        this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, other);
++    }
++
++    /**
++     * Constructs this map with a minimum capacity of the specified capacity or the specified map's size, whichever is larger, and
++     * with a load factor of {@code 0.75f}.
++     * All of the specified map's entries are copied into this map.
++     * @param capacity specified capacity, > 0
++     * @param other The specified map.
++     */
++    public SWMRHashTable(final int capacity, final Map<K, V> other) {
++        this(capacity, DEFAULT_LOAD_FACTOR, other);
++    }
++
++    /**
++     * Constructs this map with a min capacity of the specified capacity or the specified map's size, whichever is larger, and
++     * with the specified load factor.
++     * All of the specified map's entries are copied into this map.
++     * @param capacity specified capacity, > 0
++     * @param loadFactor specified load factor, > 0 && finite
++     * @param other The specified map.
++     */
++    public SWMRHashTable(final int capacity, final float loadFactor, final Map<K, V> other) {
++        this(Math.max(Validate.notNull(other, "Null map").size(), capacity), loadFactor);
++        this.putAll(other);
++    }
++
++    public final float getLoadFactor() {
++        return this.loadFactor;
++    }
++
++    protected static int getCapacityFor(final int capacity) {
++        if (capacity <= 0) {
++            throw new IllegalArgumentException("Invalid capacity: " + capacity);
++        }
++        if (capacity >= MAXIMUM_CAPACITY) {
++            return MAXIMUM_CAPACITY;
++        }
++        return IntegerUtil.roundCeilLog2(capacity);
++    }
++
++    /** Callers must still use acquire when reading the value of the entry. */
++    protected final TableEntry<K, V> getEntryForOpaque(final K key) {
++        final int hash = SWMRHashTable.getHash(key);
++        final TableEntry<K, V>[] table = this.getTableAcquire();
++
++        for (TableEntry<K, V> curr = ArrayUtil.getOpaque(table, hash & (table.length - 1)); curr != null; curr = curr.getNextOpaque()) {
++            if (hash == curr.hash && (key == curr.key || curr.key.equals(key))) {
++                return curr;
++            }
++        }
++
++        return null;
++    }
++
++    protected final TableEntry<K, V> getEntryForPlain(final K key) {
++        final int hash = SWMRHashTable.getHash(key);
++        final TableEntry<K, V>[] table = this.getTablePlain();
++
++        for (TableEntry<K, V> curr = table[hash & (table.length - 1)]; curr != null; curr = curr.getNextPlain()) {
++            if (hash == curr.hash && (key == curr.key || curr.key.equals(key))) {
++                return curr;
++            }
++        }
++
++        return null;
++    }
++
++    /* MT-Safe */
++
++    /** must be deterministic given a key */
++    private static int getHash(final Object key) {
++        int hash = key == null ? 0 : key.hashCode();
++        // inlined IntegerUtil#hash0
++        hash *= 0x36935555;
++        hash ^= hash >>> 16;
++        return hash;
++    }
++
++    static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
++    static final int spread(int h) {
++        return (h ^ (h >>> 16)) & HASH_BITS;
++    }
++
++    // rets -1 if capacity*loadFactor is too large
++    protected static int getTargetCapacity(final int capacity, final float loadFactor) {
++        final double ret = (double)capacity * (double)loadFactor;
++        if (Double.isInfinite(ret) || ret >= ((double)Integer.MAX_VALUE)) {
++            return -1;
++        }
++
++        return (int)ret;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean equals(final Object obj) {
++        if (this == obj) {
++            return true;
++        }
++        /* Make no attempt to deal with concurrent modifications */
++        if (!(obj instanceof Map)) {
++            return false;
++        }
++        final Map<?, ?> other = (Map<?, ?>)obj;
++
++        if (this.size() != other.size()) {
++            return false;
++        }
++
++        final TableEntry<K, V>[] table = this.getTableAcquire();
++
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                final V value = curr.getValueAcquire();
++
++                final Object otherValue = other.get(curr.key);
++                if (otherValue == null || (value != otherValue && value.equals(otherValue))) {
++                    return false;
++                }
++            }
++        }
++
++        return true;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public int hashCode() {
++        /* Make no attempt to deal with concurrent modifications */
++        int hash = 0;
++        final TableEntry<K, V>[] table = this.getTableAcquire();
++
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                hash += curr.hashCode();
++            }
++        }
++
++        return hash;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public String toString() {
++        final StringBuilder builder = new StringBuilder(64);
++        builder.append("SingleWriterMultiReaderHashMap:{");
++
++        this.forEach((final K key, final V value) -> {
++            builder.append("{key: \"").append(key).append("\", value: \"").append(value).append("\"}");
++        });
++
++        return builder.append('}').toString();
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public SWMRHashTable<K, V> clone() {
++        return new SWMRHashTable<>(this.getTableAcquire().length, this.loadFactor, this);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public Iterator<Entry<K, V>> iterator() {
++        return new EntryIterator<>(this.getTableAcquire(), this);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public void forEach(final Consumer<? super Entry<K, V>> action) {
++        Validate.notNull(action, "Null action");
++
++        final TableEntry<K, V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                action.accept(curr);
++            }
++        }
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public void forEach(final BiConsumer<? super K, ? super V> action) {
++        Validate.notNull(action, "Null action");
++
++        final TableEntry<K, V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                final V value = curr.getValueAcquire();
++
++                action.accept(curr.key, value);
++            }
++        }
++    }
++
++    /**
++     * Provides the specified consumer with all keys contained within this map.
++     * @param action The specified consumer.
++     */
++    public void forEachKey(final Consumer<? super K> action) {
++        Validate.notNull(action, "Null action");
++
++        final TableEntry<K, V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                action.accept(curr.key);
++            }
++        }
++    }
++
++    /**
++     * Provides the specified consumer with all values contained within this map. Equivalent to {@code map.values().forEach(Consumer)}.
++     * @param action The specified consumer.
++     */
++    public void forEachValue(final Consumer<? super V> action) {
++        Validate.notNull(action, "Null action");
++
++        final TableEntry<K, V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                final V value = curr.getValueAcquire();
++
++                action.accept(value);
++            }
++        }
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V get(final Object key) {
++        Validate.notNull(key, "Null key");
++
++        //noinspection unchecked
++        final TableEntry<K, V> entry = this.getEntryForOpaque((K)key);
++        return entry == null ? null : entry.getValueAcquire();
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean containsKey(final Object key) {
++        Validate.notNull(key, "Null key");
++
++        // note: we need to use getValueAcquire, so that the reads from this map are ordered by acquire semantics
++        return this.get(key) != null;
++    }
++
++    /**
++     * Returns {@code true} if this map contains an entry with the specified key and value at some point during this call.
++     * @param key The specified key.
++     * @param value The specified value.
++     * @return {@code true} if this map contains an entry with the specified key and value.
++     */
++    public boolean contains(final Object key, final Object value) {
++        Validate.notNull(key, "Null key");
++
++        //noinspection unchecked
++        final TableEntry<K, V> entry = this.getEntryForOpaque((K)key);
++
++        if (entry == null) {
++            return false;
++        }
++
++        final V entryVal = entry.getValueAcquire();
++        return entryVal == value || entryVal.equals(value);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean containsValue(final Object value) {
++        Validate.notNull(value, "Null value");
++
++        final TableEntry<K, V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                final V currVal = curr.getValueAcquire();
++                if (currVal == value || currVal.equals(value)) {
++                    return true;
++                }
++            }
++        }
++
++        return false;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V getOrDefault(final Object key, final V defaultValue) {
++        Validate.notNull(key, "Null key");
++
++        //noinspection unchecked
++        final TableEntry<K, V> entry = this.getEntryForOpaque((K)key);
++
++        return entry == null ? defaultValue : entry.getValueAcquire();
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public int size() {
++        return this.getSizeAcquire();
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean isEmpty() {
++        return this.getSizeAcquire() == 0;
++    }
++
++    protected Set<K> keyset;
++    protected Collection<V> values;
++    protected Set<Map.Entry<K, V>> entrySet;
++
++    @Override
++    public Set<K> keySet() {
++        return this.keyset == null ? this.keyset = new KeySet<>(this) : this.keyset;
++    }
++
++    @Override
++    public Collection<V> values() {
++        return this.values == null ? this.values = new ValueCollection<>(this) : this.values;
++    }
++
++    @Override
++    public Set<Map.Entry<K, V>> entrySet() {
++        return this.entrySet == null ? this.entrySet = new EntrySet<>(this) : this.entrySet;
++    }
++
++    /* Non-MT-Safe */
++
++    protected int threshold;
++
++    protected final void checkResize(final int minCapacity) {
++        if (minCapacity <= this.threshold || this.threshold < 0) {
++            return;
++        }
++
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        int newCapacity = minCapacity >= MAXIMUM_CAPACITY ? MAXIMUM_CAPACITY : IntegerUtil.roundCeilLog2(minCapacity);
++        if (newCapacity < 0) {
++            newCapacity = MAXIMUM_CAPACITY;
++        }
++        if (newCapacity <= table.length) {
++            if (newCapacity == MAXIMUM_CAPACITY) {
++                return;
++            }
++            newCapacity = table.length << 1;
++        }
++
++        //noinspection unchecked
++        final TableEntry<K, V>[] newTable = new TableEntry[newCapacity];
++        final int indexMask = newCapacity - 1;
++
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> entry = table[i]; entry != null; entry = entry.getNextPlain()) {
++                final int hash = entry.hash;
++                final int index = hash & indexMask;
++
++                /* we need to create a new entry since there could be reading threads */
++                final TableEntry<K, V> insert = new TableEntry<>(hash, entry.key, entry.getValuePlain());
++
++                final TableEntry<K, V> prev = newTable[index];
++
++                newTable[index] = insert;
++                insert.setNextPlain(prev);
++            }
++        }
++
++        if (newCapacity == MAXIMUM_CAPACITY) {
++            this.threshold = -1; /* No more resizing */
++        } else {
++            this.threshold = getTargetCapacity(newCapacity, this.loadFactor);
++        }
++        this.setTableRelease(newTable); /* use release to publish entries in table */
++    }
++
++    protected final int addToSize(final int num) {
++        final int newSize = this.getSizePlain() + num;
++
++        this.setSizeOpaque(newSize);
++        this.checkResize(newSize);
++
++        return newSize;
++    }
++
++    protected final int removeFromSize(final int num) {
++        final int newSize = this.getSizePlain() - num;
++
++        this.setSizeOpaque(newSize);
++
++        return newSize;
++    }
++
++    /* Cannot be used to perform downsizing */
++    protected final int removeFromSizePlain(final int num) {
++        final int newSize = this.getSizePlain() - num;
++
++        this.setSizePlain(newSize);
++
++        return newSize;
++    }
++
++    protected final V put(final K key, final V value, final boolean onlyIfAbsent) {
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        final int hash = SWMRHashTable.getHash(key);
++        final int index = hash & (table.length - 1);
++
++        final TableEntry<K, V> head = table[index];
++        if (head == null) {
++            final TableEntry<K, V> insert = new TableEntry<>(hash, key, value);
++            ArrayUtil.setRelease(table, index, insert);
++            this.addToSize(1);
++            return null;
++        }
++
++        for (TableEntry<K, V> curr = head;;) {
++            if (curr.hash == hash && (key == curr.key || curr.key.equals(key))) {
++                if (onlyIfAbsent) {
++                    return curr.getValuePlain();
++                }
++
++                final V currVal = curr.getValuePlain();
++                curr.setValueRelease(value);
++                return currVal;
++            }
++
++            final TableEntry<K, V> next = curr.getNextPlain();
++            if (next != null) {
++                curr = next;
++                continue;
++            }
++
++            final TableEntry<K, V> insert = new TableEntry<>(hash, key, value);
++
++            curr.setNextRelease(insert);
++            this.addToSize(1);
++            return null;
++        }
++    }
++
++    /**
++     * Removes a key-value pair from this map if the specified predicate returns true. The specified predicate is
++     * tested with every entry in this map. Returns the number of key-value pairs removed.
++     * @param predicate The predicate to test key-value pairs against.
++     * @return The total number of key-value pairs removed from this map.
++     */
++    public int removeIf(final BiPredicate<K, V> predicate) {
++        Validate.notNull(predicate, "Null predicate");
++
++        int removed = 0;
++
++        final TableEntry<K, V>[] table = this.getTablePlain();
++
++        bin_iteration_loop:
++        for (int i = 0, len = table.length; i < len; ++i) {
++            TableEntry<K, V> curr = table[i];
++            if (curr == null) {
++                continue;
++            }
++
++            /* Handle bin nodes first */
++            while (predicate.test(curr.key, curr.getValuePlain())) {
++                ++removed;
++                this.removeFromSizePlain(1); /* required in case predicate throws an exception */
++
++                ArrayUtil.setRelease(table, i, curr = curr.getNextPlain());
++
++                if (curr == null) {
++                    continue bin_iteration_loop;
++                }
++            }
++
++            TableEntry<K, V> prev;
++
++            /* curr at this point is the bin node */
++
++            for (prev = curr, curr = curr.getNextPlain(); curr != null;) {
++                /* If we want to remove, then we should hold prev, as it will be a valid entry to link on */
++                if (predicate.test(curr.key, curr.getValuePlain())) {
++                    ++removed;
++                    this.removeFromSizePlain(1); /* required in case predicate throws an exception */
++
++                    prev.setNextRelease(curr = curr.getNextPlain());
++                } else {
++                    prev = curr;
++                    curr = curr.getNextPlain();
++                }
++            }
++        }
++
++        return removed;
++    }
++
++    /**
++     * Removes a key-value pair from this map if the specified predicate returns true. The specified predicate is
++     * tested with every entry in this map. Returns the number of key-value pairs removed.
++     * @param predicate The predicate to test key-value pairs against.
++     * @return The total number of key-value pairs removed from this map.
++     */
++    public int removeEntryIf(final Predicate<? super Entry<K, V>> predicate) {
++        Validate.notNull(predicate, "Null predicate");
++
++        int removed = 0;
++
++        final TableEntry<K, V>[] table = this.getTablePlain();
++
++        bin_iteration_loop:
++        for (int i = 0, len = table.length; i < len; ++i) {
++            TableEntry<K, V> curr = table[i];
++            if (curr == null) {
++                continue;
++            }
++
++            /* Handle bin nodes first */
++            while (predicate.test(curr)) {
++                ++removed;
++                this.removeFromSizePlain(1); /* required in case predicate throws an exception */
++
++                ArrayUtil.setRelease(table, i, curr = curr.getNextPlain());
++
++                if (curr == null) {
++                    continue bin_iteration_loop;
++                }
++            }
++
++            TableEntry<K, V> prev;
++
++            /* curr at this point is the bin node */
++
++            for (prev = curr, curr = curr.getNextPlain(); curr != null;) {
++                /* If we want to remove, then we should hold prev, as it will be a valid entry to link on */
++                if (predicate.test(curr)) {
++                    ++removed;
++                    this.removeFromSizePlain(1); /* required in case predicate throws an exception */
++
++                    prev.setNextRelease(curr = curr.getNextPlain());
++                } else {
++                    prev = curr;
++                    curr = curr.getNextPlain();
++                }
++            }
++        }
++
++        return removed;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V put(final K key, final V value) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(value, "Null value");
++
++        return this.put(key, value, false);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V putIfAbsent(final K key, final V value) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(value, "Null value");
++
++        return this.put(key, value, true);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean remove(final Object key, final Object value) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(value, "Null value");
++
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        final int hash = SWMRHashTable.getHash(key);
++        final int index = hash & (table.length - 1);
++
++        final TableEntry<K, V> head = table[index];
++        if (head == null) {
++            return false;
++        }
++
++        if (head.hash == hash && (head.key == key || head.key.equals(key))) {
++            final V currVal = head.getValuePlain();
++
++            if (currVal != value && !currVal.equals(value)) {
++                return false;
++            }
++
++            ArrayUtil.setRelease(table, index, head.getNextPlain());
++            this.removeFromSize(1);
++
++            return true;
++        }
++
++        for (TableEntry<K, V> curr = head.getNextPlain(), prev = head; curr != null; prev = curr, curr = curr.getNextPlain()) {
++            if (curr.hash == hash && (curr.key == key || curr.key.equals(key))) {
++                final V currVal = curr.getValuePlain();
++
++                if (currVal != value && !currVal.equals(value)) {
++                    return false;
++                }
++
++                prev.setNextRelease(curr.getNextPlain());
++                this.removeFromSize(1);
++
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    protected final V remove(final Object key, final int hash) {
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        final int index = (table.length - 1) & hash;
++
++        final TableEntry<K, V> head = table[index];
++        if (head == null) {
++            return null;
++        }
++
++        if (hash == head.hash && (head.key == key || head.key.equals(key))) {
++            ArrayUtil.setRelease(table, index, head.getNextPlain());
++            this.removeFromSize(1);
++
++            return head.getValuePlain();
++        }
++
++        for (TableEntry<K, V> curr = head.getNextPlain(), prev = head; curr != null; prev = curr, curr = curr.getNextPlain()) {
++            if (curr.hash == hash && (key == curr.key || curr.key.equals(key))) {
++                prev.setNextRelease(curr.getNextPlain());
++                this.removeFromSize(1);
++
++                return curr.getValuePlain();
++            }
++        }
++
++        return null;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V remove(final Object key) {
++        Validate.notNull(key, "Null key");
++
++        return this.remove(key, SWMRHashTable.getHash(key));
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean replace(final K key, final V oldValue, final V newValue) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(oldValue, "Null oldValue");
++        Validate.notNull(newValue, "Null newValue");
++
++        final TableEntry<K, V> entry = this.getEntryForPlain(key);
++        if (entry == null) {
++            return false;
++        }
++
++        final V currValue = entry.getValuePlain();
++        if (currValue == oldValue || currValue.equals(oldValue)) {
++            entry.setValueRelease(newValue);
++            return true;
++        }
++
++        return false;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V replace(final K key, final V value) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(value, "Null value");
++
++        final TableEntry<K, V> entry = this.getEntryForPlain(key);
++        if (entry == null) {
++            return null;
++        }
++
++        final V prev = entry.getValuePlain();
++        entry.setValueRelease(value);
++        return prev;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
++        Validate.notNull(function, "Null function");
++
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<K, V> curr = table[i]; curr != null; curr = curr.getNextPlain()) {
++                final V value = curr.getValuePlain();
++
++                final V newValue = function.apply(curr.key, value);
++                if (newValue == null) {
++                    throw new NullPointerException();
++                }
++
++                curr.setValueRelease(newValue);
++            }
++        }
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public void putAll(final Map<? extends K, ? extends V> map) {
++        Validate.notNull(map, "Null map");
++
++        final int size = map.size();
++        this.checkResize(Math.max(this.getSizePlain() + size/2, size)); /* preemptively resize */
++        map.forEach(this::put);
++    }
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * This call is non-atomic and the order that which entries are removed is undefined. The clear operation itself
++     * is release ordered, that is, after the clear operation is performed a release fence is performed.
++     * </p>
++     */
++    @Override
++    public void clear() {
++        Arrays.fill(this.getTablePlain(), null);
++        this.setSizeRelease(0);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V compute(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(remappingFunction, "Null remappingFunction");
++
++        final int hash = SWMRHashTable.getHash(key);
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        final int index = hash & (table.length - 1);
++
++        for (TableEntry<K, V> curr = table[index], prev = null;;prev = curr, curr = curr.getNextPlain()) {
++            if (curr == null) {
++                final V newVal = remappingFunction.apply(key ,null);
++
++                if (newVal == null) {
++                    return null;
++                }
++
++                final TableEntry<K, V> insert = new TableEntry<>(hash, key, newVal);
++                if (prev == null) {
++                    ArrayUtil.setRelease(table, index, insert);
++                } else {
++                    prev.setNextRelease(insert);
++                }
++
++                this.addToSize(1);
++
++                return newVal;
++            }
++
++            if (curr.hash == hash && (curr.key == key || curr.key.equals(key))) {
++                final V newVal = remappingFunction.apply(key, curr.getValuePlain());
++
++                if (newVal != null) {
++                    curr.setValueRelease(newVal);
++                    return newVal;
++                }
++
++                if (prev == null) {
++                    ArrayUtil.setRelease(table, index, curr.getNextPlain());
++                } else {
++                    prev.setNextRelease(curr.getNextPlain());
++                }
++
++                this.removeFromSize(1);
++
++                return null;
++            }
++        }
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V computeIfPresent(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(remappingFunction, "Null remappingFunction");
++
++        final int hash = SWMRHashTable.getHash(key);
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        final int index = hash & (table.length - 1);
++
++        for (TableEntry<K, V> curr = table[index], prev = null; curr != null; prev = curr, curr = curr.getNextPlain()) {
++            if (curr.hash != hash || (curr.key != key && !curr.key.equals(key))) {
++                continue;
++            }
++
++            final V newVal = remappingFunction.apply(key, curr.getValuePlain());
++            if (newVal != null) {
++                curr.setValueRelease(newVal);
++                return newVal;
++            }
++
++            if (prev == null) {
++                ArrayUtil.setRelease(table, index, curr.getNextPlain());
++            } else {
++                prev.setNextRelease(curr.getNextPlain());
++            }
++
++            this.removeFromSize(1);
++
++            return null;
++        }
++
++        return null;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V computeIfAbsent(final K key, final Function<? super K, ? extends V> mappingFunction) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(mappingFunction, "Null mappingFunction");
++
++        final int hash = SWMRHashTable.getHash(key);
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        final int index = hash & (table.length - 1);
++
++        for (TableEntry<K, V> curr = table[index], prev = null;;prev = curr, curr = curr.getNextPlain()) {
++            if (curr != null) {
++                if (curr.hash == hash && (curr.key == key || curr.key.equals(key))) {
++                    return curr.getValuePlain();
++                }
++                continue;
++            }
++
++            final V newVal = mappingFunction.apply(key);
++
++            if (newVal == null) {
++                return null;
++            }
++
++            final TableEntry<K, V> insert = new TableEntry<>(hash, key, newVal);
++            if (prev == null) {
++                ArrayUtil.setRelease(table, index, insert);
++            } else {
++                prev.setNextRelease(insert);
++            }
++
++            this.addToSize(1);
++
++            return newVal;
++        }
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public V merge(final K key, final V value, final BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
++        Validate.notNull(key, "Null key");
++        Validate.notNull(value, "Null value");
++        Validate.notNull(remappingFunction, "Null remappingFunction");
++
++        final int hash = SWMRHashTable.getHash(key);
++        final TableEntry<K, V>[] table = this.getTablePlain();
++        final int index = hash & (table.length - 1);
++
++        for (TableEntry<K, V> curr = table[index], prev = null;;prev = curr, curr = curr.getNextPlain()) {
++            if (curr == null) {
++                final TableEntry<K, V> insert = new TableEntry<>(hash, key, value);
++                if (prev == null) {
++                    ArrayUtil.setRelease(table, index, insert);
++                } else {
++                    prev.setNextRelease(insert);
++                }
++
++                this.addToSize(1);
++
++                return value;
++            }
++
++            if (curr.hash == hash && (curr.key == key || curr.key.equals(key))) {
++                final V newVal = remappingFunction.apply(curr.getValuePlain(), value);
++
++                if (newVal != null) {
++                    curr.setValueRelease(newVal);
++                    return newVal;
++                }
++
++                if (prev == null) {
++                    ArrayUtil.setRelease(table, index, curr.getNextPlain());
++                } else {
++                    prev.setNextRelease(curr.getNextPlain());
++                }
++
++                this.removeFromSize(1);
++
++                return null;
++            }
++        }
++    }
++
++    protected static final class TableEntry<K, V> implements Map.Entry<K, V> {
++
++        protected final int hash;
++        protected final K key;
++        protected V value;
++
++        protected TableEntry<K, V> next;
++
++        protected static final VarHandle VALUE_HANDLE = ConcurrentUtil.getVarHandle(TableEntry.class, "value", Object.class);
++        protected static final VarHandle NEXT_HANDLE = ConcurrentUtil.getVarHandle(TableEntry.class, "next", TableEntry.class);
++
++        /* value */
++
++        protected final V getValuePlain() {
++            //noinspection unchecked
++            return (V)VALUE_HANDLE.get(this);
++        }
++
++        protected final V getValueAcquire() {
++            //noinspection unchecked
++            return (V)VALUE_HANDLE.getAcquire(this);
++        }
++
++        protected final void setValueRelease(final V to) {
++            VALUE_HANDLE.setRelease(this, to);
++        }
++
++        /* next */
++
++        protected final TableEntry<K, V> getNextPlain() {
++            //noinspection unchecked
++            return (TableEntry<K, V>)NEXT_HANDLE.get(this);
++        }
++
++        protected final TableEntry<K, V> getNextOpaque() {
++            //noinspection unchecked
++            return (TableEntry<K, V>)NEXT_HANDLE.getOpaque(this);
++        }
++
++        protected final void setNextPlain(final TableEntry<K, V> next) {
++            NEXT_HANDLE.set(this, next);
++        }
++
++        protected final void setNextRelease(final TableEntry<K, V> next) {
++            NEXT_HANDLE.setRelease(this, next);
++        }
++
++        protected TableEntry(final int hash, final K key, final V value) {
++            this.hash = hash;
++            this.key = key;
++            this.value = value;
++        }
++
++        /**
++         * {@inheritDoc}
++         */
++        @Override
++        public K getKey() {
++            return this.key;
++        }
++
++        /**
++         * {@inheritDoc}
++         */
++        @Override
++        public V getValue() {
++            return this.getValueAcquire();
++        }
++
++        /**
++         * {@inheritDoc}
++         */
++        @Override
++        public V setValue(final V value) {
++            if (value == null) {
++                throw new NullPointerException();
++            }
++
++            final V curr = this.getValuePlain();
++
++            this.setValueRelease(value);
++            return curr;
++        }
++
++        protected static int hash(final Object key, final Object value) {
++            return key.hashCode() ^ (value == null ? 0 : value.hashCode());
++        }
++
++        /**
++         * {@inheritDoc}
++         */
++        @Override
++        public int hashCode() {
++            return hash(this.key, this.getValueAcquire());
++        }
++
++        /**
++         * {@inheritDoc}
++         */
++        @Override
++        public boolean equals(final Object obj) {
++            if (this == obj) {
++                return true;
++            }
++
++            if (!(obj instanceof Map.Entry)) {
++                return false;
++            }
++            final Map.Entry<?, ?> other = (Map.Entry<?, ?>)obj;
++            final Object otherKey = other.getKey();
++            final Object otherValue = other.getValue();
++
++            final K thisKey = this.getKey();
++            final V thisVal = this.getValueAcquire();
++            return (thisKey == otherKey || thisKey.equals(otherKey)) &&
++                (thisVal == otherValue || thisVal.equals(otherValue));
++        }
++    }
++
++
++    protected static abstract class TableEntryIterator<K, V, T> implements Iterator<T> {
++
++        protected final TableEntry<K, V>[] table;
++        protected final SWMRHashTable<K, V> map;
++
++        /* bin which our current element resides on */
++        protected int tableIndex;
++
++        protected TableEntry<K, V> currEntry; /* curr entry, null if no more to iterate or if curr was removed or if we've just init'd */
++        protected TableEntry<K, V> nextEntry; /* may not be on the same bin as currEntry */
++
++        protected TableEntryIterator(final TableEntry<K, V>[] table, final SWMRHashTable<K, V> map) {
++            this.table = table;
++            this.map = map;
++            int tableIndex = 0;
++            for (int len = table.length; tableIndex < len; ++tableIndex) {
++                final TableEntry<K, V> entry = ArrayUtil.getOpaque(table, tableIndex);
++                if (entry != null) {
++                    this.nextEntry = entry;
++                    this.tableIndex = tableIndex + 1;
++                    return;
++                }
++            }
++            this.tableIndex = tableIndex;
++        }
++
++        @Override
++        public boolean hasNext() {
++            return this.nextEntry != null;
++        }
++
++        protected final TableEntry<K, V> advanceEntry() {
++            final TableEntry<K, V>[] table = this.table;
++            final int tableLength = table.length;
++            int tableIndex = this.tableIndex;
++            final TableEntry<K, V> curr = this.nextEntry;
++            if (curr == null) {
++                return null;
++            }
++
++            this.currEntry = curr;
++
++            // set up nextEntry
++
++            // find next in chain
++            TableEntry<K, V> next = curr.getNextOpaque();
++
++            if (next != null) {
++                this.nextEntry = next;
++                return curr;
++            }
++
++            // nothing in chain, so find next available bin
++            for (;tableIndex < tableLength; ++tableIndex) {
++                next = ArrayUtil.getOpaque(table, tableIndex);
++                if (next != null) {
++                    this.nextEntry = next;
++                    this.tableIndex = tableIndex + 1;
++                    return curr;
++                }
++            }
++
++            this.nextEntry = null;
++            this.tableIndex = tableIndex;
++            return curr;
++        }
++
++        @Override
++        public void remove() {
++            final TableEntry<K, V> curr = this.currEntry;
++            if (curr == null) {
++                throw new IllegalStateException();
++            }
++
++            this.map.remove(curr.key, curr.hash);
++
++            this.currEntry = null;
++        }
++    }
++
++    protected static final class ValueIterator<K, V> extends TableEntryIterator<K, V, V> {
++
++        protected ValueIterator(final TableEntry<K, V>[] table, final SWMRHashTable<K, V> map) {
++            super(table, map);
++        }
++
++        @Override
++        public V next() {
++            final TableEntry<K, V> entry = this.advanceEntry();
++
++            if (entry == null) {
++                throw new NoSuchElementException();
++            }
++
++            return entry.getValueAcquire();
++        }
++    }
++
++    protected static final class KeyIterator<K, V> extends TableEntryIterator<K, V, K> {
++
++        protected KeyIterator(final TableEntry<K, V>[] table, final SWMRHashTable<K, V> map) {
++            super(table, map);
++        }
++
++        @Override
++        public K next() {
++            final TableEntry<K, V> curr = this.advanceEntry();
++
++            if (curr == null) {
++                throw new NoSuchElementException();
++            }
++
++            return curr.key;
++        }
++    }
++
++    protected static final class EntryIterator<K, V> extends TableEntryIterator<K, V, Map.Entry<K, V>> {
++
++        protected EntryIterator(final TableEntry<K, V>[] table, final SWMRHashTable<K, V> map) {
++            super(table, map);
++        }
++
++        @Override
++        public Map.Entry<K, V> next() {
++            final TableEntry<K, V> curr = this.advanceEntry();
++
++            if (curr == null) {
++                throw new NoSuchElementException();
++            }
++
++            return curr;
++        }
++    }
++
++    protected static abstract class ViewCollection<K, V, T> implements Collection<T> {
++
++        protected final SWMRHashTable<K, V> map;
++
++        protected ViewCollection(final SWMRHashTable<K, V> map) {
++            this.map = map;
++        }
++
++        @Override
++        public boolean add(final T element) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean addAll(final Collection<? extends T> collections) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean removeAll(final Collection<?> collection) {
++            Validate.notNull(collection, "Null collection");
++
++            boolean modified = false;
++            for (final Object element : collection) {
++                modified |= this.remove(element);
++            }
++            return modified;
++        }
++
++        @Override
++        public int size() {
++            return this.map.size();
++        }
++
++        @Override
++        public boolean isEmpty() {
++            return this.size() == 0;
++        }
++
++        @Override
++        public void clear() {
++            this.map.clear();
++        }
++
++        @Override
++        public boolean containsAll(final Collection<?> collection) {
++            Validate.notNull(collection, "Null collection");
++
++            for (final Object element : collection) {
++                if (!this.contains(element)) {
++                    return false;
++                }
++            }
++
++            return true;
++        }
++
++        @Override
++        public Object[] toArray() {
++            final List<T> list = new ArrayList<>(this.size());
++
++            this.forEach(list::add);
++
++            return list.toArray();
++        }
++
++        @Override
++        public <E> E[] toArray(final E[] array) {
++            final List<T> list = new ArrayList<>(this.size());
++
++            this.forEach(list::add);
++
++            return list.toArray(array);
++        }
++
++        @Override
++        public <E> E[] toArray(final IntFunction<E[]> generator) {
++            final List<T> list = new ArrayList<>(this.size());
++
++            this.forEach(list::add);
++
++            return list.toArray(generator);
++        }
++
++        @Override
++        public int hashCode() {
++            int hash = 0;
++            for (final T element : this) {
++                hash += element == null ? 0 : element.hashCode();
++            }
++            return hash;
++        }
++
++        @Override
++        public Spliterator<T> spliterator() { // TODO implement
++            return Spliterators.spliterator(this, Spliterator.NONNULL);
++        }
++    }
++
++    protected static abstract class ViewSet<K, V, T> extends ViewCollection<K, V, T> implements Set<T> {
++
++        protected ViewSet(final SWMRHashTable<K, V> map) {
++            super(map);
++        }
++
++        @Override
++        public boolean equals(final Object obj) {
++            if (this == obj) {
++                return true;
++            }
++
++            if (!(obj instanceof Set)) {
++                return false;
++            }
++
++            final Set<?> other = (Set<?>)obj;
++            if (other.size() != this.size()) {
++                return false;
++            }
++
++            return this.containsAll(other);
++        }
++    }
++
++    protected static final class EntrySet<K, V> extends ViewSet<K, V, Map.Entry<K, V>> implements Set<Map.Entry<K, V>> {
++
++        protected EntrySet(final SWMRHashTable<K, V> map) {
++            super(map);
++        }
++
++        @Override
++        public boolean remove(final Object object) {
++            if (!(object instanceof Map.Entry<?, ?>)) {
++                return false;
++            }
++            final Map.Entry<?, ?> entry = (Map.Entry<?, ?>)object;
++
++            final Object key;
++            final Object value;
++
++            try {
++                key = entry.getKey();
++                value = entry.getValue();
++            } catch (final IllegalStateException ex) {
++                return false;
++            }
++
++            return this.map.remove(key, value);
++        }
++
++        @Override
++        public boolean removeIf(final Predicate<? super Map.Entry<K, V>> filter) {
++            Validate.notNull(filter, "Null filter");
++
++            return this.map.removeEntryIf(filter) != 0;
++        }
++
++        @Override
++        public boolean retainAll(final Collection<?> collection) {
++            Validate.notNull(collection, "Null collection");
++
++            return this.map.removeEntryIf((final Map.Entry<K, V> entry) -> {
++                return !collection.contains(entry);
++            }) != 0;
++        }
++
++        @Override
++        public Iterator<Entry<K, V>> iterator() {
++            return new EntryIterator<>(this.map.getTableAcquire(), this.map);
++        }
++
++        @Override
++        public void forEach(final Consumer<? super Entry<K, V>> action) {
++            this.map.forEach(action);
++        }
++
++        @Override
++        public boolean contains(final Object object) {
++            if (!(object instanceof Map.Entry)) {
++                return false;
++            }
++            final Map.Entry<?, ?> entry = (Map.Entry<?, ?>)object;
++
++            final Object key;
++            final Object value;
++
++            try {
++                key = entry.getKey();
++                value = entry.getValue();
++            } catch (final IllegalStateException ex) {
++                return false;
++            }
++
++            return this.map.contains(key, value);
++        }
++
++        @Override
++        public String toString() {
++            return CollectionUtil.toString(this, "SWMRHashTableEntrySet");
++        }
++    }
++
++    protected static final class KeySet<K, V> extends ViewSet<K, V, K> {
++
++        protected KeySet(final SWMRHashTable<K, V> map) {
++            super(map);
++        }
++
++        @Override
++        public Iterator<K> iterator() {
++            return new KeyIterator<>(this.map.getTableAcquire(), this.map);
++        }
++
++        @Override
++        public void forEach(final Consumer<? super K> action) {
++            Validate.notNull(action, "Null action");
++
++            this.map.forEachKey(action);
++        }
++
++        @Override
++        public boolean contains(final Object key) {
++            Validate.notNull(key, "Null key");
++
++            return this.map.containsKey(key);
++        }
++
++        @Override
++        public boolean remove(final Object key) {
++            Validate.notNull(key, "Null key");
++
++            return this.map.remove(key) != null;
++        }
++
++        @Override
++        public boolean retainAll(final Collection<?> collection) {
++            Validate.notNull(collection, "Null collection");
++
++            return this.map.removeIf((final K key, final V value) -> {
++                return !collection.contains(key);
++            }) != 0;
++        }
++
++        @Override
++        public boolean removeIf(final Predicate<? super K> filter) {
++            Validate.notNull(filter, "Null filter");
++
++            return this.map.removeIf((final K key, final V value) -> {
++                return filter.test(key);
++            }) != 0;
++        }
++
++        @Override
++        public String toString() {
++            return CollectionUtil.toString(this, "SWMRHashTableKeySet");
++        }
++    }
++
++    protected static final class ValueCollection<K, V> extends ViewSet<K, V, V> implements Collection<V> {
++
++        protected ValueCollection(final SWMRHashTable<K, V> map) {
++            super(map);
++        }
++
++        @Override
++        public Iterator<V> iterator() {
++            return new ValueIterator<>(this.map.getTableAcquire(), this.map);
++        }
++
++        @Override
++        public void forEach(final Consumer<? super V> action) {
++            Validate.notNull(action, "Null action");
++
++            this.map.forEachValue(action);
++        }
++
++        @Override
++        public boolean contains(final Object object) {
++            Validate.notNull(object, "Null object");
++
++            return this.map.containsValue(object);
++        }
++
++        @Override
++        public boolean remove(final Object object) {
++            Validate.notNull(object, "Null object");
++
++            final Iterator<V> itr = this.iterator();
++            while (itr.hasNext()) {
++                final V val = itr.next();
++                if (val == object || val.equals(object)) {
++                    itr.remove();
++                    return true;
++                }
++            }
++
++            return false;
++        }
++
++        @Override
++        public boolean removeIf(final Predicate<? super V> filter) {
++            Validate.notNull(filter, "Null filter");
++
++            return this.map.removeIf((final K key, final V value) -> {
++                return filter.test(value);
++            }) != 0;
++        }
++
++        @Override
++        public boolean retainAll(final Collection<?> collection) {
++            Validate.notNull(collection, "Null collection");
++
++            return this.map.removeIf((final K key, final V value) -> {
++                return !collection.contains(value);
++            }) != 0;
++        }
++
++        @Override
++        public String toString() {
++            return CollectionUtil.toString(this, "SWMRHashTableValues");
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRLong2ObjectHashTable.java b/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRLong2ObjectHashTable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e98f778ffa0a7bb00ebccaaa8bde075183e41f0
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/concurrentutil/map/SWMRLong2ObjectHashTable.java
+@@ -0,0 +1,672 @@
++package ca.spottedleaf.concurrentutil.map;
++
++import ca.spottedleaf.concurrentutil.util.ArrayUtil;
++import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
++import ca.spottedleaf.concurrentutil.util.Validate;
++import io.papermc.paper.util.IntegerUtil;
++import java.lang.invoke.VarHandle;
++import java.util.Arrays;
++import java.util.function.Consumer;
++import java.util.function.LongConsumer;
++
++// trimmed down version of SWMRHashTable
++public class SWMRLong2ObjectHashTable<V> {
++
++    protected int size;
++
++    protected TableEntry<V>[] table;
++
++    protected final float loadFactor;
++
++    protected static final VarHandle SIZE_HANDLE = ConcurrentUtil.getVarHandle(SWMRLong2ObjectHashTable.class, "size", int.class);
++    protected static final VarHandle TABLE_HANDLE = ConcurrentUtil.getVarHandle(SWMRLong2ObjectHashTable.class, "table", TableEntry[].class);
++
++    /* size */
++
++    protected final int getSizePlain() {
++        return (int)SIZE_HANDLE.get(this);
++    }
++
++    protected final int getSizeOpaque() {
++        return (int)SIZE_HANDLE.getOpaque(this);
++    }
++
++    protected final int getSizeAcquire() {
++        return (int)SIZE_HANDLE.getAcquire(this);
++    }
++
++    protected final void setSizePlain(final int value) {
++        SIZE_HANDLE.set(this, value);
++    }
++
++    protected final void setSizeOpaque(final int value) {
++        SIZE_HANDLE.setOpaque(this, value);
++    }
++
++    protected final void setSizeRelease(final int value) {
++        SIZE_HANDLE.setRelease(this, value);
++    }
++
++    /* table */
++
++    protected final TableEntry<V>[] getTablePlain() {
++        //noinspection unchecked
++        return (TableEntry<V>[])TABLE_HANDLE.get(this);
++    }
++
++    protected final TableEntry<V>[] getTableAcquire() {
++        //noinspection unchecked
++        return (TableEntry<V>[])TABLE_HANDLE.getAcquire(this);
++    }
++
++    protected final void setTablePlain(final TableEntry<V>[] table) {
++        TABLE_HANDLE.set(this, table);
++    }
++
++    protected final void setTableRelease(final TableEntry<V>[] table) {
++        TABLE_HANDLE.setRelease(this, table);
++    }
++
++    protected static final int DEFAULT_CAPACITY = 16;
++    protected static final float DEFAULT_LOAD_FACTOR = 0.75f;
++    protected static final int MAXIMUM_CAPACITY = Integer.MIN_VALUE >>> 1;
++
++    /**
++     * Constructs this map with a capacity of {@code 16} and load factor of {@code 0.75f}.
++     */
++    public SWMRLong2ObjectHashTable() {
++        this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
++    }
++
++    /**
++     * Constructs this map with the specified capacity and load factor of {@code 0.75f}.
++     * @param capacity specified initial capacity, > 0
++     */
++    public SWMRLong2ObjectHashTable(final int capacity) {
++        this(capacity, DEFAULT_LOAD_FACTOR);
++    }
++
++    /**
++     * Constructs this map with the specified capacity and load factor.
++     * @param capacity specified capacity, > 0
++     * @param loadFactor specified load factor, > 0 && finite
++     */
++    public SWMRLong2ObjectHashTable(final int capacity, final float loadFactor) {
++        final int tableSize = getCapacityFor(capacity);
++
++        if (loadFactor <= 0.0 || !Float.isFinite(loadFactor)) {
++            throw new IllegalArgumentException("Invalid load factor: " + loadFactor);
++        }
++
++        //noinspection unchecked
++        final TableEntry<V>[] table = new TableEntry[tableSize];
++        this.setTablePlain(table);
++
++        if (tableSize == MAXIMUM_CAPACITY) {
++            this.threshold = -1;
++        } else {
++            this.threshold = getTargetCapacity(tableSize, loadFactor);
++        }
++
++        this.loadFactor = loadFactor;
++    }
++
++    /**
++     * Constructs this map with a capacity of {@code 16} or the specified map's size, whichever is larger, and
++     * with a load factor of {@code 0.75f}.
++     * All of the specified map's entries are copied into this map.
++     * @param other The specified map.
++     */
++    public SWMRLong2ObjectHashTable(final SWMRLong2ObjectHashTable<V> other) {
++        this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, other);
++    }
++
++    /**
++     * Constructs this map with a minimum capacity of the specified capacity or the specified map's size, whichever is larger, and
++     * with a load factor of {@code 0.75f}.
++     * All of the specified map's entries are copied into this map.
++     * @param capacity specified capacity, > 0
++     * @param other The specified map.
++     */
++    public SWMRLong2ObjectHashTable(final int capacity, final SWMRLong2ObjectHashTable<V> other) {
++        this(capacity, DEFAULT_LOAD_FACTOR, other);
++    }
++
++    /**
++     * Constructs this map with a min capacity of the specified capacity or the specified map's size, whichever is larger, and
++     * with the specified load factor.
++     * All of the specified map's entries are copied into this map.
++     * @param capacity specified capacity, > 0
++     * @param loadFactor specified load factor, > 0 && finite
++     * @param other The specified map.
++     */
++    public SWMRLong2ObjectHashTable(final int capacity, final float loadFactor, final SWMRLong2ObjectHashTable<V> other) {
++        this(Math.max(Validate.notNull(other, "Null map").size(), capacity), loadFactor);
++        this.putAll(other);
++    }
++
++    public final float getLoadFactor() {
++        return this.loadFactor;
++    }
++
++    protected static int getCapacityFor(final int capacity) {
++        if (capacity <= 0) {
++            throw new IllegalArgumentException("Invalid capacity: " + capacity);
++        }
++        if (capacity >= MAXIMUM_CAPACITY) {
++            return MAXIMUM_CAPACITY;
++        }
++        return IntegerUtil.roundCeilLog2(capacity);
++    }
++
++    /** Callers must still use acquire when reading the value of the entry. */
++    protected final TableEntry<V> getEntryForOpaque(final long key) {
++        final int hash = SWMRLong2ObjectHashTable.getHash(key);
++        final TableEntry<V>[] table = this.getTableAcquire();
++
++        for (TableEntry<V> curr = ArrayUtil.getOpaque(table, hash & (table.length - 1)); curr != null; curr = curr.getNextOpaque()) {
++            if (key == curr.key) {
++                return curr;
++            }
++        }
++
++        return null;
++    }
++
++    protected final TableEntry<V> getEntryForPlain(final long key) {
++        final int hash = SWMRLong2ObjectHashTable.getHash(key);
++        final TableEntry<V>[] table = this.getTablePlain();
++
++        for (TableEntry<V> curr = table[hash & (table.length - 1)]; curr != null; curr = curr.getNextPlain()) {
++            if (key == curr.key) {
++                return curr;
++            }
++        }
++
++        return null;
++    }
++
++    /* MT-Safe */
++
++    /** must be deterministic given a key */
++    protected static int getHash(final long key) {
++        return (int)it.unimi.dsi.fastutil.HashCommon.mix(key);
++    }
++
++    // rets -1 if capacity*loadFactor is too large
++    protected static int getTargetCapacity(final int capacity, final float loadFactor) {
++        final double ret = (double)capacity * (double)loadFactor;
++        if (Double.isInfinite(ret) || ret >= ((double)Integer.MAX_VALUE)) {
++            return -1;
++        }
++
++        return (int)ret;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean equals(final Object obj) {
++        if (this == obj) {
++            return true;
++        }
++        /* Make no attempt to deal with concurrent modifications */
++        if (!(obj instanceof SWMRLong2ObjectHashTable)) {
++            return false;
++        }
++        final SWMRLong2ObjectHashTable<?> other = (SWMRLong2ObjectHashTable<?>)obj;
++
++        if (this.size() != other.size()) {
++            return false;
++        }
++
++        final TableEntry<V>[] table = this.getTableAcquire();
++
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                final V value = curr.getValueAcquire();
++
++                final Object otherValue = other.get(curr.key);
++                if (otherValue == null || (value != otherValue && value.equals(otherValue))) {
++                    return false;
++                }
++            }
++        }
++
++        return true;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public int hashCode() {
++        /* Make no attempt to deal with concurrent modifications */
++        int hash = 0;
++        final TableEntry<V>[] table = this.getTableAcquire();
++
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                hash += curr.hashCode();
++            }
++        }
++
++        return hash;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public String toString() {
++        final StringBuilder builder = new StringBuilder(64);
++        builder.append("SingleWriterMultiReaderHashMap:{");
++
++        this.forEach((final long key, final V value) -> {
++            builder.append("{key: \"").append(key).append("\", value: \"").append(value).append("\"}");
++        });
++
++        return builder.append('}').toString();
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public SWMRLong2ObjectHashTable<V> clone() {
++        return new SWMRLong2ObjectHashTable<>(this.getTableAcquire().length, this.loadFactor, this);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public void forEach(final Consumer<? super SWMRLong2ObjectHashTable.TableEntry<V>> action) {
++        Validate.notNull(action, "Null action");
++
++        final TableEntry<V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                action.accept(curr);
++            }
++        }
++    }
++
++    @FunctionalInterface
++    public static interface BiLongObjectConsumer<V> {
++        public void accept(final long key, final V value);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public void forEach(final BiLongObjectConsumer<? super V> action) {
++        Validate.notNull(action, "Null action");
++
++        final TableEntry<V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                final V value = curr.getValueAcquire();
++
++                action.accept(curr.key, value);
++            }
++        }
++    }
++
++    /**
++     * Provides the specified consumer with all keys contained within this map.
++     * @param action The specified consumer.
++     */
++    public void forEachKey(final LongConsumer action) {
++        Validate.notNull(action, "Null action");
++
++        final TableEntry<V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                action.accept(curr.key);
++            }
++        }
++    }
++
++    /**
++     * Provides the specified consumer with all values contained within this map. Equivalent to {@code map.values().forEach(Consumer)}.
++     * @param action The specified consumer.
++     */
++    public void forEachValue(final Consumer<? super V> action) {
++        Validate.notNull(action, "Null action");
++
++        final TableEntry<V>[] table = this.getTableAcquire();
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<V> curr = ArrayUtil.getOpaque(table, i); curr != null; curr = curr.getNextOpaque()) {
++                final V value = curr.getValueAcquire();
++
++                action.accept(value);
++            }
++        }
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public V get(final long key) {
++        final TableEntry<V> entry = this.getEntryForOpaque(key);
++        return entry == null ? null : entry.getValueAcquire();
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public boolean containsKey(final long key) {
++        // note: we need to use getValueAcquire, so that the reads from this map are ordered by acquire semantics
++        return this.get(key) != null;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public V getOrDefault(final long key, final V defaultValue) {
++        final TableEntry<V> entry = this.getEntryForOpaque(key);
++
++        return entry == null ? defaultValue : entry.getValueAcquire();
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public int size() {
++        return this.getSizeAcquire();
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public boolean isEmpty() {
++        return this.getSizeAcquire() == 0;
++    }
++
++    /* Non-MT-Safe */
++
++    protected int threshold;
++
++    protected final void checkResize(final int minCapacity) {
++        if (minCapacity <= this.threshold || this.threshold < 0) {
++            return;
++        }
++
++        final TableEntry<V>[] table = this.getTablePlain();
++        int newCapacity = minCapacity >= MAXIMUM_CAPACITY ? MAXIMUM_CAPACITY : IntegerUtil.roundCeilLog2(minCapacity);
++        if (newCapacity < 0) {
++            newCapacity = MAXIMUM_CAPACITY;
++        }
++        if (newCapacity <= table.length) {
++            if (newCapacity == MAXIMUM_CAPACITY) {
++                return;
++            }
++            newCapacity = table.length << 1;
++        }
++
++        //noinspection unchecked
++        final TableEntry<V>[] newTable = new TableEntry[newCapacity];
++        final int indexMask = newCapacity - 1;
++
++        for (int i = 0, len = table.length; i < len; ++i) {
++            for (TableEntry<V> entry = table[i]; entry != null; entry = entry.getNextPlain()) {
++                final long key = entry.key;
++                final int hash = SWMRLong2ObjectHashTable.getHash(key);
++                final int index = hash & indexMask;
++
++                /* we need to create a new entry since there could be reading threads */
++                final TableEntry<V> insert = new TableEntry<>(key, entry.getValuePlain());
++
++                final TableEntry<V> prev = newTable[index];
++
++                newTable[index] = insert;
++                insert.setNextPlain(prev);
++            }
++        }
++
++        if (newCapacity == MAXIMUM_CAPACITY) {
++            this.threshold = -1; /* No more resizing */
++        } else {
++            this.threshold = getTargetCapacity(newCapacity, this.loadFactor);
++        }
++        this.setTableRelease(newTable); /* use release to publish entries in table */
++    }
++
++    protected final int addToSize(final int num) {
++        final int newSize = this.getSizePlain() + num;
++
++        this.setSizeOpaque(newSize);
++        this.checkResize(newSize);
++
++        return newSize;
++    }
++
++    protected final int removeFromSize(final int num) {
++        final int newSize = this.getSizePlain() - num;
++
++        this.setSizeOpaque(newSize);
++
++        return newSize;
++    }
++
++    protected final V put(final long key, final V value, final boolean onlyIfAbsent) {
++        final TableEntry<V>[] table = this.getTablePlain();
++        final int hash = SWMRLong2ObjectHashTable.getHash(key);
++        final int index = hash & (table.length - 1);
++
++        final TableEntry<V> head = table[index];
++        if (head == null) {
++            final TableEntry<V> insert = new TableEntry<>(key, value);
++            ArrayUtil.setRelease(table, index, insert);
++            this.addToSize(1);
++            return null;
++        }
++
++        for (TableEntry<V> curr = head;;) {
++            if (key == curr.key) {
++                if (onlyIfAbsent) {
++                    return curr.getValuePlain();
++                }
++
++                final V currVal = curr.getValuePlain();
++                curr.setValueRelease(value);
++                return currVal;
++            }
++
++            final TableEntry<V> next = curr.getNextPlain();
++            if (next != null) {
++                curr = next;
++                continue;
++            }
++
++            final TableEntry<V> insert = new TableEntry<>(key, value);
++
++            curr.setNextRelease(insert);
++            this.addToSize(1);
++            return null;
++        }
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public V put(final long key, final V value) {
++        Validate.notNull(value, "Null value");
++
++        return this.put(key, value, false);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public V putIfAbsent(final long key, final V value) {
++        Validate.notNull(value, "Null value");
++
++        return this.put(key, value, true);
++    }
++
++    protected final V remove(final long key, final int hash) {
++        final TableEntry<V>[] table = this.getTablePlain();
++        final int index = (table.length - 1) & hash;
++
++        final TableEntry<V> head = table[index];
++        if (head == null) {
++            return null;
++        }
++
++        if (head.key == key) {
++            ArrayUtil.setRelease(table, index, head.getNextPlain());
++            this.removeFromSize(1);
++
++            return head.getValuePlain();
++        }
++
++        for (TableEntry<V> curr = head.getNextPlain(), prev = head; curr != null; prev = curr, curr = curr.getNextPlain()) {
++            if (key == curr.key) {
++                prev.setNextRelease(curr.getNextPlain());
++                this.removeFromSize(1);
++
++                return curr.getValuePlain();
++            }
++        }
++
++        return null;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public V remove(final long key) {
++        return this.remove(key, SWMRLong2ObjectHashTable.getHash(key));
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    public void putAll(final SWMRLong2ObjectHashTable<? extends V> map) {
++        Validate.notNull(map, "Null map");
++
++        final int size = map.size();
++        this.checkResize(Math.max(this.getSizePlain() + size/2, size)); /* preemptively resize */
++        map.forEach(this::put);
++    }
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * This call is non-atomic and the order that which entries are removed is undefined. The clear operation itself
++     * is release ordered, that is, after the clear operation is performed a release fence is performed.
++     * </p>
++     */
++    public void clear() {
++        Arrays.fill(this.getTablePlain(), null);
++        this.setSizeRelease(0);
++    }
++
++    public static final class TableEntry<V> {
++
++        protected final long key;
++        protected V value;
++
++        protected TableEntry<V> next;
++
++        protected static final VarHandle VALUE_HANDLE = ConcurrentUtil.getVarHandle(TableEntry.class, "value", Object.class);
++        protected static final VarHandle NEXT_HANDLE = ConcurrentUtil.getVarHandle(TableEntry.class, "next", TableEntry.class);
++
++        /* value */
++
++        protected final V getValuePlain() {
++            //noinspection unchecked
++            return (V)VALUE_HANDLE.get(this);
++        }
++
++        protected final V getValueAcquire() {
++            //noinspection unchecked
++            return (V)VALUE_HANDLE.getAcquire(this);
++        }
++
++        protected final void setValueRelease(final V to) {
++            VALUE_HANDLE.setRelease(this, to);
++        }
++
++        /* next */
++
++        protected final TableEntry<V> getNextPlain() {
++            //noinspection unchecked
++            return (TableEntry<V>)NEXT_HANDLE.get(this);
++        }
++
++        protected final TableEntry<V> getNextOpaque() {
++            //noinspection unchecked
++            return (TableEntry<V>)NEXT_HANDLE.getOpaque(this);
++        }
++
++        protected final void setNextPlain(final TableEntry<V> next) {
++            NEXT_HANDLE.set(this, next);
++        }
++
++        protected final void setNextRelease(final TableEntry<V> next) {
++            NEXT_HANDLE.setRelease(this, next);
++        }
++
++        protected TableEntry(final long key, final V value) {
++            this.key = key;
++            this.value = value;
++        }
++
++        public long getKey() {
++            return this.key;
++        }
++
++        public V getValue() {
++            return this.getValueAcquire();
++        }
++
++        /**
++         * {@inheritDoc}
++         */
++        public V setValue(final V value) {
++            if (value == null) {
++                throw new NullPointerException();
++            }
++
++            final V curr = this.getValuePlain();
++
++            this.setValueRelease(value);
++            return curr;
++        }
++
++        protected static int hash(final long key, final Object value) {
++            return SWMRLong2ObjectHashTable.getHash(key) ^ (value == null ? 0 : value.hashCode());
++        }
++
++        /**
++         * {@inheritDoc}
++         */
++        @Override
++        public int hashCode() {
++            return hash(this.key, this.getValueAcquire());
++        }
++
++        /**
++         * {@inheritDoc}
++         */
++        @Override
++        public boolean equals(final Object obj) {
++            if (this == obj) {
++                return true;
++            }
++
++            if (!(obj instanceof TableEntry<?>)) {
++                return false;
++            }
++            final TableEntry<?> other = (TableEntry<?>)obj;
++            final long otherKey = other.getKey();
++            final long thisKey = this.getKey();
++            final Object otherValue = other.getValueAcquire();
++            final V thisVal = this.getValueAcquire();
++            return (thisKey == otherKey) && (thisVal == otherValue || thisVal.equals(otherValue));
++        }
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/concurrentutil/util/ArrayUtil.java b/src/main/java/ca/spottedleaf/concurrentutil/util/ArrayUtil.java
@@ -4944,6 +6617,43 @@ index 0000000000000000000000000000000000000000..ebb1ab06165addb173fea4d295001fe3
 +                return curr;
 +            }
 +        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/concurrentutil/util/CollectionUtil.java b/src/main/java/ca/spottedleaf/concurrentutil/util/CollectionUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9420b9822de99d3a31224642452835b0c986f7b4
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/concurrentutil/util/CollectionUtil.java
+@@ -0,0 +1,31 @@
++package ca.spottedleaf.concurrentutil.util;
++
++import java.util.Collection;
++
++public final class CollectionUtil {
++
++    public static String toString(final Collection<?> collection, final String name) {
++        return CollectionUtil.toString(collection, name, new StringBuilder(name.length() + 128)).toString();
++    }
++
++    public static StringBuilder toString(final Collection<?> collection, final String name, final StringBuilder builder) {
++        builder.append(name).append("{elements={");
++
++        boolean first = true;
++
++        for (final Object element : collection) {
++            if (!first) {
++                builder.append(", ");
++            }
++            first = false;
++
++            builder.append('"').append(element).append('"');
++        }
++
++        return builder.append("}}");
++    }
++
++    private CollectionUtil() {
++        throw new RuntimeException();
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/concurrentutil/util/ConcurrentUtil.java b/src/main/java/ca/spottedleaf/concurrentutil/util/ConcurrentUtil.java
@@ -8236,13 +9946,14 @@ index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f38733000336c
+index 0000000000000000000000000000000000000000..ad4021485a1c8f5dfabef7e1d3e3cdcb88fdefbe
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1150 @@
+@@ -0,0 +1,1142 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
++import ca.spottedleaf.concurrentutil.map.SWMRLong2ObjectHashTable;
 +import com.google.common.collect.ImmutableList;
 +import com.google.gson.JsonArray;
 +import com.google.gson.JsonObject;
@@ -8283,7 +9994,6 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +import java.util.Iterator;
 +import java.util.List;
 +import java.util.Objects;
-+import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.TimeUnit;
 +import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.concurrent.atomic.AtomicReference;
@@ -8304,8 +10014,7 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +
 +    final ReentrantLock ticketLock = new ReentrantLock();
 +
-+    // TODO Note: CHM usage is TEMPORARY!
-+    private final ConcurrentHashMap<Long, NewChunkHolder> chunkHolders = new ConcurrentHashMap<>(8192*2, 0.15f);
++    private final SWMRLong2ObjectHashTable<NewChunkHolder> chunkHolders = new SWMRLong2ObjectHashTable<>(16384, 0.25f);
 +    private final Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap<>(8192, 0.25f);
 +    // what a disaster of a name
 +    // this is a map of removal tick to a map of chunks and the number of tickets a chunk has that are to expire that tick
@@ -8357,7 +10066,9 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +    }
 +
 +    public List<NewChunkHolder> getChunkHolders() {
-+        return new ArrayList<>(this.chunkHolders.values()); // TODO replace map
++        final List<NewChunkHolder> ret = new ArrayList<>(this.chunkHolders.size());
++        this.chunkHolders.forEachValue(ret::add);
++        return ret;
 +    }
 +
 +    public int size() {
@@ -8439,8 +10150,7 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +    }
 +
 +    public void saveAllChunks(final boolean flush, final boolean shutdown, final boolean logProgress) {
-+        final List<NewChunkHolder> holders = new ArrayList<>(this.chunkHolders.size());
-+        holders.addAll(this.chunkHolders.values()); // TODO replace map
++        final List<NewChunkHolder> holders = this.getChunkHolders();
 +
 +        if (flush) {
 +            RegionFileIOThread.flush();
@@ -8449,6 +10159,7 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +        if (logProgress) {
 +            LOGGER.info("Saving all chunkholders for world '" + this.world.getWorld().getName() + "'");
 +        }
++
 +        final DecimalFormat format = new DecimalFormat("#0.00");
 +
 +        int saved = 0;
@@ -8783,14 +10494,6 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +        return this.chunkHolders.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
 +    }
 +
-+    private NewChunkHolder getChunkHolderUnsychronized(final int chunkX, final int chunkZ) {
-+        return this.chunkHolders.get(CoordinateUtils.getChunkKey(chunkX, chunkZ)); // TODO replace map
-+    }
-+
-+    private NewChunkHolder getChunkHolderUnsychronized(final long pos) {
-+        return this.chunkHolders.get(pos); // TODO replace map
-+    }
-+
 +    public NewChunkHolder getChunkHolder(final long position) {
 +        return this.chunkHolders.get(position);
 +    }
@@ -8834,7 +10537,7 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +        // we could just acquire these locks, but...
 +        // must own the locks because the caller needs to ensure that no unload can occur AFTER this function returns
 +
-+        NewChunkHolder current = this.chunkHolders.get(position); // TODO replace map
++        NewChunkHolder current = this.chunkHolders.get(position);
 +        if (current != null) {
 +            return current;
 +        }
@@ -8991,7 +10694,6 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +    final ReferenceLinkedOpenHashSet<NewChunkHolder> unloadQueue = new ReferenceLinkedOpenHashSet<>();
 +
 +    private void removeChunkHolder(final NewChunkHolder holder) {
-+        // TODO replace map
 +        holder.vanillaChunkHolder.onChunkRemove();
 +        this.autoSaveQueue.remove(holder);
 +        this.chunkHolders.remove(CoordinateUtils.getChunkKey(holder.chunkX, holder.chunkZ));
@@ -9125,7 +10827,7 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +                        final long key = entry.getLongKey();
 +                        final int newLevel = entry.getIntValue();
 +
-+                        NewChunkHolder current = this.getChunkHolderUnsychronized(key);
++                        NewChunkHolder current = this.chunkHolders.get(key);
 +                        if (current == null && newLevel > MAX_TICKET_LEVEL) {
 +                            // not loaded and it shouldn't be loaded!
 +                            iterator.remove();
@@ -9160,7 +10862,7 @@ index 0000000000000000000000000000000000000000..cb2f4593e9e1c1ff2c12f2c68d0f3873
 +                        for (final Iterator<Long2IntMap.Entry> iterator = this.ticketLevelUpdates.long2IntEntrySet().fastIterator(); iterator.hasNext();) {
 +                            final Long2IntMap.Entry entry = iterator.next();
 +                            final long key = entry.getLongKey();
-+                            final NewChunkHolder current = this.getChunkHolderUnsychronized(key);
++                            final NewChunkHolder current = this.chunkHolders.get(key);
 +
 +                            if (current == null) {
 +                                throw new IllegalStateException("Expected chunk holder to be created");
