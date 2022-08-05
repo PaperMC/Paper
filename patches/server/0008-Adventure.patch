@@ -1421,7 +1421,7 @@ index 98f2def9125d6faf5859572a004fa8d2fa066417..436f381c727cda72c04859c540dce471
      public static ChatFormatting getById(int colorIndex) {
          if (colorIndex < 0) {
 diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
-index 6f65ee8bb555dfbfa96363e0a4cf8aadfd92fde3..30a9ff0fd92a1de6c1bce46719549b7803d0c716 100644
+index 83ffb7a08630fdaf8655569d82974625c0eaf1ff..4da1ebcd0226897f8b03bd00a851f793df3506f4 100644
 --- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 @@ -88,7 +88,7 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
@@ -1500,15 +1500,21 @@ index 021a26a6b1c258deffc26c035ab52a4ea027d9a1..00d432bd395e7f7fb6ee24e371818d13
                  try {
                      int i = friendlyByteBuf.writerIndex();
 diff --git a/src/main/java/net/minecraft/network/chat/ChatDecorator.java b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
-index b9cdd89a3871d934a0449ed70766c2e9d6369ab9..52307bdaed93de1c3ddb06477b3a5b434a8f7a68 100644
+index 0906160cb6b6b211ad50a29e5ab80ac99ac8b85b..1fbd30c52c2f1aa0594bd744ab4590709f5d34dd 100644
 --- a/src/main/java/net/minecraft/network/chat/ChatDecorator.java
 +++ b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
-@@ -10,10 +10,81 @@ public interface ChatDecorator {
+@@ -10,12 +10,82 @@ public interface ChatDecorator {
          return CompletableFuture.completedFuture(message);
      };
  
 +    @io.papermc.paper.annotation.DoNotUse // Paper
      CompletableFuture<Component> decorate(@Nullable ServerPlayer sender, Component message);
+ 
++    @io.papermc.paper.annotation.DoNotUse // Paper
+     default CompletableFuture<PlayerChatMessage> decorate(@Nullable ServerPlayer sender, PlayerChatMessage message) {
+-        return message.signedContent().isDecorated() ? CompletableFuture.completedFuture(message) : this.decorate(sender, message.serverContent()).thenApply(message::withUnsignedContent);
++        return this.decorate(sender, null, message); // Paper
+     }
  
 +    // Paper start
 +    default CompletableFuture<Result> decorate(@Nullable ServerPlayer sender, @Nullable net.minecraft.commands.CommandSourceStack commandSourceStack, Component message, boolean isPreview) {
@@ -1576,16 +1582,11 @@ index b9cdd89a3871d934a0449ed70766c2e9d6369ab9..52307bdaed93de1c3ddb06477b3a5b43
 +            return new PlayerChatMessage(playerChatMessage.signedHeader(), playerChatMessage.headerSignature(), playerChatMessage.signedBody().withContent(playerChatMessage.signedContent().withDecorationResult(result)), playerChatMessage.unsignedContent(), playerChatMessage.filterMask()).withUnsignedContent(result.component());
 +        });
 +    }
-+
 +    // Paper end
 +
-+    @io.papermc.paper.annotation.DoNotUse // Paper
-     default CompletableFuture<PlayerChatMessage> decorate(@Nullable ServerPlayer serverPlayer, PlayerChatMessage playerChatMessage) {
--        return playerChatMessage.signedContent().isDecorated() ? CompletableFuture.completedFuture(playerChatMessage) : this.decorate(serverPlayer, playerChatMessage.serverContent()).thenApply(playerChatMessage::withUnsignedContent);
-+        return this.decorate(serverPlayer, null, playerChatMessage); // Paper
+     static PlayerChatMessage attachIfNotDecorated(PlayerChatMessage message, Component attached) {
+         return !message.signedContent().isDecorated() ? message.withUnsignedContent(attached) : message;
      }
- 
-     static PlayerChatMessage attachIfNotDecorated(PlayerChatMessage playerChatMessage, Component component) {
 diff --git a/src/main/java/net/minecraft/network/chat/ChatMessageContent.java b/src/main/java/net/minecraft/network/chat/ChatMessageContent.java
 index b1c76ccfb4527337ac2c9ad2d2c7e34df0c4c660..e7caa6380b07f9bd34c2f8c821c0f6d3cb4e7649 100644
 --- a/src/main/java/net/minecraft/network/chat/ChatMessageContent.java
@@ -1690,53 +1691,54 @@ index 06736982f7625c1a532315afe94e5e0c45ec1331..e7d9e2d8c87ddf3658b1c2e0f2a3e98e
  
              if (!ichatbasecomponent.getStyle().isEmpty()) {
 diff --git a/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java
-index 952dfc9ce81bc8ce2efb120884a5723145445f3c..fc43cc6f5bbb3485b9ddcc441a13399e57289586 100644
+index de717cf25308bbade7b2c0a9187cf89238663636..bd82f0316df85b621c1970ff30bbbec0d2712ccd 100644
 --- a/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java
-@@ -13,6 +13,11 @@ public interface OutgoingPlayerChatMessage {
-     Component serverContent();
+@@ -14,6 +14,12 @@ public interface OutgoingPlayerChatMessage {
  
-     void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound);
+     void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params);
+ 
 +    // Paper start
-+    default void sendToPlayer(ServerPlayer serverPlayer, boolean shouldFilter, ChatType.Bound bound, @javax.annotation.Nullable Component unsigned) {
-+        this.sendToPlayer(serverPlayer, shouldFilter, bound);
++    default void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params, @javax.annotation.Nullable Component unsigned) {
++        this.sendToPlayer(sender, filterMaskEnabled, params);
 +    }
 +    // Paper end
- 
++
      void sendHeadersToRemainingPlayers(PlayerList playerManager);
  
-@@ -34,7 +39,15 @@ public interface OutgoingPlayerChatMessage {
+     static OutgoingPlayerChatMessage create(PlayerChatMessage message) {
+@@ -34,7 +40,15 @@ public interface OutgoingPlayerChatMessage {
  
          @Override
-         public void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound) {
+         public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params) {
 +            // Paper start
-+            this.sendToPlayer(serverPlayer, bl, bound, null);
++            this.sendToPlayer(sender, filterMaskEnabled, params, null);
 +        }
 +
 +        @Override
-+        public void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound, @javax.annotation.Nullable Component unsigned) {
++        public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params, @javax.annotation.Nullable Component unsigned) {
 +            // Paper end
-             PlayerChatMessage playerChatMessage = this.message.filter(bl);
+             PlayerChatMessage playerChatMessage = this.message.filter(filterMaskEnabled);
 +            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(unsigned) : playerChatMessage; // Paper
              if (!playerChatMessage.isFullyFiltered()) {
-                 RegistryAccess registryAccess = serverPlayer.level.registryAccess();
-                 ChatType.BoundNetwork boundNetwork = bound.toNetwork(registryAccess);
-@@ -64,7 +77,15 @@ public interface OutgoingPlayerChatMessage {
+                 RegistryAccess registryAccess = sender.level.registryAccess();
+                 ChatType.BoundNetwork boundNetwork = params.toNetwork(registryAccess);
+@@ -64,7 +78,15 @@ public interface OutgoingPlayerChatMessage {
  
          @Override
-         public void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound) {
+         public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params) {
 +            // Paper start
-+            this.sendToPlayer(serverPlayer, bl, bound, null);
++            this.sendToPlayer(sender, filterMaskEnabled, params, null);
 +        }
 +
 +        @Override
-+        public void sendToPlayer(ServerPlayer serverPlayer, boolean bl, ChatType.Bound bound, @javax.annotation.Nullable Component unsigned) {
++        public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params, @javax.annotation.Nullable Component unsigned) {
 +            // Paper end
-             PlayerChatMessage playerChatMessage = this.message.filter(bl);
+             PlayerChatMessage playerChatMessage = this.message.filter(filterMaskEnabled);
 +            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(unsigned) : playerChatMessage; // Paper
              if (!playerChatMessage.isFullyFiltered()) {
-                 this.playersWithFullMessage.add(serverPlayer);
-                 RegistryAccess registryAccess = serverPlayer.level.registryAccess();
+                 this.playersWithFullMessage.add(sender);
+                 RegistryAccess registryAccess = sender.level.registryAccess();
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
 index 02183c810f9968621b9b20c1f7b54258b620c507..32ef3edebe94a2014168b7e438752a80b2687e5f 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
@@ -1954,7 +1956,7 @@ index 20a0a14f331ed891a64bd3ed69ade9cf2d917922..b9a6533afbfe07ff544f9f03f3c25489
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 4759a0eceeccf28b62cb8865b423235d47d07443..bee13e04481f57bf6778b66cd0bc2891e069547a 100644
+index 84564ca128d2dfc79c0b5a13b699cf6fc80bdea7..9ab4588e4e512176b881ad4c252e400ff6ea97bd 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -154,6 +154,7 @@ import net.minecraft.world.scores.Score;
@@ -2011,15 +2013,15 @@ index 4759a0eceeccf28b62cb8865b423235d47d07443..bee13e04481f57bf6778b66cd0bc2891
 @@ -1729,8 +1727,13 @@ public class ServerPlayer extends Player {
      }
  
-     public void sendChatMessage(OutgoingPlayerChatMessage message, boolean flag, ChatType.Bound chatmessagetype_a) {
+     public void sendChatMessage(OutgoingPlayerChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
 +        // Paper start
-+        this.sendChatMessage(message, flag, chatmessagetype_a, null);
++        this.sendChatMessage(message, filterMaskEnabled, params, null);
 +    }
-+    public void sendChatMessage(OutgoingPlayerChatMessage message, boolean flag, ChatType.Bound chatmessagetype_a, @Nullable Component unsigned) {
++    public void sendChatMessage(OutgoingPlayerChatMessage message, boolean filterMaskEnabled, ChatType.Bound params, @Nullable Component unsigned) {
 +        // Paper end
          if (this.acceptsChatMessages()) {
--            message.sendToPlayer(this, flag, chatmessagetype_a);
-+            message.sendToPlayer(this, flag, chatmessagetype_a, unsigned); // Paper
+-            message.sendToPlayer(this, filterMaskEnabled, params);
++            message.sendToPlayer(this, filterMaskEnabled, params, unsigned); // Paper
          }
  
      }
@@ -2043,7 +2045,7 @@ index 4759a0eceeccf28b62cb8865b423235d47d07443..bee13e04481f57bf6778b66cd0bc2891
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 13f996d163739f419b701854b5248a02edfc93c0..0620ba3f5e26279e0165d86f589d73f423d633f0 100644
+index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f84735a4e 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -187,6 +187,8 @@ import org.apache.commons.lang3.StringUtils;
@@ -2161,8 +2163,8 @@ index 13f996d163739f419b701854b5248a02edfc93c0..0620ba3f5e26279e0165d86f589d73f4
 +        return packet.signedPreview() && ichatbasecomponent != null ? new ChatMessageContent(packet.message(), ichatbasecomponent, result.decoratorResult()) : new ChatMessageContent(packet.message()); // Paper end
      }
  
-     private void broadcastChatMessage(PlayerChatMessage playerchatmessage) {
-@@ -2269,14 +2284,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     private void broadcastChatMessage(PlayerChatMessage message) {
+@@ -2277,14 +2292,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      private CompletableFuture<Component> queryChatPreview(String query) {
          MutableComponent ichatmutablecomponent = Component.literal(query);
@@ -2184,7 +2186,7 @@ index 13f996d163739f419b701854b5248a02edfc93c0..0620ba3f5e26279e0165d86f589d73f4
      }
  
      private CompletableFuture<Component> queryCommandPreview(String query) {
-@@ -2285,7 +2303,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2293,7 +2311,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          CompletableFuture<Component> completablefuture = this.getPreviewedArgument(commandlistenerwrapper, PreviewableCommand.of(parseresults));
  
          completablefuture.thenAcceptAsync((ichatbasecomponent) -> {
@@ -2193,7 +2195,7 @@ index 13f996d163739f419b701854b5248a02edfc93c0..0620ba3f5e26279e0165d86f589d73f4
          }, this.server);
          return completablefuture;
      }
-@@ -3076,30 +3094,30 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3084,30 +3102,30 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  return;
              }
  
@@ -2232,10 +2234,10 @@ index 13f996d163739f419b701854b5248a02edfc93c0..0620ba3f5e26279e0165d86f589d73f4
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index fed3a8c5a23f3a7b279f209aaaab5f6ffa3f137c..5054c3208d1723a33a96d23edcbc9f1483b879e5 100644
+index 4fe70fee37685c3011e8212d6d47fee19da87824..bcf189d0ae917b99fff62167740ddb0012082138 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -379,7 +379,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+@@ -363,7 +363,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
                          if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
                              final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
                              if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
@@ -2244,7 +2246,7 @@ index fed3a8c5a23f3a7b279f209aaaab5f6ffa3f137c..5054c3208d1723a33a96d23edcbc9f14
                              }
                              Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
                                  @Override
-@@ -390,12 +390,12 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+@@ -374,12 +374,12 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
  
                              ServerLoginPacketListenerImpl.this.server.processQueue.add(waitable);
                              if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
@@ -2273,7 +2275,7 @@ index 3a587073dbe5e8a599d342c5f758d842b7b6cddb..a426adfba3fccf1815177e0b8065684c
  
                  @Override
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index ba6f4e9f74a524201390bd0e9106a6cf6afe0375..68ea3623dedefbc695bbb53e163911d3dfbfbf7e 100644
+index 6987bee4bf2c1f3d47ffdd5329f6c0c63a2962a5..521f485366c65527ac3289dd27d8f2e311706a10 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -8,6 +8,7 @@ import com.mojang.logging.LogUtils;
@@ -2391,38 +2393,38 @@ index ba6f4e9f74a524201390bd0e9106a6cf6afe0375..68ea3623dedefbc695bbb53e163911d3
 @@ -1169,14 +1169,25 @@ public abstract class PlayerList {
      }
  
-     public void broadcastChatMessage(PlayerChatMessage playerchatmessage, ServerPlayer sender, ChatType.Bound params) {
+     public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
 +        // Paper start
-+        this.broadcastChatMessage(playerchatmessage, sender, params, null);
++        this.broadcastChatMessage(message, sender, params, null);
 +    }
-+    public void broadcastChatMessage(PlayerChatMessage playerchatmessage, ServerPlayer sender, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
++    public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
 +        // Paper end
          Objects.requireNonNull(sender);
--        this.broadcastChatMessage(playerchatmessage, sender::shouldFilterMessageTo, sender, sender.asChatSender(), params);
-+        this.broadcastChatMessage(playerchatmessage, sender::shouldFilterMessageTo, sender, sender.asChatSender(), params, unsignedFunction); // Paper
+-        this.broadcastChatMessage(message, sender::shouldFilterMessageTo, sender, sender.asChatSender(), params);
++        this.broadcastChatMessage(message, sender::shouldFilterMessageTo, sender, sender.asChatSender(), params, unsignedFunction); // Paper
      }
  
-     private void broadcastChatMessage(PlayerChatMessage playerchatmessage, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer entityplayer, ChatSender chatsender, ChatType.Bound chatmessagetype_a) {
+     private void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatSender sourceProfile, ChatType.Bound params) {
 +        // Paper start
-+        this.broadcastChatMessage(playerchatmessage, shouldSendFiltered, entityplayer, chatsender, chatmessagetype_a, null);
++        this.broadcastChatMessage(message, shouldSendFiltered, sender, sourceProfile, params, null);
 +    }
 +
-+    private void broadcastChatMessage(PlayerChatMessage playerchatmessage, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer entityplayer, ChatSender chatsender, ChatType.Bound chatmessagetype_a, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
++    private void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatSender sourceProfile, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
 +        // Paper end
-         boolean flag = this.verifyChatTrusted(playerchatmessage, chatsender);
+         boolean flag = this.verifyChatTrusted(message, sourceProfile);
  
--        this.server.logChatMessage(playerchatmessage.serverContent(), chatmessagetype_a, flag ? null : "Not Secure");
-+        this.server.logChatMessage((unsignedFunction == null ? playerchatmessage : playerchatmessage.withUnsignedContent(unsignedFunction.apply(this.server.console))).serverContent(), chatmessagetype_a, flag ? null : "Not Secure"); // Paper
-         OutgoingPlayerChatMessage outgoingplayerchatmessage = OutgoingPlayerChatMessage.create(playerchatmessage);
-         boolean flag1 = playerchatmessage.isFullyFiltered();
+-        this.server.logChatMessage(message.serverContent(), params, flag ? null : "Not Secure");
++        this.server.logChatMessage((unsignedFunction == null ? message : message.withUnsignedContent(unsignedFunction.apply(this.server.console))).serverContent(), params, flag ? null : "Not Secure"); // Paper
+         OutgoingPlayerChatMessage outgoingplayerchatmessage = OutgoingPlayerChatMessage.create(message);
+         boolean flag1 = message.isFullyFiltered();
          boolean flag2 = false;
 @@ -1186,7 +1197,7 @@ public abstract class PlayerList {
              ServerPlayer entityplayer1 = (ServerPlayer) iterator.next();
              boolean flag3 = shouldSendFiltered.test(entityplayer1);
  
--            entityplayer1.sendChatMessage(outgoingplayerchatmessage, flag3, chatmessagetype_a);
-+            entityplayer1.sendChatMessage(outgoingplayerchatmessage, flag3, chatmessagetype_a, unsignedFunction == null ? null : unsignedFunction.apply(entityplayer1.getBukkitEntity()));
-             if (entityplayer != entityplayer1) {
+-            entityplayer1.sendChatMessage(outgoingplayerchatmessage, flag3, params);
++            entityplayer1.sendChatMessage(outgoingplayerchatmessage, flag3, params, unsignedFunction == null ? null : unsignedFunction.apply(entityplayer1.getBukkitEntity())); // Paper
+             if (sender != entityplayer1) {
                  flag2 |= flag1 && flag3;
              }
 @@ -1213,7 +1224,7 @@ public abstract class PlayerList {
@@ -4386,7 +4388,7 @@ index 78ea79b66cc9e90402ef5cdc2e5e04e0c74b1c26..4fede2161792ba3e7cdf0cc5a1f53318
  
          boolean hadFormat = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 8c5165c449f740e51aad3f41405aaad1cfe5c657..a9a900f09b95d84b53adbe0405c322d36b6edad1 100644
+index d805ac4274fb6149bf8efea6b771ecfe79aea76f..56a3dc9dcbd2229c60aa64e2d4c0ed147539a5ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -69,6 +69,38 @@ public final class CraftMagicNumbers implements UnsafeValues {

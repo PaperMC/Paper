@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index f6162d65d341ef3df1a9b3f45d7d0c25d52f35cf..2d1db70456b746c8fab77893cb34240e573b92ca 100644
+index 527acbc15f3fe30541eef555480e158ab83a6130..31d35af5d0efbd0bd8528c3f05e660a203e67ac9 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -93,6 +93,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -105,7 +105,7 @@ index f6162d65d341ef3df1a9b3f45d7d0c25d52f35cf..2d1db70456b746c8fab77893cb34240e
          this.send(packet, (PacketSendListener) null);
      }
  
-     public void send(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
+     public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
 -        if (this.isConnected()) {
 -            this.flushQueue();
 +        // Paper start - handle oversized packets better
@@ -118,16 +118,16 @@ index f6162d65d341ef3df1a9b3f45d7d0c25d52f35cf..2d1db70456b746c8fab77893cb34240e
 +            net.minecraft.server.MCUtil.isMainThread() && packet.isReady() && this.queue.isEmpty() &&
 +            (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
 +        ))) {
-             this.sendPacket(packet, packetsendlistener);
+             this.sendPacket(packet, callbacks);
 -        } else {
--            this.queue.add(new Connection.PacketHolder(packet, packetsendlistener));
+-            this.queue.add(new Connection.PacketHolder(packet, callbacks));
 +            return;
          }
 +        // write the packets to the queue, then flush - antixray hooks there already
 +        java.util.List<Packet> extraPackets = InnerUtil.buildExtraPackets(packet);
 +        boolean hasExtraPackets = extraPackets != null && !extraPackets.isEmpty();
 +        if (!hasExtraPackets) {
-+            this.queue.add(new Connection.PacketHolder(packet, packetsendlistener));
++            this.queue.add(new Connection.PacketHolder(packet, callbacks));
 +        } else {
 +            java.util.List<Connection.PacketHolder> packets = new java.util.ArrayList<>(1 + extraPackets.size());
 +            packets.add(new Connection.PacketHolder(packet, null)); // delay the future listener until the end of the extra packets
@@ -135,7 +135,7 @@ index f6162d65d341ef3df1a9b3f45d7d0c25d52f35cf..2d1db70456b746c8fab77893cb34240e
 +            for (int i = 0, len = extraPackets.size(); i < len;) {
 +                Packet extra = extraPackets.get(i);
 +                boolean end = ++i == len;
-+                packets.add(new Connection.PacketHolder(extra, end ? packetsendlistener : null)); // append listener to the end
++                packets.add(new Connection.PacketHolder(extra, end ? callbacks : null)); // append listener to the end
 +            }
 +            this.queue.addAll(packets); // atomic
 +        }
@@ -143,7 +143,7 @@ index f6162d65d341ef3df1a9b3f45d7d0c25d52f35cf..2d1db70456b746c8fab77893cb34240e
 +        // Paper end
      }
  
-     private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
+     private void sendPacket(Packet<?> packet, @Nullable PacketSendListener callbacks) {
 @@ -234,6 +309,15 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              this.setProtocol(packetState);
          }
@@ -159,7 +159,7 @@ index f6162d65d341ef3df1a9b3f45d7d0c25d52f35cf..2d1db70456b746c8fab77893cb34240e
 +            // Paper end
          ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
  
-         if (packetsendlistener != null) {
+         if (callbacks != null) {
 @@ -252,28 +336,65 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              });
