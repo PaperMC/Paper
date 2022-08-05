@@ -32,7 +32,7 @@ public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> ext
     private final RootCommandNode<S> root;
     private final ArgumentCommandNode<S, String> defaultArgs;
     private LiteralCommandNode<S> literal;
-    private boolean legacyBehavior = false;
+    private boolean rawCommand = false;
     private boolean cancelled = false;
 
     public CommandRegisteredEvent(String commandLabel, BukkitBrigadierCommand<S> brigadierCommand, Command command, RootCommandNode<S> root, LiteralCommandNode<S> literal, ArgumentCommandNode<S, String> defaultArgs) {
@@ -95,24 +95,26 @@ public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> ext
     }
 
     /**
-     * Gets whether to use legacy behavior.
+     * Gets whether this command should is treated as "raw".
      *
-     * @see #setLegacyBehavior(boolean)
-     * @return whether to use legacy behavior
+     * @see #setRawCommand(boolean)
+     * @return whether this command is treated as "raw"
      */
-    public boolean getLegacyBehavior() {
-        return this.legacyBehavior;
+    public boolean isRawCommand() {
+        return this.rawCommand;
     }
 
     /**
-     * In older versions of Paper, the behavior this event was to provide Brigadier meta to the client
-     * without actually using Brigadier for command execution. This method allows opting-in to the old
-     * behavior.
+     * Sets whether this command should be treated as "raw".
      *
-     * @param legacyBehavior whether to use legacy behavior
+     * <p>A "raw" command will only use the node provided by this event for
+     * sending the command tree to the client. For execution purposes, the default
+     * greedy string execution of a standard Bukkit {@link Command} is used.</p>
+     *
+     * @param rawCommand whether this command should be treated as "raw"
      */
-    public void setLegacyBehavior(final boolean legacyBehavior) {
-        this.legacyBehavior = legacyBehavior;
+    public void setRawCommand(final boolean rawCommand) {
+        this.rawCommand = rawCommand;
     }
 
     /**
