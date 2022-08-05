@@ -259,7 +259,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages())) {
                  this.server.submit(() -> {
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         // Paper end
+     private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
          if (!this.updateChatOrder(timestamp)) {
              ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
 -            this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
@@ -268,14 +268,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         ChatSender chatsender = this.player.asChatSender();
+             }
  
-         if (chatsender.profilePublicKey() != null && !message.verify(chatsender)) {
--            this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"));
-+            this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event cause
-             return false;
-         } else {
-             if (message.hasExpiredServer(Instant.now())) {
+             if (!playerchatmessage.verify(chatsender)) {
+-                this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"));
++                this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event cause
+                 return false;
+             }
+         }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // this.chatSpamTickCount += 20;
          if (this.chatSpamTickCount.addAndGet(20) > 200 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
