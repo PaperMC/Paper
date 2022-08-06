@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Fired anytime the server synchronizes Bukkit commands to Brigadier.
  *
- * Allows a plugin to control the command node structure for it's commands.
+ * Allows a plugin to control the command node structure for its commands.
  * This is done at Plugin Enable time after commands have been registered, but may also
  * run at a later point in the server lifetime due to plugins, a server reload, etc.
  *
@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Deprecated
 @Warning(false)
-public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
+public class CommandRegisteredEvent<S extends BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
     private final String commandLabel;
@@ -45,50 +45,68 @@ public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> ext
     }
 
     /**
-     * @return The command name being registered
+     * Gets the command label of the {@link Command} being registered.
+     *
+     * @return the command label
      */
     public String getCommandLabel() {
-        return commandLabel;
+        return this.commandLabel;
     }
 
     /**
-     * @return The Bukkit API Brigadier Wrapped Command Object to handle executions and suggestions
+     * Gets the {@link BukkitBrigadierCommand} for the {@link Command} being registered. This can be used
+     * as the {@link com.mojang.brigadier.Command command executor} or
+     * {@link com.mojang.brigadier.suggestion.SuggestionProvider} of a {@link com.mojang.brigadier.tree.CommandNode}
+     * to delegate to the {@link Command} being registered.
+     *
+     * @return the {@link BukkitBrigadierCommand}
      */
     public BukkitBrigadierCommand<S> getBrigadierCommand() {
-        return brigadierCommand;
-    }
-
-    public Command getCommand() {
-        return command;
+        return this.brigadierCommand;
     }
 
     /**
-     * @return Gets the root command node being used to register a command to.
+     * Gets the {@link Command} being registered.
+     *
+     * @return the {@link Command}
+     */
+    public Command getCommand() {
+        return this.command;
+    }
+
+    /**
+     * Gets the {@link RootCommandNode} which is being registered to.
+     *
+     * @return the {@link RootCommandNode}
      */
     public RootCommandNode<S> getRoot() {
-        return root;
+        return this.root;
     }
 
     /**
-     * Returns the Bukkit API's default handling of Arguments, if you wish to reuse it.
-     * @return
+     * Gets the Bukkit APIs default arguments node (greedy string), for if
+     * you wish to reuse it.
+     *
+     * @return default arguments node
      */
     public ArgumentCommandNode<S, String> getDefaultArgs() {
-        return defaultArgs;
+        return this.defaultArgs;
     }
 
     /**
-     * Returns the Bukkit API's default literal for this command, including the {@link #getDefaultArgs()} as a child already.
-     * @return
+     * Gets the {@link LiteralCommandNode} to be registered for the {@link Command}.
+     *
+     * @return the {@link LiteralCommandNode}
      */
     public LiteralCommandNode<S> getLiteral() {
-        return literal;
+        return this.literal;
     }
 
     /**
-     * Changes the literal used to register this command. The previous literable is mutable, so this is primarily if
-     * you want to completely replace the object.
-     * @param literal
+     * Sets the {@link LiteralCommandNode} used to register this command. The default literal is mutable, so
+     * this is primarily if you want to completely replace the object.
+     *
+     * @param literal new node
      */
     public void setLiteral(LiteralCommandNode<S> literal) {
         this.literal = literal;
