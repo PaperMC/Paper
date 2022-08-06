@@ -598,24 +598,6 @@ index a48a12a31a3d09a9373b688dcc093035f8f8a300..97b29bcb20e199c2d02457f8025e67e2
              // CraftBukkit start
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index dc18cc9818fef3e7193a22353aea957a47dbbdb5..ae676b46937f821e358ca4176b162bbca7048e62 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1989,6 +1989,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-     }
- 
-     private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
-+        // Paper start
-+        final ProfilePublicKey key = this.player.getProfilePublicKey();
-+        if (key != null && key.data().hasExpired()) {
-+            this.disconnect(Component.translatable("multiplayer.disconnect.missing_public_key"), org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED);
-+            return false;
-+        }
-+        // Paper end
-         if (!this.updateChatOrder(timestamp)) {
-             ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
-             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 index 2a0cf0a8a79c09566c598197fc6f8c447d4bbd72..5e3bc0590e59770490b1c6c818d99be054214a8a 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
