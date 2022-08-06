@@ -15,10 +15,10 @@ login plugin message packet.
 
 diff --git a/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..980e2b4dc308adf9a6cb2596b28eaeee65d629a8
+index 0000000000000000000000000000000000000000..5de2dabbc076a9482b1d6c299f1cff74313af74e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,74 @@
 +package com.destroystokyo.paper.proxy;
 +
 +import io.papermc.paper.configuration.GlobalConfiguration;
@@ -29,6 +29,7 @@ index 0000000000000000000000000000000000000000..980e2b4dc308adf9a6cb2596b28eaeee
 +import java.security.InvalidKeyException;
 +import java.security.MessageDigest;
 +import java.security.NoSuchAlgorithmException;
++import java.util.UUID;
 +
 +import javax.crypto.Mac;
 +import javax.crypto.spec.SecretKeySpec;
@@ -39,7 +40,8 @@ index 0000000000000000000000000000000000000000..980e2b4dc308adf9a6cb2596b28eaeee
 +public class VelocityProxy {
 +    private static final int SUPPORTED_FORWARDING_VERSION = 1;
 +    public static final int MODERN_FORWARDING_WITH_KEY = 2;
-+    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = 2;
++    public static final int MODERN_FORWARDING_WITH_KEY_V2 = 3;
++    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = MODERN_FORWARDING_WITH_KEY_V2;
 +    public static final ResourceLocation PLAYER_INFO_CHANNEL = new ResourceLocation("velocity", "player_info");
 +
 +    public static boolean checkIntegrity(final FriendlyByteBuf buf) {
@@ -86,9 +88,26 @@ index 0000000000000000000000000000000000000000..980e2b4dc308adf9a6cb2596b28eaeee
 +    public static ProfilePublicKey.Data readForwardedKey(FriendlyByteBuf buf) {
 +        return new ProfilePublicKey.Data(buf);
 +    }
++
++    public static UUID readSignerUuidOrElse(FriendlyByteBuf buf, UUID orElse) {
++        return buf.readBoolean() ? buf.readUUID() : orElse;
++    }
 +}
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index bdd6560fe85950b0a857a949cb38c044da44ca6b..b2b8953f59e778697ca823b957b1b7c9a0e6c45a 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -614,7 +614,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public boolean enforceSecureProfile() {
+-        return this.getProperties().enforceSecureProfile && this.getProperties().onlineMode;
++        return this.getProperties().enforceSecureProfile && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Velocity support
+     }
+ 
+     protected boolean convertOldUsers() {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 1010c2a649256eb850f5094290934de27544a76a..df8a2eb5e90fa35b959429a374bc086362e5755f 100644
+index 1010c2a649256eb850f5094290934de27544a76a..9fed10a77808e565c9e8b2ebe5f4114917a33187 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -71,6 +71,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
@@ -129,7 +148,7 @@ index 1010c2a649256eb850f5094290934de27544a76a..df8a2eb5e90fa35b959429a374bc0863
                          String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
                          java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
                          java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) connection.getRawAddress()).getAddress(); // Paper
-@@ -477,6 +494,59 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+@@ -477,6 +494,60 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
      // Spigot end
  
      public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
@@ -162,13 +181,14 @@ index 1010c2a649256eb850f5094290934de27544a76a..df8a2eb5e90fa35b959429a374bc0863
 +
 +            // We should already have this, but, we'll read it out anyway
 +            //noinspection NonStrictComparisonCanBeEquality
-+            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY) {
-+                final ProfilePublicKey.Data forwardedKey = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
++            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY_V2) {
++                final ProfilePublicKey.Data forwardedKeyData = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
++                final UUID signer = com.destroystokyo.paper.proxy.VelocityProxy.readSignerUuidOrElse(buf, this.gameProfile.getId());
 +                if (this.profilePublicKeyData == null) {
 +                    try {
-+                        ProfilePublicKey.createValidated(this.server.getServiceSignatureValidator(), this.gameProfile.getId(), forwardedKey);
-+                        this.profilePublicKeyData = forwardedKey;
-+                    } catch (CryptException e) {
++                        ServerLoginPacketListenerImpl.validatePublicKey(forwardedKeyData, signer, this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
++                        this.profilePublicKeyData = forwardedKeyData;
++                    } catch (ServerLoginPacketListenerImpl.PublicKeyValidationException err) {
 +                        this.disconnect("Unable to validate forwarded player key");
 +                    }
 +                }
