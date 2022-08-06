@@ -7372,7 +7372,7 @@ index 68860a3b6db2aa50373d71aec9502c18d48ab8b9..193f492ce1fb6a7ebf2c19f092c26842
      public static void processConfiguration(GlobalConfiguration.AsyncChunks config) {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c2166bb396af33c3683080ad089d9a840a44a7d8
+index 0000000000000000000000000000000000000000..25ae685b4c849a481bd7065219b2f952cc8d5e49
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 @@ -0,0 +1,712 @@
@@ -7924,7 +7924,7 @@ index 0000000000000000000000000000000000000000..c2166bb396af33c3683080ad089d9a84
 +        ChunkEntitySlices ret;
 +        if (region == null || (ret = region.get((chunkX & REGION_MASK) | ((chunkZ & REGION_MASK) << REGION_SHIFT))) == null) {
 +            // loadInEntityChunk will call addChunk for us
-+            return this.world.chunkTaskScheduler.chunkHolderManager.getOrCreateEntityChunk(chunkX, chunkZ);
++            return this.world.chunkTaskScheduler.chunkHolderManager.getOrCreateEntityChunk(chunkX, chunkZ, true);
 +        }
 +
 +        return ret;
@@ -9864,7 +9864,7 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkFullTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkFullTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a7b55630c
+index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da31d6161e3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkFullTask.java
 @@ -0,0 +1,125 @@
@@ -9924,7 +9924,7 @@ index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a
 +            // Unlike Vanilla, we load the entity chunk here, as we load the NBT in empty status (unlike Vanilla)
 +            // This brings entity addition back in line with older versions of the game
 +            // Since we load the NBT in the empty status, this will never block for I/O
-+            this.world.chunkTaskScheduler.chunkHolderManager.getOrCreateEntityChunk(this.chunkX, this.chunkZ);
++            this.world.chunkTaskScheduler.chunkHolderManager.getOrCreateEntityChunk(this.chunkX, this.chunkZ, false);
 +
 +            // we don't need the entitiesInLevel trash, this system doesn't double run callbacks
 +            chunk.setLoaded(true);
@@ -9995,10 +9995,10 @@ index 0000000000000000000000000000000000000000..bca0f657463cc8a53055019a779fdf3a
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ad4021485a1c8f5dfabef7e1d3e3cdcb88fdefbe
+index 0000000000000000000000000000000000000000..94fd7cc50507934c9e85c1403cb0266510d13d63
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1142 @@
+@@ -0,0 +1,1146 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -10600,12 +10600,12 @@ index 0000000000000000000000000000000000000000..ad4021485a1c8f5dfabef7e1d3e3cdcb
 +
 +    private long entityLoadCounter;
 +
-+    public ChunkEntitySlices getOrCreateEntityChunk(final int chunkX, final int chunkZ) {
++    public ChunkEntitySlices getOrCreateEntityChunk(final int chunkX, final int chunkZ, final boolean transientChunk) {
 +        TickThread.ensureTickThread(chunkX, chunkZ, "Cannot create entity chunk off-main");
 +        ChunkEntitySlices ret;
 +
 +        NewChunkHolder current = this.getChunkHolder(chunkX, chunkZ);
-+        if (current != null && (ret = current.getEntityChunk()) != null) {
++        if (current != null && (ret = current.getEntityChunk()) != null && (transientChunk || !ret.isTransient())) {
 +            return ret;
 +        }
 +
@@ -10619,7 +10619,7 @@ index 0000000000000000000000000000000000000000..ad4021485a1c8f5dfabef7e1d3e3cdcb
 +            this.taskScheduler.schedulingLock.lock();
 +            try {
 +                current = this.getOrCreateChunkHolder(chunkX, chunkZ);
-+                if ((ret = current.getEntityChunk()) != null && !ret.isTransient()) {
++                if ((ret = current.getEntityChunk()) != null && (transientChunk || !ret.isTransient())) {
 +                    return ret;
 +                }
 +
@@ -10627,12 +10627,14 @@ index 0000000000000000000000000000000000000000..ad4021485a1c8f5dfabef7e1d3e3cdcb
 +                    isCompleted.setPlain(true);
 +                } else {
 +                    current.getOrLoadEntityData((final GenericDataLoadTask.TaskResult<CompoundTag, Throwable> result) -> {
-+                        isCompleted.set(true);
-+                        LockSupport.unpark(waiter);
++                        if (!transientChunk) {
++                            isCompleted.set(true);
++                            LockSupport.unpark(waiter);
++                        }
 +                    });
 +                    final ChunkLoadTask.EntityDataLoadTask entityLoad = current.getEntityDataLoadTask();
 +
-+                    if (entityLoad != null) {
++                    if (entityLoad != null && !transientChunk) {
 +                        entityLoad.raisePriority(PrioritisedExecutor.Priority.BLOCKING);
 +                    }
 +                }
@@ -10643,20 +10645,22 @@ index 0000000000000000000000000000000000000000..ad4021485a1c8f5dfabef7e1d3e3cdcb
 +            this.ticketLock.unlock();
 +        }
 +
-+        // Note: no need to busy wait on the chunk queue, entity load will complete off-main
-+        boolean interrupted = false;
-+        while (!isCompleted.get()) {
-+            interrupted |= Thread.interrupted();
-+            LockSupport.park();
-+        }
++        if (!transientChunk) {
++            // Note: no need to busy wait on the chunk queue, entity load will complete off-main
++            boolean interrupted = false;
++            while (!isCompleted.get()) {
++                interrupted |= Thread.interrupted();
++                LockSupport.park();
++            }
 +
-+        if (interrupted) {
-+            Thread.currentThread().interrupt();
++            if (interrupted) {
++                Thread.currentThread().interrupt();
++            }
 +        }
 +
 +        // now that the entity data is loaded, we can load it into the world
 +
-+        ret = current.loadInEntityChunk();
++        ret = current.loadInEntityChunk(transientChunk);
 +
 +        this.removeTicketAtLevel(TicketType.ENTITY_LOAD, chunkX, chunkZ, MAX_TICKET_LEVEL, entityLoadId);
 +
@@ -13615,10 +13619,10 @@ index 0000000000000000000000000000000000000000..7917e65ac61a258242f5081092045f8e
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6cceaa61533ede5a73648db994b46a9717881c7f
+index 0000000000000000000000000000000000000000..9bb8f278149cb1809767935375ca155e6c7916b5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1946 @@
+@@ -0,0 +1,1948 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -13687,25 +13691,20 @@ index 0000000000000000000000000000000000000000..6cceaa61533ede5a73648db994b46a97
 +    // chunk data state
 +
 +    private ChunkEntitySlices entityChunk;
-+    // if entityChunkFromDisk is true, then the entity chunk from disk has been deserialized and its entities added
-+    // into the world
-+    // if this is false then the entities have not been loaded from disk
-+    // and would require a merge into this entityChunk.
-+    private boolean entityChunkFromDisk;
 +    // entity chunk that is loaded, but not yet deserialized
 +    private CompoundTag pendingEntityChunk;
 +
-+    ChunkEntitySlices loadInEntityChunk() {
++    ChunkEntitySlices loadInEntityChunk(final boolean transientChunk) {
 +        TickThread.ensureTickThread(this.chunkX, this.chunkZ, "Cannot sync load entity data off-main");
 +        final CompoundTag entityChunk;
 +        final ChunkEntitySlices ret;
 +        this.scheduler.schedulingLock.lock();
 +        try {
-+            if (this.entityChunk != null && !this.entityChunk.isTransient()) {
++            if (this.entityChunk != null && (transientChunk || !this.entityChunk.isTransient())) {
 +                return this.entityChunk;
 +            }
 +            final CompoundTag pendingEntityChunk = this.pendingEntityChunk;
-+            if (pendingEntityChunk == null) {
++            if (!transientChunk && pendingEntityChunk == null) {
 +                throw new IllegalStateException("Must load entity data from disk before loading in the entity chunk!");
 +            }
 +
@@ -13715,28 +13714,36 @@ index 0000000000000000000000000000000000000000..6cceaa61533ede5a73648db994b46a97
 +                    WorldUtil.getMinSection(this.world), WorldUtil.getMaxSection(this.world)
 +                );
 +
++                ret.setTransient(transientChunk);
++
 +                this.world.getEntityLookup().entitySectionLoad(this.chunkX, this.chunkZ, ret);
 +            } else {
++                // transientChunk = false here
 +                ret = this.entityChunk;
 +                this.entityChunk.setTransient(false);
 +            }
 +
-+            this.pendingEntityChunk = null;
-+            this.entityChunkFromDisk = true;
-+            entityChunk = pendingEntityChunk == EMPTY_ENTITY_CHUNK ? null : pendingEntityChunk;
++            if (!transientChunk) {
++                this.pendingEntityChunk = null;
++                entityChunk = pendingEntityChunk == EMPTY_ENTITY_CHUNK ? null : pendingEntityChunk;
++            } else {
++                entityChunk = null;
++            }
 +        } finally {
 +            this.scheduler.schedulingLock.unlock();
 +        }
 +
-+        if (entityChunk != null) {
-+            final List<Entity> entities = EntityStorage.readEntities(this.world, entityChunk);
++        if (!transientChunk) {
++            if (entityChunk != null) {
++                final List<Entity> entities = EntityStorage.readEntities(this.world, entityChunk);
 +
-+            this.world.getEntityLookup().addEntityChunkEntities(entities);
++                this.world.getEntityLookup().addEntityChunkEntities(entities);
 +
-+            CraftEventFactory.callEntitiesLoadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), entities);
-+        } else {
-+            // must call for empty entities
-+            CraftEventFactory.callEntitiesLoadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), new ArrayList<>());
++                CraftEventFactory.callEntitiesLoadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), entities);
++            } else {
++                // must call for empty entities
++                CraftEventFactory.callEntitiesLoadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), new ArrayList<>());
++            }
 +        }
 +
 +        return ret;
@@ -13760,7 +13767,7 @@ index 0000000000000000000000000000000000000000..6cceaa61533ede5a73648db994b46a97
 +    // returns only if the data has been loaded from disk, DOES NOT relate to whether it has been deserialized
 +    // or added into the world (or even into entityChunk)
 +    public boolean isEntityChunkNBTLoaded() {
-+        return (this.entityChunk != null && this.entityChunkFromDisk) || this.pendingEntityChunk != null;
++        return (this.entityChunk != null && !this.entityChunk.isTransient()) || this.pendingEntityChunk != null;
 +    }
 +
 +    private void completeEntityLoad(final GenericDataLoadTask.TaskResult<CompoundTag, Throwable> result) {
@@ -14362,7 +14369,6 @@ index 0000000000000000000000000000000000000000..6cceaa61533ede5a73648db994b46a97
 +        // entity chunk state
 +        this.entityChunk = null;
 +        this.pendingEntityChunk = null;
-+        this.entityChunkFromDisk = false;
 +
 +        // poi chunk state
 +        this.poiChunk = null;
@@ -14432,7 +14438,6 @@ index 0000000000000000000000000000000000000000..6cceaa61533ede5a73648db994b46a97
 +                try {
 +                    entityChunk.setTransient(true);
 +                    this.entityChunk = entityChunk;
-+                    this.entityChunkFromDisk = false;
 +                } finally {
 +                    this.scheduler.schedulingLock.unlock();
 +                }
@@ -15454,11 +15459,12 @@ index 0000000000000000000000000000000000000000..6cceaa61533ede5a73648db994b46a97
 +    @Override
 +    public String toString() {
 +        final ChunkCompletion lastCompletion = this.lastChunkCompletion;
++        final ChunkEntitySlices entityChunk = this.entityChunk;
 +        return "NewChunkHolder{" +
 +            "world=" + this.world.getWorld().getName() +
 +            ", chunkX=" + this.chunkX +
 +            ", chunkZ=" + this.chunkZ +
-+            ", entityChunkFromDisk=" + this.entityChunkFromDisk +
++            ", entityChunkFromDisk=" + (entityChunk != null && !entityChunk.isTransient()) +
 +            ", lastChunkCompletion={chunk_class=" + (lastCompletion == null || lastCompletion.chunk() == null ? "null" : lastCompletion.chunk().getClass().getName()) + ",status=" + (lastCompletion == null ? "null" : lastCompletion.genStatus()) + "}" +
 +            ", currentGenStatus=" + this.currentGenStatus +
 +            ", requestedGenStatus=" + this.requestedGenStatus +
