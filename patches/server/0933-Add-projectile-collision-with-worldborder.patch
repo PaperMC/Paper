@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: zJanny <jan.trummer@hotmail.com>
+Date: Sat, 6 Aug 2022 11:38:23 +0200
+Subject: [PATCH] Add projectile collision with worldborder
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java b/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
+index 0524161f7cb414d526e6118258bddd989be6cc9a..9a5d44c057ea0cd18f2b30d49158b74d8826c41a 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
+@@ -34,6 +34,12 @@ public final class ProjectileUtil {
+             hitResult = hitResult2;
+         }
+ 
++        // Paper start
++        if(entity.getLevel().getWorldBorder().getCollisionShape().intersects(entity.getBoundingBox().expandTowards(entity.getDeltaMovement()))){
++            hitResult = new net.minecraft.world.phys.WorldborderHitResult(entity.position());
++        }
++        // Paper end
++
+         return hitResult;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/phys/HitResult.java b/src/main/java/net/minecraft/world/phys/HitResult.java
+index d4e3817ff9a4d2edd6a286fbbe1e6f20a34d15a2..dcc5e63fe9322727ef4c8288b5af6fcda708df42 100644
+--- a/src/main/java/net/minecraft/world/phys/HitResult.java
++++ b/src/main/java/net/minecraft/world/phys/HitResult.java
+@@ -25,6 +25,7 @@ public abstract class HitResult {
+     public static enum Type {
+         MISS,
+         BLOCK,
++        WORLDBORDER, // Paper
+         ENTITY;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/phys/WorldborderHitResult.java b/src/main/java/net/minecraft/world/phys/WorldborderHitResult.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fee9dc99ee2eba2123da5e3406bee228239f435f
+--- /dev/null
++++ b/src/main/java/net/minecraft/world/phys/WorldborderHitResult.java
+@@ -0,0 +1,13 @@
++package net.minecraft.world.phys;
++// Paper
++public class WorldborderHitResult extends HitResult{
++    public WorldborderHitResult(Vec3 pos) {
++        super(pos);
++    }
++
++    @Override
++    public Type getType() {
++        return Type.WORLDBORDER;
++    }
++}
++// Paper end
