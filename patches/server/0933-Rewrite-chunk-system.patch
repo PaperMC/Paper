@@ -8090,10 +8090,10 @@ index 0000000000000000000000000000000000000000..c2166bb396af33c3683080ad089d9a84
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..acbe183c6d5d5f4a519a67f59466304f7e9d4e10
+index 0000000000000000000000000000000000000000..560a8663f86a2f9e505609873ffc8c02d674e579
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
-@@ -0,0 +1,1259 @@
+@@ -0,0 +1,1308 @@
 +package io.papermc.paper.chunk.system.io;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -8105,6 +8105,7 @@ index 0000000000000000000000000000000000000000..acbe183c6d5d5f4a519a67f59466304f
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.util.CoordinateUtils;
 +import io.papermc.paper.util.TickThread;
++import it.unimi.dsi.fastutil.HashCommon;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.ChunkPos;
@@ -8627,8 +8628,8 @@ index 0000000000000000000000000000000000000000..acbe183c6d5d5f4a519a67f59466304f
 +        final ChunkDataController taskController = this.getControllerFor(world, type);
 +
 +        final boolean[] created = new boolean[1];
-+        final Long key = Long.valueOf(CoordinateUtils.getChunkKey(chunkX, chunkZ));
-+        final ChunkDataTask task = taskController.tasks.compute(key, (final Long keyInMap, final ChunkDataTask taskRunning) -> {
++        final ChunkCoordinate key = new ChunkCoordinate(CoordinateUtils.getChunkKey(chunkX, chunkZ));
++        final ChunkDataTask task = taskController.tasks.compute(key, (final ChunkCoordinate keyInMap, final ChunkDataTask taskRunning) -> {
 +            if (taskRunning == null || taskRunning.failedWrite) {
 +                // no task is scheduled or the previous write failed - meaning we need to overwrite it
 +
@@ -8911,8 +8912,8 @@ index 0000000000000000000000000000000000000000..acbe183c6d5d5f4a519a67f59466304f
 +
 +        final ImmediateCallbackCompletion callbackInfo = new ImmediateCallbackCompletion();
 +
-+        final Long key = Long.valueOf(CoordinateUtils.getChunkKey(chunkX, chunkZ));
-+        final BiFunction<Long, ChunkDataTask, ChunkDataTask> compute = (final Long keyInMap, final ChunkDataTask running) -> {
++        final ChunkCoordinate key = new ChunkCoordinate(CoordinateUtils.getChunkKey(chunkX, chunkZ));
++        final BiFunction<ChunkCoordinate, ChunkDataTask, ChunkDataTask> compute = (final ChunkCoordinate keyInMap, final ChunkDataTask running) -> {
 +            if (running == null) {
 +                // not scheduled
 +
@@ -9122,10 +9123,58 @@ index 0000000000000000000000000000000000000000..acbe183c6d5d5f4a519a67f59466304f
 +        }
 +    }
 +
++    /**
++     * Class exists to replace {@link Long} usages as keys inside non-fastutil hashtables. The hash for some Long {@code x}
++     * is defined as {@code (x >>> 32) ^ x}. Chunk keys as long values are defined as {@code ((chunkX & 0xFFFFFFFFL) | (chunkZ << 32))},
++     * which means the hashcode as a Long value will be {@code chunkX ^ chunkZ}. Given that most chunks are created within a radius arounds players,
++     * this will lead to many hash collisions. So, this class uses a better hashing algorithm so that usage of
++     * non-fastutil collections is not degraded.
++     */
++    public static final class ChunkCoordinate implements Comparable<ChunkCoordinate> {
++
++        public final long key;
++
++        public ChunkCoordinate(final long key) {
++            this.key = key;
++        }
++
++        @Override
++        public int hashCode() {
++            return (int)HashCommon.mix(this.key);
++        }
++
++        @Override
++        public boolean equals(final Object obj) {
++            if (this == obj) {
++                return true;
++            }
++
++            if (!(obj instanceof ChunkCoordinate)) {
++                return false;
++            }
++
++            final ChunkCoordinate other = (ChunkCoordinate)obj;
++
++            return this.key == other.key;
++        }
++
++        // This class is intended for HashMap/ConcurrentHashMap usage, which do treeify bin nodes if the chain
++        // is too large. So we should implement compareTo to help.
++        @Override
++        public int compareTo(final RegionFileIOThread.ChunkCoordinate other) {
++            return Long.compare(this.key, other.key);
++        }
++
++        @Override
++        public String toString() {
++            return new ChunkPos(this.key).toString();
++        }
++    }
++
 +    public static abstract class ChunkDataController {
 +
 +        // ConcurrentHashMap synchronizes per chain, so reduce the chance of task's hashes colliding.
-+        protected final ConcurrentHashMap<Long, ChunkDataTask> tasks = new ConcurrentHashMap<>(8192, 0.10f);
++        protected final ConcurrentHashMap<ChunkCoordinate, ChunkDataTask> tasks = new ConcurrentHashMap<>(8192, 0.10f);
 +
 +        public final RegionFileType type;
 +
@@ -9236,14 +9285,14 @@ index 0000000000000000000000000000000000000000..acbe183c6d5d5f4a519a67f59466304f
 +        @Override
 +        public void run() {
 +            final RegionFileIOThread.InProgressRead read = this.inProgressRead;
-+            final Long chunkKey = Long.valueOf(CoordinateUtils.getChunkKey(this.chunkX, this.chunkZ));
++            final ChunkCoordinate chunkKey = new ChunkCoordinate(CoordinateUtils.getChunkKey(this.chunkX, this.chunkZ));
 +
 +            if (read != null) {
 +                final boolean[] canRead = new boolean[] { true };
 +
 +                if (read.waiters.isEmpty()) {
 +                    // cancelled read? go to task controller to confirm
-+                    final ChunkDataTask inMap = this.taskController.tasks.compute(chunkKey, (final Long keyInMap, final ChunkDataTask valueInMap) -> {
++                    final ChunkDataTask inMap = this.taskController.tasks.compute(chunkKey, (final ChunkCoordinate keyInMap, final ChunkDataTask valueInMap) -> {
 +                        if (valueInMap == null) {
 +                            throw new IllegalStateException("Write completed concurrently, expected this task: " + ChunkDataTask.this.toString() + ", report this!");
 +                        }
@@ -9288,7 +9337,7 @@ index 0000000000000000000000000000000000000000..acbe183c6d5d5f4a519a67f59466304f
 +            CompoundTag write = this.inProgressWrite;
 +
 +            if (write == NOTHING_TO_WRITE) {
-+                final ChunkDataTask inMap = this.taskController.tasks.compute(chunkKey, (final Long keyInMap, final ChunkDataTask valueInMap) -> {
++                final ChunkDataTask inMap = this.taskController.tasks.compute(chunkKey, (final ChunkCoordinate keyInMap, final ChunkDataTask valueInMap) -> {
 +                    if (valueInMap == null) {
 +                        throw new IllegalStateException("Write completed concurrently, expected this task: " + ChunkDataTask.this.toString() + ", report this!");
 +                    }
@@ -9326,7 +9375,7 @@ index 0000000000000000000000000000000000000000..acbe183c6d5d5f4a519a67f59466304f
 +                final boolean finalFailWrite = failedWrite;
 +                final boolean[] done = new boolean[] { false };
 +
-+                this.taskController.tasks.compute(chunkKey, (final Long keyInMap, final ChunkDataTask valueInMap) -> {
++                this.taskController.tasks.compute(chunkKey, (final ChunkCoordinate keyInMap, final ChunkDataTask valueInMap) -> {
 +                    if (valueInMap == null) {
 +                        throw new IllegalStateException("Write completed concurrently, expected this task: " + ChunkDataTask.this.toString() + ", report this!");
 +                    }
@@ -11855,10 +11904,10 @@ index 0000000000000000000000000000000000000000..322675a470eacbf0e5452f4009c643f2
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..56e091f24a6e577ee382d284afddb9f1e2e285c7
+index 0000000000000000000000000000000000000000..ea1876187b82b6485b727d20a51311ff14650db0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
-@@ -0,0 +1,753 @@
+@@ -0,0 +1,752 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -12583,11 +12632,9 @@ index 0000000000000000000000000000000000000000..56e091f24a6e577ee382d284afddb9f1
 +    }
 +
 +    private static ChunkInfo[] getChunkInfos() {
-+        ChunkInfo[] chunks;
 +        synchronized (WAITING_CHUNKS) {
-+            chunks = WAITING_CHUNKS.toArray(new ChunkInfo[0]);
++            return WAITING_CHUNKS.toArray(new ChunkInfo[0]);
 +        }
-+        return chunks;
 +    }
 +
 +    public static void dumpAllChunkLoadInfo(final boolean longPrint) {
@@ -12596,7 +12643,8 @@ index 0000000000000000000000000000000000000000..56e091f24a6e577ee382d284afddb9f1
 +            LOGGER.error("Chunk wait task info below: ");
 +            for (final ChunkInfo chunkInfo : chunkInfos) {
 +                final NewChunkHolder holder = chunkInfo.world.chunkTaskScheduler.chunkHolderManager.getChunkHolder(chunkInfo.chunkX, chunkInfo.chunkZ);
-+                LOGGER.error("Chunk holder: " + Objects.toString(holder));
++                LOGGER.error("Chunk wait: " + chunkInfo);
++                LOGGER.error("Chunk holder: " + holder);
 +            }
 +
 +            if (longPrint) {
@@ -12605,7 +12653,7 @@ index 0000000000000000000000000000000000000000..56e091f24a6e577ee382d284afddb9f1
 +                try {
 +                    MCUtil.dumpChunks(file, true);
 +                    LOGGER.error("Successfully written chunk information!");
-+                } catch (Throwable thr) {
++                } catch (final Throwable thr) {
 +                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
 +                }
 +            }
@@ -19164,7 +19212,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..9dff3a10ce0d4285c41826e741061e64
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a71e63213c 100644
+index 59acbf6249f8f5285504c0ddea448a3433d1d68d..f81ceec2c31797182e4179c42132a6384adb9e44 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -144,7 +144,7 @@ public class ServerChunkCache extends ChunkSource {
@@ -19577,7 +19625,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a7
          CompletableFuture completablefuture;
  
          if (flag1) {
-@@ -715,74 +465,53 @@ public class ServerChunkCache extends ChunkSource {
+@@ -715,74 +465,55 @@ public class ServerChunkCache extends ChunkSource {
          return completablefuture;
      }
  
@@ -19594,14 +19642,22 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a7
 -        long k = chunkcoordintpair.toLong();
 -        int l = 33 + ChunkStatus.getDistance(leastStatus);
 -        ChunkHolder playerchunk = this.getVisibleChunkIfPresent(k);
--
++        // Paper start - rewrite chunk system
++        io.papermc.paper.util.TickThread.ensureTickThread(chunkX, chunkZ, "Scheduling chunk load off-main");
++        int minLevel = 33 + ChunkStatus.getDistance(leastStatus);
++        io.papermc.paper.chunk.system.scheduling.NewChunkHolder chunkHolder = this.level.chunkTaskScheduler.chunkHolderManager.getChunkHolder(chunkX, chunkZ);
+ 
 -        // CraftBukkit start - don't add new ticket for currently unloading chunk
 -        boolean currentlyUnloading = false;
 -        if (playerchunk != null) {
 -            ChunkHolder.FullChunkStatus oldChunkState = ChunkHolder.getFullChunkStatus(playerchunk.oldTicketLevel);
 -            ChunkHolder.FullChunkStatus currentChunkState = ChunkHolder.getFullChunkStatus(playerchunk.getTicketLevel());
 -            currentlyUnloading = (oldChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !currentChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER));
--        }
++        boolean needsFullScheduling = leastStatus == ChunkStatus.FULL && !chunkHolder.getChunkStatus().isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
++
++        if ((chunkHolder == null || chunkHolder.getTicketLevel() > minLevel || needsFullScheduling) && !create) {
++            return ChunkHolder.UNLOADED_CHUNK_FUTURE;
+         }
 -        final Long identifier; // Paper - prevent plugin unloads from removing our ticket
 -        if (create && !currentlyUnloading) {
 -            // CraftBukkit end
@@ -19620,17 +19676,9 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a7
 -                if (this.chunkAbsent(playerchunk, l)) {
 -                    this.distanceManager.removeTicket(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier); // Paper
 -                    throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("No chunk holder after ticket has been added"));
-+        // Paper start - rewrite chunk system
-+        io.papermc.paper.util.TickThread.ensureTickThread(chunkX, chunkZ, "Scheduling chunk load off-main");
-+        int minLevel = 33 + ChunkStatus.getDistance(leastStatus);
-+        io.papermc.paper.chunk.system.scheduling.NewChunkHolder chunkHolder = this.level.chunkTaskScheduler.chunkHolderManager.getChunkHolder(chunkX, chunkZ);
-+
-+        if ((chunkHolder == null || chunkHolder.getTicketLevel() > minLevel) && !create) {
-+            return ChunkHolder.UNLOADED_CHUNK_FUTURE;
-+        }
 +
 +        io.papermc.paper.chunk.system.scheduling.NewChunkHolder.ChunkCompletion chunkCompletion = chunkHolder == null ? null : chunkHolder.getLastChunkCompletion();
-+        if (chunkCompletion == null || !chunkCompletion.genStatus().isOrAfter(leastStatus)) {
++        if (needsFullScheduling || chunkCompletion == null || !chunkCompletion.genStatus().isOrAfter(leastStatus)) {
 +            // schedule
 +            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> ret = new CompletableFuture<>();
 +            Consumer<ChunkAccess> complete = (ChunkAccess chunk) -> {
@@ -19685,7 +19733,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a7
      }
  
      @Override
-@@ -793,22 +522,13 @@ public class ServerChunkCache extends ChunkSource {
+@@ -793,22 +524,13 @@ public class ServerChunkCache extends ChunkSource {
          if (playerchunk == null) {
              return null;
          } else {
@@ -19714,7 +19762,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a7
          }
      }
  
-@@ -822,19 +542,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -822,19 +544,7 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public boolean runDistanceManagerUpdates() {
@@ -19735,7 +19783,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a7
      }
  
      // Paper start
-@@ -872,13 +580,8 @@ public class ServerChunkCache extends ChunkSource {
+@@ -872,13 +582,8 @@ public class ServerChunkCache extends ChunkSource {
          this.close(true);
      }
  
@@ -19751,7 +19799,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a7
      }
  
      // CraftBukkit start - modelled on below
-@@ -1089,7 +792,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1089,7 +794,12 @@ public class ServerChunkCache extends ChunkSource {
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
  
          if (playerchunk != null) {
@@ -19765,7 +19813,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..5757f0f6d82829e4a34b27e4474172a7
          }
  
      }
-@@ -1251,20 +959,11 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1251,20 +961,11 @@ public class ServerChunkCache extends ChunkSource {
          @Override
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          public boolean pollTask() {
