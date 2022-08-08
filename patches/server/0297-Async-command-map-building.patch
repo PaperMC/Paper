@@ -3,38 +3,45 @@ From: Callahan <mr.callahhh@gmail.com>
 Date: Wed, 8 Apr 2020 02:42:14 -0500
 Subject: [PATCH] Async command map building
 
+This adds a custom pool inorder to make sure that they are closed
+without much though, as it doesn't matter if the client is not sent
+commands if the server is restarting. Using the default async pool caused issues to arise
+due to the shutdown logic generally being much later.
 
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index 2bf67468a6c745bc6243c65210477ba129bfcb07..685e04b1f17938d49cd126bcfe2f488f21afbea2 100644
+index 2bf67468a6c745bc6243c65210477ba129bfcb07..91b32a4856a4c9d6dc12871ed080f7a67311ead0 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
-@@ -34,6 +34,7 @@ import net.minecraft.network.chat.ComponentUtils;
- import net.minecraft.network.chat.HoverEvent;
- import net.minecraft.network.chat.MutableComponent;
- import net.minecraft.network.protocol.game.ClientboundCommandsPacket;
-+import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.commands.AdvancementCommands;
- import net.minecraft.server.commands.AttributeCommand;
- import net.minecraft.server.commands.BanIpCommands;
-@@ -360,6 +361,12 @@ public class Commands {
+@@ -360,6 +360,23 @@ public class Commands {
          if ( org.spigotmc.SpigotConfig.tabComplete < 0 ) return; // Spigot
          // CraftBukkit start
          // Register Vanilla commands into builtRoot as before
 +        // Paper start - Async command map building
-+        net.minecraft.server.MCUtil.scheduleAsyncTask(() -> this.sendAsync(player));
++        COMMAND_SENDING_POOL.execute(() -> {
++                this.sendAsync(player);
++        });
 +    }
++
++    public static final java.util.concurrent.ThreadPoolExecutor COMMAND_SENDING_POOL = new java.util.concurrent.ThreadPoolExecutor(
++        0, 2, 60L, java.util.concurrent.TimeUnit.SECONDS,
++        new java.util.concurrent.LinkedBlockingQueue<>(),
++        new com.google.common.util.concurrent.ThreadFactoryBuilder()
++            .setNameFormat("Paper Async Command Builder Thread Pool - %1$d")
++            .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER))
++            .build()
++    );
 +
 +    private void sendAsync(ServerPlayer player) {
 +        // Paper end - Async command map building
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
          RootCommandNode vanillaRoot = new RootCommandNode();
  
-@@ -377,7 +384,14 @@ public class Commands {
+@@ -377,7 +394,14 @@ public class Commands {
          for (CommandNode node : rootcommandnode.getChildren()) {
              bukkit.add(node.getName());
          }
 +        // Paper start - Async command map building
-+        MinecraftServer.getServer().execute(() -> {
++        net.minecraft.server.MinecraftServer.getServer().execute(() -> {
 +           runSync(player, bukkit, rootcommandnode);
 +        });
 +    }
@@ -44,3 +51,15 @@ index 2bf67468a6c745bc6243c65210477ba129bfcb07..685e04b1f17938d49cd126bcfe2f488f
          PlayerCommandSendEvent event = new PlayerCommandSendEvent(player.getBukkitEntity(), new LinkedHashSet<>(bukkit));
          event.getPlayer().getServer().getPluginManager().callEvent(event);
  
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 89c0c0d0d3458f38a1a0b91617b84f439af667c8..6f6125c3896fb388e0840d3e224b826bfa10eec0 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -879,6 +879,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+ 
+         MinecraftServer.LOGGER.info("Stopping server");
++        Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Shutdown and don't bother finishing
+         MinecraftTimings.stopServer(); // Paper
+         // CraftBukkit start
+         if (this.server != null) {
