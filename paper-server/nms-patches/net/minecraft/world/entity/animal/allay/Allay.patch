@@ -1,0 +1,130 @@
+--- a/net/minecraft/world/entity/animal/allay/Allay.java
++++ b/net/minecraft/world/entity/animal/allay/Allay.java
+@@ -93,13 +93,14 @@
+     private final DynamicGameEventListener<Allay.b> dynamicJukeboxListener;
+     private final InventorySubcontainer inventory = new InventorySubcontainer(1);
+     @Nullable
+-    private BlockPosition jukeboxPos;
+-    private long duplicationCooldown;
++    public BlockPosition jukeboxPos; // PAIL private -> public
++    public long duplicationCooldown; // PAIL private -> public
+     private float holdingItemAnimationTicks;
+     private float holdingItemAnimationTicks0;
+     private float dancingAnimationTicks;
+     private float spinningAnimationTicks;
+     private float spinningAnimationTicks0;
++    public boolean forceDancing = false; // CraftBukkit
+ 
+     public Allay(EntityTypes<? extends Allay> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -112,6 +113,12 @@
+         this.dynamicJukeboxListener = new DynamicGameEventListener<>(new Allay.b(entitypositionsource, GameEvent.JUKEBOX_PLAY.getNotificationRadius()));
+     }
+ 
++    // CraftBukkit start
++    public void setCanDuplicate(boolean canDuplicate) {
++        this.entityData.set(Allay.DATA_CAN_DUPLICATE, canDuplicate);
++    }
++    // CraftBukkit end
++
+     @Override
+     protected BehaviorController.b<Allay> brainProvider() {
+         return BehaviorController.provider(Allay.MEMORY_TYPES, Allay.SENSOR_TYPES);
+@@ -124,7 +131,7 @@
+ 
+     @Override
+     public BehaviorController<Allay> getBrain() {
+-        return super.getBrain();
++        return (BehaviorController<Allay>) super.getBrain(); // CraftBukkit - decompile error
+     }
+ 
+     public static AttributeProvider.Builder createAttributes() {
+@@ -236,7 +243,7 @@
+     public void aiStep() {
+         super.aiStep();
+         if (!this.level.isClientSide && this.isAlive() && this.tickCount % 10 == 0) {
+-            this.heal(1.0F);
++            this.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
+         }
+ 
+         if (this.isDancing() && this.shouldStopDancing() && this.tickCount % 20 == 0) {
+@@ -303,7 +310,12 @@
+         ItemStack itemstack1 = this.getItemInHand(EnumHand.MAIN_HAND);
+ 
+         if (this.isDancing() && this.isDuplicationItem(itemstack) && this.canDuplicate()) {
+-            this.duplicateAllay();
++            // CraftBukkit start - handle cancel duplication
++            Allay allay = this.duplicateAllay();
++            if (allay == null) {
++                return EnumInteractionResult.SUCCESS;
++            }
++            // CraftBukkit end
+             this.level.broadcastEntityEvent(this, (byte) 18);
+             this.level.playSound(entityhuman, (Entity) this, SoundEffects.AMETHYST_BLOCK_CHIME, SoundCategory.NEUTRAL, 2.0F, 1.0F);
+             this.removeInteractionItem(entityhuman, itemstack);
+@@ -315,7 +327,7 @@
+             this.setItemInHand(EnumHand.MAIN_HAND, itemstack2);
+             this.removeInteractionItem(entityhuman, itemstack);
+             this.level.playSound(entityhuman, (Entity) this, SoundEffects.ALLAY_ITEM_GIVEN, SoundCategory.NEUTRAL, 2.0F, 1.0F);
+-            this.getBrain().setMemory(MemoryModuleType.LIKED_PLAYER, (Object) entityhuman.getUUID());
++            this.getBrain().setMemory(MemoryModuleType.LIKED_PLAYER, entityhuman.getUUID()); // CraftBukkit - decompile error
+             return EnumInteractionResult.SUCCESS;
+         } else if (!itemstack1.isEmpty() && enumhand == EnumHand.MAIN_HAND && itemstack.isEmpty()) {
+             this.setItemSlot(EnumItemSlot.MAINHAND, ItemStack.EMPTY);
+@@ -407,6 +419,7 @@
+     }
+ 
+     private boolean shouldStopDancing() {
++        if (this.forceDancing) {return false;} // CraftBukkit
+         return this.jukeboxPos == null || !this.jukeboxPos.closerToCenterThan(this.position(), (double) GameEvent.JUKEBOX_PLAY.getNotificationRadius()) || !this.level.getBlockState(this.jukeboxPos).is(Blocks.JUKEBOX);
+     }
+ 
+@@ -446,7 +459,7 @@
+     public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
+         super.addAdditionalSaveData(nbttagcompound);
+         nbttagcompound.put("Inventory", this.inventory.createTag());
+-        DataResult dataresult = VibrationListener.codec(this.vibrationListenerConfig).encodeStart(DynamicOpsNBT.INSTANCE, (VibrationListener) this.dynamicVibrationListener.getListener());
++        DataResult<net.minecraft.nbt.NBTBase> dataresult = VibrationListener.codec(this.vibrationListenerConfig).encodeStart(DynamicOpsNBT.INSTANCE, (VibrationListener) this.dynamicVibrationListener.getListener()); // CraftBukkit - decompile error
+         Logger logger = Allay.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+@@ -462,7 +475,7 @@
+         super.readAdditionalSaveData(nbttagcompound);
+         this.inventory.fromTag(nbttagcompound.getList("Inventory", 10));
+         if (nbttagcompound.contains("listener", 10)) {
+-            DataResult dataresult = VibrationListener.codec(this.vibrationListenerConfig).parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("listener")));
++            DataResult<VibrationListener> dataresult = VibrationListener.codec(this.vibrationListenerConfig).parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("listener"))); // CraftBukkit - decompile error
+             Logger logger = Allay.LOGGER;
+ 
+             Objects.requireNonNull(logger);
+@@ -508,7 +521,7 @@
+         return Allay.DUPLICATION_ITEM.test(itemstack);
+     }
+ 
+-    private void duplicateAllay() {
++    public Allay duplicateAllay() { // CraftBukkit - return allay and private -> public
+         Allay allay = (Allay) EntityTypes.ALLAY.create(this.level);
+ 
+         if (allay != null) {
+@@ -516,17 +529,17 @@
+             allay.setPersistenceRequired();
+             allay.resetDuplicationCooldown();
+             this.resetDuplicationCooldown();
+-            this.level.addFreshEntity(allay);
++            this.level.addFreshEntity(allay, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DUPLICATION); // CraftBukkit - reason for duplicated allay
+         }
+-
++        return allay; // CraftBukkit
+     }
+ 
+-    private void resetDuplicationCooldown() {
++    public void resetDuplicationCooldown() { // PAIL private -> public
+         this.duplicationCooldown = 6000L;
+         this.entityData.set(Allay.DATA_CAN_DUPLICATE, false);
+     }
+ 
+-    private boolean canDuplicate() {
++    public boolean canDuplicate() { // PAIL private -> public
+         return (Boolean) this.entityData.get(Allay.DATA_CAN_DUPLICATE);
+     }
+ 
