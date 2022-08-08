@@ -99,6 +99,16 @@ public final class TestServer implements InvocationHandler {
                         }
                     }
                 );
+            methodMap.put(
+                    Server.class.getMethod("getScoreboardCriteria", String.class),
+                    new MethodHandler() {
+                        @Override
+                        public Object handle(TestServer server, Object[] args) {
+                            // Does not need to return anything. Exists solely to test CriteriaTest which has static init fields
+                            return null;
+                        }
+                    }
+                );
             methods = methodMap.build();
 
             TestServer server = new TestServer();

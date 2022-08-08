@@ -44,6 +44,7 @@ public interface Scoreboard {
      *     characters.
      * @throws IllegalArgumentException if an objective by that name already
      *     exists
+     * @deprecated use {@link #registerNewObjective(String, Criteria, String)}
      */
     @NotNull
     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName) throws IllegalArgumentException;
@@ -66,9 +67,52 @@ public interface Scoreboard {
      * @throws IllegalArgumentException if renderType is null
      * @throws IllegalArgumentException if an objective by that name already
      *     exists
+     * @deprecated use {@link #registerNewObjective(String, Criteria, String, RenderType)}
      */
     @NotNull
     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+
+    /**
+     * Registers an Objective on this Scoreboard
+     *
+     * @param name Name of the Objective
+     * @param criteria Criteria for the Objective
+     * @param displayName Name displayed to players for the Objective.
+     * @return The registered Objective
+     * @throws IllegalArgumentException if name is null
+     * @throws IllegalArgumentException if name is longer than 32767
+     *     characters.
+     * @throws IllegalArgumentException if criteria is null
+     * @throws IllegalArgumentException if displayName is null
+     * @throws IllegalArgumentException if displayName is longer than 128
+     *     characters.
+     * @throws IllegalArgumentException if an objective by that name already
+     *     exists
+     */
+    @NotNull
+    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName) throws IllegalArgumentException;
+
+    /**
+     * Registers an Objective on this Scoreboard
+     *
+     * @param name Name of the Objective
+     * @param criteria Criteria for the Objective
+     * @param displayName Name displayed to players for the Objective.
+     * @param renderType Manner of rendering the Objective
+     * @return The registered Objective
+     * @throws IllegalArgumentException if name is null
+     * @throws IllegalArgumentException if name is longer than 32767
+     *     characters.
+     * @throws IllegalArgumentException if criteria is null
+     * @throws IllegalArgumentException if displayName is null
+     * @throws IllegalArgumentException if displayName is longer than 128
+     *     characters.
+     * @throws IllegalArgumentException if renderType is null
+     * @throws IllegalArgumentException if an objective by that name already
+     *     exists
+     */
+    @NotNull
+    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
 
     /**
      * Gets an Objective on this Scoreboard by name
@@ -86,9 +130,21 @@ public interface Scoreboard {
      * @param criteria Criteria to search by
      * @return an immutable set of Objectives using the specified Criteria
      * @throws IllegalArgumentException if criteria is null
+     * @deprecated use {@link #getObjectivesByCriteria(Criteria)}
      */
+    @Deprecated
     @NotNull
     Set<Objective> getObjectivesByCriteria(@NotNull String criteria) throws IllegalArgumentException;
+
+    /**
+     * Gets all Objectives of a Criteria on the Scoreboard
+     *
+     * @param criteria Criteria to search by
+     * @return an immutable set of Objectives using the specified Criteria
+     * @throws IllegalArgumentException if criteria is null
+     */
+    @NotNull
+    Set<Objective> getObjectivesByCriteria(@NotNull Criteria criteria) throws IllegalArgumentException;
 
     /**
      * Gets all Objectives on this Scoreboard

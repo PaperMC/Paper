@@ -45,9 +45,20 @@ public interface Objective {
      *
      * @return this objective's criteria
      * @throws IllegalStateException if this objective has been unregistered
+     * @deprecated use {@link #getTrackedCriteria()}
      */
+    @Deprecated
     @NotNull
     String getCriteria() throws IllegalStateException;
+
+    /**
+     * Gets the criteria this objective tracks.
+     *
+     * @return this objective's criteria
+     * @throws IllegalStateException if this objective has been unregistered
+     */
+    @NotNull
+    Criteria getTrackedCriteria() throws IllegalStateException;
 
     /**
      * Gets if the objective's scores can be modified directly by a plugin.

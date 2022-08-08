@@ -2,7 +2,10 @@ package org.bukkit.scoreboard;
 
 /**
  * Criteria names which trigger an objective to be modified by actions in-game
+ *
+ * @deprecated use the constants declared in {@link Criteria} instead
  */
+@Deprecated
 public final class Criterias {
 
     public static final String HEALTH = "health";
