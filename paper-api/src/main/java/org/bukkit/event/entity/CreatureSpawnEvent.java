@@ -96,7 +96,7 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         VILLAGE_INVASION,
         /**
-         * When an animal breeds to create a child
+         * When an entity breeds to create a child, this also include Shulker and Allay
          */
         BREEDING,
         /**
@@ -189,6 +189,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          * When a tadpole converts to a frog
          */
         METAMORPHOSIS,
+        /**
+         * When an Allay duplicate itself
+         */
+        DUPLICATION,
         /**
          * When a creature is spawned by the "/summon" command
          */
