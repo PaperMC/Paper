@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import net.minecraft.world.scores.ScoreboardObjective;
 import net.minecraft.world.scores.criteria.IScoreboardCriteria;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.scoreboard.RenderType;
 
-final class CraftCriteria {
+public final class CraftCriteria implements Criteria {
     static final Map<String, CraftCriteria> DEFAULTS;
     static final CraftCriteria DUMMY;
 
@@ -36,16 +38,32 @@ final class CraftCriteria {
         this.bukkitName = criteria.getName();
     }
 
+    @Override
+    public String getName() {
+        return bukkitName;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return criteria.isReadOnly();
+    }
+
+    @Override
+    public RenderType getDefaultRenderType() {
+        return RenderType.values()[criteria.getDefaultRenderType().ordinal()];
+    }
+
     static CraftCriteria getFromNMS(ScoreboardObjective objective) {
         return DEFAULTS.get(objective.getCriteria().getName());
     }
 
-    static CraftCriteria getFromBukkit(String name) {
-        final CraftCriteria criteria = DEFAULTS.get(name);
+    public static CraftCriteria getFromBukkit(String name) {
+        CraftCriteria criteria = DEFAULTS.get(name);
         if (criteria != null) {
             return criteria;
         }
-        return new CraftCriteria(name);
+
+        return IScoreboardCriteria.byName(name).map(CraftCriteria::new).orElseGet(() -> new CraftCriteria(name));
     }
 
     @Override
