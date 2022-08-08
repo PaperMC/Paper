@@ -29,6 +29,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.security.InvalidKeyException;
 +import java.security.MessageDigest;
 +import java.security.NoSuchAlgorithmException;
++import java.util.UUID;
 +
 +import javax.crypto.Mac;
 +import javax.crypto.spec.SecretKeySpec;
@@ -39,7 +40,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public class VelocityProxy {
 +    private static final int SUPPORTED_FORWARDING_VERSION = 1;
 +    public static final int MODERN_FORWARDING_WITH_KEY = 2;
-+    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = 2;
++    public static final int MODERN_FORWARDING_WITH_KEY_V2 = 3;
++    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = MODERN_FORWARDING_WITH_KEY_V2;
 +    public static final ResourceLocation PLAYER_INFO_CHANNEL = new ResourceLocation("velocity", "player_info");
 +
 +    public static boolean checkIntegrity(final FriendlyByteBuf buf) {
@@ -86,15 +88,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static ProfilePublicKey.Data readForwardedKey(FriendlyByteBuf buf) {
 +        return new ProfilePublicKey.Data(buf);
 +    }
++
++    public static UUID readSignerUuidOrElse(FriendlyByteBuf buf, UUID orElse) {
++        return buf.readBoolean() ? buf.readUUID() : orElse;
++    }
 +}
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
-     @Nullable
      private ProfilePublicKey.Data profilePublicKeyData;
      public String hostname = ""; // CraftBukkit - add field
+     public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
 +    private int velocityLoginMessageId = -1; // Paper - Velocity support
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
@@ -128,7 +134,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            // Paper end
                          String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
                          java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
-                         java.util.UUID uniqueId = ServerLoginPacketListenerImpl.this.gameProfile.getId();
+                         java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) connection.getRawAddress()).getAddress(); // Paper
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
      // Spigot end
  
@@ -162,13 +168,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            // We should already have this, but, we'll read it out anyway
 +            //noinspection NonStrictComparisonCanBeEquality
-+            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY) {
-+                final ProfilePublicKey.Data forwardedKey = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
++            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY_V2) {
++                final ProfilePublicKey.Data forwardedKeyData = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
++                final UUID signer = com.destroystokyo.paper.proxy.VelocityProxy.readSignerUuidOrElse(buf, this.gameProfile.getId());
 +                if (this.profilePublicKeyData == null) {
 +                    try {
-+                        ProfilePublicKey.createValidated(this.server.getServiceSignatureValidator(), this.gameProfile.getId(), forwardedKey, Duration.ZERO);
-+                        this.profilePublicKeyData = forwardedKey;
-+                    } catch (ProfilePublicKey.ValidationException e) {
++                        ServerLoginPacketListenerImpl.validatePublicKey(forwardedKeyData, signer, this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
++                        this.profilePublicKeyData = forwardedKeyData;
++                    } catch (ProfilePublicKey.ValidationException err) {
 +                        this.disconnect("Unable to validate forwarded player key");
 +                    }
 +                }
