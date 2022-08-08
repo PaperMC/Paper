@@ -1,0 +1,915 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@benndorf.dev>
+Date: Fri, 3 Jan 2020 16:26:19 +0100
+Subject: [PATCH] Implement Mob Goal API
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index a1a8c4778742584125d6084fa761b1bc86f6a842..a02f53c6ee0111e07d78a718a6ca0ec708f70cfc 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -37,6 +37,7 @@ dependencies {
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
+ 
++    testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
+     testImplementation("junit:junit:4.13.2")
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c9901f8c7f3af57cb2e0bec315caa97adcb6f5ea
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
+@@ -0,0 +1,371 @@
++package com.destroystokyo.paper.entity.ai;
++
++import com.destroystokyo.paper.entity.RangedEntity;
++import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet;
++import com.google.common.collect.BiMap;
++import com.google.common.collect.HashBiMap;
++import io.papermc.paper.util.ObfHelper;
++import java.lang.reflect.Constructor;
++import java.util.EnumSet;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Map;
++import java.util.Set;
++import net.minecraft.world.entity.FlyingMob;
++import net.minecraft.world.entity.PathfinderMob;
++import net.minecraft.world.entity.TamableAnimal;
++import net.minecraft.world.entity.ai.goal.Goal;
++import net.minecraft.world.entity.ambient.AmbientCreature;
++import net.minecraft.world.entity.animal.AbstractFish;
++import net.minecraft.world.entity.animal.AbstractGolem;
++import net.minecraft.world.entity.animal.AbstractSchoolingFish;
++import net.minecraft.world.entity.animal.Animal;
++import net.minecraft.world.entity.animal.Pufferfish;
++import net.minecraft.world.entity.animal.ShoulderRidingEntity;
++import net.minecraft.world.entity.animal.SnowGolem;
++import net.minecraft.world.entity.animal.WaterAnimal;
++import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
++import net.minecraft.world.entity.boss.wither.WitherBoss;
++import net.minecraft.world.entity.monster.AbstractIllager;
++import net.minecraft.world.entity.monster.EnderMan;
++import net.minecraft.world.entity.monster.PatrollingMonster;
++import net.minecraft.world.entity.monster.RangedAttackMob;
++import net.minecraft.world.entity.monster.SpellcasterIllager;
++import net.minecraft.world.entity.monster.ZombifiedPiglin;
++import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
++import org.bukkit.NamespacedKey;
++import org.bukkit.entity.AbstractHorse;
++import org.bukkit.entity.AbstractSkeleton;
++import org.bukkit.entity.AbstractVillager;
++import org.bukkit.entity.Ageable;
++import org.bukkit.entity.Ambient;
++import org.bukkit.entity.Animals;
++import org.bukkit.entity.Bat;
++import org.bukkit.entity.Bee;
++import org.bukkit.entity.Blaze;
++import org.bukkit.entity.Cat;
++import org.bukkit.entity.CaveSpider;
++import org.bukkit.entity.ChestedHorse;
++import org.bukkit.entity.Chicken;
++import org.bukkit.entity.Cod;
++import org.bukkit.entity.Cow;
++import org.bukkit.entity.Creature;
++import org.bukkit.entity.Creeper;
++import org.bukkit.entity.Dolphin;
++import org.bukkit.entity.Donkey;
++import org.bukkit.entity.Drowned;
++import org.bukkit.entity.ElderGuardian;
++import org.bukkit.entity.EnderDragon;
++import org.bukkit.entity.Enderman;
++import org.bukkit.entity.Endermite;
++import org.bukkit.entity.Evoker;
++import org.bukkit.entity.Fish;
++import org.bukkit.entity.Flying;
++import org.bukkit.entity.Fox;
++import org.bukkit.entity.Ghast;
++import org.bukkit.entity.Giant;
++import org.bukkit.entity.Golem;
++import org.bukkit.entity.Guardian;
++import org.bukkit.entity.Hoglin;
++import org.bukkit.entity.Horse;
++import org.bukkit.entity.Husk;
++import org.bukkit.entity.Illager;
++import org.bukkit.entity.Illusioner;
++import org.bukkit.entity.IronGolem;
++import org.bukkit.entity.Llama;
++import org.bukkit.entity.MagmaCube;
++import org.bukkit.entity.Mob;
++import org.bukkit.entity.Monster;
++import org.bukkit.entity.Mule;
++import org.bukkit.entity.MushroomCow;
++import org.bukkit.entity.Ocelot;
++import org.bukkit.entity.Panda;
++import org.bukkit.entity.Parrot;
++import org.bukkit.entity.Phantom;
++import org.bukkit.entity.Pig;
++import org.bukkit.entity.PigZombie;
++import org.bukkit.entity.Piglin;
++import org.bukkit.entity.PiglinAbstract;
++import org.bukkit.entity.PiglinBrute;
++import org.bukkit.entity.Pillager;
++import org.bukkit.entity.PolarBear;
++import org.bukkit.entity.PufferFish;
++import org.bukkit.entity.Rabbit;
++import org.bukkit.entity.Raider;
++import org.bukkit.entity.Ravager;
++import org.bukkit.entity.Salmon;
++import org.bukkit.entity.Sheep;
++import org.bukkit.entity.Shulker;
++import org.bukkit.entity.Silverfish;
++import org.bukkit.entity.Skeleton;
++import org.bukkit.entity.SkeletonHorse;
++import org.bukkit.entity.Slime;
++import org.bukkit.entity.Snowman;
++import org.bukkit.entity.Spellcaster;
++import org.bukkit.entity.Spider;
++import org.bukkit.entity.Squid;
++import org.bukkit.entity.Stray;
++import org.bukkit.entity.Strider;
++import org.bukkit.entity.Tameable;
++import org.bukkit.entity.TraderLlama;
++import org.bukkit.entity.TropicalFish;
++import org.bukkit.entity.Turtle;
++import org.bukkit.entity.Vex;
++import org.bukkit.entity.Villager;
++import org.bukkit.entity.Vindicator;
++import org.bukkit.entity.WanderingTrader;
++import org.bukkit.entity.WaterMob;
++import org.bukkit.entity.Witch;
++import org.bukkit.entity.Wither;
++import org.bukkit.entity.WitherSkeleton;
++import org.bukkit.entity.Wolf;
++import org.bukkit.entity.Zoglin;
++import org.bukkit.entity.Zombie;
++import org.bukkit.entity.ZombieHorse;
++import org.bukkit.entity.ZombieVillager;
++
++public class MobGoalHelper {
++
++    private static final BiMap<String, String> deobfuscationMap = HashBiMap.create();
++    private static final Map<Class<? extends Goal>, Class<? extends Mob>> entityClassCache = new HashMap<>();
++    private static final Map<Class<? extends net.minecraft.world.entity.Mob>, Class<? extends Mob>> bukkitMap = new HashMap<>();
++
++    static final Set<String> ignored = new HashSet<>();
++
++    static {
++        // TODO these kinda should be checked on each release, in case obfuscation changes
++        deobfuscationMap.put("abstract_skeleton_1", "abstract_skeleton_melee");
++
++        ignored.add("goal_selector_1");
++        ignored.add("goal_selector_2");
++        ignored.add("selector_1");
++        ignored.add("selector_2");
++        ignored.add("wrapped");
++
++        bukkitMap.put(net.minecraft.world.entity.Mob.class, Mob.class);
++        bukkitMap.put(net.minecraft.world.entity.AgeableMob.class, Ageable.class);
++        bukkitMap.put(AmbientCreature.class, Ambient.class);
++        bukkitMap.put(Animal.class, Animals.class);
++        bukkitMap.put(net.minecraft.world.entity.ambient.Bat.class, Bat.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Bee.class, Bee.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Blaze.class, Blaze.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Cat.class, Cat.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.CaveSpider.class, CaveSpider.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Chicken.class, Chicken.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Cod.class, Cod.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Cow.class, Cow.class);
++        bukkitMap.put(PathfinderMob.class, Creature.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Creeper.class, Creeper.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Dolphin.class, Dolphin.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Drowned.class, Drowned.class);
++        bukkitMap.put(net.minecraft.world.entity.boss.enderdragon.EnderDragon.class, EnderDragon.class);
++        bukkitMap.put(EnderMan.class, Enderman.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Endermite.class, Endermite.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Evoker.class, Evoker.class);
++        bukkitMap.put(AbstractFish.class, Fish.class);
++        bukkitMap.put(AbstractSchoolingFish.class, Fish.class); // close enough
++        bukkitMap.put(FlyingMob.class, Flying.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Fox.class, Fox.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Ghast.class, Ghast.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Giant.class, Giant.class);
++        bukkitMap.put(AbstractGolem.class, Golem.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Guardian.class, Guardian.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.ElderGuardian.class, ElderGuardian.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.horse.Horse.class, Horse.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.horse.AbstractHorse.class, AbstractHorse.class);
++        bukkitMap.put(AbstractChestedHorse.class, ChestedHorse.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.horse.Donkey.class, Donkey.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.horse.Mule.class, Mule.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.horse.SkeletonHorse.class, SkeletonHorse.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.horse.ZombieHorse.class, ZombieHorse.class);
++        bukkitMap.put(AbstractIllager.class, Illager.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Illusioner.class, Illusioner.class);
++        bukkitMap.put(SpellcasterIllager.class, Spellcaster.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.IronGolem.class, IronGolem.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.horse.Llama.class, Llama.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.horse.TraderLlama.class, TraderLlama.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.MagmaCube.class, MagmaCube.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Monster.class, Monster.class);
++        bukkitMap.put(PatrollingMonster.class, Raider.class); // close enough
++        bukkitMap.put(net.minecraft.world.entity.animal.MushroomCow.class, MushroomCow.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Ocelot.class, Ocelot.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Panda.class, Panda.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Parrot.class, Parrot.class);
++        bukkitMap.put(ShoulderRidingEntity.class, Parrot.class); // close enough
++        bukkitMap.put(net.minecraft.world.entity.monster.Phantom.class, Phantom.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Pig.class, Pig.class);
++        bukkitMap.put(ZombifiedPiglin.class, PigZombie.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Pillager.class, Pillager.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.PolarBear.class, PolarBear.class);
++        bukkitMap.put(Pufferfish.class, PufferFish.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Rabbit.class, Rabbit.class);
++        bukkitMap.put(net.minecraft.world.entity.raid.Raider.class, Raider.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Ravager.class, Ravager.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Salmon.class, Salmon.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Sheep.class, Sheep.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Shulker.class, Shulker.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Silverfish.class, Silverfish.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Skeleton.class, Skeleton.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.AbstractSkeleton.class, AbstractSkeleton.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Stray.class, Stray.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.WitherSkeleton.class, WitherSkeleton.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Slime.class, Slime.class);
++        bukkitMap.put(SnowGolem.class, Snowman.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Spider.class, Spider.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Squid.class, Squid.class);
++        bukkitMap.put(TamableAnimal.class, Tameable.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.TropicalFish.class, TropicalFish.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Turtle.class, Turtle.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Vex.class, Vex.class);
++        bukkitMap.put(net.minecraft.world.entity.npc.Villager.class, Villager.class);
++        bukkitMap.put(net.minecraft.world.entity.npc.AbstractVillager.class, AbstractVillager.class);
++        bukkitMap.put(net.minecraft.world.entity.npc.WanderingTrader.class, WanderingTrader.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Vindicator.class, Vindicator.class);
++        bukkitMap.put(WaterAnimal.class, WaterMob.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Witch.class, Witch.class);
++        bukkitMap.put(WitherBoss.class, Wither.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.Wolf.class, Wolf.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Zombie.class, Zombie.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Husk.class, Husk.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.ZombieVillager.class, ZombieVillager.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.hoglin.Hoglin.class, Hoglin.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.piglin.Piglin.class, Piglin.class);
++        bukkitMap.put(AbstractPiglin.class, PiglinAbstract.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.piglin.PiglinBrute.class, PiglinBrute.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Strider.class, Strider.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.Zoglin.class, Zoglin.class);
++        bukkitMap.put(net.minecraft.world.entity.GlowSquid.class, org.bukkit.entity.GlowSquid.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.axolotl.Axolotl.class, org.bukkit.entity.Axolotl.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.goat.Goat.class, org.bukkit.entity.Goat.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.frog.Frog.class, org.bukkit.entity.Frog.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.frog.Tadpole.class, org.bukkit.entity.Tadpole.class);
++        bukkitMap.put(net.minecraft.world.entity.monster.warden.Warden.class, org.bukkit.entity.Warden.class);
++        bukkitMap.put(net.minecraft.world.entity.animal.allay.Allay.class, org.bukkit.entity.Allay.class);
++    }
++
++    public static String getUsableName(Class<?> clazz) {
++        String name = ObfHelper.INSTANCE.deobfClassName(clazz.getName());
++        name = name.substring(name.lastIndexOf(".") + 1);
++        boolean flag = false;
++        // inner classes
++        if (name.contains("$")) {
++            String cut = name.substring(name.indexOf("$") + 1);
++            if (cut.length() <= 2) {
++                name = name.replace("Entity", "");
++                name = name.replace("$", "_");
++                flag = true;
++            } else {
++                // mapped, wooo
++                name = cut;
++            }
++        }
++        name = name.replace("PathfinderGoal", "");
++        name = name.replace("TargetGoal", "");
++        name = name.replace("Goal", "");
++        StringBuilder sb = new StringBuilder();
++        for (char c : name.toCharArray()) {
++            if (c >= 'A' && c <= 'Z') {
++                sb.append("_");
++                sb.append(Character.toLowerCase(c));
++            } else {
++                sb.append(c);
++            }
++        }
++        name = sb.toString();
++        name = name.replaceFirst("_", "");
++
++        if (flag && !deobfuscationMap.containsKey(name.toLowerCase()) && !ignored.contains(name)) {
++            System.out.println("need to map " + clazz.getName() + " (" + name.toLowerCase() + ")");
++        }
++
++        // did we rename this key?
++        return deobfuscationMap.getOrDefault(name, name);
++    }
++
++    public static EnumSet<GoalType> vanillaToPaper(OptimizedSmallEnumSet<Goal.Flag> types) {
++        EnumSet<GoalType> goals = EnumSet.noneOf(GoalType.class);
++        for (GoalType type : GoalType.values()) {
++            if (types.hasElement(paperToVanilla(type))) {
++                goals.add(type);
++            }
++        }
++        return goals;
++    }
++
++    public static GoalType vanillaToPaper(Goal.Flag type) {
++        switch (type) {
++            case MOVE:
++                return GoalType.MOVE;
++            case LOOK:
++                return GoalType.LOOK;
++            case JUMP:
++                return GoalType.JUMP;
++            case UNKNOWN_BEHAVIOR:
++                return GoalType.UNKNOWN_BEHAVIOR;
++            case TARGET:
++                return GoalType.TARGET;
++            default:
++                throw new IllegalArgumentException("Unknown vanilla mob goal type " + type.name());
++        }
++    }
++
++    public static EnumSet<Goal.Flag> paperToVanilla(EnumSet<GoalType> types) {
++        EnumSet<Goal.Flag> goals = EnumSet.noneOf(Goal.Flag.class);
++        for (GoalType type : types) {
++            goals.add(paperToVanilla(type));
++        }
++        return goals;
++    }
++
++    public static Goal.Flag paperToVanilla(GoalType type) {
++        switch (type) {
++            case MOVE:
++                return Goal.Flag.MOVE;
++            case LOOK:
++                return Goal.Flag.LOOK;
++            case JUMP:
++                return Goal.Flag.JUMP;
++            case UNKNOWN_BEHAVIOR:
++                return Goal.Flag.UNKNOWN_BEHAVIOR;
++            case TARGET:
++                return Goal.Flag.TARGET;
++            default:
++                throw new IllegalArgumentException("Unknown paper mob goal type " + type.name());
++        }
++    }
++
++    public static <T extends Mob> GoalKey<T> getKey(Class<? extends Goal> goalClass) {
++        String name = getUsableName(goalClass);
++        if (ignored.contains(name)) {
++            //noinspection unchecked
++            return (GoalKey<T>) GoalKey.of(Mob.class, NamespacedKey.minecraft(name));
++        }
++        return GoalKey.of(getEntity(goalClass), NamespacedKey.minecraft(name));
++    }
++
++    public static <T extends Mob> Class<T> getEntity(Class<? extends Goal> goalClass) {
++        //noinspection unchecked
++        return (Class<T>) entityClassCache.computeIfAbsent(goalClass, key -> {
++            for (Constructor<?> ctor : key.getDeclaredConstructors()) {
++                for (int i = 0; i < ctor.getParameterCount(); i++) {
++                    Class<?> param = ctor.getParameterTypes()[i];
++                    if (net.minecraft.world.entity.Mob.class.isAssignableFrom(param)) {
++                        //noinspection unchecked
++                        return toBukkitClass((Class<? extends net.minecraft.world.entity.Mob>) param);
++                    } else if (RangedAttackMob.class.isAssignableFrom(param)) {
++                        return RangedEntity.class;
++                    }
++                }
++            }
++            throw new RuntimeException("Can't figure out applicable entity for mob goal " + goalClass); // maybe just return EntityInsentient?
++        });
++    }
++
++    public static Class<? extends Mob> toBukkitClass(Class<? extends net.minecraft.world.entity.Mob> nmsClass) {
++        Class<? extends Mob> bukkitClass = bukkitMap.get(nmsClass);
++        if (bukkitClass == null) {
++            throw new RuntimeException("Can't figure out applicable bukkit entity for nms entity " + nmsClass); // maybe just return Mob?
++        }
++        return bukkitClass;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/PaperCustomGoal.java b/src/main/java/com/destroystokyo/paper/entity/ai/PaperCustomGoal.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..26c745dd9ccdfdd5c5039f2acc5201b9b91fb274
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/ai/PaperCustomGoal.java
+@@ -0,0 +1,53 @@
++package com.destroystokyo.paper.entity.ai;
++
++import org.bukkit.entity.Mob;
++
++/**
++ * Wraps api in vanilla
++ */
++public class PaperCustomGoal<T extends Mob> extends net.minecraft.world.entity.ai.goal.Goal {
++
++    private final Goal<T> handle;
++
++    public PaperCustomGoal(Goal<T> handle) {
++        this.handle = handle;
++
++        this.setFlags(MobGoalHelper.paperToVanilla(handle.getTypes()));
++        if (this.getFlags().size() == 0) {
++            this.getFlags().addUnchecked(Flag.UNKNOWN_BEHAVIOR);
++        }
++    }
++
++    @Override
++    public boolean canUse() {
++        return handle.shouldActivate();
++    }
++
++    @Override
++    public boolean canContinueToUse() {
++        return handle.shouldStayActive();
++    }
++
++    @Override
++    public void start() {
++        handle.start();
++    }
++
++    @Override
++    public void stop() {
++        handle.stop();
++    }
++
++    @Override
++    public void tick() {
++        handle.tick();
++    }
++
++    public Goal<T> getHandle() {
++        return handle;
++    }
++
++    public GoalKey<T> getKey() {
++        return handle.getKey();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java b/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..336cc3c3b43bacf4f3661fa0bb0736b273f65418
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java
+@@ -0,0 +1,213 @@
++package com.destroystokyo.paper.entity.ai;
++
++import java.util.Collection;
++import java.util.EnumSet;
++import java.util.HashSet;
++import java.util.LinkedList;
++import java.util.List;
++import java.util.Set;
++import net.minecraft.world.entity.ai.goal.GoalSelector;
++import net.minecraft.world.entity.ai.goal.WrappedGoal;
++import org.bukkit.craftbukkit.entity.CraftMob;
++import org.bukkit.entity.Mob;
++
++public class PaperMobGoals implements MobGoals {
++
++    @Override
++    public <T extends Mob> void addGoal(T mob, int priority, Goal<T> goal) {
++        CraftMob craftMob = (CraftMob) mob;
++        getHandle(craftMob, goal.getTypes()).addGoal(priority, new PaperCustomGoal<>(goal));
++    }
++
++    @Override
++    public <T extends Mob> void removeGoal(T mob, Goal<T> goal) {
++        CraftMob craftMob = (CraftMob) mob;
++        if (goal instanceof PaperCustomGoal) {
++            getHandle(craftMob, goal.getTypes()).removeGoal((net.minecraft.world.entity.ai.goal.Goal) goal);
++        } else if (goal instanceof PaperVanillaGoal) {
++            getHandle(craftMob, goal.getTypes()).removeGoal(((PaperVanillaGoal<?>) goal).getHandle());
++        } else {
++            List<net.minecraft.world.entity.ai.goal.Goal> toRemove = new LinkedList<>();
++            for (WrappedGoal item : getHandle(craftMob, goal.getTypes()).availableGoals) {
++                if (item.getGoal() instanceof PaperCustomGoal) {
++                    //noinspection unchecked
++                    if (((PaperCustomGoal<T>) item.getGoal()).getHandle() == goal) {
++                        toRemove.add(item.getGoal());
++                    }
++                }
++            }
++
++            for (net.minecraft.world.entity.ai.goal.Goal g : toRemove) {
++                getHandle(craftMob, goal.getTypes()).removeGoal(g);
++            }
++        }
++    }
++
++    @Override
++    public <T extends Mob> void removeAllGoals(T mob) {
++        for (GoalType type : GoalType.values()) {
++            removeAllGoals(mob, type);
++        }
++    }
++
++    @Override
++    public <T extends Mob> void removeAllGoals(T mob, GoalType type) {
++        for (Goal<T> goal : getAllGoals(mob, type)) {
++            removeGoal(mob, goal);
++        }
++    }
++
++    @Override
++    public <T extends Mob> void removeGoal(T mob, GoalKey<T> key) {
++        for (Goal<T> goal : getGoals(mob, key)) {
++            removeGoal(mob, goal);
++        }
++    }
++
++    @Override
++    public <T extends Mob> boolean hasGoal(T mob, GoalKey<T> key) {
++        for (Goal<T> g : getAllGoals(mob)) {
++            if (g.getKey().equals(key)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    @Override
++    public <T extends Mob> Goal<T> getGoal(T mob, GoalKey<T> key) {
++        for (Goal<T> g : getAllGoals(mob)) {
++            if (g.getKey().equals(key)) {
++                return g;
++            }
++        }
++        return null;
++    }
++
++    @Override
++    public <T extends Mob> Collection<Goal<T>> getGoals(T mob, GoalKey<T> key) {
++        Set<Goal<T>> goals = new HashSet<>();
++        for (Goal<T> g : getAllGoals(mob)) {
++            if (g.getKey().equals(key)) {
++                goals.add(g);
++            }
++        }
++        return goals;
++    }
++
++    @Override
++    public <T extends Mob> Collection<Goal<T>> getAllGoals(T mob) {
++        Set<Goal<T>> goals = new HashSet<>();
++        for (GoalType type : GoalType.values()) {
++            goals.addAll(getAllGoals(mob, type));
++        }
++        return goals;
++    }
++
++    @Override
++    public <T extends Mob> Collection<Goal<T>> getAllGoals(T mob, GoalType type) {
++        CraftMob craftMob = (CraftMob) mob;
++        Set<Goal<T>> goals = new HashSet<>();
++        for (WrappedGoal item : getHandle(craftMob, type).availableGoals) {
++            if (!item.getGoal().getFlags().hasElement(MobGoalHelper.paperToVanilla(type))) {
++                continue;
++            }
++
++            if (item.getGoal() instanceof PaperCustomGoal) {
++                //noinspection unchecked
++                goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
++            } else {
++                goals.add(item.getGoal().asPaperVanillaGoal());
++            }
++        }
++        return goals;
++    }
++
++    @Override
++    public <T extends Mob> Collection<Goal<T>> getAllGoalsWithout(T mob, GoalType type) {
++        CraftMob craftMob = (CraftMob) mob;
++        Set<Goal<T>> goals = new HashSet<>();
++        for (GoalType internalType : GoalType.values()) {
++            if (internalType == type) {
++                continue;
++            }
++            for (WrappedGoal item : getHandle(craftMob, internalType).availableGoals) {
++                if (item.getGoal().getFlags().hasElement(MobGoalHelper.paperToVanilla(type))) {
++                    continue;
++                }
++
++                if (item.getGoal() instanceof PaperCustomGoal) {
++                    //noinspection unchecked
++                    goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
++                } else {
++                    goals.add(item.getGoal().asPaperVanillaGoal());
++                }
++            }
++        }
++        return goals;
++    }
++
++    @Override
++    public <T extends Mob> Collection<Goal<T>> getRunningGoals(T mob) {
++        Set<Goal<T>> goals = new HashSet<>();
++        for (GoalType type : GoalType.values()) {
++            goals.addAll(getRunningGoals(mob, type));
++        }
++        return goals;
++    }
++
++    @Override
++    public <T extends Mob> Collection<Goal<T>> getRunningGoals(T mob, GoalType type) {
++        CraftMob craftMob = (CraftMob) mob;
++        Set<Goal<T>> goals = new HashSet<>();
++        getHandle(craftMob, type).getRunningGoals()
++            .filter(item -> item.getGoal().getFlags().hasElement(MobGoalHelper.paperToVanilla(type)))
++            .forEach(item -> {
++                if (item.getGoal() instanceof PaperCustomGoal) {
++                    //noinspection unchecked
++                    goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
++                } else {
++                    goals.add(item.getGoal().asPaperVanillaGoal());
++                }
++            });
++        return goals;
++    }
++
++    @Override
++    public <T extends Mob> Collection<Goal<T>> getRunningGoalsWithout(T mob, GoalType type) {
++        CraftMob craftMob = (CraftMob) mob;
++        Set<Goal<T>> goals = new HashSet<>();
++        for (GoalType internalType : GoalType.values()) {
++            if (internalType == type) {
++                continue;
++            }
++            getHandle(craftMob, internalType).getRunningGoals()
++                .filter(item -> !item.getGoal().getFlags().hasElement(MobGoalHelper.paperToVanilla(type)))
++                .forEach(item -> {
++                    if (item.getGoal() instanceof PaperCustomGoal) {
++                        //noinspection unchecked
++                        goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
++                    } else {
++                        goals.add(item.getGoal().asPaperVanillaGoal());
++                    }
++                });
++        }
++        return goals;
++    }
++
++    private GoalSelector getHandle(CraftMob mob, EnumSet<GoalType> types) {
++        if (types.contains(GoalType.TARGET)) {
++            return mob.getHandle().targetSelector;
++        } else {
++            return mob.getHandle().goalSelector;
++        }
++    }
++
++    private GoalSelector getHandle(CraftMob mob, GoalType type) {
++        if (type == GoalType.TARGET) {
++            return mob.getHandle().targetSelector;
++        } else {
++            return mob.getHandle().goalSelector;
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/PaperVanillaGoal.java b/src/main/java/com/destroystokyo/paper/entity/ai/PaperVanillaGoal.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d30e0b21b9024df939a9d070bd4a99b217e7c12
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/ai/PaperVanillaGoal.java
+@@ -0,0 +1,61 @@
++package com.destroystokyo.paper.entity.ai;
++
++import java.util.EnumSet;
++import net.minecraft.world.entity.ai.goal.Goal;
++import org.bukkit.entity.Mob;
++
++/**
++ * Wraps vanilla in api
++ */
++public class PaperVanillaGoal<T extends Mob> implements VanillaGoal<T> {
++
++    private final Goal handle;
++    private final GoalKey<T> key;
++
++    private final EnumSet<GoalType> types;
++
++    public PaperVanillaGoal(Goal handle) {
++        this.handle = handle;
++        this.key = MobGoalHelper.getKey(handle.getClass());
++        this.types = MobGoalHelper.vanillaToPaper(handle.getFlags());
++    }
++
++    public Goal getHandle() {
++        return handle;
++    }
++
++    @Override
++    public boolean shouldActivate() {
++        return handle.canUse();
++    }
++
++    @Override
++    public boolean shouldStayActive() {
++        return handle.canContinueToUse();
++    }
++
++    @Override
++    public void start() {
++        handle.start();
++    }
++
++    @Override
++    public void stop() {
++        handle.stop();
++    }
++
++    @Override
++    public void tick() {
++        handle.tick();
++    }
++
++    @Override
++    public GoalKey<T> getKey() {
++        return key;
++    }
++
++    @Override
++    public EnumSet<GoalType> getTypes() {
++        return types;
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
+index 4379b9948f1eecfe6fd7dea98e298ad5f761019a..3f081183521603824430709886a9cc313c28e7cb 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
+@@ -7,6 +7,14 @@ public abstract class Goal {
+     private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
+     private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
+ 
++    // Paper start make sure goaltypes is never empty
++    public Goal() {
++        if (this.goalTypes.size() == 0) {
++            this.goalTypes.addUnchecked(Flag.UNKNOWN_BEHAVIOR);
++        }
++    }
++    // Paper end
++
+     public abstract boolean canUse();
+ 
+     public boolean canContinueToUse() {
+@@ -34,6 +42,10 @@ public abstract class Goal {
+         // Paper start - remove streams from pathfindergoalselector
+         this.goalTypes.clear();
+         this.goalTypes.addAllUnchecked(controls);
++        // make sure its never empty
++        if (this.goalTypes.size() == 0) {
++            this.goalTypes.addUnchecked(Flag.UNKNOWN_BEHAVIOR);
++        }
+         // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+@@ -56,7 +68,19 @@ public abstract class Goal {
+         return Mth.positiveCeilDiv(serverTicks, 2);
+     }
+ 
++    // Paper start - mob goal api
++    private com.destroystokyo.paper.entity.ai.PaperVanillaGoal<?> vanillaGoal = null;
++    public <T extends org.bukkit.entity.Mob> com.destroystokyo.paper.entity.ai.Goal<T> asPaperVanillaGoal() {
++        if(this.vanillaGoal == null) {
++            this.vanillaGoal = new com.destroystokyo.paper.entity.ai.PaperVanillaGoal<>(this);
++        }
++        //noinspection unchecked
++        return (com.destroystokyo.paper.entity.ai.Goal<T>) this.vanillaGoal;
++    }
++    // Paper end - mob goal api
++
+     public static enum Flag {
++        UNKNOWN_BEHAVIOR, // Paper - add UNKNOWN_BEHAVIOR
+         MOVE,
+         LOOK,
+         JUMP,
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 7bc40ce1566821f29d2d199764ef33d2d1c45849..68eb6756098a9923b63e0d4cfcc15fcfee5acf6e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2684,5 +2684,11 @@ public final class CraftServer implements Server {
+     public boolean isStopping() {
+         return net.minecraft.server.MinecraftServer.getServer().hasStopped();
+     }
++
++    private com.destroystokyo.paper.entity.ai.MobGoals mobGoals = new com.destroystokyo.paper.entity.ai.PaperMobGoals();
++    @Override
++    public com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
++        return mobGoals;
++    }
+     // Paper end
+ }
+diff --git a/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java b/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b2d510459bcf90a3611f3d91dae4ccc3d29b4079
+--- /dev/null
++++ b/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java
+@@ -0,0 +1,103 @@
++package com.destroystokyo.paper.entity.ai;
++
++import org.junit.Assert;
++import org.junit.Test;
++
++import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++import java.util.stream.Collectors;
++
++import org.bukkit.entity.Mob;
++
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ScanResult;
++
++public class VanillaMobGoalTest {
++
++    @Test
++    public void testKeys() {
++        List<GoalKey<?>> deprecated = new ArrayList<>();
++        List<GoalKey<?>> keys = new ArrayList<>();
++        for (Field field : VanillaGoal.class.getFields()) {
++            if (field.getType().equals(GoalKey.class)) {
++                try {
++                    GoalKey<?> goalKey = (GoalKey<?>) field.get(null);
++                    if (field.getAnnotation(Deprecated.class) != null) {
++                        deprecated.add(goalKey);
++                    } else {
++                        keys.add(goalKey);
++                    }
++                } catch (IllegalAccessException e) {
++                    System.out.println("Skipping " + field.getName() + ": " + e.getMessage());
++                }
++            }
++        }
++
++        List<Class<?>> classes;
++        try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft").scan()) {
++            classes = scanResult.getSubclasses(net.minecraft.world.entity.ai.goal.Goal.class.getName()).loadClasses();
++        }
++
++        List<GoalKey<?>> vanillaNames = classes.stream()
++            .filter(VanillaMobGoalTest::hasNoEnclosingClass)
++            .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
++            .filter(clazz -> !net.minecraft.world.entity.ai.goal.WrappedGoal.class.equals(clazz)) // TODO - properly fix
++            .map(goalClass -> MobGoalHelper.getKey((Class<? extends net.minecraft.world.entity.ai.goal.Goal>) goalClass))
++            .collect(Collectors.toList());
++
++        List<GoalKey<?>> missingFromAPI = new ArrayList<>(vanillaNames);
++        missingFromAPI.removeAll(keys);
++        missingFromAPI.removeIf(k -> MobGoalHelper.ignored.contains(k.getNamespacedKey().getKey()));
++        List<GoalKey<?>> missingFromVanilla = new ArrayList<>(keys);
++        missingFromVanilla.removeAll(vanillaNames);
++
++        boolean shouldFail = false;
++        if (missingFromAPI.size() != 0) {
++            System.out.println("Missing from API: ");
++            for (GoalKey<?> key : missingFromAPI) {
++                System.out.println("GoalKey<" + key.getEntityClass().getSimpleName() + "> " + key.getNamespacedKey().getKey().toUpperCase() +
++                                   " = GoalKey.of(" + key.getEntityClass().getSimpleName() + ".class, NamespacedKey.minecraft(\"" + key.getNamespacedKey().getKey() + "\"));");
++            }
++            shouldFail = true;
++        }
++        if (missingFromVanilla.size() != 0) {
++            System.out.println("Missing from vanilla: ");
++            missingFromVanilla.forEach(System.out::println);
++            shouldFail = true;
++        }
++
++        if (deprecated.size() != 0) {
++            System.out.println("Deprecated (might want to remove them at some point): ");
++            deprecated.forEach(System.out::println);
++        }
++
++        if (shouldFail) Assert.fail("See above");
++    }
++
++    private static boolean hasNoEnclosingClass(Class<?> clazz) {
++        return clazz.getEnclosingClass() == null || hasNoEnclosingClass(clazz.getSuperclass());
++    }
++
++    @Test
++    public void testBukkitMap() {
++        List<Class<?>> classes;
++        try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft.world.entity").scan()) {
++            classes = scanResult.getSubclasses("net.minecraft.world.entity.Mob").loadClasses();
++        }
++        Assert.assertNotEquals("There are supposed to be more than 0 entity types!", Collections.emptyList(), classes);
++
++        boolean shouldFail = false;
++        for (Class<?> nmsClass : classes) {
++            Class<? extends Mob> bukkitClass = MobGoalHelper.toBukkitClass((Class<? extends net.minecraft.world.entity.Mob>) nmsClass);
++            if (bukkitClass == null) {
++                shouldFail = true;
++                System.out.println("Missing bukkitMap.put(" + nmsClass.getSimpleName() + ".class, " + nmsClass.getSimpleName().replace("Entity", "") + ".class);");
++            }
++        }
++
++        if (shouldFail) Assert.fail("See above");
++    }
++}
