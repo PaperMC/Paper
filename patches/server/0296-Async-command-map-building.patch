@@ -9,14 +9,18 @@ commands if the server is restarting. Using the default async pool caused issues
 due to the shutdown logic generally being much later.
 
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index 2bf67468a6c745bc6243c65210477ba129bfcb07..91b32a4856a4c9d6dc12871ed080f7a67311ead0 100644
+index 2bf67468a6c745bc6243c65210477ba129bfcb07..b89761343fd6125cef3b7949b39c56c2e1e513a2 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
-@@ -360,6 +360,23 @@ public class Commands {
+@@ -360,6 +360,27 @@ public class Commands {
          if ( org.spigotmc.SpigotConfig.tabComplete < 0 ) return; // Spigot
          // CraftBukkit start
          // Register Vanilla commands into builtRoot as before
 +        // Paper start - Async command map building
++        // Don't send to pool if it's shutdown
++        if (COMMAND_SENDING_POOL.isShutdown()) {
++            return;
++        }
 +        COMMAND_SENDING_POOL.execute(() -> {
 +                this.sendAsync(player);
 +        });
@@ -36,7 +40,7 @@ index 2bf67468a6c745bc6243c65210477ba129bfcb07..91b32a4856a4c9d6dc12871ed080f7a6
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
          RootCommandNode vanillaRoot = new RootCommandNode();
  
-@@ -377,7 +394,14 @@ public class Commands {
+@@ -377,7 +398,14 @@ public class Commands {
          for (CommandNode node : rootcommandnode.getChildren()) {
              bukkit.add(node.getName());
          }
