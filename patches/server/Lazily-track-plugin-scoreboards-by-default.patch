@@ -26,31 +26,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      CraftScoreboard(Scoreboard board) {
          this.board = board;
 @@ -0,0 +0,0 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+         Validate.notNull(renderType, "RenderType cannot be null");
          Validate.isTrue(name.length() <= Short.MAX_VALUE, "The name '" + name + "' is longer than the limit of 32767 characters");
          Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
-         CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
 +        // Paper start - the block comment from the old registerNewObjective didnt cause a conflict when rebasing, so this block wasn't added to the adventure registerNewObjective
-+        if (craftCriteria.criteria != net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY && !registeredGlobally) {
++        if (((CraftCriteria) criteria).criteria != net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY && !registeredGlobally) {
 +            net.minecraft.server.MinecraftServer.getServer().server.getScoreboardManager().registerScoreboardForVanilla(this);
 +            registeredGlobally = true;
 +        }
 +        // Paper end
-         net.minecraft.world.scores.Objective objective = board.addObjective(name, craftCriteria.criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
+         net.minecraft.world.scores.Objective objective = board.addObjective(name, ((CraftCriteria) criteria).criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
          return new CraftObjective(this, objective);
      }
-@@ -0,0 +0,0 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
-         net.minecraft.world.scores.Objective objective = this.board.addObjective(name, craftCriteria.criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
- 
-         CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
-+        // Paper start
-+        if (craftCriteria.criteria != net.minecraft.server.IScoreboardCriteria.DUMMY && !registeredGlobally) {
-+            net.minecraft.server.MinecraftServer.getServer().server.getScoreboardManager().registerScoreboardForVanilla(this);
-+            registeredGlobally = true;
-+        }
-+        // Paper end
-         ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
-         return new CraftObjective(this, objective);*/ // Paper
-         return registerNewObjective(name, criteria, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(displayName), renderType); // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
