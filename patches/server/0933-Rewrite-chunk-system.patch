@@ -7372,10 +7372,10 @@ index 68860a3b6db2aa50373d71aec9502c18d48ab8b9..193f492ce1fb6a7ebf2c19f092c26842
      public static void processConfiguration(GlobalConfiguration.AsyncChunks config) {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a5122f99364d921cd96f81dd515560fc05efe99c
+index 0000000000000000000000000000000000000000..df92b8f4c6f668d27a73622d920182ed20dab582
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
-@@ -0,0 +1,711 @@
+@@ -0,0 +1,716 @@
 +package io.papermc.paper.chunk.system.entity;
 +
 +import com.google.common.collect.Iterables;
@@ -7389,6 +7389,7 @@ index 0000000000000000000000000000000000000000..a5122f99364d921cd96f81dd515560fc
 +import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.server.level.ChunkHolder;
++import net.minecraft.server.level.ChunkMap;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.util.Mth;
 +import net.minecraft.world.entity.Entity;
@@ -7580,13 +7581,17 @@ index 0000000000000000000000000000000000000000..a5122f99364d921cd96f81dd515560fc
 +        final int sectionY = Mth.clamp(pos.getY() >> 4, this.minSection, this.maxSection);
 +        final int sectionZ = pos.getZ() >> 4;
 +        TickThread.ensureTickThread(sectionX, sectionZ, "Cannot add entity off-main thread");
++
++        if (fromDisk) {
++            ChunkMap.checkDupeUUID(this.world, entity);
++        }
++
 +        this.entityByLock.writeLock();
 +        try {
 +            if (entity.isRemoved()) {
 +                LOGGER.warn("Refusing to add removed entity: " + entity);
 +                return false;
 +            }
-+            // TODO duplicate entity id config
 +            if (this.entityById.containsKey(entity.getId())) {
 +                LOGGER.warn("Entity id already exists: " + entity.getId() + ", mapped to " + this.entityById.get(entity.getId()) + ", can't add " + entity, new Throwable());
 +                return false;
@@ -17477,7 +17482,7 @@ index 11cd31691307749e925930c4b6e10e3f3b4fad25..a62b8a9f0afdcd94801dac7d02ceb154
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..c51c97c620368dec265e0e9982e66f23f5566afe 100644
+index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..59286ccaefe86ac0f432a89662cbbd9a2216f32f 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -124,37 +124,33 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -18218,7 +18223,7 @@ index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..c51c97c620368dec265e0e9982e66f23
          if (!nbt.isEmpty()) {
              // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
              world.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(nbt, world).filter((entity) -> {
-@@ -1354,46 +862,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1354,50 +862,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> protoChunkToFullChunk(ChunkHolder chunkHolder) {
@@ -18266,6 +18271,11 @@ index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..c51c97c620368dec265e0e9982e66f23
      }
  
      // Paper start
+-    private static void checkDupeUUID(ServerLevel level, Entity entity) {
++    public static void checkDupeUUID(ServerLevel level, Entity entity) { // Paper - rewrite chunk system
+         io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode mode = level.paperConfig().entities.spawning.duplicateUuid.mode;
+         if (mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.WARN
+             && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.DELETE
 @@ -1434,31 +903,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
      // Paper end
