@@ -9133,22 +9133,19 @@ index 456595e4b7e0c7f50617aa2694b0d2dfc368ab81..34ecd95145c99e0dc794ada29da6a7a7
  
      public class UnsupportedSettings extends ConfigurationPart {
 diff --git a/src/main/java/io/papermc/paper/util/TickThread.java b/src/main/java/io/papermc/paper/util/TickThread.java
-index c92f7e59f490f7b289325d9cc2bf7c2cf1750c7a..ebe684c816a9b6f8e46ccc891a668811e36c8438 100644
+index be130b03ca116fd6d104df26c32312db1655b09e..946a69f959724fbba58fd5db689aafc4937f0f12 100644
 --- a/src/main/java/io/papermc/paper/util/TickThread.java
 +++ b/src/main/java/io/papermc/paper/util/TickThread.java
-@@ -1,9 +1,9 @@
- package io.papermc.paper.util;
- 
- import net.minecraft.server.MinecraftServer;
--import org.bukkit.Bukkit;
-+import java.util.concurrent.atomic.AtomicInteger;
+@@ -5,7 +5,7 @@ import net.minecraft.world.entity.Entity;
+ import org.bukkit.Bukkit;
+ import java.util.concurrent.atomic.AtomicInteger;
  
 -public final class TickThread extends Thread {
 +public class TickThread extends Thread {
  
      public static final boolean STRICT_THREAD_CHECKS = Boolean.getBoolean("paper.strict-thread-checks");
  
-@@ -13,6 +13,10 @@ public final class TickThread extends Thread {
+@@ -15,6 +15,10 @@ public final class TickThread extends Thread {
          }
      }
  
@@ -9159,58 +9156,34 @@ index c92f7e59f490f7b289325d9cc2bf7c2cf1750c7a..ebe684c816a9b6f8e46ccc891a668811
      public static void softEnsureTickThread(final String reason) {
          if (!STRICT_THREAD_CHECKS) {
              return;
-@@ -21,8 +25,19 @@ public final class TickThread extends Thread {
+@@ -22,6 +26,10 @@ public final class TickThread extends Thread {
+         ensureTickThread(reason);
      }
- 
  
 +    /**
 +     * @deprecated Use {@link #ensureTickThread(int, int, String)}
 +     */
 +    @Deprecated
      public static void ensureTickThread(final String reason) {
--        if (!Bukkit.isPrimaryThread()) {
-+        if (!isTickThread()) {
-+            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
-+            throw new IllegalStateException(reason);
-+        }
-+    }
-+
-+    public static void ensureTickThread(final int chunkX, final int chunkZ, final String reason) {
-+        if (!isTickThreadFor(chunkX, chunkZ)) {
+         if (!isTickThread()) {
              MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
-             throw new IllegalStateException(reason);
-         }
-@@ -30,7 +45,17 @@ public final class TickThread extends Thread {
- 
-     public final int id; /* We don't override getId as the spec requires that it be unique (with respect to all other threads) */
- 
--    public TickThread(final Runnable run, final String name, final int id) {
-+    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
-+
-+    public TickThread(final String name) {
-+        this(null, name);
-+    }
-+
-+    public TickThread(final Runnable run, final String name) {
-+        this(run, name, ID_GENERATOR.incrementAndGet());
-+    }
-+
-+    private TickThread(final Runnable run, final String name, final int id) {
-         super(run, name);
-         this.id = id;
+@@ -65,14 +73,14 @@ public final class TickThread extends Thread {
      }
-@@ -38,4 +63,12 @@ public final class TickThread extends Thread {
-     public static TickThread getCurrentTickThread() {
-         return (TickThread)Thread.currentThread();
+ 
+     public static boolean isTickThread() {
+-        return Bukkit.isPrimaryThread();
++        return Thread.currentThread() instanceof TickThread;
      }
-+
-+    public static boolean isTickThread() {
+ 
+     public static boolean isTickThreadFor(final int chunkX, final int chunkZ) {
+-        return Bukkit.isPrimaryThread();
 +        return Thread.currentThread() instanceof TickThread;
-+    }
-+
-+    public static boolean isTickThreadFor(final int chunkX, final int chunkZ) {
+     }
+ 
+     public static boolean isTickThreadFor(final Entity entity) {
+-        return Bukkit.isPrimaryThread();
 +        return Thread.currentThread() instanceof TickThread;
-+    }
+     }
  }
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a9e4fc0f9 100644
@@ -9667,7 +9640,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..7ef6273f9205f5d116b3ccf1d9e4d7e9
          }
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f23be38ef96a81ce3867a3b6fdccf632fe285f31..85bb2ab74b76a4cc2ced8520892ca0562ea296b7 100644
+index 081c7160cf727646cdec4cd551dbc2aad56326f6..aed7ee721cc0790ee41ee789029af0177dad0bb7 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -301,7 +301,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -9725,7 +9698,7 @@ index f23be38ef96a81ce3867a3b6fdccf632fe285f31..85bb2ab74b76a4cc2ced8520892ca056
              }
  
              MinecraftServer.LOGGER.info("ThreadedAnvilChunkStorage: All dimensions are saved");
-@@ -964,38 +974,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -965,38 +975,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          // Paper end - let's be a little more intelligent around crashes
  
@@ -9767,7 +9740,7 @@ index f23be38ef96a81ce3867a3b6fdccf632fe285f31..85bb2ab74b76a4cc2ced8520892ca056
  
          this.isSaving = false;
          this.resources.close();
-@@ -1016,7 +998,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1017,7 +999,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Spigot end
          // Paper start - move final shutdown items here
          LOGGER.info("Flushing Chunk IO");
@@ -9776,7 +9749,7 @@ index f23be38ef96a81ce3867a3b6fdccf632fe285f31..85bb2ab74b76a4cc2ced8520892ca056
          LOGGER.info("Closing Thread Pool");
          Util.shutdownExecutors(); // Paper
          LOGGER.info("Closing Server");
-@@ -1118,6 +1100,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1119,6 +1101,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // Paper End
      // Spigot End
  
@@ -9785,7 +9758,7 @@ index f23be38ef96a81ce3867a3b6fdccf632fe285f31..85bb2ab74b76a4cc2ced8520892ca056
      protected void runServer() {
          try {
              long serverStartTime = Util.getNanos(); // Paper
-@@ -1150,6 +1134,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1151,6 +1135,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
              lastTick = start - TICK_TIME; // Paper
              while (this.running) {
@@ -9798,7 +9771,7 @@ index f23be38ef96a81ce3867a3b6fdccf632fe285f31..85bb2ab74b76a4cc2ced8520892ca056
                  long i = ((curTime = System.nanoTime()) / (1000L * 1000L)) - this.nextTickTime; // Paper
  
                  if (i > 5000L && this.nextTickTime - this.lastOverloadWarning >= 30000L) { // CraftBukkit
-@@ -2052,7 +2042,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2053,7 +2043,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper
              new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
              // Paper start
@@ -9807,7 +9780,7 @@ index f23be38ef96a81ce3867a3b6fdccf632fe285f31..85bb2ab74b76a4cc2ced8520892ca056
                  return;
              }
              // this.getPlayerList().saveAll(); // Paper - we don't need to save everything, just advancements
-@@ -2460,7 +2450,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2461,7 +2451,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // CraftBukkit start
      @Override
      public boolean isSameThread() {
@@ -14621,38 +14594,6 @@ index 2bc0384728f89b7c64a8beec78a1b77dc063d37b..c5fce4f130a51508064f3b67ff617501
          int i = getVersion(chunkNbt);
          return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY_CHUNK, chunkNbt, i, SharedConstants.getCurrentVersion().getWorldVersion()); // Paper - route to new converter system
      }
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 6704ae5c2ee01f8b319f4d425fe08c16d7b1b212..47cd08391767b4c07d0cf556ae15245e07541665 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -1005,6 +1005,9 @@ public class RegionFile implements AutoCloseable {
- 
-     }
-     // Paper end
-+
-+    public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - TODO put this into the patch
-+
-     private class ChunkBuffer extends ByteArrayOutputStream {
- 
-         private final ChunkPos pos;
-@@ -1022,7 +1025,7 @@ public class RegionFile implements AutoCloseable {
-         // Paper start - don't write garbage data to disk if writing serialization fails
-         @Override
-         public void write(final int b) {
--            if (this.count > 500_000_000) {
-+            if (this.count > MAX_CHUNK_SIZE) { // TODO extract this constant
-                 throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + this.count);
-             }
-             super.write(b);
-@@ -1030,7 +1033,7 @@ public class RegionFile implements AutoCloseable {
- 
-         @Override
-         public void write(final byte[] b, final int off, final int len) {
--            if (this.count + len > 500_000_000) {
-+            if (this.count + len > MAX_CHUNK_SIZE) { // Paper - TODO put this into the patch
-                 throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + (this.count + len));
-             }
-             super.write(b, off, len);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 index c31b9a6b1d4548d507ecb60d42ca9f96f49f6c4b..c2c25b5d9eaf8f2abf390a3d0d270f0c9bb96e03 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
@@ -14787,10 +14728,10 @@ index 947b0b10fb965f30513fd0df5bc0910fb9cb9a71..01e15c7b70dd60f6ad417c8bb81edfa5
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..fadd4866e2a529b01a2dca3d6adaa5bff6ca79b6 100644
+index 964ec590ef5302576ecb3ba2b8ea95dbc2acf103..94ceab289777e44c753161cc406c21dd4388781e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1249,7 +1249,7 @@ public final class CraftServer implements Server {
+@@ -1251,7 +1251,7 @@ public final class CraftServer implements Server {
  
          internal.keepSpawnInMemory = creator.keepSpawnLoaded().toBooleanOrElse(internal.getWorld().getKeepSpawnInMemory()); // Paper
          this.getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
@@ -14799,7 +14740,7 @@ index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..fadd4866e2a529b01a2dca3d6adaa5bf
  
          this.pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
          return internal.getWorld();
-@@ -1294,7 +1294,7 @@ public final class CraftServer implements Server {
+@@ -1296,7 +1296,7 @@ public final class CraftServer implements Server {
              }
  
              handle.getChunkSource().close(save);
@@ -14808,7 +14749,7 @@ index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..fadd4866e2a529b01a2dca3d6adaa5bf
              handle.convertable.close();
          } catch (Exception ex) {
              this.getLogger().log(Level.SEVERE, null, ex);
-@@ -2178,7 +2178,7 @@ public final class CraftServer implements Server {
+@@ -2180,7 +2180,7 @@ public final class CraftServer implements Server {
  
      @Override
      public boolean isPrimaryThread() {
@@ -14938,7 +14879,7 @@ index 6549ade8e19807c523e5a1dc68b66585aad438b1..783a31dd8cac40c6adabbfa8f3a5970b
                  }
              });
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index ef9c3a7b15a4901e1662e6d55504b9cbbb804ad3..d01a8ae4e8c0c556ef5c0fa2ebc136b2c83c4fe6 100644
+index 067d64ce06f626ce90b3ccf608d98f3c64fce335..334339d7e7b6ae9a6a3a4f0c0bc61d4f20ce2ef8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1162,15 +1162,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
