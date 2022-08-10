@@ -10,8 +10,9 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when sending Suggestions to the client. Will be called asynchronously if a plugin
- * marks the AsyncTabComplete event handled asynchronously, otherwise called synchronously.
+ * Called when sending {@link Suggestions} to the client. Will be called asynchronously if a plugin
+ * marks the {@link com.destroystokyo.paper.event.server.AsyncTabCompleteEvent} event handled asynchronously,
+ * otherwise called synchronously.
  */
 public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Cancellable {
 
@@ -28,21 +29,27 @@ public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Canc
     }
 
     /**
-     * @return The input buffer sent to request these suggestions
+     * Gets the input buffer sent to request these suggestions.
+     *
+     * @return the input buffer
      */
     public String getBuffer() {
         return buffer;
     }
 
     /**
-     * @return The suggestions being sent to client
+     * Gets the suggestions to be sent to client.
+     *
+     * @return the suggestions
      */
     public Suggestions getSuggestions() {
         return suggestions;
     }
 
     /**
-     * @param suggestions The suggestions to be sent to client if need to change them
+     * Sets the suggestions to be sent to client.
+     *
+     * @param suggestions suggestions
      */
     public void setSuggestions(Suggestions suggestions) {
         this.suggestions = suggestions;
@@ -57,7 +64,7 @@ public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Canc
     }
 
     /**
-     * Cancels sending suggestions to the client
+     * Cancels sending suggestions to the client.
      * {@inheritDoc}
      */
     @Override
