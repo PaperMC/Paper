@@ -7372,10 +7372,10 @@ index 68860a3b6db2aa50373d71aec9502c18d48ab8b9..193f492ce1fb6a7ebf2c19f092c26842
      public static void processConfiguration(GlobalConfiguration.AsyncChunks config) {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..25ae685b4c849a481bd7065219b2f952cc8d5e49
+index 0000000000000000000000000000000000000000..a5122f99364d921cd96f81dd515560fc05efe99c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
-@@ -0,0 +1,712 @@
+@@ -0,0 +1,711 @@
 +package io.papermc.paper.chunk.system.entity;
 +
 +import com.google.common.collect.Iterables;
@@ -7587,9 +7587,6 @@ index 0000000000000000000000000000000000000000..25ae685b4c849a481bd7065219b2f952
 +                return false;
 +            }
 +            // TODO duplicate entity id config
-+            // TODO what about if chunk slices contains entity
-+            // TODO players will force-add
-+            // TODO what if they're the same entity
 +            if (this.entityById.containsKey(entity.getId())) {
 +                LOGGER.warn("Entity id already exists: " + entity.getId() + ", mapped to " + this.entityById.get(entity.getId()) + ", can't add " + entity, new Throwable());
 +                return false;
@@ -7608,7 +7605,9 @@ index 0000000000000000000000000000000000000000..25ae685b4c849a481bd7065219b2f952
 +        entity.sectionY = sectionY;
 +        entity.sectionZ = sectionZ;
 +        final ChunkEntitySlices slices = this.getOrCreateChunk(sectionX, sectionZ);
-+        slices.addEntity(entity, sectionY);
++        if (!slices.addEntity(entity, sectionY)) {
++            LOGGER.warn("Entity " + entity + " added to world '" + this.world.getWorld().getName() + "', but was already contained in entity chunk (" + sectionX + "," + sectionZ + ")");
++        }
 +
 +        entity.setLevelCallback(new EntityCallback(entity));
 +
@@ -21667,46 +21666,31 @@ index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..fadd4866e2a529b01a2dca3d6adaa5bf
  
      // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index f0b14914438840bd819fa7da8b76f4fcc13704d0..ed54d4aaf8a359652325fa00713ca135218408b0 100644
+index f0b14914438840bd819fa7da8b76f4fcc13704d0..cfb810a9cc25c3133d9e333f35deff2424febb67 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -167,17 +167,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
- 
+@@ -168,9 +168,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public int getTileEntityCount() {
--        // We don't use the full world tile entity list, so we must iterate chunks
+         // We don't use the full world tile entity list, so we must iterate chunks
 -        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.updatingChunks.getVisibleMap(); // Paper - change updating chunks map
--        int size = 0;
++        // Paper - rewrite chunk system
+         int size = 0;
 -        for (ChunkHolder playerchunk : chunks.values()) {
--            net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
--            if (chunk == null) {
--                continue;
--            }
--            size += chunk.blockEntities.size();
--        }
--        return size;
-+        throw new UnsupportedOperationException(); // Paper - TODO rewrite chunk system
-     }
- 
-     @Override
-@@ -187,15 +177,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
- 
-     @Override
++        for (ChunkHolder playerchunk : world.chunkTaskScheduler.chunkHolderManager.getOldChunkHolders()) { // Paper - rewrite chunk system
+             net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
+             if (chunk == null) {
+                 continue;
+@@ -189,7 +189,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public int getChunkCount() {
--        int ret = 0;
--
--        for (ChunkHolder chunkHolder : world.getChunkSource().chunkMap.updatingChunks.getVisibleMap().values()) { // Paper - change updating chunks map
--            if (chunkHolder.getTickingChunk() != null) {
--                ++ret;
--            }
--        }
--
--        return ret;
-+        throw new UnsupportedOperationException(); // Paper - TODO rewrite chunk system
-     }
+         int ret = 0;
  
-     @Override
-@@ -385,19 +367,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+-        for (ChunkHolder chunkHolder : world.getChunkSource().chunkMap.updatingChunks.getVisibleMap().values()) { // Paper - change updating chunks map
++        for (ChunkHolder chunkHolder : world.chunkTaskScheduler.chunkHolderManager.getOldChunkHolders()) { // Paper - change updating chunks map // Paper - rewrite chunk system
+             if (chunkHolder.getTickingChunk() != null) {
+                 ++ret;
+             }
+@@ -385,19 +385,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public Chunk[] getLoadedChunks() {
@@ -21730,7 +21714,7 @@ index f0b14914438840bd819fa7da8b76f4fcc13704d0..ed54d4aaf8a359652325fa00713ca135
      }
  
      @Override
-@@ -508,7 +481,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -508,7 +499,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean refreshChunk(int x, int z) {
@@ -21739,7 +21723,7 @@ index f0b14914438840bd819fa7da8b76f4fcc13704d0..ed54d4aaf8a359652325fa00713ca135
          if (playerChunk == null) return false;
  
          playerChunk.getTickingChunkFuture().thenAccept(either -> {
-@@ -639,20 +612,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -639,20 +630,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public Collection<Plugin> getPluginChunkTickets(int x, int z) {
          DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
@@ -21761,7 +21745,7 @@ index f0b14914438840bd819fa7da8b76f4fcc13704d0..ed54d4aaf8a359652325fa00713ca135
      }
  
      @Override
-@@ -660,7 +620,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -660,7 +638,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
          DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
  
@@ -21770,7 +21754,7 @@ index f0b14914438840bd819fa7da8b76f4fcc13704d0..ed54d4aaf8a359652325fa00713ca135
              long chunkKey = chunkTickets.getLongKey();
              SortedArraySet<Ticket<?>> tickets = chunkTickets.getValue();
  
-@@ -2281,7 +2241,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2281,7 +2259,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          // Paper start - Chunk priority
          if (!urgent) {
              // If not urgent, at least use a slightly boosted priority
