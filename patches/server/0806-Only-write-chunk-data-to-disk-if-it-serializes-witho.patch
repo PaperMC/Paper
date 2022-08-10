@@ -8,17 +8,27 @@ This ensures at least a valid version of the chunk exists
 on disk, even if outdated
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 8ff8855c5267379b3a5f5d8baa4a275ffee2c4bf..6704ae5c2ee01f8b319f4d425fe08c16d7b1b212 100644
+index 8ff8855c5267379b3a5f5d8baa4a275ffee2c4bf..fc3442b4c7e1f22080fe6bf36d4fade162d6709e 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -1019,6 +1019,24 @@ public class RegionFile implements AutoCloseable {
+@@ -1004,6 +1004,9 @@ public class RegionFile implements AutoCloseable {
+         }
+ 
+     }
++
++    public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
++
+     // Paper end
+     private class ChunkBuffer extends ByteArrayOutputStream {
+ 
+@@ -1019,6 +1022,24 @@ public class RegionFile implements AutoCloseable {
              this.pos = chunkcoordintpair;
          }
  
 +        // Paper start - don't write garbage data to disk if writing serialization fails
 +        @Override
 +        public void write(final int b) {
-+            if (this.count > 500_000_000) {
++            if (this.count > MAX_CHUNK_SIZE) {
 +                throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + this.count);
 +            }
 +            super.write(b);
@@ -26,7 +36,7 @@ index 8ff8855c5267379b3a5f5d8baa4a275ffee2c4bf..6704ae5c2ee01f8b319f4d425fe08c16
 +
 +        @Override
 +        public void write(final byte[] b, final int off, final int len) {
-+            if (this.count + len > 500_000_000) {
++            if (this.count + len > MAX_CHUNK_SIZE) {
 +                throw new RegionFileStorage.RegionFileSizeException("Region file too large: " + (this.count + len));
 +            }
 +            super.write(b, off, len);
