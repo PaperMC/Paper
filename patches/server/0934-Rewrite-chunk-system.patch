@@ -2836,15 +2836,17 @@ index 0000000000000000000000000000000000000000..0b7a2b0ead4f3bc07bfd9a38c2b7cf02
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/poi/PoiChunk.java b/src/main/java/io/papermc/paper/chunk/system/poi/PoiChunk.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6cb81c3f1
+index 0000000000000000000000000000000000000000..583339f27b6a3bd025656dac8996f68f25590e46
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/poi/PoiChunk.java
-@@ -0,0 +1,168 @@
+@@ -0,0 +1,211 @@
 +package io.papermc.paper.chunk.system.poi;
 +
 +import com.mojang.logging.LogUtils;
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.DataResult;
++import io.papermc.paper.util.CoordinateUtils;
++import io.papermc.paper.util.TickThread;
 +import io.papermc.paper.util.WorldUtil;
 +import net.minecraft.SharedConstants;
 +import net.minecraft.nbt.CompoundTag;
@@ -2852,6 +2854,7 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.resources.RegistryOps;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.ai.village.poi.PoiManager;
 +import net.minecraft.world.entity.ai.village.poi.PoiSection;
 +import org.slf4j.Logger;
 +
@@ -2866,14 +2869,11 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +    public final int chunkZ;
 +    public final int minSection;
 +    public final int maxSection;
-+    // this is dumb
-+    public final Runnable onModify = () -> {
-+        PoiChunk.this.isDirty = true;
-+    };
 +
 +    protected final PoiSection[] sections;
 +
 +    private boolean isDirty;
++    private boolean loaded;
 +
 +    public PoiChunk(final ServerLevel world, final int chunkX, final int chunkZ, final int minSection, final int maxSection) {
 +        this(world, chunkX, chunkZ, minSection, maxSection, new PoiSection[maxSection - minSection + 1]);
@@ -2891,6 +2891,29 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +        }
 +    }
 +
++    public void load() {
++        TickThread.ensureTickThread(this.chunkX, this.chunkZ, "Loading in poi chunk off-main");
++        if (this.loaded) {
++            return;
++        }
++        this.loaded = true;
++        this.world.chunkSource.getPoiManager().loadInPoiChunk(this);
++    }
++
++    public boolean isLoaded() {
++        return this.loaded;
++    }
++
++    public boolean isEmpty() {
++        for (final PoiSection section : this.sections) {
++            if (section != null && !section.isEmpty()) {
++                return false;
++            }
++        }
++
++        return true;
++    }
++
 +    public PoiSection getOrCreateSection(final int chunkY) {
 +        if (chunkY >= this.minSection && chunkY <= this.maxSection) {
 +            final int idx = chunkY - this.minSection;
@@ -2899,7 +2922,12 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +                return ret;
 +            }
 +
-+            return this.sections[idx] = new PoiSection(this.onModify);
++            final PoiManager poiManager = this.world.getPoiManager();
++            final long key = CoordinateUtils.getChunkSectionKey(this.chunkX, chunkY, this.chunkZ);
++
++            return this.sections[idx] = new PoiSection(() -> {
++                poiManager.setDirty(key);
++            });
 +        }
 +        throw new IllegalArgumentException("chunkY is out of bounds, chunkY: " + chunkY + " outside [" + this.minSection + "," + this.maxSection + "]");
 +    }
@@ -2929,7 +2957,6 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +
 +    // returns null if empty
 +    public CompoundTag save() {
-+        final Codec<PoiSection> codec = PoiSection.codec(this.onModify);
 +        final RegistryOps<Tag> registryOps = RegistryOps.create(NbtOps.INSTANCE, world.getPoiManager().registryAccess);
 +
 +        final CompoundTag ret = new CompoundTag();
@@ -2939,6 +2966,7 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +        ret.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
 +
 +        final ServerLevel world = this.world;
++        final PoiManager poiManager = world.getPoiManager();
 +        final int chunkX = this.chunkX;
 +        final int chunkZ = this.chunkZ;
 +
@@ -2947,6 +2975,12 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +            if (chunk == null || chunk.isEmpty()) {
 +                continue;
 +            }
++
++            final long key = CoordinateUtils.getChunkSectionKey(chunkX, sectionY, chunkZ);
++            // codecs are honestly such a fucking disaster. What the fuck is this trash?
++            final Codec<PoiSection> codec = PoiSection.codec(() -> {
++                poiManager.setDirty(key);
++            });
 +
 +            final DataResult<Tag> serializedResult = codec.encodeStart(registryOps, chunk);
 +            final int finalSectionY = sectionY;
@@ -2965,13 +2999,14 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +    }
 +
 +    public static PoiChunk empty(final ServerLevel world, final int chunkX, final int chunkZ) {
-+        return new PoiChunk(world, chunkX, chunkZ, WorldUtil.getMinSection(world), WorldUtil.getMaxSection(world));
++        final PoiChunk ret = new PoiChunk(world, chunkX, chunkZ, WorldUtil.getMinSection(world), WorldUtil.getMaxSection(world));
++        ret.loaded = true;
++        return ret;
 +    }
 +
 +    public static PoiChunk parse(final ServerLevel world, final int chunkX, final int chunkZ, final CompoundTag data) {
 +        final PoiChunk ret = empty(world, chunkX, chunkZ);
 +
-+        final Codec<PoiSection> codec = PoiSection.codec(ret.onModify);
 +        final RegistryOps<Tag> registryOps = RegistryOps.create(NbtOps.INSTANCE, world.getPoiManager().registryAccess);
 +
 +        final CompoundTag sections = data.getCompound("Sections");
@@ -2981,6 +3016,8 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +            return ret;
 +        }
 +
++        final PoiManager poiManager = world.getPoiManager();
++
 +        boolean readAnything = false;
 +
 +        for (int sectionY = ret.minSection; sectionY <= ret.maxSection; ++sectionY) {
@@ -2988,6 +3025,12 @@ index 0000000000000000000000000000000000000000..28b31ef4e1a63ca70c00052f9d9d4fd6
 +            if (!sections.contains(key)) {
 +                continue;
 +            }
++
++            final long coordinateKey = CoordinateUtils.getChunkSectionKey(chunkX, sectionY, chunkZ);
++            // codecs are honestly such a fucking disaster. What the fuck is this trash?
++            final Codec<PoiSection> codec = PoiSection.codec(() -> {
++                poiManager.setDirty(coordinateKey);
++            });
 +
 +            final CompoundTag section = sections.getCompound(key);
 +            final DataResult<PoiSection> deserializeResult = codec.parse(registryOps, section);
@@ -3141,10 +3184,10 @@ index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..94fd7cc50507934c9e85c1403cb0266510d13d63
+index 0000000000000000000000000000000000000000..70cf1a5ca7308948e3dc990d268ea9f58a4f3685
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1146 @@
+@@ -0,0 +1,1154 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -3813,20 +3856,24 @@ index 0000000000000000000000000000000000000000..94fd7cc50507934c9e85c1403cb02665
 +        return ret;
 +    }
 +
-+    public PoiChunk getPoiChunkIfLoaded(final int chunkX, final int chunkZ) {
++    public PoiChunk getPoiChunkIfLoaded(final int chunkX, final int chunkZ, final boolean checkLoadInCallback) {
 +        final NewChunkHolder holder = this.getChunkHolder(chunkX, chunkZ);
 +        if (holder != null) {
-+            return holder.getPoiChunk();
++            final PoiChunk ret = holder.getPoiChunk();
++            return ret == null || (checkLoadInCallback && !ret.isLoaded()) ? null : ret;
 +        }
 +        return null;
 +    }
 +
 +    public PoiChunk loadPoiChunk(final int chunkX, final int chunkZ) {
 +        TickThread.ensureTickThread(chunkX, chunkZ, "Cannot create poi chunk off-main");
-+        final PoiChunk ret;
++        PoiChunk ret;
 +
 +        NewChunkHolder current = this.getChunkHolder(chunkX, chunkZ);
 +        if (current != null && (ret = current.getPoiChunk()) != null) {
++            if (!ret.isLoaded()) {
++                ret.load();
++            }
 +            return ret;
 +        }
 +
@@ -3871,7 +3918,11 @@ index 0000000000000000000000000000000000000000..94fd7cc50507934c9e85c1403cb02665
 +            Thread.currentThread().interrupt();
 +        }
 +
-+        return completed.getPlain();
++        ret = completed.getPlain();
++
++        ret.load();
++
++        return ret;
 +    }
 +
 +    void addChangedStatuses(final List<NewChunkHolder> changedFullStatus) {
@@ -4480,10 +4531,10 @@ index 0000000000000000000000000000000000000000..53ddd7e9ac05e6a9eb809f329796e6d4
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLoadTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLoadTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b0252f13c8cebef293d9a4fc49778184cb17e3ff
+index 0000000000000000000000000000000000000000..3530c20926490310b7da09913292b9cadfdeec40
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkLoadTask.java
-@@ -0,0 +1,457 @@
+@@ -0,0 +1,491 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -4727,7 +4778,7 @@ index 0000000000000000000000000000000000000000..b0252f13c8cebef293d9a4fc49778184
 +        }
 +    }
 +
-+    public static final class ChunkDataLoadTask extends CallbackDataLoadTask<ChunkSerializer.InProgressChunkHolder, ChunkAccess> {
++    public final class ChunkDataLoadTask extends CallbackDataLoadTask<ChunkSerializer.InProgressChunkHolder, ChunkAccess> {
 +        protected ChunkDataLoadTask(final ChunkTaskScheduler scheduler, final ServerLevel world, final int chunkX,
 +                                    final int chunkZ, final PrioritisedExecutor.Priority priority) {
 +            super(scheduler, world, chunkX, chunkZ, RegionFileIOThread.RegionFileType.CHUNK_DATA, priority);
@@ -4751,6 +4802,23 @@ index 0000000000000000000000000000000000000000..b0252f13c8cebef293d9a4fc49778184
 +        @Override
 +        protected PrioritisedExecutor.PrioritisedTask createOnMain(final Runnable run, final PrioritisedExecutor.Priority priority) {
 +            return this.scheduler.createChunkTask(this.chunkX, this.chunkZ, run, priority);
++        }
++
++        @Override
++        protected TaskResult<ChunkAccess, Throwable> completeOnMainOffMain(final ChunkSerializer.InProgressChunkHolder data, final Throwable throwable) {
++            if (data != null) {
++                return null;
++            }
++
++            final PoiChunk poiChunk = ChunkLoadTask.this.chunkHolder.getPoiChunk();
++            if (poiChunk == null) {
++                LOGGER.error("Expected poi chunk to be loaded with chunk for task " + this.toString());
++            } else if (!poiChunk.isLoaded()) {
++                // need to call poiChunk.load() on main
++                return null;
++            }
++
++            return new TaskResult<>(this.getEmptyChunk(), null);
 +        }
 +
 +        @Override
@@ -4784,7 +4852,7 @@ index 0000000000000000000000000000000000000000..b0252f13c8cebef293d9a4fc49778184
 +            } catch (final ThreadDeath death) {
 +                throw death;
 +            } catch (final Throwable thr2) {
-+                LOGGER.error("Failed to run parse chunk data for task: " + this.toString() + ", chunk data will be lost", thr2);
++                LOGGER.error("Failed to parse chunk data for task: " + this.toString() + ", chunk data will be lost", thr2);
 +                return new TaskResult<>(null, thr2);
 +            }
 +        }
@@ -4798,6 +4866,13 @@ index 0000000000000000000000000000000000000000..b0252f13c8cebef293d9a4fc49778184
 +
 +        @Override
 +        protected TaskResult<ChunkAccess, Throwable> runOnMain(final ChunkSerializer.InProgressChunkHolder data, final Throwable throwable) {
++            final PoiChunk poiChunk = ChunkLoadTask.this.chunkHolder.getPoiChunk();
++            if (poiChunk == null) {
++                LOGGER.error("Expected poi chunk to be loaded with chunk for task " + this.toString());
++            } else {
++                poiChunk.load();
++            }
++
 +            if (data == null || data.protoChunk == null) {
 +                // throwable could be non-null, but the off-main task will print its exceptions - so we don't need to care,
 +                // it's handled already
@@ -4846,6 +4921,11 @@ index 0000000000000000000000000000000000000000..b0252f13c8cebef293d9a4fc49778184
 +
 +        @Override
 +        protected PrioritisedExecutor.PrioritisedTask createOnMain(final Runnable run, final PrioritisedExecutor.Priority priority) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        protected TaskResult<PoiChunk, Throwable> completeOnMainOffMain(final PoiChunk data, final Throwable throwable) {
 +            throw new UnsupportedOperationException();
 +        }
 +
@@ -4909,6 +4989,11 @@ index 0000000000000000000000000000000000000000..b0252f13c8cebef293d9a4fc49778184
 +
 +        @Override
 +        protected PrioritisedExecutor.PrioritisedTask createOnMain(final Runnable run, final PrioritisedExecutor.Priority priority) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        protected TaskResult<CompoundTag, Throwable> completeOnMainOffMain(final CompoundTag data, final Throwable throwable) {
 +            throw new UnsupportedOperationException();
 +        }
 +
@@ -6027,10 +6112,10 @@ index 0000000000000000000000000000000000000000..e96ecf351a1952b4e23e9a352f32d326
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/GenericDataLoadTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/GenericDataLoadTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7917e65ac61a258242f5081092045f8edfdf04bb
+index 0000000000000000000000000000000000000000..4e770ce4f824376aea535873e26a6104b68e3cf9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/GenericDataLoadTask.java
-@@ -0,0 +1,732 @@
+@@ -0,0 +1,741 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -6127,6 +6212,8 @@ index 0000000000000000000000000000000000000000..7917e65ac61a258242f5081092045f8e
 +    protected abstract TaskResult<FinalCompletion, Throwable> runOnMain(final OnMain data, final Throwable throwable);
 +
 +    protected abstract void onComplete(final TaskResult<FinalCompletion,Throwable> result);
++
++    protected abstract TaskResult<FinalCompletion, Throwable> completeOnMainOffMain(final OnMain data, final Throwable throwable);
 +
 +    @Override
 +    public String toString() {
@@ -6334,6 +6421,13 @@ index 0000000000000000000000000000000000000000..7917e65ac61a258242f5081092045f8e
 +            }
 +
 +            if (this.schedule != null) {
++                final TaskResult<FinalCompletion, Throwable> syncComplete = GenericDataLoadTask.this.completeOnMainOffMain(newData.left, newData.right);
++
++                if (syncComplete != null) {
++                    GenericDataLoadTask.this.onComplete(syncComplete);
++                    return;
++                }
++
 +                this.schedule.data = newData.left;
 +                this.schedule.throwable = newData.right;
 +
@@ -6765,10 +6859,10 @@ index 0000000000000000000000000000000000000000..7917e65ac61a258242f5081092045f8e
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9bb8f278149cb1809767935375ca155e6c7916b5
+index 0000000000000000000000000000000000000000..29595a5fef9a5cdd6891b2bdfc3bb8ee1e03aa59
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1948 @@
+@@ -0,0 +1,1950 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -7603,7 +7697,9 @@ index 0000000000000000000000000000000000000000..9bb8f278149cb1809767935375ca155e
 +                this.poiDataUnload.complete(null);
 +            }
 +
-+            this.world.getPoiManager().onUnload(CoordinateUtils.getChunkKey(this.chunkX, this.chunkZ));
++            if (poiChunk.isLoaded()) {
++                this.world.getPoiManager().onUnload(CoordinateUtils.getChunkKey(this.chunkX, this.chunkZ));
++            }
 +        }
 +    }
 +
@@ -13868,7 +13964,7 @@ index f925a8d550ecbf2044a37bfe58b30d6578c5f6af..a10799816ee26bd4708957628b642e37
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..93a99f3e790f58477dd371eb04374d9b6a8aab1f 100644
+index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..c578056f1c17141bc708ce40e92cbc5fed69afc6 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -1,12 +1,11 @@
@@ -14024,7 +14120,7 @@ index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..93a99f3e790f58477dd371eb04374d9b
          // Paper start - async chunk io
          while (!this.dirty.isEmpty() && shouldKeepTicking.getAsBoolean() && !this.world.noSave()) { // Paper - unload POI data - don't write to disk if saving is disabled
              ChunkPos chunkcoordintpair = SectionPos.of(this.dirty.firstLong()).chunk();
-@@ -362,13 +250,87 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -362,13 +250,106 @@ public class PoiManager extends SectionStorage<PoiSection> {
              this.pollUnloads(shouldKeepTicking);
          }
          // Paper end - unload POI data
@@ -14039,9 +14135,12 @@ index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..93a99f3e790f58477dd371eb04374d9b
 +        int chunkX = io.papermc.paper.util.CoordinateUtils.getChunkSectionX(pos);
 +        int chunkY = io.papermc.paper.util.CoordinateUtils.getChunkSectionY(pos);
 +        int chunkZ = io.papermc.paper.util.CoordinateUtils.getChunkSectionZ(pos);
++
++        io.papermc.paper.util.TickThread.ensureTickThread(chunkX, chunkZ, "Accessing poi chunk off-main");
++
 +        ChunkHolderManager manager =
 +            this.world.chunkTaskScheduler.chunkHolderManager;
-+        io.papermc.paper.chunk.system.poi.PoiChunk ret = manager.getPoiChunkIfLoaded(chunkX, chunkZ);
++        io.papermc.paper.chunk.system.poi.PoiChunk ret = manager.getPoiChunkIfLoaded(chunkX, chunkZ, true);
 +
 +        return ret == null ? Optional.empty() : ret.getSectionForVanilla(chunkY);
 +    }
@@ -14052,12 +14151,14 @@ index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..93a99f3e790f58477dd371eb04374d9b
 +        int chunkY = io.papermc.paper.util.CoordinateUtils.getChunkSectionY(pos);
 +        int chunkZ = io.papermc.paper.util.CoordinateUtils.getChunkSectionZ(pos);
 +
++        io.papermc.paper.util.TickThread.ensureTickThread(chunkX, chunkZ, "Accessing poi chunk off-main");
++
 +        ChunkHolderManager manager =
 +            this.world.chunkTaskScheduler.chunkHolderManager;
 +
 +        if (chunkY >= io.papermc.paper.util.WorldUtil.getMinSection(this.world) &&
 +            chunkY <= io.papermc.paper.util.WorldUtil.getMaxSection(this.world)) {
-+            io.papermc.paper.chunk.system.poi.PoiChunk ret = manager.getPoiChunkIfLoaded(chunkX, chunkZ);
++            io.papermc.paper.chunk.system.poi.PoiChunk ret = manager.getPoiChunkIfLoaded(chunkX, chunkZ, true);
 +            if (ret != null) {
 +                return ret.getSectionForVanilla(chunkY);
 +            } else {
@@ -14074,10 +14175,12 @@ index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..93a99f3e790f58477dd371eb04374d9b
 +        int chunkY = io.papermc.paper.util.CoordinateUtils.getChunkSectionY(pos);
 +        int chunkZ = io.papermc.paper.util.CoordinateUtils.getChunkSectionZ(pos);
 +
++        io.papermc.paper.util.TickThread.ensureTickThread(chunkX, chunkZ, "Accessing poi chunk off-main");
++
 +        ChunkHolderManager manager =
 +            this.world.chunkTaskScheduler.chunkHolderManager;
 +
-+        io.papermc.paper.chunk.system.poi.PoiChunk ret = manager.getPoiChunkIfLoaded(chunkX, chunkZ);
++        io.papermc.paper.chunk.system.poi.PoiChunk ret = manager.getPoiChunkIfLoaded(chunkX, chunkZ, true);
 +        if (ret != null) {
 +            return ret.getOrCreateSection(chunkY);
 +        } else {
@@ -14087,25 +14190,38 @@ index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..93a99f3e790f58477dd371eb04374d9b
 +
 +    @Override
 +    public void onUnload(long coordinate) { // Paper - rewrite chunk system
-+        io.papermc.paper.util.TickThread.softEnsureTickThread("async poi unload callback");
 +        int chunkX = net.minecraft.server.MCUtil.getCoordinateX(coordinate);
 +        int chunkZ = net.minecraft.server.MCUtil.getCoordinateZ(coordinate);
++        io.papermc.paper.util.TickThread.ensureTickThread(chunkX, chunkZ, "Unloading poi chunk off-main");
 +        for (int section = this.levelHeightAccessor.getMinSection(); section < this.levelHeightAccessor.getMaxSection(); ++section) {
 +            long sectionPos = SectionPos.asLong(chunkX, section, chunkZ);
 +            this.updateDistanceTracking(sectionPos);
 +        }
 +    }
++
++    public void loadInPoiChunk(io.papermc.paper.chunk.system.poi.PoiChunk poiChunk) {
++        int chunkX = poiChunk.chunkX;
++        int chunkZ = poiChunk.chunkZ;
++        io.papermc.paper.util.TickThread.ensureTickThread(chunkX, chunkZ, "Loading poi chunk off-main");
++        for (int sectionY = this.levelHeightAccessor.getMinSection(); sectionY < this.levelHeightAccessor.getMaxSection(); ++sectionY) {
++            PoiSection section = poiChunk.getSection(sectionY);
++            if (section != null && !section.isEmpty()) {
++                this.onSectionLoad(SectionPos.asLong(chunkX, sectionY, chunkZ));
++            }
++        }
++    }
 +    // Paper end - rewrite chunk system
 +
      @Override
-     protected void setDirty(long pos) {
+-    protected void setDirty(long pos) {
 -        super.setDirty(pos);
++    public void setDirty(long pos) { // Paper - rewrite chunk system
 +        // Paper start - rewrite chunk system
 +        int chunkX = io.papermc.paper.util.CoordinateUtils.getChunkSectionX(pos);
 +        int chunkZ = io.papermc.paper.util.CoordinateUtils.getChunkSectionZ(pos);
 +        ChunkHolderManager manager =
 +            this.world.chunkTaskScheduler.chunkHolderManager;
-+        io.papermc.paper.chunk.system.poi.PoiChunk chunk = manager.getPoiChunkIfLoaded(chunkX, chunkZ);
++        io.papermc.paper.chunk.system.poi.PoiChunk chunk = manager.getPoiChunkIfLoaded(chunkX, chunkZ, false);
 +        if (chunk != null) {
 +            chunk.setDirty(true);
 +        }
@@ -14113,7 +14229,7 @@ index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..93a99f3e790f58477dd371eb04374d9b
          this.updateDistanceTracking(pos); // Paper - move to new distance tracking util
      }
  
-@@ -416,7 +378,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -416,7 +397,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
          }).map((pair) -> {
              return pair.getFirst().chunk();
          }).filter((chunkPos) -> {
@@ -14122,7 +14238,7 @@ index 210b0cdd4831421c8f43c3d823ac8e962b56bbbc..93a99f3e790f58477dd371eb04374d9b
          }).forEach((chunkPos) -> {
              world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.EMPTY);
          });
-@@ -459,27 +421,27 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -459,27 +440,27 @@ public class PoiManager extends SectionStorage<PoiSection> {
      @javax.annotation.Nullable
      @Override
      public net.minecraft.nbt.CompoundTag read(ChunkPos chunkcoordintpair) throws java.io.IOException {
