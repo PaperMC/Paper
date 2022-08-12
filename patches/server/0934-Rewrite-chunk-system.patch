@@ -514,10 +514,10 @@ index 68860a3b6db2aa50373d71aec9502c18d48ab8b9..193f492ce1fb6a7ebf2c19f092c26842
      public static void processConfiguration(GlobalConfiguration.AsyncChunks config) {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..df92b8f4c6f668d27a73622d920182ed20dab582
+index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770ff2189ee5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
-@@ -0,0 +1,716 @@
+@@ -0,0 +1,721 @@
 +package io.papermc.paper.chunk.system.entity;
 +
 +import com.google.common.collect.Iterables;
@@ -724,16 +724,21 @@ index 0000000000000000000000000000000000000000..df92b8f4c6f668d27a73622d920182ed
 +        final int sectionZ = pos.getZ() >> 4;
 +        TickThread.ensureTickThread(sectionX, sectionZ, "Cannot add entity off-main thread");
 +
++        if (entity.isRemoved()) {
++            LOGGER.warn("Refusing to add removed entity: " + entity);
++            return false;
++        }
++
 +        if (fromDisk) {
 +            ChunkMap.checkDupeUUID(this.world, entity);
++            if (entity.isRemoved()) {
++                // removed from checkDupeUUID call
++                return false;
++            }
 +        }
 +
 +        this.entityByLock.writeLock();
 +        try {
-+            if (entity.isRemoved()) {
-+                LOGGER.warn("Refusing to add removed entity: " + entity);
-+                return false;
-+            }
 +            if (this.entityById.containsKey(entity.getId())) {
 +                LOGGER.warn("Entity id already exists: " + entity.getId() + ", mapped to " + this.entityById.get(entity.getId()) + ", can't add " + entity, new Throwable());
 +                return false;
