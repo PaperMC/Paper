@@ -514,13 +514,13 @@ index 68860a3b6db2aa50373d71aec9502c18d48ab8b9..193f492ce1fb6a7ebf2c19f092c26842
      public static void processConfiguration(GlobalConfiguration.AsyncChunks config) {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770ff2189ee5
+index 0000000000000000000000000000000000000000..d52127904e7d5a29884c1babdbc223936b7409c7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
-@@ -0,0 +1,721 @@
+@@ -0,0 +1,818 @@
 +package io.papermc.paper.chunk.system.entity;
 +
-+import com.google.common.collect.Iterables;
++import com.destroystokyo.paper.util.maplist.EntityList;
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.util.CoordinateUtils;
 +import io.papermc.paper.util.TickThread;
@@ -542,10 +542,13 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +import net.minecraft.world.level.entity.LevelEntityGetter;
 +import net.minecraft.world.level.entity.Visibility;
 +import net.minecraft.world.phys.AABB;
++import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +import org.slf4j.Logger;
 +import java.util.ArrayList;
++import java.util.Iterator;
 +import java.util.List;
++import java.util.NoSuchElementException;
 +import java.util.UUID;
 +import java.util.concurrent.locks.StampedLock;
 +import java.util.function.Consumer;
@@ -571,12 +574,18 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +    private final StampedLock entityByLock = new StampedLock();
 +    private final Int2ReferenceOpenHashMap<Entity> entityById = new Int2ReferenceOpenHashMap<>();
 +    private final Object2ReferenceOpenHashMap<UUID, Entity> entityByUUID = new Object2ReferenceOpenHashMap<>();
++    private final EntityList accessibleEntities = new EntityList();
 +
 +    public EntityLookup(final ServerLevel world, final LevelCallback<Entity> worldCallback) {
 +        this.world = world;
 +        this.minSection = WorldUtil.getMinSection(world);
 +        this.maxSection = WorldUtil.getMaxSection(world);
 +        this.worldCallback = worldCallback;
++    }
++
++    private static Entity maskNonAccessible(final Entity entity) {
++        final Visibility visibility = EntityLookup.getEntityStatus(entity);
++        return visibility.isAccessible() ? entity : null;
 +    }
 +
 +    @Nullable
@@ -588,7 +597,7 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +                final Entity ret = this.entityById.get(id);
 +
 +                if (this.entityByLock.validate(attempt)) {
-+                    return ret;
++                    return maskNonAccessible(ret);
 +                }
 +            } catch (final Error error) {
 +                throw error;
@@ -599,7 +608,7 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +
 +        this.entityByLock.readLock();
 +        try {
-+            return this.entityById.get(id);
++            return maskNonAccessible(this.entityById.get(id));
 +        } finally {
 +            this.entityByLock.tryUnlockRead();
 +        }
@@ -614,7 +623,7 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +                final Entity ret = this.entityByUUID.get(id);
 +
 +                if (this.entityByLock.validate(attempt)) {
-+                    return ret;
++                    return maskNonAccessible(ret);
 +                }
 +            } catch (final Error error) {
 +                throw error;
@@ -625,7 +634,7 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +
 +        this.entityByLock.readLock();
 +        try {
-+            return this.entityByUUID.get(id);
++            return maskNonAccessible(this.entityByUUID.get(id));
 +        } finally {
 +            this.entityByLock.tryUnlockRead();
 +        }
@@ -639,14 +648,71 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +        return "count_id:" + this.entityById.size() + ",count_uuid:" + this.entityByUUID.size() + ",region_count:" + this.regions.size();
 +    }
 +
++    static final class ArrayIterable<T> implements Iterable<T> {
++
++        private final T[] array;
++        private final int off;
++        private final int length;
++
++        public ArrayIterable(final T[] array, final int off, final int length) {
++            this.array = array;
++            this.off = off;
++            this.length = length;
++            if (length > array.length) {
++                throw new IllegalArgumentException("Length must be no greater-than the array length");
++            }
++        }
++
++        @NotNull
++        @Override
++        public Iterator<T> iterator() {
++            return new ArrayIterator<>(this.array, this.off, this.length);
++        }
++
++        static final class ArrayIterator<T> implements Iterator<T> {
++
++            private final T[] array;
++            private int off;
++            private final int length;
++
++            public ArrayIterator(final T[] array, final int off, final int length) {
++                this.array = array;
++                this.off = off;
++                this.length = length;
++            }
++
++            @Override
++            public boolean hasNext() {
++                return this.off < this.length;
++            }
++
++            @Override
++            public T next() {
++                if (this.off >= this.length) {
++                    throw new NoSuchElementException();
++                }
++                return this.array[this.off++];
++            }
++
++            @Override
++            public void remove() {
++                throw new UnsupportedOperationException();
++            }
++        }
++    }
++
 +    @Override
 +    public Iterable<Entity> getAll() {
-+        return Iterables.unmodifiableIterable(this.entityById.values());
++        return new ArrayIterable<>(this.accessibleEntities.getRawData(), 0, this.accessibleEntities.size());
 +    }
 +
 +    @Override
 +    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final Consumer<U> action) {
 +        for (final Entity entity : this.entityById.values()) {
++            final Visibility visibility = EntityLookup.getEntityStatus(entity);
++            if (!visibility.isAccessible()) {
++                continue;
++            }
 +            final U casted = filter.tryCast(entity);
 +            if (casted != null) {
 +                action.accept(casted);
@@ -680,11 +746,44 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +        }
 +    }
 +
-+    public void chunkStatusChange(final int x, final int z, final ChunkHolder.FullChunkStatus newStatus) {
-+        final ChunkEntitySlices slices = this.getChunk(x, z);
-+        if (slices != null) {
-+            slices.updateStatus(newStatus, this.worldCallback);
++    public void entityStatusChange(final Entity entity, final Visibility oldVisibility, final Visibility newVisibility, final boolean moved) {
++        TickThread.ensureTickThread(entity, "Entity status change must only happen on the main thread");
++        if (oldVisibility == newVisibility) {
++            if (moved && newVisibility.isAccessible()) {
++                EntityLookup.this.worldCallback.onSectionChange(entity);
++            }
++            return;
 +        }
++
++        if (newVisibility.ordinal() > oldVisibility.ordinal()) {
++            // status upgrade
++            if (!oldVisibility.isAccessible() && newVisibility.isAccessible()) {
++                this.accessibleEntities.add(entity);
++                EntityLookup.this.worldCallback.onTrackingStart(entity);
++            }
++
++            if (!oldVisibility.isTicking() && newVisibility.isTicking()) {
++                EntityLookup.this.worldCallback.onTickingStart(entity);
++            }
++        } else {
++            // status downgrade
++            if (oldVisibility.isTicking() && !newVisibility.isTicking()) {
++                EntityLookup.this.worldCallback.onTickingEnd(entity);
++            }
++
++            if (oldVisibility.isAccessible() && !newVisibility.isAccessible()) {
++                this.accessibleEntities.remove(entity);
++                EntityLookup.this.worldCallback.onTrackingEnd(entity);
++            }
++        }
++
++        if (moved && newVisibility.isAccessible()) {
++            EntityLookup.this.worldCallback.onSectionChange(entity);
++        }
++    }
++
++    public void chunkStatusChange(final int x, final int z, final ChunkHolder.FullChunkStatus newStatus) {
++        this.getChunk(x, z).updateStatus(newStatus, this);
 +    }
 +
 +    public void addLegacyChunkEntities(final List<Entity> entities) {
@@ -769,7 +868,10 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +
 +        final Visibility visibility = getEntityStatus(entity);
 +
-+        this.worldCallback.onTrackingStart(entity);
++        if (visibility.isAccessible()) {
++            this.accessibleEntities.add(entity);
++            this.worldCallback.onTrackingStart(entity);
++        }
 +
 +        if (visibility.isTicking()) {
 +            this.worldCallback.onTickingStart(entity);
@@ -811,6 +913,9 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +    }
 +
 +    public void moveEntity(final Entity entity) {
++        // ensure we own the entity
++        TickThread.ensureTickThread(entity, "Cannot move entity off-main");
++
 +        final BlockPos newPos = entity.blockPosition();
 +        final int newSectionX = newPos.getX() >> 4;
 +        final int newSectionY = Mth.clamp(newPos.getY() >> 4, this.minSection, this.maxSection);
@@ -820,7 +925,10 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +            return;
 +        }
 +
++        // ensure the new section is owned by this tick thread
 +        TickThread.ensureTickThread(newSectionX, newSectionZ, "Cannot move entity off-main");
++
++        // ensure the old section is owned by this tick thread
 +        TickThread.ensureTickThread(entity.sectionX, entity.sectionZ, "Cannot move entity off-main");
 +
 +        final ChunkEntitySlices old = this.getChunk(entity.sectionX, entity.sectionZ);
@@ -1188,40 +1296,29 @@ index 0000000000000000000000000000000000000000..88b9a3d0d8862c1079c11ce182d5770f
 +            final Visibility oldVisibility = getEntityStatus(entity);
 +            EntityLookup.this.moveEntity(this.entity);
 +            final Visibility newVisibility = getEntityStatus(entity);
-+            // too late to throw and stop the movement now, it's already happened
 +
-+            if (oldVisibility == newVisibility) {
-+                return;
-+            }
-+
-+            if (newVisibility.ordinal() > oldVisibility.ordinal()) {
-+                // status upgrade
-+                if (!oldVisibility.isTicking() && newVisibility.isTicking()) {
-+                    EntityLookup.this.worldCallback.onTickingStart(entity);
-+                }
-+            } else {
-+                // status downgrade
-+                if (oldVisibility.isTicking() && !newVisibility.isTicking()) {
-+                    EntityLookup.this.worldCallback.onTickingEnd(entity);
-+                }
-+            }
++            EntityLookup.this.entityStatusChange(entity, oldVisibility, newVisibility, true);
 +        }
 +
 +        @Override
 +        public void onRemove(final Entity.RemovalReason reason) {
-+            io.papermc.paper.util.TickThread.ensureTickThread(entity.chunkPosition().x, entity.chunkPosition().z, "Cannot remove entity off-main"); // Paper - rewrite chunk system
-+            final Visibility tickingState = EntityLookup.getEntityStatus(this.entity);
++            final Entity entity = this.entity;
++            TickThread.ensureTickThread(entity, "Cannot remove entity off-main"); // Paper - rewrite chunk system
++            final Visibility tickingState = EntityLookup.getEntityStatus(entity);
 +
-+            EntityLookup.this.removeEntity(this.entity);
++            EntityLookup.this.removeEntity(entity);
 +
 +            if (tickingState.isTicking()) {
-+                EntityLookup.this.worldCallback.onTickingEnd(this.entity);
++                EntityLookup.this.worldCallback.onTickingEnd(entity);
 +            }
 +
-+            EntityLookup.this.worldCallback.onTrackingEnd(this.entity);
++            if (tickingState.isAccessible()) {
++                EntityLookup.this.accessibleEntities.remove(entity);
++                EntityLookup.this.worldCallback.onTrackingEnd(entity);
++            }
 +
 +            if (reason.shouldDestroy()) {
-+                EntityLookup.this.worldCallback.onDestroyed(this.entity);
++                EntityLookup.this.worldCallback.onDestroyed(entity);
 +            }
 +
 +            this.entity.setLevelCallback(NoOpCallback.INSTANCE);
@@ -6864,10 +6961,10 @@ index 0000000000000000000000000000000000000000..4e770ce4f824376aea535873e26a6104
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..29595a5fef9a5cdd6891b2bdfc3bb8ee1e03aa59
+index 0000000000000000000000000000000000000000..e13f5a56b5067ca5c322252d634a9096fd1a97c9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1950 @@
+@@ -0,0 +1,1960 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -6880,6 +6977,7 @@ index 0000000000000000000000000000000000000000..29595a5fef9a5cdd6891b2bdfc3bb8ee
 +import com.google.gson.JsonObject;
 +import com.google.gson.JsonPrimitive;
 +import com.mojang.logging.LogUtils;
++import io.papermc.paper.chunk.system.entity.EntityLookup;
 +import io.papermc.paper.chunk.system.io.RegionFileIOThread;
 +import io.papermc.paper.chunk.system.poi.PoiChunk;
 +import io.papermc.paper.util.CoordinateUtils;
@@ -8080,6 +8178,9 @@ index 0000000000000000000000000000000000000000..29595a5fef9a5cdd6891b2bdfc3bb8ee
 +
 +                // chunks cannot downgrade state while status is pending a change
 +                final LevelChunk chunk = (LevelChunk)this.currentChunk;
++                final EntityLookup entityLookup = this.world.getEntityLookup();
++                final int chunkX = this.chunkX;
++                final int chunkZ = this.chunkZ;
 +
 +                // Note: we assume that only load/unload contain plugin logic
 +                // plugin logic is anything stupid enough to possibly change the chunk status while it is already
@@ -8092,17 +8193,20 @@ index 0000000000000000000000000000000000000000..29595a5fef9a5cdd6891b2bdfc3bb8ee
 +                        // specifically for chunk loading, we set it to loaded before the callback so that plugins see it as loaded
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.BORDER);
 +                        this.scheduler.chunkHolderManager.ensureInAutosave(this);
++                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.BORDER);
 +                        chunk.onChunkLoad(this);
 +                        this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.BORDER, chunk);
 +                    }
 +
 +                    if (!currState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING) && nextState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING)) {
++                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.TICKING);
 +                        chunk.onChunkTicking(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.TICKING);
 +                        this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.TICKING, chunk);
 +                    }
 +
 +                    if (!currState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && nextState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
++                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
 +                        chunk.onChunkEntityTicking(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.ENTITY_TICKING);
 +                        this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.ENTITY_TICKING, chunk);
@@ -8110,16 +8214,19 @@ index 0000000000000000000000000000000000000000..29595a5fef9a5cdd6891b2bdfc3bb8ee
 +                } else {
 +                    // state downgrade
 +                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
++                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.TICKING);
 +                        chunk.onChunkNotEntityTicking(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.TICKING);
 +                    }
 +
 +                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING)) {
++                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.BORDER);
 +                        chunk.onChunkNotTicking(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.BORDER);
 +                    }
 +
 +                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
++                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.INACCESSIBLE);
 +                        chunk.onChunkUnload(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.INACCESSIBLE);
 +                    }
@@ -9287,30 +9394,34 @@ index be130b03ca116fd6d104df26c32312db1655b09e..946a69f959724fbba58fd5db689aafc4
      }
  }
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
-index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a9e4fc0f9 100644
+index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa549592f0974d 100644
 --- a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 +++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
-@@ -3,6 +3,7 @@ package io.papermc.paper.world;
+@@ -1,8 +1,10 @@
+ package io.papermc.paper.world;
+ 
  import com.destroystokyo.paper.util.maplist.EntityList;
++import io.papermc.paper.chunk.system.entity.EntityLookup;
  import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
  import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 +import net.minecraft.nbt.CompoundTag;
  import net.minecraft.server.level.ChunkHolder;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.util.Mth;
-@@ -10,7 +11,11 @@ import net.minecraft.world.entity.Entity;
+@@ -10,7 +12,12 @@ import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.EntityType;
  import net.minecraft.world.entity.boss.EnderDragonPart;
  import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.storage.EntityStorage;
 +import net.minecraft.world.level.entity.LevelCallback;
++import net.minecraft.world.level.entity.Visibility;
  import net.minecraft.world.phys.AABB;
 +import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.Iterator;
  import java.util.List;
-@@ -31,6 +36,16 @@ public final class ChunkEntitySlices {
+@@ -31,6 +38,16 @@ public final class ChunkEntitySlices {
  
      public ChunkHolder.FullChunkStatus status;
  
@@ -9327,7 +9438,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
      // TODO implement container search optimisations
  
      public ChunkEntitySlices(final ServerLevel world, final int chunkX, final int chunkZ, final ChunkHolder.FullChunkStatus status,
-@@ -65,28 +80,101 @@ public final class ChunkEntitySlices {
+@@ -65,28 +82,87 @@ public final class ChunkEntitySlices {
  
          return ret.toArray(new org.bukkit.entity.Entity[0]);
      }
@@ -9396,34 +9507,20 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
      }
  
 -    public synchronized void updateStatus(final ChunkHolder.FullChunkStatus status) {
-+    public void updateStatus(final ChunkHolder.FullChunkStatus status, final LevelCallback<Entity> callback) {
-+        final ChunkHolder.FullChunkStatus oldStatus = this.status;
++    public void updateStatus(final ChunkHolder.FullChunkStatus status, final EntityLookup lookup) {
          this.status = status;
 -        this.updateTicketLevels();
 +
 +        final Entity[] entities = this.entities.getRawData();
 +
-+        // NOTE: this HOLDS the lock for this class, so we cannot do anything REMOTELY dangerous
-+        // Note: tracking callback invoke is absent; this is controlled solely from entity unload/load
++        for (int i = 0, size = this.entities.size(); i < size; ++i) {
++            final Entity entity = entities[i];
 +
-+        if (status.isOrAfter(oldStatus)) {
-+            // status upgrade
-+            if (!oldStatus.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && status.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
-+                for (int i = 0, size = Math.min(entities.length, this.entities.size()); i < size; ++i) {
-+                    final Entity entity = entities[i];
-+                    callback.onTickingStart(entity);
-+                    entity.chunkStatus = status;
-+                }
-+            }
-+        } else {
-+            // status downgrade
-+            if (oldStatus.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && !status.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
-+                for (int i = 0, size = Math.min(entities.length, this.entities.size()); i < size; ++i) {
-+                    final Entity entity = entities[i];
-+                    callback.onTickingEnd(entity);
-+                    entity.chunkStatus = status;
-+                }
-+            }
++            final Visibility oldVisibility = EntityLookup.getEntityStatus(entity);
++            entity.chunkStatus = status;
++            final Visibility newVisibility = EntityLookup.getEntityStatus(entity);
++
++            lookup.entityStatusChange(entity, oldVisibility, newVisibility, false);
 +        }
      }
  
@@ -9435,7 +9532,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
          }
          entity.chunkStatus = this.status;
          final int sectionIndex = chunkSection - this.minSection;
-@@ -105,13 +193,15 @@ public final class ChunkEntitySlices {
+@@ -105,13 +181,15 @@ public final class ChunkEntitySlices {
                  entry.getValue().addEntity(entity, sectionIndex);
              }
          }
@@ -9454,7 +9551,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
          final int sectionIndex = chunkSection - this.minSection;
  
          this.allEntities.removeEntity(entity, sectionIndex);
-@@ -128,6 +218,8 @@ public final class ChunkEntitySlices {
+@@ -128,6 +206,8 @@ public final class ChunkEntitySlices {
                  entry.getValue().removeEntity(entity, sectionIndex);
              }
          }
@@ -9463,7 +9560,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
      }
  
      public void getHardCollidingEntities(final Entity except, final AABB box, final List<Entity> into, final Predicate<? super Entity> predicate) {
-@@ -138,6 +230,10 @@ public final class ChunkEntitySlices {
+@@ -138,6 +218,10 @@ public final class ChunkEntitySlices {
          this.allEntities.getEntitiesWithEnderDragonParts(except, box, into, predicate);
      }
  
@@ -9474,7 +9571,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
      public <T extends Entity> void getEntities(final EntityType<?> type, final AABB box, final List<? super T> into,
                                                 final Predicate<? super T> predicate) {
          this.allEntities.getEntities(type, box, (List)into, (Predicate)predicate);
-@@ -172,21 +268,11 @@ public final class ChunkEntitySlices {
+@@ -172,21 +256,11 @@ public final class ChunkEntitySlices {
          if (collection != null) {
              collection.getEntitiesWithEnderDragonParts(except, clazz, box, (List)into, (Predicate)predicate);
          } else {
@@ -9497,7 +9594,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
      protected static final class BasicEntityList<E extends Entity> {
  
          protected static final Entity[] EMPTY = new Entity[0];
-@@ -321,8 +407,6 @@ public final class ChunkEntitySlices {
+@@ -321,8 +395,6 @@ public final class ChunkEntitySlices {
              final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
              final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
  
@@ -9506,7 +9603,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
              final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
  
              for (int section = min; section <= max; ++section) {
-@@ -362,8 +446,6 @@ public final class ChunkEntitySlices {
+@@ -362,8 +434,6 @@ public final class ChunkEntitySlices {
              final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
              final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
  
@@ -9515,7 +9612,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
              final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
  
              for (int section = min; section <= max; ++section) {
-@@ -415,8 +497,6 @@ public final class ChunkEntitySlices {
+@@ -415,8 +485,6 @@ public final class ChunkEntitySlices {
              final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
              final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
  
@@ -9524,7 +9621,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..8463b6084322122f611588746431234a
              final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
  
              for (int section = min; section <= max; ++section) {
-@@ -468,8 +548,6 @@ public final class ChunkEntitySlices {
+@@ -468,8 +536,6 @@ public final class ChunkEntitySlices {
              final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
              final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
  
@@ -14486,10 +14583,10 @@ index e6240f891e396d91e31b02fdf3084be77e9d6697..00cb9dafc711607f28529ea9afbcdb49
  
      public int getIndex() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..25883cba5957c3c47f947bed0adfaba75e6368ce 100644
+index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..b135f38beb532452def4cb63b4226781974e2437 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -830,6 +830,76 @@ public class LevelChunk extends ChunkAccess {
+@@ -830,6 +830,70 @@ public class LevelChunk extends ChunkAccess {
  
      }
  
@@ -14518,7 +14615,6 @@ index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..25883cba5957c3c47f947bed0adfaba7
 +        // the entity chunk load event // -> moved to the FULL status
 +        // the chunk load event // -> stays here
 +        // any entity add to world events // -> in FULL status
-+        this.level.getEntityLookup().chunkStatusChange(this.locX, this.locZ, ChunkHolder.FullChunkStatus.BORDER);
 +        this.loadCallback();
 +    }
 +
@@ -14528,12 +14624,10 @@ index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..25883cba5957c3c47f947bed0adfaba7
 +        // the chunk load event // -> stays here
 +        // any entity add to world events // -> goes into the unload logic, it will completely explode
 +        // etc later
-+        this.level.getEntityLookup().chunkStatusChange(this.locX, this.locZ, ChunkHolder.FullChunkStatus.INACCESSIBLE);
 +        this.unloadCallback();
 +    }
 +
 +    public void onChunkTicking(io.papermc.paper.chunk.system.scheduling.NewChunkHolder chunkHolder) {
-+        this.level.getEntityLookup().chunkStatusChange(this.locX, this.locZ, ChunkHolder.FullChunkStatus.TICKING);
 +        this.postProcessGeneration();
 +        this.level.startTickingChunk(this);
 +        // Paper start - ticking chunk set
@@ -14542,21 +14636,18 @@ index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..25883cba5957c3c47f947bed0adfaba7
 +    }
 +
 +    public void onChunkNotTicking(io.papermc.paper.chunk.system.scheduling.NewChunkHolder chunkHolder) {
-+        this.level.getEntityLookup().chunkStatusChange(this.locX, this.locZ, ChunkHolder.FullChunkStatus.BORDER);
 +        // Paper start - ticking chunk set
 +        this.level.getChunkSource().tickingChunks.remove(this);
 +        // Paper end - ticking chunk set
 +    }
 +
 +    public void onChunkEntityTicking(io.papermc.paper.chunk.system.scheduling.NewChunkHolder chunkHolder) {
-+        this.level.getEntityLookup().chunkStatusChange(this.locX, this.locZ, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
 +        // Paper start - entity ticking chunk set
 +        this.level.getChunkSource().entityTickingChunks.add(this);
 +        // Paper end - entity ticking chunk set
 +    }
 +
 +    public void onChunkNotEntityTicking(io.papermc.paper.chunk.system.scheduling.NewChunkHolder chunkHolder) {
-+        this.level.getEntityLookup().chunkStatusChange(this.locX, this.locZ, ChunkHolder.FullChunkStatus.TICKING);
 +        // Paper start - entity ticking chunk set
 +        this.level.getChunkSource().entityTickingChunks.remove(this);
 +        // Paper end - entity ticking chunk set
@@ -14566,7 +14657,7 @@ index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..25883cba5957c3c47f947bed0adfaba7
      // CraftBukkit start
      public void loadCallback() {
          if (this.loadedTicketLevel) { LOGGER.error("Double calling chunk load!", new Throwable()); } // Paper
-@@ -1072,7 +1142,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -1072,7 +1136,7 @@ public class LevelChunk extends ChunkAccess {
      }
  
      public ChunkHolder.FullChunkStatus getFullStatus() {
