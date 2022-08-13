@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MelnCat <melncatuwu@gmail.com>
+Date: Fri, 12 Aug 2022 23:24:37 -0700
+Subject: [PATCH] Add getDrops and isPreferredTool to BlockState
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
+index 966ac60daebb7bb211ab8096fc0c5f33db67320a..9c8aa6bf81decaa14c639d61f596f5eefbfae0f9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
+@@ -2,9 +2,13 @@ package org.bukkit.craftbukkit.block;
+ 
+ import com.google.common.base.Preconditions;
+ import java.lang.ref.WeakReference;
++import java.util.Collection;
++import java.util.Collections;
+ import java.util.List;
++import java.util.stream.Collectors;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.level.LevelAccessor;
+ import org.bukkit.Chunk;
+ import org.bukkit.Location;
+@@ -15,7 +19,11 @@ import org.bukkit.block.BlockState;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.entity.Entity;
++import org.bukkit.inventory.ItemStack;
+ import org.bukkit.material.Attachable;
+ import org.bukkit.material.MaterialData;
+ import org.bukkit.metadata.MetadataValue;
+@@ -330,5 +338,42 @@ public class CraftBlockState implements BlockState {
+     public boolean isCollidable() {
+         return this.data.getBlock().hasCollision;
+     }
++
++    @Override
++    public Collection<ItemStack> getDrops() {
++        return this.getDrops(null);
++    }
++
++    @Override
++    public Collection<ItemStack> getDrops(ItemStack item) {
++        return this.getDrops(item, null);
++    }
++
++    @Override
++    public Collection<ItemStack> getDrops(ItemStack item, Entity entity) {
++        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
++
++        // Modelled off EntityHuman#hasBlock
++        if (item == null || isPreferredTool(data, nms)) {
++            return net.minecraft.world.level.block.Block.getDrops(
++                data,
++                world.getHandle(),
++                position,
++                world.getHandle().getBlockEntity(position), entity == null ? null : ((CraftEntity) entity).getHandle(), nms
++            ).stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
++        } else {
++            return Collections.emptyList();
++        }
++    }
++
++    @Override
++    public boolean isPreferredTool(ItemStack item) {
++        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
++        return isPreferredTool(data, nms);
++    }
++
++    private boolean isPreferredTool(net.minecraft.world.level.block.state.BlockState iblockdata, net.minecraft.world.item.ItemStack nmsItem) {
++        return !iblockdata.requiresCorrectToolForDrops() || nmsItem.isCorrectToolForDrops(iblockdata);
++    }
+     // Paper end
+ }
