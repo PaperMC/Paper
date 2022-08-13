@@ -347,5 +347,24 @@ public class CraftBlockState implements BlockState {
     public boolean isCollidable() {
         return this.data.getBlock().hasCollision;
     }
+
+    @Override
+    public java.util.Collection<org.bukkit.inventory.ItemStack> getDrops(org.bukkit.inventory.ItemStack item, org.bukkit.entity.Entity entity) {
+        this.requirePlaced();
+        net.minecraft.world.item.ItemStack nms = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(item);
+
+        // Modelled off EntityHuman#hasBlock
+        if (item == null || !data.requiresCorrectToolForDrops() || nms.isCorrectToolForDrops(data)) {
+            return net.minecraft.world.level.block.Block.getDrops(
+                data,
+                world.getHandle(),
+                position,
+                world.getHandle().getBlockEntity(position), entity == null ? null :
+                    ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle(), nms
+            ).stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asBukkitCopy).toList();
+        } else {
+            return java.util.Collections.emptyList();
+        }
+    }
     // Paper end
 }
