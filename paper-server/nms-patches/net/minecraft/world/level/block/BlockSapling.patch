@@ -21,30 +21,33 @@
  
      protected BlockSapling(WorldGenTreeProvider worldgentreeprovider, BlockBase.Info blockbase_info) {
          super(blockbase_info);
-@@ -44,7 +52,30 @@
+@@ -44,7 +52,32 @@
          if ((Integer) iblockdata.getValue(BlockSapling.STAGE) == 0) {
              worldserver.setBlock(blockposition, (IBlockData) iblockdata.cycle(BlockSapling.STAGE), 4);
          } else {
+-            this.treeGrower.growTree(worldserver, worldserver.getChunkSource().getGenerator(), blockposition, iblockdata, randomsource);
 +            // CraftBukkit start
-+            worldserver.captureTreeGeneration = true;
-+            // CraftBukkit end
-             this.treeGrower.growTree(worldserver, worldserver.getChunkSource().getGenerator(), blockposition, iblockdata, randomsource);
-+            // CraftBukkit start
-+            worldserver.captureTreeGeneration = false;
-+            if (worldserver.capturedBlockStates.size() > 0) {
-+                TreeType treeType = BlockSapling.treeType;
-+                BlockSapling.treeType = null;
-+                Location location = new Location(worldserver.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+                java.util.List<BlockState> blocks = new java.util.ArrayList<>(worldserver.capturedBlockStates.values());
-+                worldserver.capturedBlockStates.clear();
-+                StructureGrowEvent event = null;
-+                if (treeType != null) {
-+                    event = new StructureGrowEvent(location, treeType, false, null, blocks);
-+                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+                }
-+                if (event == null || !event.isCancelled()) {
-+                    for (BlockState blockstate : blocks) {
-+                        blockstate.update(true);
++            if (worldserver.captureTreeGeneration) {
++                this.treeGrower.growTree(worldserver, worldserver.getChunkSource().getGenerator(), blockposition, iblockdata, randomsource);
++            } else {
++                worldserver.captureTreeGeneration = true;
++                this.treeGrower.growTree(worldserver, worldserver.getChunkSource().getGenerator(), blockposition, iblockdata, randomsource);
++                worldserver.captureTreeGeneration = false;
++                if (worldserver.capturedBlockStates.size() > 0) {
++                    TreeType treeType = BlockSapling.treeType;
++                    BlockSapling.treeType = null;
++                    Location location = new Location(worldserver.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                    java.util.List<BlockState> blocks = new java.util.ArrayList<>(worldserver.capturedBlockStates.values());
++                    worldserver.capturedBlockStates.clear();
++                    StructureGrowEvent event = null;
++                    if (treeType != null) {
++                        event = new StructureGrowEvent(location, treeType, false, null, blocks);
++                        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                    }
++                    if (event == null || !event.isCancelled()) {
++                        for (BlockState blockstate : blocks) {
++                            blockstate.update(true);
++                        }
 +                    }
 +                }
 +            }
