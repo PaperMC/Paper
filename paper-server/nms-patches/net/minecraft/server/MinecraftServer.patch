@@ -32,6 +32,15 @@
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements ICommandListener, AutoCloseable {
  
      public static final Logger LOGGER = LogUtils.getLogger();
+@@ -195,7 +220,7 @@
+     private String localIp;
+     private int port;
+     public final IRegistryCustom.Dimension registryHolder;
+-    public final Map<ResourceKey<World>, WorldServer> levels;
++    private Map<ResourceKey<World>, WorldServer> levels;
+     private PlayerList playerList;
+     private volatile boolean running;
+     private boolean stopped;
 @@ -239,6 +264,21 @@
      protected SaveData worldData;
      private volatile boolean isSaving;
@@ -71,15 +80,6 @@
          super("Server");
          this.metricsRecorder = InactiveMetricsRecorder.INSTANCE;
          this.profiler = this.metricsRecorder.getProfiler();
-@@ -271,7 +311,7 @@
-         this.status = new ServerPing();
-         this.random = RandomSource.create();
-         this.port = -1;
--        this.levels = Maps.newLinkedHashMap();
-+        this.levels = Maps.newLinkedHashMap(); // CraftBukkit - keep order, k+v already use identity methods
-         this.running = true;
-         this.tickTimes = new long[100];
-         this.nextTickTime = SystemUtils.getMillis();
 @@ -280,7 +320,7 @@
          this.frameTimer = new CircularTimer();
          this.registryHolder = worldstem.registryAccess();
@@ -321,7 +321,7 @@
 +            worlddata.setModdedInfo(this.getServerModName(), this.getModdedStatus().shouldReportAsModified());
 +            this.initWorld(world, worlddata, worldData, worlddata.worldGenSettings());
 +
-+            this.levels.put(world.dimension(), world);
++            this.addLevel(world);
 +            this.getPlayerList().addWorldborderListener(world);
 +
 +            if (worlddata.getCustomBossEvents() != null) {
@@ -334,19 +334,19 @@
 +            worldserver.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
 +            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
 +        }
- 
--        this.levels.put(World.OVERWORLD, worldserver);
--        WorldPersistentData worldpersistentdata = worldserver.getDataStorage();
++
 +        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
 +        this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
 +        this.connection.acceptConnections();
 +    }
 +    // CraftBukkit end
  
+-        this.levels.put(World.OVERWORLD, worldserver);
+-        WorldPersistentData worldpersistentdata = worldserver.getDataStorage();
++    protected void forceDifficulty() {}
+ 
 -        this.readScoreboard(worldpersistentdata);
 -        this.commandStorage = new PersistentCommandStorage(worldpersistentdata);
-+    protected void forceDifficulty() {}
-+
 +    // CraftBukkit start
 +    public void initWorld(WorldServer worldserver, IWorldDataServer iworlddataserver, SaveData saveData, GeneratorSettings generatorsettings) {
 +        boolean flag = generatorsettings.isDebug();
@@ -649,7 +649,30 @@
  
              this.profiler.push("tick");
  
-@@ -1021,7 +1315,7 @@
+@@ -995,6 +1289,22 @@
+         return (WorldServer) this.levels.get(resourcekey);
+     }
+ 
++    // CraftBukkit start
++    public void addLevel(WorldServer level) {
++        Map<ResourceKey<World>, WorldServer> oldLevels = this.levels;
++        Map<ResourceKey<World>, WorldServer> newLevels = Maps.newLinkedHashMap(oldLevels);
++        newLevels.put(level.dimension(), level);
++        this.levels = Collections.unmodifiableMap(newLevels);
++    }
++
++    public void removeLevel(WorldServer level) {
++        Map<ResourceKey<World>, WorldServer> oldLevels = this.levels;
++        Map<ResourceKey<World>, WorldServer> newLevels = Maps.newLinkedHashMap(oldLevels);
++        newLevels.remove(level.dimension());
++        this.levels = Collections.unmodifiableMap(newLevels);
++    }
++    // CraftBukkit end
++
+     public Set<ResourceKey<World>> levelKeys() {
+         return this.levels.keySet();
+     }
+@@ -1021,7 +1331,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -658,7 +681,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport systemreport) {
-@@ -1372,11 +1666,11 @@
+@@ -1372,11 +1682,11 @@
      public CompletableFuture<Void> reloadResources(Collection<String> collection) {
          IRegistryCustom.Dimension iregistrycustom_dimension = this.registryAccess();
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -672,7 +695,7 @@
          }, this).thenCompose((immutablelist) -> {
              ResourceManager resourcemanager = new ResourceManager(EnumResourcePackType.SERVER_DATA, immutablelist);
  
-@@ -1391,6 +1685,7 @@
+@@ -1391,6 +1701,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -680,7 +703,7 @@
              this.packRepository.setSelected(collection);
              this.worldData.setDataPackConfig(getSelectedPacks(this.packRepository));
              this.resources.managers.updateRegistryTags(this.registryAccess());
-@@ -1740,7 +2035,7 @@
+@@ -1740,7 +2051,7 @@
              try {
                  label51:
                  {
@@ -689,7 +712,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -1790,6 +2085,22 @@
+@@ -1790,6 +2101,22 @@
  
      }
  
@@ -712,7 +735,7 @@
      private void startMetricsRecordingTick() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(SystemUtils.timeSource, this.isDedicatedServer()), SystemUtils.timeSource, SystemUtils.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -1912,8 +2223,30 @@
+@@ -1912,8 +2239,30 @@
  
      }
  
