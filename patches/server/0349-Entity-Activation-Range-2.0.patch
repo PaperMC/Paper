@@ -302,6 +302,44 @@ index f957c0aca36b7228ac3a33ca04c948b1d10642d1..39fc94b1e1555fd6706391223dd27831
  
          super.customServerAiStep();
      }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
+index 540c23f6297c34cf8e7bf8312ceaa5fc868f414c..2866385a64b22b7dc82b6122c62bcea6b0908a60 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
+@@ -57,6 +57,7 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+         if (bl != this.isEnabled()) {
+             this.setEnabled(bl);
+         }
++        this.immunize();  // Paper
+ 
+     }
+ 
+@@ -107,11 +108,13 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+ 
+     public boolean suckInItems() {
+         if (HopperBlockEntity.suckInItems(this.level, this)) {
++            this.immunize();  // Paper
+             return true;
+         } else {
+             List<ItemEntity> list = this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(0.25D, 0.0D, 0.25D), EntitySelector.ENTITY_STILL_ALIVE);
+             if (!list.isEmpty()) {
+                 HopperBlockEntity.addItem(this, list.get(0));
++                this.immunize();  // Paper
+             }
+ 
+             return false;
+@@ -149,4 +152,11 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+     public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory) {
+         return new HopperMenu(syncId, playerInventory, this);
+     }
++
++    // Paper start
++    public void immunize() {
++        this.activatedImmunityTick = Math.max(this.activatedImmunityTick, net.minecraft.server.MinecraftServer.currentTick + 20);
++    }
++    // Paper end
++
+ }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index e6bfc9cdf116b2233a638eec369a80eb8536aa18..4c1d34bd274d8e2a4003a286536652367da9488a 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
