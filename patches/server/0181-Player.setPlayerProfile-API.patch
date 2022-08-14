@@ -24,30 +24,10 @@ index fa949d01da7b6c1a489d17955108f7082f959c66..c83395364edb4f2ba8515326b19c4f1a
                          playerName = gameProfile.getName();
                          uniqueId = gameProfile.getId();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 299f2a8c45462d8070312c98554dbcc05298c681..31bcabd4c6ac3aa261c439a154ba7eb0f8caa0b8 100644
+index b8d07ce7abb81a25db632fb2806749b99c3859c8..587676cf3308bf292db213112ae329554e756f13 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -75,6 +75,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
- import net.minecraft.world.inventory.AbstractContainerMenu;
- import net.minecraft.world.level.GameType;
- import net.minecraft.world.level.block.Blocks;
-+import net.minecraft.world.level.biome.BiomeManager;
- import net.minecraft.world.level.block.entity.SignBlockEntity;
- import net.minecraft.world.level.border.BorderChangeListener;
- import net.minecraft.world.level.saveddata.maps.MapDecoration;
-@@ -201,11 +202,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         return server.getPlayer(getUniqueId()) != null;
-     }
- 
--    @Override
--    public PlayerProfile getPlayerProfile() {
--        return new CraftPlayerProfile(this.getProfile());
--    }
--
-     @Override
-     public InetSocketAddress getAddress() {
-         if (this.getHandle().connection == null) return null;
-@@ -1498,8 +1494,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1500,8 +1500,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.hiddenEntities.put(entity.getUniqueId(), hidingPlugins);
  
          // Remove this entity from the hidden player's EntityTrackerEntry
@@ -64,7 +44,7 @@ index 299f2a8c45462d8070312c98554dbcc05298c681..31bcabd4c6ac3aa261c439a154ba7eb0
          ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
          if (entry != null) {
              entry.removePlayer(this.getHandle());
-@@ -1512,8 +1515,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1514,8 +1521,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                  this.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, otherPlayer));
              }
          }
@@ -73,7 +53,7 @@ index 299f2a8c45462d8070312c98554dbcc05298c681..31bcabd4c6ac3aa261c439a154ba7eb0
      }
  
      @Override
-@@ -1550,8 +1551,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1552,8 +1557,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
          this.hiddenEntities.remove(entity.getUniqueId());
  
@@ -90,46 +70,54 @@ index 299f2a8c45462d8070312c98554dbcc05298c681..31bcabd4c6ac3aa261c439a154ba7eb0
  
          if (other instanceof ServerPlayer) {
              ServerPlayer otherPlayer = (ServerPlayer) other;
-@@ -1562,9 +1570,51 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1564,10 +1576,60 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
              entry.updatePlayer(this.getHandle());
          }
 +    }
 +    // Paper start
-+    private void reregisterPlayer(ServerPlayer player) {
-+        if (!hiddenEntities.containsKey(player.getUUID())) {
-+            unregisterEntity(player);
-+            registerEntity(player);
-+        }
-+    }
++    @Override
 +    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
-+        ServerPlayer self = getHandle();
-+        self.gameProfile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
++        ServerPlayer self = this.getHandle();
++        GameProfile gameProfile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
 +        if (!self.sentListPacket) {
++            self.gameProfile = gameProfile;
 +            return;
 +        }
-+        List<ServerPlayer> players = server.getServer().getPlayerList().players;
++        List<ServerPlayer> players = this.server.getServer().getPlayerList().players;
++        // First unregister the player for all players with the OLD game profile
 +        for (ServerPlayer player : players) {
-+            player.getBukkitEntity().reregisterPlayer(self);
++            CraftPlayer bukkitPlayer = player.getBukkitEntity();
++            if (bukkitPlayer.canSee(this)) {
++                bukkitPlayer.unregisterEntity(self);
++            }
 +        }
-+        refreshPlayer();
-+    }
-+    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
-+        return new com.destroystokyo.paper.profile.CraftPlayerProfile(this).clone();
-+    }
  
 -        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
-+    private void refreshPlayer() {
-+        ServerPlayer handle = getHandle();
++        // Set the game profile here, we should have unregistered the entity via iterating all player entities above.
++        self.gameProfile = gameProfile;
 +
-+        Location loc = getLocation();
++        // Re-register the game profile for all players
++        for (ServerPlayer player : players) {
++            CraftPlayer bukkitPlayer = player.getBukkitEntity();
++            if (bukkitPlayer.canSee(this)) {
++                bukkitPlayer.registerEntity(self);
++            }
++        }
++
++        // Refresh misc player things AFTER sending game profile
++        this.refreshPlayer();
+     }
+ 
++    private void refreshPlayer() {
++        ServerPlayer handle = this.getHandle();
++        Location loc = this.getLocation();
 +
 +        ServerGamePacketListenerImpl connection = handle.connection;
-+        reregisterPlayer(handle);
 +
 +        //Respawn the player then update their position and selected slot
 +        ServerLevel worldserver = handle.getLevel();
-+        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(worldserver.dimensionTypeId(), worldserver.dimension(), BiomeManager.obfuscateSeed(worldserver.getSeed()), handle.gameMode.getGameModeForPlayer(), handle.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), true, this.getHandle().getLastDeathLocation()));
++        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(worldserver.dimensionTypeId(), worldserver.dimension(), net.minecraft.world.level.biome.BiomeManager.obfuscateSeed(worldserver.getSeed()), handle.gameMode.getGameModeForPlayer(), handle.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), true, this.getHandle().getLastDeathLocation()));
 +        handle.onUpdateAbilities();
 +        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet(), false);
 +        net.minecraft.server.MinecraftServer.getServer().getPlayerList().sendAllPlayerInfo(handle);
@@ -138,8 +126,9 @@ index 299f2a8c45462d8070312c98554dbcc05298c681..31bcabd4c6ac3aa261c439a154ba7eb0
 +            this.setOp(false);
 +            this.setOp(true);
 +        }
-     }
++    }
 +    // Paper end
- 
++
      public void onEntityRemove(Entity entity) {
          this.hiddenEntities.remove(entity.getUUID());
+     }

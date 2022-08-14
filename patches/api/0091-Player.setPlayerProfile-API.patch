@@ -5,124 +5,29 @@ Subject: [PATCH] Player.setPlayerProfile API
 
 This can be useful for changing name or skins after a player has logged in.
 
-diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index d5fd584c109c0a84a4259b10e7b43fae3a1da1ae..a452adcbf8657c501ad92f4cb361b551992f128f 100644
---- a/src/main/java/org/bukkit/Bukkit.java
-+++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -1197,8 +1197,10 @@ public final class Bukkit {
-      * @return the new PlayerProfile
-      * @throws IllegalArgumentException if both the unique id is
-      * <code>null</code> and the name is <code>null</code> or blank
-+     * @deprecated use {@link #createProfile(UUID, String)}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     public static PlayerProfile createPlayerProfile(@Nullable UUID uniqueId, @Nullable String name) {
-         return server.createPlayerProfile(uniqueId, name);
-     }
-@@ -1209,8 +1211,10 @@ public final class Bukkit {
-      * @param uniqueId the unique id
-      * @return the new PlayerProfile
-      * @throws IllegalArgumentException if the unique id is <code>null</code>
-+     * @deprecated use {@link #createProfile(UUID)}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     public static PlayerProfile createPlayerProfile(@NotNull UUID uniqueId) {
-         return server.createPlayerProfile(uniqueId);
-     }
-@@ -1222,8 +1226,10 @@ public final class Bukkit {
-      * @return the new PlayerProfile
-      * @throws IllegalArgumentException if the name is <code>null</code> or
-      * blank
-+     * @deprecated use {@link #createProfile(String)}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     public static PlayerProfile createPlayerProfile(@NotNull String name) {
-         return server.createPlayerProfile(name);
-     }
-diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index fab39e4fc595c022da27e87e27bd168939e54381..e90056341407f58ff6ce2d9b80c8f3f64464e650 100644
---- a/src/main/java/org/bukkit/Server.java
-+++ b/src/main/java/org/bukkit/Server.java
-@@ -1015,8 +1015,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
-      * @return the new PlayerProfile
-      * @throws IllegalArgumentException if both the unique id is
-      * <code>null</code> and the name is <code>null</code> or blank
-+     * @deprecated use {@link #createProfile(UUID, String)}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     PlayerProfile createPlayerProfile(@Nullable UUID uniqueId, @Nullable String name);
- 
-     /**
-@@ -1025,8 +1027,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
-      * @param uniqueId the unique id
-      * @return the new PlayerProfile
-      * @throws IllegalArgumentException if the unique id is <code>null</code>
-+     * @deprecated use {@link #createProfile(UUID)}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     PlayerProfile createPlayerProfile(@NotNull UUID uniqueId);
- 
-     /**
-@@ -1036,8 +1040,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
-      * @return the new PlayerProfile
-      * @throws IllegalArgumentException if the name is <code>null</code> or
-      * blank
-+     * @deprecated use {@link #createProfile(String)}
-      */
-     @NotNull
-+    @Deprecated
-     PlayerProfile createPlayerProfile(@NotNull String name);
- 
-     /**
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index d3d3cfc0cf43f2b1f2d1937ef1a924b51f8cbde5..1d3387716f3e4e11155d79f62a759d8c59db84cd 100644
+index 4d3f863d5bd5330ae8868d7ec8362314b3312a80..ce7b23707453ca7f0566a98b60611d34945d33ea 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -2298,6 +2298,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      *         was {@link org.bukkit.event.player.PlayerResourcePackStatusEvent.Status#SUCCESSFULLY_LOADED}
+@@ -2305,6 +2305,21 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
-     boolean hasResourcePack();
-+
-+    /**
-+     * Gets a copy of this players profile
-+     * @return The players profile object
-+     */
-+    @NotNull
-+    com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile();
+     @NotNull
+     com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile();
 +
 +    /**
 +     * Changes the PlayerProfile for this player. This will cause this player
 +     * to be reregistered to all clients that can currently see this player
++     * <p>
++     * Note:
++     * Undefined behavior may occur when changing the player's uuid/name.
++     * For example,
++     * Setting a player profile with a different uuid will cause chat messages
++     * to appear as insecure.
++     * It will also cause the player's skin to not change on the client.
++     *
 +     * @param profile The new profile to use
 +     */
 +    void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile);
      // Paper end
  
      // Spigot start
-diff --git a/src/main/java/org/bukkit/profile/PlayerProfile.java b/src/main/java/org/bukkit/profile/PlayerProfile.java
-index fc46add38bf59dc1a04ea566fd230dcd8ae2708c..d36b3e3c7e53840132011add365ca2a26d799064 100644
---- a/src/main/java/org/bukkit/profile/PlayerProfile.java
-+++ b/src/main/java/org/bukkit/profile/PlayerProfile.java
-@@ -16,7 +16,9 @@ import org.jetbrains.annotations.Nullable;
-  * <p>
-  * New profiles can be created via
-  * {@link Server#createPlayerProfile(UUID, String)}.
-+ * @deprecated see {@link com.destroystokyo.paper.profile.PlayerProfile}
-  */
-+@Deprecated // Paper
- public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
- 
-     /**
-@@ -25,6 +27,7 @@ public interface PlayerProfile extends Cloneable, ConfigurationSerializable {
-      * @return the player's unique id, or <code>null</code> if not available
-      */
-     @Nullable
-+    @Deprecated // Paper
-     UUID getUniqueId();
- 
-     /**
