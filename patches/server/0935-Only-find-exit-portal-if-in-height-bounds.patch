@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Lomov <drupal.doesnot.exists@mail.ru>
+Date: Sun, 14 Aug 2022 21:50:11 +0300
+Subject: [PATCH] Only find exit portal if in height bounds
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+index e2c612dd55fcb2769fb06f7878b8d0873f2be139..14c1eec64e65316b659662aa048274c4bd826569 100644
+--- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+@@ -336,6 +336,7 @@ public class WorldConfiguration extends ConfigurationPart {
+ 
+         public int waterOverLavaFlowSpeed = 5;
+         public int portalSearchRadius = 128;
++        public int portalSearchHeightLimit = 128;
+         public int portalCreateRadius = 16;
+         public boolean portalSearchVanillaDimensionScaling = true;
+         public boolean disableTeleportationSuffocationCheck = false;
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+index 386a73f32f2504af81107852307dcd393d4d8a11..abc110306f24b0031a53701298ef8bd5cf8549bb 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+@@ -67,6 +67,13 @@ public class PortalForcer {
+                 if (!worldborder.isWithinBounds(pos)) {
+                     return false;
+                 }
++
++                // Paper start - add max portal height limit to configuration
++                if (pos.getY() > this.level.paperConfig().environment.portalSearchHeightLimit) {
++                    return false;
++                }
++                // Paper end
++
+                 return lowest.getBlockState(pos).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
+             },
+             blockposition, i, Double.MAX_VALUE, PoiManager.Occupancy.ANY, true, records
