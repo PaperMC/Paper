@@ -223,4 +223,37 @@ public interface UnsafeValues {
      */
     @org.jetbrains.annotations.NotNull org.bukkit.attribute.Attributable getDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
     // Paper end
+
+    // Paper start - namespaced key biome methods
+    /**
+     * Gets the {@link NamespacedKey} for the biome at the given location.
+     *
+     * @param accessor The {@link RegionAccessor} of the provided coordinates
+     * @param x X-coordinate of the block
+     * @param y Y-coordinate of the block
+     * @param z Z-coordinate of the block
+     * @deprecated custom biomes are properly supported in API now
+     * @return the biome's {@link NamespacedKey}
+     */
+    @org.jetbrains.annotations.NotNull
+    @Deprecated(since = "1.21.3", forRemoval = true)
+    NamespacedKey getBiomeKey(RegionAccessor accessor, int x, int y, int z);
+
+    /**
+     * Sets the biome at the given location to a biome registered
+     * to the given {@link NamespacedKey}. If no biome by the given
+     * {@link NamespacedKey} exists, an {@link IllegalStateException}
+     * will be thrown.
+     *
+     * @param accessor The {@link RegionAccessor} of the provided coordinates
+     * @param x X-coordinate of the block
+     * @param y Y-coordinate of the block
+     * @param z Z-coordinate of the block
+     * @param biomeKey Biome key
+     * @deprecated custom biomes are properly supported in API now
+     * @throws IllegalStateException if no biome by the given key is registered.
+     */
+    @Deprecated(since = "1.21.3", forRemoval = true)
+    void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey);
+    // Paper end - namespaced key biome methods
 }
