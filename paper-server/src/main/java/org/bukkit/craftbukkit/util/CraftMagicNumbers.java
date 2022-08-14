@@ -598,6 +598,16 @@ public final class CraftMagicNumbers implements UnsafeValues {
         var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
         return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
     }
+
+    @Override
+    public org.bukkit.NamespacedKey getBiomeKey(org.bukkit.RegionAccessor accessor, int x, int y, int z) {
+        return accessor.getBiome(x, y, z).getKey();
+    }
+
+    @Override
+    public void setBiomeKey(org.bukkit.RegionAccessor accessor, int x, int y, int z, org.bukkit.NamespacedKey biomeKey) {
+        accessor.setBiome(x, y, z, org.bukkit.Registry.BIOME.getOrThrow(biomeKey));
+    }
     // Paper end
 
     /**
