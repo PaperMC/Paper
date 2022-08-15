@@ -5,50 +5,149 @@ Subject: [PATCH] Spawn Reason API
 
 
 diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
-index 05c29cbd2ae1ca0434a90f8389479bd608ca2ac1..66bc6da2a482bb207ec50beb22fd62aeda90cc34 100644
+index 05c29cbd2ae1ca0434a90f8389479bd608ca2ac1..4ce4165138b7c10a31baf9f70160a3ba1b55e4e4 100644
 --- a/src/main/java/org/bukkit/RegionAccessor.java
 +++ b/src/main/java/org/bukkit/RegionAccessor.java
-@@ -10,6 +10,7 @@ import org.bukkit.block.data.BlockData;
- import org.bukkit.entity.Entity;
- import org.bukkit.entity.EntityType;
- import org.bukkit.entity.LivingEntity;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
- import org.bukkit.util.Consumer;
- import org.jetbrains.annotations.NotNull;
- import org.jetbrains.annotations.Nullable;
-@@ -309,7 +310,34 @@ public interface RegionAccessor {
+@@ -309,7 +309,34 @@ public interface RegionAccessor {
       *     {@link Entity} requested cannot be spawned
       */
      @NotNull
 -    <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function) throws IllegalArgumentException;
 +    // Paper start
-+    public default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function) throws IllegalArgumentException {
-+        return spawn(location, clazz, CreatureSpawnEvent.SpawnReason.CUSTOM, function);
++    default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function) throws IllegalArgumentException {
++        return spawn(location, clazz, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, function);
 +    }
 +
 +    @NotNull
-+    public default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
++    default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
 +        return spawn(location, clazz, reason, null);
 +    }
 +
 +    @NotNull
-+    public default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull CreatureSpawnEvent.SpawnReason reason, @Nullable Consumer<T> function) throws IllegalArgumentException {
++    default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason, @Nullable Consumer<T> function) throws IllegalArgumentException {
 +        return spawn(location, clazz, function, reason);
 +    }
 +
 +    @NotNull
-+    public default Entity spawnEntity(@NotNull Location loc, @NotNull org.bukkit.entity.EntityType type, @NotNull CreatureSpawnEvent.SpawnReason reason) {
++    default Entity spawnEntity(@NotNull Location loc, @NotNull org.bukkit.entity.EntityType type, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        return spawn(loc, (Class<Entity>) type.getEntityClass(), reason, null);
 +    }
 +
 +    @NotNull
-+    public default Entity spawnEntity(@NotNull Location loc, @NotNull org.bukkit.entity.EntityType type, @NotNull CreatureSpawnEvent.SpawnReason reason, @Nullable Consumer<Entity> function) {
++    default Entity spawnEntity(@NotNull Location loc, @NotNull org.bukkit.entity.EntityType type, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason, @Nullable Consumer<Entity> function) {
 +        return spawn(loc, (Class<Entity>) type.getEntityClass(), reason, function);
 +    }
 +
 +    @NotNull
-+    public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function, @NotNull CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException;
++    <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException;
 +    // Paper end
  
      /**
       * Creates a new entity at the given {@link Location} with the supplied
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 0c5ce79c04e8193db248a221f519d80a944ef6ba..a5b3bac803f467d5a3613706411b5b46dfa8f29b 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -691,7 +691,27 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @return Arrow entity spawned as a result of this method
+      */
+     @NotNull
+-    public <T extends AbstractArrow> T spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<T> clazz);
++    // Paper start
++    default <T extends AbstractArrow> T spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<T> clazz) {
++        return spawnArrow(location, direction, speed, spread, clazz, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT); // should be custom, but upstream spawns arrows from #spawnArrow with the SpawnReason.DEFAULT
++    }
++
++    /**
++     * Creates an arrow entity of the given class at the given {@link Location}
++     *
++     * @param <T> type of arrow to spawn
++     * @param location Location to spawn the arrow
++     * @param direction Direction to shoot the arrow in
++     * @param speed Speed of the arrow. A recommend speed is 0.6
++     * @param spread Spread of the arrow. A recommend spread is 12
++     * @param clazz the Entity class for the arrow
++     * {@link org.bukkit.entity.SpectralArrow SpectralArrow},{@link org.bukkit.entity.Arrow Arrow},{@link org.bukkit.entity.TippedArrow TippedArrow}
++     * @param reason the spawn reason
++     * @return Arrow entity spawned as a result of this method
++     */
++    @NotNull
++    <T extends AbstractArrow> T spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<T> clazz, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason);
++    // Paper end
+ 
+     /**
+      * Creates a tree at the given {@link Location}
+@@ -723,7 +743,21 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @return The lightning entity.
+      */
+     @NotNull
+-    public LightningStrike strikeLightning(@NotNull Location loc);
++    // Paper start
++    default LightningStrike strikeLightning(@NotNull Location loc) {
++        return strikeLightning(loc, org.bukkit.event.weather.LightningStrikeEvent.Cause.CUSTOM);
++    }
++
++    /**
++     * Strikes lightning at the given {@link Location}
++     *
++     * @param loc The location to strike lightning
++     * @param cause The cause of this lightning strike
++     * @return The lightning entity.
++     */
++    @NotNull
++    LightningStrike strikeLightning(@NotNull Location loc, @NotNull org.bukkit.event.weather.LightningStrikeEvent.Cause cause);
++    // Paper end
+ 
+     /**
+      * Strikes lightning at the given {@link Location} without doing damage
+@@ -732,7 +766,21 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @return The lightning entity.
+      */
+     @NotNull
+-    public LightningStrike strikeLightningEffect(@NotNull Location loc);
++    // Paper start
++    default LightningStrike strikeLightningEffect(@NotNull Location loc) {
++        return strikeLightningEffect(loc, org.bukkit.event.weather.LightningStrikeEvent.Cause.CUSTOM);
++    }
++
++    /**
++     * Strikes lightning at the given {@link Location} without doing damage
++     *
++     * @param loc The location to strike lightning
++     * @param cause The cause of this lightning strike
++     * @return The lightning entity.
++     */
++    @NotNull
++    LightningStrike strikeLightningEffect(@NotNull Location loc, @NotNull org.bukkit.event.weather.LightningStrikeEvent.Cause cause);
++    // Paper end
+ 
+     /**
+      * Get a list of all entities in this World
+@@ -2228,7 +2276,26 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      *     BlockData} are null
+      */
+     @NotNull
+-    public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull BlockData data) throws IllegalArgumentException;
++    // Paper start
++    default FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull BlockData data) throws IllegalArgumentException {
++        return spawnFallingBlock(location, data, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
++    }
++
++    /**
++     * Spawn a {@link FallingBlock} entity at the given {@link Location} of
++     * the specified {@link BlockData}. The block data dictates what is falling.
++     * When the FallingBlock hits the ground, it will place that block.
++     *
++     * @param location The {@link Location} to spawn the FallingBlock
++     * @param data The {@link BlockData} of the FallingBlock to spawn
++     * @param reason The spawn reason
++     * @return The spawned {@link FallingBlock} instance
++     * @throws IllegalArgumentException if {@link Location} or {@link
++     *     BlockData} are null
++     */
++    @NotNull
++    FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull BlockData data, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException;
++    // Paper end
+ 
+     /**
+      * Spawn a {@link FallingBlock} entity at the given {@link Location} of the

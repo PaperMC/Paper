@@ -3,9 +3,11 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Sun, 25 Sep 2022 11:21:01 -0700
 Subject: [PATCH] Fixes and additions to the SpawnReason API
 
-Fixes some wrong reasons, and adds missing spawn reasons for entities.
+Fixes some wrong reasons, adds missing spawn reasons for entities
+and add spawn reason parameter for all spawn methods.
 
 Co-authored-by: Doc <nachito94@msn.com>
+Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
 index c7e127e62b7616997c123c47d86ed751c12fd151..c11e805dc4b77f08cadb0e99d86635036405da3e 100644
@@ -69,3 +71,69 @@ index 294d22b6b27e96b59c77527efcfefa9410b756e4..bebcdc70c4cb01764428836fff76f03b
              }
          }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 1a481fb4f4228f0fea8a7dc6132248c98b727c90..2be948d39d56477a5bae46eb902f3dbf07c1c3ac 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -733,7 +733,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     }
+ 
+     @Override
+-    public <T extends AbstractArrow> T spawnArrow(Location loc, Vector velocity, float speed, float spread, Class<T> clazz) {
++    public <T extends AbstractArrow> T spawnArrow(Location loc, Vector velocity, float speed, float spread, Class<T> clazz, SpawnReason reason) { // Paper
+         Preconditions.checkArgument(loc != null, "Location cannot be null");
+         Preconditions.checkArgument(velocity != null, "Vector cannot be null");
+         Preconditions.checkArgument(clazz != null, "clazz Entity for the arrow cannot be null");
+@@ -752,27 +752,27 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+         arrow.moveTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+         arrow.shoot(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
+-        this.world.addFreshEntity(arrow);
++        this.world.addFreshEntity(arrow, reason); // Paper
+         return (T) arrow.getBukkitEntity();
+     }
+ 
+     @Override
+-    public LightningStrike strikeLightning(Location loc) {
+-        return this.strikeLightning0(loc, false);
++    public LightningStrike strikeLightning(Location loc, LightningStrikeEvent.Cause cause) { // Paper
++        return this.strikeLightning0(loc, false, cause); // Paper
+     }
+ 
+     @Override
+-    public LightningStrike strikeLightningEffect(Location loc) {
+-        return this.strikeLightning0(loc, true);
++    public LightningStrike strikeLightningEffect(Location loc, LightningStrikeEvent.Cause cause) { // Paper
++        return this.strikeLightning0(loc, true, cause); // Paper
+     }
+ 
+-    private LightningStrike strikeLightning0(Location loc, boolean isVisual) {
++    private LightningStrike strikeLightning0(Location loc, boolean isVisual, LightningStrikeEvent.Cause cause) { // Paper
+         Preconditions.checkArgument(loc != null, "Location cannot be null");
+ 
+         LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(world);
+         lightning.moveTo(loc.getX(), loc.getY(), loc.getZ());
+         lightning.setVisualOnly(isVisual);
+-        this.world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
++        this.world.strikeLightning(lightning, cause); // Paper
+         return (LightningStrike) lightning.getBukkitEntity();
+     }
+ 
+@@ -1427,7 +1427,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     }
+ 
+     @Override
+-    public FallingBlock spawnFallingBlock(Location location, BlockData data) throws IllegalArgumentException {
++    public FallingBlock spawnFallingBlock(Location location, BlockData data, SpawnReason reason) throws IllegalArgumentException { // Paper
+         Preconditions.checkArgument(location != null, "Location cannot be null");
+         Preconditions.checkArgument(data != null, "BlockData cannot be null");
+ 
+@@ -1435,7 +1435,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         FallingBlockEntity entity = new FallingBlockEntity(this.world, location.getX(), location.getY(), location.getZ(), ((CraftBlockData) data).getState());
+         entity.time = 1;
+ 
+-        this.world.addFreshEntity(entity, SpawnReason.CUSTOM);
++        this.world.addFreshEntity(entity, reason);
+         // Paper end
+         return (FallingBlock) entity.getBukkitEntity();
+     }
