@@ -55,6 +55,28 @@ index 04a119e6641898454253e2478bc1b4dff181b5ee..a8da601b8342aa6e4902b452eb588c76
      public void setStanding(boolean angry) {
          if (angry) {
              this.setEating(false);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java b/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
+index 7dbdb6529350b34c0260ca50dfff2b4583fd9c2a..f5cc03029dce4bc26ab91a5672f182dcf910438a 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
+@@ -21,7 +21,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
+ 
+ public class TraderLlama extends Llama {
+ 
+-    private int despawnDelay = 47999;
++    public int despawnDelay = 47999; // Paper - private -> public
+ 
+     public TraderLlama(EntityType<? extends TraderLlama> type, Level world) {
+         super(type, world);
+@@ -84,7 +84,7 @@ public class TraderLlama extends Llama {
+     private void maybeDespawn() {
+         if (this.canDespawn()) {
+             this.despawnDelay = this.isLeashedToWanderingTrader() ? ((WanderingTrader) this.getLeashHolder()).getDespawnDelay() - 1 : this.despawnDelay - 1;
+-            if (this.despawnDelay <= 0) {
++            if (this.despawnDelay == 0) { // Paper
+                 this.dropLeash(true, false);
+                 this.discard();
+             }
 diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 index 32b302aad0319ce3ee412912425c1c8db9979f8a..92734f767fde60351a179a88350a97b861be0e88 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
@@ -80,6 +102,21 @@ index 32b302aad0319ce3ee412912425c1c8db9979f8a..92734f767fde60351a179a88350a97b8
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+index f6405e862b15b71dbb96215e604610fe5ff59bfc..d9713676b2ef59d6d6c476ce7db6909a0fbc8bf1 100644
+--- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -56,8 +56,8 @@ public class FallingBlockEntity extends Entity {
+     public boolean dropItem;
+     private boolean cancelDrop;
+     public boolean hurtEntities;
+-    private int fallDamageMax;
+-    private float fallDamagePerDistance;
++    public int fallDamageMax; // Paper - private -> public
++    public float fallDamagePerDistance; // - Paper private -> public
+     @Nullable
+     public CompoundTag blockData;
+     protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
 diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
 index e0e32528ed9f2f494b5ee2079c3167021f2e84c4..f22e615dba31619c97bf58930da060476a52facf 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
@@ -300,6 +337,50 @@ index ae669a970aa1f17ed786640de8a481364543c58e..acdc4e578d70f8121c8c6be7682ba1ec
      @Override
      public EnderMan getHandle() {
          return (EnderMan) entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
+index 0de415236fe9997fc3ffedba20b8df68647cb822..b02453dd311d97fc0f0c0072d9c7d7093fe681cb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
+@@ -58,7 +58,39 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
+     public void setHurtEntities(boolean hurtEntities) {
+         this.getHandle().hurtEntities = hurtEntities;
+     }
++    // Paper start
++    @Override
++    public int getTime() {
++        return this.getHandle().time;
++    }
++
++    @Override
++    public void setTime(int time) {
++        this.getHandle().time = time;
++    }
++
++    @Override
++    public int getMaxFallDamage() {
++        return this.getHandle().fallDamageMax;
++    }
+ 
++    @Override
++    public void setMaxFallDamage(int maxDamage) {
++        if (maxDamage < 0) maxDamage = 0;
++        this.getHandle().fallDamageMax = maxDamage;
++    }
++
++    @Override
++    public float getFallDamageRate() {
++        return this.getHandle().fallDamagePerDistance;
++    }
++
++    @Override
++    public void setFallDamageRate(float damageRate) {
++        if (damageRate < 0) damageRate = 0;
++        this.getHandle().fallDamagePerDistance = damageRate;
++    }
++    // Paper end
+     @Override
+     public void setTicksLived(int value) {
+         super.setTicksLived(value);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
 index f6369a1b0ea3fc64e9e7902d9da25924a0745855..fce96b67300b8808984904ee19d4e987f5235bfd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
@@ -464,6 +545,26 @@ index 27a8a2b1e03254b1fc6fe8edc3ff77841a42f5f6..8d77b870fd9de69b57ae1affdfbd2a02
 +    @Override
 +    public void setCelebrating(boolean celebrating) {
 +        this.getHandle().setCelebrating(celebrating);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTraderLlama.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTraderLlama.java
+index 0f07a43896e0f677fb9e4ba5080466d22eddcfcb..2add15d1e958420970a9b9574366f361e39fce5a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTraderLlama.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTraderLlama.java
+@@ -24,4 +24,15 @@ public class CraftTraderLlama extends CraftLlama implements TraderLlama {
+     public EntityType getType() {
+         return EntityType.TRADER_LLAMA;
+     }
++    // Paper start
++    @Override
++    public int getDespawnDelay() {
++        return this.getHandle().despawnDelay;
++    }
++
++    @Override
++    public void setDespawnDelay(int despawnDelay) {
++        this.getHandle().despawnDelay = despawnDelay;
 +    }
 +    // Paper end
  }
