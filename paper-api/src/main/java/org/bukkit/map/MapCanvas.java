@@ -3,6 +3,7 @@ package org.bukkit.map;
 import java.awt.Color;
 import java.awt.Image;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a canvas for drawing to a map. Each canvas is associated with a
@@ -44,20 +45,27 @@ public interface MapCanvas {
      * {@link #getPixelColor(int, int)} might return another
      * color than set.
      *
+     * If null is used as color, then the color returned by
+     * {@link #getBasePixelColor(int, int)} is shown on the map.
+     *
      * @param x The x coordinate, from 0 to 127.
      * @param y The y coordinate, from 0 to 127.
      * @param color The color.
      */
-    void setPixelColor(int x, int y, @NotNull Color color);
+    void setPixelColor(int x, int y, @Nullable Color color);
 
     /**
      * Get a pixel from the canvas.
      *
+     * If no color is set at the given position for this canvas, then null is
+     * returned and the color returned by {@link #getBasePixelColor(int, int)}
+     * is shown on the map.
+     *
      * @param x The x coordinate, from 0 to 127.
      * @param y The y coordinate, from 0 to 127.
-     * @return The color.
+     * @return The color, or null if no color is set.
      */
-    @NotNull
+    @Nullable
     Color getPixelColor(int x, int y);
 
     /**
