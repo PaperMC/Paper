@@ -1,0 +1,35 @@
+--- a/net/minecraft/world/entity/ai/behavior/BehaviorFollowAdult.java
++++ b/net/minecraft/world/entity/ai/behavior/BehaviorFollowAdult.java
+@@ -10,6 +10,13 @@
+ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+ import net.minecraft.world.entity.ai.memory.MemoryStatus;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent;
++import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
++// CraftBukkit end
++
+ public class BehaviorFollowAdult<E extends EntityAgeable> extends Behavior<E> {
+ 
+     private final UniformInt followRange;
+@@ -38,7 +45,17 @@
+     }
+ 
+     protected void start(WorldServer worldserver, E e0, long i) {
+-        BehaviorUtil.setWalkAndLookTargetMemories(e0, (Entity) this.getNearestAdult(e0), (Float) this.speedModifier.apply(e0), this.followRange.getMinValue() - 1);
++        // CraftBukkit start
++        EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(e0, this.getNearestAdult(e0), EntityTargetEvent.TargetReason.FOLLOW_LEADER);
++        if (event.isCancelled()) {
++            return;
++        }
++        if (event.getTarget() != null) {
++            BehaviorUtil.setWalkAndLookTargetMemories(e0, ((CraftLivingEntity) event.getTarget()).getHandle(), this.speedModifier.apply(e0), this.followRange.getMinValue() - 1);
++        } else {
++            e0.getBrain().eraseMemory(MemoryModuleType.NEAREST_VISIBLE_ADULT);
++        }
++        // CraftBukkit end
+     }
+ 
+     private EntityAgeable getNearestAdult(E e0) {
