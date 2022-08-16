@@ -38,12 +38,17 @@ public class CraftMapCanvas implements MapCanvas {
 
     @Override
     public void setPixelColor(int x, int y, Color color) {
-        setPixel(x, y, MapPalette.matchColor(color));
+        setPixel(x, y, (color == null) ? -1 : MapPalette.matchColor(color));
     }
 
     @Override
     public Color getPixelColor(int x, int y) {
-        return MapPalette.getColor(getPixel(x, y));
+        byte pixel = getPixel(x, y);
+        if (pixel == -1) {
+            return null;
+        }
+
+        return MapPalette.getColor(pixel);
     }
 
     @Override
