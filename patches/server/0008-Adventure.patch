@@ -247,10 +247,10 @@ index 0000000000000000000000000000000000000000..87e791801b624859477025df49824637
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f8586ae7fe41cce772745bab2a1482c424d0b28f
+index 0000000000000000000000000000000000000000..12ea885e815b6814a74ac3aa9d9c325e53721ecd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,376 @@
+@@ -0,0 +1,379 @@
 +package io.papermc.paper.adventure;
 +
 +import com.google.common.base.Suppliers;
@@ -547,6 +547,9 @@ index 0000000000000000000000000000000000000000..f8586ae7fe41cce772745bab2a1482c4
 +                    viewer.sendMessage(source, audienceMsgFunction.apply(viewer), MessageType.CHAT);
 +                }
 +            }
++
++            // Make sure to send remaining headers
++            ChatProcessor.this.outgoing.sendHeadersToRemainingPlayers(ChatProcessor.this.server.getPlayerList());
 +        }
 +
 +        private void sendToViewer(final CommandSender viewer, final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
@@ -1890,7 +1893,7 @@ index 762a9392ffac3042356709dddd15bb3516048bed..3544e2dc2522e9d6305d727d56e73490
          buf.writeComponent(this.footer);
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 20a0a14f331ed891a64bd3ed69ade9cf2d917922..b9a6533afbfe07ff544f9f03f3c254890ee2e068 100644
+index 805a1773d55e2551911e5b8e69052e23f630359b..e4220f14a5ebf43dd3491fc8649c2be5238c5798 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -229,6 +229,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -1901,7 +1904,7 @@ index 20a0a14f331ed891a64bd3ed69ade9cf2d917922..b9a6533afbfe07ff544f9f03f3c25489
      private int playerIdleTimeout;
      public final long[] tickTimes;
      @Nullable
-@@ -1590,8 +1591,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1606,8 +1607,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.motd;
      }
  
@@ -1920,7 +1923,7 @@ index 20a0a14f331ed891a64bd3ed69ade9cf2d917922..b9a6533afbfe07ff544f9f03f3c25489
      }
  
      public boolean previewsChat() {
-@@ -2302,27 +2313,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2318,27 +2329,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      // CraftBukkit start
      public final java.util.concurrent.ExecutorService chatExecutor = java.util.concurrent.Executors.newCachedThreadPool(
@@ -2045,19 +2048,19 @@ index 84564ca128d2dfc79c0b5a13b699cf6fc80bdea7..9ab4588e4e512176b881ad4c252e400f
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f84735a4e 100644
+index bc253a8140f6775d038b2b0bfa185de99b3010d8..a258c965a4a0352f9d77def6748b176f3bdab106 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -187,6 +187,8 @@ import org.apache.commons.lang3.StringUtils;
+@@ -188,6 +188,8 @@ import org.apache.commons.lang3.StringUtils;
  import org.slf4j.Logger;
  
  // CraftBukkit start
 +import io.papermc.paper.adventure.ChatProcessor; // Paper
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
+ import java.util.Arrays;
  import java.util.concurrent.ExecutionException;
  import java.util.concurrent.atomic.AtomicInteger;
- import net.minecraft.network.chat.OutgoingPlayerChatMessage;
-@@ -441,14 +443,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -444,14 +446,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          return this.server.isSingleplayerOwner(this.player.getGameProfile());
      }
  
@@ -2081,7 +2084,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
          // CraftBukkit start - fire PlayerKickEvent
          if (this.processedDisconnect) {
              return;
-@@ -457,7 +462,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -460,7 +465,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              Waitable waitable = new Waitable() {
                  @Override
                  protected Object evaluate() {
@@ -2090,7 +2093,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
                      return null;
                  }
              };
-@@ -474,9 +479,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -477,9 +482,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              return;
          }
  
@@ -2102,7 +2105,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
  
          if (this.cserver.getServer().isRunning()) {
              this.cserver.getPluginManager().callEvent(event);
-@@ -488,7 +493,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -491,7 +496,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          }
          this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
          // Send the possibly modified leave message
@@ -2111,7 +2114,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
          // CraftBukkit end
  
          this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
-@@ -1785,9 +1790,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1788,9 +1793,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          */
  
          this.player.disconnect();
@@ -2126,7 +2129,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
          }
          // CraftBukkit end
          this.player.getTextFilter().leave();
-@@ -1877,7 +1884,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1880,7 +1887,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                      if (this.verifyChatMessage(playerchatmessage)) {
                          this.chatMessageChain.append(() -> {
                              CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent().plain());
@@ -2135,7 +2138,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
  
                              return CompletableFuture.allOf(completablefuture, completablefuture1).thenAcceptAsync((ovoid) -> {
                                  FilterMask filtermask = ((FilteredText) completablefuture.join()).mask();
-@@ -2039,7 +2046,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2042,7 +2049,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              this.handleCommand(s);
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
              // Do nothing, this is coming from a plugin
@@ -2149,7 +2152,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
-@@ -2172,9 +2184,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2175,9 +2187,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      }
  
      private ChatMessageContent getSignedContent(ServerboundChatPacket packet) {
@@ -2164,7 +2167,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
      }
  
      private void broadcastChatMessage(PlayerChatMessage message) {
-@@ -2277,14 +2292,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2280,14 +2295,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      private CompletableFuture<Component> queryChatPreview(String query) {
          MutableComponent ichatmutablecomponent = Component.literal(query);
@@ -2186,7 +2189,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
      }
  
      private CompletableFuture<Component> queryCommandPreview(String query) {
-@@ -2293,7 +2311,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2296,7 +2314,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          CompletableFuture<Component> completablefuture = this.getPreviewedArgument(commandlistenerwrapper, PreviewableCommand.of(parseresults));
  
          completablefuture.thenAcceptAsync((ichatbasecomponent) -> {
@@ -2195,7 +2198,7 @@ index 047f158fbd267e5ae570ec9bc0a9292a6a894968..b6436801ab2f10c68c8d6c529997223f
          }, this.server);
          return completablefuture;
      }
-@@ -3084,30 +3102,30 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3092,30 +3110,30 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  return;
              }
  
@@ -2546,10 +2549,10 @@ index 595b56b2ab9a813ba71399d306117294fa90dc65..3527d40102d512d0e276edc969ea3c18
                  }
                  collection = icons;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b7196322b6e7bb 100644
+index 4dd952faac05f553b28d1252296b0587369865f4..6139a06453e370865889f47644a6840fce2934f2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -590,8 +590,10 @@ public final class CraftServer implements Server {
+@@ -592,8 +592,10 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -2560,7 +2563,7 @@ index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b71963
      }
  
      @Override
-@@ -1411,7 +1413,15 @@ public final class CraftServer implements Server {
+@@ -1413,7 +1415,15 @@ public final class CraftServer implements Server {
          return this.configuration.getInt("settings.spawn-radius", -1);
      }
  
@@ -2576,7 +2579,7 @@ index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b71963
      public String getShutdownMessage() {
          return this.configuration.getString("settings.shutdown-message");
      }
-@@ -1579,7 +1589,20 @@ public final class CraftServer implements Server {
+@@ -1581,7 +1591,20 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -2597,7 +2600,7 @@ index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b71963
          Set<CommandSender> recipients = new HashSet<>();
          for (Permissible permissible : this.getPluginManager().getPermissionSubscriptions(permission)) {
              if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-@@ -1587,14 +1610,14 @@ public final class CraftServer implements Server {
+@@ -1589,14 +1612,14 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -2614,7 +2617,7 @@ index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b71963
  
          for (CommandSender recipient : recipients) {
              recipient.sendMessage(message);
-@@ -1845,6 +1868,14 @@ public final class CraftServer implements Server {
+@@ -1847,6 +1870,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -2629,7 +2632,7 @@ index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b71963
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
-@@ -1857,13 +1888,28 @@ public final class CraftServer implements Server {
+@@ -1859,13 +1890,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -2658,7 +2661,7 @@ index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b71963
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
-@@ -1928,6 +1974,12 @@ public final class CraftServer implements Server {
+@@ -1930,6 +1976,12 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -2671,7 +2674,7 @@ index a850bb8a4268c0210ee7af98f51131759ff95f30..837fb51698e6650c6df720f798b71963
      @Override
      public String getMotd() {
          return this.console.getMotd();
-@@ -2350,4 +2402,15 @@ public final class CraftServer implements Server {
+@@ -2357,4 +2409,15 @@ public final class CraftServer implements Server {
          return this.spigot;
      }
      // Spigot end
@@ -4227,11 +4230,24 @@ index 1980240d3dc0331ddf2ff56e163e2bfbd3b231ab..7a7f3f53aef601f124d474d9890e23d8
          @Override
          public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {
              // BrewingStand does not extend TileEntityLootable
+diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapRenderer.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapRenderer.java
+index b47f18b1e448807a17ca9f2ae9609680233da837..9683d7d103af66fffd68c11abc38fb4fd2f99482 100644
+--- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapRenderer.java
++++ b/src/main/java/org/bukkit/craftbukkit/map/CraftMapRenderer.java
+@@ -42,7 +42,7 @@ public class CraftMapRenderer extends MapRenderer {
+             }
+ 
+             MapDecoration decoration = worldMap.decorations.get(key);
+-            cursors.addCursor(decoration.getX(), decoration.getY(), (byte) (decoration.getRot() & 15), decoration.getType().getIcon(), true, CraftChatMessage.fromComponent(decoration.getName()));
++            cursors.addCursor(decoration.getX(), decoration.getY(), (byte) (decoration.getRot() & 15), decoration.getType().getIcon(), true, decoration.getName() == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(decoration.getName())); // Paper
+         }
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
-index e9bb0728ae5c16aad4acc106d332db5095db4033..6752cd9b3bc246fc2a7764df0d2b40d3e638fa62 100644
+index 0d25c7c03f7ac21a4b21bb95b5bd921c43430cf9..b7f0277b50a0f45c32b818bf9fe1218874aa8533 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
-@@ -30,6 +30,21 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
+@@ -31,6 +31,21 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
          return this.objective.getName();
      }
  
@@ -4254,20 +4270,28 @@ index e9bb0728ae5c16aad4acc106d332db5095db4033..6752cd9b3bc246fc2a7764df0d2b40d3
      public String getDisplayName() throws IllegalStateException {
          CraftScoreboard scoreboard = this.checkState();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
-index afc059755ae3e7b1c0a4cf3c6b8f32ce13cc458d..9130c478b80fc50ef1fc4e27b1afa51e3f97d618 100644
+index c624867e28dd5187d58a6bcb9067b0c10ff7e733..f367261b119ab48c1d17b2b6552cce481c6effbb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
-@@ -27,6 +27,27 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -28,6 +28,34 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
      public CraftObjective registerNewObjective(String name, String criteria) throws IllegalArgumentException {
          return this.registerNewObjective(name, criteria, name);
      }
 +    // Paper start
 +    @Override
 +    public CraftObjective registerNewObjective(String name, String criteria, net.kyori.adventure.text.Component displayName) {
-+        return registerNewObjective(name, criteria, displayName, org.bukkit.scoreboard.RenderType.INTEGER);
++        return registerNewObjective(name, CraftCriteria.getFromBukkit(criteria), displayName, RenderType.INTEGER);
 +    }
 +    @Override
 +    public CraftObjective registerNewObjective(String name, String criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) {
++        return registerNewObjective(name, CraftCriteria.getFromBukkit(criteria), displayName, renderType);
++    }
++    @Override
++    public CraftObjective registerNewObjective(String name, Criteria criteria, net.kyori.adventure.text.Component displayName) throws IllegalArgumentException {
++        return registerNewObjective(name, criteria, displayName, RenderType.INTEGER);
++    }
++    @Override
++    public CraftObjective registerNewObjective(String name, Criteria criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) throws IllegalArgumentException {
 +        if (displayName == null) {
 +            displayName = net.kyori.adventure.text.Component.empty();
 +        }
@@ -4277,32 +4301,27 @@ index afc059755ae3e7b1c0a4cf3c6b8f32ce13cc458d..9130c478b80fc50ef1fc4e27b1afa51e
 +        Validate.notNull(renderType, "RenderType cannot be null");
 +        Validate.isTrue(name.length() <= Short.MAX_VALUE, "The name '" + name + "' is longer than the limit of 32767 characters");
 +        Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
-+        CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
-+        net.minecraft.world.scores.Objective objective = board.addObjective(name, craftCriteria.criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
++        net.minecraft.world.scores.Objective objective = board.addObjective(name, ((CraftCriteria) criteria).criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
 +        return new CraftObjective(this, objective);
 +    }
 +    // Paper end
  
      @Override
      public CraftObjective registerNewObjective(String name, String criteria, String displayName) throws IllegalArgumentException {
-@@ -35,7 +56,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -46,16 +74,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
  
      @Override
-     public CraftObjective registerNewObjective(String name, String criteria, String displayName, RenderType renderType) throws IllegalArgumentException {
+     public CraftObjective registerNewObjective(String name, Criteria criteria, String displayName, RenderType renderType) throws IllegalArgumentException {
 -        Validate.notNull(name, "Objective name cannot be null");
-+        /*Validate.notNull(name, "Objective name cannot be null"); // Paper
-         Validate.notNull(criteria, "Criteria cannot be null");
-         Validate.notNull(displayName, "Display name cannot be null");
-         Validate.notNull(renderType, "RenderType cannot be null");
-@@ -45,7 +66,11 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
- 
-         CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
-         net.minecraft.world.scores.Objective objective = this.board.addObjective(name, craftCriteria.criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
+-        Validate.notNull(criteria, "Criteria cannot be null");
+-        Validate.notNull(displayName, "Display name cannot be null");
+-        Validate.notNull(renderType, "RenderType cannot be null");
+-        Validate.isTrue(name.length() <= Short.MAX_VALUE, "The name '" + name + "' is longer than the limit of 32767 characters");
+-        Validate.isTrue(displayName.length() <= 128, "The display name '" + displayName + "' is longer than the limit of 128 characters");
+-        Validate.isTrue(this.board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
+-
+-        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
 -        return new CraftObjective(this, objective);
-+
-+        CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
-+        ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
-+        return new CraftObjective(this, objective);*/ // Paper
 +        return registerNewObjective(name, criteria, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(displayName), renderType); // Paper
      }
  
