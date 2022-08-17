@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a thrown potion bottle
  */
-public interface ThrownPotion extends Projectile {
+public interface ThrownPotion extends ThrowableProjectile {
 
     /**
      * Returns the effects that are applied by this potion.
