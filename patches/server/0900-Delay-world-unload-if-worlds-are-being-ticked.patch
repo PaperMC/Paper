@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Mar 2022 12:44:30 -0700
+Subject: [PATCH] Delay world unload if worlds are being ticked
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 4d920031300a9801debc2eb39a4d3cb9d8fbb330..cd88cc811fc299f8896a2d490a646866b2df943f 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -297,6 +297,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     public volatile Thread shutdownThread; // Paper
+     public volatile boolean abnormalExit = false; // Paper
++    public boolean isIteratingOverLevels = false; // Paper
++    public List<Runnable> worldUnloadTasks = new ArrayList<>(); // Paper
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+@@ -1527,6 +1529,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Paper end
+         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
+ 
++        this.isIteratingOverLevels = true; // Paper
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
+             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+@@ -1574,6 +1577,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.profiler.pop();
+             worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+         }
++        this.isIteratingOverLevels = false; // Paper
++        // Paper start
++        while (!this.worldUnloadTasks.isEmpty()){
++            this.worldUnloadTasks.remove(0).run();
++        }
++        // Paper end
+ 
+         this.profiler.popPush("connection");
+         MinecraftTimings.connectionTimer.startTiming(); // Spigot
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 81eedf4812b654bd068a00e7f0e63ae6388dfe31..ba28da3b1da85bdc600dd3f11a04e79828c4f30b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -233,6 +233,7 @@ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.potion.Potion;
+ import org.bukkit.potion.PotionEffectType;
+ import org.bukkit.profile.PlayerProfile;
++import org.bukkit.scheduler.BukkitScheduler;
+ import org.bukkit.scheduler.BukkitWorker;
+ import org.bukkit.scoreboard.Criteria;
+ import org.bukkit.structure.StructureManager;
+@@ -1288,20 +1289,30 @@ public final class CraftServer implements Server {
+             return false;
+         }
+ 
+-        try {
+-            if (save) {
+-                handle.save(null, true, false); // Paper - don't disable saving
++        // Paper start - delay world unload until worlds are not being iterated through
++        Runnable removeWorld = () -> {
++            try {
++                if (save) {
++                    handle.save(null, true, false); // Paper - don't disable saving
++                }
++
++                handle.getChunkSource().close(save);
++                handle.entityManager.close(save); // SPIGOT-6722: close entityManager
++                handle.convertable.close();
++            } catch (Exception ex) {
++                this.getLogger().log(Level.SEVERE, null, ex);
+             }
+ 
+-            handle.getChunkSource().close(save);
+-            handle.entityManager.close(save); // SPIGOT-6722: close entityManager
+-            handle.convertable.close();
+-        } catch (Exception ex) {
+-            this.getLogger().log(Level.SEVERE, null, ex);
++            this.worlds.remove(world.getName().toLowerCase(java.util.Locale.ENGLISH));
++            this.console.removeLevel(handle);
++        };
++        if(!this.console.isIteratingOverLevels){
++            removeWorld.run();
++        } else {
++            this.console.worldUnloadTasks.add(removeWorld);
+         }
++        // Paper end
+ 
+-        this.worlds.remove(world.getName().toLowerCase(java.util.Locale.ENGLISH));
+-        this.console.removeLevel(handle);
+         return true;
+     }
+ 
