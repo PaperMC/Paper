@@ -3289,10 +3289,10 @@ index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..efe67d384427f0c03fdf794ea51a6524c1d92c8e
+index 0000000000000000000000000000000000000000..6cf41eb89bec50c8b1309df90e1625590993d9d1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1132 @@
+@@ -0,0 +1,1141 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -3475,10 +3475,10 @@ index 0000000000000000000000000000000000000000..efe67d384427f0c03fdf794ea51a6524
 +
 +            this.autoSaveQueue.remove(holder);
 +
++            holder.lastAutoSave = currentTick;
 +            if (holder.save(false, false)) {
 +                ++autoSaved;
 +            }
-+            holder.lastAutoSave = currentTick;
 +
 +            if (holder.getChunkStatus().isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
 +                reschedule.add(holder);
@@ -4112,8 +4112,7 @@ index 0000000000000000000000000000000000000000..efe67d384427f0c03fdf794ea51a6524
 +
 +        final List<NewChunkHolder> toRemove = new ArrayList<>(unloadQueue.size());
 +
-+        final Boolean before = BLOCK_TICKET_UPDATES.get();
-+        BLOCK_TICKET_UPDATES.set(Boolean.TRUE);
++        final Boolean before = this.blockTicketUpdates();
 +        try {
 +            for (int i = 0, len = unloadQueue.size(); i < len; ++i) {
 +                final NewChunkHolder.UnloadState state = unloadQueue.get(i);
@@ -4123,7 +4122,7 @@ index 0000000000000000000000000000000000000000..efe67d384427f0c03fdf794ea51a6524
 +                toRemove.add(holder);
 +            }
 +        } finally {
-+            BLOCK_TICKET_UPDATES.set(before);
++            this.unblockTicketUpdates(before);
 +        }
 +
 +        this.ticketLock.lock();
@@ -4150,13 +4149,23 @@ index 0000000000000000000000000000000000000000..efe67d384427f0c03fdf794ea51a6524
 +
 +    private final ThreadLocal<Boolean> BLOCK_TICKET_UPDATES = ThreadLocal.withInitial(() -> Boolean.FALSE);
 +
++    Boolean blockTicketUpdates() {
++        final Boolean ret = BLOCK_TICKET_UPDATES.get();
++        BLOCK_TICKET_UPDATES.set(Boolean.TRUE);
++        return ret;
++    }
++
++    void unblockTicketUpdates(final Boolean before) {
++        BLOCK_TICKET_UPDATES.set(before);
++    }
++
 +    public boolean processTicketUpdates() {
 +        return this.processTicketUpdates(true, true, null);
 +    }
 +
 +    private boolean processTicketUpdates(final boolean checkLocks, final boolean processFullUpdates, List<ChunkProgressionTask> scheduledTasks) {
 +        if (BLOCK_TICKET_UPDATES.get() == Boolean.TRUE) {
-+            throw new IllegalStateException("Cannot update ticket level while unloading chunks");
++            throw new IllegalStateException("Cannot update ticket level while unloading chunks or updating entity manager");
 +        }
 +        if (checkLocks && this.ticketLock.isHeldByCurrentThread()) {
 +            throw new IllegalStateException("Illegal recursive processTicketUpdates!");
@@ -6946,10 +6955,10 @@ index 0000000000000000000000000000000000000000..925a409af2fe222553a7f42eeeacb1f0
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fc802f4ebb8d898487f52c1cf0df9986e9fbc828
+index 0000000000000000000000000000000000000000..4e5bc5365140a0d07197a77e7185a8b0e4be0fd4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2009 @@
+@@ -0,0 +1,2017 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -8155,6 +8164,16 @@ index 0000000000000000000000000000000000000000..fc802f4ebb8d898487f52c1cf0df9986
 +        }
 +    }
 +
++    private void changeEntityChunkStatus(final ChunkHolder.FullChunkStatus toStatus) {
++        final ChunkHolderManager holderManager = this.scheduler.chunkHolderManager;
++        final Boolean ticketBlock = holderManager.blockTicketUpdates();
++        try {
++            this.world.getEntityLookup().chunkStatusChange(this.chunkX, this.chunkZ, toStatus);
++        } finally {
++            holderManager.unblockTicketUpdates(ticketBlock);
++        }
++    }
++
 +    // only to be called on the main thread, no locks need to be held
 +    public boolean handleFullStatusChange(final List<NewChunkHolder> changedFullStatus) {
 +        TickThread.ensureTickThread(this.chunkX, this.chunkZ, "Cannot update full status thread off-main");
@@ -8168,7 +8187,9 @@ index 0000000000000000000000000000000000000000..fc802f4ebb8d898487f52c1cf0df9986
 +            return ret;
 +        }
 +
-+        final ChunkHolderManager holderManager = this.world.chunkTaskScheduler.chunkHolderManager;
++        final EntityLookup entityLookup = this.world.getEntityLookup();
++        final ChunkTaskScheduler scheduler = this.scheduler;
++        final ChunkHolderManager holderManager = scheduler.chunkHolderManager;
 +        final int ticketKeep;
 +        final Long ticketId;
 +        holderManager.ticketLock.lock();
@@ -8201,9 +8222,6 @@ index 0000000000000000000000000000000000000000..fc802f4ebb8d898487f52c1cf0df9986
 +
 +                // chunks cannot downgrade state while status is pending a change
 +                final LevelChunk chunk = (LevelChunk)this.currentChunk;
-+                final EntityLookup entityLookup = this.world.getEntityLookup();
-+                final int chunkX = this.chunkX;
-+                final int chunkZ = this.chunkZ;
 +
 +                // Note: we assume that only load/unload contain plugin logic
 +                // plugin logic is anything stupid enough to possibly change the chunk status while it is already
@@ -8213,45 +8231,44 @@ index 0000000000000000000000000000000000000000..fc802f4ebb8d898487f52c1cf0df9986
 +                if (nextState.isOrAfter(currState)) {
 +                    // state upgrade
 +                    if (!currState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && nextState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
-+                        // specifically for chunk loading, we set it to loaded before the callback so that plugins see it as loaded
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.BORDER);
-+                        this.scheduler.chunkHolderManager.ensureInAutosave(this);
-+                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.BORDER);
++                        holderManager.ensureInAutosave(this);
++                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.BORDER);
 +                        chunk.onChunkLoad(this);
 +                        this.onFullChunkLoadChange(true, changedFullStatus);
 +                        this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.BORDER, chunk);
 +                    }
 +
 +                    if (!currState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING) && nextState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING)) {
-+                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.TICKING);
-+                        chunk.onChunkTicking(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.TICKING);
++                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.TICKING);
++                        chunk.onChunkTicking(this);
 +                        this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.TICKING, chunk);
 +                    }
 +
 +                    if (!currState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && nextState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
-+                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
-+                        chunk.onChunkEntityTicking(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.ENTITY_TICKING);
++                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.ENTITY_TICKING);
++                        chunk.onChunkEntityTicking(this);
 +                        this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.ENTITY_TICKING, chunk);
 +                    }
 +                } else {
 +                    // state downgrade
 +                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
-+                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.TICKING);
++                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.TICKING);
 +                        chunk.onChunkNotEntityTicking(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.TICKING);
 +                    }
 +
 +                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING)) {
-+                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.BORDER);
++                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.BORDER);
 +                        chunk.onChunkNotTicking(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.BORDER);
 +                    }
 +
 +                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
 +                        this.onFullChunkLoadChange(false, changedFullStatus);
-+                        entityLookup.chunkStatusChange(chunkX, chunkZ, ChunkHolder.FullChunkStatus.INACCESSIBLE);
++                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.INACCESSIBLE);
 +                        chunk.onChunkUnload(this);
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.INACCESSIBLE);
 +                    }
