@@ -679,34 +679,55 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @NotNull
     public List<World> getWorlds();
 
+    // Paper start
+    /**
+     * Gets whether the worlds are being ticked right now.
+     *
+     * @return true if the worlds are being ticked, false otherwise.
+     */
+    public boolean isTickingWorlds();
+    // Paper end
+
     /**
      * Creates or loads a world with the given name using the specified
      * options.
      * <p>
      * If the world is already loaded, it will just return the equivalent of
      * getWorld(creator.name()).
+     * <p>
+     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
+     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
      *
      * @param creator the options to use when creating the world
      * @return newly created or loaded world
+     * @throws IllegalStateException when {@link #isTickingWorlds() isTickingWorlds} is true
      */
     @Nullable
     public World createWorld(@NotNull WorldCreator creator);
 
     /**
      * Unloads a world with the given name.
+     * <p>
+     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
+     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
      *
      * @param name Name of the world to unload
      * @param save whether to save the chunks before unloading
      * @return true if successful, false otherwise
+     * @throws IllegalStateException when {@link #isTickingWorlds() isTickingWorlds} is true
      */
     public boolean unloadWorld(@NotNull String name, boolean save);
 
     /**
      * Unloads the given world.
+     * <p>
+     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
+     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
      *
      * @param world the world to unload
      * @param save whether to save the chunks before unloading
      * @return true if successful, false otherwise
+     * @throws IllegalStateException when {@link #isTickingWorlds() isTickingWorlds} is true
      */
     public boolean unloadWorld(@NotNull World world, boolean save);
 

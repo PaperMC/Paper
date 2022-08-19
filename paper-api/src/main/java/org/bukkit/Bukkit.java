@@ -809,12 +809,26 @@ public final class Bukkit {
         return server.getWorlds();
     }
 
+    // Paper start
+    /**
+     * Gets whether the worlds are being ticked right now.
+     *
+     * @return true if the worlds are being ticked, false otherwise.
+     */
+    public static boolean isTickingWorlds(){
+        return server.isTickingWorlds();
+    }
+    // Paper end
+
     /**
      * Creates or loads a world with the given name using the specified
      * options.
      * <p>
      * If the world is already loaded, it will just return the equivalent of
      * getWorld(creator.name()).
+     * <p>
+     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
+     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
      *
      * @param creator the options to use when creating the world
      * @return newly created or loaded world
@@ -826,6 +840,9 @@ public final class Bukkit {
 
     /**
      * Unloads a world with the given name.
+     * <p>
+     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
+     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
      *
      * @param name Name of the world to unload
      * @param save whether to save the chunks before unloading
@@ -837,6 +854,9 @@ public final class Bukkit {
 
     /**
      * Unloads the given world.
+     * <p>
+     * Do note that un/loading worlds mid-tick may have potential side effects, we strongly recommend
+     * ensuring that you're not un/loading worlds midtick by checking {@link Bukkit#isTickingWorlds()}
      *
      * @param world the world to unload
      * @param save whether to save the chunks before unloading
