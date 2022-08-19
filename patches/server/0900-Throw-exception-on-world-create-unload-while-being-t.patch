@@ -1,13 +1,13 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Tue, 22 Mar 2022 12:44:30 -0700
-Subject: [PATCH] Throw exception on world create while being ticked
+Subject: [PATCH] Throw exception on world create/unload while being ticked
 
 There are no plans to support creating worlds while worlds are
-being ticked themselvess.
+being ticked themselves.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4d920031300a9801debc2eb39a4d3cb9d8fbb330..dd9ab51e904be2f2f2a2981d4f0f6638a6895e8d 100644
+index 4d920031300a9801debc2eb39a4d3cb9d8fbb330..db3d34f0ad2baa2b8685c039a1de162c1b5ec212 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -297,6 +297,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -18,11 +18,20 @@ index 4d920031300a9801debc2eb39a4d3cb9d8fbb330..dd9ab51e904be2f2f2a2981d4f0f6638
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1527,6 +1528,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1495,7 +1496,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.getFunctions().tick();
+         MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot // Paper
+         this.profiler.popPush("levels");
+-        Iterator iterator = this.getAllLevels().iterator();
+ 
+         // CraftBukkit start
+         // Run tasks that are waiting on processing
+@@ -1527,6 +1527,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper end
          MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
  
 +        this.isIteratingOverLevels = true; // Paper
++        Iterator iterator = this.getAllLevels().iterator(); // Paper - move down
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
