@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 Jul 2018 02:13:59 -0400
+Subject: [PATCH] Store counts for each Entity/Block Entity Type
+
+Opens door for future patches to optimize performance
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index ae08fcce66d50d7f61bc3bd4a0e2547d56f53e82..00ce55c17980da87a3834f952475a766543506b0 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -90,15 +90,19 @@ public class LevelChunk implements ChunkAccess {
+     }
+ 
+     // Paper start
++    public final co.aikar.util.Counter<String> entityCounts = new co.aikar.util.Counter<>();
++    public final co.aikar.util.Counter<String> tileEntityCounts = new co.aikar.util.Counter<>();
+     private class TileEntityHashMap extends java.util.HashMap<BlockPos, BlockEntity> {
+         @Override
+         public BlockEntity put(BlockPos key, BlockEntity value) {
+             BlockEntity replaced = super.put(key, value);
+             if (replaced != null) {
+                 replaced.setCurrentChunk(null);
++                tileEntityCounts.decrement(replaced.getMinecraftKeyString());
+             }
+             if (value != null) {
+                 value.setCurrentChunk(LevelChunk.this);
++                tileEntityCounts.increment(value.getMinecraftKeyString());
+             }
+             return replaced;
+         }
+@@ -108,6 +112,7 @@ public class LevelChunk implements ChunkAccess {
+             BlockEntity removed = super.remove(key);
+             if (removed != null) {
+                 removed.setCurrentChunk(null);
++                tileEntityCounts.decrement(removed.getMinecraftKeyString());
+             }
+             return removed;
+         }
+@@ -528,6 +533,7 @@ public class LevelChunk implements ChunkAccess {
+             k = this.entitySlices.length - 1;
+         }
+ 
++        if (!entity.inChunk || entity.getCurrentChunk() != this) entityCounts.increment(entity.getMinecraftKeyString()); // Paper
+         entity.inChunk = true;
+         entity.setCurrentChunk(this); // Paper
+         entity.xChunk = this.chunkPos.x;
+@@ -562,6 +568,7 @@ public class LevelChunk implements ChunkAccess {
+         if (!this.entitySlices[section].remove(entity)) {
+             return;
+         }
++        entityCounts.decrement(entity.getMinecraftKeyString());
+         // Paper end
+         this.entities.remove(entity); // Paper
+     }

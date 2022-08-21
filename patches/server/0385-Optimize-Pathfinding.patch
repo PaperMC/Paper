@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 02:02:07 -0600
+Subject: [PATCH] Optimize Pathfinding
+
+Prevents pathfinding from spamming failures for things such as
+arrow attacks.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+index 649c2fdba307d986d13916bf90e311c862ccefc1..af53372391d05dd6aa3757556418e8723b8b6d80 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+@@ -191,9 +191,29 @@ public abstract class PathNavigation {
+         return this.moveTo(this.createPath(x, y, z, 1), speed);
+     }
+ 
++    // Paper start - optimise pathfinding
++    private int lastFailure = 0;
++    private int pathfindFailures = 0;
++    // Paper end
++
+     public boolean moveTo(Entity entity, double speed) {
++        // Paper start - Pathfinding optimizations
++        if (this.pathfindFailures > 10 && this.path == null && net.minecraft.server.MinecraftServer.currentTick < this.lastFailure + 40) {
++            return false;
++        }
++        // Paper end
+         Path path = this.createPath(entity, 1);
+-        return path != null && this.moveTo(path, speed);
++        // Paper start - Pathfinding optimizations
++        if (path != null && this.moveTo(path, speed)) {
++            this.lastFailure = 0;
++            this.pathfindFailures = 0;
++            return true;
++        } else {
++            this.pathfindFailures++;
++            this.lastFailure = net.minecraft.server.MinecraftServer.currentTick;
++            return false;
++        }
++        // Paper end
+     }
+ 
+     public boolean moveTo(@Nullable Path path, double speed) {

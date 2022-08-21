@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 3 Jul 2020 15:03:33 -0700
+Subject: [PATCH] Improve EntityTargetLivingEntityEvent for 1.16 mobs
+
+CraftBukkit has a bug in their implementation and is incorrectly handling forget
+Also adds more target reasons for why it forgot target.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java b/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
+index 44d3c9da39389b72bfc5ee39c1abb6baf9dccdb1..565691aaed71de3efe15dd751fbbbe7849ef56b7 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
+@@ -56,15 +56,15 @@ public class StopAttackingIfTargetInvalid<E extends Mob> extends Behavior<E> {
+         LivingEntity entityliving = this.getAttackTarget(entity);
+ 
+         if (!entity.canAttack(entityliving)) {
+-            this.clearAttackTarget(entity);
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
+         } else if (this.canGrowTiredOfTryingToReachTarget && StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entity)) {
+-            this.clearAttackTarget(entity);
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // Paper
+         } else if (this.isCurrentTargetDeadOrRemoved(entity)) {
+-            this.clearAttackTarget(entity);
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_DIED); // Paper
+         } else if (this.isCurrentTargetInDifferentLevel(entity)) {
+-            this.clearAttackTarget(entity);
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL); // Paper
+         } else if (this.stopAttackingWhen.test(this.getAttackTarget(entity))) {
+-            this.clearAttackTarget(entity);
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
+         }
+     }
+ 
+@@ -88,17 +88,20 @@ public class StopAttackingIfTargetInvalid<E extends Mob> extends Behavior<E> {
+         return optional.isPresent() && !((LivingEntity) optional.get()).isAlive();
+     }
+ 
+-    protected void clearAttackTarget(E entity) {
++    protected void clearAttackTarget(E entity, EntityTargetEvent.TargetReason reason) {
+         // CraftBukkit start
+-        LivingEntity old = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
+-        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
++        // Paper start - fix this event
++        // LivingEntity old = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
++        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, null, reason);
+         if (event.isCancelled()) {
+             return;
+         }
+-        if (event.getTarget() != null) {
++        // comment out, bad logic - bad
++        /*if (event.getTarget() != null) {
+             entity.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
+             return;
+-        }
++        }*/
++        // Paper end
+         // CraftBukkit end
+         this.onTargetErased.accept(entity, this.getAttackTarget(entity));
+         entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);

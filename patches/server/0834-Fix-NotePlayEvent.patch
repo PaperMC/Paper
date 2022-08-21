@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kieran Wallbanks <kieran.wallbanks@gmail.com>
+Date: Mon, 21 Jun 2021 14:23:50 +0100
+Subject: [PATCH] Fix NotePlayEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/NoteBlock.java b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
+index 293affa9821bcf7c6f4c2d57818958ae2765c5de..c14eb4f7decdbcd6176d3bff95d595a947d4ec95 100644
+--- a/src/main/java/net/minecraft/world/level/block/NoteBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
+@@ -63,11 +63,12 @@ public class NoteBlock extends Block {
+     private void playNote(@Nullable Entity entity, Level world, BlockPos blockposition, BlockState data) { // CraftBukkit
+         if (world.getBlockState(blockposition.above()).isAir()) {
+             // CraftBukkit start
+-            org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, blockposition, data.getValue(NoteBlock.INSTRUMENT), data.getValue(NoteBlock.NOTE));
+-            if (event.isCancelled()) {
+-                return;
+-            }
++            // org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, blockposition, data.getValue(NoteBlock.INSTRUMENT), data.getValue(NoteBlock.NOTE)); // Paper - move event into block event handler
++            // if (event.isCancelled()) {
++            //     return;
++            // }
+             // CraftBukkit end
++            // Paper - TODO any way to cancel the game event?
+             world.blockEvent(blockposition, this, 0, 0);
+             world.gameEvent(entity, GameEvent.NOTE_BLOCK_PLAY, blockposition);
+         }
+@@ -97,10 +98,14 @@ public class NoteBlock extends Block {
+ 
+     @Override
+     public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
+-        int k = (Integer) state.getValue(NoteBlock.NOTE);
++        // Paper start - move NotePlayEvent call to fix instrument/note changes
++        org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, pos, state.getValue(INSTRUMENT), state.getValue(NOTE));
++        if (event.isCancelled()) return false;
++        int k = event.getNote().getId();
+         float f = (float) Math.pow(2.0D, (double) (k - 12) / 12.0D);
+ 
+-        world.playSound((Player) null, pos, ((NoteBlockInstrument) state.getValue(NoteBlock.INSTRUMENT)).getSoundEvent(), SoundSource.RECORDS, 3.0F, f);
++        world.playSound(null, pos, org.bukkit.craftbukkit.block.data.CraftBlockData.toNMS(event.getInstrument(), NoteBlockInstrument.class).getSoundEvent(), SoundSource.RECORDS, 3.0F, f);
++        // Paper end
+         world.addParticle(ParticleTypes.NOTE, (double) pos.getX() + 0.5D, (double) pos.getY() + 1.2D, (double) pos.getZ() + 0.5D, (double) k / 24.0D, 0.0D, 0.0D);
+         return true;
+     }

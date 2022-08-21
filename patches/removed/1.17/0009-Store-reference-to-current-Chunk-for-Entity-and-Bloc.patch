@@ -1,0 +1,171 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 Jul 2018 02:10:36 -0400
+Subject: [PATCH] Store reference to current Chunk for Entity and Block
+ Entities
+
+This enables us a fast reference to the entities current chunk instead
+of having to look it up by hashmap lookups.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 48c9d2b7d56832ebd13749a394b8b715f0b1704d..b633f6b3a36b793e6dbc1b8b554bfba74c719570 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -260,7 +260,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+     }
+ 
+     public boolean isChunkLoaded() {
+-        return level.hasChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4);
++        return getCurrentChunk() != null;
+     }
+     // CraftBukkit end
+ 
+@@ -1762,6 +1762,23 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+     }
+ 
+     // Paper start
++    public java.lang.ref.WeakReference<net.minecraft.world.level.chunk.LevelChunk> currentChunk = null;
++
++    public void setCurrentChunk(net.minecraft.world.level.chunk.LevelChunk chunk) {
++        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
++    }
++    /**
++     * Returns the entities current registered chunk. If the entity is not added to a chunk yet, it will return null
++     */
++    public net.minecraft.world.level.chunk.LevelChunk getCurrentChunk() {
++        final net.minecraft.world.level.chunk.LevelChunk chunk = currentChunk != null ? currentChunk.get() : null;
++        if (chunk != null && chunk.loaded) {
++            return chunk;
++        }
++
++        return !inChunk ? null : ((ServerLevel)level).getChunkSource().getChunkAtIfLoadedMainThreadNoCache(xChunk, zChunk);
++    }
++
+     private ResourceLocation entityKey;
+     private String entityKeyString;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+index 846fc0f36377337630b2ec2a5f7a5a54c39c2965..bb60c9da9f3ba0d5c5bad22512675ccb841a60e5 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -11,6 +11,7 @@ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.Mirror;
+ import net.minecraft.world.level.block.Rotation;
+ import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.chunk.LevelChunk;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ import org.apache.logging.log4j.util.Supplier;
+@@ -63,6 +64,15 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
+         getMinecraftKey(); // Try to load if it doesn't exists.
+         return tileEntityKeyString;
+     }
++
++    private java.lang.ref.WeakReference<LevelChunk> currentChunk = null;
++    public LevelChunk getCurrentChunk() {
++        final LevelChunk chunk = currentChunk != null ? currentChunk.get() : null;
++        return chunk != null && chunk.loaded ? chunk : null;
++    }
++    public void setCurrentChunk(LevelChunk chunk) {
++        this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
++    }
+     // Paper end
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index e2c5a17aa72d1a5412d76881187d4d9ad1763297..ae08fcce66d50d7f61bc3bd4a0e2547d56f53e82 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -89,11 +89,36 @@ public class LevelChunk implements ChunkAccess {
+         this(world, pos, biomes, UpgradeData.EMPTY, EmptyTickList.empty(), EmptyTickList.empty(), 0L, (LevelChunkSection[]) null, (Consumer) null);
+     }
+ 
++    // Paper start
++    private class TileEntityHashMap extends java.util.HashMap<BlockPos, BlockEntity> {
++        @Override
++        public BlockEntity put(BlockPos key, BlockEntity value) {
++            BlockEntity replaced = super.put(key, value);
++            if (replaced != null) {
++                replaced.setCurrentChunk(null);
++            }
++            if (value != null) {
++                value.setCurrentChunk(LevelChunk.this);
++            }
++            return replaced;
++        }
++
++        @Override
++        public BlockEntity remove(Object key) {
++            BlockEntity removed = super.remove(key);
++            if (removed != null) {
++                removed.setCurrentChunk(null);
++            }
++            return removed;
++        }
++    }
++    // Paper end
++
+     public LevelChunk(Level world, ChunkPos pos, ChunkBiomeContainer biomes, UpgradeData upgradeData, TickList<Block> blockTickScheduler, TickList<Fluid> fluidTickScheduler, long inhabitedTime, @Nullable LevelChunkSection[] sections, @Nullable Consumer<LevelChunk> loadToWorldConsumer) {
+         this.sections = new LevelChunkSection[16];
+         this.pendingBlockEntities = Maps.newHashMap();
+         this.heightmaps = Maps.newEnumMap(Heightmap.Types.class);
+-        this.blockEntities = Maps.newHashMap();
++        this.blockEntities = new TileEntityHashMap(); // Paper
+         this.structureStarts = Maps.newHashMap();
+         this.structuresRefences = Maps.newHashMap();
+         this.postProcessing = new ShortList[16];
+@@ -504,6 +529,7 @@ public class LevelChunk implements ChunkAccess {
+         }
+ 
+         entity.inChunk = true;
++        entity.setCurrentChunk(this); // Paper
+         entity.xChunk = this.chunkPos.x;
+         entity.yChunk = k;
+         entity.zChunk = this.chunkPos.z;
+@@ -516,6 +542,7 @@ public class LevelChunk implements ChunkAccess {
+         ((Heightmap) this.heightmaps.get(type)).setRawData(heightmap);
+     }
+ 
++    public final void removeEntity(Entity entity) { this.removeEntity(entity); } // Paper - OBFHELPER
+     public void removeEntity(Entity entity) {
+         this.removeEntity(entity, entity.yChunk);
+     }
+@@ -530,7 +557,12 @@ public class LevelChunk implements ChunkAccess {
+             section = this.entitySlices.length - 1;
+         }
+ 
+-        this.entitySlices[section].remove(entity);
++        // Paper start
++        if (entity.currentChunk != null && entity.currentChunk.get() == this) entity.setCurrentChunk(null);
++        if (!this.entitySlices[section].remove(entity)) {
++            return;
++        }
++        // Paper end
+         this.entities.remove(entity); // Paper
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 080d3292e03c5a179b9eb89da1550718d263f817..eb61c803cf74c5ca2c51d5027a02ed3db6b53096 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -145,6 +145,7 @@ import net.minecraft.world.entity.vehicle.MinecartHopper;
+ import net.minecraft.world.entity.vehicle.MinecartSpawner;
+ import net.minecraft.world.entity.vehicle.MinecartTNT;
+ import net.minecraft.world.phys.AABB;
++import org.bukkit.Chunk; // Paper
+ import org.bukkit.EntityEffect;
+ import org.bukkit.Location;
+ import org.bukkit.Server;
+@@ -186,6 +187,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         this.entity = entity;
+     }
+ 
++    @Override
++    public Chunk getChunk() {
++        net.minecraft.world.level.chunk.LevelChunk currentChunk = entity.getCurrentChunk();
++        return currentChunk != null ? currentChunk.bukkitChunk : getLocation().getChunk();
++    }
++
+     public static CraftEntity getEntity(CraftServer server, Entity entity) {
+         /*
+          * Order is *EXTREMELY* important -- keep it right! =D

@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zero <zero@cock.li>
+Date: Sat, 22 Feb 2020 16:10:31 -0500
+Subject: [PATCH] Configurable chance of villager zombie infection
+
+This allows you to solve an issue in vanilla behavior where:
+* On easy difficulty your villagers will NEVER get infected, meaning they will always die.
+* On normal difficulty they will have a 50% of getting infected or dying.
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index bf5f4fe68a942dff8c2e2ad4735a529b5a6353e8..3c3095e7e684079bcba0ea5a6b44c8fe2a3f47c4 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -451,10 +451,14 @@ public class Zombie extends Monster {
+     public boolean wasKilled(ServerLevel world, LivingEntity other) {
+         boolean flag = super.wasKilled(world, other);
+ 
+-        if ((world.getDifficulty() == Difficulty.NORMAL || world.getDifficulty() == Difficulty.HARD) && other instanceof Villager) {
+-            if (world.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
++        // Paper start
++        if (level.paperConfig().entities.behavior.zombieVillagerInfectionChance != 0.0 && (level.paperConfig().entities.behavior.zombieVillagerInfectionChance != -1.0 || world.getDifficulty() == Difficulty.NORMAL || world.getDifficulty() == Difficulty.HARD) && other instanceof Villager) {
++            if (level.paperConfig().entities.behavior.zombieVillagerInfectionChance == -1.0 && world.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
+                 return flag;
+             }
++            if (level.paperConfig().entities.behavior.zombieVillagerInfectionChance != -1.0 && (this.random.nextDouble() * 100.0) > level.paperConfig().entities.behavior.zombieVillagerInfectionChance) {
++                return flag;
++            } // Paper end
+ 
+             Villager entityvillager = (Villager) other;
+             // CraftBukkit start

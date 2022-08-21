@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 24 Oct 2021 20:29:45 -0700
+Subject: [PATCH] Fix issues with mob conversion
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+index ded88c78c9000d4401d293d18b89b07ea46088dd..3a3f3358c4bbd16bdcadc56c6a865ecfb942ad54 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+@@ -86,10 +86,15 @@ public class Skeleton extends AbstractSkeleton {
+     }
+ 
+     protected void doFreezeConversion() {
+-        this.convertTo(EntityType.STRAY, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons
+-        if (!this.isSilent()) {
++        Stray stray = this.convertTo(EntityType.STRAY, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons // Paper - track result of conversion
++        if (stray != null && !this.isSilent()) { // Paper - only send event if conversion succeeded
+             this.level.levelEvent((Player) null, 1048, this.blockPosition(), 0);
+         }
++        // Paper start - reset conversion time to prevent event spam
++        if (stray == null) {
++            this.conversionTime = 300;
++        }
++        // Paper end
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
+index 38f56cb4adeac0d7dcad63d0fbd98f17ab6e3b46..5e0e6ab7eaa9825b2f8c90353c30673dd43dd8b8 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
+@@ -105,6 +105,11 @@ public abstract class AbstractPiglin extends Monster {
+         if (entitypigzombie != null) {
+             entitypigzombie.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
+         }
++        // Paper start - reset to prevent event spam
++        else {
++            this.timeInOverworld = 0;
++        }
++        // Paper end
+ 
+     }
+ 

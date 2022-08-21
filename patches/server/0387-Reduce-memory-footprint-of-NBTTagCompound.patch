@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 6 Apr 2020 17:39:25 -0700
+Subject: [PATCH] Reduce memory footprint of NBTTagCompound
+
+Fastutil maps are going to have a lower memory footprint - which
+is important because we clone chunk data after reading it for safety.
+So, reduce the impact of the clone on GC.
+
+diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
+index b965af563f2cb1508d138e4d48e97a44873c4bb9..0778fdd4f47015787f7ffbfb39c31ec0e1c039bd 100644
+--- a/src/main/java/net/minecraft/nbt/CompoundTag.java
++++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
+@@ -34,7 +34,7 @@ public class CompoundTag implements Tag {
+             if (i > 512) {
+                 throw new RuntimeException("Tried to read NBT tag with too high complexity, depth > 512");
+             } else {
+-                Map<String, Tag> map = Maps.newHashMap();
++                it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> map = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f); // Paper - reduce memory footprint of NBTTagCompound
+ 
+                 byte b;
+                 while((b = CompoundTag.readNamedTagType(dataInput, nbtAccounter)) != 0) {
+@@ -128,7 +128,7 @@ public class CompoundTag implements Tag {
+     }
+ 
+     public CompoundTag() {
+-        this(Maps.newHashMap());
++        this(new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f)); // Paper - reduce memory footprint of NBTTagCompound
+     }
+ 
+     @Override
+@@ -434,8 +434,16 @@ public class CompoundTag implements Tag {
+ 
+     @Override
+     public CompoundTag copy() {
+-        Map<String, Tag> map = Maps.newHashMap(Maps.transformValues(this.tags, Tag::copy));
+-        return new CompoundTag(map);
++        // Paper start - reduce memory footprint of NBTTagCompound
++        it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> ret = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(this.tags.size(), 0.8f);
++        java.util.Iterator<java.util.Map.Entry<String, Tag>> iterator = (this.tags instanceof it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap) ? ((it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap)this.tags).object2ObjectEntrySet().fastIterator() : this.tags.entrySet().iterator();
++        while (iterator.hasNext()) {
++            Map.Entry<String, Tag> entry = iterator.next();
++            ret.put(entry.getKey(), entry.getValue().copy());
++        }
++
++        return new CompoundTag(ret);
++        // Paper end - reduce memory footprint of NBTTagCompound
+     }
+ 
+     @Override

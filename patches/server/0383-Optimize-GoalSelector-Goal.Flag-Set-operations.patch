@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 6 Apr 2020 17:53:29 -0700
+Subject: [PATCH] Optimize GoalSelector Goal.Flag Set operations
+
+Optimise the stream.anyMatch statement to move to a bitset
+where we can replace the call with a single bitwise operation.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
+index 6667ecc4b7eded4e20a415cef1e1b1179e6710b8..4379b9948f1eecfe6fd7dea98e298ad5f761019a 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
+@@ -4,7 +4,8 @@ import java.util.EnumSet;
+ import net.minecraft.util.Mth;
+ 
+ public abstract class Goal {
+-    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class);
++    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
++    private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
+ 
+     public abstract boolean canUse();
+ 
+@@ -30,8 +31,10 @@ public abstract class Goal {
+     }
+ 
+     public void setFlags(EnumSet<Goal.Flag> controls) {
+-        this.flags.clear();
+-        this.flags.addAll(controls);
++        // Paper start - remove streams from pathfindergoalselector
++        this.goalTypes.clear();
++        this.goalTypes.addAllUnchecked(controls);
++        // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+     @Override
+@@ -39,8 +42,10 @@ public abstract class Goal {
+         return this.getClass().getSimpleName();
+     }
+ 
+-    public EnumSet<Goal.Flag> getFlags() {
+-        return this.flags;
++    // Paper start - remove streams from pathfindergoalselector
++    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
++        return this.goalTypes;
++        // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+     protected int adjustedTickDelay(int ticks) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
+index 19ee04dd92b39a775260f832ca8880335d24988b..a910189177da0c1134c954b3d81b9e9bc4bc1420 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
+@@ -29,10 +29,12 @@ public class GoalSelector {
+     private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap<>(Goal.Flag.class);
+     public final Set<WrappedGoal> availableGoals = Sets.newLinkedHashSet();
+     private final Supplier<ProfilerFiller> profiler;
+-    private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class);
++    private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
++    private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
+     private int tickCount;
+     private int newGoalRate = 3;
+     private int curRate;
++    private static final Goal.Flag[] GOAL_FLAG_VALUES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
+ 
+     public GoalSelector(Supplier<ProfilerFiller> profiler) {
+         this.profiler = profiler;
+@@ -62,26 +64,32 @@ public class GoalSelector {
+     }
+     // Paper end
+     public void removeGoal(Goal goal) {
+-        this.availableGoals.stream().filter((wrappedGoal) -> {
+-            return wrappedGoal.getGoal() == goal;
+-        }).filter(WrappedGoal::isRunning).forEach(WrappedGoal::stop);
+-        this.availableGoals.removeIf((wrappedGoal) -> {
+-            return wrappedGoal.getGoal() == goal;
+-        });
+-    }
+-
+-    private static boolean goalContainsAnyFlags(WrappedGoal goal, EnumSet<Goal.Flag> controls) {
+-        for(Goal.Flag flag : goal.getFlags()) {
+-            if (controls.contains(flag)) {
+-                return true;
++        // Paper start - remove streams from pathfindergoalselector
++        for (java.util.Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
++            WrappedGoal goalWrapped = iterator.next();
++            if (goalWrapped.getGoal() != goal) {
++                continue;
+             }
++            if (goalWrapped.isRunning()) {
++                goalWrapped.stop();
++            }
++            iterator.remove();
+         }
++        // Paper end - remove streams from pathfindergoalselector
++    }
+ 
+-        return false;
++    private static boolean goalContainsAnyFlags(WrappedGoal goal, com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> controls) {
++        return goal.getFlags().hasCommonElements(controls); // Paper
+     }
+ 
+     private static boolean goalCanBeReplacedForAllFlags(WrappedGoal goal, Map<Goal.Flag, WrappedGoal> goalsByControl) {
+-        for(Goal.Flag flag : goal.getFlags()) {
++        // Paper start
++        long flagIterator = goal.getFlags().getBackingSet();
++        int wrappedGoalSize = goal.getFlags().size();
++        for (int i = 0; i < wrappedGoalSize; ++i) {
++            final Goal.Flag flag = GOAL_FLAG_VALUES[Long.numberOfTrailingZeros(flagIterator)];
++            flagIterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(flagIterator);
++            // Paper end
+             if (!goalsByControl.getOrDefault(flag, NO_GOAL).canBeReplacedBy(goal)) {
+                 return false;
+             }
+@@ -95,7 +103,7 @@ public class GoalSelector {
+         profilerFiller.push("goalCleanup");
+ 
+         for(WrappedGoal wrappedGoal : this.availableGoals) {
+-            if (wrappedGoal.isRunning() && (goalContainsAnyFlags(wrappedGoal, this.disabledFlags) || !wrappedGoal.canContinueToUse())) {
++            if (wrappedGoal.isRunning() && (goalContainsAnyFlags(wrappedGoal, this.goalTypes) || !wrappedGoal.canContinueToUse())) {
+                 wrappedGoal.stop();
+             }
+         }
+@@ -113,8 +121,14 @@ public class GoalSelector {
+         profilerFiller.push("goalUpdate");
+ 
+         for(WrappedGoal wrappedGoal2 : this.availableGoals) {
+-            if (!wrappedGoal2.isRunning() && !goalContainsAnyFlags(wrappedGoal2, this.disabledFlags) && goalCanBeReplacedForAllFlags(wrappedGoal2, this.lockedFlags) && wrappedGoal2.canUse()) {
+-                for(Goal.Flag flag : wrappedGoal2.getFlags()) {
++            // Paper start
++            if (!wrappedGoal2.isRunning() && !goalContainsAnyFlags(wrappedGoal2, this.goalTypes) && goalCanBeReplacedForAllFlags(wrappedGoal2, this.lockedFlags) && wrappedGoal2.canUse()) {
++                long flagIterator = wrappedGoal2.getFlags().getBackingSet();
++                int wrappedGoalSize = wrappedGoal2.getFlags().size();
++                for (int i = 0; i < wrappedGoalSize; ++i) {
++                    final Goal.Flag flag = GOAL_FLAG_VALUES[Long.numberOfTrailingZeros(flagIterator)];
++                    flagIterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(flagIterator);
++                    // Paper end
+                     WrappedGoal wrappedGoal3 = this.lockedFlags.getOrDefault(flag, NO_GOAL);
+                     wrappedGoal3.stop();
+                     this.lockedFlags.put(flag, wrappedGoal2);
+@@ -154,11 +168,11 @@ public class GoalSelector {
+     }
+ 
+     public void disableControlFlag(Goal.Flag control) {
+-        this.disabledFlags.add(control);
++        this.goalTypes.addUnchecked(control); // Paper - remove streams from pathfindergoalselector
+     }
+ 
+     public void enableControlFlag(Goal.Flag control) {
+-        this.disabledFlags.remove(control);
++        this.goalTypes.removeUnchecked(control); // Paper - remove streams from pathfindergoalselector
+     }
+ 
+     public void setControlFlag(Goal.Flag control, boolean enabled) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
+index 6665ce5f48316e626907e6937d5ef1bc398a7ebd..51deb4455cac055ffa455e4f34aa30858d2fb448 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
+@@ -69,8 +69,10 @@ public class WrappedGoal extends Goal {
+     }
+ 
+     @Override
+-    public EnumSet<Goal.Flag> getFlags() {
++    // Paper start - remove streams from pathfindergoalselector
++    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
+         return this.goal.getFlags();
++        // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+     public boolean isRunning() {

@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Riley Park <riley.park@meino.net>
+Date: Sun, 23 May 2021 05:04:28 -0700
+Subject: [PATCH] ItemStack#editMeta
+
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 0d0d7bda2d4fafffd3e80a359019626ab44031d0..77ef41527a05e2d7899633ef7fa813774dd15bd9 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -546,6 +546,50 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+         return result.ensureServerConversions(); // Paper
+     }
+ 
++    // Paper start
++    /**
++     * Edits the {@link ItemMeta} of this stack.
++     * <p>
++     * The {@link java.util.function.Consumer} must only interact
++     * with this stack's {@link ItemMeta} through the provided {@link ItemMeta} instance.
++     * Calling this method or any other meta-related method of the {@link ItemStack} class
++     * (such as {@link #getItemMeta()}, {@link #addItemFlags(ItemFlag...)}, {@link #lore()}, etc.)
++     * from inside the consumer is disallowed and will produce undefined results or exceptions.
++     * </p>
++     *
++     * @param consumer the meta consumer
++     * @return {@code true} if the edit was successful, {@code false} otherwise
++     */
++    public boolean editMeta(final @NotNull java.util.function.Consumer<? super ItemMeta> consumer) {
++        return editMeta(ItemMeta.class, consumer);
++    }
++
++    /**
++     * Edits the {@link ItemMeta} of this stack if the meta is of the specified type.
++     * <p>
++     * The {@link java.util.function.Consumer} must only interact
++     * with this stack's {@link ItemMeta} through the provided {@link ItemMeta} instance.
++     * Calling this method or any other meta-related method of the {@link ItemStack} class
++     * (such as {@link #getItemMeta()}, {@link #addItemFlags(ItemFlag...)}, {@link #lore()}, etc.)
++     * from inside the consumer is disallowed and will produce undefined results or exceptions.
++     * </p>
++     *
++     * @param metaClass the type of meta to edit
++     * @param consumer the meta consumer
++     * @param <M> the meta type
++     * @return {@code true} if the edit was successful, {@code false} otherwise
++     */
++    public <M extends ItemMeta> boolean editMeta(final @NotNull Class<M> metaClass, final @NotNull java.util.function.Consumer<@NotNull ? super M> consumer) {
++        final @Nullable ItemMeta meta = this.getItemMeta();
++        if (metaClass.isInstance(meta)) {
++            consumer.accept((M) meta);
++            this.setItemMeta(meta);
++            return true;
++        }
++        return false;
++    }
++    // Paper end
++
+     /**
+      * Get a copy of this ItemStack's {@link ItemMeta}.
+      *
