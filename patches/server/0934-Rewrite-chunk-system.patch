@@ -12664,7 +12664,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d31044e09cef 100644
+index 59acbf6249f8f5285504c0ddea448a3433d1d68d..fe4e284fd4b5f0409b4281cc86926d45b8dd8035 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -144,7 +144,7 @@ public class ServerChunkCache extends ChunkSource {
@@ -12813,7 +12813,8 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
 -            LOGGER.error("Load callback for chunk " + chunkX + "," + chunkZ + " in world '" + this.level.getWorld().getName() + "' threw an exception", throwable);
 -        }
 -    }
--
++    // Paper - rewrite chunk system
+ 
 -    public final void getChunkAtAsynchronously(int chunkX, int chunkZ, ChunkStatus status, boolean gen, boolean allowSubTicketLevel, java.util.function.Consumer<ChunkAccess> onLoad) {
 -        // try to fire sync
 -        int chunkStatusTicketLevel = 33 + ChunkStatus.getDistance(status);
@@ -12868,8 +12869,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
 -            }
 -        });
 -    }
-+    // Paper - rewrite chunk system
- 
+-
 -    final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<LevelChunk> tickingChunks = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(4096, 0.75f, 4096, 0.15, true);
 -    final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<LevelChunk> entityTickingChunks = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(4096, 0.75f, 4096, 0.15, true);
 +    public final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<LevelChunk> tickingChunks = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(4096, 0.75f, 4096, 0.15, true);
@@ -13004,12 +13004,12 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
 -    public boolean markHighPriority(ChunkPos coords, int priority) {
 -        return this.distanceManager.markHighPriority(coords, priority);
 -    }
--
++        this.getChunkAtAsynchronously(x, z, gen, chunkStatus, priority, consumer);
+ 
 -    public void markAreaHighPriority(ChunkPos center, int priority, int radius) {
 -        this.distanceManager.markAreaHighPriority(center, priority, radius);
 -    }
-+        this.getChunkAtAsynchronously(x, z, gen, chunkStatus, priority, consumer);
- 
+-
 -    public void clearAreaPriorityTickets(ChunkPos center, int radius) {
 -        this.distanceManager.clearAreaPriorityTickets(center, radius);
 +        return ret;
@@ -13091,7 +13091,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
          CompletableFuture completablefuture;
  
          if (flag1) {
-@@ -715,74 +456,55 @@ public class ServerChunkCache extends ChunkSource {
+@@ -715,74 +456,58 @@ public class ServerChunkCache extends ChunkSource {
          return completablefuture;
      }
  
@@ -13168,6 +13168,9 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
 -        // Paper end - prevent plugin unloads from removing our ticket
 -        if (isUrgent) {
 -            future.thenAccept(either -> this.distanceManager.clearUrgent(chunkcoordintpair));
++            ChunkPos pos = new ChunkPos(chunkX, chunkZ);
++            this.addTicketAtLevel(TicketType.UNKNOWN, pos, minLevel, pos);
++
 +            this.level.chunkTaskScheduler.scheduleChunkLoad(
 +                chunkX, chunkZ, leastStatus, true,
 +                isUrgent ? ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.BLOCKING : ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL,
@@ -13199,7 +13202,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
      }
  
      @Override
-@@ -793,22 +515,13 @@ public class ServerChunkCache extends ChunkSource {
+@@ -793,22 +518,13 @@ public class ServerChunkCache extends ChunkSource {
          if (playerchunk == null) {
              return null;
          } else {
@@ -13228,7 +13231,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
          }
      }
  
-@@ -822,19 +535,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -822,19 +538,7 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public boolean runDistanceManagerUpdates() {
@@ -13249,7 +13252,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
      }
  
      // Paper start
-@@ -872,13 +573,8 @@ public class ServerChunkCache extends ChunkSource {
+@@ -872,13 +576,8 @@ public class ServerChunkCache extends ChunkSource {
          this.close(true);
      }
  
@@ -13265,7 +13268,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
      }
  
      // CraftBukkit start - modelled on below
-@@ -1089,7 +785,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1089,7 +788,12 @@ public class ServerChunkCache extends ChunkSource {
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
  
          if (playerchunk != null) {
@@ -13279,7 +13282,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d310
          }
  
      }
-@@ -1251,20 +952,11 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1251,20 +955,11 @@ public class ServerChunkCache extends ChunkSource {
          @Override
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          public boolean pollTask() {
