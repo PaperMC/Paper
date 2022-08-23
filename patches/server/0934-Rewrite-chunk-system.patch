@@ -6954,10 +6954,10 @@ index 0000000000000000000000000000000000000000..925a409af2fe222553a7f42eeeacb1f0
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9852e0ad9722a444d82c9ea210089a3f2c2f3470
+index 0000000000000000000000000000000000000000..c1160812014777beea24b9a744407289bc5d19dc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2011 @@
+@@ -0,0 +1,2027 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -8167,6 +8167,8 @@ index 0000000000000000000000000000000000000000..9852e0ad9722a444d82c9ea210089a3f
 +        }
 +    }
 +
++    private boolean pendingDowngrade = false;
++
 +    // only to be called on the main thread, no locks need to be held
 +    public boolean handleFullStatusChange(final List<NewChunkHolder> changedFullStatus) {
 +        TickThread.ensureTickThread(this.chunkX, this.chunkZ, "Cannot update full status thread off-main");
@@ -8180,7 +8182,6 @@ index 0000000000000000000000000000000000000000..9852e0ad9722a444d82c9ea210089a3f
 +            return ret;
 +        }
 +
-+        final EntityLookup entityLookup = this.world.getEntityLookup();
 +        final ChunkTaskScheduler scheduler = this.scheduler;
 +        final ChunkHolderManager holderManager = scheduler.chunkHolderManager;
 +        final int ticketKeep;
@@ -8211,7 +8212,13 @@ index 0000000000000000000000000000000000000000..9852e0ad9722a444d82c9ea210089a3f
 +                    break;
 +                }
 +
-+                ret = true;
++                if (this.pendingDowngrade) {
++                    // recursively processing downgrade, so we can't upgrade or downgrade: we actually need to abort here
++                    // the downgrade processor, once we are done, will then re-check
++                    // it is important to note that pendingDowngrade can only be set if the current state is at least BORDER,
++                    // so we cannot block sync chunk loads here by returning early
++                    return ret;
++                }
 +
 +                // chunks cannot downgrade state while status is pending a change
 +                final LevelChunk chunk = (LevelChunk)this.currentChunk;
@@ -8247,25 +8254,34 @@ index 0000000000000000000000000000000000000000..9852e0ad9722a444d82c9ea210089a3f
 +                    }
 +                } else {
 +                    // state downgrade
-+                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
-+                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.TICKING);
-+                        chunk.onChunkNotEntityTicking(this);
-+                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.TICKING);
-+                    }
++                    // because the status downgrade only updates current state after callbacks have completed, we actually need to block
++                    // any other processing of the full status
++                    this.pendingDowngrade = true;
++                    try {
++                        if (currState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
++                            this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.TICKING);
++                            chunk.onChunkNotEntityTicking(this);
++                            nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.TICKING);
++                        }
 +
-+                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING)) {
-+                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.BORDER);
-+                        chunk.onChunkNotTicking(this);
-+                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.BORDER);
-+                    }
++                        if (currState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING)) {
++                            this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.BORDER);
++                            chunk.onChunkNotTicking(this);
++                            nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.BORDER);
++                        }
 +
-+                    if (currState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
-+                        this.onFullChunkLoadChange(false, changedFullStatus);
-+                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.INACCESSIBLE);
-+                        chunk.onChunkUnload(this);
-+                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.INACCESSIBLE);
++                        if (currState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !nextState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
++                            this.onFullChunkLoadChange(false, changedFullStatus);
++                            this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.INACCESSIBLE);
++                            chunk.onChunkUnload(this);
++                            nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.INACCESSIBLE);
++                        }
++                    } finally {
++                        this.pendingDowngrade = false;
 +                    }
 +                }
++
++                ret = true;
 +            }
 +        } finally {
 +            holderManager.removeTicketAtLevel(TicketType.STATUS_UPGRADE, this.chunkX, this.chunkZ, ticketKeep, ticketId);
