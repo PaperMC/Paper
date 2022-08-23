@@ -114,12 +114,13 @@ index 0000000000000000000000000000000000000000..7a4a7a654fe2516ed894a68f2657344d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ad2ee206823a26ebde64b5401445fd71626be0ca
+index 0000000000000000000000000000000000000000..c2dca89291361d60cbf160cab77749cb0130035a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
-@@ -0,0 +1,309 @@
+@@ -0,0 +1,311 @@
 +package io.papermc.paper.configuration;
 +
++import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
@@ -127,6 +128,7 @@ index 0000000000000000000000000000000000000000..ad2ee206823a26ebde64b5401445fd71
 +import net.minecraft.server.level.ServerLevel;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.MustBeInvokedByOverriders;
++import org.slf4j.Logger;
 +import org.spongepowered.configurate.CommentedConfigurationNode;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
@@ -138,6 +140,7 @@ index 0000000000000000000000000000000000000000..ad2ee206823a26ebde64b5401445fd71
 +
 +import java.io.IOException;
 +import java.lang.reflect.Type;
++import java.nio.file.AccessDeniedException;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
 +import java.util.HashMap;
@@ -148,7 +151,7 @@ index 0000000000000000000000000000000000000000..ad2ee206823a26ebde64b5401445fd71
 +
 +public abstract class Configurations<G, W> {
 +
-+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getLogger();
 +    public static final String WORLD_DEFAULTS = "__world_defaults__";
 +    public static final ResourceLocation WORLD_DEFAULTS_KEY = new ResourceLocation("configurations", WORLD_DEFAULTS);
 +    protected final Path globalFolder;
@@ -222,9 +225,8 @@ index 0000000000000000000000000000000000000000..ad2ee206823a26ebde64b5401445fd71
 +        try {
 +            loader.save(node);
 +        } catch (ConfigurateException ex) {
-+            if (ex.getCause() instanceof java.nio.file.AccessDeniedException) {
-+                LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename);
-+                LOGGER.warn("Exception: {} ", ex);
++            if (ex.getCause() instanceof AccessDeniedException) {
++                LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex);
 +            } else throw ex;
 +        }
 +    }
@@ -4279,13 +4281,14 @@ index 7d965247833c91dc824e6cc56e8b0fe5f3413d1d..08ae7a96e93c0d8547f560b3f7538045
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
-index 7c35fb22df0bca2c2ca885a872ee42d6073d852f..03a9fa81f72130fd4cf16db329ab929e7ee1dc78 100644
+index 7c35fb22df0bca2c2ca885a872ee42d6073d852f..5a432a84009a236751241d78e2ee96902824a718 100644
 --- a/src/main/java/net/minecraft/server/dedicated/Settings.java
 +++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
-@@ -75,6 +75,7 @@ public abstract class Settings<T extends Settings<T>> {
+@@ -75,6 +75,8 @@ public abstract class Settings<T extends Settings<T>> {
          try {
              // CraftBukkit start - Don't attempt writing to file if it's read only
              if (path.toFile().exists() && !path.toFile().canWrite()) {
++                // Paper - warn here to make this skip visible in logs
 +                Settings.LOGGER.warn("Can not write to file {}, skipping.", path);
                  return;
              }
