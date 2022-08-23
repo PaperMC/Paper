@@ -3289,10 +3289,10 @@ index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c69ce14d192de79c72790e8b43e3c08daf65c5b5
+index 0000000000000000000000000000000000000000..336216b2038ded378c6d1faf6051a3ff6abf670c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1143 @@
+@@ -0,0 +1,1157 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -4046,7 +4046,7 @@ index 0000000000000000000000000000000000000000..c69ce14d192de79c72790e8b43e3c08d
 +                ChunkHolderManager.this.processPendingFullUpdate();
 +            }, PrioritisedExecutor.Priority.HIGHEST);
 +        } else {
-+            final ArrayDeque<NewChunkHolder> pendingFullLoadUpdate = ChunkHolderManager.this.pendingFullLoadUpdate;
++            final ArrayDeque<NewChunkHolder> pendingFullLoadUpdate = this.pendingFullLoadUpdate;
 +            for (int i = 0, len = changedFullStatus.size(); i < len; ++i) {
 +                pendingFullLoadUpdate.add(changedFullStatus.get(i));
 +            }
@@ -4149,7 +4149,9 @@ index 0000000000000000000000000000000000000000..c69ce14d192de79c72790e8b43e3c08d
 +        }
 +    }
 +
-+    private final ThreadLocal<Boolean> BLOCK_TICKET_UPDATES = ThreadLocal.withInitial(() -> Boolean.FALSE);
++    private final ThreadLocal<Boolean> BLOCK_TICKET_UPDATES = ThreadLocal.withInitial(() -> {
++        return Boolean.FALSE;
++    });
 +
 +    Boolean blockTicketUpdates() {
 +        final Boolean ret = BLOCK_TICKET_UPDATES.get();
@@ -4163,6 +4165,12 @@ index 0000000000000000000000000000000000000000..c69ce14d192de79c72790e8b43e3c08d
 +
 +    public boolean processTicketUpdates() {
 +        return this.processTicketUpdates(true, true, null);
++    }
++
++    private static final ThreadLocal<List<ChunkProgressionTask>> CURRENT_TICKET_UPDATE_SCHEDULING = new ThreadLocal<>();
++
++    static List<ChunkProgressionTask> getCurrentTicketUpdateScheduling() {
++        return CURRENT_TICKET_UPDATE_SCHEDULING.get();
 +    }
 +
 +    private boolean processTicketUpdates(final boolean checkLocks, final boolean processFullUpdates, List<ChunkProgressionTask> scheduledTasks) {
@@ -4228,21 +4236,27 @@ index 0000000000000000000000000000000000000000..c69ce14d192de79c72790e8b43e3c08d
 +                    changedFullStatus = new ArrayList<>();
 +
 +                    // allow the chunkholders to process ticket level updates without needing to acquire the schedule lock every time
-+                    this.taskScheduler.schedulingLock.lock();
++                    final List<ChunkProgressionTask> prev = CURRENT_TICKET_UPDATE_SCHEDULING.get();
++                    CURRENT_TICKET_UPDATE_SCHEDULING.set(scheduledTasks);
 +                    try {
-+                        for (final Iterator<Long2IntMap.Entry> iterator = this.ticketLevelUpdates.long2IntEntrySet().fastIterator(); iterator.hasNext();) {
-+                            final Long2IntMap.Entry entry = iterator.next();
-+                            final long key = entry.getLongKey();
-+                            final NewChunkHolder current = this.chunkHolders.get(key);
++                        this.taskScheduler.schedulingLock.lock();
++                        try {
++                            for (final Iterator<Long2IntMap.Entry> iterator = this.ticketLevelUpdates.long2IntEntrySet().fastIterator(); iterator.hasNext(); ) {
++                                final Long2IntMap.Entry entry = iterator.next();
++                                final long key = entry.getLongKey();
++                                final NewChunkHolder current = this.chunkHolders.get(key);
 +
-+                            if (current == null) {
-+                                throw new IllegalStateException("Expected chunk holder to be created");
++                                if (current == null) {
++                                    throw new IllegalStateException("Expected chunk holder to be created");
++                                }
++
++                                current.processTicketLevelUpdate(scheduledTasks, changedFullStatus);
 +                            }
-+
-+                            current.processTicketLevelUpdate(scheduledTasks, changedFullStatus);
++                        } finally {
++                            this.taskScheduler.schedulingLock.unlock();
 +                        }
 +                    } finally {
-+                        this.taskScheduler.schedulingLock.unlock();
++                        CURRENT_TICKET_UPDATE_SCHEDULING.set(prev);
 +                    }
 +
 +                    this.ticketLevelUpdates.clear();
@@ -6954,10 +6968,10 @@ index 0000000000000000000000000000000000000000..925a409af2fe222553a7f42eeeacb1f0
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c1160812014777beea24b9a744407289bc5d19dc
+index 0000000000000000000000000000000000000000..364639c10c189e74bfb28a0680a554cacf1774bf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2027 @@
+@@ -0,0 +1,2038 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -8609,7 +8623,16 @@ index 0000000000000000000000000000000000000000..c1160812014777beea24b9a744407289
 +                return;
 +            }
 +
-+            final List<ChunkProgressionTask> tasks = new ArrayList<>();
++            final boolean scheduleTasks;
++            List<ChunkProgressionTask> tasks = ChunkHolderManager.getCurrentTicketUpdateScheduling();
++            if (tasks == null) {
++                scheduleTasks = true;
++                tasks = new ArrayList<>();
++            } else {
++                scheduleTasks = false;
++                // we are currently updating ticket levels, so we already hold the schedule lock
++                // this means we have to leave the ticket level update to handle the scheduling
++            }
 +            final List<NewChunkHolder> changedLoadStatus = new ArrayList<>();
 +            this.scheduler.schedulingLock.lock();
 +            try {
@@ -8622,9 +8645,11 @@ index 0000000000000000000000000000000000000000..c1160812014777beea24b9a744407289
 +            }
 +            this.scheduler.chunkHolderManager.addChangedStatuses(changedLoadStatus);
 +
-+            // can't hold the lock while scheduling, so we have to build the tasks and then schedule after
-+            for (int i = 0, len = tasks.size(); i < len; ++i) {
-+                tasks.get(i).schedule();
++            if (scheduleTasks) {
++                // can't hold the lock while scheduling, so we have to build the tasks and then schedule after
++                for (int i = 0, len = tasks.size(); i < len; ++i) {
++                    tasks.get(i).schedule();
++                }
 +            }
 +        });
 +    }
