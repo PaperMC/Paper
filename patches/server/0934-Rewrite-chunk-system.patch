@@ -5233,7 +5233,7 @@ index 0000000000000000000000000000000000000000..322675a470eacbf0e5452f4009c643f2
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9596f33bee4be51253c65850d425ae7c2e99e08f
+index 0000000000000000000000000000000000000000..e07e580500f87a8a1681db43dd7ba686721765b1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
 @@ -0,0 +1,751 @@
@@ -5929,7 +5929,7 @@ index 0000000000000000000000000000000000000000..9596f33bee4be51253c65850d425ae7c
 +
 +    public static final ArrayDeque<ChunkInfo> WAITING_CHUNKS = new ArrayDeque<>(); // stack
 +
-+    private static final class ChunkInfo {
++    public static final class ChunkInfo {
 +
 +        public final int chunkX;
 +        public final int chunkZ;
@@ -5959,7 +5959,7 @@ index 0000000000000000000000000000000000000000..9596f33bee4be51253c65850d425ae7c
 +        }
 +    }
 +
-+    private static ChunkInfo[] getChunkInfos() {
++    public static ChunkInfo[] getChunkInfos() {
 +        synchronized (WAITING_CHUNKS) {
 +            return WAITING_CHUNKS.toArray(new ChunkInfo[0]);
 +        }
@@ -6954,10 +6954,10 @@ index 0000000000000000000000000000000000000000..925a409af2fe222553a7f42eeeacb1f0
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..28e692fb476b7530238018e02b00a34faca00e90
+index 0000000000000000000000000000000000000000..9852e0ad9722a444d82c9ea210089a3f2c2f3470
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2017 @@
+@@ -0,0 +1,2011 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -6994,7 +6994,6 @@ index 0000000000000000000000000000000000000000..28e692fb476b7530238018e02b00a34f
 +import net.minecraft.world.level.chunk.LevelChunk;
 +import net.minecraft.world.level.chunk.storage.ChunkSerializer;
 +import net.minecraft.world.level.chunk.storage.EntityStorage;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.slf4j.Logger;
 +import java.lang.invoke.VarHandle;
 +import java.util.ArrayList;
@@ -7075,11 +7074,6 @@ index 0000000000000000000000000000000000000000..28e692fb476b7530238018e02b00a34f
 +                final List<Entity> entities = EntityStorage.readEntities(this.world, entityChunk);
 +
 +                this.world.getEntityLookup().addEntityChunkEntities(entities);
-+
-+                CraftEventFactory.callEntitiesLoadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), entities);
-+            } else {
-+                // must call for empty entities
-+                CraftEventFactory.callEntitiesLoadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), new ArrayList<>());
 +            }
 +        }
 +
@@ -9444,7 +9438,7 @@ index be130b03ca116fd6d104df26c32312db1655b09e..946a69f959724fbba58fd5db689aafc4
      }
  }
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
-index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa549592f0974d 100644
+index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..7f2d59b61a4cc71339eff6eb076ba1975eb7373a 100644
 --- a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 +++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 @@ -1,8 +1,10 @@
@@ -9464,9 +9458,9 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
  import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.storage.EntityStorage;
-+import net.minecraft.world.level.entity.LevelCallback;
 +import net.minecraft.world.level.entity.Visibility;
  import net.minecraft.world.phys.AABB;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.Iterator;
@@ -9488,7 +9482,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
      // TODO implement container search optimisations
  
      public ChunkEntitySlices(final ServerLevel world, final int chunkX, final int chunkZ, final ChunkHolder.FullChunkStatus status,
-@@ -65,28 +82,87 @@ public final class ChunkEntitySlices {
+@@ -65,28 +82,110 @@ public final class ChunkEntitySlices {
  
          return ret.toArray(new org.bukkit.entity.Entity[0]);
      }
@@ -9540,6 +9534,29 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
 +
 +        return this.entities.size() != 0;
 +    }
++
++    private List<Entity> getAllEntities() {
++        final int len = this.entities.size();
++        if (len == 0) {
++            return new ArrayList<>();
++        }
++
++        final Entity[] rawData = this.entities.getRawData();
++        final List<Entity> collectedEntities = new ArrayList<>(len);
++        for (int i = 0; i < len; ++i) {
++            collectedEntities.add(rawData[i]);
++        }
++
++        return collectedEntities;
++    }
++
++    public void callEntitiesLoadEvent() {
++        CraftEventFactory.callEntitiesLoadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), this.getAllEntities());
++    }
++
++    public void callEntitiesUnloadEvent() {
++        CraftEventFactory.callEntitiesUnloadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), this.getAllEntities());
++    }
      // Paper end - optimise CraftChunk#getEntities
  
      public boolean isEmpty() {
@@ -9582,7 +9599,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
          }
          entity.chunkStatus = this.status;
          final int sectionIndex = chunkSection - this.minSection;
-@@ -105,13 +181,15 @@ public final class ChunkEntitySlices {
+@@ -105,13 +204,15 @@ public final class ChunkEntitySlices {
                  entry.getValue().addEntity(entity, sectionIndex);
              }
          }
@@ -9601,7 +9618,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
          final int sectionIndex = chunkSection - this.minSection;
  
          this.allEntities.removeEntity(entity, sectionIndex);
-@@ -128,6 +206,8 @@ public final class ChunkEntitySlices {
+@@ -128,6 +229,8 @@ public final class ChunkEntitySlices {
                  entry.getValue().removeEntity(entity, sectionIndex);
              }
          }
@@ -9610,7 +9627,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
      }
  
      public void getHardCollidingEntities(final Entity except, final AABB box, final List<Entity> into, final Predicate<? super Entity> predicate) {
-@@ -138,6 +218,10 @@ public final class ChunkEntitySlices {
+@@ -138,6 +241,10 @@ public final class ChunkEntitySlices {
          this.allEntities.getEntitiesWithEnderDragonParts(except, box, into, predicate);
      }
  
@@ -9621,7 +9638,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
      public <T extends Entity> void getEntities(final EntityType<?> type, final AABB box, final List<? super T> into,
                                                 final Predicate<? super T> predicate) {
          this.allEntities.getEntities(type, box, (List)into, (Predicate)predicate);
-@@ -172,21 +256,11 @@ public final class ChunkEntitySlices {
+@@ -172,21 +279,11 @@ public final class ChunkEntitySlices {
          if (collection != null) {
              collection.getEntitiesWithEnderDragonParts(except, clazz, box, (List)into, (Predicate)predicate);
          } else {
@@ -9644,7 +9661,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
      protected static final class BasicEntityList<E extends Entity> {
  
          protected static final Entity[] EMPTY = new Entity[0];
-@@ -321,8 +395,6 @@ public final class ChunkEntitySlices {
+@@ -321,8 +418,6 @@ public final class ChunkEntitySlices {
              final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
              final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
  
@@ -9653,7 +9670,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
              final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
  
              for (int section = min; section <= max; ++section) {
-@@ -362,8 +434,6 @@ public final class ChunkEntitySlices {
+@@ -362,8 +457,6 @@ public final class ChunkEntitySlices {
              final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
              final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
  
@@ -9662,7 +9679,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
              final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
  
              for (int section = min; section <= max; ++section) {
-@@ -415,8 +485,6 @@ public final class ChunkEntitySlices {
+@@ -415,8 +508,6 @@ public final class ChunkEntitySlices {
              final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
              final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
  
@@ -9671,7 +9688,7 @@ index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..a55d8941e68949b61dc9b57d75fa5495
              final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
  
              for (int section = min; section <= max; ++section) {
-@@ -468,8 +536,6 @@ public final class ChunkEntitySlices {
+@@ -468,8 +559,6 @@ public final class ChunkEntitySlices {
              final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
              final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
  
@@ -9694,7 +9711,7 @@ index 3ba094e640d7fe7803e2bbdab8ff3beb6f50e8a0..6608e54922a1e35a8719742e30201105
          }
      }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..7ef6273f9205f5d116b3ccf1d9e4d7e95939aa16 100644
+index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937174e23cd 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -39,6 +39,7 @@ import org.spigotmc.AsyncCatcher;
@@ -9723,7 +9740,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..7ef6273f9205f5d116b3ccf1d9e4d7e9
              if (reason != null) {
                  new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
              }
-@@ -559,64 +560,17 @@ public final class MCUtil {
+@@ -559,64 +560,24 @@ public final class MCUtil {
      }
  
      public static ChunkStatus getChunkStatus(ChunkHolder chunk) {
@@ -9788,10 +9805,17 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..7ef6273f9205f5d116b3ccf1d9e4d7e9
          data.addProperty("server-version", org.bukkit.Bukkit.getVersion());
 -        data.addProperty("data-version", 0);
 +        data.addProperty("data-version", 1);
++
++        JsonArray chunkWaitInformation = new JsonArray();
++        data.add("chunk-wait-infos", chunkWaitInformation);
++
++        for (io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.ChunkInfo chunkInfo : io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.getChunkInfos()) {
++            chunkWaitInformation.add(chunkInfo.toString());
++        }
  
          JsonArray worldsData = new JsonArray();
  
-@@ -624,36 +578,13 @@ public final class MCUtil {
+@@ -624,36 +585,13 @@ public final class MCUtil {
              JsonObject worldData = new JsonObject();
  
              ServerLevel world = ((org.bukkit.craftbukkit.CraftWorld)bukkitWorld).getHandle();
@@ -9828,7 +9852,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..7ef6273f9205f5d116b3ccf1d9e4d7e9
  
              JsonArray playersData = new JsonArray();
  
-@@ -666,48 +597,10 @@ public final class MCUtil {
+@@ -666,48 +604,10 @@ public final class MCUtil {
                  playerData.addProperty("z", player.getZ());
  
                  playersData.add(playerData);
@@ -9878,7 +9902,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..7ef6273f9205f5d116b3ccf1d9e4d7e9
              worldsData.add(worldData);
          }
  
-@@ -721,7 +614,7 @@ public final class MCUtil {
+@@ -721,7 +621,7 @@ public final class MCUtil {
  
          String fileData = stringWriter.toString();
  
@@ -10037,6 +10061,37 @@ index 081c7160cf727646cdec4cd551dbc2aad56326f6..aed7ee721cc0790ee41ee789029af017
      }
  
      public boolean isDebugging() {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index bdd6560fe85950b0a857a949cb38c044da44ca6b..dfb9b10db9f87d4139a88336a3a2b4432ec37076 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -453,6 +453,26 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     }
+ 
+     public void handleConsoleInput(String command, CommandSourceStack commandSource) {
++        // Paper start - rewrite chunk system
++        if (command.equalsIgnoreCase("paper debug chunks --async")) {
++            LOGGER.info("Scheduling async debug chunks");
++            net.minecraft.server.MCUtil.asyncExecutor.execute(() -> {
++                LOGGER.info("Async debug chunks executing");
++                io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(false);
++                CommandSender sender = MinecraftServer.getServer().console;
++                java.io.File file = new java.io.File(new java.io.File(new java.io.File("."), "debug"),
++                    "chunks-" + java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(java.time.LocalDateTime.now()) + ".txt");
++                sender.sendMessage(net.kyori.adventure.text.Component.text("Writing chunk information dump to " + file, net.kyori.adventure.text.format.NamedTextColor.GREEN));
++                try {
++                    net.minecraft.server.MCUtil.dumpChunks(file, true);
++                    sender.sendMessage(net.kyori.adventure.text.Component.text("Successfully written chunk information!", net.kyori.adventure.text.format.NamedTextColor.GREEN));
++                } catch (Throwable thr) {
++                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
++                    sender.sendMessage(net.kyori.adventure.text.Component.text("Failed to dump chunk information, see console", net.kyori.adventure.text.format.NamedTextColor.RED));
++                }
++            });
++        }
++        // Paper end - rewrite chunk system
+         this.serverCommandQueue.add(new ConsoleInput(command, commandSource));
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 index 11cd31691307749e925930c4b6e10e3f3b4fad25..5451dfc681e546ca1e0f7f253fbf19f2f8cc3e77 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
@@ -12593,7 +12648,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 59acbf6249f8f5285504c0ddea448a3433d1d68d..2da262eaf46424d7a31cd2866caf683b7d390200 100644
+index 59acbf6249f8f5285504c0ddea448a3433d1d68d..dcae22fe3ea6a0009770daeeb4e8d31044e09cef 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -144,7 +144,7 @@ public class ServerChunkCache extends ChunkSource {
@@ -12975,7 +13030,7 @@ index 59acbf6249f8f5285504c0ddea448a3433d1d68d..2da262eaf46424d7a31cd2866caf683b
 -                    }
 -                }
 -            }
-+            // Paper - rewrite chunk system - there are no correct callbacks to remove items from cache, so why are we trusting this trash?
++            // Paper - rewrite chunk system - there are no correct callbacks to remove items from cache in the new chunk system
  
              gameprofilerfiller.incrementCounter("getChunkCacheMiss");
              CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create, true); // Paper
@@ -14659,7 +14714,7 @@ index e6240f891e396d91e31b02fdf3084be77e9d6697..00cb9dafc711607f28529ea9afbcdb49
  
      public int getIndex() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..b135f38beb532452def4cb63b4226781974e2437 100644
+index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..5f5723c5230af790df5e415824dac9c10bd2016b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -830,6 +830,70 @@ public class LevelChunk extends ChunkAccess {
@@ -14733,7 +14788,23 @@ index 2292cb0e0c1a3e0ed34b941f028136bfb0bff13e..b135f38beb532452def4cb63b4226781
      // CraftBukkit start
      public void loadCallback() {
          if (this.loadedTicketLevel) { LOGGER.error("Double calling chunk load!", new Throwable()); } // Paper
-@@ -1072,7 +1136,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -860,6 +924,7 @@ public class LevelChunk extends ChunkAccess {
+              * no way of creating a CraftWorld/CraftServer at that point.
+              */
+             server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(this.bukkitChunk, this.needsDecoration));
++            this.chunkHolder.getEntityChunk().callEntitiesLoadEvent(); // Paper - rewrite chunk system
+ 
+             if (this.needsDecoration) {
+                 try (co.aikar.timings.Timing ignored = this.level.timings.chunkLoadPopulate.startTiming()) { // Paper
+@@ -890,6 +955,7 @@ public class LevelChunk extends ChunkAccess {
+     public void unloadCallback() {
+         if (!this.loadedTicketLevel) { LOGGER.error("Double calling chunk unload!", new Throwable()); } // Paper
+         org.bukkit.Server server = this.level.getCraftServer();
++        this.chunkHolder.getEntityChunk().callEntitiesUnloadEvent(); // Paper - rewrite chunk system
+         org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
+         server.getPluginManager().callEvent(unloadEvent);
+         // note: saving can be prevented, but not forced if no saving is actually required
+@@ -1072,7 +1138,7 @@ public class LevelChunk extends ChunkAccess {
      }
  
      public ChunkHolder.FullChunkStatus getFullStatus() {
