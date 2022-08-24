@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Justin <justin@justinf.dev>
+Date: Wed, 24 Aug 2022 05:08:52 -0700
+Subject: [PATCH] Add Entity hidden by default API
+
+This patch adds API that allows entities to be hidden by default. Entities that are hidden by 
+default are not shown to players until Player#showEntity is invoked on said entity. The same is 
+true for players that join the server after an Entity is hidden by default.
+
+Hiding entities by default also respects precedent of keeping entities hidden when other plugins 
+explicitly hide them from a player. If an entity is hidden by default and by a plugin, the entity 
+must have the plugin that hid them from a player show them in order to be shown to a player again. 
+If no plugin had previously hidden the entity before the entity was hidden by default, then any 
+plugin that attempts to show the entity to a player will succeed in doing so.
+
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 4d4a0d15876cc48c9c0456b9f11a5dda37fd56ce..89951f9551e5fffcbd4e7dbe51f0eaca9b60d077 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -919,4 +919,25 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+      */
+     boolean wouldCollideUsing(@NotNull BoundingBox boundingBox);
+     // Paper End - Collision API
++
++    // Paper start - Entity hiddenByDefault
++    /**
++     * Sets whether the entity is hidden by default. When an entity is hidden by default,
++     * {@link Player#showEntity(org.bukkit.plugin.Plugin, Entity)} must be called in order to
++     * display the entity again. Players that join the server do not see entities that are
++     * hidden by default at first and must be shown the entity with the same method above.
++     *
++     * This method also respects plugins hiding entities - if another plugin still wishes for an entity
++     * to be hidden (via {@link Player#hideEntity(org.bukkit.plugin.Plugin, Entity)}), then the entity will
++     * remain hidden even if hiddenByDefault is set to false again or if another plugin tries to show the entity.
++     *
++     * @param hiddenByDefault
++     */
++    void setHiddenByDefault(boolean hiddenByDefault);
++
++    /**
++     * @return true if the Entity is hidden by default, false otherwise
++     */
++    boolean isHiddenByDefault();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index b607c229cfb1e95b17b6a0073380089ef5e1b675..94cdd836cf17a872d3877e1be1cf1458106754df 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -1411,9 +1411,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+ 
+     /**
+      * Allows this player to see an entity that was previously hidden. If
+-     * another another plugin had hidden the entity too, then the entity will
++     * another plugin had hidden the entity too, then the entity will
+      * remain hidden until the other plugin calls this method too.
+      *
++     * If no other plugin is hiding the entity after this method is called,
++     * then this method also allows the player to see entities hidden by default
++     * with {@link Entity#setHiddenByDefault(boolean)}.
++     *
+      * @param plugin Plugin that wants to show the entity
+      * @param entity Entity to show
+      */
