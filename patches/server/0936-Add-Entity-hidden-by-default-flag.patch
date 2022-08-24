@@ -3,25 +3,25 @@ From: Justin <justin@justinf.dev>
 Date: Wed, 24 Aug 2022 05:17:20 -0700
 Subject: [PATCH] Add Entity hidden by default flag
 
-Adds a boolean to the server Entity controlling if the entity should be hidden by default. 
-The TrackedEntity maintains a set of all players that will be able to see the entity even 
-when it is hidden by default. This set is modified when Player#showEntity and Player#hideEntity 
-are invoked. Changes are made to the way that TrackedEntity updates players when the entity is 
+Adds a boolean to the server Entity controlling if the entity should be hidden by default.
+The TrackedEntity maintains a set of all players that will be able to see the entity even
+when it is hidden by default. This set is modified when Player#showEntity and Player#hideEntity
+are invoked. Changes are made to the way that TrackedEntity updates players when the entity is
 hidden by default - if a player is not present in the above set, the update is abandoned.
 
-This functionality is expanded when a Player is hidden by default. The player will send out 
-PlayerInfo packets to hide themselves from other Players when hiddenByDefault. There remains a 
-discrepancy when trying to getHiddenPlayers - players that are hidden by default are currently 
+This functionality is expanded when a Player is hidden by default. The player will send out
+PlayerInfo packets to hide themselves from other Players when hiddenByDefault. There remains a
+discrepancy when trying to getHiddenPlayers - players that are hidden by default are currently
 not returned from this method, only those hidden with hideEntity or hidePlayer.
 
-Hiding entities by default also respects precedent of keeping entities hidden when other plugins 
-explicitly hide them from a player. If an entity is hidden by default and by a plugin, the entity 
-must have the plugin that hid them from a player show them in order to be shown to a player again. 
-If no plugin had previously hidden the entity before the entity was hidden by default, then any 
+Hiding entities by default also respects precedent of keeping entities hidden when other plugins
+explicitly hide them from a player. If an entity is hidden by default and by a plugin, the entity
+must have the plugin that hid them from a player show them in order to be shown to a player again.
+If no plugin had previously hidden the entity before the entity was hidden by default, then any
 plugin that attempts to show the entity to a player will succeed in doing so.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..c29c2a57b8bab3dd36af0e4ff21c6f0735c260a9 100644
+index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..4e506395085fc597a0544830355d4490194706f0 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -2277,6 +2277,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -32,29 +32,23 @@ index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..c29c2a57b8bab3dd36af0e4ff21c6f07
  
          public TrackedEntity(Entity entity, int i, int j, boolean flag) {
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, j, flag, this::broadcast, this.seenBy); // CraftBukkit
-@@ -2385,6 +2386,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -2385,6 +2386,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      flag = false;
                  }
                  // CraftBukkit end
-+
-+                // Paper start - Entity hiddenByDefault
-+                if (this.entity.isHiddenByDefault() && !this.showToEvenWhenHiddenByDefault.contains(player.connection)) {
-+                    flag = false;
-+                }
-+                // Paper end
 +
                  if (flag) {
                      if (this.seenBy.add(player.connection)) {
                          this.serverEntity.addPairing(player);
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index f925a8d550ecbf2044a37bfe58b30d6578c5f6af..dfda6e2f38be417f19dc9d7847f3cae80fb8fac2 100644
+index f925a8d550ecbf2044a37bfe58b30d6578c5f6af..20b2656086ba8e2e517ef0e2a6e417c068e22bc6 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -398,6 +398,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      @javax.annotation.Nullable
      private UUID originWorld;
      public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
-+    public boolean hiddenByDefault; // Paper - Entity hiddenByDefault
++    private boolean hiddenByDefault; // Paper - Entity hiddenByDefault
  
      public void setOrigin(@javax.annotation.Nonnull Location location) {
          this.origin = location.toVector();
@@ -74,10 +68,10 @@ index f925a8d550ecbf2044a37bfe58b30d6578c5f6af..dfda6e2f38be417f19dc9d7847f3cae8
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 6549ade8e19807c523e5a1dc68b66585aad438b1..0d3b808472a4ba25266aa3da1b27d91af775a267 100644
+index 6549ade8e19807c523e5a1dc68b66585aad438b1..bda909f2523ac8c3ee9b5f103e487523927a8bc7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -1355,4 +1355,26 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -1355,4 +1355,25 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          return !this.getHandle().level.noCollision(this.getHandle(), aabb);
      }
      // Paper End - Collision API
@@ -88,8 +82,7 @@ index 6549ade8e19807c523e5a1dc68b66585aad438b1..0d3b808472a4ba25266aa3da1b27d91a
 +        this.getHandle().setHiddenByDefault(hiddenByDefault);
 +
 +        // We need to update the players again
-+        ServerLevel world = ((CraftWorld) this.getWorld()).getHandle();
-+        ChunkMap.TrackedEntity entityTracker = world.getChunkSource().chunkMap.entityMap.get(this.getEntityId());
++        ChunkMap.TrackedEntity entityTracker = this.getHandle().tracker;
 +
 +        // If the entity is already hiddenByDefault, we reset our "show to" set to again hide the entity from all players that may be seeing the entity
 +        // We also clear the "show to" set when we stop hiding by default
@@ -105,7 +98,7 @@ index 6549ade8e19807c523e5a1dc68b66585aad438b1..0d3b808472a4ba25266aa3da1b27d91a
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 067d64ce06f626ce90b3ccf608d98f3c64fce335..99ec84ebf018c36ddaf866b1ec05e64cb0f84b43 100644
+index 067d64ce06f626ce90b3ccf608d98f3c64fce335..85b8866ef0b26a510022d6353511bfe423ab2ab7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1721,6 +1721,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -133,7 +126,7 @@ index 067d64ce06f626ce90b3ccf608d98f3c64fce335..99ec84ebf018c36ddaf866b1ec05e64c
 +                return; // Some other plugins still want the entity hidden
 +            }
 +        } else {
-+            if (!entity.isHiddenByDefault()) {
++            if (!entity.isHiddenByDefault() || ((CraftEntity) entity).getHandle().tracker.showToEvenWhenHiddenByDefault.contains(this.getHandle().connection)) {
 +                return; // Entity isn't hidden
 +            }
          }
@@ -159,26 +152,24 @@ index 067d64ce06f626ce90b3ccf608d98f3c64fce335..99ec84ebf018c36ddaf866b1ec05e64c
      }
      // Paper start
      private void reregisterPlayer(ServerPlayer player) {
-@@ -1843,7 +1855,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1843,7 +1855,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public boolean canSee(org.bukkit.entity.Entity entity) {
 -        return !this.hiddenEntities.containsKey(entity.getUniqueId());
 +        // Paper start - Entity hiddenByDefault
-+        boolean ret = true;
++        boolean shownWhenHiddenByDefault = true;
 +
 +        if (entity.isHiddenByDefault()) {
-+            ServerLevel world = ((CraftWorld) entity.getWorld()).getHandle();
-+            ChunkMap.TrackedEntity entityTracker = world.getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
-+            ret = entityTracker.showToEvenWhenHiddenByDefault.contains(this.getHandle().connection);
++            shownWhenHiddenByDefault = ((CraftEntity) entity).getHandle().tracker.showToEvenWhenHiddenByDefault.contains(this.getHandle().connection);
 +        }
 +
++        return !this.hiddenEntities.containsKey(entity.getUniqueId()) && shownWhenHiddenByDefault;
 +        // Paper end
-+        return !this.hiddenEntities.containsKey(entity.getUniqueId()) && ret;
      }
  
      @Override
-@@ -2892,6 +2914,26 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2892,6 +2912,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
      // Paper end
  
@@ -187,13 +178,14 @@ index 067d64ce06f626ce90b3ccf608d98f3c64fce335..99ec84ebf018c36ddaf866b1ec05e64c
 +    public void setHiddenByDefault(boolean hiddenByDefault) {
 +        // Update server lists
 +        if (hiddenByDefault) {
-+            server.getHandle().getPlayers().stream()
-+                .filter(serverPlayer -> serverPlayer != this.getHandle())
-+                .forEach(serverPlayer -> serverPlayer.connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, this.getHandle())));
++            server.getOnlinePlayers().stream()
++                .filter(entityPlayer -> entityPlayer != this)
++                .filter(entityPlayer -> entityPlayer.canSee(this))
++                .forEach(entityPlayer -> entityPlayer.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, this.getHandle())));
 +        } else {
 +            server.getOnlinePlayers().stream()
 +                .filter(entityPlayer -> entityPlayer != this)
-+                .filter(entityPlayer -> !entityPlayer.hiddenEntities.containsKey(this.getUniqueId()))
++                .filter(entityPlayer -> !entityPlayer.canSee(this))
 +                .forEach(entityPlayer -> entityPlayer.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, this.getHandle())));
 +        }
 +
