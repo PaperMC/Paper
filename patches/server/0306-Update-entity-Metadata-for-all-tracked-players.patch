@@ -22,22 +22,22 @@ index d6f34adbdf45bbef4a39e629dd7cb6d7fcb5db0f..7881176a900daa3306c691454f688c1f
          this.broadcast.accept(packet);
          if (this.entity instanceof ServerPlayer) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 933d74f48dfedc15eec76b4e376e51c40bc4bea5..90af6b5e7f6188eec4a4e311a0d273857d3d1c5c 100644
+index db3b208e560ae2c8a59bfb474f7b2266d108068f..75cd936e28c3c933c53513093634a9d071a7f94b 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2727,7 +2727,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2730,7 +2730,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
                          if (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem) {
                              // Refresh the current entity metadata
 -                            ServerGamePacketListenerImpl.this.send(new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData(), true));
 +                            // Paper start - update entity for all players
-+                            ClientboundSetEntityDataPacket packet1 = new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData(), true);
++                            ClientboundSetEntityDataPacket entityDataPacket = new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData(), true);
 +                            if (entity.tracker != null) {
-+                                entity.tracker.broadcast(packet1);
++                                entity.tracker.broadcast(entityDataPacket);
 +                            } else {
-+                                ServerGamePacketListenerImpl.this.send(packet1);
++                                ServerGamePacketListenerImpl.this.send(entityDataPacket);
 +                            }
 +                            // Paper end
-                         }
- 
-                         if (event.isCancelled()) {
+                             // SPIGOT-7136 - Allays
+                             if (entity instanceof Allay) {
+                                 ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
