@@ -44,7 +44,6 @@ import org.jetbrains.annotations.Nullable;
  * <ul>
  * <li>{@link ChunkGenerator#shouldGenerateNoise()}</li>
  * <li>{@link ChunkGenerator#shouldGenerateSurface()}</li>
- * <li>{@link ChunkGenerator#shouldGenerateBedrock()}</li>
  * <li>{@link ChunkGenerator#shouldGenerateCaves()}</li>
  * <li>{@link ChunkGenerator#shouldGenerateDecorations()}</li>
  * <li>{@link ChunkGenerator#shouldGenerateMobs()}</li>
@@ -122,8 +121,6 @@ public abstract class ChunkGenerator {
      * Y-coordinate range use the methods {@link ChunkData#getMinHeight()} and
      * {@link ChunkData#getMaxHeight()}.
      * <p>
-     * If {@link #shouldGenerateBedrock()} is set to true, the given
-     * {@link ChunkData} contains already the Vanilla bedrock generation.
      *
      * @param worldInfo The world info of the world this chunk will be used for
      * @param random The random generator to use
@@ -404,7 +401,9 @@ public abstract class ChunkGenerator {
      * called.
      *
      * @return true if the server should generate Vanilla bedrock
+     * @deprecated has no effect, bedrock generation is part of the surface step, see {@link #shouldGenerateSurface()}
      */
+    @Deprecated
     public boolean shouldGenerateBedrock() {
         return false;
     }
