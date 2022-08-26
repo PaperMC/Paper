@@ -9843,10 +9843,18 @@ index 3ba094e640d7fe7803e2bbdab8ff3beb6f50e8a0..6608e54922a1e35a8719742e30201105
          }
      }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937174e23cd 100644
+index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..f42a6b33f0d9e9ff673b68a6feeab426e0d03774 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -39,6 +39,7 @@ import org.spigotmc.AsyncCatcher;
+@@ -5,6 +5,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
+ import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
+ import java.lang.ref.Cleaner;
++import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.nbt.CompoundTag;
+@@ -39,6 +40,7 @@ import org.spigotmc.AsyncCatcher;
  import javax.annotation.Nonnull;
  import javax.annotation.Nullable;
  import java.io.*;
@@ -9854,7 +9862,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937
  import java.util.ArrayList;
  import java.util.List;
  import java.util.Queue;
-@@ -331,7 +332,7 @@ public final class MCUtil {
+@@ -331,7 +333,7 @@ public final class MCUtil {
       * @return
       */
      public static void ensureMain(String reason, Runnable run) {
@@ -9863,7 +9871,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937
              if (reason != null) {
                  new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
              }
-@@ -356,7 +357,7 @@ public final class MCUtil {
+@@ -356,7 +358,7 @@ public final class MCUtil {
       * @return
       */
      public static <T> T ensureMain(String reason, Supplier<T> run) {
@@ -9872,7 +9880,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937
              if (reason != null) {
                  new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
              }
-@@ -559,64 +560,24 @@ public final class MCUtil {
+@@ -559,64 +561,50 @@ public final class MCUtil {
      }
  
      public static ChunkStatus getChunkStatus(ChunkHolder chunk) {
@@ -9931,12 +9939,39 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937
 -         *  -add-tick:<long>
 -         *  -object-reason:<string> // This depends on the type of ticket. ie POST_TELEPORT -> entity id
 -         */
-         List<org.bukkit.World> worlds = org.bukkit.Bukkit.getWorlds();
+-        List<org.bukkit.World> worlds = org.bukkit.Bukkit.getWorlds();
++        ReferenceArrayList<org.bukkit.World> worlds = new ReferenceArrayList<>(org.bukkit.Bukkit.getWorlds());
++        ReferenceArrayList<org.bukkit.World> loadedWorlds = new ReferenceArrayList<>(worlds);
          JsonObject data = new JsonObject();
  
          data.addProperty("server-version", org.bukkit.Bukkit.getVersion());
 -        data.addProperty("data-version", 0);
 +        data.addProperty("data-version", 1);
++
++        {
++            JsonArray players = new JsonArray();
++            data.add("all-players", players);
++            List<ServerPlayer> playerList = MinecraftServer.getServer().getPlayerList().players;
++            for (ServerPlayer player : playerList) {
++                JsonObject playerData = new JsonObject();
++                players.add(playerData);
++
++                Level playerWorld = player.getLevel();
++                org.bukkit.World craftWorld = playerWorld.getWorld();
++                Entity.RemovalReason removalReason = player.getRemovalReason();
++
++                playerData.addProperty("name", player.getScoreboardName());
++                playerData.addProperty("x", player.getX());
++                playerData.addProperty("y", player.getY());
++                playerData.addProperty("z", player.getZ());
++                playerData.addProperty("world", playerWorld == null ? "null world" : craftWorld.getName());
++                playerData.addProperty("removalReason", removalReason == null ? "null" : removalReason.name());
++
++                if (!worlds.contains(craftWorld)) {
++                    worlds.add(craftWorld);
++                }
++            }
++        }
 +
 +        JsonArray chunkWaitInformation = new JsonArray();
 +        data.add("chunk-wait-infos", chunkWaitInformation);
@@ -9947,7 +9982,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937
  
          JsonArray worldsData = new JsonArray();
  
-@@ -624,36 +585,13 @@ public final class MCUtil {
+@@ -624,36 +612,14 @@ public final class MCUtil {
              JsonObject worldData = new JsonObject();
  
              ServerLevel world = ((org.bukkit.craftbukkit.CraftWorld)bukkitWorld).getHandle();
@@ -9973,6 +10008,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937
 -                return Integer.compare(v1.pos.z, v2.pos.z);
 -            });
 -
++            worldData.addProperty("is-loaded", loadedWorlds.contains(bukkitWorld));
              worldData.addProperty("name", world.getWorld().getName());
              worldData.addProperty("view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetNoTickViewDistance()); // Paper - replace chunk loader system
              worldData.addProperty("tick-view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance()); // Paper - replace chunk loader system
@@ -9984,7 +10020,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937
  
              JsonArray playersData = new JsonArray();
  
-@@ -666,48 +604,10 @@ public final class MCUtil {
+@@ -666,48 +632,10 @@ public final class MCUtil {
                  playerData.addProperty("z", player.getZ());
  
                  playersData.add(playerData);
@@ -10034,7 +10070,7 @@ index 7034af8ad42940c5af6b9032b9873ce36c55a2a7..9f50305075a362e24319bb12ff43a937
              worldsData.add(worldData);
          }
  
-@@ -721,7 +621,7 @@ public final class MCUtil {
+@@ -721,7 +649,7 @@ public final class MCUtil {
  
          String fileData = stringWriter.toString();
  
