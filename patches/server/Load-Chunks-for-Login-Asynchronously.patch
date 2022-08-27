@@ -4,6 +4,26 @@ Date: Sun, 19 Apr 2020 04:28:29 -0400
 Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -0,0 +0,0 @@ import org.bukkit.event.world.GenericGameEvent;
+ import org.bukkit.event.world.TimeSkipEvent;
+ // CraftBukkit end
+ import it.unimi.dsi.fastutil.ints.IntArrayList; // Paper
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
+ 
+ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         return this.getServer().getPlayerList().getPlayer(uuid);
+     }
+     // Paper end
++    public final ReferenceOpenHashSet<ServerPlayer> pendingLogin = new ReferenceOpenHashSet<>(); // Paper
+ 
+     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
@@ -151,6 +171,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.server.invalidateStatus();
 +        // Paper start - async load spawn in chunk
 +        ServerLevel finalWorldserver = worldserver1;
++        finalWorldserver.pendingLogin.add(player);
 +        int chunkX = loc.getBlockX() >> 4;
 +        int chunkZ = loc.getBlockZ() >> 4;
 +        final net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
@@ -171,6 +192,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    player, finalWorldserver, connection, playerconnection,
 +                    nbttagcompound, s1, lastKnownName
 +                );
++                finalWorldserver.pendingLogin.remove(player);
 +            };
 +        });
 +    }
@@ -251,4 +273,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
  
          Iterator iterator = list.iterator();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
+             return false;
+         }
+ 
+-        if (handle.players().size() > 0) {
++        if (handle.players().size() > 0 || handle.pendingLogin.size() > 0) { // Paper
+             return false;
+         }
  
