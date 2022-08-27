@@ -4,6 +4,26 @@ Date: Sun, 19 Apr 2020 04:28:29 -0400
 Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 67f1a8490d48f55d58268d7e34a27170792b5559..a7db54a94a5017e737ce9682a52eed7405af8cc1 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -170,6 +170,7 @@ import org.bukkit.event.world.GenericGameEvent;
+ import org.bukkit.event.world.TimeSkipEvent;
+ // CraftBukkit end
+ import it.unimi.dsi.fastutil.ints.IntArrayList; // Paper
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
+ 
+ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+@@ -404,6 +405,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         return this.getServer().getPlayerList().getPlayer(uuid);
+     }
+     // Paper end
++    public final ReferenceOpenHashSet<ServerPlayer> pendingLogin = new ReferenceOpenHashSet<>(); // Paper
+ 
+     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 084521ed853fc2b15be355a17da8421c54716815..acc64abd9420b81ed4c8c17cf6a9f5bc5d35f116 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
@@ -96,7 +116,7 @@ index c83395364edb4f2ba8515326b19c4f1a436a0502..c99266d4782c5d58339e63f7564c28b4
              try {
                  ServerPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile, s); // CraftBukkit - add player reference
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e5a167060 100644
+index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b07ad17ac1 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -139,6 +139,7 @@ public abstract class PlayerList {
@@ -145,12 +165,13 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e
  
          // Spigot start - spawn location event
          Player spawnPlayer = player.getBukkitEntity();
-@@ -264,6 +274,52 @@ public abstract class PlayerList {
+@@ -264,6 +274,54 @@ public abstract class PlayerList {
          player.getRecipeBook().sendInitialRecipeBook(player);
          this.updateEntireScoreboard(worldserver1.getScoreboard(), player);
          this.server.invalidateStatus();
 +        // Paper start - async load spawn in chunk
 +        ServerLevel finalWorldserver = worldserver1;
++        finalWorldserver.pendingLogin.add(player);
 +        int chunkX = loc.getBlockX() >> 4;
 +        int chunkZ = loc.getBlockZ() >> 4;
 +        final net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
@@ -171,6 +192,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e
 +                    player, finalWorldserver, connection, playerconnection,
 +                    nbttagcompound, s1, lastKnownName
 +                );
++                finalWorldserver.pendingLogin.remove(player);
 +            };
 +        });
 +    }
@@ -198,7 +220,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e
          MutableComponent ichatmutablecomponent;
  
          if (player.getGameProfile().getName().equalsIgnoreCase(s)) {
-@@ -505,6 +561,7 @@ public abstract class PlayerList {
+@@ -505,6 +563,7 @@ public abstract class PlayerList {
  
      protected void save(ServerPlayer player) {
          if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
@@ -206,7 +228,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e
          this.playerIo.save(player);
          ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
  
-@@ -532,7 +589,7 @@ public abstract class PlayerList {
+@@ -532,7 +591,7 @@ public abstract class PlayerList {
          }
  
          PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
@@ -215,7 +237,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
          if (server.isSameThread()) entityplayer.doTick(); // SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
-@@ -577,6 +634,13 @@ public abstract class PlayerList {
+@@ -577,6 +636,13 @@ public abstract class PlayerList {
              // this.advancements.remove(uuid);
              // CraftBukkit end
          }
@@ -229,7 +251,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e
  
          // CraftBukkit start
          // this.broadcastAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
-@@ -594,7 +658,7 @@ public abstract class PlayerList {
+@@ -594,7 +660,7 @@ public abstract class PlayerList {
          this.cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
          // CraftBukkit end
  
@@ -238,7 +260,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e
      }
  
      // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-@@ -613,6 +677,13 @@ public abstract class PlayerList {
+@@ -613,6 +679,13 @@ public abstract class PlayerList {
                  list.add(entityplayer);
              }
          }
@@ -251,4 +273,17 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..0d86536696657ba6eee5f12d3d3afa8e
 +        // Paper end
  
          Iterator iterator = list.iterator();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 4016b31bd020e00c0e79328646f9b5411b312e88..c8c11ec3c5c4c4d1ed09163aa6d3a4275e497e11 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1219,7 +1219,7 @@ public final class CraftServer implements Server {
+             return false;
+         }
+ 
+-        if (handle.players().size() > 0) {
++        if (handle.players().size() > 0 || handle.pendingLogin.size() > 0) { // Paper
+             return false;
+         }
  
