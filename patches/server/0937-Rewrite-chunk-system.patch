@@ -7013,10 +7013,10 @@ index 0000000000000000000000000000000000000000..ffbfaef2a57f0f26d0143f3a8fcf937b
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..897f4ee4c911ccd8d554a90f483f9c60022cca79
+index 0000000000000000000000000000000000000000..6297709f9f7af08c73a04745a49aa10468af05c3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2053 @@
+@@ -0,0 +1,2058 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -7919,12 +7919,6 @@ index 0000000000000000000000000000000000000000..897f4ee4c911ccd8d554a90f483f9c60
 +        final ChunkStatus maxGenerationStatusOld = ChunkHolder.getStatus(oldLevel);
 +        final ChunkStatus maxGenerationStatusNew = ChunkHolder.getStatus(newLevel);
 +
-+        if (oldState != newState) {
-+            if (this.onTicketUpdate(oldState, newState)) {
-+                changedLoadStatus.add(this);
-+            }
-+        }
-+
 +        // check for cancellations from downgrading ticket level
 +        if (this.requestedGenStatus != null && !newState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && newLevel > oldLevel) {
 +            // note: cancel() may invoke onChunkGenComplete synchronously here
@@ -7987,11 +7981,14 @@ index 0000000000000000000000000000000000000000..897f4ee4c911ccd8d554a90f483f9c60
 +                }
 +
 +                if (!newState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && oldState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
-+                    if (this.currentGenStatus == ChunkStatus.FULL) {
-+                        this.queueBorderFullStatus(false, changedLoadStatus);
-+                    }
 +                    this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.BORDER, null);
 +                }
++            }
++        }
++
++        if (oldState != newState) {
++            if (this.onTicketUpdate(oldState, newState)) {
++                changedLoadStatus.add(this);
 +            }
 +        }
 +
@@ -8117,12 +8114,16 @@ index 0000000000000000000000000000000000000000..897f4ee4c911ccd8d554a90f483f9c60
 +            return false;
 +        }
 +
-+        final ChunkHolder.FullChunkStatus byNeighbours = getStatusForBitset(this.fullNeighbourChunksLoadedBitset);
++        // preserve border request after full status complete, as it does not set anything in the bitset
++        ChunkHolder.FullChunkStatus byNeighbours = getStatusForBitset(this.fullNeighbourChunksLoadedBitset);
++        if (byNeighbours == ChunkHolder.FullChunkStatus.INACCESSIBLE && newState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && this.currentGenStatus == ChunkStatus.FULL) {
++            byNeighbours = ChunkHolder.FullChunkStatus.BORDER;
++        }
 +
 +        final ChunkHolder.FullChunkStatus toSet;
 +
 +        if (newState.isOrAfter(byNeighbours)) {
-+            // must clamp to neighbours level, as we don't have the ticket level for it
++            // must clamp to neighbours level, even though we have the ticket level
 +            toSet = byNeighbours;
 +        } else {
 +            // must clamp to ticket level, even though we have the neighbours
@@ -8159,6 +8160,10 @@ index 0000000000000000000000000000000000000000..897f4ee4c911ccd8d554a90f483f9c60
 +        }
 +        if (newState.isOrAfter(currStateTicketLevel)) {
 +            newState = currStateTicketLevel;
++        }
++        // preserve border request after full status complete, as it does not set anything in the bitset
++        if (newState == ChunkHolder.FullChunkStatus.INACCESSIBLE && currStateTicketLevel.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && this.currentGenStatus == ChunkStatus.FULL) {
++            newState = ChunkHolder.FullChunkStatus.BORDER;
 +        }
 +
 +        if (oldState == newState) {
