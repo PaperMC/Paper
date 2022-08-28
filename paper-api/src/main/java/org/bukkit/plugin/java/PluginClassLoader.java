@@ -109,13 +109,34 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
 
     @Override
     public URL getResource(String name) {
-        return findResource(name);
+        // Paper start
+        URL resource = findResource(name);
+        if (resource == null && libraryLoader != null) {
+            return libraryLoader.getResource(name);
+        }
+        return resource;
+        // Paper end
     }
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        return findResources(name);
+        // Paper start
+        java.util.ArrayList<URL> resources = new java.util.ArrayList<>();
+        addEnumeration(resources, findResources(name));
+        if (libraryLoader != null) {
+            addEnumeration(resources, libraryLoader.getResources(name));
+        }
+        return Collections.enumeration(resources);
+        // Paper end
     }
+
+    // Paper start
+    private <T> void addEnumeration(java.util.ArrayList<T> list, Enumeration<T> enumeration) {
+        while (enumeration.hasMoreElements()) {
+            list.add(enumeration.nextElement());
+        }
+    }
+    // Paper end
 
     // Paper start
     @Override
