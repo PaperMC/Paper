@@ -5,18 +5,18 @@ Subject: [PATCH] Also load resources from LibraryLoader
 
 
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 345394132df70593800127d34a38f8f8a4dafe00..2dc519b1703be2682e120733774216e4a9d9f776 100644
+index 345394132df70593800127d34a38f8f8a4dafe00..d09811ba3aedadc20f8b37883fb5a02d81177284 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -13,6 +13,7 @@ import java.security.CodeSource;
+@@ -10,6 +10,7 @@ import java.net.URL;
+ import java.net.URLClassLoader;
+ import java.security.CodeSigner;
+ import java.security.CodeSource;
++import java.util.ArrayList;
  import java.util.Collection;
  import java.util.Collections;
  import java.util.Enumeration;
-+import java.util.LinkedList;
- import java.util.Map;
- import java.util.Set;
- import java.util.concurrent.ConcurrentHashMap;
-@@ -90,12 +91,29 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -90,12 +91,31 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
  
      @Override
      public URL getResource(String name) {
@@ -34,15 +34,17 @@ index 345394132df70593800127d34a38f8f8a4dafe00..2dc519b1703be2682e120733774216e4
      public Enumeration<URL> getResources(String name) throws IOException {
 -        return findResources(name);
 +        // Paper start
-+        var resources = new LinkedList<URL>();
-+        addEnumeration(resources, super.getResources(name));
-+        addEnumeration(resources, libraryLoader.getResources(name));
++        var resources = new ArrayList<URL>();
++        addEnumeration(resources, findResources(name));
++        if (libraryLoader != null) {
++            addEnumeration(resources, libraryLoader.getResources(name));
++        }
 +        return Collections.enumeration(resources);
 +        // Paper end
 +    }
 +
-+    private <T> void addEnumeration(LinkedList<T> list, Enumeration<T> enumeration) {
-+        while(enumeration.hasMoreElements()) {
++    private <T> void addEnumeration(ArrayList<T> list, Enumeration<T> enumeration) {
++        while (enumeration.hasMoreElements()) {
 +            list.add(enumeration.nextElement());
 +        }
      }
