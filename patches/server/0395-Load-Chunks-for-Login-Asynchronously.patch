@@ -57,34 +57,21 @@ index be677d437d17b74c6188ce1bd5fc6fdc228fd92f..78fbb4c3e52e900956ae0811aaf934c8
      public static final TicketType<ChunkPos> UNKNOWN = TicketType.create("unknown", Comparator.comparingLong(ChunkPos::toLong), 1);
      public static final TicketType<Unit> PLUGIN = TicketType.create("plugin", (a, b) -> 0); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 0df93b204ddf55a2a3b8af33d6a3273697eea91e..cadc14777f6a978d4a58bbaf1b606a53c28b2c08 100644
+index 0df93b204ddf55a2a3b8af33d6a3273697eea91e..88d4c2a9c628d32f1633a376eff37c3e6ae33a72 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -254,6 +254,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-     private static final int PENDING_MESSAGE_DISCONNECT_THRESHOLD = 4096;
-     public final Connection connection;
-     private final MinecraftServer server;
-+    public Runnable playerJoinReady; // Paper
-     public ServerPlayer player;
-     private int tickCount;
-     private int ackBlockChangesUpTo = -1;
-@@ -346,6 +347,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -346,6 +346,10 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      @Override
      public void tick() {
 +        // Paper start - login async
-+        Runnable playerJoinReady = this.playerJoinReady;
-+        if (playerJoinReady != null) {
-+            this.playerJoinReady = null;
-+            playerJoinReady.run();
-+        }
 +        // Don't tick if not valid (dead), otherwise we load chunks below
 +        if (this.player.valid) {
 +        // Paper end
          if (this.ackBlockChangesUpTo > -1) {
              this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
              this.ackBlockChangesUpTo = -1;
-@@ -392,7 +402,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -392,7 +396,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              this.lastVehicle = null;
              this.clientVehicleIsFloating = false;
              this.aboveGroundVehicleTickCount = 0;
@@ -116,7 +103,7 @@ index c83395364edb4f2ba8515326b19c4f1a436a0502..c99266d4782c5d58339e63f7564c28b4
              try {
                  ServerPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile, s); // CraftBukkit - add player reference
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b07ad17ac1 100644
+index b48641bbe371ffacbbd659a0ee1783437267a4dc..b1f6dc751c3dab5220a02223f6ba205aa0949f84 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -139,6 +139,7 @@ public abstract class PlayerList {
@@ -165,7 +152,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b0
  
          // Spigot start - spawn location event
          Player spawnPlayer = player.getBukkitEntity();
-@@ -264,6 +274,54 @@ public abstract class PlayerList {
+@@ -264,6 +274,61 @@ public abstract class PlayerList {
          player.getRecipeBook().sendInitialRecipeBook(player);
          this.updateEntireScoreboard(worldserver1.getScoreboard(), player);
          this.server.invalidateStatus();
@@ -187,13 +174,20 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b0
 +                return java.util.concurrent.CompletableFuture.completedFuture(chunk);
 +            }
 +        }).thenAccept(chunk -> {
-+            playerconnection.playerJoinReady = () -> {
-+                postChunkLoadJoin(
-+                    player, finalWorldserver, connection, playerconnection,
-+                    nbttagcompound, s1, lastKnownName
-+                );
-+                finalWorldserver.pendingLogin.remove(player);
-+            };
++            MinecraftServer.getServer().scheduleOnMain(() -> {
++                try {
++                    if (!playerconnection.connection.isConnected()) {
++                        return;
++                    }
++                    PlayerList.this.postChunkLoadJoin(
++                        player, finalWorldserver, connection, playerconnection,
++                        nbttagcompound, s1, lastKnownName
++                    );
++                    distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
++                } finally {
++                    finalWorldserver.pendingLogin.remove(player);
++                }
++            });
 +        });
 +    }
 +
@@ -220,7 +214,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b0
          MutableComponent ichatmutablecomponent;
  
          if (player.getGameProfile().getName().equalsIgnoreCase(s)) {
-@@ -505,6 +563,7 @@ public abstract class PlayerList {
+@@ -505,6 +570,7 @@ public abstract class PlayerList {
  
      protected void save(ServerPlayer player) {
          if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
@@ -228,7 +222,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b0
          this.playerIo.save(player);
          ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
  
-@@ -532,7 +591,7 @@ public abstract class PlayerList {
+@@ -532,7 +598,7 @@ public abstract class PlayerList {
          }
  
          PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
@@ -237,7 +231,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b0
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
          if (server.isSameThread()) entityplayer.doTick(); // SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
-@@ -577,6 +636,13 @@ public abstract class PlayerList {
+@@ -577,6 +643,13 @@ public abstract class PlayerList {
              // this.advancements.remove(uuid);
              // CraftBukkit end
          }
@@ -251,7 +245,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b0
  
          // CraftBukkit start
          // this.broadcastAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
-@@ -594,7 +660,7 @@ public abstract class PlayerList {
+@@ -594,7 +667,7 @@ public abstract class PlayerList {
          this.cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
          // CraftBukkit end
  
@@ -260,7 +254,7 @@ index b48641bbe371ffacbbd659a0ee1783437267a4dc..9bfa4ff2eefa47e7468eeb4f912873b0
      }
  
      // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-@@ -613,6 +679,13 @@ public abstract class PlayerList {
+@@ -613,6 +686,13 @@ public abstract class PlayerList {
                  list.add(entityplayer);
              }
          }
