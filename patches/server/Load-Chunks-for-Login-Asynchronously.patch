@@ -61,23 +61,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-     private static final int PENDING_MESSAGE_DISCONNECT_THRESHOLD = 4096;
-     public final Connection connection;
-     private final MinecraftServer server;
-+    public Runnable playerJoinReady; // Paper
-     public ServerPlayer player;
-     private int tickCount;
-     private int ackBlockChangesUpTo = -1;
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      @Override
      public void tick() {
 +        // Paper start - login async
-+        Runnable playerJoinReady = this.playerJoinReady;
-+        if (playerJoinReady != null) {
-+            this.playerJoinReady = null;
-+            playerJoinReady.run();
-+        }
 +        // Don't tick if not valid (dead), otherwise we load chunks below
 +        if (this.player.valid) {
 +        // Paper end
@@ -187,13 +174,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return java.util.concurrent.CompletableFuture.completedFuture(chunk);
 +            }
 +        }).thenAccept(chunk -> {
-+            playerconnection.playerJoinReady = () -> {
-+                postChunkLoadJoin(
-+                    player, finalWorldserver, connection, playerconnection,
-+                    nbttagcompound, s1, lastKnownName
-+                );
-+                finalWorldserver.pendingLogin.remove(player);
-+            };
++            MinecraftServer.getServer().scheduleOnMain(() -> {
++                try {
++                    if (!playerconnection.connection.isConnected()) {
++                        return;
++                    }
++                    PlayerList.this.postChunkLoadJoin(
++                        player, finalWorldserver, connection, playerconnection,
++                        nbttagcompound, s1, lastKnownName
++                    );
++                    distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
++                } finally {
++                    finalWorldserver.pendingLogin.remove(player);
++                }
++            });
 +        });
 +    }
 +
