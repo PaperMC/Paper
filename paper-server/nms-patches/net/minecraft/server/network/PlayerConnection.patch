@@ -1169,7 +1169,7 @@
          }
      }
  
-@@ -1611,13 +2299,65 @@
+@@ -1611,13 +2299,59 @@
      @Override
      public void handleAnimate(PacketPlayInArmAnimation packetplayinarmanimation) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinarmanimation, this, this.player.getLevel());
@@ -1181,19 +1181,13 @@
 +        double d0 = this.player.getX();
 +        double d1 = this.player.getY() + (double) this.player.getEyeHeight();
 +        double d2 = this.player.getZ();
-+        Vec3D vec3d = new Vec3D(d0, d1, d2);
++        Location origin = new Location(this.player.level.getWorld(), d0, d1, d2, f2, f1);
 +
-+        float f3 = MathHelper.cos(-f2 * 0.017453292F - 3.1415927F);
-+        float f4 = MathHelper.sin(-f2 * 0.017453292F - 3.1415927F);
-+        float f5 = -MathHelper.cos(-f1 * 0.017453292F);
-+        float f6 = MathHelper.sin(-f1 * 0.017453292F);
-+        float f7 = f4 * f5;
-+        float f8 = f3 * f5;
-+        double d3 = player.gameMode.getGameModeForPlayer()== EnumGamemode.CREATIVE ? 5.0D : 4.5D;
-+        Vec3D vec3d1 = vec3d.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
-+        MovingObjectPosition movingobjectposition = this.player.level.clip(new RayTrace(vec3d, vec3d1, RayTrace.BlockCollisionOption.OUTLINE, RayTrace.FluidCollisionOption.NONE, player));
++        double d3 = player.gameMode.getGameModeForPlayer() == EnumGamemode.CREATIVE ? 5.0D : 4.5D;
++        // SPIGOT-5607: Only call interact event if no block or entity is being clicked. Use bukkit ray trace method, because it handles blocks and entities at the same time
++        org.bukkit.util.RayTraceResult result = this.player.level.getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.1, entity -> entity != this.player.getBukkitEntity());
 +
-+        if (movingobjectposition == null || movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.BLOCK) {
++        if (result == null) {
 +            CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelected(), EnumHand.MAIN_HAND);
 +        }
 +
@@ -1235,7 +1229,7 @@
          this.player.resetLastActionTime();
          IJumpable ijumpable;
  
-@@ -1702,6 +2442,7 @@
+@@ -1702,6 +2436,7 @@
      @Override
      public void handleInteract(PacketPlayInUseEntity packetplayinuseentity) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinuseentity, this, this.player.getLevel());
@@ -1243,7 +1237,7 @@
          WorldServer worldserver = this.player.getLevel();
          final Entity entity = packetplayinuseentity.getTarget(worldserver);
  
-@@ -1714,10 +2455,49 @@
+@@ -1714,10 +2449,49 @@
  
              if (entity.distanceToSqr(this.player.getEyePosition()) < PlayerConnection.MAX_INTERACTION_DISTANCE) {
                  packetplayinuseentity.dispatch(new PacketPlayInUseEntity.c() {
@@ -1294,7 +1288,7 @@
                          if (enuminteractionresult.consumesAction()) {
                              CriterionTriggers.PLAYER_INTERACTED_WITH_ENTITY.trigger(PlayerConnection.this.player, itemstack, entity);
                              if (enuminteractionresult.shouldSwing()) {
-@@ -1729,20 +2509,27 @@
+@@ -1729,20 +2503,27 @@
  
                      @Override
                      public void onInteraction(EnumHand enumhand) {
@@ -1325,7 +1319,7 @@
                          } else {
                              PlayerConnection.this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.invalid_entity_attacked"));
                              PlayerConnection.LOGGER.warn("Player {} tried to attack an invalid entity", PlayerConnection.this.player.getName().getString());
-@@ -1787,15 +2574,21 @@
+@@ -1787,15 +2568,21 @@
      @Override
      public void handleContainerClose(PacketPlayInCloseWindow packetplayinclosewindow) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinclosewindow, this, this.player.getLevel());
@@ -1349,7 +1343,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  PlayerConnection.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1808,7 +2601,284 @@
+@@ -1808,7 +2595,284 @@
                      boolean flag = packetplayinwindowclick.getStateId() != this.player.containerMenu.getStateId();
  
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -1635,7 +1629,7 @@
                      ObjectIterator objectiterator = Int2ObjectMaps.fastIterable(packetplayinwindowclick.getChangedSlots()).iterator();
  
                      while (objectiterator.hasNext()) {
-@@ -1848,6 +2918,7 @@
+@@ -1848,6 +2912,7 @@
      @Override
      public void handleContainerButtonClick(PacketPlayInEnchantItem packetplayinenchantitem) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinenchantitem, this, this.player.getLevel());
@@ -1643,7 +1637,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packetplayinenchantitem.getContainerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -1885,6 +2956,43 @@
+@@ -1885,6 +2950,43 @@
  
              boolean flag1 = packetplayinsetcreativeslot.getSlotNum() >= 1 && packetplayinsetcreativeslot.getSlotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getDamageValue() >= 0 && itemstack.getCount() <= 64 && !itemstack.isEmpty();
@@ -1687,7 +1681,7 @@
  
              if (flag1 && flag2) {
                  this.player.inventoryMenu.getSlot(packetplayinsetcreativeslot.getSlotNum()).set(itemstack);
-@@ -1907,6 +3015,7 @@
+@@ -1907,6 +3009,7 @@
      }
  
      private void updateSignText(PacketPlayInUpdateSign packetplayinupdatesign, List<FilteredText> list) {
@@ -1695,7 +1689,7 @@
          this.player.resetLastActionTime();
          WorldServer worldserver = this.player.getLevel();
          BlockPosition blockposition = packetplayinupdatesign.getPos();
-@@ -1923,18 +3032,37 @@
+@@ -1923,18 +3026,37 @@
  
              if (!tileentitysign.isEditable() || !this.player.getUUID().equals(tileentitysign.getPlayerWhoMayEdit())) {
                  PlayerConnection.LOGGER.warn("Player {} just tried to change non-editable sign", this.player.getName().getString());
@@ -1735,7 +1729,7 @@
  
              tileentitysign.setChanged();
              worldserver.sendBlockUpdated(blockposition, iblockdata, iblockdata, 3);
-@@ -1944,6 +3072,7 @@
+@@ -1944,6 +3066,7 @@
  
      @Override
      public void handleKeepAlive(PacketPlayInKeepAlive packetplayinkeepalive) {
@@ -1743,7 +1737,7 @@
          if (this.keepAlivePending && packetplayinkeepalive.getId() == this.keepAliveChallenge) {
              int i = (int) (SystemUtils.getMillis() - this.keepAliveTime);
  
-@@ -1958,7 +3087,17 @@
+@@ -1958,7 +3081,17 @@
      @Override
      public void handlePlayerAbilities(PacketPlayInAbilities packetplayinabilities) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinabilities, this, this.player.getLevel());
@@ -1762,7 +1756,7 @@
      }
  
      @Override
-@@ -1967,8 +3106,50 @@
+@@ -1967,8 +3100,50 @@
          this.player.updateOptions(packetplayinsettings);
      }
  
