@@ -1,19 +1,22 @@
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -58,6 +58,12 @@
+@@ -58,6 +58,15 @@
  import net.minecraft.world.level.storage.WorldInfo;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
++import com.google.common.base.Charsets;
++import java.io.InputStreamReader;
 +import java.util.concurrent.atomic.AtomicReference;
 +import net.minecraft.SharedConstants;
 +import net.minecraft.world.level.dimension.WorldDimension;
++import org.bukkit.configuration.file.YamlConfiguration;
 +// CraftBukkit end
 +
  public class Main {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -65,8 +71,9 @@
+@@ -65,8 +74,9 @@
      public Main() {}
  
      @DontObfuscate
@@ -24,7 +27,7 @@
          OptionParser optionparser = new OptionParser();
          OptionSpec<Void> optionspec = optionparser.accepts("nogui");
          OptionSpec<Void> optionspec1 = optionparser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -91,9 +98,12 @@
+@@ -91,9 +101,12 @@
                  optionparser.printHelpOn(System.err);
                  return;
              }
@@ -38,7 +41,7 @@
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-@@ -101,13 +111,13 @@
+@@ -101,13 +114,26 @@
              DispenserRegistry.validate();
              SystemUtils.startTimerHackThread();
              Path path = Paths.get("server.properties");
@@ -51,10 +54,23 @@
  
 -            if (optionset.has(optionspec1)) {
 +            if (optionset.has("initSettings")) { // CraftBukkit
++                // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
++                File configFile = (File) optionset.valueOf("bukkit-settings");
++                YamlConfiguration configuration = YamlConfiguration.loadConfiguration(configFile);
++                configuration.options().copyDefaults(true);
++                configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), Charsets.UTF_8)));
++                configuration.save(configFile);
++
++                File commandFile = (File) optionset.valueOf("commands-settings");
++                YamlConfiguration commandsConfiguration = YamlConfiguration.loadConfiguration(commandFile);
++                commandsConfiguration.options().copyDefaults(true);
++                commandsConfiguration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/commands.yml"), Charsets.UTF_8)));
++                commandsConfiguration.save(commandFile);
++                // CraftBukkit end
                  Main.LOGGER.info("Initialized '{}' and '{}'", path.toAbsolutePath(), path1.toAbsolutePath());
                  return;
              }
-@@ -117,11 +127,12 @@
+@@ -117,11 +143,12 @@
                  return;
              }
  
@@ -70,7 +86,7 @@
              WorldInfo worldinfo = convertable_conversionsession.getSummary();
  
              if (worldinfo != null) {
-@@ -136,13 +147,32 @@
+@@ -136,13 +163,32 @@
                  }
              }
  
@@ -104,7 +120,7 @@
  
              WorldStem worldstem;
  
-@@ -155,6 +185,12 @@
+@@ -155,6 +201,12 @@
                      return WorldStem.load(worldloader_a, (iresourcemanager, datapackconfiguration1) -> {
                          IRegistryCustom.e iregistrycustom_e = IRegistryCustom.builtinCopy();
                          DynamicOps<NBTBase> dynamicops = RegistryOps.createAndLoad(DynamicOpsNBT.INSTANCE, iregistrycustom_e, iresourcemanager);
@@ -117,7 +133,7 @@
                          SaveData savedata = convertable_conversionsession.getDataTag(dynamicops, datapackconfiguration1, iregistrycustom_e.allElementsLifecycle());
  
                          if (savedata != null) {
-@@ -177,6 +213,7 @@
+@@ -177,6 +229,7 @@
  
                              return Pair.of(worlddataserver, iregistrycustom_e.freeze());
                          }
@@ -125,7 +141,7 @@
                      }, SystemUtils.backgroundExecutor(), executor);
                  }).get();
              } catch (Exception exception) {
-@@ -184,6 +221,7 @@
+@@ -184,6 +237,7 @@
                  return;
              }
  
@@ -133,7 +149,7 @@
              IRegistryCustom.Dimension iregistrycustom_dimension = worldstem.registryAccess();
  
              dedicatedserversettings.getProperties().getWorldGenSettings(iregistrycustom_dimension);
-@@ -196,21 +234,32 @@
+@@ -196,21 +250,32 @@
              }
  
              convertable_conversionsession.saveDataTag(iregistrycustom_dimension, savedata);
@@ -168,7 +184,7 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
                      dedicatedserver.halt(true);
-@@ -219,6 +268,7 @@
+@@ -219,6 +284,7 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -176,7 +192,7 @@
          } catch (Exception exception1) {
              Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
          }
-@@ -226,7 +276,7 @@
+@@ -226,7 +292,7 @@
      }
  
      public static void forceUpgrade(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, GeneratorSettings generatorsettings) {
