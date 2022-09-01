@@ -2079,10 +2079,38 @@ index d870cefbe5b7485f423817f4f639e3e2a304640c..2292cb0e0c1a3e0ed34b941f028136bf
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 73e7181655b78f5bff90d07edfe6c5408cc08235..1e179d8ff339c6647fed1a3d2a1c010737d37dc6 100644
+index 73e7181655b78f5bff90d07edfe6c5408cc08235..cf6fce4f3bddcbbae59fd128cf661e4506b9d2c5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2234,43 +2234,56 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -483,10 +483,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
+         if (playerChunk == null) return false;
+ 
+-        playerChunk.getTickingChunkFuture().thenAccept(either -> {
+-            either.left().ifPresent(chunk -> {
++        // Paper start - rewrite player chunk loader
++        net.minecraft.world.level.chunk.LevelChunk chunk = playerChunk.getSendingChunk();
++        if (chunk == null) {
++            return false;
++        }
++        // Paper end - rewrite player chunk loader
+                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
+-                if (playersInRange.isEmpty()) return;
++                if (playersInRange.isEmpty()) return true; // Paper - rewrite player chunk loader
+ 
+                 // Paper start - Anti-Xray - Bypass
+                 Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
+@@ -499,8 +503,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+                     }));
+                     // Paper end
+                 }
+-            });
+-        });
++        // Paper - rewrite player chunk loader
+ 
+         return true;
+     }
+@@ -2234,43 +2237,56 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      // Spigot start
      @Override
      public int getViewDistance() {
