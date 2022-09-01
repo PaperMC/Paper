@@ -9,18 +9,30 @@ sometimes it is.
 This patch also prevents the saving/unloading of POI data when
 world saving is disabled.
 
+diff --git a/src/main/java/net/minecraft/server/ChunkSystem.java b/src/main/java/net/minecraft/server/ChunkSystem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ChunkSystem.java
++++ b/src/main/java/net/minecraft/server/ChunkSystem.java
+@@ -0,0 +0,0 @@ public final class ChunkSystem {
+         for (int index = 0, len = chunkMap.regionManagers.size(); index < len; ++index) {
+             chunkMap.regionManagers.get(index).addChunk(holder.pos.x, holder.pos.z);
+         }
++        chunkMap.getPoiManager().dequeueUnload(holder.pos.longKey); // Paper - unload POI data
+     }
+ 
+     public static void onChunkHolderDelete(final ServerLevel level, final ChunkHolder holder) {
+@@ -0,0 +0,0 @@ public final class ChunkSystem {
+         for (int index = 0, len = chunkMap.regionManagers.size(); index < len; ++index) {
+             chunkMap.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
+         }
++        chunkMap.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
+     }
+ 
+     public static void onChunkBorder(LevelChunk chunk, ChunkHolder holder) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                     }
-                     // Paper end
-                 }
-+                this.getPoiManager().dequeueUnload(holder.pos.longKey); // Paper - unload POI data
- 
-                 this.updatingChunks.queueUpdate(pos, holder); // Paper - Don't copy
-                 this.modified = true;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
@@ -29,22 +41,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) { // Paper - diff on change
              long j = longiterator.nextLong();
              ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
- 
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                         this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
-                     }
-                     // Paper end
-+                    this.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
-                     if (ichunkaccess instanceof LevelChunk) {
-                         ((LevelChunk) ichunkaccess).setLoaded(false);
-                     }
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
-                     this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
-                 }
-+                this.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
-             } // Paper end
-                 } finally { this.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes while unloading chunks
  
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }

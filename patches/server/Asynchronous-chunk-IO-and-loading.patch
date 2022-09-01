@@ -2282,7 +2282,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.getProfileCache().save(false); // Paper
+             this.getProfileCache().save();
          }
          // Spigot end
 -
@@ -2303,6 +2303,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } finally {
              super.close();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+ 
+     protected void saveAllChunks(boolean flush) {
++        // Paper start - do not overload I/O threads with too much work when saving
++        int[] saved = new int[1];
++        int maxAsyncSaves = 50;
++        Runnable onChunkSave = () -> {
++            if (++saved[0] >= maxAsyncSaves) {
++                saved[0] = 0;
++                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.flush();
++            }
++        };
++        // Paper end - do not overload I/O threads with too much work when saving
+         if (flush) {
+             List<ChunkHolder> list = (List) net.minecraft.server.ChunkSystem.getVisibleChunkHolders(this.level).stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList()); // Paper
+             MutableBoolean mutableboolean = new MutableBoolean();
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 }).filter((ichunkaccess) -> {
+                     return ichunkaccess instanceof ImposterProtoChunk || ichunkaccess instanceof LevelChunk;
+                 }).filter(this::save).forEach((ichunkaccess) -> {
++                    onChunkSave.run(); // Paper - do not overload I/O threads with too much work when saving
+                     mutableboolean.setTrue();
+                 });
+             } while (mutableboolean.isTrue());
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.processUnloads(() -> {
                  return true;
              });
@@ -2310,7 +2335,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            //this.flushWorker(); // Paper - nuke IOWorker
 +            this.level.asyncChunkTaskManager.flush(); // Paper - flush to preserve behavior compat with pre-async behaviour
          } else {
-             this.visibleChunkMap.values().forEach(this::saveChunkIfNeeded);
+             net.minecraft.server.ChunkSystem.getVisibleChunkHolders(this.level).forEach(this::saveChunkIfNeeded);
          }
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      protected void tick(BooleanSupplier shouldKeepTicking) {
@@ -2824,7 +2849,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-             server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]))); // Paper
+             this.disconnect(Component.translatable("disconnect.spam"));
              return;
          }
 +        // Paper start
@@ -2835,8 +2860,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end
          // CraftBukkit end
-         // Paper start - async tab completion
-         TAB_COMPLETE_EXECUTOR.execute(() -> {
+         StringReader stringreader = new StringReader(packet.getCommand());
+ 
 diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
@@ -3365,7 +3390,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
              return regionfile;
          } else {
-             if (this.regionCache.size() >= io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize) { // Paper - configurable
+             if (this.regionCache.size() >= 256) {
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
              RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
  
@@ -3410,13 +3435,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        RegionFile regionfile = this.getRegionFile(pos, false); // CraftBukkit
 +        RegionFile regionfile = this.getRegionFile(pos, false, true); // CraftBukkit // Paper
 +        try { // Paper
-         int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
  
          if (nbt == null) {
+             regionfile.clear(pos);
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
-             net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk", laste);
+             }
          }
-         // Paper end
+ 
 +        } finally { // Paper start
 +            regionfile.fileLock.unlock();
 +        } // Paper end
@@ -3554,95 +3579,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +    // Paper end
  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-     public DragonBattle getEnderDragonBattle() {
-         return (this.getHandle().dragonFight() == null) ? null : new CraftDragonBattle(this.getHandle().dragonFight());
-     }
-+    // Paper start
-+    @Override
-+    public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
-+        if (Bukkit.isPrimaryThread()) {
-+            net.minecraft.world.level.chunk.LevelChunk immediate = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
-+            if (immediate != null) {
-+                return java.util.concurrent.CompletableFuture.completedFuture(immediate.getBukkitChunk());
-+            }
-+        } else {
-+            java.util.concurrent.CompletableFuture<Chunk> future = new java.util.concurrent.CompletableFuture<Chunk>();
-+            world.getServer().execute(() -> {
-+                getChunkAtAsync(x, z, gen, urgent).whenComplete((chunk, err) -> {
-+                    if (err != null) {
-+                        future.completeExceptionally(err);
-+                    } else {
-+                        future.complete(chunk);
-+                    }
-+                });
-+            });
-+            return future;
-+        }
-+
-+        return this.world.getChunkSource().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
-+            net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) either.left().orElse(null);
-+            return java.util.concurrent.CompletableFuture.completedFuture(chunk == null ? null : chunk.getBukkitChunk());
-+        }, net.minecraft.server.MinecraftServer.getServer());
-+    }
-+    // Paper end
- 
-     @Override
-     public PersistentDataContainer getPersistentDataContainer() {
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -0,0 +0,0 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
-         this.entity.setYHeadRot(yaw);
-     }
- 
-+    // Paper start
-+    @Override
-+    public java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location location, TeleportCause cause) {
-+        Preconditions.checkArgument(location != null, "location");
-+        location.checkFinite();
-+        Location locationClone = location.clone(); // clone so we don't need to worry about mutations after this call.
-+
-+        net.minecraft.server.level.ServerLevel world = ((CraftWorld)locationClone.getWorld()).getHandle();
-+        java.util.concurrent.CompletableFuture<Boolean> ret = new java.util.concurrent.CompletableFuture<>();
-+
-+        world.loadChunksForMoveAsync(getHandle().getBoundingBoxAt(locationClone.getX(), locationClone.getY(), locationClone.getZ()), location.getX(), location.getZ(), (list) -> {
-+            net.minecraft.server.level.ServerChunkCache chunkProviderServer = world.getChunkSource();
-+            for (net.minecraft.world.level.chunk.ChunkAccess chunk : list) {
-+                chunkProviderServer.addTicketAtLevel(net.minecraft.server.level.TicketType.POST_TELEPORT, chunk.getPos(), 33, CraftEntity.this.getEntityId());
-+            }
-+            net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
-+                try {
-+                    ret.complete(CraftEntity.this.teleport(locationClone, cause) ? Boolean.TRUE : Boolean.FALSE);
-+                } catch (Throwable throwable) {
-+                    if (throwable instanceof ThreadDeath) {
-+                        throw (ThreadDeath)throwable;
-+                    }
-+                    ret.completeExceptionally(throwable);
-+                }
-+            });
-+        });
-+
-+        return ret;
-+    }
-+    // Paper end
-+
-     @Override
-     public boolean teleport(Location location) {
-         return this.teleport(location, TeleportCause.PLUGIN);
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
-                 // Paper end - Different message for short timeout
+                 //
                  log.log( Level.SEVERE, "------------------------------" );
-                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
+                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Spigot!):" );
 +                com.destroystokyo.paper.io.chunk.ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
                  WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
                  log.log( Level.SEVERE, "------------------------------" );

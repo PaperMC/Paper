@@ -115,17 +115,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // private final Map<UUID, ServerStatisticManager> stats;
      // private final Map<UUID, AdvancementDataPlayer> advancements;
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-     }
- 
      public void placeNewPlayer(Connection connection, ServerPlayer player) {
-+        ServerPlayer prev = pendingPlayers.put(player.getUUID(), player);// Paper
+         player.isRealPlayer = true; // Paper - Chunk priority
+         player.loginTime = System.currentTimeMillis(); // Paper
++        // Paper start
++        ServerPlayer prev = pendingPlayers.put(player.getUUID(), player);
 +        if (prev != null) {
 +            disconnectPendingPlayer(prev);
 +        }
-+        player.networkManager = connection; // Paper
-         player.loginTime = System.currentTimeMillis(); // Paper
++        player.networkManager = connection;
++        // Paper end
          GameProfile gameprofile = player.getGameProfile();
          GameProfileCache usercache = this.server.getProfileCache();
+         Optional<GameProfile> optional = usercache.get(gameprofile.getId());
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          if (nbttagcompound != null && nbttagcompound.contains("bukkit")) {
              CompoundTag bukkit = nbttagcompound.getCompound("bukkit");
@@ -164,31 +166,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
 +        net.minecraft.server.level.ChunkMap playerChunkMap = worldserver1.getChunkSource().chunkMap;
 +        net.minecraft.server.level.DistanceManager distanceManager = playerChunkMap.distanceManager;
-+        distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
-+        worldserver1.getChunkSource().runDistanceManagerUpdates();
-+        worldserver1.getChunkSource().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
-+            net.minecraft.server.level.ChunkHolder updatingChunk = playerChunkMap.getUpdatingChunkIfPresent(pos.toLong());
-+            if (updatingChunk != null) {
-+                return updatingChunk.getEntityTickingChunkFuture();
-+            } else {
-+                return java.util.concurrent.CompletableFuture.completedFuture(chunk);
-+            }
-+        }).thenAccept(chunk -> {
-+            MinecraftServer.getServer().scheduleOnMain(() -> {
-+                try {
-+                    if (!playerconnection.connection.isConnected()) {
-+                        return;
++        net.minecraft.server.ChunkSystem.scheduleTickingState(
++            worldserver1, chunkX, chunkZ, net.minecraft.server.level.ChunkHolder.FullChunkStatus.ENTITY_TICKING, true,
++            ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHEST,
++            (chunk) -> {
++                MinecraftServer.getServer().scheduleOnMain(() -> {
++                    try {
++                        if (!playerconnection.connection.isConnected()) {
++                            return;
++                        }
++                        PlayerList.this.postChunkLoadJoin(
++                            player, finalWorldserver, connection, playerconnection,
++                            nbttagcompound, s1, lastKnownName
++                        );
++                        distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
++                    } finally {
++                        finalWorldserver.pendingLogin.remove(player);
 +                    }
-+                    PlayerList.this.postChunkLoadJoin(
-+                        player, finalWorldserver, connection, playerconnection,
-+                        nbttagcompound, s1, lastKnownName
-+                    );
-+                    distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
-+                } finally {
-+                    finalWorldserver.pendingLogin.remove(player);
-+                }
-+            });
-+        });
++                });
++            }
++        );
 +    }
 +
 +    public ServerPlayer getActivePlayer(UUID uuid) {

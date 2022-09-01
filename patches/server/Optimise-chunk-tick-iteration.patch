@@ -10,9 +10,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-         long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
          this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
          this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
+         // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +        // Paper start - optimise chunk tick iteration
 +        if (this.needsBroadcastChanges()) {
 +            this.chunkMap.needsChangeBroadcasting.add(this);
@@ -20,17 +20,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - optimise chunk tick iteration
      }
  
-     void onChunkRemove() {
+     public void onChunkRemove() {
+@@ -0,0 +0,0 @@ public class ChunkHolder {
          this.playersInMobSpawnRange = null;
          this.playersInChunkTickRange = null;
+         // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +        // Paper start - optimise chunk tick iteration
 +        if (this.needsBroadcastChanges()) {
 +            this.chunkMap.needsChangeBroadcasting.remove(this);
 +        }
 +        // Paper end - optimise chunk tick iteration
      }
-     // Paper end - optimise anyPlayerCloseEnoughForSpawning
-     long lastAutoSaveTime; // Paper - incremental autosave
+     // Paper end
+ 
 @@ -0,0 +0,0 @@ public class ChunkHolder {
  
              if (i < 0 || i >= this.changedBlocksPerSection.length) return; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
@@ -158,13 +160,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
 +                // Paper start - optimise chunk tick iteration
 +                }
-             }
++            }
 +
 +            } finally {
 +                if (iterator1 instanceof io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator safeIterator) {
 +                    safeIterator.finishedIterating();
 +                }
-+            }
+             }
 +            // Paper end - optimise chunk tick iteration
              this.level.timings.chunkTicks.stopTiming(); // Paper
              gameprofilerfiller.popPush("customSpawners");

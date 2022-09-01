@@ -112,10 +112,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return true;
          // Paper end
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
- 
-         return this.world.getChunkSource().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
-             net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) either.left().orElse(null);
-+            if (chunk != null) addTicket(x, z); // Paper
-             return java.util.concurrent.CompletableFuture.completedFuture(chunk == null ? null : chunk.getBukkitChunk());
-         }, net.minecraft.server.MinecraftServer.getServer());
-     }
+         net.minecraft.server.ChunkSystem.scheduleChunkLoad(this.getHandle(), x, z, gen, ChunkStatus.FULL, true, priority, (c) -> {
+             net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
+                 net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk)c;
++                if (chunk != null) addTicket(x, z); // Paper
+                 ret.complete(chunk == null ? null : chunk.getBukkitChunk());
+             });
+         });

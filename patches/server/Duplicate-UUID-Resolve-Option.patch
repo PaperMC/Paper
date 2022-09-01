@@ -32,6 +32,21 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
+diff --git a/src/main/java/net/minecraft/server/ChunkSystem.java b/src/main/java/net/minecraft/server/ChunkSystem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ChunkSystem.java
++++ b/src/main/java/net/minecraft/server/ChunkSystem.java
+@@ -0,0 +0,0 @@ public final class ChunkSystem {
+     }
+ 
+     public static void onEntityPreAdd(final ServerLevel level, final Entity entity) {
+-
++        if (net.minecraft.server.level.ChunkMap.checkDupeUUID(level, entity)) {
++            return;
++        }
+     }
+ 
+     public static void onChunkHolderCreate(final ServerLevel level, final ChunkHolder holder) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -49,14 +64,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start
-+    private static void checkDupeUUID(ServerLevel level, Entity entity) {
++    // rets true if to prevent the entity from being added
++    public static boolean checkDupeUUID(ServerLevel level, Entity entity) {
 +        io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode mode = level.paperConfig().entities.spawning.duplicateUuid.mode;
 +        if (mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.WARN
 +            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.DELETE
 +            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN) {
-+            return;
++            return false;
 +        }
 +        Entity other = level.getEntity(entity.getUUID());
++
++        if (other == null || other == entity) {
++            return false;
++        }
 +
 +        if (mode == io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN && other != null && !other.isRemoved()
 +            && Objects.equals(other.getEncodeId(), entity.getEncodeId())
@@ -64,7 +84,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ) {
 +            if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + " because it was near the duplicate and likely an actual duplicate. See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +            entity.discard();
-+            return;
++            return true;
 +        }
 +        if (other != null && !other.isRemoved()) {
 +            switch (mode) {
@@ -76,13 +96,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                case DELETE: {
 +                    if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +                    entity.discard();
-+                    break;
++                    return true;
 +                }
 +                default:
 +                    if (ServerLevel.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", doing nothing to " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
 +                    break;
 +            }
 +        }
++        return false;
 +    }
 +    // Paper end
      public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> prepareTickingChunk(ChunkHolder holder) {

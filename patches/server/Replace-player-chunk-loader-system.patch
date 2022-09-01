@@ -1284,7 +1284,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            worldData.addProperty("tick-view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance()); // Paper - replace chunk loader system
              worldData.addProperty("keep-spawn-loaded", world.keepSpawnInMemory);
              worldData.addProperty("keep-spawn-loaded-range", world.paperConfig().spawn.keepSpawnLoadedRange * 16);
-             worldData.addProperty("visible-chunk-count", visibleChunks.size());
+             worldData.addProperty("visible-chunk-count", allChunks.size());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
@@ -1305,8 +1305,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - no-tick view distance
  
-     // Paper start - optimise anyPlayerCloseEnoughForSpawning
-     // cached here to avoid a map lookup
+     // Paper start
+     public void onChunkAdd() {
 @@ -0,0 +0,0 @@ public class ChunkHolder {
  
      public void blockChanged(BlockPos pos) {
@@ -1440,7 +1440,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.viewDistance = j;
 -            this.distanceManager.updatePlayerTickets(this.viewDistance + 1);
--            Iterator objectiterator = this.updatingChunks.getVisibleValuesCopy().iterator(); // Paper
+-            Iterator objectiterator = net.minecraft.server.ChunkSystem.getUpdatingChunkHolders(this.level).iterator(); // Paper
 -
 -            while (objectiterator.hasNext()) {
 -                ChunkHolder playerchunk = (ChunkHolder) objectiterator.next();
@@ -1484,7 +1484,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          CsvOutput csvwriter = CsvOutput.builder().addColumn("x").addColumn("z").addColumn("level").addColumn("in_memory").addColumn("status").addColumn("full_status").addColumn("accessible_ready").addColumn("ticking_ready").addColumn("entity_ticking_ready").addColumn("ticket").addColumn("spawning").addColumn("block_entity_count").addColumn("ticking_ticket").addColumn("ticking_level").addColumn("block_ticks").addColumn("fluid_ticks").build(writer);
 -        TickingTracker tickingtracker = this.distanceManager.tickingTracker();
 +        // Paper - replace loader system
-         ObjectBidirectionalIterator objectbidirectionaliterator = this.updatingChunks.getVisibleMap().clone().long2ObjectEntrySet().fastIterator(); // Paper
+         Iterator<ChunkHolder> objectbidirectionaliterator = net.minecraft.server.ChunkSystem.getVisibleChunkHolders(this.level).iterator(); // Paper
  
          while (objectbidirectionaliterator.hasNext()) {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider

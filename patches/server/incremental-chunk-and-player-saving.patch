@@ -57,8 +57,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-         this.playersInChunkTickRange = null;
-     }
+     com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInMobSpawnRange;
+     com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInChunkTickRange;
      // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +    long lastAutoSaveTime; // Paper - incremental autosave
 +    long inactiveTimeStart; // Paper - incremental autosave
@@ -107,18 +107,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +        // Paper end
-     }
- 
++    }
++
 +    // Paper start - incremental autosave
 +    public boolean setHasBeenLoaded() {
 +        this.wasAccessibleSinceLastSave = getFullChunkStatus(this.ticketLevel).isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
 +        return this.wasAccessibleSinceLastSave;
-+    }
+     }
 +    // Paper end
-+
+ 
      public void replaceProtoChunk(ImposterProtoChunk chunk) {
          for (int i = 0; i < this.futures.length(); ++i) {
-             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(i);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -194,13 +193,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      protected void saveAllChunks(boolean flush) {
-         if (flush) {
-             List<ChunkHolder> list = (List) this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList());
+         // Paper start - do not overload I/O threads with too much work when saving
+         int[] saved = new int[1];
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          int l = 0;
--        ObjectIterator objectiterator = this.visibleChunkMap.values().iterator();
+-        Iterator objectiterator = net.minecraft.server.ChunkSystem.getVisibleChunkHolders(this.level).iterator(); // Paper
 -
 -        while (l < 20 && shouldKeepTicking.getAsBoolean() && objectiterator.hasNext()) {
 -            if (this.saveChunkIfNeeded((ChunkHolder) objectiterator.next())) {
