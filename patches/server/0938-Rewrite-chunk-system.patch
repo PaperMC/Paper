@@ -1363,7 +1363,7 @@ index 0000000000000000000000000000000000000000..ba93f07acd2557d0a5a8299ed4ca5584
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..560a8663f86a2f9e505609873ffc8c02d674e579
+index 0000000000000000000000000000000000000000..e217e61753ae27dab2959e2829b9df74aa79c933
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
 @@ -0,0 +1,1308 @@
@@ -2640,7 +2640,7 @@ index 0000000000000000000000000000000000000000..560a8663f86a2f9e505609873ffc8c02
 +                        final int maxSize = RegionFile.MAX_CHUNK_SIZE / (1024 * 1024);
 +                        LOGGER.error("Chunk at (" + this.chunkX + "," + this.chunkZ + ") in '" + this.world.getWorld().getName() + "' exceeds max size of " + maxSize + "MiB, it has been deleted from disk.");
 +                    } else {
-+                        failedWrite = true;
++                        failedWrite = thr instanceof IOException;
 +                        LOGGER.error("Failed to write chunk data for task: " + this.toString(), thr);
 +                    }
 +                }
@@ -3311,10 +3311,10 @@ index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726afe0312b
+index 0000000000000000000000000000000000000000..a6398e190247b2f225e8af8742e29d12352d1ee1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1167 @@
+@@ -0,0 +1,1177 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -3662,37 +3662,18 @@ index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726
 +
 +    public <T> boolean addTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level,
 +                                        final T identifier) {
-+        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, -1L);
++        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier);
 +    }
 +
 +    public <T> boolean addTicketAtLevel(final TicketType<T> type, final int chunkX, final int chunkZ, final int level,
 +                                        final T identifier) {
-+        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier, -1L);
-+    }
-+
-+    public <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier) {
-+        return this.addTicketAtLevel(type, chunk, level, identifier, -1L);
-+    }
-+
-+    /* removeDelay = 0 means no unload, this is VANILLA behavior, and tickets are __DEFINED__ this way, do not change */
-+
-+    public <T> boolean addTicketAtLevel(final TicketType<T> type, final ChunkPos chunkPos, final int level,
-+                                        final T identifier, final long removeDelay) {
-+        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkPos), level, identifier, removeDelay);
-+    }
-+
-+    public <T> boolean addTicketAtLevel(final TicketType<T> type, final int chunkX, final int chunkZ, final int level,
-+                                        final T identifier, final long removeDelay) {
-+        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier, removeDelay);
++        return this.addTicketAtLevel(type, CoordinateUtils.getChunkKey(chunkX, chunkZ), level, identifier);
 +    }
 +
 +    // supposed to return true if the ticket was added and did not replace another
 +    // but, we always return false if the ticket cannot be added
-+    public <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier,
-+                                        long removeDelay) {
-+        if (removeDelay < 0L) {
-+            removeDelay = Math.max(0, type.timeout);
-+        }
++    public <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier) {
++        final long removeDelay = Math.max(0, type.timeout);
 +        if (level > MAX_TICKET_LEVEL) {
 +            return false;
 +        }
@@ -3799,6 +3780,18 @@ index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726
 +            }
 +
 +            return true;
++        } finally {
++            this.ticketLock.unlock();
++        }
++    }
++
++    // atomic with respect to all add/remove/addandremove ticket calls for the given chunk
++    public <T, V> void addAndRemoveTickets(final long chunk, final TicketType<T> addType, final int addLevel, final T addIdentifier,
++                                           final TicketType<V> removeType, final int removeLevel, final V removeIdentifier) {
++        this.ticketLock.lock();
++        try {
++            this.addTicketAtLevel(addType, chunk, addLevel, addIdentifier);
++            this.removeTicketAtLevel(removeType, chunk, removeLevel, removeIdentifier);
 +        } finally {
 +            this.ticketLock.unlock();
 +        }
@@ -3939,6 +3932,7 @@ index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726
 +            try {
 +                current = this.getOrCreateChunkHolder(chunkX, chunkZ);
 +                if ((ret = current.getEntityChunk()) != null && (transientChunk || !ret.isTransient())) {
++                    this.removeTicketAtLevel(TicketType.ENTITY_LOAD, chunkX, chunkZ, MAX_TICKET_LEVEL, entityLoadId);
 +                    return ret;
 +                }
 +
@@ -3985,7 +3979,11 @@ index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726
 +
 +        ret = current.loadInEntityChunk(transientChunk);
 +
-+        this.removeTicketAtLevel(TicketType.ENTITY_LOAD, chunkX, chunkZ, MAX_TICKET_LEVEL, entityLoadId);
++        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
++        this.addAndRemoveTickets(chunkKey,
++            TicketType.UNKNOWN, MAX_TICKET_LEVEL, new ChunkPos(chunkX, chunkZ),
++            TicketType.ENTITY_LOAD, MAX_TICKET_LEVEL, entityLoadId
++        );
 +
 +        return ret;
 +    }
@@ -3998,6 +3996,8 @@ index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726
 +        }
 +        return null;
 +    }
++
++    private long poiLoadCounter;
 +
 +    public PoiChunk loadPoiChunk(final int chunkX, final int chunkZ) {
 +        TickThread.ensureTickThread(chunkX, chunkZ, "Cannot create poi chunk off-main");
@@ -4014,13 +4014,17 @@ index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726
 +        final AtomicReference<PoiChunk> completed = new AtomicReference<>();
 +        final AtomicBoolean isCompleted = new AtomicBoolean();
 +        final Thread waiter = Thread.currentThread();
++        final Long poiLoadId;
 +        NewChunkHolder.GenericDataLoadTaskCallback loadTask = null;
 +        this.ticketLock.lock();
 +        try {
++            poiLoadId = Long.valueOf(this.poiLoadCounter++);
++            this.addTicketAtLevel(TicketType.POI_LOAD, chunkX, chunkZ, MAX_TICKET_LEVEL, poiLoadId);
 +            this.taskScheduler.schedulingLock.lock();
 +            try {
 +                current = this.getOrCreateChunkHolder(chunkX, chunkZ);
 +                if (current.isPoiChunkLoaded()) {
++                    this.removeTicketAtLevel(TicketType.POI_LOAD, chunkX, chunkZ, MAX_TICKET_LEVEL, poiLoadId);
 +                    return current.getPoiChunk();
 +                }
 +
@@ -4060,6 +4064,12 @@ index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726
 +        ret = completed.getPlain();
 +
 +        ret.load();
++
++        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
++        this.addAndRemoveTickets(chunkKey,
++            TicketType.UNKNOWN, MAX_TICKET_LEVEL, new ChunkPos(chunkX, chunkZ),
++            TicketType.POI_LOAD, MAX_TICKET_LEVEL, poiLoadId
++        );
 +
 +        return ret;
 +    }
@@ -4170,7 +4180,7 @@ index 0000000000000000000000000000000000000000..31259546b2280b477689e1915283c726
 +                        this.removeChunkHolder(holder);
 +                    } else {
 +                        // add cooldown so the next unload check is not immediately next tick
-+                        this.addTicketAtLevel(TicketType.UNLOAD_COOLDOWN, holder.chunkX, holder.chunkZ, MAX_TICKET_LEVEL, Unit.INSTANCE, 10L * 20L); // delay for 10s
++                        this.addTicketAtLevel(TicketType.UNLOAD_COOLDOWN, holder.chunkX, holder.chunkZ, MAX_TICKET_LEVEL, Unit.INSTANCE);
 +                    }
 +                }
 +            } finally {
@@ -5287,10 +5297,10 @@ index 0000000000000000000000000000000000000000..322675a470eacbf0e5452f4009c643f2
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b7c596febd95445ff2f81e5b233d295c10ff68f1
+index 0000000000000000000000000000000000000000..9f7eca1d60fd46364d6de9fbe8a4a4e4efc13b98
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
-@@ -0,0 +1,753 @@
+@@ -0,0 +1,768 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -5313,6 +5323,7 @@ index 0000000000000000000000000000000000000000..b7c596febd95445ff2f81e5b233d295c
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.ChunkAccess;
 +import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.LevelChunk;
 +import org.bukkit.Bukkit;
 +import org.slf4j.Logger;
 +import java.io.File;
@@ -5558,7 +5569,7 @@ index 0000000000000000000000000000000000000000..b7c596febd95445ff2f81e5b233d295c
 +
 +    public void scheduleTickingState(final int chunkX, final int chunkZ, final ChunkHolder.FullChunkStatus toStatus,
 +                                     final boolean addTicket, final PrioritisedExecutor.Priority priority,
-+                                     final Consumer<ChunkAccess> onComplete) {
++                                     final Consumer<LevelChunk> onComplete) {
 +        if (this.chunkHolderManager.ticketLock.isHeldByCurrentThread()) {
 +            throw new IllegalStateException("Cannot schedule chunk load during ticket level update");
 +        }
@@ -5579,21 +5590,23 @@ index 0000000000000000000000000000000000000000..b7c596febd95445ff2f81e5b233d295c
 +            this.chunkHolderManager.processTicketUpdates();
 +        }
 +
-+        final Consumer<ChunkAccess> loadCallback = (final ChunkAccess chunk) -> {
++        final Consumer<LevelChunk> loadCallback = (final LevelChunk chunk) -> {
 +            try {
 +                if (onComplete != null) {
 +                    onComplete.accept(chunk);
 +                }
 +            } finally {
 +                if (addTicket) {
-+                    ChunkTaskScheduler.this.chunkHolderManager.addTicketAtLevel(TicketType.UNKNOWN, chunkKey, minLevel, new ChunkPos(chunkKey));
-+                    ChunkTaskScheduler.this.chunkHolderManager.removeTicketAtLevel(TicketType.CHUNK_LOAD, chunkKey, minLevel, chunkReference);
++                    ChunkTaskScheduler.this.chunkHolderManager.addAndRemoveTickets(chunkKey,
++                        TicketType.UNKNOWN, minLevel, new ChunkPos(chunkKey),
++                        TicketType.CHUNK_LOAD, minLevel, chunkReference
++                    );
 +                }
 +            }
 +        };
 +
 +        final boolean scheduled;
-+        final ChunkAccess chunk;
++        final LevelChunk chunk;
 +        this.chunkHolderManager.ticketLock.lock();
 +        try {
 +            this.schedulingLock.lock();
@@ -5606,11 +5619,21 @@ index 0000000000000000000000000000000000000000..b7c596febd95445ff2f81e5b233d295c
 +                    final ChunkHolder.FullChunkStatus currStatus = chunkHolder.getChunkStatus();
 +                    if (currStatus.isOrAfter(toStatus)) {
 +                        scheduled = false;
-+                        chunk = chunkHolder.getCurrentChunk();
++                        chunk = (LevelChunk)chunkHolder.getCurrentChunk();
 +                    } else {
 +                        scheduled = true;
 +                        chunk = null;
-+                        chunkHolder.raisePriority(priority);
++
++                        final int radius = toStatus.ordinal() - 1; // 0 -> BORDER, 1 -> TICKING, 2 -> ENTITY_TICKING
++                        for (int dz = -radius; dz <= radius; ++dz) {
++                            for (int dx = -radius; dx <= radius; ++dx) {
++                                final NewChunkHolder neighbour =
++                                    (dx | dz) == 0 ? chunkHolder : this.chunkHolderManager.getChunkHolder(dx + chunkX, dz + chunkZ);
++                                if (neighbour != null) {
++                                    neighbour.raisePriority(priority);
++                                }
++                            }
++                        }
 +
 +                        // ticket level should schedule for us
 +                        chunkHolder.addFullStatusConsumer(toStatus, loadCallback);
@@ -5664,7 +5687,7 @@ index 0000000000000000000000000000000000000000..b7c596febd95445ff2f81e5b233d295c
 +        }
 +
 +        if (toStatus == ChunkStatus.FULL) {
-+            this.scheduleTickingState(chunkX, chunkZ, ChunkHolder.FullChunkStatus.BORDER, addTicket, priority, onComplete);
++            this.scheduleTickingState(chunkX, chunkZ, ChunkHolder.FullChunkStatus.BORDER, addTicket, priority, (Consumer)onComplete);
 +            return;
 +        }
 +
@@ -5684,8 +5707,10 @@ index 0000000000000000000000000000000000000000..b7c596febd95445ff2f81e5b233d295c
 +                }
 +            } finally {
 +                if (addTicket) {
-+                    ChunkTaskScheduler.this.chunkHolderManager.addTicketAtLevel(TicketType.UNKNOWN, chunkKey, minLevel, new ChunkPos(chunkKey));
-+                    ChunkTaskScheduler.this.chunkHolderManager.removeTicketAtLevel(TicketType.CHUNK_LOAD, chunkKey, minLevel, chunkReference);
++                    ChunkTaskScheduler.this.chunkHolderManager.addAndRemoveTickets(chunkKey,
++                        TicketType.UNKNOWN, minLevel, new ChunkPos(chunkKey),
++                        TicketType.CHUNK_LOAD, minLevel, chunkReference
++                    );
 +                }
 +            }
 +        };
@@ -7013,7 +7038,7 @@ index 0000000000000000000000000000000000000000..ffbfaef2a57f0f26d0143f3a8fcf937b
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6297709f9f7af08c73a04745a49aa10468af05c3
+index 0000000000000000000000000000000000000000..dc9742eab581e7a30234644373a387a362112c61
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 @@ -0,0 +1,2058 @@
@@ -8431,15 +8456,15 @@ index 0000000000000000000000000000000000000000..6297709f9f7af08c73a04745a49aa104
 +        }, PrioritisedExecutor.Priority.HIGHEST);
 +    }
 +
-+    private final Reference2ObjectOpenHashMap<ChunkHolder.FullChunkStatus, List<Consumer<ChunkAccess>>> fullStatusWaiters = new Reference2ObjectOpenHashMap<>();
++    private final Reference2ObjectOpenHashMap<ChunkHolder.FullChunkStatus, List<Consumer<LevelChunk>>> fullStatusWaiters = new Reference2ObjectOpenHashMap<>();
 +
-+    void addFullStatusConsumer(final ChunkHolder.FullChunkStatus status, final Consumer<ChunkAccess> consumer) {
++    void addFullStatusConsumer(final ChunkHolder.FullChunkStatus status, final Consumer<LevelChunk> consumer) {
 +        this.fullStatusWaiters.computeIfAbsent(status, (final ChunkHolder.FullChunkStatus keyInMap) -> {
 +            return new ArrayList<>(4);
 +        }).add(consumer);
 +    }
 +
-+    private void completeFullStatusConsumers(ChunkHolder.FullChunkStatus status, final ChunkAccess chunk) {
++    private void completeFullStatusConsumers(ChunkHolder.FullChunkStatus status, final LevelChunk chunk) {
 +        // need to tell future statuses to complete if cancelled
 +        final ChunkHolder.FullChunkStatus max = CHUNK_STATUS_BY_ID[CHUNK_STATUS_BY_ID.length - 1];
 +
@@ -8452,8 +8477,8 @@ index 0000000000000000000000000000000000000000..6297709f9f7af08c73a04745a49aa104
 +        }
 +    }
 +
-+    private void completeFullStatusConsumers0(final ChunkHolder.FullChunkStatus status, final ChunkAccess chunk) {
-+        final List<Consumer<ChunkAccess>> consumers;
++    private void completeFullStatusConsumers0(final ChunkHolder.FullChunkStatus status, final LevelChunk chunk) {
++        final List<Consumer<LevelChunk>> consumers;
 +        consumers = this.fullStatusWaiters.remove(status);
 +
 +        if (consumers == null) {
@@ -8462,7 +8487,7 @@ index 0000000000000000000000000000000000000000..6297709f9f7af08c73a04745a49aa104
 +
 +        // must be scheduled to main, we do not trust the callback to not do anything stupid
 +        this.scheduler.scheduleChunkTask(this.chunkX, this.chunkZ, () -> {
-+            for (final Consumer<ChunkAccess> consumer : consumers) {
++            for (final Consumer<LevelChunk> consumer : consumers) {
 +                try {
 +                    consumer.accept(chunk);
 +                } catch (final ThreadDeath thr) {
