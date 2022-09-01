@@ -2083,6 +2083,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
+         if (playerChunk == null) return false;
+ 
+-        playerChunk.getTickingChunkFuture().thenAccept(either -> {
+-            either.left().ifPresent(chunk -> {
++        // Paper start - rewrite player chunk loader
++        net.minecraft.world.level.chunk.LevelChunk chunk = playerChunk.getSendingChunk();
++        if (chunk == null) {
++            return false;
++        }
++        // Paper end - rewrite player chunk loader
+                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
+-                if (playersInRange.isEmpty()) return;
++                if (playersInRange.isEmpty()) return true; // Paper - rewrite player chunk loader
+ 
+                 // Paper start - Anti-Xray - Bypass
+                 Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+                     }));
+                     // Paper end
+                 }
+-            });
+-        });
++        // Paper - rewrite player chunk loader
+ 
+         return true;
+     }
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      // Spigot start
      @Override
      public int getViewDistance() {
