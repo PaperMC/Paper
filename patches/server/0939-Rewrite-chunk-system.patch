@@ -12314,57 +12314,15 @@ index c2c01988bf3b6fbb0a7a4716373c2ff0cffce27d..44eafeb815a15028ffe82b96b2df8f90
  
          @Nullable
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade3741690a33 100644
+index d1b5c25b7455174e908cd6ed66789fa700190604..fe91cbde8da8cec8cb927dac551c5e83bc968aeb 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -1,171 +1,44 @@
- package net.minecraft.server.level;
- 
--import com.google.common.annotations.VisibleForTesting;
--import com.google.common.collect.ImmutableList;
--import com.google.common.collect.ImmutableSet;
--import com.google.common.collect.Sets;
--import com.mojang.datafixers.util.Either;
- import com.mojang.logging.LogUtils;
--import it.unimi.dsi.fastutil.longs.Long2ByteMap;
--import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
--import it.unimi.dsi.fastutil.longs.Long2IntMap;
--import it.unimi.dsi.fastutil.longs.Long2IntMaps;
--import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
--import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
--import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
--import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
--import it.unimi.dsi.fastutil.longs.LongIterator;
--import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
--import it.unimi.dsi.fastutil.longs.LongSet;
--import it.unimi.dsi.fastutil.objects.ObjectIterator;
--import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
--import it.unimi.dsi.fastutil.objects.ObjectSet;
--import java.io.File;
--import java.io.FileOutputStream;
--import java.io.IOException;
--import java.nio.charset.StandardCharsets;
--import java.util.Iterator;
--import java.util.Objects;
--import java.util.Set;
--import java.util.concurrent.CompletableFuture;
-+import io.papermc.paper.chunk.system.scheduling.ChunkHolderManager;
-+
- import java.util.concurrent.Executor;
- import javax.annotation.Nullable;
- import net.minecraft.core.SectionPos;
- import net.minecraft.util.SortedArraySet;
--import net.minecraft.util.thread.ProcessorHandle;
- import net.minecraft.world.level.ChunkPos;
- import net.minecraft.world.level.chunk.ChunkStatus;
--import net.minecraft.world.level.chunk.LevelChunk;
- import org.slf4j.Logger;
- 
--import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap; // Paper
+@@ -41,131 +41,32 @@ import org.slf4j.Logger;
+ import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap; // Paper
  public abstract class DistanceManager {
  
 +    // Paper start - rewrite chunk system
-+    public ChunkHolderManager getChunkHolderManager() {
++    public io.papermc.paper.chunk.system.scheduling.ChunkHolderManager getChunkHolderManager() {
 +        return this.chunkMap.level.chunkTaskScheduler.chunkHolderManager;
 +    }
 +    // Paper end - rewrite chunk system
@@ -12502,7 +12460,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
      }
  
      private static int getTicketLevelAt(SortedArraySet<Ticket<?>> tickets) {
-@@ -181,163 +54,28 @@ public abstract class DistanceManager {
+@@ -181,163 +82,28 @@ public abstract class DistanceManager {
      @Nullable
      protected abstract ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k);
  
@@ -12673,7 +12631,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
      }
  
      public <T> void addRegionTicket(TicketType<T> type, ChunkPos pos, int radius, T argument) {
-@@ -346,13 +84,7 @@ public abstract class DistanceManager {
+@@ -346,13 +112,7 @@ public abstract class DistanceManager {
      }
  
      public <T> boolean addRegionTicketAtDistance(TicketType<T> tickettype, ChunkPos chunkcoordintpair, int i, T t0) {
@@ -12688,7 +12646,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
      }
  
      public <T> void removeRegionTicket(TicketType<T> type, ChunkPos pos, int radius, T argument) {
-@@ -361,129 +93,13 @@ public abstract class DistanceManager {
+@@ -361,129 +121,13 @@ public abstract class DistanceManager {
      }
  
      public <T> boolean removeRegionTicketAtDistance(TicketType<T> tickettype, ChunkPos chunkcoordintpair, int i, T t0) {
@@ -12699,9 +12657,8 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
 -        boolean removed = this.removeTicket(j, ticket); // CraftBukkit
 -        //this.tickingTicketsTracker.removeTicket(j, ticket); // Paper - no longer used
 -        return removed; // CraftBukkit
-+        return this.getChunkHolderManager().removeTicketAtLevel(tickettype, chunkcoordintpair, 33 - i, t0); // Paper - rewrite chunk system
-     }
- 
+-    }
+-
 -    private SortedArraySet<Ticket<?>> getTickets(long position) {
 -        return (SortedArraySet) this.tickets.computeIfAbsent(position, (j) -> {
 -            return SortedArraySet.create(4);
@@ -12765,8 +12722,9 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
 -        chunkMap.level.getChunkSource().runDistanceManagerUpdates();
 -
 -        return success;
--    }
--
++        return this.getChunkHolderManager().removeTicketAtLevel(tickettype, chunkcoordintpair, 33 - i, t0); // Paper - rewrite chunk system
+     }
+ 
 -    private boolean updatePriorityTicket(ChunkPos coords, TicketType<ChunkPos> type, int priority) {
 -        SortedArraySet<Ticket<?>> tickets = this.tickets.get(coords.toLong());
 -        if (tickets == null) {
@@ -12821,7 +12779,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
          long i = pos.toLong();
  
          if (forced) {
-@@ -497,36 +113,15 @@ public abstract class DistanceManager {
+@@ -497,36 +141,15 @@ public abstract class DistanceManager {
      }
  
      public void addPlayer(SectionPos pos, ServerPlayer player) {
@@ -12861,7 +12819,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
  
      public boolean inEntityTickingRange(long chunkPos) {
          // Paper start - replace player chunk loader system
-@@ -543,9 +138,7 @@ public abstract class DistanceManager {
+@@ -543,9 +166,7 @@ public abstract class DistanceManager {
      }
  
      protected String getTicketDebugString(long pos) {
@@ -12872,7 +12830,7 @@ index d1b5c25b7455174e908cd6ed66789fa700190604..77d1c14656f395dcbf53c8727eeade37
      }
  
      protected void updatePlayerTickets(int viewDistance) {
-@@ -577,97 +170,24 @@ public abstract class DistanceManager {
+@@ -577,97 +198,24 @@ public abstract class DistanceManager {
      }
  
      public String getDebugStatus() {
