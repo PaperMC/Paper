@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 01:17:12 -0600
+Subject: [PATCH] Ensure commands are not ran async
+
+Plugins calling Player.chat("/foo") or Server.dispatchCommand() could
+trigger the server to execute a command while on another thread.
+
+These commands would then process EXPECTING to be on the main thread, leaving to
+very hard to trace concurrency issues.
+
+This change will synchronize the command execution back to the main thread, causing a
+big slowdown in execution but throwing an exception at same time to raise awareness
+that it is happening so that plugin authors can fix their code to stop executing commands async.
+
+This also properly splits up the chat and command handling to reflect the server now
+having separate packets for both, and the client always using the correct packet. Text
+from a chat packet should never be parsed into a command, even if it starts with the `/`
+character.
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 5072d4dc1f7f77c61e3cc72c1101cb95f6596ce7..451dd594a2acc6fbc7112b9ecfa737c942f10a3c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2033,7 +2033,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         return true;
+     }
+ 
+-    private static boolean isChatMessageIllegal(String message) {
++    public static boolean isChatMessageIllegal(String message) { // Paper - private -> public
+         for (int i = 0; i < message.length(); ++i) {
+             if (!SharedConstants.isAllowedChatCharacter(message.charAt(i))) {
+                 return true;
+@@ -2050,7 +2050,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         }
+         OutgoingPlayerChatMessage outgoing = OutgoingPlayerChatMessage.create(original);
+ 
+-        if (!async && s.startsWith("/")) {
++        if (false && !async && s.startsWith("/")) { // Paper - don't handle commands in chat logic
+             this.handleCommand(s);
+         } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
+             // Do nothing, this is coming from a plugin
+@@ -2153,7 +2153,29 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         }
+     }
+ 
+-    private void handleCommand(String s) {
++    public void handleCommand(String s) { // Paper - private -> public
++        // Paper Start
++        if (!org.spigotmc.AsyncCatcher.shuttingDown && !org.bukkit.Bukkit.isPrimaryThread()) {
++            LOGGER.error("Command Dispatched Async: " + s);
++            LOGGER.error("Please notify author of plugin causing this execution to fix this bug! see: http://bit.ly/1oSiM6C", new Throwable());
++            Waitable<Void> wait = new Waitable<>() {
++                @Override
++                protected Void evaluate() {
++                    ServerGamePacketListenerImpl.this.handleCommand(s);
++                    return null;
++                }
++            };
++            server.processQueue.add(wait);
++            try {
++                wait.get();
++                return;
++            } catch (InterruptedException e) {
++                Thread.currentThread().interrupt(); // This is proper habit for java. If we aren't handling it, pass it on!
++            } catch (Exception e) {
++                throw new RuntimeException("Exception processing chat command", e.getCause());
++            }
++        }
++        // Paper End
+         co.aikar.timings.MinecraftTimings.playerCommandTimer.startTiming(); // Paper
+         if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
+         this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + s);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 56efe95512c851b965f2295d5eac7bc0c67bdb1f..1c6577bbbc005131661cbb4667cff6494b8fe5e4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -863,6 +863,28 @@ public final class CraftServer implements Server {
+         Validate.notNull(commandLine, "CommandLine cannot be null");
+         org.spigotmc.AsyncCatcher.catchOp("command dispatch"); // Spigot
+ 
++        // Paper Start
++        if (!org.spigotmc.AsyncCatcher.shuttingDown && !Bukkit.isPrimaryThread()) {
++            final CommandSender fSender = sender;
++            final String fCommandLine = commandLine;
++            Bukkit.getLogger().log(Level.SEVERE, "Command Dispatched Async: " + commandLine);
++            Bukkit.getLogger().log(Level.SEVERE, "Please notify author of plugin causing this execution to fix this bug! see: http://bit.ly/1oSiM6C", new Throwable());
++            org.bukkit.craftbukkit.util.Waitable<Boolean> wait = new org.bukkit.craftbukkit.util.Waitable<Boolean>() {
++                @Override
++                protected Boolean evaluate() {
++                    return dispatchCommand(fSender, fCommandLine);
++                }
++            };
++            net.minecraft.server.MinecraftServer.getServer().processQueue.add(wait);
++            try {
++                return wait.get();
++            } catch (InterruptedException e) {
++                Thread.currentThread().interrupt(); // This is proper habit for java. If we aren't handling it, pass it on!
++            } catch (Exception e) {
++                throw new RuntimeException("Exception processing dispatch command", e.getCause());
++            }
++        }
++        // Paper End
+         if (this.commandMap.dispatch(sender, commandLine)) {
+             return true;
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 82a640887a75c360539c1787dbbb32750f6b1379..2666e55d72fd7731a2bde42d690762a2747dac90 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -461,7 +461,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void chat(String msg) {
+         if (this.getHandle().connection == null) return;
+ 
+-        this.getHandle().connection.chat(msg, PlayerChatMessage.system(new ChatMessageContent(msg)), false);
++        // Paper start - improve chat handling
++        if (ServerGamePacketListenerImpl.isChatMessageIllegal(msg)) {
++            this.getHandle().connection.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS);
++        } else {
++            if (msg.startsWith("/")) {
++                this.getHandle().connection.handleCommand(msg);
++            } else {
++                // TODO text filtering
++                // TODO chat decorating
++                this.getHandle().connection.chat(msg, PlayerChatMessage.system(new net.minecraft.network.chat.ChatMessageContent(msg)), false);
++            }
++        }
++        // Paper en
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
+index 19c44daaa407b7c1c7a7ffe56fef8c8814c6d5b2..6a073a9dc44d93eba296a0e18a9c7be8a7881725 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
+@@ -13,6 +13,7 @@ public class ServerShutdownThread extends Thread {
+     public void run() {
+         try {
+             org.spigotmc.AsyncCatcher.enabled = false; // Spigot
++            org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
+             this.server.close();
+         } finally {
+             try {
+diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
+index 78669fa035b7537ff7e533cf32aaf2995625424f..7585a30e8f063ac2656b5de519b1e9edaceffbc7 100644
+--- a/src/main/java/org/spigotmc/AsyncCatcher.java
++++ b/src/main/java/org/spigotmc/AsyncCatcher.java
+@@ -6,6 +6,7 @@ public class AsyncCatcher
+ {
+ 
+     public static boolean enabled = true;
++    public static boolean shuttingDown = false; // Paper
+ 
+     public static void catchOp(String reason)
+     {
+diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
+index 882e93ad4471e3688f2fcfb1e6f16926786ee5e7..94d8ba376cd1f024b244654cac9bb62bb19e3060 100644
+--- a/src/main/java/org/spigotmc/RestartCommand.java
++++ b/src/main/java/org/spigotmc/RestartCommand.java
+@@ -43,6 +43,7 @@ public class RestartCommand extends Command
+     private static void restart(final String restartScript)
+     {
+         AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
++        org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
+         try
+         {
+             String[] split = restartScript.split( " " );
