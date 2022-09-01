@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 8 Mar 2016 23:25:45 -0500
+Subject: [PATCH] Disable Scoreboards for non players by default
+
+Entities collision is checking for scoreboards setting.
+This is very heavy to do map lookups for every collision to check
+this setting.
+
+So avoid looking up scoreboards and short circuit to the "not on a team"
+logic which is most likely to be true.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 3bf89827afc515ffae0f79532b38c5f31ba014f6..4218d5aa5b4ba77d304b91c6c6cd9fa9cdaaa532 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2575,6 +2575,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+ 
+     @Nullable
+     public Team getTeam() {
++        if (!this.level.paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof Player)) { return null; } // Paper
+         return this.level.getScoreboard().getPlayersTeam(this.getScoreboardName());
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 0d61cb2b7af48bbc60b04be6a4767ccba2b29ffb..3023e714961d1b565d9e8659e07ccc4dab729f2f 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -823,6 +823,7 @@ public abstract class LivingEntity extends Entity {
+         if (nbt.contains("Team", 8)) {
+             String s = nbt.getString("Team");
+             PlayerTeam scoreboardteam = this.level.getScoreboard().getPlayerTeam(s);
++            if (!level.paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { scoreboardteam = null; } // Paper
+             boolean flag = scoreboardteam != null && this.level.getScoreboard().addPlayerToTeam(this.getStringUUID(), scoreboardteam);
+ 
+             if (!flag) {
