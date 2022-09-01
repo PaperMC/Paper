@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize anyPlayerCloseEnoughForSpawning to use distance maps
 Use a distance map to find the players in range quickly
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index a52932d665ca45a5e066d7cef0ec0313d1c3f69f..176165122aac927fa9c00547ed5ca62fa5b4a62c 100644
+index a52932d665ca45a5e066d7cef0ec0313d1c3f69f..0f75a109c06eb3113be74cf49ec560f5e2ea9cfc 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -79,14 +79,27 @@ public class ChunkHolder {
@@ -39,16 +39,8 @@ index a52932d665ca45a5e066d7cef0ec0313d1c3f69f..176165122aac927fa9c00547ed5ca62f
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
          this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
-@@ -108,6 +121,7 @@ public class ChunkHolder {
-         this.setTicketLevel(level);
-         this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
-         this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
-+        this.onChunkAdd(); // Paper - optimise anyPlayerCloseEnoughForSpawning
-     }
- 
-     // Paper start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 82eceddc15dcdf592dc5bbe6f1249f537be0a91e..7a9f6027e0341efc135221178f2b489da1a978f8 100644
+index 82eceddc15dcdf592dc5bbe6f1249f537be0a91e..43ad735f57ab513311d700b42d7d0f2f1e43d0e7 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -196,11 +196,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -133,15 +125,7 @@ index 82eceddc15dcdf592dc5bbe6f1249f537be0a91e..7a9f6027e0341efc135221178f2b489d
      }
  
      protected ChunkGenerator generator() {
-@@ -622,6 +671,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 holder = (ChunkHolder) this.pendingUnloads.remove(pos);
-                 if (holder != null) {
-                     holder.setTicketLevel(level);
-+                    holder.onChunkAdd(); // Paper - optimise anyPlayerCloseEnoughForSpawning - PUT HERE AFTER RE-ADDING ONLY
-                 } else {
-                     holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
-                     // Paper start
-@@ -1524,43 +1574,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1524,43 +1573,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
      }
  
