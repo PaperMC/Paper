@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 19 Apr 2020 00:05:46 -0400
+Subject: [PATCH] Fix Longstanding Broken behavior of PlayerJoinEvent
+
+For years, plugin developers have had to delay many things they do
+inside of the PlayerJoinEvent by 1 tick to make it actually work.
+
+This all boiled down to 1 reason why: The event fired before the
+player was fully ready and joined to the world!
+
+Additionally, if that player logged out on a vehicle, the event
+fired before the vehicle was even loaded, so that plugins had no
+access to the vehicle during this event either.
+
+This change finally fixes this issue, fully preparing the player
+into the world as a fully ready entity, vehicle included.
+
+There should be no plugins that break because of this change, but might
+improve consistency with other plugins instead.
+
+For example, if 2 plugins listens to this event, and the first one
+teleported the player in the event, then the 2nd plugin actually
+would be getting a valid player!
+
+This was very non deterministic. This change will ensure every plugin
+receives a deterministic result, and should no longer require 1 tick
+delays anymore.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index aed3da6ef2d498d3f1c9c64177bf1ba6b8157493..ea224e68b680c5e9ab38998f7709a4dbe3471b86 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1762,6 +1762,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 .printStackTrace();
+             return;
+         }
++        if (entity instanceof ServerPlayer && ((ServerPlayer) entity).supressTrackerForLogin) return; // Delay adding to tracker until after list packets
+         // Paper end
+         if (!(entity instanceof EnderDragonPart)) {
+             EntityType<?> entitytypes = entity.getType();
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 49cb507ddd378b9a16b82e5c2a28531fce9c6708..53dcb40f5217d560ee42da3d73d1e66e2620067a 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -255,6 +255,7 @@ public class ServerPlayer extends Player {
+     public double maxHealthCache;
+     public boolean joining = true;
+     public boolean sentListPacket = false;
++    public boolean supressTrackerForLogin = false; // Paper
+     public Integer clientViewDistance;
+     public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
+     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 602a30f7dc51ffad9e5f5cc0b339108a2225aafd..a7bc7e83b9355ef920d94fff8572528965352fb6 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -282,6 +282,12 @@ public abstract class PlayerList {
+         this.playersByUUID.put(player.getUUID(), player);
+         // this.broadcastAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
+ 
++        // Paper start - correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
++        player.supressTrackerForLogin = true;
++        worldserver1.addNewPlayer(player);
++        this.server.getCustomBossEvents().onPlayerConnect(player); // see commented out section below worldserver.addPlayerJoin(entityplayer);
++        mountSavedVehicle(player, worldserver1, nbttagcompound);
++        // Paper end
+         // CraftBukkit start
+         CraftPlayer bukkitPlayer = player.getBukkitEntity();
+ 
+@@ -320,6 +326,8 @@ public abstract class PlayerList {
+             player.connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, new ServerPlayer[]{entityplayer1}));
+         }
+         player.sentListPacket = true;
++        player.supressTrackerForLogin = false; // Paper
++        ((ServerLevel)player.level).getChunkSource().chunkMap.addEntity(player); // Paper - track entity now
+         // CraftBukkit end
+ 
+         player.connection.send(new ClientboundSetEntityDataPacket(player.getId(), player.getEntityData(), true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
+@@ -345,6 +353,11 @@ public abstract class PlayerList {
+             playerconnection.send(new ClientboundUpdateMobEffectPacket(player.getId(), mobeffect));
+         }
+ 
++        // Paper start - move vehicle into method so it can be called above - short circuit around that code
++        onPlayerJoinFinish(player, worldserver1, s1);
++    }
++    private void mountSavedVehicle(ServerPlayer player, ServerLevel worldserver1, CompoundTag nbttagcompound) {
++        // Paper end
+         if (nbttagcompound != null && nbttagcompound.contains("RootVehicle", 10)) {
+             CompoundTag nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
+             // CraftBukkit start
+@@ -393,6 +406,10 @@ public abstract class PlayerList {
+             }
+         }
+ 
++        // Paper start
++    }
++    public void onPlayerJoinFinish(ServerPlayer player, ServerLevel worldserver1, String s1) {
++        // Paper end
+         player.initInventoryMenu();
+         // CraftBukkit - Moved from above, added world
+         // Paper start - Add to collideRule team if needed
+@@ -402,6 +419,7 @@ public abstract class PlayerList {
+             scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
+         }
+         // Paper end
++        // CraftBukkit - Moved from above, added world
+         PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
+     }
+ 

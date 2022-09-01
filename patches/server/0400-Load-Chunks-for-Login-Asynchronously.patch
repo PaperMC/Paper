@@ -1,0 +1,280 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 19 Apr 2020 04:28:29 -0400
+Subject: [PATCH] Load Chunks for Login Asynchronously
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index f5a9edf47230a1552a36ee5de4cb7560ea9ba7c4..a778b4b5b2413c25c2f0f0efc72ba1d362d89acf 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -170,6 +170,7 @@ import org.bukkit.event.world.GenericGameEvent;
+ import org.bukkit.event.world.TimeSkipEvent;
+ // CraftBukkit end
+ import it.unimi.dsi.fastutil.ints.IntArrayList; // Paper
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
+ 
+ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+@@ -406,6 +407,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         return this.getServer().getPlayerList().getPlayer(uuid);
+     }
+     // Paper end
++    public final ReferenceOpenHashSet<ServerPlayer> pendingLogin = new ReferenceOpenHashSet<>(); // Paper
+ 
+     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 53dcb40f5217d560ee42da3d73d1e66e2620067a..971f72c1dd713077c128279a78ed37f15aedeff6 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -182,6 +182,7 @@ public class ServerPlayer extends Player {
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
+     public ServerGamePacketListenerImpl connection;
++    public net.minecraft.network.Connection networkManager; // Paper
+     public final MinecraftServer server;
+     public final ServerPlayerGameMode gameMode;
+     private final PlayerAdvancements advancements;
+@@ -256,6 +257,7 @@ public class ServerPlayer extends Player {
+     public boolean joining = true;
+     public boolean sentListPacket = false;
+     public boolean supressTrackerForLogin = false; // Paper
++    public boolean didPlayerJoinEvent = false; // Paper
+     public Integer clientViewDistance;
+     public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
+     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/level/TicketType.java b/src/main/java/net/minecraft/server/level/TicketType.java
+index 478109526cff7ceb0565cea3b5e97b9a07fbf8d1..3c1698ba0d3bc412ab957777d9b5211dbc555208 100644
+--- a/src/main/java/net/minecraft/server/level/TicketType.java
++++ b/src/main/java/net/minecraft/server/level/TicketType.java
+@@ -25,6 +25,7 @@ public class TicketType<T> {
+     public static final TicketType<ChunkPos> FORCED = TicketType.create("forced", Comparator.comparingLong(ChunkPos::toLong));
+     public static final TicketType<ChunkPos> LIGHT = TicketType.create("light", Comparator.comparingLong(ChunkPos::toLong));
+     public static final TicketType<BlockPos> PORTAL = TicketType.create("portal", Vec3i::compareTo, 300);
++    public static final TicketType<Long> LOGIN = create("login", Long::compareTo, 100); // Paper
+     public static final TicketType<Integer> POST_TELEPORT = TicketType.create("post_teleport", Integer::compareTo, 5);
+     public static final TicketType<ChunkPos> UNKNOWN = TicketType.create("unknown", Comparator.comparingLong(ChunkPos::toLong), 1);
+     public static final TicketType<Unit> PLUGIN = TicketType.create("plugin", (a, b) -> 0); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0df93b204ddf55a2a3b8af33d6a3273697eea91e..88d4c2a9c628d32f1633a376eff37c3e6ae33a72 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -346,6 +346,10 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+     @Override
+     public void tick() {
++        // Paper start - login async
++        // Don't tick if not valid (dead), otherwise we load chunks below
++        if (this.player.valid) {
++        // Paper end
+         if (this.ackBlockChangesUpTo > -1) {
+             this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
+             this.ackBlockChangesUpTo = -1;
+@@ -392,7 +396,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             this.lastVehicle = null;
+             this.clientVehicleIsFloating = false;
+             this.aboveGroundVehicleTickCount = 0;
+-        }
++        }} // Paper - end if (valid)
+ 
+         this.server.getProfiler().push("keepAlive");
+         // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index c83395364edb4f2ba8515326b19c4f1a436a0502..c99266d4782c5d58339e63f7564c28b4b5b7ac1d 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -90,7 +90,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+             }
+             // Paper end
+         } else if (this.state == ServerLoginPacketListenerImpl.State.DELAY_ACCEPT) {
+-            ServerPlayer entityplayer = this.server.getPlayerList().getPlayer(this.gameProfile.getId());
++            ServerPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.gameProfile.getId()); // Paper
+ 
+             if (entityplayer == null) {
+                 this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
+@@ -199,7 +199,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+             }
+ 
+             this.connection.send(new ClientboundGameProfilePacket(this.gameProfile));
+-            ServerPlayer entityplayer = this.server.getPlayerList().getPlayer(this.gameProfile.getId());
++            ServerPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.gameProfile.getId()); // Paper
+ 
+             try {
+                 ServerPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile, s); // CraftBukkit - add player reference
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index a7bc7e83b9355ef920d94fff8572528965352fb6..32ab0cd6cb42b0ab8a14f790dfcf4b155c945d6d 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -139,6 +139,7 @@ public abstract class PlayerList {
+     private final IpBanList ipBans;
+     private final ServerOpList ops;
+     private final UserWhiteList whitelist;
++    private final Map<UUID, ServerPlayer> pendingPlayers = Maps.newHashMap(); // Paper
+     // CraftBukkit start
+     // private final Map<UUID, ServerStatisticManager> stats;
+     // private final Map<UUID, AdvancementDataPlayer> advancements;
+@@ -180,6 +181,13 @@ public abstract class PlayerList {
+     public void placeNewPlayer(Connection connection, ServerPlayer player) {
+         player.isRealPlayer = true; // Paper - Chunk priority
+         player.loginTime = System.currentTimeMillis(); // Paper
++        // Paper start
++        ServerPlayer prev = pendingPlayers.put(player.getUUID(), player);
++        if (prev != null) {
++            disconnectPendingPlayer(prev);
++        }
++        player.networkManager = connection;
++        // Paper end
+         GameProfile gameprofile = player.getGameProfile();
+         GameProfileCache usercache = this.server.getProfileCache();
+         Optional<GameProfile> optional = usercache.get(gameprofile.getId());
+@@ -192,7 +200,7 @@ public abstract class PlayerList {
+         if (nbttagcompound != null && nbttagcompound.contains("bukkit")) {
+             CompoundTag bukkit = nbttagcompound.getCompound("bukkit");
+             s = bukkit.contains("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
+-        }
++        }String lastKnownName = s; // Paper
+         // CraftBukkit end
+ 
+         if (nbttagcompound != null) {
+@@ -219,11 +227,15 @@ public abstract class PlayerList {
+         if (nbttagcompound == null) player.fudgeSpawnLocation(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
+ 
+         player.setLevel(worldserver1);
+-        String s1 = "local";
++        // Paper start - make s1 final
++        final String s1;
+ 
+         if (connection.getRemoteAddress() != null) {
+             s1 = connection.getRemoteAddress().toString();
++        } else {
++            s1 = "local";
+         }
++        // Paper end
+ 
+         // Spigot start - spawn location event
+         Player spawnPlayer = player.getBukkitEntity();
+@@ -265,6 +277,56 @@ public abstract class PlayerList {
+         player.getRecipeBook().sendInitialRecipeBook(player);
+         this.updateEntireScoreboard(worldserver1.getScoreboard(), player);
+         this.server.invalidateStatus();
++        // Paper start - async load spawn in chunk
++        ServerLevel finalWorldserver = worldserver1;
++        finalWorldserver.pendingLogin.add(player);
++        int chunkX = loc.getBlockX() >> 4;
++        int chunkZ = loc.getBlockZ() >> 4;
++        final net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
++        net.minecraft.server.level.ChunkMap playerChunkMap = worldserver1.getChunkSource().chunkMap;
++        net.minecraft.server.level.DistanceManager distanceManager = playerChunkMap.distanceManager;
++        net.minecraft.server.ChunkSystem.scheduleTickingState(
++            worldserver1, chunkX, chunkZ, net.minecraft.server.level.ChunkHolder.FullChunkStatus.ENTITY_TICKING, true,
++            ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHEST,
++            (chunk) -> {
++                MinecraftServer.getServer().scheduleOnMain(() -> {
++                    try {
++                        if (!playerconnection.connection.isConnected()) {
++                            return;
++                        }
++                        PlayerList.this.postChunkLoadJoin(
++                            player, finalWorldserver, connection, playerconnection,
++                            nbttagcompound, s1, lastKnownName
++                        );
++                        distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
++                    } finally {
++                        finalWorldserver.pendingLogin.remove(player);
++                    }
++                });
++            }
++        );
++    }
++
++    public ServerPlayer getActivePlayer(UUID uuid) {
++        ServerPlayer player = this.playersByUUID.get(uuid);
++        return player != null ? player : pendingPlayers.get(uuid);
++    }
++
++    void disconnectPendingPlayer(ServerPlayer entityplayer) {
++        Component msg = Component.translatable("multiplayer.disconnect.duplicate_login");
++        entityplayer.networkManager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(msg), net.minecraft.network.PacketSendListener.thenRun(() -> {
++            entityplayer.networkManager.disconnect(msg);
++            entityplayer.networkManager = null;
++        }));
++    }
++
++    private void postChunkLoadJoin(ServerPlayer player, ServerLevel worldserver1, Connection networkmanager, ServerGamePacketListenerImpl playerconnection, CompoundTag nbttagcompound, String s1, String s) {
++        pendingPlayers.remove(player.getUUID(), player);
++        if (!networkmanager.isConnected()) {
++            return;
++        }
++        player.didPlayerJoinEvent = true;
++        // Paper end
+         MutableComponent ichatmutablecomponent;
+ 
+         if (player.getGameProfile().getName().equalsIgnoreCase(s)) {
+@@ -506,6 +568,7 @@ public abstract class PlayerList {
+ 
+     protected void save(ServerPlayer player) {
+         if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
++        if (!player.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
+         this.playerIo.save(player);
+         ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
+ 
+@@ -533,7 +596,7 @@ public abstract class PlayerList {
+         }
+ 
+         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
+-        this.cserver.getPluginManager().callEvent(playerQuitEvent);
++        if (entityplayer.didPlayerJoinEvent) this.cserver.getPluginManager().callEvent(playerQuitEvent); // Paper - if we disconnected before join ever fired, don't fire quit
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
+ 
+         if (server.isSameThread()) entityplayer.doTick(); // SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
+@@ -578,6 +641,13 @@ public abstract class PlayerList {
+             // this.advancements.remove(uuid);
+             // CraftBukkit end
+         }
++        // Paper start
++        entityplayer1 = pendingPlayers.get(uuid);
++        if (entityplayer1 == entityplayer) {
++            pendingPlayers.remove(uuid);
++        }
++        entityplayer.networkManager = null;
++        // Paper end
+ 
+         // CraftBukkit start
+         // this.broadcastAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
+@@ -595,7 +665,7 @@ public abstract class PlayerList {
+         this.cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
+         // CraftBukkit end
+ 
+-        return playerQuitEvent.quitMessage(); // Paper - Adventure
++        return entityplayer.didPlayerJoinEvent ? playerQuitEvent.quitMessage() : null; // CraftBukkit // Paper - Adventure // Paper - don't print quit if we never printed join
+     }
+ 
+     // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
+@@ -614,6 +684,13 @@ public abstract class PlayerList {
+                 list.add(entityplayer);
+             }
+         }
++        // Paper start - check pending players too
++        entityplayer = pendingPlayers.get(uuid);
++        if (entityplayer != null) {
++            this.pendingPlayers.remove(uuid);
++            disconnectPendingPlayer(entityplayer);
++        }
++        // Paper end
+ 
+         Iterator iterator = list.iterator();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 4016b31bd020e00c0e79328646f9b5411b312e88..c8c11ec3c5c4c4d1ed09163aa6d3a4275e497e11 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1219,7 +1219,7 @@ public final class CraftServer implements Server {
+             return false;
+         }
+ 
+-        if (handle.players().size() > 0) {
++        if (handle.players().size() > 0 || handle.pendingLogin.size() > 0) { // Paper
+             return false;
+         }
+ 

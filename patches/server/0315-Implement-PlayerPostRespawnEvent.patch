@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MisterVector <whizkid3000@hotmail.com>
+Date: Fri, 26 Oct 2018 21:31:00 -0700
+Subject: [PATCH] Implement PlayerPostRespawnEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 895d087fbdde840bd6b96b6c8d231fc9beeb2a0b..3f95cfe7d6e85a19c4d6c4ce2b662a4259c45477 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -728,9 +728,14 @@ public abstract class PlayerList {
+ 
+         boolean flag2 = false;
+ 
++        // Paper start
++        boolean isBedSpawn = false;
++        boolean isRespawn = false;
++        // Paper end
++
+         // CraftBukkit start - fire PlayerRespawnEvent
+         if (location == null) {
+-            boolean isBedSpawn = false;
++            // boolean isBedSpawn = false; // Paper - moved up
+             ServerLevel worldserver1 = this.server.getLevel(entityplayer.getRespawnDimension());
+             if (worldserver1 != null) {
+                 Optional optional;
+@@ -782,6 +787,7 @@ public abstract class PlayerList {
+ 
+             location = respawnEvent.getRespawnLocation();
+             if (!flag) entityplayer.reset(); // SPIGOT-4785
++            isRespawn = true; // Paper
+         } else {
+             location.setWorld(worldserver.getWorld());
+         }
+@@ -839,6 +845,13 @@ public abstract class PlayerList {
+         if (entityplayer.connection.isDisconnected()) {
+             this.save(entityplayer);
+         }
++
++        // Paper start
++        if (isRespawn) {
++            cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(entityplayer.getBukkitEntity(), location, isBedSpawn));
++        }
++        // Paper end
++
+         // CraftBukkit end
+         return entityplayer1;
+     }
