@@ -10442,17 +10442,20 @@ index d2161a3c3b9a2b2d463ac778656c95167c10a49d..ebf9ebad4e675e78389c44de84cf8f93
  
      public boolean isDebugging() {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index bdd6560fe85950b0a857a949cb38c044da44ca6b..dfb9b10db9f87d4139a88336a3a2b4432ec37076 100644
+index bdd6560fe85950b0a857a949cb38c044da44ca6b..d8f49052d0c0641be5358bb41db90fccc44ffdb7 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -453,6 +453,26 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -452,7 +452,33 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         return this.getProperties().allowNether;
      }
  
++    static final java.util.concurrent.atomic.AtomicInteger ASYNC_DEBUG_CHUNKS_COUNT = new java.util.concurrent.atomic.AtomicInteger(); // Paper - rewrite chunk system
++
      public void handleConsoleInput(String command, CommandSourceStack commandSource) {
 +        // Paper start - rewrite chunk system
 +        if (command.equalsIgnoreCase("paper debug chunks --async")) {
 +            LOGGER.info("Scheduling async debug chunks");
-+            net.minecraft.server.MCUtil.asyncExecutor.execute(() -> {
++            Runnable run = () -> {
 +                LOGGER.info("Async debug chunks executing");
 +                io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(false);
 +                CommandSender sender = MinecraftServer.getServer().console;
@@ -10466,7 +10469,11 @@ index bdd6560fe85950b0a857a949cb38c044da44ca6b..dfb9b10db9f87d4139a88336a3a2b443
 +                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
 +                    sender.sendMessage(net.kyori.adventure.text.Component.text("Failed to dump chunk information, see console", net.kyori.adventure.text.format.NamedTextColor.RED));
 +                }
-+            });
++            };
++            Thread t = new Thread(run);
++            t.setName("Async debug thread #" + ASYNC_DEBUG_CHUNKS_COUNT.getAndIncrement());
++            t.setDaemon(true);
++            t.start();
 +        }
 +        // Paper end - rewrite chunk system
          this.serverCommandQueue.add(new ConsoleInput(command, commandSource));
