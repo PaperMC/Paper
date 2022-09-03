@@ -694,10 +694,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6679038054796b9bdfeb6fb4b29e50aa63052101
+index 0000000000000000000000000000000000000000..943be7d581bdf68a98152bfe9bdeb1117114c64f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,331 @@
+@@ -0,0 +1,338 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -882,6 +882,13 @@ index 0000000000000000000000000000000000000000..6679038054796b9bdfeb6fb4b29e50aa
 +
 +    public static String asPlain(final Component component, final Locale locale) {
 +        return PlainTextComponentSerializer.plainText().serialize(translated(component, locale));
++    }
++
++    public static String translateJsonTag(final String json, final Locale locale) {
++        if (json.contains("translate")) {
++            return asJsonString(GsonComponentSerializer.gson().deserialize(json), locale);
++        }
++        return null;
 +    }
 +
 +    private static Component translated(final Component component, final Locale locale) {
@@ -1423,6 +1430,19 @@ index 98f2def9125d6faf5859572a004fa8d2fa066417..436f381c727cda72c04859c540dce471
      @Nullable
      public static ChatFormatting getById(int colorIndex) {
          if (colorIndex < 0) {
+diff --git a/src/main/java/net/minecraft/advancements/DisplayInfo.java b/src/main/java/net/minecraft/advancements/DisplayInfo.java
+index db939a754e9308ad68f1b09a970f7a1b00a673bf..45b1fc6339d52a45b044ae1085161a542f2d8bfa 100644
+--- a/src/main/java/net/minecraft/advancements/DisplayInfo.java
++++ b/src/main/java/net/minecraft/advancements/DisplayInfo.java
+@@ -128,7 +128,7 @@ public class DisplayInfo {
+     public void serializeToNetwork(FriendlyByteBuf buf) {
+         buf.writeComponent(this.title);
+         buf.writeComponent(this.description);
+-        buf.writeItem(this.icon);
++        buf.writeItem(this.icon, true); // Paper - ignore translation
+         buf.writeEnum(this.frame);
+         int i = 0;
+         if (this.background != null) {
 diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 index 83ffb7a08630fdaf8655569d82974625c0eaf1ff..4da1ebcd0226897f8b03bd00a851f793df3506f4 100644
 --- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
@@ -1446,7 +1466,7 @@ index 83ffb7a08630fdaf8655569d82974625c0eaf1ff..4da1ebcd0226897f8b03bd00a851f793
              return completableFuture;
          }
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index c4854debe11b8bb61fa49c76c1854f94c1e7777f..42514a0c7066dc79050c0496d6463528b593f9e4 100644
+index c4854debe11b8bb61fa49c76c1854f94c1e7777f..d97c679be3df4e21f2e47e946aa8631d1d222150 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 @@ -18,6 +18,7 @@ import io.netty.handler.codec.EncoderException;
@@ -1482,6 +1502,89 @@ index c4854debe11b8bb61fa49c76c1854f94c1e7777f..42514a0c7066dc79050c0496d6463528
      }
  
      public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
+@@ -552,6 +561,11 @@ public class FriendlyByteBuf extends ByteBuf {
+     }
+ 
+     public FriendlyByteBuf writeItem(ItemStack stack) {
++        // Paper start
++        return writeItem(stack, false);
++    }
++    public FriendlyByteBuf writeItem(ItemStack stack, boolean skipTranslation) {
++        // Paper end
+         if (stack.isEmpty() || stack.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
+             this.writeBoolean(false);
+         } else {
+@@ -568,6 +582,7 @@ public class FriendlyByteBuf extends ByteBuf {
+                 CraftItemStack.setItemMeta(stack, CraftItemStack.getItemMeta(stack));
+                 // Spigot end
+                 nbttagcompound = stack.getTag();
++                if (!skipTranslation) handleWriteTranslation(nbttagcompound); // Paper
+             }
+ 
+             this.writeNbt(nbttagcompound);
+@@ -575,6 +590,53 @@ public class FriendlyByteBuf extends ByteBuf {
+ 
+         return this;
+     }
++    // Paper start
++    private void handleWriteTranslation(CompoundTag tag) {
++        if (tag == null || tag.isEmpty()) return;
++        CompoundTag display = tag.getCompound("display");
++        if (display.isEmpty()) return;
++
++        CompoundTag clonedDisplay = null;
++        String name = display.getString("Name");
++        if (!name.isEmpty()) {
++            String translatedName = PaperAdventure.translateJsonTag(name, adventure$locale);
++            if (translatedName != null) {
++                if (clonedDisplay == null) {
++                    clonedDisplay = display.copy();
++                }
++                display.putString("Name", translatedName);
++            }
++        }
++
++        net.minecraft.nbt.ListTag lore = display.getList("Lore", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_STRING);
++
++        int size = lore.size();
++        for (int i = 0; i < size; i++) {
++            String line = lore.getString(i);
++            String translatedLine = PaperAdventure.translateJsonTag(line, adventure$locale);
++            if (translatedLine != null) {
++                if (clonedDisplay == null) {
++                    clonedDisplay = display.copy();
++                }
++                lore.set(i, net.minecraft.nbt.StringTag.valueOf(translatedLine));
++            }
++        }
++        if (clonedDisplay != null) {
++            display.put("original", clonedDisplay);
++        }
++    }
++    private CompoundTag handleReadTranslation(CompoundTag tag) {
++        if (tag == null || tag.isEmpty()) return tag;
++        CompoundTag display = tag.getCompound("display");
++        if (display.isEmpty()) return tag;
++
++        CompoundTag original = display.getCompound("original");
++        if (!original.isEmpty()) {
++            tag.put("display", original);
++        }
++        return tag;
++    }
++    // Paper end
+ 
+     public ItemStack readItem() {
+         if (!this.readBoolean()) {
+@@ -584,7 +646,7 @@ public class FriendlyByteBuf extends ByteBuf {
+             byte b0 = this.readByte();
+             ItemStack itemstack = new ItemStack(item, b0);
+ 
+-            itemstack.setTag(this.readNbt());
++            itemstack.setTag(handleReadTranslation(this.readNbt())); // Paper
+             // CraftBukkit start
+             if (itemstack.getTag() != null) {
+                 CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
 index 021a26a6b1c258deffc26c035ab52a4ea027d9a1..00d432bd395e7f7fb6ee24e371818d13892b2f0c 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
@@ -1892,6 +1995,19 @@ index 762a9392ffac3042356709dddd15bb3516048bed..3544e2dc2522e9d6305d727d56e73490
          buf.writeComponent(this.header);
          buf.writeComponent(this.footer);
      }
+diff --git a/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java b/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
+index 0c79613597e9ed1fbeeb36e9cb60a70bbda17bb9..1a877327c62149bb251768c1a990022424298d70 100644
+--- a/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
++++ b/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
+@@ -38,7 +38,7 @@ public class EntityDataSerializers {
+     public static final EntityDataSerializer<ItemStack> ITEM_STACK = new EntityDataSerializer<ItemStack>() {
+         @Override
+         public void write(FriendlyByteBuf buf, ItemStack value) {
+-            buf.writeItem(value);
++            buf.writeItem(value, true); // Paper - ignore translation
+         }
+ 
+         @Override
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 805a1773d55e2551911e5b8e69052e23f630359b..e4220f14a5ebf43dd3491fc8649c2be5238c5798 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -1959,7 +2075,7 @@ index 805a1773d55e2551911e5b8e69052e23f630359b..e4220f14a5ebf43dd3491fc8649c2be5
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index bdad7b404067ab65d85d1628db9009896a43a052..5aad3da061d391d1003bdcca95dd4f7e5c0e5ea8 100644
+index bdad7b404067ab65d85d1628db9009896a43a052..ba7782c85fe4acf2f3390e6a32195deaa1c851d5 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -154,6 +154,7 @@ import net.minecraft.world.scores.Score;
@@ -2036,14 +2152,18 @@ index bdad7b404067ab65d85d1628db9009896a43a052..5aad3da061d391d1003bdcca95dd4f7e
      public void updateOptions(ServerboundClientInformationPacket packet) {
          // CraftBukkit start
          if (getMainArm() != packet.mainHand()) {
-@@ -1763,6 +1767,10 @@ public class ServerPlayer extends Player {
+@@ -1761,8 +1765,13 @@ public class ServerPlayer extends Player {
+         if (!this.locale.equals(packet.language)) {
+             PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(this.getBukkitEntity(), packet.language);
              this.server.server.getPluginManager().callEvent(event);
++            // Paper start - update itemstack translation
++            this.locale = packet.language;
++            this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(this.locale);
++            this.connection.connection.channel.attr(PaperAdventure.LOCALE_ATTRIBUTE).set(this.adventure$locale);
++            inventoryMenu.sendAllDataToRemote();
++            // Paper end
          }
-         this.locale = packet.language;
-+        // Paper start
-+        this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(this.locale);
-+        this.connection.connection.channel.attr(PaperAdventure.LOCALE_ATTRIBUTE).set(this.adventure$locale);
-+        // Paper end
+-        this.locale = packet.language;
          this.clientViewDistance = packet.viewDistance;
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
