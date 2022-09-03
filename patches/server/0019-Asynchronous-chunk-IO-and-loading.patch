@@ -2579,111 +2579,33 @@ index aaf6344d3187ceada947ce6ee0fbba91ca0271a3..1d6ab658c48bb765f66624f276ec7b05
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 514111ed7fe8aec0d5f15f7a8f157d5872a56e4f..3ff5e35e45a71dc03552dedb65c7338317e9d0a9 100644
+index 8c99e9d1cc1abf5a425846eb4edd52bf38aa2f75..07671ac54f598872dba2b22ec8f82db3dd037d7f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -308,10 +308,111 @@ public class ServerChunkCache extends ChunkSource {
+@@ -388,10 +388,33 @@ public class ServerChunkCache extends ChunkSource {
          return ret;
      }
      // Paper end
 +    // Paper start - async chunk io
-+    private long asyncLoadSeqCounter;
-+
 +    public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
-+        if (Thread.currentThread() != this.mainThread) {
-+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = new CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>();
-+            this.mainThreadProcessor.execute(() -> {
-+                this.getChunkAtAsynchronously(x, z, gen, isUrgent).whenComplete((chunk, ex) -> {
-+                    if (ex != null) {
-+                        future.completeExceptionally(ex);
-+                    } else {
-+                        future.complete(chunk);
-+                    }
-+                });
-+            });
-+            return future;
++        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> ret = new CompletableFuture<>();
++
++        ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority priority;
++        if (isUrgent) {
++            priority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHER;
++        } else {
++            priority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL;
 +        }
 +
-+        long k = ChunkPos.asLong(x, z);
-+        ChunkPos chunkPos = new ChunkPos(x, z);
-+
-+        ChunkAccess ichunkaccess;
-+
-+        // try cache
-+        for (int l = 0; l < 4; ++l) {
-+            if (k == this.lastChunkPos[l] && ChunkStatus.FULL == this.lastChunkStatus[l]) {
-+                ichunkaccess = this.lastChunk[l];
-+                if (ichunkaccess != null) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
-+
-+                    // move to first in cache
-+
-+                    for (int i1 = 3; i1 > 0; --i1) {
-+                        this.lastChunkPos[i1] = this.lastChunkPos[i1 - 1];
-+                        this.lastChunkStatus[i1] = this.lastChunkStatus[i1 - 1];
-+                        this.lastChunk[i1] = this.lastChunk[i1 - 1];
-+                    }
-+
-+                    this.lastChunkPos[0] = k;
-+                    this.lastChunkStatus[0] = ChunkStatus.FULL;
-+                    this.lastChunk[0] = ichunkaccess;
-+
-+                    return CompletableFuture.completedFuture(Either.left(ichunkaccess));
-+                }
++        net.minecraft.server.ChunkSystem.scheduleChunkLoad(this.level, x, z, gen, ChunkStatus.FULL, true, priority, (chunk) -> {
++            if (chunk == null) {
++                ret.complete(ChunkHolder.UNLOADED_CHUNK);
++            } else {
++                ret.complete(Either.left(chunk));
 +            }
-+        }
-+
-+        if (gen) {
-+            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
-+        }
-+
-+        ChunkAccess current = this.getChunkAtImmediately(x, z); // we want to bypass ticket restrictions
-+        if (current != null) {
-+            if (!(current instanceof net.minecraft.world.level.chunk.ImposterProtoChunk) && !(current instanceof LevelChunk)) {
-+                return CompletableFuture.completedFuture(ChunkHolder.UNLOADED_CHUNK);
-+            }
-+            // we know the chunk is at full status here (either in read-only mode or the real thing)
-+            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
-+        }
-+
-+        // here we don't know what status it is and we're not supposed to generate
-+        // so we asynchronously load empty status
-+        return this.bringToStatusAsync(x, z, chunkPos, ChunkStatus.EMPTY, isUrgent).thenCompose((either) -> {
-+            ChunkAccess chunk = either.left().orElse(null);
-+            if (!(chunk instanceof net.minecraft.world.level.chunk.ImposterProtoChunk) && !(chunk instanceof LevelChunk)) {
-+                // the chunk on disk was not a full status chunk
-+                return CompletableFuture.completedFuture(ChunkHolder.UNLOADED_CHUNK);
-+            }
-+            // bring to full status if required
-+            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
 +        });
-+    }
 +
-+    private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> bringToFullStatusAsync(int x, int z, ChunkPos chunkPos, boolean isUrgent) {
-+        return this.bringToStatusAsync(x, z, chunkPos, ChunkStatus.FULL, isUrgent);
-+    }
-+
-+    private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> bringToStatusAsync(int x, int z, ChunkPos chunkPos, ChunkStatus status, boolean isUrgent) {
-+        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getChunkFutureMainThread(x, z, status, true, isUrgent);
-+        Long identifier = Long.valueOf(this.asyncLoadSeqCounter++);
-+        int ticketLevel = net.minecraft.server.MCUtil.getTicketLevelFor(status);
-+        this.addTicketAtLevel(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
-+
-+        return future.thenComposeAsync((Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either) -> {
-+            // either left -> success
-+            // either right -> failure
-+
-+            this.removeTicketAtLevel(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
-+            this.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos); // allow unloading
-+
-+            Optional<ChunkHolder.ChunkLoadingFailure> failure = either.right();
-+
-+            if (failure.isPresent()) {
-+                // failure
-+                throw new IllegalStateException("Chunk failed to load: " + failure.get().toString());
-+            }
-+
-+            return CompletableFuture.completedFuture(either);
-+        }, this.mainThreadProcessor);
++        return ret;
 +    }
 +    // Paper end - async chunk io
  
@@ -2694,7 +2616,7 @@ index 514111ed7fe8aec0d5f15f7a8f157d5872a56e4f..3ff5e35e45a71dc03552dedb65c73383
          if (Thread.currentThread() != this.mainThread) {
              return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunk(x, z, leastStatus, create);
-@@ -334,13 +435,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -414,13 +437,18 @@ public class ServerChunkCache extends ChunkSource {
              }
  
              gameprofilerfiller.incrementCounter("getChunkCacheMiss");
@@ -2714,7 +2636,7 @@ index 514111ed7fe8aec0d5f15f7a8f157d5872a56e4f..3ff5e35e45a71dc03552dedb65c73383
                  this.level.timings.syncChunkLoad.stopTiming(); // Paper
              } // Paper
              ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-@@ -427,6 +533,11 @@ public class ServerChunkCache extends ChunkSource {
+@@ -507,6 +535,11 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
@@ -2726,7 +2648,7 @@ index 514111ed7fe8aec0d5f15f7a8f157d5872a56e4f..3ff5e35e45a71dc03552dedb65c73383
          ChunkPos chunkcoordintpair = new ChunkPos(chunkX, chunkZ);
          long k = chunkcoordintpair.toLong();
          int l = 33 + ChunkStatus.getDistance(leastStatus);
-@@ -841,11 +952,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -921,11 +954,12 @@ public class ServerChunkCache extends ChunkSource {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          public boolean pollTask() {
          try {
