@@ -589,6 +589,14 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
 
     /**
+     * Returns true if this entity can breathe underwater and will not take
+     * suffocation damage when its air supply reaches zero.
+     *
+     * @return <code>true</code> if the entity can breathe underwater
+     */
+    public boolean canBreatheUnderwater();
+
+    /**
      * Get the category to which this entity belongs.
      *
      * Categories may subject this entity to additional effects, benefits or
