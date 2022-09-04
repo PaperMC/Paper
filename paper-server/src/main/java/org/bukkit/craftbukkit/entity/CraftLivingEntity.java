@@ -698,6 +698,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public boolean canBreatheUnderwater() {
+        return getHandle().canBreatheUnderwater();
+    }
+
+    @Override
     public EntityCategory getCategory() {
         EnumMonsterType type = getHandle().getMobType(); // Not actually an enum?
 
