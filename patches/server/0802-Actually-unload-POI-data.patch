@@ -9,19 +9,31 @@ sometimes it is.
 This patch also prevents the saving/unloading of POI data when
 world saving is disabled.
 
+diff --git a/src/main/java/net/minecraft/server/ChunkSystem.java b/src/main/java/net/minecraft/server/ChunkSystem.java
+index 2a099fe0d514f181bf2b452d5333bc29b0d29e43..81ea64443a843736f9ada97900d173c302e39ba0 100644
+--- a/src/main/java/net/minecraft/server/ChunkSystem.java
++++ b/src/main/java/net/minecraft/server/ChunkSystem.java
+@@ -270,6 +270,7 @@ public final class ChunkSystem {
+         for (int index = 0, len = chunkMap.regionManagers.size(); index < len; ++index) {
+             chunkMap.regionManagers.get(index).addChunk(holder.pos.x, holder.pos.z);
+         }
++        chunkMap.getPoiManager().dequeueUnload(holder.pos.longKey); // Paper - unload POI data
+     }
+ 
+     public static void onChunkHolderDelete(final ServerLevel level, final ChunkHolder holder) {
+@@ -277,6 +278,7 @@ public final class ChunkSystem {
+         for (int index = 0, len = chunkMap.regionManagers.size(); index < len; ++index) {
+             chunkMap.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
+         }
++        chunkMap.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
+     }
+ 
+     public static void onChunkBorder(LevelChunk chunk, ChunkHolder holder) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index dc8d915956c04b3e9b596e3cb62f1a0498ef1787..39915f1c71fae142725ae2977a4eb0c483b4967a 100644
+index fe10c770b511fa8a38ece2bf9679492a85b28eff..a5e74d30045a171f5ed66a115fbd429e9ab412af 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -866,6 +866,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                     }
-                     // Paper end
-                 }
-+                this.getPoiManager().dequeueUnload(holder.pos.longKey); // Paper - unload POI data
- 
-                 this.updatingChunks.queueUpdate(pos, holder); // Paper - Don't copy
-                 this.modified = true;
-@@ -1017,7 +1018,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1016,7 +1016,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
          LongIterator longiterator = this.toDrop.iterator();
@@ -30,23 +42,7 @@ index dc8d915956c04b3e9b596e3cb62f1a0498ef1787..39915f1c71fae142725ae2977a4eb0c4
              long j = longiterator.nextLong();
              ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
  
-@@ -1065,6 +1066,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                         this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
-                     }
-                     // Paper end
-+                    this.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
-                     if (ichunkaccess instanceof LevelChunk) {
-                         ((LevelChunk) ichunkaccess).setLoaded(false);
-                     }
-@@ -1094,6 +1096,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
-                     this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
-                 }
-+                this.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
-             } // Paper end
-                 } finally { this.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes while unloading chunks
- 
-@@ -1169,6 +1172,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1164,6 +1164,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
                  this.poiManager.loadInData(pos, chunkHolder.poiData);
                  chunkHolder.tasks.forEach(Runnable::run);
