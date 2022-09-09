@@ -6,7 +6,7 @@ Subject: [PATCH] Fix interact event not being called in adventure
 Call PlayerInteractEvent when left-clicking on a block in adventure mode
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 38bc886317dec183bb276d1a81b4b0a001350312..2ad4df9895728185d6e5db2e8525ed3b08a518a1 100644
+index bdab60032896ad24add7d2efb49db07a1793670a..0840813bf89eb5d51f9dae02d5100ea9ba3de928 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1852,7 +1852,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -18,12 +18,12 @@ index 38bc886317dec183bb276d1a81b4b0a001350312..2ad4df9895728185d6e5db2e8525ed3b
                              this.player.swing(enumhand, true);
                          }
                      }
-@@ -2612,7 +2612,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         Vec3 vec3d1 = vec3d.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
-         HitResult movingobjectposition = this.player.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this.player));
+@@ -2606,7 +2606,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         // SPIGOT-5607: Only call interact event if no block or entity is being clicked. Use bukkit ray trace method, because it handles blocks and entities at the same time
+         org.bukkit.util.RayTraceResult result = this.player.level.getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.1, entity -> entity != this.player.getBukkitEntity());
  
--        if (movingobjectposition == null || movingobjectposition.getType() != HitResult.Type.BLOCK) {
-+        if (movingobjectposition == null || movingobjectposition.getType() != HitResult.Type.BLOCK || this.player.gameMode.getGameModeForPlayer() == GameType.ADVENTURE) { // Paper - call PlayerInteractEvent when left-clicking on a block in adventure mode
+-        if (result == null) {
++        if (result == null || this.player.gameMode.getGameModeForPlayer() == GameType.ADVENTURE) { // Paper - call PlayerInteractEvent when left-clicking on a block in adventure mode
              CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
          }
  
