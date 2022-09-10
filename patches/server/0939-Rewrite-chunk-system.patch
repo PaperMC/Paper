@@ -3312,10 +3312,10 @@ index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b8360758edcb67df31bcd39eea60e575a37ae7b
+index 0000000000000000000000000000000000000000..962d24fea60db3aacadc91e078936ae57aede746
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1190 @@
+@@ -0,0 +1,1191 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -4108,6 +4108,7 @@ index 0000000000000000000000000000000000000000..1b8360758edcb67df31bcd39eea60e57
 +    final ReferenceLinkedOpenHashSet<NewChunkHolder> unloadQueue = new ReferenceLinkedOpenHashSet<>();
 +
 +    private void removeChunkHolder(final NewChunkHolder holder) {
++        holder.killed = true;
 +        holder.vanillaChunkHolder.onChunkRemove();
 +        this.autoSaveQueue.remove(holder);
 +        ChunkSystem.onChunkHolderDelete(this.world, holder.vanillaChunkHolder);
@@ -7052,10 +7053,10 @@ index 0000000000000000000000000000000000000000..ffbfaef2a57f0f26d0143f3a8fcf937b
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..25850cb778f3ad0c1e18c1b3a45bec0ed579f0df
+index 0000000000000000000000000000000000000000..d1eb9666367cf89f8f6a142e851640c989176b26
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2058 @@
+@@ -0,0 +1,2067 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -7762,8 +7763,14 @@ index 0000000000000000000000000000000000000000..25850cb778f3ad0c1e18c1b3a45bec0e
 +        return null;
 +    }
 +
++    /** Unloaded from chunk map */
++    boolean killed;
++
 +    // must hold scheduling lock
 +    private void checkUnload() {
++        if (this.killed) {
++            return;
++        }
 +        if (this.isSafeToUnload() == null) {
 +            // ensure in unload queue
 +            this.scheduler.chunkHolderManager.unloadQueue.add(this);
@@ -9018,6 +9025,7 @@ index 0000000000000000000000000000000000000000..25850cb778f3ad0c1e18c1b3a45bec0e
 +            ", currentChunkStatus=" + currentFullStatus +
 +            ", pendingChunkStatus=" + pendingFullStatus +
 +            ", is_unload_safe=" + this.isSafeToUnload() +
++            ", killed=" + this.killed +
 +            '}';
 +    }
 +
@@ -9110,6 +9118,8 @@ index 0000000000000000000000000000000000000000..25850cb778f3ad0c1e18c1b3a45bec0e
 +            ret.addProperty("unload_task_priority", Objects.toString(unloadTask.getPriority()));
 +            ret.addProperty("unload_task_priority_raw", Integer.valueOf(unloadTask.getPriorityInternal()));
 +        }
++
++        ret.addProperty("killed", Boolean.valueOf(this.killed));
 +
 +        return ret;
 +    }
