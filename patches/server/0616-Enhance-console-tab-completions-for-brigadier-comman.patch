@@ -5,7 +5,7 @@ Subject: [PATCH] Enhance console tab completions for brigadier commands
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
-index a4070b59e261f0f1ac4beec47b11492f4724bf27..b0390eedb507d27426d1e1d73bd4ab63aec89ebe 100644
+index a4070b59e261f0f1ac4beec47b11492f4724bf27..c5d5648f4ca603ef2b1df723b58f9caf4dd3c722 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 +++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 @@ -16,11 +16,15 @@ public final class PaperConsole extends SimpleTerminalConsole {
@@ -20,7 +20,7 @@ index a4070b59e261f0f1ac4beec47b11492f4724bf27..b0390eedb507d27426d1e1d73bd4ab63
 -        );
 +                .option(LineReader.Option.COMPLETE_IN_WORD, true);
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierHighlighting) {
-+            builder.highlighter(new io.papermc.paper.console.BrigadierCommandHighlighter(this.server, this.server.createCommandSourceStack()));
++            builder.highlighter(new io.papermc.paper.console.BrigadierCommandHighlighter(this.server));
 +        }
 +        return super.buildReader(builder);
      }
@@ -28,18 +28,23 @@ index a4070b59e261f0f1ac4beec47b11492f4724bf27..b0390eedb507d27426d1e1d73bd4ab63
      @Override
 diff --git a/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java b/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5fee12b106a50f7c92c9ecf8256d5e12aec64260
+index 0000000000000000000000000000000000000000..0627c98cae0b5ebdd71a849ae1299d7d3d581850
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,99 @@
 +package io.papermc.paper.console;
 +
 +import com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion;
++import com.google.common.base.Suppliers;
 +import com.mojang.brigadier.CommandDispatcher;
 +import com.mojang.brigadier.ParseResults;
 +import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.suggestion.Suggestion;
 +import io.papermc.paper.adventure.PaperAdventure;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++import java.util.function.Supplier;
 +import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.network.chat.ComponentUtils;
 +import net.minecraft.server.dedicated.DedicatedServer;
@@ -48,28 +53,27 @@ index 0000000000000000000000000000000000000000..5fee12b106a50f7c92c9ecf8256d5e12
 +import org.jline.reader.LineReader;
 +import org.jline.reader.ParsedLine;
 +
-+import java.util.ArrayList;
-+import java.util.Collections;
-+import java.util.List;
-+
 +import static com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion.completion;
 +
 +public final class BrigadierCommandCompleter {
-+    private final CommandSourceStack commandSourceStack;
++    private final Supplier<CommandSourceStack> commandSourceStack;
 +    private final DedicatedServer server;
 +
-+    public BrigadierCommandCompleter(final @NonNull DedicatedServer server, final @NonNull CommandSourceStack commandSourceStack) {
++    public BrigadierCommandCompleter(final @NonNull DedicatedServer server) {
 +        this.server = server;
-+        this.commandSourceStack = commandSourceStack;
++        this.commandSourceStack = Suppliers.memoize(this.server::createCommandSourceStack);
 +    }
 +
 +    public void complete(final @NonNull LineReader reader, final @NonNull ParsedLine line, final @NonNull List<Candidate> candidates, final @NonNull List<Completion> existing) {
-+        if (!io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierCompletions) {
++        //noinspection ConstantConditions
++        if (this.server.overworld() == null) { // check if overworld is null, as worlds haven't been loaded yet
++            return;
++        } else if (!io.papermc.paper.configuration.GlobalConfiguration.get().console.enableBrigadierCompletions) {
 +            this.addCandidates(candidates, Collections.emptyList(), existing);
 +            return;
 +        }
 +        final CommandDispatcher<CommandSourceStack> dispatcher = this.server.getCommands().getDispatcher();
-+        final ParseResults<CommandSourceStack> results = dispatcher.parse(prepareStringReader(line.line()), this.commandSourceStack);
++        final ParseResults<CommandSourceStack> results = dispatcher.parse(prepareStringReader(line.line()), this.commandSourceStack.get());
 +        this.addCandidates(
 +            candidates,
 +            dispatcher.getCompletionSuggestions(results, line.cursor()).join().getList(),
@@ -129,15 +133,17 @@ index 0000000000000000000000000000000000000000..5fee12b106a50f7c92c9ecf8256d5e12
 +}
 diff --git a/src/main/java/io/papermc/paper/console/BrigadierCommandHighlighter.java b/src/main/java/io/papermc/paper/console/BrigadierCommandHighlighter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5ab8365b806dd035800ba9b449c9bc9233772d13
+index 0000000000000000000000000000000000000000..dd9d77d7c7f1a5a130a1f4c15e5b1e68ae3753e1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/BrigadierCommandHighlighter.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,70 @@
 +package io.papermc.paper.console;
 +
++import com.google.common.base.Suppliers;
 +import com.mojang.brigadier.ParseResults;
 +import com.mojang.brigadier.context.ParsedCommandNode;
 +import com.mojang.brigadier.tree.LiteralCommandNode;
++import java.util.function.Supplier;
 +import java.util.regex.Pattern;
 +import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.server.dedicated.DedicatedServer;
@@ -150,18 +156,22 @@ index 0000000000000000000000000000000000000000..5ab8365b806dd035800ba9b449c9bc92
 +
 +public final class BrigadierCommandHighlighter implements Highlighter {
 +    private static final int[] COLORS = {AttributedStyle.CYAN, AttributedStyle.YELLOW, AttributedStyle.GREEN, AttributedStyle.MAGENTA, /* Client uses GOLD here, not BLUE, however there is no GOLD AttributedStyle. */ AttributedStyle.BLUE};
-+    private final CommandSourceStack commandSourceStack;
++    private final Supplier<CommandSourceStack> commandSourceStack;
 +    private final DedicatedServer server;
 +
-+    public BrigadierCommandHighlighter(final @NonNull DedicatedServer server, final @NonNull CommandSourceStack commandSourceStack) {
++    public BrigadierCommandHighlighter(final @NonNull DedicatedServer server) {
 +        this.server = server;
-+        this.commandSourceStack = commandSourceStack;
++        this.commandSourceStack = Suppliers.memoize(this.server::createCommandSourceStack);
 +    }
 +
 +    @Override
 +    public AttributedString highlight(final @NonNull LineReader reader, final @NonNull String buffer) {
++        //noinspection ConstantConditions
++        if (this.server.overworld() == null) { // check if overworld is null, as worlds haven't been loaded yet
++            return new AttributedString(buffer, AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
++        }
 +        final AttributedStringBuilder builder = new AttributedStringBuilder();
-+        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(BrigadierCommandCompleter.prepareStringReader(buffer), this.commandSourceStack);
++        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(BrigadierCommandCompleter.prepareStringReader(buffer), this.commandSourceStack.get());
 +        int pos = 0;
 +        if (buffer.startsWith("/")) {
 +            builder.append("/", AttributedStyle.DEFAULT);
@@ -219,7 +229,7 @@ index ef02ceba53943d34bd45070297c72beedd6e1883..f812b0a2d5534a7c443361bd69cfc2fe
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics();
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
-index 14cd8ae69d9b25dc5edad4ff96ff4a9acb1f22cb..b3484487fa8baa4d1dd6c595586fb26a01a2153d 100644
+index 14cd8ae69d9b25dc5edad4ff96ff4a9acb1f22cb..cd4ad8261e56365850068db1d83d6a8454026737 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 @@ -18,9 +18,11 @@ import org.bukkit.event.server.TabCompleteEvent;
@@ -230,7 +240,7 @@ index 14cd8ae69d9b25dc5edad4ff96ff4a9acb1f22cb..b3484487fa8baa4d1dd6c595586fb26a
  
      public ConsoleCommandCompleter(DedicatedServer server) { // Paper - CraftServer -> DedicatedServer
          this.server = server;
-+        this.brigadierCompleter = new io.papermc.paper.console.BrigadierCommandCompleter(this.server, this.server.createCommandSourceStack()); // Paper
++        this.brigadierCompleter = new io.papermc.paper.console.BrigadierCommandCompleter(this.server); // Paper
      }
  
      // Paper start - Change method signature for JLine update
