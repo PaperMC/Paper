@@ -1364,10 +1364,10 @@ index 0000000000000000000000000000000000000000..fd1d99582b1e872c9a6b8e1be7d71b21
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e217e61753ae27dab2959e2829b9df74aa79c933
+index 0000000000000000000000000000000000000000..de137486f610e9042853512f630b9dcc74b29280
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
-@@ -0,0 +1,1308 @@
+@@ -0,0 +1,1328 @@
 +package io.papermc.paper.chunk.system.io;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -1584,6 +1584,26 @@ index 0000000000000000000000000000000000000000..e217e61753ae27dab2959e2829b9df74
 +    public static void flush() {
 +        for (int i = 0, len = threads.length; i < len; ++i) {
 +            threads[i].waitUntilAllExecuted();
++        }
++    }
++
++    public static void partialFlush(final int totalTasksRemaining) {
++        long failures = 1L; // start out at 0.25ms
++
++        for (;;) {
++            final long[] executed = getExecutedTasks();
++            final long[] scheduled = getTasksScheduled();
++
++            long sum = 0;
++            for (int i = 0; i < executed.length; ++i) {
++                sum += scheduled[i] - executed[i];
++            }
++
++            if (sum <= totalTasksRemaining) {
++                break;
++            }
++
++            failures = ConcurrentUtil.linearLongBackoff(failures, 250_000L, 5_000_000L); // 500us, 5ms
 +        }
 +    }
 +
@@ -3312,10 +3332,10 @@ index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..962d24fea60db3aacadc91e078936ae57aede746
+index 0000000000000000000000000000000000000000..a78ffc28d858f2917a109668e1d3bded7410f7ee
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1191 @@
+@@ -0,0 +1,1188 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -3521,10 +3541,6 @@ index 0000000000000000000000000000000000000000..962d24fea60db3aacadc91e078936ae5
 +    public void saveAllChunks(final boolean flush, final boolean shutdown, final boolean logProgress) {
 +        final List<NewChunkHolder> holders = this.getChunkHolders();
 +
-+        if (flush) {
-+            RegionFileIOThread.flush();
-+        }
-+
 +        if (logProgress) {
 +            LOGGER.info("Saving all chunkholders for world '" + this.world.getWorld().getName() + "'");
 +        }
@@ -3536,6 +3552,7 @@ index 0000000000000000000000000000000000000000..962d24fea60db3aacadc91e078936ae5
 +        long start = System.nanoTime();
 +        long lastLog = start;
 +        boolean needsFlush = false;
++        final int flushInterval = 50;
 +
 +        for (int i = 0, len = holders.size(); i < len; ++i) {
 +            final NewChunkHolder holder = holders.get(i);
@@ -3549,9 +3566,9 @@ index 0000000000000000000000000000000000000000..962d24fea60db3aacadc91e078936ae5
 +            } catch (final Throwable thr) {
 +                LOGGER.error("Failed to save chunk (" + holder.chunkX + "," + holder.chunkZ + ") in world '" + this.world.getWorld().getName() + "'", thr);
 +            }
-+            if (flush && needsFlush && (saved % 50) == 0) {
++            if (flush && needsFlush && (saved % flushInterval) == 0) {
 +                needsFlush = false;
-+                RegionFileIOThread.flush();
++                RegionFileIOThread.partialFlush(flushInterval / 2);
 +            }
 +            if (logProgress) {
 +                final long currTime = System.nanoTime();
@@ -4141,7 +4158,7 @@ index 0000000000000000000000000000000000000000..962d24fea60db3aacadc91e078936ae5
 +                // in order to ensure all chunks in the unload queue do not have a pending ticket level update,
 +                // process them now
 +                this.processTicketUpdates(false, false, scheduleList);
-+                unloadQueue = new ArrayList<>(this.unloadQueue.size());
++                unloadQueue = new ArrayList<>((int)(this.unloadQueue.size() * 0.05) + 1);
 +
 +                final int unloadCount = Math.max(50, (int)(this.unloadQueue.size() * 0.05));
 +                for (int i = 0; i < unloadCount && !this.unloadQueue.isEmpty(); ++i) {
