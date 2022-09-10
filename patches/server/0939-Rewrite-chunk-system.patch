@@ -7053,10 +7053,10 @@ index 0000000000000000000000000000000000000000..ffbfaef2a57f0f26d0143f3a8fcf937b
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d1eb9666367cf89f8f6a142e851640c989176b26
+index 0000000000000000000000000000000000000000..8b4f8da3fc7274ce617289c7b3625bd763e724a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2067 @@
+@@ -0,0 +1,2068 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -7827,20 +7827,23 @@ index 0000000000000000000000000000000000000000..d1eb9666367cf89f8f6a142e851640c9
 +        // priority state
 +        this.priorityLocked = false;
 +
-+        if (chunk != null) {
-+            this.chunkDataUnload = new UnloadTask(new Completable<>(), new DelayedPrioritisedTask(PrioritisedExecutor.Priority.NORMAL));
++        if (!(chunk instanceof LevelChunk && ((LevelChunk)chunk).mustNotSave)) {
++            if (chunk != null) {
++                this.chunkDataUnload = new UnloadTask(new Completable<>(), new DelayedPrioritisedTask(PrioritisedExecutor.Priority.NORMAL));
++            }
++            if (poiChunk != null) {
++                this.poiDataUnload = new UnloadTask(new Completable<>(), null);
++            }
 +        }
++
 +        if (entityChunk != null) {
 +            this.entityDataUnload = new UnloadTask(new Completable<>(), null);
-+        }
-+        if (poiChunk != null) {
-+            this.poiDataUnload = new UnloadTask(new Completable<>(), null);
 +        }
 +
 +        return this.unloadState = (chunk != null || entityChunk != null || poiChunk != null) ? new UnloadState(this, chunk, entityChunk, poiChunk) : null;
 +    }
 +
-+    // data is null if failed
++    // data is null if failed or does not need to be saved
 +    void completeAsyncChunkDataSave(final CompoundTag data) {
 +        if (data != null) {
 +            RegionFileIOThread.scheduleSave(this.world, this.chunkX, this.chunkZ, data, RegionFileIOThread.RegionFileType.CHUNK_DATA);
@@ -8795,11 +8798,9 @@ index 0000000000000000000000000000000000000000..d1eb9666367cf89f8f6a142e851640c9
 +            }
 +        }
 +
-+        if (chunk instanceof LevelChunk levelChunk && levelChunk.mustNotSave) {
-+            return false;
-+        }
-+        boolean canSaveChunk = chunk != null && (shutdown || (chunk instanceof LevelChunk && chunk.isUnsaved()));
-+        boolean canSavePOI = poi != null && poi.isDirty();
++        boolean canSaveChunk = !(chunk instanceof LevelChunk levelChunk && levelChunk.mustNotSave) &&
++                                (chunk != null && ((shutdown || chunk instanceof LevelChunk) && chunk.isUnsaved()));
++        boolean canSavePOI = !(chunk instanceof LevelChunk levelChunk && levelChunk.mustNotSave) && (poi != null && poi.isDirty());
 +        boolean canSaveEntities = entities != null;
 +
 +        try (co.aikar.timings.Timing ignored = this.world.timings.chunkSave.startTiming()) { // Paper
@@ -8875,7 +8876,7 @@ index 0000000000000000000000000000000000000000..d1eb9666367cf89f8f6a142e851640c9
 +    }
 +
 +    private boolean saveChunk(final ChunkAccess chunk, final boolean unloading) {
-+        if (chunk instanceof ImposterProtoChunk) {
++        if (!chunk.isUnsaved()) {
 +            if (unloading) {
 +                this.completeAsyncChunkDataSave(null);
 +            }
