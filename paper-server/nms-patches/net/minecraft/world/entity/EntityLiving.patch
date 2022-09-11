@@ -556,7 +556,36 @@
  
      }
  
-@@ -1559,9 +1825,14 @@
+@@ -1504,6 +1770,28 @@
+         return itemstack.getEatingSound();
+     }
+ 
++    // CraftBukkit start - Add delegate methods
++    public SoundEffect getHurtSound0(DamageSource damagesource) {
++        return getHurtSound(damagesource);
++    }
++
++    public SoundEffect getDeathSound0() {
++        return getDeathSound();
++    }
++
++    public SoundEffect getFallDamageSound0(int fallHeight) {
++        return getFallDamageSound(fallHeight);
++    }
++
++    public SoundEffect getDrinkingSound0(ItemStack itemstack) {
++        return getDrinkingSound(itemstack);
++    }
++
++    public SoundEffect getEatingSound0(ItemStack itemstack) {
++        return getEatingSound(itemstack);
++    }
++    // CraftBukkit end
++
+     @Override
+     public void setOnGround(boolean flag) {
+         super.setOnGround(flag);
+@@ -1559,9 +1847,14 @@
          int i = this.calculateFallDamage(f, f1);
  
          if (i > 0) {
@@ -572,7 +601,7 @@
              return true;
          } else {
              return flag;
-@@ -1610,7 +1881,7 @@
+@@ -1610,7 +1903,7 @@
  
      protected float getDamageAfterArmorAbsorb(DamageSource damagesource, float f) {
          if (!damagesource.isBypassArmor()) {
@@ -581,7 +610,7 @@
              f = CombatMath.getDamageAfterAbsorb(f, (float) this.getArmorValue(), (float) this.getAttributeValue(GenericAttributes.ARMOR_TOUGHNESS));
          }
  
-@@ -1623,7 +1894,8 @@
+@@ -1623,7 +1916,8 @@
          } else {
              int i;
  
@@ -591,7 +620,7 @@
                  i = (this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
                  float f1 = f * (float) j;
-@@ -1656,29 +1928,172 @@
+@@ -1656,29 +1950,172 @@
          }
      }
  
@@ -694,10 +723,7 @@
 +            if (damagesource.isDamageHelmet() && !this.getItemBySlot(EnumItemSlot.HEAD).isEmpty()) {
 +                this.hurtHelmet(damagesource, f);
 +            }
- 
--            f = Math.max(f - this.getAbsorptionAmount(), 0.0F);
--            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f1 - f));
--            float f2 = f1 - f;
++
 +            // Apply damage to armor
 +            if (!damagesource.isBypassArmor()) {
 +                float armorDamage = (float) (event.getDamage() + event.getDamage(DamageModifier.BLOCKING) + event.getDamage(DamageModifier.HARD_HAT));
@@ -714,7 +740,10 @@
 +                    this.blockUsingShield((EntityLiving) entity);
 +                }
 +            }
-+
+ 
+-            f = Math.max(f - this.getAbsorptionAmount(), 0.0F);
+-            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f1 - f));
+-            float f2 = f1 - f;
 +            absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionAmount(Math.max(this.getAbsorptionAmount() - absorptionModifier, 0.0F));
 +            float f2 = absorptionModifier;
@@ -774,27 +803,28 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1699,8 +2114,18 @@
+@@ -1699,9 +2136,19 @@
      }
  
      public final void setArrowCount(int i) {
 -        this.entityData.set(EntityLiving.DATA_ARROW_COUNT_ID, i);
 +        // CraftBukkit start
 +        setArrowCount(i, false);
-+    }
-+
+     }
+ 
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(EntityLiving.DATA_ARROW_COUNT_ID, event.getNewAmount());
-     }
++    }
 +    // CraftBukkit end
- 
++
      public final int getStingerCount() {
          return (Integer) this.entityData.get(EntityLiving.DATA_STINGER_COUNT_ID);
-@@ -1996,6 +2421,12 @@
+     }
+@@ -1996,6 +2443,12 @@
  
      public abstract ItemStack getItemBySlot(EnumItemSlot enumitemslot);
  
@@ -807,7 +837,7 @@
      @Override
      public abstract void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack);
  
-@@ -2239,6 +2670,7 @@
+@@ -2239,6 +2692,7 @@
                  }
  
                  if (this.onGround && !this.level.isClientSide) {
@@ -815,7 +845,7 @@
                      this.setSharedFlag(7, false);
                  }
              } else {
-@@ -2772,6 +3204,7 @@
+@@ -2772,6 +3226,7 @@
          }
  
          if (!this.level.isClientSide) {
@@ -823,7 +853,7 @@
              this.setSharedFlag(7, flag);
          }
  
-@@ -2931,14 +3364,21 @@
+@@ -2931,14 +3386,21 @@
  
      @Override
      public boolean isPickable() {
@@ -847,7 +877,7 @@
      @Override
      public float getYHeadRot() {
          return this.yHeadRot;
-@@ -3133,7 +3573,25 @@
+@@ -3133,7 +3595,25 @@
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
                      this.triggerItemUseEffects(this.useItem, 16);
@@ -874,7 +904,7 @@
  
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
-@@ -3211,6 +3669,12 @@
+@@ -3211,6 +3691,12 @@
      }
  
      public boolean randomTeleport(double d0, double d1, double d2, boolean flag) {
@@ -887,7 +917,7 @@
          double d3 = this.getX();
          double d4 = this.getY();
          double d5 = this.getZ();
-@@ -3235,16 +3699,41 @@
+@@ -3235,16 +3721,41 @@
              }
  
              if (flag2) {
@@ -932,7 +962,7 @@
          } else {
              if (flag) {
                  world.broadcastEntityEvent(this, (byte) 46);
-@@ -3254,7 +3743,7 @@
+@@ -3254,7 +3765,7 @@
                  ((EntityCreature) this).getNavigation().stop();
              }
  
@@ -941,7 +971,7 @@
          }
      }
  
-@@ -3337,7 +3826,7 @@
+@@ -3337,7 +3848,7 @@
      }
  
      public void stopSleeping() {
@@ -950,7 +980,7 @@
          World world = this.level;
  
          java.util.Objects.requireNonNull(this.level);
-@@ -3369,7 +3858,7 @@
+@@ -3369,7 +3880,7 @@
  
      @Nullable
      public EnumDirection getBedOrientation() {
@@ -959,7 +989,7 @@
  
          return blockposition != null ? BlockBed.getBedOrientation(this.level, blockposition) : null;
      }
-@@ -3417,7 +3906,7 @@
+@@ -3417,7 +3928,7 @@
                  Pair<MobEffect, Float> pair = (Pair) iterator.next();
  
                  if (!world.isClientSide && pair.getFirst() != null && world.random.nextFloat() < (Float) pair.getSecond()) {

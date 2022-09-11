@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.sounds.SoundEffect;
 import net.minecraft.world.EnumHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
@@ -43,10 +44,12 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
@@ -695,6 +698,45 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
         getHandle().getBrain().setMemory(CraftMemoryKey.fromMemoryKey(memoryKey), CraftMemoryMapper.toNms(t));
+    }
+
+    @Override
+    public Sound getHurtSound() {
+        SoundEffect sound = getHandle().getHurtSound0(DamageSource.GENERIC);
+        return (sound != null) ? CraftSound.getBukkit(sound) : null;
+    }
+
+    @Override
+    public Sound getDeathSound() {
+        SoundEffect sound = getHandle().getDeathSound0();
+        return (sound != null) ? CraftSound.getBukkit(sound) : null;
+    }
+
+    @Override
+    public Sound getFallDamageSound(int fallHeight) {
+        return CraftSound.getBukkit(getHandle().getFallDamageSound0(fallHeight));
+    }
+
+    @Override
+    public Sound getFallDamageSoundSmall() {
+        return CraftSound.getBukkit(getHandle().getFallSounds().small());
+    }
+
+    @Override
+    public Sound getFallDamageSoundBig() {
+        return CraftSound.getBukkit(getHandle().getFallSounds().big());
+    }
+
+    @Override
+    public Sound getDrinkingSound(ItemStack itemStack) {
+        Preconditions.checkArgument(itemStack != null, "itemStack must not be null");
+        return CraftSound.getBukkit(getHandle().getDrinkingSound0(CraftItemStack.asNMSCopy(itemStack)));
+    }
+
+    @Override
+    public Sound getEatingSound(ItemStack itemStack) {
+        Preconditions.checkArgument(itemStack != null, "itemStack must not be null");
+        return CraftSound.getBukkit(getHandle().getEatingSound0(CraftItemStack.asNMSCopy(itemStack)));
     }
 
     @Override

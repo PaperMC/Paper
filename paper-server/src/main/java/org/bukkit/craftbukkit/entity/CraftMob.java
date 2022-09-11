@@ -1,11 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.sounds.SoundEffect;
 import net.minecraft.world.entity.EntityInsentient;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
@@ -43,6 +45,12 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
     @Override
     public boolean isAware() {
         return getHandle().aware;
+    }
+
+    @Override
+    public Sound getAmbientSound() {
+        SoundEffect sound = getHandle().getAmbientSound0();
+        return (sound != null) ? CraftSound.getBukkit(sound) : null;
     }
 
     @Override

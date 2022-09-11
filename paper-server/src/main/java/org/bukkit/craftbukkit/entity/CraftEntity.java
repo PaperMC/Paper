@@ -15,6 +15,7 @@ import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.PlayerChunkMap;
 import net.minecraft.server.level.WorldServer;
+import net.minecraft.sounds.SoundEffect;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
@@ -162,10 +163,12 @@ import net.minecraft.world.phys.AxisAlignedBB;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
@@ -755,6 +758,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         if (type.getApplicable().isInstance(this)) {
             this.getHandle().level.broadcastEntityEvent(getHandle(), type.getData());
         }
+    }
+
+    @Override
+    public Sound getSwimSound() {
+        return CraftSound.getBukkit(getHandle().getSwimSound0());
+    }
+
+    @Override
+    public Sound getSwimSplashSound() {
+        return CraftSound.getBukkit(getHandle().getSwimSplashSound0());
+    }
+
+    @Override
+    public Sound getSwimHighSpeedSplashSound() {
+        return CraftSound.getBukkit(getHandle().getSwimHighSpeedSplashSound0());
     }
 
     public void setHandle(final Entity entity) {
