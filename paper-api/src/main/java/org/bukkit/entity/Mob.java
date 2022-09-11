@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import org.bukkit.Sound;
 import org.bukkit.loot.Lootable;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,4 +48,17 @@ public interface Mob extends LivingEntity, Lootable {
      * @return whether the mob is aware
      */
     public boolean isAware();
+
+    /**
+     * Get the {@link Sound} this makes while ambiently existing. This sound
+     * may change depending on the current state of the entity, and may also
+     * return null under specific conditions. This sound is not constant.
+     * For instance, villagers will make different passive noises depending
+     * on whether or not they are actively trading with a player, or make no
+     * ambient noise while sleeping.
+     *
+     * @return the ambient sound, or null if this entity is ambiently quiet
+     */
+    @Nullable
+    public Sound getAmbientSound();
 }

@@ -1,6 +1,8 @@
 package org.bukkit.entity;
 
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface Raider extends Monster {
@@ -47,4 +49,12 @@ public interface Raider extends Monster {
      * @param join CanJoinRaid status
      */
     void setCanJoinRaid(boolean join);
+
+    /**
+     * Get the {@link Sound} this entity will play when celebrating.
+     *
+     * @return the celebration sound
+     */
+    @NotNull
+    Sound getCelebrationSound();
 }

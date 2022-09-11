@@ -7,11 +7,13 @@ import java.util.UUID;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Block;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
@@ -587,6 +589,73 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param <T> the type of the passed value
      */
     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
+
+    /**
+     * Get the {@link Sound} this entity will make when damaged.
+     *
+     * @return the hurt sound, or null if the entity does not make any sound
+     */
+    @Nullable
+    public Sound getHurtSound();
+
+    /**
+     * Get the {@link Sound} this entity will make on death.
+     *
+     * @return the death sound, or null if the entity does not make any sound
+     */
+    @Nullable
+    public Sound getDeathSound();
+
+    /**
+     * Get the {@link Sound} this entity will make when falling from the given
+     * height (in blocks). The sound will often differ between either a small
+     * or a big fall damage sound if the height exceeds 4 blocks.
+     *
+     * @param fallHeight the fall height in blocks
+     * @return the fall damage sound
+     * @see #getFallDamageSoundSmall()
+     * @see #getFallDamageSoundBig()
+     */
+    @NotNull
+    public Sound getFallDamageSound(int fallHeight);
+
+    /**
+     * Get the {@link Sound} this entity will make when falling from a small
+     * height.
+     *
+     * @return the fall damage sound
+     */
+    @NotNull
+    public Sound getFallDamageSoundSmall();
+
+    /**
+     * Get the {@link Sound} this entity will make when falling from a large
+     * height.
+     *
+     * @return the fall damage sound
+     */
+    @NotNull
+    public Sound getFallDamageSoundBig();
+
+    /**
+     * Get the {@link Sound} this entity will make when drinking the given
+     * {@link ItemStack}.
+     *
+     * @param itemStack the item stack being drank
+     * @return the drinking sound
+     */
+    @NotNull
+    public Sound getDrinkingSound(@NotNull ItemStack itemStack);
+
+    /**
+     * Get the {@link Sound} this entity will make when eating the given
+     * {@link ItemStack}.
+     *
+     * @param itemStack the item stack being eaten
+     * @return the eating sound
+     */
+    @NotNull
+    public Sound getEatingSound(@NotNull ItemStack itemStack);
 
     /**
      * Returns true if this entity can breathe underwater and will not take
