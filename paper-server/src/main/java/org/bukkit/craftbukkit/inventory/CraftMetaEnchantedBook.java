@@ -7,7 +7,6 @@ import java.util.Map;
 import net.minecraft.nbt.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
@@ -57,12 +56,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case ENCHANTED_BOOK:
-                return true;
-            default:
-                return false;
-        }
+        return type == Material.ENCHANTED_BOOK;
     }
 
     @Override

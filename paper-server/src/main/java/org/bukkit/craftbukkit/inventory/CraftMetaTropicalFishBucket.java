@@ -8,7 +8,6 @@ import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.TropicalFish;
@@ -86,12 +85,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case TROPICAL_FISH_BUCKET:
-                return true;
-            default:
-                return false;
-        }
+        return type == Material.TROPICAL_FISH_BUCKET;
     }
 
     @Override

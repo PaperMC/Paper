@@ -1,8 +1,10 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Sets;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.nbt.GameProfileSerializer;
 import net.minecraft.nbt.NBTTagCompound;
@@ -12,7 +14,6 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -21,6 +22,21 @@ import org.bukkit.profile.PlayerProfile;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+
+    private static final Set<Material> SKULL_MATERIALS = Sets.newHashSet(
+            Material.CREEPER_HEAD,
+            Material.CREEPER_WALL_HEAD,
+            Material.DRAGON_HEAD,
+            Material.DRAGON_WALL_HEAD,
+            Material.PLAYER_HEAD,
+            Material.PLAYER_WALL_HEAD,
+            Material.SKELETON_SKULL,
+            Material.SKELETON_WALL_SKULL,
+            Material.WITHER_SKELETON_SKULL,
+            Material.WITHER_SKELETON_WALL_SKULL,
+            Material.ZOMBIE_HEAD,
+            Material.ZOMBIE_WALL_HEAD
+    );
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKey SKULL_PROFILE = new ItemMetaKey("SkullProfile");
@@ -109,23 +125,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case CREEPER_HEAD:
-            case CREEPER_WALL_HEAD:
-            case DRAGON_HEAD:
-            case DRAGON_WALL_HEAD:
-            case PLAYER_HEAD:
-            case PLAYER_WALL_HEAD:
-            case SKELETON_SKULL:
-            case SKELETON_WALL_SKULL:
-            case WITHER_SKELETON_SKULL:
-            case WITHER_SKELETON_WALL_SKULL:
-            case ZOMBIE_HEAD:
-            case ZOMBIE_WALL_HEAD:
-                return true;
-            default:
-                return false;
-        }
+        return SKULL_MATERIALS.contains(type);
     }
 
     @Override

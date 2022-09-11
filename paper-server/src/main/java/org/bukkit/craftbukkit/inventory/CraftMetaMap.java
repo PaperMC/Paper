@@ -10,7 +10,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.MapMeta;
@@ -120,12 +119,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case FILLED_MAP:
-                return true;
-            default:
-                return false;
-        }
+        return type == Material.FILLED_MAP;
     }
 
     @Override

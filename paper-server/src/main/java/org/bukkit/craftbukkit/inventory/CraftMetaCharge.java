@@ -6,7 +6,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 
@@ -68,12 +67,7 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case FIREWORK_STAR:
-                return true;
-            default:
-                return false;
-        }
+        return type == Material.FIREWORK_STAR;
     }
 
     @Override

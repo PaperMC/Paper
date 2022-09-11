@@ -6,7 +6,6 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
 
 @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 public class CraftMetaArmorStand extends CraftMetaItem {
@@ -64,12 +63,7 @@ public class CraftMetaArmorStand extends CraftMetaItem {
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case ARMOR_STAND:
-                return true;
-            default:
-                return false;
-        }
+        return type == Material.ARMOR_STAND;
     }
 
     @Override

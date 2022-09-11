@@ -83,12 +83,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case AXOLOTL_BUCKET:
-                return true;
-            default:
-                return false;
-        }
+        return type == Material.AXOLOTL_BUCKET;
     }
 
     @Override

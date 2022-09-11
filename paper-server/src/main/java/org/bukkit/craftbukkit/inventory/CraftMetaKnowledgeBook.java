@@ -11,7 +11,6 @@ import net.minecraft.nbt.NBTTagString;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.meta.KnowledgeBookMeta;
@@ -84,12 +83,7 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case KNOWLEDGE_BOOK:
-                return true;
-            default:
-                return false;
-        }
+        return type == Material.KNOWLEDGE_BOOK;
     }
 
     @Override

@@ -51,13 +51,7 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-        case WRITTEN_BOOK:
-        case WRITABLE_BOOK:
-            return true;
-        default:
-            return false;
-        }
+        return type == Material.WRITTEN_BOOK || type == Material.WRITABLE_BOOK;
     }
 
     @Override
