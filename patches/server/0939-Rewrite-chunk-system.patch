@@ -3332,7 +3332,7 @@ index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a78ffc28d858f2917a109668e1d3bded7410f7ee
+index 0000000000000000000000000000000000000000..dadb971cd1fb0b6729e4672024f4f72fa4b908f2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 @@ -0,0 +1,1188 @@
@@ -3559,14 +3559,14 @@ index 0000000000000000000000000000000000000000..a78ffc28d858f2917a109668e1d3bded
 +            try {
 +                if (holder.save(shutdown, false)) {
 +                    ++saved;
-+                    needsFlush = true;
++                    needsFlush = flush;
 +                }
 +            } catch (final ThreadDeath thr) {
 +                throw thr;
 +            } catch (final Throwable thr) {
 +                LOGGER.error("Failed to save chunk (" + holder.chunkX + "," + holder.chunkZ + ") in world '" + this.world.getWorld().getName() + "'", thr);
 +            }
-+            if (flush && needsFlush && (saved % flushInterval) == 0) {
++            if (needsFlush && (saved % flushInterval) == 0) {
 +                needsFlush = false;
 +                RegionFileIOThread.partialFlush(flushInterval / 2);
 +            }
@@ -7070,10 +7070,10 @@ index 0000000000000000000000000000000000000000..ffbfaef2a57f0f26d0143f3a8fcf937b
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8b4f8da3fc7274ce617289c7b3625bd763e724a6
+index 0000000000000000000000000000000000000000..d2d66fb775027903c60c02102d001fdea7abb808
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2068 @@
+@@ -0,0 +1,2071 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -7826,9 +7826,9 @@ index 0000000000000000000000000000000000000000..8b4f8da3fc7274ce617289c7b3625bd7
 +    UnloadState unloadStage1() {
 +        // because we hold the scheduling lock, we cannot actually unload anything
 +        // so we need to null this chunk's state
-+        final ChunkAccess chunk = this.currentChunk;
-+        final ChunkEntitySlices entityChunk = this.entityChunk;
-+        final PoiChunk poiChunk = this.poiChunk;
++        ChunkAccess chunk = this.currentChunk;
++        ChunkEntitySlices entityChunk = this.entityChunk;
++        PoiChunk poiChunk = this.poiChunk;
 +        // chunk state
 +        this.currentChunk = null;
 +        this.currentGenStatus = null;
@@ -7851,6 +7851,9 @@ index 0000000000000000000000000000000000000000..8b4f8da3fc7274ce617289c7b3625bd7
 +            if (poiChunk != null) {
 +                this.poiDataUnload = new UnloadTask(new Completable<>(), null);
 +            }
++        } else {
++            chunk = null;
++            poiChunk = null;
 +        }
 +
 +        if (entityChunk != null) {
