@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -586,4 +587,20 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param location where to set the last death player location
      */
     public void setLastDeathLocation(@Nullable Location location);
+
+    /**
+     * Perform a firework boost.
+     * <p>
+     * This method will only work such that {@link #isGliding()} is true and
+     * the entity is actively gliding with an elytra. Additionally, the supplied
+     * {@code fireworkItemStack} must be a firework rocket. The power of the boost
+     * will directly correlate to {@link FireworkMeta#getPower()}.
+     *
+     * @param fireworkItemStack the firework item stack to use to glide
+     * @return the attached {@link Firework}, or null if the entity could not
+     * be boosted
+     * @throws IllegalArgumentException if the fireworkItemStack is not a firework
+     */
+    @Nullable
+    public Firework fireworkBoost(@NotNull ItemStack fireworkItemStack);
 }
