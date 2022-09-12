@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.Random;
+import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.projectile.EntityFireworks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -9,6 +11,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.meta.FireworkMeta;
 
 public class CraftFirework extends CraftProjectile implements Firework {
@@ -65,8 +68,63 @@ public class CraftFirework extends CraftProjectile implements Firework {
     }
 
     @Override
+    public boolean setAttachedTo(LivingEntity entity) {
+        if (isDetonated()) {
+            return false;
+        }
+
+        getHandle().attachedToEntity = (entity != null) ? ((CraftLivingEntity) entity).getHandle() : null;
+        return true;
+    }
+
+    @Override
+    public LivingEntity getAttachedTo() {
+        EntityLiving entity = getHandle().attachedToEntity;
+        return (entity != null) ? (LivingEntity) entity.getBukkitEntity() : null;
+    }
+
+    @Override
+    public boolean setLife(int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "ticks must be greater than or equal to 0");
+
+        if (isDetonated()) {
+            return false;
+        }
+
+        getHandle().life = ticks;
+        return true;
+    }
+
+    @Override
+    public int getLife() {
+        return getHandle().life;
+    }
+
+    @Override
+    public boolean setMaxLife(int ticks) {
+        Preconditions.checkArgument(ticks > 0, "ticks must be greater than 0");
+
+        if (isDetonated()) {
+            return false;
+        }
+
+        getHandle().lifetime = ticks;
+        return true;
+    }
+
+    @Override
+    public int getMaxLife() {
+        return getHandle().lifetime;
+    }
+
+    @Override
     public void detonate() {
-        getHandle().lifetime = 0;
+        this.setLife(getMaxLife() + 1);
+    }
+
+    @Override
+    public boolean isDetonated() {
+        return getHandle().life > getHandle().lifetime;
     }
 
     @Override

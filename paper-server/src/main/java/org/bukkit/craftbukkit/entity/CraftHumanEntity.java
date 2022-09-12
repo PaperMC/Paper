@@ -18,6 +18,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EnumMainHand;
 import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.entity.projectile.EntityFireworks;
 import net.minecraft.world.inventory.Container;
 import net.minecraft.world.inventory.Containers;
 import net.minecraft.world.item.ItemCooldown;
@@ -49,8 +50,10 @@ import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Villager;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
@@ -660,5 +663,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         } else {
             getHandle().setLastDeathLocation(Optional.of(CraftMemoryMapper.toNms(location)));
         }
+    }
+
+    @Override
+    public Firework fireworkBoost(ItemStack fireworkItemStack) {
+        Preconditions.checkArgument(fireworkItemStack != null, "fireworkItemStack must not be null");
+        Preconditions.checkArgument(fireworkItemStack.getType() == Material.FIREWORK_ROCKET, "fireworkItemStack must be of type %s", Material.FIREWORK_ROCKET);
+
+        EntityFireworks fireworks = new EntityFireworks(getHandle().level, CraftItemStack.asNMSCopy(fireworkItemStack), getHandle());
+        boolean success = getHandle().level.addFreshEntity(fireworks, SpawnReason.CUSTOM);
+        return success ? (Firework) fireworks.getBukkitEntity() : null;
     }
 }
