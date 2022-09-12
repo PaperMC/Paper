@@ -1106,7 +1106,7 @@
      private PlayerChatMessage getSignedMessage(PacketPlayInChat packetplayinchat) {
          MessageSigner messagesigner = packetplayinchat.getSigner(this.player);
          SignedMessageChain.c signedmessagechain_c = new SignedMessageChain.c(packetplayinchat.signature());
-@@ -1475,7 +2143,25 @@
+@@ -1475,7 +2143,28 @@
      }
  
      private void broadcastChatMessage(PlayerChatMessage playerchatmessage) {
@@ -1116,6 +1116,9 @@
 +        if (s.isEmpty()) {
 +            LOGGER.warn(this.player.getScoreboardName() + " tried to send an empty message");
 +        } else if (getCraftPlayer().isConversing()) {
++            OutgoingPlayerChatMessage outgoing = OutgoingPlayerChatMessage.create(playerchatmessage);
++            outgoing.sendHeadersToRemainingPlayers(this.server.getPlayerList());
++
 +            final String conversationInput = s;
 +            this.server.processQueue.add(new Runnable() {
 +                @Override
@@ -1133,7 +1136,7 @@
          this.detectRateSpam();
      }
  
-@@ -1503,8 +2189,10 @@
+@@ -1503,8 +2192,10 @@
      }
  
      private void detectRateSpam() {
@@ -1146,7 +1149,7 @@
              this.disconnect(IChatBaseComponent.translatable("disconnect.spam"));
          }
  
-@@ -1568,7 +2256,7 @@
+@@ -1568,7 +2259,7 @@
          List<PreviewableCommand.a<CommandListenerWrapper>> list = previewablecommand.arguments();
  
          if (list.isEmpty()) {
@@ -1155,7 +1158,7 @@
          } else {
              for (int i = list.size() - 1; i >= 0; --i) {
                  PreviewableCommand.a previewablecommand_a = (PreviewableCommand.a) list.get(i);
-@@ -1580,11 +2268,11 @@
+@@ -1580,11 +2271,11 @@
                          return completablefuture;
                      }
                  } catch (CommandSyntaxException commandsyntaxexception) {
@@ -1169,7 +1172,7 @@
          }
      }
  
-@@ -1611,13 +2299,59 @@
+@@ -1611,13 +2302,59 @@
      @Override
      public void handleAnimate(PacketPlayInArmAnimation packetplayinarmanimation) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinarmanimation, this, this.player.getLevel());
@@ -1229,7 +1232,7 @@
          this.player.resetLastActionTime();
          IJumpable ijumpable;
  
-@@ -1702,6 +2436,7 @@
+@@ -1702,6 +2439,7 @@
      @Override
      public void handleInteract(PacketPlayInUseEntity packetplayinuseentity) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinuseentity, this, this.player.getLevel());
@@ -1237,7 +1240,7 @@
          WorldServer worldserver = this.player.getLevel();
          final Entity entity = packetplayinuseentity.getTarget(worldserver);
  
-@@ -1714,10 +2449,49 @@
+@@ -1714,10 +2452,49 @@
  
              if (entity.distanceToSqr(this.player.getEyePosition()) < PlayerConnection.MAX_INTERACTION_DISTANCE) {
                  packetplayinuseentity.dispatch(new PacketPlayInUseEntity.c() {
@@ -1288,7 +1291,7 @@
                          if (enuminteractionresult.consumesAction()) {
                              CriterionTriggers.PLAYER_INTERACTED_WITH_ENTITY.trigger(PlayerConnection.this.player, itemstack, entity);
                              if (enuminteractionresult.shouldSwing()) {
-@@ -1729,20 +2503,27 @@
+@@ -1729,20 +2506,27 @@
  
                      @Override
                      public void onInteraction(EnumHand enumhand) {
@@ -1319,7 +1322,7 @@
                          } else {
                              PlayerConnection.this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.invalid_entity_attacked"));
                              PlayerConnection.LOGGER.warn("Player {} tried to attack an invalid entity", PlayerConnection.this.player.getName().getString());
-@@ -1787,15 +2568,21 @@
+@@ -1787,15 +2571,21 @@
      @Override
      public void handleContainerClose(PacketPlayInCloseWindow packetplayinclosewindow) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinclosewindow, this, this.player.getLevel());
@@ -1343,7 +1346,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  PlayerConnection.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1808,7 +2595,284 @@
+@@ -1808,7 +2598,284 @@
                      boolean flag = packetplayinwindowclick.getStateId() != this.player.containerMenu.getStateId();
  
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -1629,7 +1632,7 @@
                      ObjectIterator objectiterator = Int2ObjectMaps.fastIterable(packetplayinwindowclick.getChangedSlots()).iterator();
  
                      while (objectiterator.hasNext()) {
-@@ -1848,6 +2912,7 @@
+@@ -1848,6 +2915,7 @@
      @Override
      public void handleContainerButtonClick(PacketPlayInEnchantItem packetplayinenchantitem) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinenchantitem, this, this.player.getLevel());
@@ -1637,7 +1640,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packetplayinenchantitem.getContainerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -1885,6 +2950,43 @@
+@@ -1885,6 +2953,43 @@
  
              boolean flag1 = packetplayinsetcreativeslot.getSlotNum() >= 1 && packetplayinsetcreativeslot.getSlotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getDamageValue() >= 0 && itemstack.getCount() <= 64 && !itemstack.isEmpty();
@@ -1681,7 +1684,7 @@
  
              if (flag1 && flag2) {
                  this.player.inventoryMenu.getSlot(packetplayinsetcreativeslot.getSlotNum()).set(itemstack);
-@@ -1907,6 +3009,7 @@
+@@ -1907,6 +3012,7 @@
      }
  
      private void updateSignText(PacketPlayInUpdateSign packetplayinupdatesign, List<FilteredText> list) {
@@ -1689,7 +1692,7 @@
          this.player.resetLastActionTime();
          WorldServer worldserver = this.player.getLevel();
          BlockPosition blockposition = packetplayinupdatesign.getPos();
-@@ -1923,18 +3026,37 @@
+@@ -1923,18 +3029,37 @@
  
              if (!tileentitysign.isEditable() || !this.player.getUUID().equals(tileentitysign.getPlayerWhoMayEdit())) {
                  PlayerConnection.LOGGER.warn("Player {} just tried to change non-editable sign", this.player.getName().getString());
@@ -1729,7 +1732,7 @@
  
              tileentitysign.setChanged();
              worldserver.sendBlockUpdated(blockposition, iblockdata, iblockdata, 3);
-@@ -1944,6 +3066,7 @@
+@@ -1944,6 +3069,7 @@
  
      @Override
      public void handleKeepAlive(PacketPlayInKeepAlive packetplayinkeepalive) {
@@ -1737,7 +1740,7 @@
          if (this.keepAlivePending && packetplayinkeepalive.getId() == this.keepAliveChallenge) {
              int i = (int) (SystemUtils.getMillis() - this.keepAliveTime);
  
-@@ -1958,7 +3081,17 @@
+@@ -1958,7 +3084,17 @@
      @Override
      public void handlePlayerAbilities(PacketPlayInAbilities packetplayinabilities) {
          PlayerConnectionUtils.ensureRunningOnSameThread(packetplayinabilities, this, this.player.getLevel());
@@ -1756,7 +1759,7 @@
      }
  
      @Override
-@@ -1967,8 +3100,50 @@
+@@ -1967,8 +3103,50 @@
          this.player.updateOptions(packetplayinsettings);
      }
  
