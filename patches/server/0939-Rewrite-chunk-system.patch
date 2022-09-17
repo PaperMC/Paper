@@ -7083,7 +7083,7 @@ index 0000000000000000000000000000000000000000..ffbfaef2a57f0f26d0143f3a8fcf937b
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d2d66fb775027903c60c02102d001fdea7abb808
+index 0000000000000000000000000000000000000000..9a4ec0f1fb3bac0e84e6bd3aaeb77f44e248aadb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 @@ -0,0 +1,2071 @@
@@ -7857,18 +7857,12 @@ index 0000000000000000000000000000000000000000..d2d66fb775027903c60c02102d001fde
 +        // priority state
 +        this.priorityLocked = false;
 +
-+        if (!(chunk instanceof LevelChunk && ((LevelChunk)chunk).mustNotSave)) {
-+            if (chunk != null) {
-+                this.chunkDataUnload = new UnloadTask(new Completable<>(), new DelayedPrioritisedTask(PrioritisedExecutor.Priority.NORMAL));
-+            }
-+            if (poiChunk != null) {
-+                this.poiDataUnload = new UnloadTask(new Completable<>(), null);
-+            }
-+        } else {
-+            chunk = null;
-+            poiChunk = null;
++        if (chunk != null) {
++            this.chunkDataUnload = new UnloadTask(new Completable<>(), new DelayedPrioritisedTask(PrioritisedExecutor.Priority.NORMAL));
 +        }
-+
++        if (poiChunk != null) {
++            this.poiDataUnload = new UnloadTask(new Completable<>(), null);
++        }
 +        if (entityChunk != null) {
 +            this.entityDataUnload = new UnloadTask(new Completable<>(), null);
 +        }
@@ -7898,13 +7892,19 @@ index 0000000000000000000000000000000000000000..d2d66fb775027903c60c02102d001fde
 +        final ChunkEntitySlices entityChunk = state.entityChunk();
 +        final PoiChunk poiChunk = state.poiChunk();
 +
++        final boolean shouldLevelChunkNotSave = (chunk instanceof LevelChunk levelChunk && levelChunk.mustNotSave);
++
 +        // unload chunk data
 +        if (chunk != null) {
 +            if (chunk instanceof LevelChunk levelChunk) {
 +                levelChunk.setLoaded(false);
 +            }
 +
-+            this.saveChunk(chunk, true);
++            if (!shouldLevelChunkNotSave) {
++                this.saveChunk(chunk, true);
++            } else {
++                this.completeAsyncChunkDataSave(null);
++            }
 +
 +            if (chunk instanceof LevelChunk levelChunk) {
 +                this.world.unload(levelChunk);
@@ -7936,7 +7936,7 @@ index 0000000000000000000000000000000000000000..d2d66fb775027903c60c02102d001fde
 +
 +        // unload poi data
 +        if (poiChunk != null) {
-+            if (poiChunk.isDirty()) {
++            if (poiChunk.isDirty() && !shouldLevelChunkNotSave) {
 +                this.savePOI(poiChunk, true);
 +            } else {
 +                this.poiDataUnload.completable().complete(null);
