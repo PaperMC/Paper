@@ -4,16 +4,16 @@ Date: Sun, 5 Apr 2020 22:23:14 -0500
 Subject: [PATCH] Add tick times API and /mspt command
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/MSPTCommand.java b/src/main/java/com/destroystokyo/paper/MSPTCommand.java
+diff --git a/src/main/java/io/papermc/paper/command/MSPTCommand.java b/src/main/java/io/papermc/paper/command/MSPTCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d0211d4f39f9d6af1d751ac66342b42cc6d7ba6d
+index 0000000000000000000000000000000000000000..8b5293b0c696ef21d0101493ffa41b60bf0bc86b
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/MSPTCommand.java
-@@ -0,0 +1,64 @@
-+package com.destroystokyo.paper;
++++ b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+@@ -0,0 +1,102 @@
++package io.papermc.paper.command;
 +
++import net.kyori.adventure.text.Component;
 +import net.minecraft.server.MinecraftServer;
-+import org.bukkit.ChatColor;
 +import org.bukkit.Location;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
@@ -23,11 +23,22 @@ index 0000000000000000000000000000000000000000..d0211d4f39f9d6af1d751ac66342b42c
 +import java.util.Arrays;
 +import java.util.Collections;
 +import java.util.List;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+public class MSPTCommand extends Command {
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GOLD;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
++
++@DefaultQualifier(NonNull.class)
++public final class MSPTCommand extends Command {
 +    private static final DecimalFormat DF = new DecimalFormat("########0.0");
++    private static final Component SLASH = text("/");
 +
-+    public MSPTCommand(String name) {
++    public MSPTCommand(final String name) {
 +        super(name);
 +        this.description = "View server tick times";
 +        this.usageMessage = "/mspt";
@@ -45,17 +56,44 @@ index 0000000000000000000000000000000000000000..d0211d4f39f9d6af1d751ac66342b42c
 +
 +        MinecraftServer server = MinecraftServer.getServer();
 +
-+        List<String> times = new ArrayList<>();
++        List<Component> times = new ArrayList<>();
 +        times.addAll(eval(server.tickTimes5s.getTimes()));
 +        times.addAll(eval(server.tickTimes10s.getTimes()));
 +        times.addAll(eval(server.tickTimes60s.getTimes()));
 +
-+        sender.sendMessage("§6Server tick times §e(§7avg§e/§7min§e/§7max§e)§6 from last 5s§7,§6 10s§7,§6 1m§e:");
-+        sender.sendMessage(String.format("§6◴ %s§7/%s§7/%s§e, %s§7/%s§7/%s§e, %s§7/%s§7/%s", times.toArray()));
++        sender.sendMessage(text().content("Server tick times ").color(GOLD)
++            .append(text().color(YELLOW)
++                .append(
++                    text("("),
++                    text("avg", GRAY),
++                    text("/"),
++                    text("min", GRAY),
++                    text("/"),
++                    text("max", GRAY),
++                    text(")")
++                )
++            ).append(
++                text(" from last 5s"),
++                text(",", GRAY),
++                text(" 10s"),
++                text(",", GRAY),
++                text(" 1m"),
++                text(":", YELLOW)
++            )
++        );
++        sender.sendMessage(text().content("◴ ").color(GOLD)
++            .append(text().color(GRAY)
++                .append(
++                    times.get(0), SLASH, times.get(1), SLASH, times.get(2), text(", ", YELLOW),
++                    times.get(3), SLASH, times.get(4), SLASH, times.get(5), text(", ", YELLOW),
++                    times.get(6), SLASH, times.get(7), SLASH, times.get(8)
++                )
++            )
++        );
 +        return true;
 +    }
 +
-+    private static List<String> eval(long[] times) {
++    private static List<Component> eval(long[] times) {
 +        long min = Integer.MAX_VALUE;
 +        long max = 0L;
 +        long total = 0L;
@@ -70,28 +108,28 @@ index 0000000000000000000000000000000000000000..d0211d4f39f9d6af1d751ac66342b42c
 +        return Arrays.asList(getColor(avgD), getColor(minD), getColor(maxD));
 +    }
 +
-+    private static String getColor(double avg) {
-+        return ChatColor.COLOR_CHAR + (avg >= 50 ? "c" : avg >= 40 ? "e" : "a") + DF.format(avg);
++    private static Component getColor(double avg) {
++        return text(DF.format(avg), avg >= 50 ? RED : avg >= 40 ? YELLOW : GREEN);
 +    }
 +}
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 83bf428abd3be89e34cf42638bd1357a708ea0e3..fda5a623ec6bba0ed4d230415f7b9779ee2e8ccf 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -69,6 +69,7 @@ public class PaperConfig {
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommands.java b/src/main/java/io/papermc/paper/command/PaperCommands.java
+index 6a00f3d38da8107825ab1d405f337fd077b09f72..d31b5ed47cffc61c90c926a0cd2005b72ebddfc5 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommands.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommands.java
+@@ -17,6 +17,7 @@ public final class PaperCommands {
+     private static final Map<String, Command> COMMANDS = new HashMap<>();
+     static {
+         COMMANDS.put("paper", new PaperCommand("paper"));
++        COMMANDS.put("mspt", new MSPTCommand("mspt"));
+     }
  
-         commands = new HashMap<String, Command>();
-         commands.put("paper", new PaperCommand("paper"));
-+        commands.put("mspt", new MSPTCommand("mspt"));
- 
-         version = getInt("config-version", 25);
-         set("config-version", 25);
+     public static void registerCommands(final MinecraftServer server) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 287014feb99c67083a959f2c09213d49ad5f743d..2e08855085a547151140bcb05dce9bc469d81ff6 100644
+index 27f19abc22e295a5480dbed5df86f5d885ad3b73..12ca13f5b0556c53fd36d638ee4fa854b89ee8ec 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -244,6 +244,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     private String motd;
+@@ -237,6 +237,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     @Nullable private net.kyori.adventure.text.Component cachedMotd; // Paper
      private int playerIdleTimeout;
      public final long[] tickTimes;
 +    // Paper start
@@ -102,7 +140,7 @@ index 287014feb99c67083a959f2c09213d49ad5f743d..2e08855085a547151140bcb05dce9bc4
      @Nullable
      private KeyPair keyPair;
      @Nullable
-@@ -1401,6 +1406,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1361,6 +1366,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.averageTickTime = this.averageTickTime * 0.8F + (float) l / 1000000.0F * 0.19999999F;
          long i1 = Util.getNanos();
  
@@ -115,10 +153,11 @@ index 287014feb99c67083a959f2c09213d49ad5f743d..2e08855085a547151140bcb05dce9bc4
          this.frameTimer.logFrameDuration(i1 - i);
          this.profiler.pop();
          org.spigotmc.WatchdogThread.tick(); // Spigot
-@@ -2537,4 +2548,29 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             };
-         }
+@@ -2539,4 +2550,30 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public static record ServerResourcePackInfo(String url, String hash, boolean isRequired, @Nullable Component prompt) {
+ 
      }
++
 +    // Paper start
 +    public static class TickTimes {
 +        private final long[] times;
@@ -146,10 +185,10 @@ index 287014feb99c67083a959f2c09213d49ad5f743d..2e08855085a547151140bcb05dce9bc4
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a523e50d0542e8aeca961ed57346c3d7ecf01979..d4442ba4f0fc9e062fd321dccd0f49c3d10fd28b 100644
+index 8cc2a35486e8c6433e722ddc5e776c3332e7c7fe..a6f40cba559a4ca8c91b4daca0867f3be9cc94e6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2455,6 +2455,16 @@ public final class CraftServer implements Server {
+@@ -2485,6 +2485,16 @@ public final class CraftServer implements Server {
                  net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
          };
      }

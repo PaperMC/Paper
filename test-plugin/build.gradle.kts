@@ -1,9 +1,5 @@
 version = "1.0.0-SNAPSHOT"
 
-repositories {
-    maven("https://libraries.minecraft.net")
-}
-
 dependencies {
     compileOnly(project(":paper-api"))
     compileOnly(project(":paper-mojangapi"))

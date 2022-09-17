@@ -56,7 +56,7 @@ index 0000000000000000000000000000000000000000..a736d7bcdc5861a01b66ba36158db1c7
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index ce5794d684a1126ec9acbf4af17f5d6fa783f551..5ba6c7a69937badd64256248560268fb695d5f74 100644
+index c9ecd5b1908e05a1b39dadcded27241672adcddf..355c46f1c1f08072446f3cc92c0d22898933a7fc 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
 @@ -94,5 +94,12 @@ public interface UnsafeValues {
@@ -73,7 +73,7 @@ index ce5794d684a1126ec9acbf4af17f5d6fa783f551..5ba6c7a69937badd64256248560268fb
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index 2305eb40832a82159cd89162934870cf57e1aa0e..4c2ddc722a9dc4011906ad9530b13fa9be1d3ff9 100644
+index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c2f46935f 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 @@ -1,5 +1,6 @@
@@ -81,17 +81,9 @@ index 2305eb40832a82159cd89162934870cf57e1aa0e..4c2ddc722a9dc4011906ad9530b13fa9
  
 +import com.destroystokyo.paper.util.VersionFetcher; // Paper - version supplier
  import com.google.common.base.Charsets;
+ import com.google.common.base.Preconditions;
  import com.google.common.collect.ImmutableList;
- import com.google.common.io.Resources;
-@@ -16,6 +17,7 @@ import java.util.HashSet;
- import java.util.List;
- import java.util.Set;
- import java.util.concurrent.locks.ReentrantLock;
-+import net.kyori.adventure.text.Component; // Paper
- import org.apache.commons.lang.Validate;
- import org.bukkit.Bukkit;
- import org.bukkit.ChatColor;
-@@ -26,6 +28,15 @@ import org.bukkit.util.StringUtil;
+@@ -26,6 +27,15 @@ import org.bukkit.util.StringUtil;
  import org.jetbrains.annotations.NotNull;
  
  public class VersionCommand extends BukkitCommand {
@@ -107,7 +99,7 @@ index 2305eb40832a82159cd89162934870cf57e1aa0e..4c2ddc722a9dc4011906ad9530b13fa9
      public VersionCommand(@NotNull String name) {
          super(name);
  
-@@ -40,7 +51,7 @@ public class VersionCommand extends BukkitCommand {
+@@ -40,7 +50,7 @@ public class VersionCommand extends BukkitCommand {
          if (!testPermission(sender)) return true;
  
          if (args.length == 0) {
@@ -116,12 +108,12 @@ index 2305eb40832a82159cd89162934870cf57e1aa0e..4c2ddc722a9dc4011906ad9530b13fa9
              sendVersion(sender);
          } else {
              StringBuilder name = new StringBuilder();
-@@ -146,14 +157,14 @@ public class VersionCommand extends BukkitCommand {
+@@ -146,14 +156,14 @@ public class VersionCommand extends BukkitCommand {
  
      private final ReentrantLock versionLock = new ReentrantLock();
      private boolean hasVersion = false;
 -    private String versionMessage = null;
-+    private Component versionMessage = null; // Paper
++    private net.kyori.adventure.text.Component versionMessage = null; // Paper
      private final Set<CommandSender> versionWaiters = new HashSet<CommandSender>();
      private boolean versionTaskStarted = false;
      private long lastCheck = 0;
@@ -133,22 +125,22 @@ index 2305eb40832a82159cd89162934870cf57e1aa0e..4c2ddc722a9dc4011906ad9530b13fa9
                  lastCheck = System.currentTimeMillis();
                  hasVersion = false;
              } else {
-@@ -168,7 +179,7 @@ public class VersionCommand extends BukkitCommand {
+@@ -168,7 +178,7 @@ public class VersionCommand extends BukkitCommand {
                  return;
              }
              versionWaiters.add(sender);
 -            sender.sendMessage("Checking version, please wait...");
-+            sender.sendMessage(Component.text("Checking version, please wait...", net.kyori.adventure.text.format.NamedTextColor.WHITE, net.kyori.adventure.text.format.TextDecoration.ITALIC)); // Paper
++            sender.sendMessage(net.kyori.adventure.text.Component.text("Checking version, please wait...", net.kyori.adventure.text.format.NamedTextColor.WHITE, net.kyori.adventure.text.format.TextDecoration.ITALIC)); // Paper
              if (!versionTaskStarted) {
                  versionTaskStarted = true;
                  new Thread(new Runnable() {
-@@ -186,6 +197,13 @@ public class VersionCommand extends BukkitCommand {
+@@ -186,6 +196,13 @@ public class VersionCommand extends BukkitCommand {
  
      private void obtainVersion() {
          String version = Bukkit.getVersion();
 +        // Paper start
 +        if (version.startsWith("null")) { // running from ide?
-+            setVersionMessage(Component.text("Unknown version, custom build?", net.kyori.adventure.text.format.NamedTextColor.YELLOW));
++            setVersionMessage(net.kyori.adventure.text.Component.text("Unknown version, custom build?", net.kyori.adventure.text.format.NamedTextColor.YELLOW));
 +            return;
 +        }
 +        setVersionMessage(getVersionFetcher().getVersionMessage(version));
@@ -156,7 +148,7 @@ index 2305eb40832a82159cd89162934870cf57e1aa0e..4c2ddc722a9dc4011906ad9530b13fa9
          if (version == null) version = "Custom";
          String[] parts = version.substring(0, version.indexOf(' ')).split("-");
          if (parts.length == 4) {
-@@ -215,11 +233,24 @@ public class VersionCommand extends BukkitCommand {
+@@ -215,11 +232,24 @@ public class VersionCommand extends BukkitCommand {
          } else {
              setVersionMessage("Unknown version, custom build?");
          }
@@ -166,17 +158,17 @@ index 2305eb40832a82159cd89162934870cf57e1aa0e..4c2ddc722a9dc4011906ad9530b13fa9
  
 -    private void setVersionMessage(@NotNull String msg) {
 +    // Paper start
-+    private void setVersionMessage(final @NotNull Component msg) {
++    private void setVersionMessage(final @NotNull net.kyori.adventure.text.Component msg) {
          lastCheck = System.currentTimeMillis();
 -        versionMessage = msg;
-+        final Component message = net.kyori.adventure.text.TextComponent.ofChildren(
-+            Component.text("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")", net.kyori.adventure.text.format.NamedTextColor.WHITE),
-+            Component.newline(),
++        final net.kyori.adventure.text.Component message = net.kyori.adventure.text.TextComponent.ofChildren(
++            net.kyori.adventure.text.Component.text("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")", net.kyori.adventure.text.format.NamedTextColor.WHITE),
++            net.kyori.adventure.text.Component.newline(),
 +            msg
 +        );
-+        this.versionMessage = Component.text()
++        this.versionMessage = net.kyori.adventure.text.Component.text()
 +            .append(message)
-+            .hoverEvent(Component.text("Click to copy to clipboard", net.kyori.adventure.text.format.NamedTextColor.WHITE))
++            .hoverEvent(net.kyori.adventure.text.Component.text("Click to copy to clipboard", net.kyori.adventure.text.format.NamedTextColor.WHITE))
 +            .clickEvent(net.kyori.adventure.text.event.ClickEvent.copyToClipboard(net.kyori.adventure.text.serializer.plain.PlainComponentSerializer.plain().serialize(message)))
 +            .build();
 +        // Paper end

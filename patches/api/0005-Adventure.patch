@@ -7,14 +7,14 @@ Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 98afa6a25131dc626ea7a5122f33df6bd2d39178..eefc024acc3e14ae21855df7f2f358bd1e0a9e38 100644
+index 79bf95d5a19046b142d0162dd6b739b7f0f52e59..84432bf9dd99332098f952ea777ee97d987f9eb2 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -8,18 +8,37 @@ java {
+@@ -8,17 +8,37 @@ java {
      withJavadocJar()
  }
  
-+val adventureVersion = "4.10.1"
++val adventureVersion = "4.11.0"
 +val apiAndDocs: Configuration by configurations.creating {
 +    attributes {
 +        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
@@ -29,7 +29,6 @@ index 98afa6a25131dc626ea7a5122f33df6bd2d39178..eefc024acc3e14ae21855df7f2f358bd
 +
  dependencies {
      // api dependencies are listed transitively to API consumers
-     api("commons-lang:commons-lang:2.6")
      api("com.google.guava:guava:31.0.1-jre")
      api("com.google.code.gson:gson:2.8.9")
 -    api("net.md-5:bungeecord-chat:1.16-R0.4")
@@ -46,10 +45,11 @@ index 98afa6a25131dc626ea7a5122f33df6bd2d39178..eefc024acc3e14ae21855df7f2f358bd
 +    apiAndDocs("net.kyori:adventure-text-serializer-gson")
 +    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
 +    apiAndDocs("net.kyori:adventure-text-serializer-plain")
++    apiAndDocs("net.kyori:adventure-text-logger-slf4j")
      // Paper end
  
-     compileOnly("org.apache.maven:maven-resolver-provider:3.8.4")
-@@ -77,9 +96,24 @@ tasks.withType<Javadoc> {
+     compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
+@@ -78,9 +98,24 @@ tasks.withType<Javadoc> {
          "https://guava.dev/releases/31.0.1-jre/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/1.30/",
          "https://javadoc.io/doc/org.jetbrains/annotations/23.0.0/", // Paper - we don't want Java 5 annotations
@@ -77,16 +77,15 @@ index 98afa6a25131dc626ea7a5122f33df6bd2d39178..eefc024acc3e14ae21855df7f2f358bd
      doLast {
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88ad3bab097
+index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af85e287a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.chat;
 +
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
-+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -115,7 +114,11 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +     */
 +    @NotNull
 +    static ChatRenderer defaultRenderer() {
-+        return viewerUnaware((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++        return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++    }
++
++    @ApiStatus.Internal
++    sealed interface Default extends ChatRenderer, ViewerUnaware permits ViewerUnawareImpl.Default {
 +    }
 +
 +    /**
@@ -127,17 +130,7 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +     */
 +    @NotNull
 +    static ChatRenderer viewerUnaware(final @NotNull ViewerUnaware renderer) {
-+        return new ChatRenderer() {
-+            private @MonotonicNonNull Component message;
-+
-+            @Override
-+            public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
-+                if (this.message == null) {
-+                    this.message = renderer.render(source, sourceDisplayName, message);
-+                }
-+                return this.message;
-+            }
-+        };
++        return new ViewerUnawareImpl(renderer);
 +    }
 +
 +    /**
@@ -157,6 +150,50 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +        @ApiStatus.OverrideOnly
 +        @NotNull
 +        Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9adeb880f7948f937891d83e256c808b5eb40a27
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.chat;
++
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.jetbrains.annotations.NotNull;
++
++sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnaware permits ViewerUnawareImpl.Default {
++
++    private final ViewerUnaware unaware;
++
++    private @MonotonicNonNull Component message;
++
++    ViewerUnawareImpl(final ViewerUnaware unaware) {
++        this.unaware = unaware;
++    }
++
++    @Override
++    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
++        return this.render(source, sourceDisplayName, message);
++    }
++
++    @Override
++    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message) {
++        if (this.message == null) {
++            this.message = this.unaware.render(source, sourceDisplayName, message);
++        }
++        return this.message;
++    }
++
++    static final class Default extends ViewerUnawareImpl implements ChatRenderer.Default {
++
++        Default(final ViewerUnaware unaware) {
++            super(unaware);
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
@@ -277,6 +314,164 @@ index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c
 +        this.cancelled = cancelled;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd216f7333795fc6bc5bec593f9cc0e3c2c1a27e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.Experimental
++public class AsyncChatCommandDecorateEvent extends AsyncChatDecorateEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    public AsyncChatCommandDecorateEvent(boolean async, @Nullable Player player, @NotNull Component originalMessage, boolean isPreview, @NotNull Component result) {
++        super(async, player, originalMessage, isPreview, result);
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..347122b12ad98115133ef98db69b271ee0cec194
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
+@@ -0,0 +1,119 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.server.ServerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * This event is fired when the server decorates a component for chat purposes. It can be called
++ * under the following circumstances:
++ * <ul>
++ *     <li><b>Previewing:</b> If the client requests a preview response, this event is fired to decorate the component
++ *     before it is sent back to the client for signing.</li>
++ *     <li><b>Chat:</b> If the client sends a chat packet without having signed a preview (the client could have previews
++ *     disabled or they sent the message too quickly) this event is fired to generated the decorated component. Note
++ *     that when this is the case, the message will show up as modified as the decorated component wasn't signed
++ *     by the client.</li>
++ * </ul>
++ * @see AsyncChatCommandDecorateEvent for the decoration of messages sent via commands
++ */
++@ApiStatus.Experimental
++public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Player player;
++    private final Component originalMessage;
++    private final boolean isPreview;
++    private Component result;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public AsyncChatDecorateEvent(final boolean async, final @Nullable Player player, final @NotNull Component originalMessage, final boolean isPreview, final @NotNull Component result) {
++        super(async);
++        this.player = player;
++        this.originalMessage = originalMessage;
++        this.isPreview = isPreview;
++        this.result = result;
++    }
++
++    /**
++     * Gets the player (if available) associated with this event.
++     * <p>
++     * Certain commands request decorations without a player context
++     * which is why this is possibly null.
++     *
++     * @return the player or null
++     */
++    public @Nullable Player player() {
++        return this.player;
++    }
++
++    /**
++     * Gets the original decoration input
++     *
++     * @return the input
++     */
++    public @NotNull Component originalMessage() {
++        return this.originalMessage;
++    }
++
++    /**
++     * Gets the decoration result. This may already be different from
++     * {@link #originalMessage()} if some other listener to this event
++     * <b>OR</b> the legacy preview event ({@link org.bukkit.event.player.AsyncPlayerChatPreviewEvent}
++     * changed the result.
++     *
++     * @return the result
++     */
++    public @NotNull Component result() {
++        return this.result;
++    }
++
++    /**
++     * Sets the resulting decorated component.
++     *
++     * @param result the result
++     */
++    public void result(@NotNull Component result) {
++        this.result = result;
++    }
++
++    /**
++     * If this decorating is part of a preview request/response.
++     *
++     * @return true if part of previewing
++     */
++    public boolean isPreview() {
++        return this.isPreview;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * A cancelled decorating event means that no changes to the result component
++     * will have any effect. The decorated component will be equal to the original
++     * component.
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0d9e3c23027e3af90cb70e4bb6fb0ac1da35fc4d
@@ -358,10 +553,10 @@ index 0000000000000000000000000000000000000000..eb179aae1e1d2ce842442e49fe275827
 +}
 diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a1d2c5641
+index 0000000000000000000000000000000000000000..bff9a6295db367c6b89d69fb55459a40828265ea
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,112 @@
 +package io.papermc.paper.text;
 +
 +import net.kyori.adventure.text.Component;
@@ -398,10 +593,10 @@ index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a
 +     * <p>Implementations may provide a serializer capable of processing any
 +     * information that requires access to implementation details.</p>
 +     *
-+     * @deprecated will be removed in adventure 5.0.0, use {@link #plainTextSerializer()}
 +     * @return a serializer to plain text
++     * @deprecated will be removed in adventure 5.0.0, use {@link PlainTextComponentSerializer#plainText()}
 +     */
-+    @Deprecated
++    @Deprecated(forRemoval = true)
 +    public static @NotNull PlainComponentSerializer plainSerializer() {
 +        return Bukkit.getUnsafe().plainComponentSerializer();
 +    }
@@ -414,7 +609,9 @@ index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a
 +     * information that requires access to implementation details.</p>
 +     *
 +     * @return a serializer to plain text
++     * @deprecated use {@link PlainTextComponentSerializer#plainText()}
 +     */
++    @Deprecated(forRemoval = true)
 +    public static @NotNull PlainTextComponentSerializer plainTextSerializer() {
 +        return Bukkit.getUnsafe().plainTextSerializer();
 +    }
@@ -428,7 +625,9 @@ index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a
 +     * (pre-1.16) hover events.</p>
 +     *
 +     * @return a json component serializer
++     * @deprecated use {@link GsonComponentSerializer#gson()}
 +     */
++    @Deprecated(forRemoval = true)
 +    public static @NotNull GsonComponentSerializer gsonSerializer() {
 +        return Bukkit.getUnsafe().gsonComponentSerializer();
 +    }
@@ -443,7 +642,9 @@ index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a
 +     * (pre-1.16) hover events.</p>
 +     *
 +     * @return a json component serializer
++     * @deprecated use {@link GsonComponentSerializer#colorDownsamplingGson()}
 +     */
++    @Deprecated(forRemoval = true)
 +    public static @NotNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
 +        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
 +    }
@@ -461,16 +662,18 @@ index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a
 +     * information that requires access to implementation details.</p>
 +     *
 +     * @return a section serializer
++     * @deprecated use {@link LegacyComponentSerializer#legacySection()}
 +     */
++    @Deprecated(forRemoval = true)
 +    public static @NotNull LegacyComponentSerializer legacySectionSerializer() {
 +        return Bukkit.getUnsafe().legacyComponentSerializer();
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234cd0b07b9 100644
+index 72143df182e55b70726b066b6b276021c1f4f4d7..c800da7aba43de995682eb724ccf8b7066d6cad3 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -357,7 +357,9 @@ public final class Bukkit {
+@@ -358,7 +358,9 @@ public final class Bukkit {
       *
       * @param message the message
       * @return the number of players
@@ -480,7 +683,7 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234
      public static int broadcastMessage(@NotNull String message) {
          return server.broadcastMessage(message);
      }
-@@ -1039,6 +1041,19 @@ public final class Bukkit {
+@@ -1072,6 +1074,19 @@ public final class Bukkit {
          server.shutdown();
      }
  
@@ -500,7 +703,7 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234
      /**
       * Broadcasts the specified message to every user with the given
       * permission name.
-@@ -1048,6 +1063,21 @@ public final class Bukkit {
+@@ -1081,6 +1096,21 @@ public final class Bukkit {
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
       */
@@ -522,7 +725,7 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234
      public static int broadcast(@NotNull String message, @NotNull String permission) {
          return server.broadcast(message, permission);
      }
-@@ -1286,6 +1316,7 @@ public final class Bukkit {
+@@ -1319,6 +1349,7 @@ public final class Bukkit {
          return server.createInventory(owner, type);
      }
  
@@ -530,7 +733,7 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1311,6 +1342,38 @@ public final class Bukkit {
+@@ -1344,6 +1375,38 @@ public final class Bukkit {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -569,7 +772,7 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234
      public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title) {
          return server.createInventory(owner, type, title);
      }
-@@ -1329,6 +1392,7 @@ public final class Bukkit {
+@@ -1362,6 +1425,7 @@ public final class Bukkit {
          return server.createInventory(owner, size);
      }
  
@@ -577,7 +780,7 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -1341,10 +1405,30 @@ public final class Bukkit {
+@@ -1374,10 +1438,30 @@ public final class Bukkit {
       * @throws IllegalArgumentException if the size is not a multiple of 9
       */
      @NotNull
@@ -608,7 +811,7 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234
      /**
       * Creates an empty merchant.
       *
-@@ -1352,7 +1436,20 @@ public final class Bukkit {
+@@ -1385,7 +1469,20 @@ public final class Bukkit {
       * when the merchant inventory is viewed
       * @return a new merchant
       */
@@ -629,7 +832,7 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234
      public static Merchant createMerchant(@Nullable String title) {
          return server.createMerchant(title);
      }
-@@ -1458,22 +1555,47 @@ public final class Bukkit {
+@@ -1502,22 +1599,47 @@ public final class Bukkit {
          return server.isPrimaryThread();
      }
  
@@ -802,10 +1005,10 @@ index 803fa0019869127ee8c7e4fb1777a59c43e66f8a..c65f0d6569c130b4920a9e71ad24af64
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d91827a0e7730 100644
+index c0a3b44c728ec98ecce4d1e71746747d87582aa9..4d5c3af2e1f0030aa7415fbe9d11fe3580854fd5 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -58,13 +58,13 @@ import org.jetbrains.annotations.Nullable;
+@@ -59,13 +59,13 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a server implementation.
   */
@@ -821,7 +1024,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
       */
      public static final String BROADCAST_CHANNEL_ADMINISTRATIVE = "bukkit.broadcast.admin";
  
-@@ -72,7 +72,7 @@ public interface Server extends PluginMessageRecipient {
+@@ -73,7 +73,7 @@ public interface Server extends PluginMessageRecipient {
       * Used for all announcement messages, such as informing users that a
       * player has joined.
       * <p>
@@ -830,7 +1033,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
       */
      public static final String BROADCAST_CHANNEL_USERS = "bukkit.broadcast.user";
  
-@@ -294,7 +294,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -295,7 +295,9 @@ public interface Server extends PluginMessageRecipient {
       *
       * @param message the message
       * @return the number of players
@@ -840,7 +1043,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
      public int broadcastMessage(@NotNull String message);
  
      /**
-@@ -881,8 +883,33 @@ public interface Server extends PluginMessageRecipient {
+@@ -911,8 +913,33 @@ public interface Server extends PluginMessageRecipient {
       * @param permission the required permission {@link Permissible
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
@@ -874,7 +1077,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
  
      /**
       * Gets the player by the given name, regardless if they are offline or
-@@ -1080,6 +1107,7 @@ public interface Server extends PluginMessageRecipient {
+@@ -1110,6 +1137,7 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
  
@@ -882,7 +1085,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1105,6 +1133,36 @@ public interface Server extends PluginMessageRecipient {
+@@ -1135,6 +1163,36 @@ public interface Server extends PluginMessageRecipient {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -919,7 +1122,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title);
  
      /**
-@@ -1119,6 +1177,22 @@ public interface Server extends PluginMessageRecipient {
+@@ -1149,6 +1207,22 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
  
@@ -942,7 +1145,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -1129,10 +1203,13 @@ public interface Server extends PluginMessageRecipient {
+@@ -1159,10 +1233,13 @@ public interface Server extends PluginMessageRecipient {
       *     viewed
       * @return a new inventory
       * @throws IllegalArgumentException if the size is not a multiple of 9
@@ -956,7 +1159,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
      /**
       * Creates an empty merchant.
       *
-@@ -1140,7 +1217,18 @@ public interface Server extends PluginMessageRecipient {
+@@ -1170,7 +1247,18 @@ public interface Server extends PluginMessageRecipient {
       * when the merchant inventory is viewed
       * @return a new merchant
       */
@@ -975,7 +1178,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
      Merchant createMerchant(@Nullable String title);
  
      /**
-@@ -1227,20 +1315,41 @@ public interface Server extends PluginMessageRecipient {
+@@ -1266,20 +1354,41 @@ public interface Server extends PluginMessageRecipient {
       */
      boolean isPrimaryThread();
  
@@ -1017,7 +1220,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
      String getShutdownMessage();
  
      /**
-@@ -1597,7 +1706,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1661,7 +1770,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends the component to the player
           *
           * @param component the components to send
@@ -1027,7 +1230,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
          public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1606,7 +1717,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1670,7 +1781,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends an array of components as a single message to the player
           *
           * @param components the components to send
@@ -1038,7 +1241,7 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d9182
              throw new UnsupportedOperationException("Not supported yet.");
          }
 diff --git a/src/main/java/org/bukkit/Sound.java b/src/main/java/org/bukkit/Sound.java
-index 77553fe2e7c1b6a4a9c566e663beffd85bdbd21d..c6d09a8bf2157d4c1c8c40fbb78ddcbbef8b762a 100644
+index 21b95d404fbdf7f972f8a13ecd07dc28481f2286..da844079a9d3efd1a92c892de79fc7b3aeecaf4b 100644
 --- a/src/main/java/org/bukkit/Sound.java
 +++ b/src/main/java/org/bukkit/Sound.java
 @@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
@@ -1050,7 +1253,7 @@ index 77553fe2e7c1b6a4a9c566e663beffd85bdbd21d..c6d09a8bf2157d4c1c8c40fbb78ddcbb
  
      AMBIENT_BASALT_DELTAS_ADDITIONS("ambient.basalt_deltas.additions"),
      AMBIENT_BASALT_DELTAS_LOOP("ambient.basalt_deltas.loop"),
-@@ -1227,4 +1227,12 @@ public enum Sound implements Keyed {
+@@ -1345,4 +1345,12 @@ public enum Sound implements Keyed {
      public NamespacedKey getKey() {
          return key;
      }
@@ -1100,7 +1303,7 @@ index ac5e263d737973af077e3406a84a84baca4370db..2d91924b7f5ef16a91d40cdc1bfc3d68
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 01e11f882abb6c631f810584aa23646042688435..f43ad19a44f3b7368a1a110cc55247277f4d3751 100644
+index 01e11f882abb6c631f810584aa23646042688435..fa28b5bb0efd9d400277cd8969f38e039e6ea8ac 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
 @@ -22,6 +22,14 @@ import org.bukkit.plugin.PluginDescriptionFile;
@@ -1109,11 +1312,11 @@ index 01e11f882abb6c631f810584aa23646042688435..f43ad19a44f3b7368a1a110cc5524727
  public interface UnsafeValues {
 +    // Paper start
 +    net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
-+    @Deprecated net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
-+    net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer();
-+    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
-+    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
-+    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
++    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
++    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer();
++    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
++    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
++    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
 +    // Paper end
  
      Material toLegacy(Material material);
@@ -1131,19 +1334,19 @@ index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb
                  return warning == null || warning.value();
              }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 81adea0efd380b7452f5f573e7a6ea378b071eab..cf6fe1b5a1531e8d30c0386e36c023d003458b7e 100644
+index 7e0c6c57976a00f989fe4e5dce83cd986b460e72..1d3bb553c944f5920e81e295f8cd5b7194d37aac 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -43,7 +43,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a world, which may contain entities, chunks and blocks
   */
--public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder {
-+public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, net.kyori.adventure.audience.ForwardingAudience { // Paper
+-public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed {
++public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience { // Paper
  
      /**
       * Gets the {@link Block} at the given coordinates
-@@ -635,6 +635,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -638,6 +638,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @NotNull
      public List<Player> getPlayers();
  
@@ -1276,7 +1479,7 @@ index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..c8d37184d8e882a4084a1bfef85faa33
  
      /**
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..50e6d45ec9349b56d20e2ffc664eca15ba936cc6 100644
+index 80209bb88a0294d4eedc78509533a6257315d856..57ade3963faae3724d9a01eeeb6d02168acb567e 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -32,8 +32,7 @@ public abstract class Command {
@@ -1314,7 +1517,7 @@ index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..50e6d45ec9349b56d20e2ffc664eca15
 +    @Deprecated // Paper
      public String getPermissionMessage() {
 -        return permissionMessage;
-+        return io.papermc.paper.text.PaperComponents.legacySectionSerializer().serializeOrNull(permissionMessage); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serializeOrNull(permissionMessage); // Paper
      }
  
      /**
@@ -1328,11 +1531,11 @@ index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..50e6d45ec9349b56d20e2ffc664eca15
 +    @Deprecated // Paper
      public Command setPermissionMessage(@Nullable String permissionMessage) {
 -        this.permissionMessage = permissionMessage;
-+        this.permissionMessage = io.papermc.paper.text.PaperComponents.legacySectionSerializer().deserializeOrNull(permissionMessage); // Paper
++        this.permissionMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(permissionMessage); // Paper
          return this;
      }
  
-@@ -399,6 +402,25 @@ public abstract class Command {
+@@ -399,13 +402,47 @@ public abstract class Command {
          this.usageMessage = (usage == null) ? "" : usage;
          return this;
      }
@@ -1358,8 +1561,45 @@ index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..50e6d45ec9349b56d20e2ffc664eca15
  
      public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message) {
          broadcastCommandMessage(source, message, true);
+     }
+ 
+     public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message, boolean sendToSource) {
+-        String result = source.getName() + ": " + message;
++        // Paper start
++        broadcastCommandMessage(source, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message), sendToSource);
++    }
++
++    public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull net.kyori.adventure.text.Component message) {
++        broadcastCommandMessage(source, message, true);
++    }
++
++    public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull net.kyori.adventure.text.Component message, boolean sendToSource) {
++        net.kyori.adventure.text.TextComponent.Builder result = net.kyori.adventure.text.Component.text()
++            .color(net.kyori.adventure.text.format.NamedTextColor.WHITE)
++            .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
++            .append(source.name())
++            .append(net.kyori.adventure.text.Component.text(": "))
++            .append(message);
++        // Paper end
+ 
+         if (source instanceof BlockCommandSender) {
+             BlockCommandSender blockCommandSender = (BlockCommandSender) source;
+@@ -424,7 +461,12 @@ public abstract class Command {
+         }
+ 
+         Set<Permissible> users = Bukkit.getPluginManager().getPermissionSubscriptions(Server.BROADCAST_CHANNEL_ADMINISTRATIVE);
+-        String colored = ChatColor.GRAY + "" + ChatColor.ITALIC + "[" + result + ChatColor.GRAY + ChatColor.ITALIC + "]";
++        // Paper start
++        net.kyori.adventure.text.TextComponent.Builder colored = net.kyori.adventure.text.Component.text()
++            .color(net.kyori.adventure.text.format.NamedTextColor.GRAY)
++            .decorate(net.kyori.adventure.text.format.TextDecoration.ITALIC)
++            .append(net.kyori.adventure.text.Component.text("["), result, net.kyori.adventure.text.Component.text("]"));
++        // Paper end
+ 
+         if (sendToSource && !(source instanceof ConsoleCommandSender)) {
+             source.sendMessage(message);
 diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
-index 284be63a125624a8ae43d2c164aede810ce6bfe5..f98d46fa45bb7c842d791b09f082a0968ae537fb 100644
+index 284be63a125624a8ae43d2c164aede810ce6bfe5..ec97093a4410322ad44e111d894a3b1a5c5f7b88 100644
 --- a/src/main/java/org/bukkit/command/CommandSender.java
 +++ b/src/main/java/org/bukkit/command/CommandSender.java
 @@ -6,12 +6,13 @@ import org.bukkit.permissions.Permissible;
@@ -1441,7 +1681,7 @@ index 284be63a125624a8ae43d2c164aede810ce6bfe5..f98d46fa45bb7c842d791b09f082a096
          public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -99,4 +111,18 @@ public interface CommandSender extends Permissible {
+@@ -99,4 +111,39 @@ public interface CommandSender extends Permissible {
      @NotNull
      Spigot spigot();
      // Spigot end
@@ -1456,12 +1696,33 @@ index 284be63a125624a8ae43d2c164aede810ce6bfe5..f98d46fa45bb7c842d791b09f082a096
 +
 +    @Override
 +    default void sendMessage(final @NotNull net.kyori.adventure.identity.Identity identity, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
-+        this.sendMessage(org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(message));
++        this.sendMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(message));
++    }
++
++    /**
++     * Sends a message with the MiniMessage format to the command sender.
++     * <p>
++     * See <a href="https://docs.adventure.kyori.net/minimessage/">MiniMessage docs</a>
++     * for more information on the format.
++     *
++     * @param message MiniMessage content
++     */
++    default void sendRichMessage(final @NotNull String message) {
++        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message));
++    }
++
++    /**
++     * Sends a plain message to the command sender.
++     *
++     * @param message plain message
++     */
++    default void sendPlainMessage(final @NotNull String message) {
++        this.sendMessage(net.kyori.adventure.text.Component.text(message));
 +    }
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java b/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
-index a542c4bb3c973bbe4b976642feccde6a4d90cb7b..614cba22c0997dbb45576f800675db4053a9831c 100644
+index a542c4bb3c973bbe4b976642feccde6a4d90cb7b..ef870b864c1e36032b54b31f3f85707edc06d764 100644
 --- a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
 +++ b/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
 @@ -67,7 +67,7 @@ public class PluginCommandYamlParser {
@@ -1469,7 +1730,7 @@ index a542c4bb3c973bbe4b976642feccde6a4d90cb7b..614cba22c0997dbb45576f800675db40
  
              if (permissionMessage != null) {
 -                newCmd.setPermissionMessage(permissionMessage.toString());
-+                newCmd.permissionMessage(io.papermc.paper.text.PaperComponents.legacySectionSerializer().deserialize(permissionMessage.toString())); // Paper
++                newCmd.permissionMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(permissionMessage.toString())); // Paper
              }
  
              pluginCmds.add(newCmd);
@@ -1504,10 +1765,10 @@ index fcc34b640265f4dccb46b9f09466ab8e1d96043e..74599b4ee0518481c0e3a5f6ab2f5302
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
-index b833ef63fbe01271ceb2bd83a9eb4a84c9912761..8eb0497c81744874809ebc4bc2e28b128e66a926 100644
+index e2800dc97af5bbb02c555069285a0fa155a9799d..5744a9f432ec75f6b6b1991ff488dffb9591c934 100644
 --- a/src/main/java/org/bukkit/enchantments/Enchantment.java
 +++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
-@@ -294,6 +294,19 @@ public abstract class Enchantment implements Keyed {
+@@ -299,6 +299,19 @@ public abstract class Enchantment implements Keyed {
       * @return True if the enchantment may be applied, otherwise False
       */
      public abstract boolean canEnchantItem(@NotNull ItemStack item);
@@ -1544,10 +1805,10 @@ index 9566e4306ada5e82dede0f002aa06da12c44996b..4d5f0837bd0e02a30c943d8969fb6b13
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 922d33ff4fa9d901d3c5c0a9f8399ad8aef62c37..cd287978c34873c7122794e4f3e762915978a1f0 100644
+index 259d878ddd4e4e2b289c0de0325ca8fd6203c484..a829779ac56a271cad463806984991b4713a27be 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a base entity in the world
   */
@@ -1556,7 +1817,7 @@ index 922d33ff4fa9d901d3c5c0a9f8399ad8aef62c37..cd287978c34873c7122794e4f3e76291
  
      /**
       * Gets the entity's current position
-@@ -656,4 +656,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -683,4 +683,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      @Override
      Spigot spigot();
      // Spigot end
@@ -1578,10 +1839,10 @@ index 922d33ff4fa9d901d3c5c0a9f8399ad8aef62c37..cd287978c34873c7122794e4f3e76291
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872e0a6871a 100644
+index c652660f8e053b066d0d40a89ab6f1b86655f71b..2c5fc4f62b2c16de1f4f94f52aae5baf8af6d694 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -35,7 +35,28 @@ import org.jetbrains.annotations.Nullable;
+@@ -37,7 +37,28 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a player, connected or not
   */
@@ -1610,8 +1871,8 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
 +    // Paper end
  
      /**
-      * Gets the "friendly" name to display of this player. This may include
-@@ -45,7 +66,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * {@inheritDoc}
+@@ -54,7 +75,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * places defined by plugins.
       *
       * @return the friendly name
@@ -1621,7 +1882,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      @NotNull
      public String getDisplayName();
  
-@@ -57,15 +80,50 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -66,15 +89,50 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * places defined by plugins.
       *
       * @param name The new display name.
@@ -1672,7 +1933,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public String getPlayerListName();
  
      /**
-@@ -74,14 +132,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -83,14 +141,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * If the value is null, the name will be identical to {@link #getName()}.
       *
       * @param name new player list name
@@ -1691,7 +1952,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      @Nullable
      public String getPlayerListHeader();
  
-@@ -89,7 +151,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -98,7 +160,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Gets the currently displayed player list footer for this player.
       *
       * @return player list header or null
@@ -1701,7 +1962,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      @Nullable
      public String getPlayerListFooter();
  
-@@ -97,14 +161,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -106,14 +170,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Sets the currently displayed player list header for this player.
       *
       * @param header player list header, null for empty
@@ -1720,7 +1981,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public void setPlayerListFooter(@Nullable String footer);
  
      /**
-@@ -113,7 +181,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -122,7 +190,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param header player list header, null for empty
       * @param footer player list footer, null for empty
@@ -1730,7 +1991,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public void setPlayerListHeaderFooter(@Nullable String header, @Nullable String footer);
  
      /**
-@@ -151,9 +221,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -160,9 +230,25 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Kicks player with custom kick message.
       *
       * @param message kick message
@@ -1740,6 +2001,11 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public void kickPlayer(@Nullable String message);
  
 +    // Paper start
++    /**
++     * Kicks the player with the default kick message.
++     * @see #kick(Component)
++     */
++    void kick();
 +    /**
 +     * Kicks player with custom kick message.
 +     *
@@ -1751,7 +2017,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      /**
       * Says a message (or runs a command).
       *
-@@ -498,6 +579,90 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -514,6 +600,90 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull EquipmentSlot slot, @NotNull ItemStack item);
  
@@ -1842,7 +2108,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      /**
       * Send a sign change. This fakes a sign change packet for a user at
       * a certain location. This will not actually change the world in any way.
-@@ -512,7 +677,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -528,7 +698,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param lines the new text on the sign or null to clear it
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -1852,7 +2118,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
  
      /**
-@@ -531,7 +698,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -547,7 +719,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if dyeColor is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -1862,7 +2128,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
  
      /**
-@@ -551,7 +720,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -567,7 +741,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if dyeColor is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -1872,7 +2138,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
  
      /**
-@@ -1026,6 +1197,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1042,6 +1218,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *     pack correctly.
       * </ul>
       *
@@ -1880,7 +2146,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
-@@ -1039,8 +1211,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1055,8 +1232,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -1938,7 +2204,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      /**
       * Request that the player's client download and switch resource packs.
       * <p>
-@@ -1115,6 +1336,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1131,6 +1357,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *     pack correctly.
       * </ul>
       *
@@ -1946,7 +2212,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
-@@ -1130,8 +1352,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1146,8 +1373,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -2004,7 +2270,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      /**
       * Gets the Scoreboard displayed to this player
       *
-@@ -1225,7 +1496,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1263,7 +1539,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param title Title text
       * @param subtitle Subtitle text
@@ -2013,7 +2279,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
       */
      @Deprecated
      public void sendTitle(@Nullable String title, @Nullable String subtitle);
-@@ -1244,7 +1515,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1282,7 +1558,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
       * @param stay time in ticks for titles to stay. Defaults to 70.
       * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
@@ -2023,7 +2289,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public void sendTitle(@Nullable String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut);
  
      /**
-@@ -1471,6 +1744,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1509,6 +1787,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public int getClientViewDistance();
  
@@ -2038,7 +2304,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      /**
       * Gets the player's estimated ping in milliseconds.
       *
-@@ -1496,8 +1777,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1534,8 +1820,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * they wish.
       *
       * @return the player's locale
@@ -2049,7 +2315,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      public String getLocale();
  
      /**
-@@ -1539,6 +1822,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1577,6 +1865,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public boolean isAllowingServerListings();
  
@@ -2064,7 +2330,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -1593,11 +1884,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1631,11 +1927,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -2078,7 +2344,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -1608,7 +1901,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1646,7 +1944,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -2088,7 +2354,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1618,7 +1913,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1656,7 +1956,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -2098,7 +2364,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1629,7 +1926,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1667,7 +1969,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -2108,7 +2374,7 @@ index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1640,7 +1939,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1678,7 +1982,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send
@@ -2133,7 +2399,7 @@ index 63c80b4ee1f7adc8a9efc3b607993104b1991f90..91cab8b13d5bba34007f124838b32a1d
  
  }
 diff --git a/src/main/java/org/bukkit/event/block/SignChangeEvent.java b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
-index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1f79f704abf339150df08900b8ea7da4cefef258 100644
+index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1268066e30ddb0cd3792ea4b3de894eb04196669 100644
 --- a/src/main/java/org/bukkit/event/block/SignChangeEvent.java
 +++ b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
 @@ -16,12 +16,25 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
@@ -2158,7 +2424,7 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1f79f704abf339150df08900b8ea7da4
 +        // Paper start
 +        this.adventure$lines = new java.util.ArrayList<>();
 +        for (String theLine : theLines) {
-+            this.adventure$lines.add(org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(theLine));
++            this.adventure$lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(theLine));
 +        }
 +        // Paper end
      }
@@ -2214,7 +2480,7 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1f79f704abf339150df08900b8ea7da4
 +    @Deprecated // Paper
      public String[] getLines() {
 -        return lines;
-+        return adventure$lines.stream().map(org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer()::serialize).toArray(String[]::new); // Paper
++        return adventure$lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
      }
  
      /**
@@ -2228,7 +2494,7 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1f79f704abf339150df08900b8ea7da4
 +    @Deprecated // Paper
      public String getLine(int index) throws IndexOutOfBoundsException {
 -        return lines[index];
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.adventure$lines.get(index)); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.adventure$lines.get(index)); // Paper
      }
  
      /**
@@ -2241,12 +2507,12 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1f79f704abf339150df08900b8ea7da4
 +    @Deprecated // Paper
      public void setLine(int index, @Nullable String line) throws IndexOutOfBoundsException {
 -        lines[index] = line;
-+        adventure$lines.set(index, line != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(line) : null); // Paper
++        adventure$lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : null); // Paper
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
-index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a01d4c21bedc7f1a54f5a330bb4c2909ce3a18e4 100644
+index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..7941c60b0e1840785ba2b250071591bd75bc6e35 100644
 --- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 @@ -12,25 +12,48 @@ import org.jetbrains.annotations.Nullable;
@@ -2294,7 +2560,7 @@ index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a01d4c21bedc7f1a54f5a330bb4c2909
          this.newTotalExp = newTotalExp;
          this.newLevel = newLevel;
          this.deathMessage = deathMessage;
-+        this.adventure$deathMessage = deathMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(deathMessage) : net.kyori.adventure.text.Component.empty(); // Paper
++        this.adventure$deathMessage = deathMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(deathMessage) : net.kyori.adventure.text.Component.empty(); // Paper
      }
  
      @NotNull
@@ -2332,7 +2598,7 @@ index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a01d4c21bedc7f1a54f5a330bb4c2909
 +    @Deprecated // Paper
      public void setDeathMessage(@Nullable String deathMessage) {
          this.deathMessage = deathMessage;
-+        this.adventure$deathMessage = deathMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(deathMessage) : net.kyori.adventure.text.Component.empty(); // Paper
++        this.adventure$deathMessage = deathMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(deathMessage) : net.kyori.adventure.text.Component.empty(); // Paper
      }
  
      /**
@@ -2350,7 +2616,7 @@ index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a01d4c21bedc7f1a54f5a330bb4c2909
 -
 +    // Paper start //TODO: add translation API to drop String deathMessage in favor of just Adventure
 +    private static String getDeathMessageString(net.kyori.adventure.text.Component component) {
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(component);
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(component);
 +    }
 +    // Paper end
      /**
@@ -2412,7 +2678,7 @@ index 9c68c3f2d61500479f48b80264f625aaae2f3204..399afcd19fcb6acd24857ed6ab48cf0d
      private static final HandlerList handlers = new HandlerList();
      private boolean cancel = false;
 diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
-index 9866c07c999f46cb585709804aaad710c3031d5a..31f6f781a0403bf6388d668f0effaed5aae94468 100644
+index 9866c07c999f46cb585709804aaad710c3031d5a..c7c45e2de8cca1bf8b8e12752e08db62403efa6a 100644
 --- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 @@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
@@ -2495,7 +2761,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..31f6f781a0403bf6388d668f0effaed5
 +    @NotNull
 +    @Deprecated // Paper
 +    public String getKickMessage() {
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.message); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.message); // Paper
 +    }
 +
 +    /**
@@ -2506,7 +2772,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..31f6f781a0403bf6388d668f0effaed5
 +     */
 +    @Deprecated // Paper
 +    public void setKickMessage(@NotNull final String message) {
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
 +    }
 +
      /**
@@ -2529,7 +2795,7 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..31f6f781a0403bf6388d668f0effaed5
      public void disallow(@NotNull final Result result, @NotNull final String message) {
          this.result = result;
 -        this.message = message;
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
      }
  
      /**
@@ -2538,12 +2804,12 @@ index 9866c07c999f46cb585709804aaad710c3031d5a..31f6f781a0403bf6388d668f0effaed5
      public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final String message) {
          this.result = result == null ? null : Result.valueOf(result.name());
 -        this.message = message;
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
      }
  
      /**
 diff --git a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
-index 8ea56aac752544f798728b429e7152afbee497e4..213837794c603cb9f152f917941b912326a08030 100644
+index a1f4261eaa1497554f1e51d1d5a072c2eb9226df..3a1da86e3dbf18c6e1040086c1df4b8976bc2b9d 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
 @@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
@@ -2568,7 +2834,7 @@ index 793b661b6d2d05de3d7f4fc26a4c018a2af58e62..f6d3b817de3001f04ea4554c7c39a129
          player = who;
  
 diff --git a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
-index d06684aba7688ce06777dbd837a46856a9d7767f..851a189d42e271679abc78f95049d8badf7a2b64 100644
+index d06684aba7688ce06777dbd837a46856a9d7767f..4af1d064fcb57773dfa8f6ad40d6482973f8e1a8 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
 @@ -10,30 +10,60 @@ import org.jetbrains.annotations.Nullable;
@@ -2586,7 +2852,7 @@ index d06684aba7688ce06777dbd837a46856a9d7767f..851a189d42e271679abc78f95049d8ba
 +    @Deprecated // Paper end
      public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final String joinMessage) {
          super(playerJoined);
-+        this.joinMessage = joinMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(joinMessage) : null; // Paper end
++        this.joinMessage = joinMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(joinMessage) : null; // Paper end
 +    }
 +
 +    // Paper start
@@ -2619,7 +2885,7 @@ index d06684aba7688ce06777dbd837a46856a9d7767f..851a189d42e271679abc78f95049d8ba
 +    @Deprecated // Paper
      public String getJoinMessage() {
 -        return joinMessage;
-+        return this.joinMessage == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.joinMessage); // Paper
++        return this.joinMessage == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.joinMessage); // Paper
      }
  
      /**
@@ -2631,12 +2897,12 @@ index d06684aba7688ce06777dbd837a46856a9d7767f..851a189d42e271679abc78f95049d8ba
 +    @Deprecated // Paper
      public void setJoinMessage(@Nullable String joinMessage) {
 -        this.joinMessage = joinMessage;
-+        this.joinMessage = joinMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(joinMessage) : null; // Paper
++        this.joinMessage = joinMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(joinMessage) : null; // Paper
      }
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
-index 14c337f15fc804f52e52cb0a185aad38d89303a8..5c0efe74237dbe6803ce023fde99682ff70d1a92 100644
+index 2f6ca42330675733b2b4132cbb66e433788d05d5..efbf4b657c99ce3a5096d041d275af9ccaea7911 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
 @@ -10,35 +10,84 @@ import org.jetbrains.annotations.NotNull;
@@ -2647,13 +2913,13 @@ index 14c337f15fc804f52e52cb0a185aad38d89303a8..5c0efe74237dbe6803ce023fde99682f
 -    private String kickReason;
 +    private net.kyori.adventure.text.Component leaveMessage; // Paper
 +    private net.kyori.adventure.text.Component kickReason; // Paper
-     private Boolean cancel;
+     private boolean cancel;
  
 +    @Deprecated // Paper
      public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final String kickReason, @NotNull final String leaveMessage) {
 +        super(playerKicked);
-+        this.kickReason = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(kickReason); // Paper
-+        this.leaveMessage = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(leaveMessage); // Paper
++        this.kickReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(kickReason); // Paper
++        this.leaveMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(leaveMessage); // Paper
 +        this.cancel = false;
 +    }
 +    // Paper start
@@ -2711,7 +2977,7 @@ index 14c337f15fc804f52e52cb0a185aad38d89303a8..5c0efe74237dbe6803ce023fde99682f
 +    @Deprecated // Paper
      public String getReason() {
 -        return kickReason;
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.kickReason); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.kickReason); // Paper
      }
  
      /**
@@ -2724,7 +2990,7 @@ index 14c337f15fc804f52e52cb0a185aad38d89303a8..5c0efe74237dbe6803ce023fde99682f
 +    @Deprecated // Paper
      public String getLeaveMessage() {
 -        return leaveMessage;
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.leaveMessage); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.leaveMessage); // Paper
      }
  
      @Override
@@ -2737,7 +3003,7 @@ index 14c337f15fc804f52e52cb0a185aad38d89303a8..5c0efe74237dbe6803ce023fde99682f
 +    @Deprecated // Paper
      public void setReason(@NotNull String kickReason) {
 -        this.kickReason = kickReason;
-+        this.kickReason = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(kickReason); // Paper
++        this.kickReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(kickReason); // Paper
      }
  
      /**
@@ -2749,7 +3015,7 @@ index 14c337f15fc804f52e52cb0a185aad38d89303a8..5c0efe74237dbe6803ce023fde99682f
 +    @Deprecated // Paper
      public void setLeaveMessage(@NotNull String leaveMessage) {
 -        this.leaveMessage = leaveMessage;
-+        this.leaveMessage = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(leaveMessage); // Paper
++        this.leaveMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(leaveMessage); // Paper
      }
  
      @NotNull
@@ -2790,7 +3056,7 @@ index 36b436e145a7215682b692a87ab894df25752c1d..ebd499c1a2d11ea068e8c374edbc3967
          return locale;
      }
 diff --git a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
-index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..75cc54739ef841cd90568d74927d6002d4cfa7e0 100644
+index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..95c53d934f928d25f7b20cfbf2e5faa3df31ddc4 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
 @@ -17,7 +17,7 @@ public class PlayerLoginEvent extends PlayerEvent {
@@ -2812,7 +3078,7 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..75cc54739ef841cd90568d74927d6002
      public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) { // Spigot
          this(player, hostname, address, realAddress); // Spigot
          this.result = result;
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
 +    }
 +
 +    // Paper start
@@ -2865,7 +3131,7 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..75cc54739ef841cd90568d74927d6002
 +    @Deprecated // Paper
      public String getKickMessage() {
 -        return message;
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.message); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.message); // Paper
      }
  
      /**
@@ -2877,7 +3143,7 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..75cc54739ef841cd90568d74927d6002
 +    @Deprecated // Paper
      public void setKickMessage(@NotNull final String message) {
 -        this.message = message;
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
      }
  
      /**
@@ -2899,7 +3165,7 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..75cc54739ef841cd90568d74927d6002
 +    @Deprecated // Paper start
      public void disallow(@NotNull final Result result, @NotNull final String message) {
 +        this.result = result;
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message);
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message);
 +    }
 +    /**
 +     * Disallows the player from logging in, with the given reason
@@ -2913,7 +3179,7 @@ index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..75cc54739ef841cd90568d74927d6002
          this.message = message;
      }
 diff --git a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
-index fb066251f793ec3b41bfc075b9478901b15ee549..123979ed64939d615b061f91c19c630e1e1db8c7 100644
+index fb066251f793ec3b41bfc075b9478901b15ee549..6800132c6288b4588fd02b08d26f016c38f27129 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
 @@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
@@ -2981,7 +3247,7 @@ index fb066251f793ec3b41bfc075b9478901b15ee549..123979ed64939d615b061f91c19c630e
 +    @Deprecated // Paper
 +    @NotNull
 +    public String getKickMessage() {
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.message); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.message); // Paper
 +    }
 +
 +    /**
@@ -2992,7 +3258,7 @@ index fb066251f793ec3b41bfc075b9478901b15ee549..123979ed64939d615b061f91c19c630e
 +     */
 +    @Deprecated // Paper
 +    public void setKickMessage(@NotNull final String message) {
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
 +    }
 +
      /**
@@ -3015,12 +3281,12 @@ index fb066251f793ec3b41bfc075b9478901b15ee549..123979ed64939d615b061f91c19c630e
      public void disallow(@NotNull final Result result, @NotNull final String message) {
          this.result = result;
 -        this.message = message;
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
      }
  
      /**
 diff --git a/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java b/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
-index d70c25f404e994766a9ebce89a917c8d0719777c..849e8f10dd77e9fb46aab17752b8f1ff79e9d42e 100644
+index d70c25f404e994766a9ebce89a917c8d0719777c..0395ca85a466f6356259078d3bad48b2ce6e57b7 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
 @@ -10,30 +10,59 @@ import org.jetbrains.annotations.Nullable;
@@ -3033,7 +3299,7 @@ index d70c25f404e994766a9ebce89a917c8d0719777c..849e8f10dd77e9fb46aab17752b8f1ff
 +    @Deprecated // Paper
      public PlayerQuitEvent(@NotNull final Player who, @Nullable final String quitMessage) {
          super(who);
-+        this.quitMessage = quitMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(quitMessage) : null; // Paper
++        this.quitMessage = quitMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(quitMessage) : null; // Paper
 +    }
 +    // Paper start
 +    public PlayerQuitEvent(@NotNull final Player who, @Nullable final net.kyori.adventure.text.Component quitMessage) {
@@ -3070,7 +3336,7 @@ index d70c25f404e994766a9ebce89a917c8d0719777c..849e8f10dd77e9fb46aab17752b8f1ff
 +    @Deprecated // Paper
      public String getQuitMessage() {
 -        return quitMessage;
-+        return this.quitMessage == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.quitMessage); // Paper
++        return this.quitMessage == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.quitMessage); // Paper
      }
  
      /**
@@ -3082,12 +3348,12 @@ index d70c25f404e994766a9ebce89a917c8d0719777c..849e8f10dd77e9fb46aab17752b8f1ff
 +    @Deprecated // Paper
      public void setQuitMessage(@Nullable String quitMessage) {
 -        this.quitMessage = quitMessage;
-+        this.quitMessage = quitMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(quitMessage) : null; // Paper
++        this.quitMessage = quitMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(quitMessage) : null; // Paper
      }
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
-index 03bfca9d368bbe4b7c1353d52c883e756bf69bda..4f8c85222c7bd33217c7db0ff5f47bf397f8f3e5 100644
+index 03bfca9d368bbe4b7c1353d52c883e756bf69bda..943d324435350d3f16fad3e21cb472a01a3ff60b 100644
 --- a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
 +++ b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
 @@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
@@ -3107,7 +3373,7 @@ index 03bfca9d368bbe4b7c1353d52c883e756bf69bda..4f8c85222c7bd33217c7db0ff5f47bf3
      public BroadcastMessageEvent(boolean isAsync, @NotNull String message, @NotNull Set<CommandSender> recipients) {
 +        // Paper start
 +        super(isAsync);
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message);
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message);
 +        this.recipients = recipients;
 +    }
 +
@@ -3152,7 +3418,7 @@ index 03bfca9d368bbe4b7c1353d52c883e756bf69bda..4f8c85222c7bd33217c7db0ff5f47bf3
 +    @Deprecated // Paper
      public String getMessage() {
 -        return message;
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.message); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.message); // Paper
      }
  
      /**
@@ -3164,56 +3430,58 @@ index 03bfca9d368bbe4b7c1353d52c883e756bf69bda..4f8c85222c7bd33217c7db0ff5f47bf3
 +    @Deprecated // Paper
      public void setMessage(@NotNull String message) {
 -        this.message = message;
-+        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
      }
  
      /**
 diff --git a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
-index cc5e2fef75736e56420df4cf4f83152fa97926df..fd4db14bef92b893ddaf5424e14ee71da22dcf84 100644
+index 92941af574945936c3714718ed3eea23697c99df..5b8a7b897d9f9d8df3705eef36388f41be4531a6 100644
 --- a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
 +++ b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
-@@ -21,15 +21,16 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
-     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
+@@ -22,15 +22,16 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      private static final HandlerList handlers = new HandlerList();
      private final InetAddress address;
+     private final boolean shouldSendChatPreviews;
 -    private String motd;
 +    private net.kyori.adventure.text.Component motd; // Paper
      private final int numPlayers;
      private int maxPlayers;
  
 +    @Deprecated // Paper
-     public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
+     public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final boolean shouldSendChatPreviews, final int numPlayers, final int maxPlayers) {
          super(true);
-         Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
+         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
          this.address = address;
 -        this.motd = motd;
-+        this.motd = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(motd); // Paper
++        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
+         this.shouldSendChatPreviews = shouldSendChatPreviews;
          this.numPlayers = numPlayers;
          this.maxPlayers = maxPlayers;
-     }
-@@ -42,14 +43,58 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
-      * @param address the address of the pinger
+@@ -45,15 +46,61 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
       * @param motd the message of the day
+      * @param shouldSendChatPreviews if the server should send chat previews
       * @param maxPlayers the max number of players
-+     * @deprecated in favour of {@link #ServerListPingEvent(java.net.InetAddress, net.kyori.adventure.text.Component, int)}
++     * @deprecated in favour of {@link #ServerListPingEvent(java.net.InetAddress, net.kyori.adventure.text.Component, boolean, int)}
       */
 +    @Deprecated // Paper
-     protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
-+        super(true);
-+        this.numPlayers = MAGIC_PLAYER_COUNT;
-+        this.address = address;
-+        this.motd = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(motd); // Paper
+     protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, boolean shouldSendChatPreviews, final int maxPlayers) {
+         super(true);
+         this.numPlayers = MAGIC_PLAYER_COUNT;
+         this.address = address;
++        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
++        this.shouldSendChatPreviews = shouldSendChatPreviews;
 +        this.maxPlayers = maxPlayers;
 +    }
 +    // Paper start
-+    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
++    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, boolean shouldSendChatPreviews, final int numPlayers, final int maxPlayers) {
 +        super(true);
-+        Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
++        Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online (%s)", numPlayers);
 +        this.address = address;
-+        this.motd = motd;
+         this.motd = motd;
+         this.shouldSendChatPreviews = shouldSendChatPreviews;
 +        this.numPlayers = numPlayers;
-+        this.maxPlayers = maxPlayers;
-+    }
+         this.maxPlayers = maxPlayers;
+     }
 +    /**
 +     * This constructor is intended for implementations that provide the
 +     * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
@@ -3223,13 +3491,14 @@ index cc5e2fef75736e56420df4cf4f83152fa97926df..fd4db14bef92b893ddaf5424e14ee71d
 +     * @param motd the message of the day
 +     * @param maxPlayers the max number of players
 +     */
-+    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int maxPlayers) {
-         super(true);
-         this.numPlayers = MAGIC_PLAYER_COUNT;
-         this.address = address;
-         this.motd = motd;
-         this.maxPlayers = maxPlayers;
-     }
++    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, boolean shouldSendChatPreviews, final int maxPlayers) {
++        super(true);
++        this.numPlayers = MAGIC_PLAYER_COUNT;
++        this.address = address;
++        this.motd = motd;
++        this.shouldSendChatPreviews = shouldSendChatPreviews;
++        this.maxPlayers = maxPlayers;
++    }
 +    /**
 +     * Get the message of the day message.
 +     *
@@ -3250,7 +3519,7 @@ index cc5e2fef75736e56420df4cf4f83152fa97926df..fd4db14bef92b893ddaf5424e14ee71d
  
      /**
       * Get the address the ping is coming from.
-@@ -65,19 +110,23 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+@@ -69,19 +116,23 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
       * Get the message of the day message.
       *
       * @return the message of the day
@@ -3260,7 +3529,7 @@ index cc5e2fef75736e56420df4cf4f83152fa97926df..fd4db14bef92b893ddaf5424e14ee71d
 +    @Deprecated // Paper
      public String getMotd() {
 -        return motd;
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.motd); // Paper
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.motd); // Paper
      }
  
      /**
@@ -3272,12 +3541,12 @@ index cc5e2fef75736e56420df4cf4f83152fa97926df..fd4db14bef92b893ddaf5424e14ee71d
 +    @Deprecated // Paper
      public void setMotd(@NotNull String motd) {
 -        this.motd = motd;
-+        this.motd = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(motd); // Paper
++        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
      }
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/InventoryView.java b/src/main/java/org/bukkit/inventory/InventoryView.java
-index 14346d83bc99581b18e53d19af03708c0bf22cf7..664de64b020cf9090a2fbee0afe2bfaf150adc3c 100644
+index 14346d83bc99581b18e53d19af03708c0bf22cf7..a4e3d526db2d17dc923cbe82e53d3c902d61e1f3 100644
 --- a/src/main/java/org/bukkit/inventory/InventoryView.java
 +++ b/src/main/java/org/bukkit/inventory/InventoryView.java
 @@ -446,11 +446,25 @@ public abstract class InventoryView {
@@ -3292,7 +3561,7 @@ index 14346d83bc99581b18e53d19af03708c0bf22cf7..664de64b020cf9090a2fbee0afe2bfaf
       */
      @NotNull
 +    public /*abstract*/ net.kyori.adventure.text.Component title() {
-+        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(this.getTitle());
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.getTitle());
 +    }
 +    // Paper end
 +
@@ -3307,10 +3576,10 @@ index 14346d83bc99581b18e53d19af03708c0bf22cf7..664de64b020cf9090a2fbee0afe2bfaf
      public abstract String getTitle();
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
-index 4ff149fd98895dd8ba45939a37c223b1f8d7281f..6cc4bad2ecd19f44a680ff03cbfb99d48ea5c337 100644
+index f89d71b77d1200314df6ca23614d5ca6fb15ceb3..af4a7ce37eb10bab06eadb6583c7894b3ec55ae6 100644
 --- a/src/main/java/org/bukkit/inventory/ItemFactory.java
 +++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
-@@ -141,4 +141,24 @@ public interface ItemFactory {
+@@ -159,4 +159,24 @@ public interface ItemFactory {
      @Deprecated
      @NotNull
      Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
@@ -3336,7 +3605,7 @@ index 4ff149fd98895dd8ba45939a37c223b1f8d7281f..6cc4bad2ecd19f44a680ff03cbfb99d4
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index f70a6a22b85ff0da76e67e9b223ad4e0b020b5c4..a15abec467bac70116a6fc21a300d4930b909f15 100644
+index 7b904dd2c0a660df8874d4800919e16981877163..d168a836d655b369f67200d7afe101b56ff815b1 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
@@ -3626,7 +3895,7 @@ index 94852d50e88d0594b84b581cd627174043629995..36bcbb3f3acedf7ebecbf6f6b358cf64
              throw new UnsupportedOperationException("Not supported yet.");
          }
 diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
-index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c4f7cff33 100644
+index 2fbb0b7640dd9b9b0e70d4bc60fbb0310d5ec250..64114b1a9e201df369fc794fbee984d496385420 100644
 --- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
 +++ b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
 @@ -31,6 +31,24 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
@@ -3684,7 +3953,7 @@ index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c
 +     *
 +     * <p>Plugins should check that {@link #hasLore()} returns <code>true</code> before calling this method.</p>
 +     *
-+     * @return the display name
++     * @return the lore
 +     */
 +    @Nullable List<net.kyori.adventure.text.Component> lore();
 +
@@ -3720,7 +3989,7 @@ index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c
  
      /**
 diff --git a/src/main/java/org/bukkit/map/MapCursor.java b/src/main/java/org/bukkit/map/MapCursor.java
-index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..ed0bc2024a0bb85837e25f75ae89d1fe257b2e60 100644
+index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..ca763b231749f108b6773040a5c6109378b21b31 100644
 --- a/src/main/java/org/bukkit/map/MapCursor.java
 +++ b/src/main/java/org/bukkit/map/MapCursor.java
 @@ -10,7 +10,7 @@ public final class MapCursor {
@@ -3764,7 +4033,7 @@ index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..ed0bc2024a0bb85837e25f75ae89d1fe
          setRawType(type);
          this.visible = visible;
 -        this.caption = caption;
-+        this.caption = caption == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(caption); // Paper
++        this.caption = caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(caption); // Paper
      }
 +    // Paper start
 +    /**
@@ -3808,7 +4077,7 @@ index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..ed0bc2024a0bb85837e25f75ae89d1fe
          setType(type);
          this.visible = visible;
 -        this.caption = caption;
-+        this.caption = caption == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(caption); // Paper
++        this.caption = caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(caption); // Paper
      }
  
      /**
@@ -3844,7 +4113,7 @@ index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..ed0bc2024a0bb85837e25f75ae89d1fe
 +    @Deprecated // Paper
      public String getCaption() {
 -        return caption;
-+        return this.caption == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.caption); // Paper
++        return this.caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.caption); // Paper
      }
  
      /**
@@ -3856,7 +4125,7 @@ index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..ed0bc2024a0bb85837e25f75ae89d1fe
 +    @Deprecated // Paper
      public void setCaption(@Nullable String caption) {
 -        this.caption = caption;
-+        this.caption = caption == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(caption); // Paper
++        this.caption = caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(caption); // Paper
      }
  
      /**
@@ -3926,8 +4195,26 @@ index 228421154913116069c20323afb519bdde2134df..26791db3c267670d5782f1d2b67ff7d5
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/plugin/Plugin.java b/src/main/java/org/bukkit/plugin/Plugin.java
+index 03ca87a1cbace2459174bb7bb8847bda766e80c5..b37938745f916b5f0111b07b1a1c97527f026e9d 100644
+--- a/src/main/java/org/bukkit/plugin/Plugin.java
++++ b/src/main/java/org/bukkit/plugin/Plugin.java
+@@ -179,6 +179,13 @@ public interface Plugin extends TabExecutor {
+     @NotNull
+     public Logger getLogger();
+ 
++    // Paper start - Adventure component logger
++    @NotNull
++    default net.kyori.adventure.text.logger.slf4j.ComponentLogger getComponentLogger() {
++        return net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(getLogger().getName());
++    }
++    // Paper end
++
+     /**
+      * Returns the name of the plugin.
+      * <p>
 diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
-index ff3fcb2697eb00736238d0efdcaefe43043334d3..75acd6f8f3d774bb79e8e513125e801c5569a244 100644
+index 2ff3a11f1f9c115722ea224873e7eb6dc6dc63e6..474274fdffe4041bf4bfb146fcc66424eb5be78a 100644
 --- a/src/main/java/org/bukkit/scoreboard/Objective.java
 +++ b/src/main/java/org/bukkit/scoreboard/Objective.java
 @@ -19,14 +19,35 @@ public interface Objective {
@@ -3977,10 +4264,10 @@ index ff3fcb2697eb00736238d0efdcaefe43043334d3..75acd6f8f3d774bb79e8e513125e801c
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Scoreboard.java b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
-index 5c855dbd0da895392f7a6e92cdc90782baf614ad..1ada91d790abedbc9b3aeb6e96467a0d78560f15 100644
+index a15183f302de42956d8965efe5f0585fc2cd030e..ef3e729caf430b08cdf2d680d5a137a1ba56c1c5 100644
 --- a/src/main/java/org/bukkit/scoreboard/Scoreboard.java
 +++ b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
-@@ -27,6 +27,48 @@ public interface Scoreboard {
+@@ -27,6 +27,92 @@ public interface Scoreboard {
      @Deprecated
      @NotNull
      Objective registerNewObjective(@NotNull String name, @NotNull String criteria) throws IllegalArgumentException;
@@ -4001,9 +4288,53 @@ index 5c855dbd0da895392f7a6e92cdc90782baf614ad..1ada91d790abedbc9b3aeb6e96467a0d
 +     *     characters.
 +     * @throws IllegalArgumentException if an objective by that name already
 +     *     exists
++     * @deprecated use {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component)}
 +     */
 +    @NotNull
++    @Deprecated
 +    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName) throws IllegalArgumentException;
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @param renderType Manner of rendering the Objective
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 32767
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if renderType is null
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     * @deprecated use {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component, RenderType)}
++     */
++    @NotNull
++    @Deprecated
++    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 32767
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     */
++    @NotNull
++    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @Nullable net.kyori.adventure.text.Component displayName) throws IllegalArgumentException;
 +    /**
 +     * Registers an Objective on this Scoreboard
 +     *
@@ -4024,38 +4355,54 @@ index 5c855dbd0da895392f7a6e92cdc90782baf614ad..1ada91d790abedbc9b3aeb6e96467a0d
 +     *     exists
 +     */
 +    @NotNull
-+    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
++    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
 +    // Paper end
  
      /**
       * Registers an Objective on this Scoreboard
-@@ -44,8 +86,10 @@ public interface Scoreboard {
-      *     characters.
-      * @throws IllegalArgumentException if an objective by that name already
-      *     exists
-+     * @deprecated in favour of {@link #registerNewObjective(String, String, net.kyori.adventure.text.Component)}
+@@ -47,6 +133,7 @@ public interface Scoreboard {
+      * @deprecated use {@link #registerNewObjective(String, Criteria, String)}
       */
      @NotNull
 +    @Deprecated // Paper
      Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName) throws IllegalArgumentException;
  
      /**
-@@ -66,8 +110,10 @@ public interface Scoreboard {
-      * @throws IllegalArgumentException if renderType is null
-      * @throws IllegalArgumentException if an objective by that name already
-      *     exists
-+     * @deprecated in favour of {@link #registerNewObjective(String, String, net.kyori.adventure.text.Component, RenderType)}
+@@ -70,6 +157,7 @@ public interface Scoreboard {
+      * @deprecated use {@link #registerNewObjective(String, Criteria, String, RenderType)}
       */
      @NotNull
 +    @Deprecated // Paper
      Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
  
      /**
+@@ -88,8 +176,10 @@ public interface Scoreboard {
+      *     characters.
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated in favour of {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName) throws IllegalArgumentException;
+ 
+     /**
+@@ -110,8 +200,10 @@ public interface Scoreboard {
+      * @throws IllegalArgumentException if renderType is null
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated in favour of {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component, RenderType)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
-index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df1506858168d20d 100644
+index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..47b10df619ad2520b9bb673e2220f36391680f1b 100644
 --- a/src/main/java/org/bukkit/scoreboard/Team.java
 +++ b/src/main/java/org/bukkit/scoreboard/Team.java
-@@ -22,14 +22,93 @@ public interface Team {
+@@ -22,14 +22,100 @@ public interface Team {
       */
      @NotNull
      String getName() throws IllegalStateException;
@@ -4072,8 +4419,6 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
 +     * Sets the name displayed to entries for this team
 +     *
 +     * @param displayName New display name
-+     * @throws IllegalArgumentException if displayName is longer than 128
-+     *     characters.
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
 +    void displayName(@Nullable net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException;
@@ -4115,13 +4460,23 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
 +    void suffix(@Nullable net.kyori.adventure.text.Component suffix) throws IllegalStateException, IllegalArgumentException;
 +
 +    /**
++     * Checks if the team has a color specified
++     *
++     * @return true if it has a <b>color</b>
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    boolean hasColor();
++
++    /**
 +     * Gets the color of the team.
 +     * <br>
 +     * This only sets the team outline, other occurrences of colors such as in
 +     * names are handled by prefixes / suffixes.
 +     *
-+     * @return team color, defaults to {@link ChatColor#RESET}
++     * @return team color
 +     * @throws IllegalStateException if this team has been unregistered
++     * @throws IllegalStateException if the team doesn't have a color
++     * @see #hasColor()
 +     */
 +    @NotNull net.kyori.adventure.text.format.TextColor color() throws IllegalStateException;
 +
@@ -4131,8 +4486,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
 +     * This only sets the team outline, other occurrences of colors such as in
 +     * names are handled by prefixes / suffixes.
 +     *
-+     * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
-+     * no color
++     * @param color new color, null for no color
 +     */
 +    void color(@Nullable net.kyori.adventure.text.format.NamedTextColor color);
 +    // Paper end
@@ -4149,7 +4503,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
      String getDisplayName() throws IllegalStateException;
  
      /**
-@@ -39,7 +118,9 @@ public interface Team {
+@@ -39,7 +125,9 @@ public interface Team {
       * @throws IllegalArgumentException if displayName is longer than 128
       *     characters.
       * @throws IllegalStateException if this team has been unregistered
@@ -4159,7 +4513,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
      void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -47,8 +128,10 @@ public interface Team {
+@@ -47,8 +135,10 @@ public interface Team {
       *
       * @return Team prefix
       * @throws IllegalStateException if this team has been unregistered
@@ -4170,7 +4524,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
      String getPrefix() throws IllegalStateException;
  
      /**
-@@ -59,7 +142,9 @@ public interface Team {
+@@ -59,7 +149,9 @@ public interface Team {
       * @throws IllegalArgumentException if prefix is longer than 64
       *     characters
       * @throws IllegalStateException if this team has been unregistered
@@ -4180,7 +4534,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
      void setPrefix(@NotNull String prefix) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -67,8 +152,10 @@ public interface Team {
+@@ -67,8 +159,10 @@ public interface Team {
       *
       * @return the team's current suffix
       * @throws IllegalStateException if this team has been unregistered
@@ -4191,7 +4545,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
      String getSuffix() throws IllegalStateException;
  
      /**
-@@ -79,7 +166,9 @@ public interface Team {
+@@ -79,7 +173,9 @@ public interface Team {
       * @throws IllegalArgumentException if suffix is longer than 64
       *     characters
       * @throws IllegalStateException if this team has been unregistered
@@ -4201,7 +4555,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
      void setSuffix(@NotNull String suffix) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -90,8 +179,10 @@ public interface Team {
+@@ -90,8 +186,10 @@ public interface Team {
       *
       * @return team color, defaults to {@link ChatColor#RESET}
       * @throws IllegalStateException if this team has been unregistered
@@ -4212,7 +4566,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
      ChatColor getColor() throws IllegalStateException;
  
      /**
-@@ -102,7 +193,9 @@ public interface Team {
+@@ -102,7 +200,9 @@ public interface Team {
       *
       * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
       * no color
@@ -4223,7 +4577,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
  
      /**
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index c6a8a37a933cfc5a5885602a8a70fdda8fb6aa10..7f57b95727d0336f1f1548055574e0c129fe9643 100644
+index c6a8a37a933cfc5a5885602a8a70fdda8fb6aa10..93498307004b68b934fbfa1aeb3aaf0e97cbdac7 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -26,6 +26,12 @@ import org.objectweb.asm.tree.ParameterNode;
@@ -4244,7 +4598,7 @@ index c6a8a37a933cfc5a5885602a8a70fdda8fb6aa10..7f57b95727d0336f1f1548055574e0c1
                              for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
                                  final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
 -                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
-+                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && org.apache.commons.lang.ArrayUtils.contains(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc)) {
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
                                      continue dancing;
                                  }
                              }

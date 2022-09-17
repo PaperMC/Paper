@@ -1,0 +1,112 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 2 Mar 2022 13:36:21 -0800
+Subject: [PATCH] Add PaperRegistry
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/Reference.java b/src/main/java/io/papermc/paper/registry/Reference.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d880810cbf05bc45051fe29515054211572e33b4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/Reference.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.registry;
++
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Represents a reference to a server-backed registry value that may
++ * change.
++ *
++ * @param <T> type of the value
++ */
++public interface Reference<T extends Keyed> extends Keyed {
++
++    /**
++     * Gets the value from the registry with the key.
++     *
++     * @return the value
++     * @throws java.util.NoSuchElementException if there is no value with this key
++     */
++    @NotNull T value();
++
++    /**
++     * Gets the value from the registry with the key.
++     *
++     * @return the value or null if it doesn't exist
++     */
++    @Nullable T valueOrNull();
++
++    /**
++     * Creates a reference to a registered value.
++     *
++     * @param registry the registry the value is located in
++     * @param key the key to the value
++     * @param <T> the type of the value
++     * @return a reference
++     */
++    static <T extends Keyed> @NotNull Reference<T> create(@NotNull Registry<T> registry, @NotNull NamespacedKey key) {
++        return new ReferenceImpl<>(registry, key);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/ReferenceImpl.java b/src/main/java/io/papermc/paper/registry/ReferenceImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f29e76a6b66ddfec12ddf8db6dcb2df6083b5982
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/ReferenceImpl.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.registry;
++
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.NoSuchElementException;
++
++record ReferenceImpl<T extends Keyed>(@NotNull Registry<T> registry, @NotNull NamespacedKey key) implements Reference<T> {
++
++    @Override
++    public @NotNull T value() {
++        final T value = this.registry.get(this.key);
++        if (value == null) {
++            throw new NoSuchElementException("No such value with key " + this.key);
++        }
++        return value;
++    }
++
++    @Override
++    public @Nullable T valueOrNull() {
++        return this.registry.get(this.key);
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++}
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 035dfcd9d483152a050e45409f15b015b135fb38..abe79e4a2233341d0030742b823a0cfb5af97f41 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -147,5 +147,15 @@ public interface UnsafeValues {
+      * Use this when sending custom packets, so that there are no collisions on the client or server.
+      */
+     public int nextEntityId();
++
++    /**
++     * Gets the server-backed registry for a type.
++     *
++     * @param classOfT type
++     * @param <T> type
++     * @return the server-backed registry
++     * @throws IllegalArgumentException if there isn't a registry for that type
++     */
++    <T extends Keyed> @org.jetbrains.annotations.NotNull Registry<T> registryFor(Class<T> classOfT);
+     // Paper end
+ }

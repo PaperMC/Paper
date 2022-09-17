@@ -5,11 +5,11 @@ Subject: [PATCH] Prevent opening inventories when frozen
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 65794caf8fec677037c283eec2802838a0c9ce43..97d7237060f2a9a03180b5d15bcec54246b1645b 100644
+index 61f97fab1e0e3d6c9206c397cecfff868cf0d9d2..227bcd9c1cfcc6bf8dedacdca28731a8ffc7171a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -611,7 +611,7 @@ public class ServerPlayer extends Player {
-             containerUpdateDelay = level.paperConfig.containerUpdateTickRate;
+@@ -637,7 +637,7 @@ public class ServerPlayer extends Player {
+             containerUpdateDelay = level.paperConfig().tickRates.containerUpdate;
          }
          // Paper end
 -        if (!this.level.isClientSide && !this.containerMenu.stillValid(this)) {
@@ -17,7 +17,7 @@ index 65794caf8fec677037c283eec2802838a0c9ce43..97d7237060f2a9a03180b5d15bcec542
              this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
              this.containerMenu = this.inventoryMenu;
          }
-@@ -1478,7 +1478,7 @@ public class ServerPlayer extends Player {
+@@ -1507,7 +1507,7 @@ public class ServerPlayer extends Player {
              } else {
                  // CraftBukkit start
                  this.containerMenu = container;
@@ -27,22 +27,22 @@ index 65794caf8fec677037c283eec2802838a0c9ce43..97d7237060f2a9a03180b5d15bcec542
                  this.initMenu(container);
                  return OptionalInt.of(this.containerCounter);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
-index adfbc156b4c4a8591609f385adaa6b04f984a64f..709bab9ac4eb453caeb0f565b6a0d6d097e2d1e0 100644
+index 883b6245f44f3fb82d7678e1092177ca646d484a..f5f30e1408892b4e728053bc5005e551396583a5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
-@@ -322,7 +322,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
-         if (adventure$title == null) adventure$title = io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.deserialize(container.getBukkitView().getTitle()); // Paper
+@@ -326,7 +326,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
  
-         //player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0])); // Paper // Paper - comment
+         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
 -        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
 +        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
          player.containerMenu = container;
          player.initMenu(container);
      }
-@@ -396,7 +396,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+@@ -400,7 +400,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
          net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
-         if (adventure$title == null) adventure$title = io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.deserialize(inventory.getTitle()); // Paper
-         //player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
+         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
 -        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
 +        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
          player.containerMenu = container;

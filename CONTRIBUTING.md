@@ -168,7 +168,7 @@ move it under the line of the patch you wish to modify;
   assist you too.
    - Alternatively, if you only know the name of the patch, you can do
   `git commit -a --fixup "Subject of Patch name"`.
-1. Rebase with autosquash: `git rebase --autosquash -i base`.
+1. Rebase with autosquash: `git rebase -i --autosquash base`.
 This will automatically move your fixup commit to the right place, and you just
 need to "save" the changes.
 1. Type `./gradlew rebuildPatches` in the root directory;
@@ -309,56 +309,55 @@ what fits best in your situation.
 
 ## Configuration files
 
-To use a configurable value in your patch, add a new entry in either the
-`PaperConfig` or `PaperWorldConfig` classes. Use `PaperConfig` if a value
+To use a configurable value in your patch, add a new field in either the
+`GlobalConfiguration` or `WorldConfiguration` classes (inside the 
+`io.papermc.paper.configuration` package). Use `GlobalConfiguration` if a value
 must remain the same throughout all worlds, or the latter if it can change
 between worlds. World-specific configuration options are preferred whenever
 possible.
 
-### PaperConfig example
-
+### Example
+This is adding a new miscellaneous setting that doesn't seem to fit in other categories.
+Try to check and see if an existing category (inner class) exists that matches
+whatever configuration option you are adding.
 ```java
-public static boolean saveEmptyScoreboardTeams = false;
-private static void saveEmptyScoreboardTeams() {
-    // This is called automatically!
-    // The name also doesn't matter.
-    saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
+public class GlobalConfiguration {
+    // other sections
+    public class Misc extends ConfigurationPart {
+        // other settings
+        public boolean lagCompensateBlockBreaking = true;
+        public boolean useDimensionTypeForCustomSpawners = false;
+        public int maxNumOfPlayers = 20; // This is the new setting
+    }
 }
 ```
+You set the type of the setting as the field type, and the default value is the
+initial field value. The name of the setting defaults to the snake-case of the
+field name, so in this case it would be `misc.max-num-of-players`. You can use
+the `@Setting` annotation to override that, but generally just try to set the 
+field name to what you want the setting to be called.
 
-Notice that the field is always public, but the setter is always private. This
-is important to the way the configuration generation system works. To access
-this value, reference it as you would any other static value:
-
+#### Accessing the value
+If you added a new global config value, you can access it in the code just by
+doing
 ```java
-if (!PaperConfig.saveEmptyScoreboardTeams) {
+int maxPlayers = GlobalConfiguration.get().misc.maxNumOfPlayers;
+```
+Generally for global config values you will use the fully qualified class name,
+`io.papermc.paper.configuration.GlobalConfiguration` since it's not imported in
+most places.
+---
+If you are adding a new world config value, you must have access to an instance
+of the `net.minecraft.world.level.Level` which you can then access the config by doing
+```java
+int maxPlayers = level.paperConfig().misc.maxNumOfPlayers;
 ```
 
-It is often preferred that you use the fully qualified name for the
-configuration class when accessing it, like so:
-`com.destroystokyo.paper.PaperConfig.valueHere`.  
-If this is not done, a developer for Paper might fix that for you before
-merging, but it's always nice if you make it a habit where you only need 1-2
-lines changed.
-
-### PaperWorldConfig example
-
-```java
-public boolean useInhabitedTime = true;
-private void useInhabitedTime() {
-    // This is called automatically!
-    // The name also doesn't matter.
-    useInhabitedTime = getBoolean("use-chunk-inhabited-timer", true);
-}
-```
-
-Again, notice that the field is always public, but the setter is always private.
-To access this value, you'll need an instance of the `net.minecraft.world.level.Level`
-object:
-
-```java
-return this.level.paperConfig.useInhabitedTime ? this.inhabitedTime : 0;
-```
+#### Committing changes
+All changes to the `GlobalConfiguration` and `WorldConfiguration` files
+should be done in the commit that created them. So do an interactive rebase
+or fixup to apply just those changes to that commit, then add a new commit
+that includes the logic that uses that option in the server somewhere.
 
 ## Testing API changes
 
@@ -402,7 +401,7 @@ progress will be lost if you do not;
 1. Identify the name(s) of the file(s) you want to import.
    - A complete list of all possible file names can be found at
    `./Paper-Server/.gradle/caches/paperweight/mc-dev-sources/net/minecraft/`. You might find
-   [MiniMappingViewer] useful if you need to translate between Mojang and Spigot mapped names.
+   [MappingViewer] useful if you need to translate between Mojang and Spigot mapped names.
 1. Open the file at `./build-data/dev-imports.txt` and add the name of your file to
 the script. Follow the instructions there;
 1. Re-patch the server `./gradlew applyPatches`;
@@ -427,16 +426,16 @@ file (`CONTRIBUTING.md`), the `LICENSE.md` file, and so forth.
 ### Patching and building is *really* slow, what can I do?
 
 This only applies if you're running Windows. If you're running a prior Windows
-release, either update to Windows 10 or move to macOS/Linux/BSD.
+release, either update to Windows 10/11 or move to macOS/Linux/BSD.
 
 In order to speed up patching process on Windows, it's recommended you get WSL
 2. This is available in Windows 10 v2004, build 19041 or higher. (You can check
 your version by running `winver` in the run window (Windows key + R)). If you're
-out of date, update your system with the
-[Windows Update Assistant](https://www.microsoft.com/en-us/software-download/windows10).
+using an out of date version of Windows 10, update your system with the
+[Windows 10 Update Assistant](https://www.microsoft.com/en-us/software-download/windows10) or [Windows 11 Update Assistant](https://www.microsoft.com/en-us/software-download/windows11).
 
 To set up WSL 2, follow the information here:
-<https://docs.microsoft.com/en-us/windows/wsl/install-win10>
+<https://docs.microsoft.com/en-us/windows/wsl/install>
 
 You will most likely want to use the Ubuntu apps. Once it's set up, install the
 required tools with `sudo apt-get update && sudo apt-get install $TOOL_NAMES
@@ -446,6 +445,6 @@ everything like usual.
 
 > ❗ Do not use the `/mnt/` directory in WSL! Instead, mount the WSL directories
 > in Windows like described here:
-> <https://www.howtogeek.com/426749/how-to-access-your-linux-wsl-files-in-windows-10/>
+> <https://docs.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>
 
-[MiniMappingViewer]: https://minidigger.github.io/MiniMappingViewer/
+[MappingViewer]: https://nms.screamingsandals.org/

@@ -12,45 +12,23 @@ Subject: [PATCH] Optimize Hoppers
 * Don't check for Entities with Inventories if the block above us is also occluding (not just Inventoried)
 * Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 2f060bc6b108df0c4fb07758005a911d92c09057..73d82e20d7353120a36815dc94be8c2253b2602d 100644
---- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -506,5 +506,17 @@ public class PaperWorldConfig {
-     private void entitiesTargetWithFollowRange() {
-         entitiesTargetWithFollowRange = getBoolean("entities-target-with-follow-range", entitiesTargetWithFollowRange);
-     }
-+
-+    public boolean cooldownHopperWhenFull = true;
-+    public boolean disableHopperMoveEvents = false;
-+    public boolean hoppersIgnoreOccludingBlocks = false;
-+    private void hopperOptimizations() {
-+        cooldownHopperWhenFull = getBoolean("hopper.cooldown-when-full", cooldownHopperWhenFull);
-+        log("Cooldown Hoppers when Full: " + (cooldownHopperWhenFull ? "enabled" : "disabled"));
-+        disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
-+        log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
-+        hoppersIgnoreOccludingBlocks = getBoolean("hopper.ignore-occluding-blocks", hoppersIgnoreOccludingBlocks);
-+        log("Hopper Ignore Container Entities inside Occluding Blocks: " + (hoppersIgnoreOccludingBlocks ? "enabled" : "disabled"));
-+    }
- }
- 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 25fb2789bcec7cf864b3a401610e765daa1abe22..bec5328f1ab05faab83584f75d54a5a6c830f9b7 100644
+index 7342c8ac1d4bb13c0d8ce6f26b1b43d76a327655..3a085c141a5a6e2df9a85d0e3969363d69824294 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1451,6 +1451,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1411,6 +1411,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
-+            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
++            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
  
              this.profiler.push(() -> {
                  return worldserver + " " + worldserver.dimension().location();
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index f1289d7251783c5203828c2b76785dd22c7e2992..b78769cf6a70fb7513ea8d3302cb2dd4bf242752 100644
+index 4b41d2dd00c1b206c1419ba767a3474947664e53..5e0852c4656813272a7ee6cb9c2331410c1b7739 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -613,11 +613,12 @@ public final class ItemStack {
+@@ -625,11 +625,12 @@ public final class ItemStack {
          return this.getItem().interactLivingEntity(this, user, entity, hand);
      }
  
@@ -67,18 +45,18 @@ index f1289d7251783c5203828c2b76785dd22c7e2992..b78769cf6a70fb7513ea8d3302cb2dd4
              itemstack.setPopTime(this.getPopTime());
              if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index a69bbc11b9e003aed1630a6f5cdbca521deb6ff5..e838abb6d258a1ab47e95572cf4c30c6ca6144b4 100644
+index 06beb18e5e1950aeb6cb427876fcc4c5ea95adb2..b0174aedb7358af1e80278e2f5f13e00c35ab3c6 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -70,6 +70,7 @@ public abstract class BlockEntity implements io.papermc.paper.util.KeyedObject {
-         getMinecraftKey(); // Try to load if it doesn't exists.
-         return tileEntityKeyString;
-     }
-+    static boolean IGNORE_TILE_UPDATES = false;
-     // Paper end
+@@ -26,6 +26,7 @@ import co.aikar.timings.MinecraftTimings; // Paper
+ import co.aikar.timings.Timing; // Paper
  
-     @Nullable
-@@ -182,6 +183,7 @@ public abstract class BlockEntity implements io.papermc.paper.util.KeyedObject {
+ public abstract class BlockEntity {
++    static boolean IGNORE_TILE_UPDATES = false; // Paper
+ 
+     public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
+     // CraftBukkit start - data containers
+@@ -162,6 +163,7 @@ public abstract class BlockEntity {
  
      public void setChanged() {
          if (this.level != null) {
@@ -100,7 +78,7 @@ index a05acf709735b40ca86f978508c63a86065fd405..6a1405a8630e90db3b5a3c9152259ba6
  
      double getLevelY();
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e82a463aaa 100644
+index a507d7f65a94e49ecd18cd18797b156474558390..a7ac6b528aecae528a17af157f8ec29371e4484c 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -3,7 +3,6 @@ package net.minecraft.world.level.block.entity;
@@ -111,7 +89,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
  import java.util.stream.IntStream;
  import javax.annotation.Nullable;
  import net.minecraft.core.BlockPos;
-@@ -33,7 +32,6 @@ import net.minecraft.world.level.block.state.BlockState;
+@@ -32,7 +31,6 @@ import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.shapes.BooleanOp;
  import net.minecraft.world.phys.shapes.Shapes;
@@ -119,7 +97,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
  import org.bukkit.craftbukkit.entity.CraftHumanEntity;
  import org.bukkit.craftbukkit.inventory.CraftItemStack;
  import org.bukkit.entity.HumanEntity;
-@@ -191,6 +189,158 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -190,6 +188,158 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
  
          return false;
      }
@@ -166,7 +144,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
 +                origItemStack.setCount(origCount);
 +            }
 +        }
-+        if (foundItem && level.paperConfig.cooldownHopperWhenFull) { // Inventory was full - cooldown
++        if (foundItem && level.paperConfig().hopper.cooldownWhenFull) { // Inventory was full - cooldown
 +            hopper.setCooldown(level.spigotConfig.hopperTransfer);
 +        }
 +        return false;
@@ -205,7 +183,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
 +        }
 +        origItemStack.setCount(origCount);
 +
-+        if (level.paperConfig.cooldownHopperWhenFull) {
++        if (level.paperConfig().hopper.cooldownWhenFull) {
 +            cooldownHopper(ihopper);
 +        }
 +
@@ -278,7 +256,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
  
      private static boolean ejectItems(Level world, BlockPos blockposition, BlockState iblockdata, Container iinventory, HopperBlockEntity hopper) { // CraftBukkit
          Container iinventory1 = HopperBlockEntity.getAttachedContainer(world, blockposition, iblockdata);
-@@ -203,6 +353,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -202,6 +352,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
              if (HopperBlockEntity.isFullContainer(iinventory1, enumdirection)) {
                  return false;
              } else {
@@ -286,7 +264,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
                  for (int i = 0; i < iinventory.getContainerSize(); ++i) {
                      if (!iinventory.getItem(i).isEmpty()) {
                          ItemStack itemstack = iinventory.getItem(i).copy();
-@@ -240,7 +391,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -239,7 +390,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
                      }
                  }
  
@@ -295,7 +273,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
              }
          }
      }
-@@ -250,27 +401,68 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -249,27 +400,68 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      private static boolean isFullContainer(Container inventory, Direction direction) {
@@ -374,7 +352,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
              });
          } else {
              Iterator iterator = HopperBlockEntity.getItemsAtAndAbove(world, hopper).iterator();
-@@ -289,10 +481,12 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -288,10 +480,12 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          }
      }
  
@@ -388,7 +366,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
              ItemStack itemstack1 = itemstack.copy();
              // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.removeItem(i, 1), (EnumDirection) null);
              // CraftBukkit start - Call event on collection of items from inventories into the hopper
-@@ -329,7 +523,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -328,7 +522,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
              }
  
              itemstack1.shrink(origCount - itemstack2.getCount()); // Spigot
@@ -397,7 +375,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
          }
  
          return false;
-@@ -338,7 +532,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -337,7 +531,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      public static boolean addItem(Container inventory, ItemEntity itemEntity) {
          boolean flag = false;
          // CraftBukkit start
@@ -406,7 +384,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
          itemEntity.level.getCraftServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              return false;
-@@ -397,7 +591,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -396,7 +590,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
                      stack = stack.split(to.getMaxStackSize());
                  }
                  // Spigot end
@@ -416,7 +394,7 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
                  stack = ItemStack.EMPTY;
                  flag = true;
              } else if (HopperBlockEntity.canMergeItems(itemstack1, stack)) {
-@@ -448,18 +644,23 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -447,18 +643,23 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      public static List<ItemEntity> getItemsAtAndAbove(Level world, Hopper hopper) {
@@ -444,18 +422,18 @@ index 43b0e6a4c2bcd1d2026add39f64b5993eb614d40..ae680111d01470881e5dc4914cc7e8e8
 +    private static Container getContainerAt(Level world, double x, double y, double z, boolean optimizeEntities) {
          Object object = null;
          BlockPos blockposition = new BlockPos(x, y, z);
-         if ( !world.hasChunkAt( blockposition ) ) return null; // Spigot
-@@ -479,7 +680,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         if ( !world.spigotConfig.hopperCanLoadChunks && !world.hasChunkAt( blockposition ) ) return null; // Spigot
+@@ -478,7 +679,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
              }
          }
  
 -        if (object == null) {
-+        if (object == null && (!optimizeEntities || !world.paperConfig.hoppersIgnoreOccludingBlocks || !org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
++        if (object == null && (!optimizeEntities || !world.paperConfig().hopper.ignoreOccludingBlocks || !org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
              List<Entity> list = world.getEntities((Entity) null, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR);
  
              if (!list.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index f23fff80d07ac7d06715efe67cb49ebbe704967b..ed3518fe7c841d9e1a9c97626acaa3d765a6d76f 100644
+index e3bee2df77d87630e96621470e940d9d9e152e7f..d559f93a9a09bac414dd5d58afccad42c127f09b 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 @@ -95,12 +95,19 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc

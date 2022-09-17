@@ -28,10 +28,10 @@ index 67fb370cad6924895a6b27052dbd5c1767e3f0c9..bb338269c9e3bef4c274157c490d8b8f
 +/.factorypath
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..bc894c62618437215e1a7185dc20283e4f9963dd
+index 0000000000000000000000000000000000000000..d10ff4a52c22033e2adb2a4e7f2cee98a13ea6c5
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,138 @@
 +import io.papermc.paperweight.util.*
 +
 +plugins {
@@ -40,28 +40,26 @@ index 0000000000000000000000000000000000000000..bc894c62618437215e1a7185dc20283e
 +    id("com.github.johnrengelman.shadow")
 +}
 +
-+repositories {
-+    maven("https://libraries.minecraft.net/")
-+}
-+
 +dependencies {
 +    implementation(project(":paper-api"))
 +    implementation("jline:jline:2.12.1")
 +    implementation("org.apache.logging.log4j:log4j-iostreams:2.17.0") {
 +        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
 +    }
-+    implementation("org.ow2.asm:asm:9.2")
++    implementation("org.ow2.asm:asm:9.3")
++    implementation("commons-lang:commons-lang:2.6")
 +    runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
-+    runtimeOnly("mysql:mysql-connector-java:8.0.27")
++    runtimeOnly("mysql:mysql-connector-java:8.0.29")
 +
-+    runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.4")
-+    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.2")
-+    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.2")
++    runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.5")
++    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
++    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
 +
 +    testImplementation("junit:junit:4.13.2")
 +    testImplementation("org.hamcrest:hamcrest-library:1.3")
 +}
 +
++val craftbukkitPackageVersion = "1_19_R1" // Paper
 +tasks.jar {
 +    archiveClassifier.set("dev")
 +
@@ -93,8 +91,7 @@ index 0000000000000000000000000000000000000000..bc894c62618437215e1a7185dc20283e
 +
 +relocation {
 +    // Order matters here - e.g. craftbukkit proper must be relocated before any of the libs are relocated into the cb package
-+    val packageVersion = "1_18_R2"
-+    relocate("org.bukkit.craftbukkit" to "org.bukkit.craftbukkit.v$packageVersion") {
++    relocate("org.bukkit.craftbukkit" to "org.bukkit.craftbukkit.v$craftbukkitPackageVersion") {
 +        exclude("org.bukkit.craftbukkit.Main*")
 +    }
 +}
@@ -175,17 +172,17 @@ index 0000000000000000000000000000000000000000..bc894c62618437215e1a7185dc20283e
 +}
 diff --git a/pom.xml b/pom.xml
 deleted file mode 100644
-index ac2dbe041d8a286ed7a34bf20c88464693f32a25..0000000000000000000000000000000000000000
+index 82a2b163a8b660d0f65dd9eca6651c520b571cd2..0000000000000000000000000000000000000000
 --- a/pom.xml
 +++ /dev/null
-@@ -1,546 +0,0 @@
+@@ -1,623 +0,0 @@
 -<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 -         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 -    <modelVersion>4.0.0</modelVersion>
 -    <groupId>org.spigotmc</groupId>
 -    <artifactId>spigot</artifactId>
 -    <packaging>jar</packaging>
--    <version>1.18.2-R0.1-SNAPSHOT</version>
+-    <version>1.19.2-R0.1-SNAPSHOT</version>
 -    <name>Spigot</name>
 -    <url>https://www.spigotmc.org/</url>
 -
@@ -201,9 +198,9 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 -        <api.version>unknown</api.version>
 -        <bt.name>git</bt.name>
--        <minecraft_version>1_18_R2</minecraft_version>
--        <maven.compiler.source>16</maven.compiler.source>
--        <maven.compiler.target>16</maven.compiler.target>
+-        <minecraft_version>1_19_R1</minecraft_version>
+-        <maven.compiler.source>17</maven.compiler.source>
+-        <maven.compiler.target>17</maven.compiler.target>
 -    </properties>
 -
 -    <repositories>
@@ -242,7 +239,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>org.ow2.asm</groupId>
 -            <artifactId>asm</artifactId>
--            <version>9.2</version>
+-            <version>9.3</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <!-- Mojang depends -->
@@ -255,7 +252,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>com.mojang</groupId>
 -            <artifactId>authlib</artifactId>
--            <version>3.3.39</version>
+-            <version>3.11.49</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
@@ -267,7 +264,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>com.mojang</groupId>
 -            <artifactId>datafixerupper</artifactId>
--            <version>4.1.27</version>
+-            <version>5.0.28</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
@@ -290,14 +287,82 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -        </dependency>
 -        <dependency>
 -            <groupId>io.netty</groupId>
--            <artifactId>netty-all</artifactId>
--            <version>4.1.68.Final</version>
+-            <artifactId>netty-buffer</artifactId>
+-            <version>4.1.77.Final</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-codec</artifactId>
+-            <version>4.1.77.Final</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-common</artifactId>
+-            <version>4.1.77.Final</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-handler</artifactId>
+-            <version>4.1.77.Final</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-resolver</artifactId>
+-            <version>4.1.77.Final</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-transport</artifactId>
+-            <version>4.1.77.Final</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-transport-classes-epoll</artifactId>
+-            <version>4.1.77.Final</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-transport-native-epoll</artifactId>
+-            <version>4.1.77.Final</version>
+-            <classifier>linux-x86_64</classifier>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-transport-native-epoll</artifactId>
+-            <version>4.1.77.Final</version>
+-            <classifier>linux-aarch_64</classifier>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-transport-native-unix-common</artifactId>
+-            <version>4.1.77.Final</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>it.unimi.dsi</groupId>
 -            <artifactId>fastutil</artifactId>
 -            <version>8.5.6</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>net.java.dev.jna</groupId>
+-            <artifactId>jna</artifactId>
+-            <version>5.10.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>net.java.dev.jna</groupId>
+-            <artifactId>jna-platform</artifactId>
+-            <version>5.10.0</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
@@ -332,6 +397,13 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -        </dependency>
 -        <!-- deprecated API depend -->
 -        <dependency>
+-            <groupId>commons-lang</groupId>
+-            <artifactId>commons-lang</artifactId>
+-            <version>2.6</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <!-- deprecated API depend -->
+-        <dependency>
 -            <groupId>com.googlecode.json-simple</groupId>
 -            <artifactId>json-simple</artifactId>
 -            <version>1.1.1</version>
@@ -346,27 +418,34 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>mysql</groupId>
 -            <artifactId>mysql-connector-java</artifactId>
--            <version>8.0.27</version>
+-            <version>8.0.29</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <!-- add these back in as they are not exposed by the API -->
 -        <dependency>
 -            <groupId>org.apache.maven</groupId>
 -            <artifactId>maven-resolver-provider</artifactId>
--            <version>3.8.4</version>
+-            <version>3.8.5</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.apache.maven.resolver</groupId>
 -            <artifactId>maven-resolver-connector-basic</artifactId>
--            <version>1.7.2</version>
+-            <version>1.7.3</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.apache.maven.resolver</groupId>
 -            <artifactId>maven-resolver-transport-http</artifactId>
--            <version>1.7.2</version>
+-            <version>1.7.3</version>
 -            <scope>runtime</scope>
+-        </dependency>
+-        <!-- annotations -->
+-        <dependency>
+-            <groupId>org.jetbrains</groupId>
+-            <artifactId>annotations-java5</artifactId>
+-            <version>23.0.0</version>
+-            <scope>provided</scope>
 -        </dependency>
 -        <!-- testing -->
 -        <dependency>
@@ -420,7 +499,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-clean-plugin</artifactId>
--                <version>3.1.0</version>
+-                <version>3.2.0</version>
 -                <executions>
 -                    <execution>
 -                        <phase>initialize</phase>
@@ -433,7 +512,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-jar-plugin</artifactId>
--                <version>3.2.0</version>
+-                <version>3.2.2</version>
 -                <configuration>
 -                    <archive>
 -                        <manifest>
@@ -480,12 +559,12 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -                    <dependency>
 -                        <groupId>org.ow2.asm</groupId>
 -                        <artifactId>asm</artifactId>
--                        <version>9.2</version>
+-                        <version>9.3</version>
 -                    </dependency>
 -                    <dependency>
 -                        <groupId>org.ow2.asm</groupId>
 -                        <artifactId>asm-commons</artifactId>
--                        <version>9.2</version>
+-                        <version>9.3</version>
 -                    </dependency>
 -                </dependencies>
 -                <executions>
@@ -518,7 +597,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>net.md-5</groupId>
 -                <artifactId>specialsource-maven-plugin</artifactId>
--                <version>1.2.3</version>
+-                <version>1.2.4</version>
 -                <executions>
 -                    <execution>
 -                        <phase>package</phase>
@@ -590,7 +669,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-compiler-plugin</artifactId>
--                <version>3.8.1</version>
+-                <version>3.10.1</version>
 -                <configuration>
 -                    <!-- we use the Eclipse compiler as it doesn't need a JDK -->
 -                    <compilerId>eclipse</compilerId>
@@ -599,12 +678,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -                    <dependency>
 -                        <groupId>org.codehaus.plexus</groupId>
 -                        <artifactId>plexus-compiler-eclipse</artifactId>
--                        <version>2.8.8</version>
--                    </dependency>
--                    <dependency>
--                        <groupId>org.eclipse.jdt</groupId>
--                        <artifactId>ecj</artifactId>
--                        <version>3.28.0</version>
+-                        <version>2.12.0</version>
 -                    </dependency>
 -                </dependencies>
 -            </plugin>
@@ -664,7 +738,7 @@ index ac2dbe041d8a286ed7a34bf20c88464693f32a25..00000000000000000000000000000000
 -                    <plugin>
 -                        <groupId>org.codehaus.mojo</groupId>
 -                        <artifactId>animal-sniffer-maven-plugin</artifactId>
--                        <version>1.20</version>
+-                        <version>1.21</version>
 -                        <executions>
 -                            <execution>
 -                                <phase>process-classes</phase>

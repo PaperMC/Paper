@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 13:02:51 -0600
+Subject: [PATCH] Configurable cactus bamboo and reed growth heights
+
+Bamboo - Both the minimum fully-grown heights and the maximum are configurable
+- Machine_Maker
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BambooBlock.java b/src/main/java/net/minecraft/world/level/block/BambooBlock.java
+index 4d9c6b462101dd533b0d08c40e0257e39ccbead3..4eaf778f43b67210321ffafa3da622cb4262d57b 100644
+--- a/src/main/java/net/minecraft/world/level/block/BambooBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BambooBlock.java
+@@ -130,7 +130,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+             if (random.nextInt(Math.max(1, (int) (100.0F / world.spigotConfig.bambooModifier) * 3)) == 0 && world.isEmptyBlock(pos.above()) && world.getRawBrightness(pos.above(), 0) >= 9) { // Spigot
+                 int i = this.getHeightBelowUpToMax(world, pos) + 1;
+ 
+-                if (i < 16) {
++                if (i < world.paperConfig().maxGrowthHeight.bamboo.max) { // Paper
+                     this.growBamboo(state, world, pos, random, i);
+                 }
+             }
+@@ -161,7 +161,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+         int i = this.getHeightAboveUpToMax(world, pos);
+         int j = this.getHeightBelowUpToMax(world, pos);
+ 
+-        return i + j + 1 < 16 && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1;
++        return i + j + 1 < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1; // Paper
+     }
+ 
+     @Override
+@@ -180,7 +180,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+             BlockPos blockposition1 = pos.above(i);
+             BlockState iblockdata1 = world.getBlockState(blockposition1);
+ 
+-            if (k >= 16 || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here
++            if (k >= world.paperConfig().maxGrowthHeight.bamboo.max || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus bamboo and reed growth heights
+                 return;
+             }
+ 
+@@ -221,7 +221,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+         }
+ 
+         int j = (Integer) state.getValue(BambooBlock.AGE) != 1 && !iblockdata2.is(Blocks.BAMBOO) ? 0 : 1;
+-        int k = (height < 11 || random.nextFloat() >= 0.25F) && height != 15 ? 0 : 1;
++        int k = (height < world.paperConfig().maxGrowthHeight.bamboo.min || random.nextFloat() >= 0.25F) && height != (world.paperConfig().maxGrowthHeight.bamboo.max - 1) ? 0 : 1; // Paper
+ 
+         // CraftBukkit start
+         if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) ((BlockState) ((BlockState) this.defaultBlockState().setValue(BambooBlock.AGE, j)).setValue(BambooBlock.LEAVES, blockpropertybamboosize)).setValue(BambooBlock.STAGE, k), 3)) {
+@@ -236,7 +236,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+     protected int getHeightAboveUpToMax(BlockGetter world, BlockPos pos) {
+         int i;
+ 
+-        for (i = 0; i < 16 && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) {
++        for (i = 0; i < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
+             ;
+         }
+ 
+@@ -246,7 +246,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+     protected int getHeightBelowUpToMax(BlockGetter world, BlockPos pos) {
+         int i;
+ 
+-        for (i = 0; i < 16 && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) {
++        for (i = 0; i < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
+             ;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/CactusBlock.java b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+index 3b4be44e4204435a360bc224a9b2651952dedf02..cb3d26af146859b87fc471174f8f63dfe7caa5fd 100644
+--- a/src/main/java/net/minecraft/world/level/block/CactusBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+@@ -55,7 +55,7 @@ public class CactusBlock extends Block {
+                 ;
+             }
+ 
+-            if (i < 3) {
++            if (i < world.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable growth height
+                 int j = (Integer) state.getValue(CactusBlock.AGE);
+ 
+                 if (j >= (byte) range(3, ((100.0F / world.spigotConfig.cactusModifier) * 15) + 0.5F, 15)) { // Spigot
+diff --git a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+index e5956a2a68f168a4c08c6c409ae7b288eb792660..5554889adbade3af627b11348e9cc04191bfea36 100644
+--- a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+@@ -52,7 +52,7 @@ public class SugarCaneBlock extends Block {
+                 ;
+             }
+ 
+-            if (i < 3) {
++            if (i < world.paperConfig().maxGrowthHeight.reeds) { // Paper - Configurable growth height
+                 int j = (Integer) state.getValue(SugarCaneBlock.AGE);
+ 
+                 if (j >= (byte) range(3, ((100.0F / world.spigotConfig.caneModifier) * 15) + 0.5F, 15)) { // Spigot
