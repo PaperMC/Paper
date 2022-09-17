@@ -5,29 +5,19 @@ Subject: [PATCH] Cache user authenticator threads
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index bcf189d0ae917b99fff62167740ddb0012082138..6e315a2e87bbc4b03e4e0f38ba0b0f6b592a433e 100644
+index bcf189d0ae917b99fff62167740ddb0012082138..71581c619d369d443908ed475d9a4d2d6ef07e5c 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -118,6 +118,18 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+@@ -118,6 +118,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
  
      }
  
-+    // Paper start - Cache authenticator threads
-+    private static final AtomicInteger threadId = new AtomicInteger(0);
-+    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(
-+            r -> {
-+                Thread ret = new Thread(r, "User Authenticator #" + threadId.incrementAndGet());
++    private static final java.util.concurrent.ExecutorService authenticatorPool = new java.util.concurrent.ThreadPoolExecutor(0, 16, 60L, java.util.concurrent.TimeUnit.SECONDS, new java.util.concurrent.SynchronousQueue<>(),  new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
 +
-+                ret.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
-+
-+                return ret;
-+            }
-+    );
-+    // Paper end
      // Spigot start
      public void initUUID()
      {
-@@ -242,8 +254,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+@@ -242,8 +244,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
              } else {
                  // Spigot start
@@ -38,7 +28,7 @@ index bcf189d0ae917b99fff62167740ddb0012082138..6e315a2e87bbc4b03e4e0f38ba0b0f6b
                      @Override
                      public void run() {
                          try {
-@@ -254,7 +266,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+@@ -254,7 +256,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
                              server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.gameProfile.getName(), ex);
                          }
                      }
@@ -48,7 +38,7 @@ index bcf189d0ae917b99fff62167740ddb0012082138..6e315a2e87bbc4b03e4e0f38ba0b0f6b
                  // Spigot end
              }
  
-@@ -297,7 +310,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+@@ -297,7 +300,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
              throw new IllegalStateException("Protocol error", cryptographyexception);
          }
  
@@ -58,7 +48,7 @@ index bcf189d0ae917b99fff62167740ddb0012082138..6e315a2e87bbc4b03e4e0f38ba0b0f6b
              public void run() {
                  GameProfile gameprofile = ServerLoginPacketListenerImpl.this.gameProfile;
  
-@@ -342,10 +356,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+@@ -342,10 +346,8 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
  
                  return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
              }
