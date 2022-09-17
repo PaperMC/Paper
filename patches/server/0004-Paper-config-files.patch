@@ -114,12 +114,13 @@ index 0000000000000000000000000000000000000000..7a4a7a654fe2516ed894a68f2657344d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9440375d0
+index 0000000000000000000000000000000000000000..c2dca89291361d60cbf160cab77749cb0130035a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,311 @@
 +package io.papermc.paper.configuration;
 +
++import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
@@ -127,6 +128,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +import net.minecraft.server.level.ServerLevel;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.MustBeInvokedByOverriders;
++import org.slf4j.Logger;
 +import org.spongepowered.configurate.CommentedConfigurationNode;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
@@ -138,6 +140,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +
 +import java.io.IOException;
 +import java.lang.reflect.Type;
++import java.nio.file.AccessDeniedException;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
 +import java.util.HashMap;
@@ -148,6 +151,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +
 +public abstract class Configurations<G, W> {
 +
++    private static final Logger LOGGER = LogUtils.getLogger();
 +    public static final String WORLD_DEFAULTS = "__world_defaults__";
 +    public static final ResourceLocation WORLD_DEFAULTS_KEY = new ResourceLocation("configurations", WORLD_DEFAULTS);
 +    protected final Path globalFolder;
@@ -217,6 +221,16 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        return this.initializeGlobalConfiguration(creator(this.globalConfigClass, true));
 +    }
 +
++    private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
++        try {
++            loader.save(node);
++        } catch (ConfigurateException ex) {
++            if (ex.getCause() instanceof AccessDeniedException) {
++                LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex);
++            } else throw ex;
++        }
++    }
++
 +    protected G initializeGlobalConfiguration(final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
 +        final Path configFile = this.globalFolder.resolve(this.globalConfigFileName);
 +        final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder()
@@ -231,7 +245,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        }
 +        this.applyGlobalConfigTransformations(node);
 +        final G instance = creator.apply(node);
-+        loader.save(node);
++        trySaveFileNode(loader, node, configFile.toString());
 +        return instance;
 +    }
 +
@@ -249,7 +263,8 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        final ContextMap contextMap = this.createDefaultContextMap()
 +            .put(FIRST_DEFAULT)
 +            .build();
-+        final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap);
++        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
++        final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap, configFile);
 +        final YamlConfigurationLoader loader = result.loader();
 +        final ConfigurationNode node = loader.load();
 +        if (result.isNewFile()) { // add version to new files
@@ -258,11 +273,10 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        this.applyWorldConfigTransformations(contextMap, node);
 +        final W instance = node.require(this.worldConfigClass);
 +        node.set(this.worldConfigClass, instance);
-+        loader.save(node);
++        trySaveFileNode(loader, node, configFile.toString());
 +    }
 +
-+    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap) {
-+        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
++    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap, final Path configFile) {
 +        boolean willCreate = Files.notExists(configFile);
 +        if (requireFile && willCreate) {
 +            throw new IllegalStateException("World defaults configuration file '" + configFile + "' doesn't exist");
@@ -294,7 +308,8 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +    }
 +
 +    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
-+        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build()).loader();
++        final Path defaultsConfigFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
++        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build(), defaultsConfigFile).loader();
 +        final ConfigurationNode defaultsNode = defaultsLoader.load();
 +
 +        boolean newFile = false;
@@ -316,7 +331,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        }
 +        this.applyWorldConfigTransformations(contextMap, worldNode);
 +        this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
-+        worldLoader.save(worldNode); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
++        trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
 +        worldNode.mergeFrom(defaultsNode);
 +        return creator.apply(worldNode);
 +    }
@@ -4265,6 +4280,18 @@ index 7d965247833c91dc824e6cc56e8b0fe5f3413d1d..08ae7a96e93c0d8547f560b3f7538045
  
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
+diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
+index 7c35fb22df0bca2c2ca885a872ee42d6073d852f..26fc8127024d7b81ffe5c1c81b8ef8a68e35cbb6 100644
+--- a/src/main/java/net/minecraft/server/dedicated/Settings.java
++++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
+@@ -75,6 +75,7 @@ public abstract class Settings<T extends Settings<T>> {
+         try {
+             // CraftBukkit start - Don't attempt writing to file if it's read only
+             if (path.toFile().exists() && !path.toFile().canWrite()) {
++                Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper
+                 return;
+             }
+             // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0029d8e349ee0766aae3ab53fb374759b1f28e72..bbdde701a16480b0b4b29e8fb6b5b5d987db0ce3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
