@@ -3332,10 +3332,10 @@ index 0000000000000000000000000000000000000000..b02619d7111c52d1b4e3b50267e54da3
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dadb971cd1fb0b6729e4672024f4f72fa4b908f2
+index 0000000000000000000000000000000000000000..06b700de0bd53c4c02a13be76c0ddca58d1532c2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1188 @@
+@@ -0,0 +1,1189 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -4248,6 +4248,7 @@ index 0000000000000000000000000000000000000000..dadb971cd1fb0b6729e4672024f4f72f
 +    }
 +
 +    private boolean processTicketUpdates(final boolean checkLocks, final boolean processFullUpdates, List<ChunkProgressionTask> scheduledTasks) {
++        TickThread.ensureTickThread("Cannot process ticket levels off-main");
 +        if (BLOCK_TICKET_UPDATES.get() == Boolean.TRUE) {
 +            throw new IllegalStateException("Cannot update ticket level while unloading chunks or updating entity manager");
 +        }
@@ -5329,10 +5330,10 @@ index 0000000000000000000000000000000000000000..322675a470eacbf0e5452f4009c643f2
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9f7eca1d60fd46364d6de9fbe8a4a4e4efc13b98
+index 0000000000000000000000000000000000000000..2b4e3f31d7c31aa5a4a5a18ba9e1d8b3f232fd16
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
-@@ -0,0 +1,768 @@
+@@ -0,0 +1,780 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -5602,6 +5603,12 @@ index 0000000000000000000000000000000000000000..9f7eca1d60fd46364d6de9fbe8a4a4e4
 +    public void scheduleTickingState(final int chunkX, final int chunkZ, final ChunkHolder.FullChunkStatus toStatus,
 +                                     final boolean addTicket, final PrioritisedExecutor.Priority priority,
 +                                     final Consumer<LevelChunk> onComplete) {
++        if (!TickThread.isTickThread()) {
++            this.scheduleChunkTask(chunkX, chunkZ, () -> {
++                ChunkTaskScheduler.this.scheduleTickingState(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
++            }, priority);
++            return;
++        }
 +        if (this.chunkHolderManager.ticketLock.isHeldByCurrentThread()) {
 +            throw new IllegalStateException("Cannot schedule chunk load during ticket level update");
 +        }
@@ -5711,6 +5718,12 @@ index 0000000000000000000000000000000000000000..9f7eca1d60fd46364d6de9fbe8a4a4e4
 +
 +    public void scheduleChunkLoad(final int chunkX, final int chunkZ, final ChunkStatus toStatus, final boolean addTicket,
 +                                  final PrioritisedExecutor.Priority priority, final Consumer<ChunkAccess> onComplete) {
++        if (!TickThread.isTickThread()) {
++            this.scheduleChunkTask(chunkX, chunkZ, () -> {
++                ChunkTaskScheduler.this.scheduleChunkLoad(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
++            }, priority);
++            return;
++        }
 +        if (this.chunkHolderManager.ticketLock.isHeldByCurrentThread()) {
 +            throw new IllegalStateException("Cannot schedule chunk load during ticket level update");
 +        }
