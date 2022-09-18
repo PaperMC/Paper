@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gardel <sunxinao@hotmail.com>
+Date: Sun, 18 Sep 2022 22:18:10 +0800
+Subject: [PATCH] Support enforce-secure-profile when behind proxy.
+
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index bdd6560fe85950b0a857a949cb38c044da44ca6b..b9f411e83c30dbb07cee14fcff2c6eafc132f4bd 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -614,7 +614,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public boolean enforceSecureProfile() {
+-        return this.getProperties().enforceSecureProfile && this.getProperties().onlineMode;
++        // Paper start
++        return this.getProperties().enforceSecureProfile &&
++            io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode();
++        // Paper end
+     }
+ 
+     protected boolean convertOldUsers() {
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 88a849a21d6e39fd70f6e7b554528da1a5a7dd57..6d0d9075b889c4830669a335f74d8a1f94a5f2dd 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -169,7 +169,10 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+     public void handleAcceptedLogin() {
+         ProfilePublicKey profilepublickey = null;
+ 
+-        if (!this.server.usesAuthentication()) {
++        // Paper start
++        // if (!this.server.usesAuthentication()) {
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) {
++        // Paper end
+             // this.gameProfile = this.createFakeProfile(this.gameProfile); // Spigot - Moved to initUUID
+             // Spigot end
+         } else {
