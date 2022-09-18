@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 9 Aug 2021 20:45:46 -0700
+Subject: [PATCH] Fire EntityChangeBlockEvent in more places
+
+
+diff --git a/src/main/java/net/minecraft/world/item/AxeItem.java b/src/main/java/net/minecraft/world/item/AxeItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/AxeItem.java
++++ b/src/main/java/net/minecraft/world/item/AxeItem.java
+@@ -0,0 +0,0 @@ public class AxeItem extends DiggerItem {
+         }
+ 
+         if (optional4.isPresent()) {
++            // Paper start - EntityChangeBlockEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, optional4.get()).isCancelled()) {
++                return InteractionResult.PASS;
++            }
++            // Paper end
+             if (player instanceof ServerPlayer) {
+                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
+             }
+diff --git a/src/main/java/net/minecraft/world/item/HoneycombItem.java b/src/main/java/net/minecraft/world/item/HoneycombItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/HoneycombItem.java
++++ b/src/main/java/net/minecraft/world/item/HoneycombItem.java
+@@ -0,0 +0,0 @@ public class HoneycombItem extends Item {
+         return getWaxed(blockState).map((state) -> {
+             Player player = context.getPlayer();
+             ItemStack itemStack = context.getItemInHand();
++            // Paper start - EntityChangeBlockEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, state).isCancelled()) {
++                return InteractionResult.PASS;
++            }
++            // Paper end
+             if (player instanceof ServerPlayer) {
+                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
+             }
+diff --git a/src/main/java/net/minecraft/world/item/ShovelItem.java b/src/main/java/net/minecraft/world/item/ShovelItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/ShovelItem.java
++++ b/src/main/java/net/minecraft/world/item/ShovelItem.java
+@@ -0,0 +0,0 @@ public class ShovelItem extends DiggerItem {
+             Player player = context.getPlayer();
+             BlockState blockState2 = FLATTENABLES.get(blockState.getBlock());
+             BlockState blockState3 = null;
++            Runnable afterAction = null; // Paper
+             if (blockState2 != null && level.getBlockState(blockPos.above()).isAir()) {
+-                level.playSound(player, blockPos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
++                afterAction = () -> level.playSound(player, blockPos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F); // Paper
+                 blockState3 = blockState2;
+             } else if (blockState.getBlock() instanceof CampfireBlock && blockState.getValue(CampfireBlock.LIT)) {
++                afterAction = () -> { // Paper
+                 if (!level.isClientSide()) {
+                     level.levelEvent((Player)null, 1009, blockPos, 0);
+                 }
+ 
+                 CampfireBlock.dowse(context.getPlayer(), level, blockPos, blockState);
++                }; // Paper
+                 blockState3 = blockState.setValue(CampfireBlock.LIT, Boolean.valueOf(false));
+             }
+ 
+             if (blockState3 != null) {
+                 if (!level.isClientSide) {
++                    // Paper start
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockPos, blockState3).isCancelled()) {
++                        return InteractionResult.PASS;
++                    }
++                    afterAction.run();
++                    // Paper end
+                     level.setBlock(blockPos, blockState3, 11);
+                     level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(player, blockState3));
+                     if (player != null) {
+diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
+@@ -0,0 +0,0 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+ 
+         if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(itemstack.getItem())) {
+             if (i < 7 && !world.isClientSide) {
+-                BlockState iblockdata1 = ComposterBlock.addItem(state, world, pos, itemstack);
++                // Paper start - EntityChangeBlockEvent
++                double rand = world.getRandom().nextDouble();
++                BlockState dummyBlockState = ComposterBlock.addItem(state, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, pos, itemstack, rand);
++                if (state != dummyBlockState && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, dummyBlockState).isCancelled()) { // if block state will change and event cancelled
++                    return InteractionResult.sidedSuccess(world.isClientSide);
++                }
++                BlockState iblockdata1 = ComposterBlock.addItem(state, world, pos, itemstack, rand);
++                // Paper end
+ 
+                 world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
+                 player.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
