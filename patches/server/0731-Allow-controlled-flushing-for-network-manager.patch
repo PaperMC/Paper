@@ -9,7 +9,7 @@ This patch will be used to optimise out flush calls in later
 patches.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index ec1fa6b6cb386542d9c83f5c49c1e8e98c87d417..dc6b467f51b6e17aa46ccce75aa40788afcdf010 100644
+index b5f884d6671823085a2ab0e8da2d30afd2928f32..057a0be81b12bd8a4ac71106dc8ada91bd4c9bfd 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -99,6 +99,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -56,19 +56,19 @@ index ec1fa6b6cb386542d9c83f5c49c1e8e98c87d417..dc6b467f51b6e17aa46ccce75aa40788
              net.minecraft.server.MCUtil.isMainThread() && packet.isReady() && this.queue.isEmpty() &&
              (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
          ))) {
--            this.sendPacket(packet, packetsendlistener);
-+            this.sendPacket(packet, packetsendlistener, null); // Paper
+-            this.sendPacket(packet, callbacks);
++            this.sendPacket(packet, callbacks, null); // Paper
              return;
          }
          // write the packets to the queue, then flush - antixray hooks there already
 @@ -288,6 +321,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
-     private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener) {
+     private void sendPacket(Packet<?> packet, @Nullable PacketSendListener callbacks) {
 +        // Paper start - add flush parameter
-+        this.sendPacket(packet, packetsendlistener, Boolean.TRUE);
++        this.sendPacket(packet, callbacks, Boolean.TRUE);
 +    }
-+    private void sendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, Boolean flushConditional) {
++    private void sendPacket(Packet<?> packet, @Nullable PacketSendListener callbacks, Boolean flushConditional) {
 +        this.packetWrites.getAndIncrement(); // must be befeore using canFlush
 +        boolean effectiveFlush = flushConditional == null ? this.canFlush : flushConditional.booleanValue();
 +        final boolean flush = effectiveFlush || packet instanceof net.minecraft.network.protocol.game.ClientboundKeepAlivePacket || packet instanceof ClientboundDisconnectPacket; // no delay for certain packets
@@ -80,22 +80,22 @@ index ec1fa6b6cb386542d9c83f5c49c1e8e98c87d417..dc6b467f51b6e17aa46ccce75aa40788
          }
  
          if (this.channel.eventLoop().inEventLoop()) {
--            this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1);
-+            this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+-            this.doSendPacket(packet, callbacks, enumprotocol, enumprotocol1);
++            this.doSendPacket(packet, callbacks, enumprotocol, enumprotocol1, flush); // Paper
          } else {
              this.channel.eventLoop().execute(() -> {
--                this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1);
-+                this.doSendPacket(packet, packetsendlistener, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+-                this.doSendPacket(packet, callbacks, enumprotocol, enumprotocol1);
++                this.doSendPacket(packet, callbacks, enumprotocol, enumprotocol1, flush); // Paper
              });
          }
  
      }
  
-     private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, ConnectionProtocol packetState, ConnectionProtocol currentState) {
+     private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener callbacks, ConnectionProtocol packetState, ConnectionProtocol currentState) {
 +        // Paper start - add flush parameter
-+        this.doSendPacket(packet, packetsendlistener, packetState, currentState, true);
++        this.doSendPacket(packet, callbacks, packetState, currentState, true);
 +    }
-+    private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener packetsendlistener, ConnectionProtocol packetState, ConnectionProtocol currentState, boolean flush) {
++    private void doSendPacket(Packet<?> packet, @Nullable PacketSendListener callbacks, ConnectionProtocol packetState, ConnectionProtocol currentState, boolean flush) {
 +        // Paper end - add flush parameter
          if (packetState != currentState) {
              this.setProtocol(packetState);
@@ -107,7 +107,7 @@ index ec1fa6b6cb386542d9c83f5c49c1e8e98c87d417..dc6b467f51b6e17aa46ccce75aa40788
 -        ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
 +        ChannelFuture channelfuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - add flush parameter
  
-         if (packetsendlistener != null) {
+         if (callbacks != null) {
              channelfuture.addListener((future) -> {
 @@ -376,6 +422,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }

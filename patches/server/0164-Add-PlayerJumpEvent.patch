@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Thu, 28 Sep 2017 17:21:44 -0400
+Subject: [PATCH] Add PlayerJumpEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index f3360ebf43d973606682fe85bc3240a84a0f0123..b44fd3e73d2d15736ac2bbcc7d99ae44c7459d4b 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1293,7 +1293,34 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                             boolean flag = d8 > 0.0D;
+ 
+                             if (this.player.isOnGround() && !packet.isOnGround() && flag) {
+-                                this.player.jumpFromGround();
++                                // Paper start - Add player jump event
++                                Player player = this.getCraftPlayer();
++                                Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch); // Get the Players previous Event location.
++                                Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
++
++                                // If the packet contains movement information then we update the To location with the correct XYZ.
++                                if (packet.hasPos) {
++                                    to.setX(packet.x);
++                                    to.setY(packet.y);
++                                    to.setZ(packet.z);
++                                }
++
++                                // If the packet contains look information then we update the To location with the correct Yaw & Pitch.
++                                if (packet.hasRot) {
++                                    to.setYaw(packet.yRot);
++                                    to.setPitch(packet.xRot);
++                                }
++
++                                com.destroystokyo.paper.event.player.PlayerJumpEvent event = new com.destroystokyo.paper.event.player.PlayerJumpEvent(player, from, to);
++
++                                if (event.callEvent()) {
++                                    this.player.jumpFromGround();
++                                } else {
++                                    from = event.getFrom();
++                                    this.internalTeleport(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch(), Collections.emptySet(), false);
++                                    return;
++                                }
++                                // Paper end
+                             }
+ 
+                             boolean flag1 = this.player.verticalCollisionBelow;
