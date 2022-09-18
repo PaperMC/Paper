@@ -9,10 +9,10 @@ since the penalty of a map lookup could outweigh the benefits of
 searching less players (as it basically did in the outside range patch).
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 8bea90cb57f38f33e8b3162e24e353993a98ebbf..5b4c3ca92dffff876af18db106310cb14e8612b1 100644
+index 538f21e6bc29c0307441fe4899dc7f600d2d1a04..09f262de1b12b09013f8277b25d13ffcf53b96d8 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -91,6 +91,12 @@ public class ChunkHolder {
+@@ -89,6 +89,12 @@ public class ChunkHolder {
              this.chunkMap.needsChangeBroadcasting.add(this);
          }
          // Paper end - optimise chunk tick iteration
@@ -24,7 +24,7 @@ index 8bea90cb57f38f33e8b3162e24e353993a98ebbf..5b4c3ca92dffff876af18db106310cb1
 +        // Paper end - optimise checkDespawn
      }
  
-     void onChunkRemove() {
+     public void onChunkRemove() {
 @@ -101,6 +107,12 @@ public class ChunkHolder {
              this.chunkMap.needsChangeBroadcasting.remove(this);
          }
@@ -36,10 +36,10 @@ index 8bea90cb57f38f33e8b3162e24e353993a98ebbf..5b4c3ca92dffff876af18db106310cb1
 +        }
 +        // Paper end - optimise checkDespawn
      }
-     // Paper end - optimise anyPlayerCloseEnoughForSpawning
-     long lastAutoSaveTime; // Paper - incremental autosave
+     // Paper end
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 5507f6982bfc02f648a7aa4e4860378fc442cf34..97ec72dc383a2637c60cfc988bca2a8a86954ffb 100644
+index f47e2d4a7343f3e3ee68f36688720cedc58861dc..aa1b6b692f9107ef1b5091714f1ecc8b29da9897 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -165,6 +165,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -105,13 +105,13 @@ index 5507f6982bfc02f648a7aa4e4860378fc442cf34..97ec72dc383a2637c60cfc988bca2a8a
  
      protected ChunkGenerator generator() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b779656482325416ef37d6909b01a136e7f97656..091e678a736f291b546ce1e684d4e03055734e02 100644
+index bcd1b2534af33e7a9d184e0ea4c9c0a4b58dacc8..25149dde919738859f6fb6b2d0405e90d1732f2b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -406,6 +406,83 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         return this.getServer().getPlayerList().getPlayer(uuid);
-     }
+@@ -411,6 +411,84 @@ public class ServerLevel extends Level implements WorldGenLevel {
      // Paper end
+     public final ReferenceOpenHashSet<ServerPlayer> pendingLogin = new ReferenceOpenHashSet<>(); // Paper
+ 
 +    // Paper start - optimise checkDespawn
 +    public final List<ServerPlayer> playersAffectingSpawning = new java.util.ArrayList<>();
 +    // Paper end - optimise checkDespawn
@@ -189,10 +189,11 @@ index b779656482325416ef37d6909b01a136e7f97656..091e678a736f291b546ce1e684d4e030
 +        return ret;
 +    }
 +    // Paper end - optimise get nearest players for entity AI
- 
++
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
-@@ -509,6 +586,14 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // Holder holder = worlddimension.typeHolder(); // CraftBukkit - decompile error
+@@ -513,6 +591,14 @@ public class ServerLevel extends Level implements WorldGenLevel {
      }
  
      public void tick(BooleanSupplier shouldKeepTicking) {
@@ -208,10 +209,10 @@ index b779656482325416ef37d6909b01a136e7f97656..091e678a736f291b546ce1e684d4e030
  
          this.handlingTick = true;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index a49dfe4f81d449c5dd7ba5b8f9af7fec5c54f5de..3646b969fa51b9683ab4137e530c3a6f6fc6c465 100644
+index 5fb88a3b7242a2712a568aaccebe601f89bfee3a..557e90e54439ce0430075403392b5052d5181feb 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -802,7 +802,12 @@ public abstract class Mob extends LivingEntity {
+@@ -808,7 +808,12 @@ public abstract class Mob extends LivingEntity {
          if (this.level.getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
              this.discard();
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
@@ -226,7 +227,7 @@ index a49dfe4f81d449c5dd7ba5b8f9af7fec5c54f5de..3646b969fa51b9683ab4137e530c3a6f
              if (entityhuman != null) {
                  double d0 = entityhuman.distanceToSqr((Entity) this);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 45be0dc44b98ca90b68e6ff3278e4de21934d7a2..17c0110fd5ccb8399af797cc892ca285b1fb7964 100644
+index 76a2d00324a85419548005e0aa3cbd8b891b8257..931de769a3b7c993d151f3ee8e1038d95d3899a3 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -205,6 +205,69 @@ public abstract class Level implements LevelAccessor, AutoCloseable {

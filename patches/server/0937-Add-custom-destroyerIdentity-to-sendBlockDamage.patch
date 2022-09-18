@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheFruxz <cedricspitzer@outlook.de>
+Date: Sat, 26 Mar 2022 18:41:36 +0100
+Subject: [PATCH] Add custom destroyerIdentity to sendBlockDamage
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 41258fcfa0505500665c2f185b9ef6d050213355..4ba927b4585ca56337fa763d60d21de3b58bb2f7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -965,13 +965,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public void sendBlockDamage(Location loc, float progress) {
++        // Paper start - customBlockDamage identity
++        sendBlockDamage(loc, progress, this.getHandle().getId());
++    }
++
++    @Override
++    public void sendBlockDamage(Location loc, float progress, int destroyerIdentity) {
++        // Paper end - customBlockDamage identity
+         Preconditions.checkArgument(loc != null, "loc must not be null");
+         Preconditions.checkArgument(progress >= 0.0 && progress <= 1.0, "progress must be between 0.0 and 1.0 (inclusive)");
+ 
+         if (this.getHandle().connection == null) return;
+ 
+         int stage = (int) (9 * progress); // There are 0 - 9 damage states
+-        ClientboundBlockDestructionPacket packet = new ClientboundBlockDestructionPacket(this.getHandle().getId(), new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), stage);
++        ClientboundBlockDestructionPacket packet = new ClientboundBlockDestructionPacket(destroyerIdentity, new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), stage);  // Paper - customBlockDamage identity
+         this.getHandle().connection.send(packet);
+     }
+ 
