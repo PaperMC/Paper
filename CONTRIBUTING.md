@@ -426,16 +426,16 @@ file (`CONTRIBUTING.md`), the `LICENSE.md` file, and so forth.
 ### Patching and building is *really* slow, what can I do?
 
 This only applies if you're running Windows. If you're running a prior Windows
-release, either update to Windows 10 or move to macOS/Linux/BSD.
+release, either update to Windows 10/11 or move to macOS/Linux/BSD.
 
 In order to speed up patching process on Windows, it's recommended you get WSL
 2. This is available in Windows 10 v2004, build 19041 or higher. (You can check
 your version by running `winver` in the run window (Windows key + R)). If you're
-out of date, update your system with the
-[Windows Update Assistant](https://www.microsoft.com/en-us/software-download/windows10).
+using an out of date version of Windows 10, update your system with the
+[Windows 10 Update Assistant](https://www.microsoft.com/en-us/software-download/windows10) or [Windows 11 Update Assistant](https://www.microsoft.com/en-us/software-download/windows11).
 
 To set up WSL 2, follow the information here:
-<https://docs.microsoft.com/en-us/windows/wsl/install-win10>
+<https://docs.microsoft.com/en-us/windows/wsl/install>
 
 You will most likely want to use the Ubuntu apps. Once it's set up, install the
 required tools with `sudo apt-get update && sudo apt-get install $TOOL_NAMES
@@ -445,6 +445,6 @@ everything like usual.
 
 > ❗ Do not use the `/mnt/` directory in WSL! Instead, mount the WSL directories
 > in Windows like described here:
-> <https://www.howtogeek.com/426749/how-to-access-your-linux-wsl-files-in-windows-10/>
+> <https://docs.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>
 
 [MappingViewer]: https://nms.screamingsandals.org/

@@ -5,10 +5,10 @@ Subject: [PATCH] Add PlayerKickEvent causes
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4ad7c5377c67fd156353166145b1edd39e41cd02..d7a20955b145a23917364726045ce7a5c53c867b 100644
+index 84e76fbe3eca77b112c9dff936e21cba1c83e5aa..98fe4165d291b47a39ce741884353c87dd0a4789 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -2090,7 +2090,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2118,7 +2118,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
                  if (!whitelist.isWhiteListed(entityplayer.getGameProfile()) && !this.getPlayerList().isOp(entityplayer.getGameProfile())) { // Paper - Fix kicking ops when whitelist is reloaded (MC-171420)
@@ -57,10 +57,10 @@ index 65637a33ba171a4b598f70cd943d24b0ee44a69f..57a9146bf2dee7a60aab16716e25348f
          }
  
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757ea7e1e88f 100644
+index 3ef39ebeb76f43d521266402e170bd1af6af2348..55c5348e793fa560d7042cf90076a8f7a3b76547 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -344,7 +344,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -369,7 +369,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          if (this.clientIsFloating && !this.player.isSleeping() && !this.player.isPassenger()) {
              if (++this.aboveGroundTickCount > 80) {
                  ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked for floating too long!", this.player.getName().getString());
@@ -69,7 +69,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
                  return;
              }
          } else {
-@@ -363,7 +363,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -388,7 +388,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              if (this.clientVehicleIsFloating && this.player.getRootVehicle().getControllingPassenger() == this.player) {
                  if (++this.aboveGroundVehicleTickCount > 80) {
                      ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked for floating a vehicle too long!", this.player.getName().getString());
@@ -78,7 +78,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
                      return;
                  }
              } else {
-@@ -385,7 +385,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -410,7 +410,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          if (this.keepAlivePending) {
              if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
                  ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info
@@ -87,7 +87,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
              }
          } else {
              if (elapsedTime >= 15000L) { // 15 seconds
-@@ -415,7 +415,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -440,7 +440,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
          if (this.player.getLastActionTime() > 0L && this.server.getPlayerIdleTimeout() > 0 && Util.getMillis() - this.player.getLastActionTime() > (long) (this.server.getPlayerIdleTimeout() * 1000 * 60)) {
              this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
@@ -96,34 +96,38 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
          }
  
          this.chatPreviewThrottler.tick();
-@@ -441,14 +441,22 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -464,16 +464,26 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         return this.server.isSingleplayerOwner(this.player.getGameProfile());
+     }
  
++    @io.papermc.paper.annotation.DoNotUse // Paper
      public void disconnect(String s) {
          // Paper start
 -        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s));
 +        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
-+    }
-+
-+    public void disconnect(String s, PlayerKickEvent.Cause cause) {
-+        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s), cause);
      }
  
++    public void disconnect(String s, PlayerKickEvent.Cause cause) {
++        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s), cause);
++    }
++
++    @io.papermc.paper.annotation.DoNotUse // Paper
      public void disconnect(final Component reason) {
 -        this.disconnect(PaperAdventure.asAdventure(reason));
 +        this.disconnect(PaperAdventure.asAdventure(reason), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++    }
++
++    public void disconnect(final Component reason, PlayerKickEvent.Cause cause) {
++        this.disconnect(PaperAdventure.asAdventure(reason), cause);
      }
  
 -    public void disconnect(net.kyori.adventure.text.Component reason) {
-+    public void disconnect(final Component reason, PlayerKickEvent.Cause cause) {
-+        this.disconnect(PaperAdventure.asAdventure(reason), cause);
-+    }
-+
 +    public void disconnect(net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
          // Paper end
          // CraftBukkit start - fire PlayerKickEvent
          if (this.processedDisconnect) {
-@@ -456,7 +464,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-         }
+@@ -502,7 +512,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
          net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? this.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(this.player.getScoreboardName())); // Paper - Adventure
  
 -        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage); // Paper - Adventure
@@ -131,7 +135,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
  
          if (this.cserver.getServer().isRunning()) {
              this.cserver.getPluginManager().callEvent(event);
-@@ -533,7 +541,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -572,7 +582,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      public void handleMoveVehicle(ServerboundMoveVehiclePacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (ServerGamePacketListenerImpl.containsInvalidValues(packet.getX(), packet.getY(), packet.getZ(), packet.getYRot(), packet.getXRot())) {
@@ -140,7 +144,16 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
          } else {
              Entity entity = this.player.getRootVehicle();
  
-@@ -784,13 +792,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -770,7 +780,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+         if (packet.getId() == this.awaitingTeleport) {
+             if (this.awaitingPositionFromClient == null) {
+-                this.disconnect(Component.translatable("multiplayer.disconnect.invalid_player_movement"));
++                this.disconnect(Component.translatable("multiplayer.disconnect.invalid_player_movement"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT); // Paper - kick event cause
+                 return;
+             }
+ 
+@@ -827,13 +837,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel()); // Paper - run this async
          // CraftBukkit start
          if (this.chatSpamTickCount.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit && !this.server.getPlayerList().isOp(this.player.getGameProfile())) { // Paper start - split and make configurable
@@ -156,7 +169,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
              return;
          }
          // Paper end
-@@ -943,7 +951,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -986,7 +996,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // Paper start - validate pick item position
          if (!(packet.getSlot() >= 0 && packet.getSlot() < this.player.getInventory().items.size())) {
              ServerGamePacketListenerImpl.LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
@@ -165,7 +178,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
              return;
          }
          this.player.getInventory().pickSlot(packet.getSlot()); // Paper - Diff above if changed
-@@ -1108,7 +1116,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1173,7 +1183,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  int byteLength = testString.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
                  if (byteLength > 256 * 4) {
                      ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send a book with with a page too large!");
@@ -174,7 +187,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
                      return;
                  }
                  byteTotal += byteLength;
-@@ -1131,14 +1139,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1196,14 +1206,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
              if (byteTotal > byteAllowed) {
                  ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send too large of a book. Book Size: " + byteTotal + " - Allowed:  "+ byteAllowed + " - Pages: " + pageList.size());
@@ -191,16 +204,16 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
              return;
          }
          this.lastBookTick = MinecraftServer.currentTick;
-@@ -1260,7 +1268,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1327,7 +1337,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      public void handleMovePlayer(ServerboundMovePlayerPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (ServerGamePacketListenerImpl.containsInvalidValues(packet.getX(0.0D), packet.getY(0.0D), packet.getZ(0.0D), packet.getYRot(0.0F), packet.getXRot(0.0F))) {
 -            this.disconnect(Component.translatable("multiplayer.disconnect.invalid_player_movement"));
-+            this.disconnect(Component.translatable(("multiplayer.disconnect.invalid_player_movement"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT)); // Paper - kick event cause
++            this.disconnect(Component.translatable("multiplayer.disconnect.invalid_player_movement"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PLAYER_MOVEMENT); // Paper - kick event cause
          } else {
              ServerLevel worldserver = this.player.getLevel();
  
-@@ -1687,7 +1695,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1754,7 +1764,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                          this.dropCount++;
                          if (this.dropCount >= 20) {
                              ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " dropped their items too quickly!");
@@ -209,7 +222,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
                              return;
                          }
                      }
-@@ -1895,7 +1903,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1963,7 +1973,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (packet.getAction() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
              ServerGamePacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack rejection", this.player.getName());
@@ -218,7 +231,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
          }
          // Paper start
          PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.action.ordinal()];
-@@ -2008,7 +2016,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -2076,7 +2086,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              this.player.resetLastActionTime();
          } else {
              ServerGamePacketListenerImpl.LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
@@ -227,34 +240,70 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
          }
      }
  
-@@ -2021,7 +2029,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -2089,7 +2099,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          }
          // CraftBukkit end
-         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.getMessage())) {
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.message())) {
 -            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
 +            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add cause
          } else {
-             if (this.tryHandleChat(packet.getMessage(), packet.getTimeStamp())) {
-                 // CraftBukkit start
-@@ -2304,7 +2312,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-                 Waitable waitable = new Waitable() {
-                     @Override
-                     protected Object evaluate() {
--                        ServerGamePacketListenerImpl.this.disconnect(Component.translatable("disconnect.spam"));
-+                        ServerGamePacketListenerImpl.this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause
-                         return null;
-                     }
-                 };
-@@ -2319,7 +2327,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-                     throw new RuntimeException(e);
-                 }
-             } else {
--                this.disconnect(Component.translatable("disconnect.spam"));
-+                this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause
+             if (this.tryHandleChat(packet.message(), packet.timeStamp(), packet.lastSeenMessages())) {
+                 // this.server.submit(() -> { // CraftBukkit - async chat
+@@ -2117,7 +2127,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     @Override
+     public void handleChatCommand(ServerboundChatCommandPacket packet) {
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.command())) {
+-            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
++            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper
+         } else {
+             if (this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages())) {
+                 this.server.submit(() -> {
+@@ -2203,7 +2213,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
+         if (!this.updateChatOrder(timestamp)) {
+             ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
+-            this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
++            this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event cause
+             return false;
+         } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
+             this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
+@@ -2465,7 +2475,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              }
-             // CraftBukkit end
+ 
+             if (!playerchatmessage.verify(chatsender)) {
+-                this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"));
++                this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event cause
+                 return false;
+             }
          }
-@@ -2537,7 +2545,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -2493,7 +2503,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         // this.chatSpamTickCount += 20;
+         if (this.chatSpamTickCount.addAndGet(20) > 200 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
+             // CraftBukkit end
+-            this.disconnect(Component.translatable("disconnect.spam"));
++            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause
+         }
+ 
+     }
+@@ -2596,7 +2606,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+     private void handleValidationFailure(Set<LastSeenMessagesValidator.ErrorCondition> reasons) {
+         ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message from {}, reasons: {}", this.player.getName().getString(), reasons.stream().map(LastSeenMessagesValidator.ErrorCondition::message).collect(Collectors.joining(",")));
+-        this.disconnect(Component.translatable("multiplayer.disconnect.chat_validation_failed"));
++        this.disconnect(Component.translatable("multiplayer.disconnect.chat_validation_failed"), org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event cause
+     }
+ 
+     @Override
+@@ -2737,7 +2747,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             }
+ 
+             if (i > 4096) {
+-                this.disconnect(Component.translatable("multiplayer.disconnect.too_many_pending_chats"));
++                this.disconnect(Component.translatable("multiplayer.disconnect.too_many_pending_chats"), org.bukkit.event.player.PlayerKickEvent.Cause.TOO_MANY_PENDING_CHATS); // Paper - kick event cause
+             }
+ 
+         }
+@@ -2752,7 +2762,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // Spigot Start
          if ( entity == this.player && !this.player.isSpectator() )
          {
@@ -263,7 +312,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
              return;
          }
          // Spigot End
-@@ -2630,7 +2638,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -2850,7 +2860,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                              }
                              // CraftBukkit end
                          } else {
@@ -272,7 +321,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
                              ServerGamePacketListenerImpl.LOGGER.warn("Player {} tried to attack an invalid entity", ServerGamePacketListenerImpl.this.player.getName().getString());
                          }
                      }
-@@ -3036,7 +3044,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3258,7 +3268,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // Paper start
          if (!org.bukkit.Bukkit.isPrimaryThread()) {
              if (recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
@@ -281,7 +330,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
                  return;
              }
          }
-@@ -3227,7 +3235,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3461,7 +3471,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          } else if (!this.isSingleplayerOwner()) {
              // Paper start - This needs to be handled on the main thread for plugins
              server.submit(() -> {
@@ -290,7 +339,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
              });
              // Paper end
          }
-@@ -3273,7 +3281,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3507,7 +3517,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  }
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t register custom payload", ex);
@@ -299,7 +348,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
              }
          } else if (packet.identifier.equals(CUSTOM_UNREGISTER)) {
              try {
-@@ -3283,7 +3291,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3517,7 +3527,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  }
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t unregister custom payload", ex);
@@ -308,7 +357,7 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
              }
          } else {
              try {
-@@ -3301,7 +3309,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3535,7 +3545,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), packet.identifier.toString(), data);
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
@@ -318,10 +367,10 @@ index f3a8b36956dbb8b9396bac4fc17aae7a3cb1d594..c8e99e115c0c40834cc73c8373bb757e
          }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index a4278a4ca0b41813b8f88d01dcc8d75b4f458908..be163c1cc4c8982b89be86c004299cdcb8ba7387 100644
+index 977a23684b061d7390f70f8754a1d879d7d7075a..cd7fdf629ac1dd17e83445afdf352c33823cbd25 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -719,7 +719,7 @@ public abstract class PlayerList {
+@@ -726,7 +726,7 @@ public abstract class PlayerList {
          while (iterator.hasNext()) {
              entityplayer = (ServerPlayer) iterator.next();
              this.save(entityplayer); // CraftBukkit - Force the player's inventory to be saved
@@ -330,7 +379,7 @@ index a4278a4ca0b41813b8f88d01dcc8d75b4f458908..be163c1cc4c8982b89be86c004299cdc
          }
  
          // Instead of kicking then returning, we need to store the kick reason
-@@ -1350,8 +1350,8 @@ public abstract class PlayerList {
+@@ -1357,8 +1357,8 @@ public abstract class PlayerList {
          // Paper end
          // CraftBukkit start - disconnect safely
          for (ServerPlayer player : this.players) {
@@ -342,7 +391,7 @@ index a4278a4ca0b41813b8f88d01dcc8d75b4f458908..be163c1cc4c8982b89be86c004299cdc
          // CraftBukkit end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 2562907dd19c4027a5d9928506db8bfd7495c06f..dc0c689864fb312ebdbc742561d73837229947cc 100644
+index ca8267966307ed5e0cb2fc5e4cf61868a77f50ed..a7a0b892b50302ac7af4588bb65206834134dba2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -516,7 +516,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
