@@ -300,7 +300,18 @@ public class GlobalConfiguration extends ConfigurationPart {
 
             @PostProcess
             private void postProcess() {
-                // TODO: fill in separate patch
+                //noinspection ConstantConditions
+                if (net.minecraft.server.MinecraftServer.getServer() == null) return; // In testing env, this will be null here
+                int _chatExecutorMaxSize = (this.chatExecutorMaxSize <= 0) ? Integer.MAX_VALUE : this.chatExecutorMaxSize; // This is somewhat dumb, but, this is the default, do we cap this?;
+                int _chatExecutorCoreSize = Math.max(this.chatExecutorCoreSize, 0);
+
+                if (_chatExecutorMaxSize < _chatExecutorCoreSize) {
+                    _chatExecutorMaxSize = _chatExecutorCoreSize;
+                }
+
+                java.util.concurrent.ThreadPoolExecutor executor = (java.util.concurrent.ThreadPoolExecutor) net.minecraft.server.MinecraftServer.getServer().chatExecutor;
+                executor.setCorePoolSize(_chatExecutorCoreSize);
+                executor.setMaximumPoolSize(_chatExecutorMaxSize);
             }
         }
         public int maxJoinsPerTick = 5;
