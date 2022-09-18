@@ -8,7 +8,7 @@ Now in 1.17, this state is _even more_ critical than it was before,
 so these must exist to catch stupid plugins.
 
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c782659def3ba6 100644
+index 1f0eddb0f3ded42bf312f8933def2f5c9a964651..2d3aacdae95963385ea228e73a2073a6fd96e640 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 @@ -138,6 +138,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
@@ -24,10 +24,10 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
  
      private boolean addEntity(T entity, boolean existing) {
 +        org.spigotmc.AsyncCatcher.catchOp("Entity add"); // Paper
-         if (!this.addEntityUuid(entity)) {
-             return false;
-         } else {
-@@ -210,19 +212,23 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+         // Paper start - chunk system hooks
+         if (existing) {
+             // I don't want to know why this is a generic type.
+@@ -222,19 +224,23 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      void startTicking(T entity) {
@@ -51,7 +51,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          this.callbacks.onTrackingEnd(entity);
          this.visibleEntityStorage.remove(entity);
      }
-@@ -236,6 +242,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -248,6 +254,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      public void updateChunkStatus(ChunkPos chunkPos, Visibility trackingStatus) {
@@ -59,7 +59,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          long i = chunkPos.toLong();
  
          if (trackingStatus == Visibility.HIDDEN) {
-@@ -280,6 +287,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -292,6 +299,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      public void ensureChunkQueuedForLoad(long chunkPos) {
@@ -67,7 +67,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(chunkPos);
  
          if (persistententitysectionmanager_b == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
-@@ -324,6 +332,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -336,6 +344,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      private void requestChunkLoad(long chunkPos) {
@@ -75,7 +75,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          this.chunkLoadStatuses.put(chunkPos, PersistentEntitySectionManager.ChunkLoadStatus.PENDING);
          ChunkPos chunkcoordintpair = new ChunkPos(chunkPos);
          CompletableFuture completablefuture = this.permanentStorage.loadEntities(chunkcoordintpair);
-@@ -337,6 +346,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -349,6 +358,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      private boolean processChunkUnload(long chunkPos) {
@@ -83,7 +83,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          boolean flag = this.storeChunkSections(chunkPos, (entityaccess) -> {
              entityaccess.getPassengersAndSelf().forEach(this::unloadEntity);
          }, true); // CraftBukkit - add boolean for event call
-@@ -361,6 +371,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -373,6 +383,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      private void processPendingLoads() {
@@ -91,7 +91,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          ChunkEntities<T> chunkentities; // CraftBukkit - decompile error
  
          while ((chunkentities = (ChunkEntities) this.loadingInbox.poll()) != null) {
-@@ -377,6 +388,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -389,6 +400,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      public void tick() {
@@ -99,7 +99,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          this.processPendingLoads();
          this.processUnloads();
      }
-@@ -397,6 +409,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -409,6 +421,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      public void autoSave() {
@@ -107,7 +107,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          this.getAllChunksToSave().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
              boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
  
-@@ -411,6 +424,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -423,6 +436,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      }
  
      public void saveAll() {
@@ -115,7 +115,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
          LongSet longset = this.getAllChunksToSave();
  
          while (!longset.isEmpty()) {
-@@ -518,6 +532,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -530,6 +544,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
              long i = SectionPos.asLong(blockposition); final long newSectionPos = i; // Paper - diff on change, new position section
  
              if (i != this.currentSectionKey) {
@@ -123,7 +123,7 @@ index af37b1fcf8459af41482713a9e977599ae6da556..30c4974b4019d67cffabd3e686c78265
                  PersistentEntitySectionManager.this.entitySliceManager.moveEntity((Entity)this.entity); // Paper
                  Visibility visibility = this.currentSection.getStatus(); final Visibility oldVisibility = visibility; // Paper - diff on change - this should be OLD section visibility
                  // Paper start
-@@ -592,6 +607,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -604,6 +619,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
  
          @Override
          public void onRemove(Entity.RemovalReason reason) {

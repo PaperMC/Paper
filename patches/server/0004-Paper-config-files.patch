@@ -114,12 +114,13 @@ index 0000000000000000000000000000000000000000..7a4a7a654fe2516ed894a68f2657344d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9440375d0
+index 0000000000000000000000000000000000000000..c2dca89291361d60cbf160cab77749cb0130035a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,311 @@
 +package io.papermc.paper.configuration;
 +
++import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
@@ -127,6 +128,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +import net.minecraft.server.level.ServerLevel;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.MustBeInvokedByOverriders;
++import org.slf4j.Logger;
 +import org.spongepowered.configurate.CommentedConfigurationNode;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
@@ -138,6 +140,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +
 +import java.io.IOException;
 +import java.lang.reflect.Type;
++import java.nio.file.AccessDeniedException;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
 +import java.util.HashMap;
@@ -148,6 +151,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +
 +public abstract class Configurations<G, W> {
 +
++    private static final Logger LOGGER = LogUtils.getLogger();
 +    public static final String WORLD_DEFAULTS = "__world_defaults__";
 +    public static final ResourceLocation WORLD_DEFAULTS_KEY = new ResourceLocation("configurations", WORLD_DEFAULTS);
 +    protected final Path globalFolder;
@@ -217,6 +221,16 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        return this.initializeGlobalConfiguration(creator(this.globalConfigClass, true));
 +    }
 +
++    private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
++        try {
++            loader.save(node);
++        } catch (ConfigurateException ex) {
++            if (ex.getCause() instanceof AccessDeniedException) {
++                LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex);
++            } else throw ex;
++        }
++    }
++
 +    protected G initializeGlobalConfiguration(final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
 +        final Path configFile = this.globalFolder.resolve(this.globalConfigFileName);
 +        final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder()
@@ -231,7 +245,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        }
 +        this.applyGlobalConfigTransformations(node);
 +        final G instance = creator.apply(node);
-+        loader.save(node);
++        trySaveFileNode(loader, node, configFile.toString());
 +        return instance;
 +    }
 +
@@ -249,7 +263,8 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        final ContextMap contextMap = this.createDefaultContextMap()
 +            .put(FIRST_DEFAULT)
 +            .build();
-+        final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap);
++        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
++        final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap, configFile);
 +        final YamlConfigurationLoader loader = result.loader();
 +        final ConfigurationNode node = loader.load();
 +        if (result.isNewFile()) { // add version to new files
@@ -258,11 +273,10 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        this.applyWorldConfigTransformations(contextMap, node);
 +        final W instance = node.require(this.worldConfigClass);
 +        node.set(this.worldConfigClass, instance);
-+        loader.save(node);
++        trySaveFileNode(loader, node, configFile.toString());
 +    }
 +
-+    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap) {
-+        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
++    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap, final Path configFile) {
 +        boolean willCreate = Files.notExists(configFile);
 +        if (requireFile && willCreate) {
 +            throw new IllegalStateException("World defaults configuration file '" + configFile + "' doesn't exist");
@@ -294,7 +308,8 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +    }
 +
 +    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
-+        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build()).loader();
++        final Path defaultsConfigFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
++        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build(), defaultsConfigFile).loader();
 +        final ConfigurationNode defaultsNode = defaultsLoader.load();
 +
 +        boolean newFile = false;
@@ -316,7 +331,7 @@ index 0000000000000000000000000000000000000000..31325994ab441c59a4c0bd9f3f9db3d9
 +        }
 +        this.applyWorldConfigTransformations(contextMap, worldNode);
 +        this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
-+        worldLoader.save(worldNode); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
++        trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
 +        worldNode.mergeFrom(defaultsNode);
 +        return creator.apply(worldNode);
 +    }
@@ -4168,10 +4183,10 @@ index 0000000000000000000000000000000000000000..70cc7b45e7355f6c8476a74a070f1266
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 853e7c2019f5147e9681e95a82eaef0825b6341e..a48a12a31a3d09a9373b688dcc093035f8f8a300 100644
+index 23e60283a6c99dde5fbb142da678f6569d163c97..4dd3af1416cbdad330365a19ad664079f3598c15 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -110,6 +110,11 @@ public class Main {
+@@ -114,6 +114,11 @@ public class Main {
              DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
  
              dedicatedserversettings.forceSave();
@@ -4183,7 +4198,7 @@ index 853e7c2019f5147e9681e95a82eaef0825b6341e..a48a12a31a3d09a9373b688dcc093035
              Path path1 = Paths.get("eula.txt");
              Eula eula = new Eula(path1);
  
-@@ -133,7 +138,7 @@ public class Main {
+@@ -150,7 +155,7 @@ public class Main {
              }
  
              File file = (File) optionset.valueOf("universe"); // CraftBukkit
@@ -4193,7 +4208,7 @@ index 853e7c2019f5147e9681e95a82eaef0825b6341e..a48a12a31a3d09a9373b688dcc093035
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 15ecb1769a0604eed348b0cd31b86ce2010cbda0..8d65c989aef5ec92873a504f5b331dfe7d8b4bff 100644
+index ec2d172cb8fb19b7d0c83b6bb948df66dce320f7..cd9f94b98f9b7072ed7ca1becd779132dfc1dd12 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -281,6 +281,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -4265,8 +4280,20 @@ index 7d965247833c91dc824e6cc56e8b0fe5f3413d1d..08ae7a96e93c0d8547f560b3f7538045
  
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
+diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
+index 7c35fb22df0bca2c2ca885a872ee42d6073d852f..26fc8127024d7b81ffe5c1c81b8ef8a68e35cbb6 100644
+--- a/src/main/java/net/minecraft/server/dedicated/Settings.java
++++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
+@@ -75,6 +75,7 @@ public abstract class Settings<T extends Settings<T>> {
+         try {
+             // CraftBukkit start - Don't attempt writing to file if it's read only
+             if (path.toFile().exists() && !path.toFile().canWrite()) {
++                Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper
+                 return;
+             }
+             // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 3f4dbd3503bc3224a2f483563af25a76cc0b68f9..1a23437b9fa17846fd28163ae930d21a6bb00138 100644
+index 0029d8e349ee0766aae3ab53fb374759b1f28e72..bbdde701a16480b0b4b29e8fb6b5b5d987db0ce3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -227,7 +227,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -4307,7 +4334,7 @@ index c1194f459414dc6ca9626ab8cec48cb48cdd926b..649df119b24dc8c390f45e9f813cf8c3
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index b2a06ca1240e20693ee993928509dd50992b6f6f..3620b8a76b5c13d33ec32e4a0d7fc7fa7290f220 100644
+index 57814d847551122a4d700c397cde62d32b840950..7c3d02a8a3bac227692ad2349981bc8c6c600341 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -872,6 +872,7 @@ public final class CraftServer implements Server {
@@ -4319,10 +4346,10 @@ index b2a06ca1240e20693ee993928509dd50992b6f6f..3620b8a76b5c13d33ec32e4a0d7fc7fa
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index eca7833e722a876be29806c92b18b6b58aab5725..e8d71985f2e96574081e4f609d62a3b8bded8249 100644
+index 0b3eebd669d9d7a8876ffa8743874703dd14b6a9..d3a5641e84d5b761ebd932a79869a288e2044f4e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -129,6 +129,19 @@ public class Main {
+@@ -131,6 +131,19 @@ public class Main {
                          .defaultsTo(new File("spigot.yml"))
                          .describedAs("Yml file");
                  // Spigot End

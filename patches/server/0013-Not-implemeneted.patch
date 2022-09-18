@@ -1,0 +1,105 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 3 Mar 2019 20:53:18 -0800
+Subject: [PATCH] Not implemeneted
+
+Currently a placeholder patch.
+
+diff --git a/src/main/java/io/papermc/paper/util/TickThread.java b/src/main/java/io/papermc/paper/util/TickThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d59885ee9c8b29d5bac34dce0597e345e5358c77
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/TickThread.java
+@@ -0,0 +1,79 @@
++package io.papermc.paper.util;
++
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.Entity;
++import org.bukkit.Bukkit;
++import java.util.concurrent.atomic.AtomicInteger;
++
++public final class TickThread extends Thread {
++
++    public static final boolean STRICT_THREAD_CHECKS = Boolean.getBoolean("paper.strict-thread-checks");
++
++    static {
++        if (STRICT_THREAD_CHECKS) {
++            MinecraftServer.LOGGER.warn("Strict thread checks enabled - performance may suffer");
++        }
++    }
++
++    public static void softEnsureTickThread(final String reason) {
++        if (!STRICT_THREAD_CHECKS) {
++            return;
++        }
++        ensureTickThread(reason);
++    }
++
++    public static void ensureTickThread(final String reason) {
++        if (!isTickThread()) {
++            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
++            throw new IllegalStateException(reason);
++        }
++    }
++
++    public static void ensureTickThread(final ServerLevel world, final int chunkX, final int chunkZ, final String reason) {
++        if (!isTickThreadFor(world, chunkX, chunkZ)) {
++            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
++            throw new IllegalStateException(reason);
++        }
++    }
++
++    public static void ensureTickThread(final Entity entity, final String reason) {
++        if (!isTickThreadFor(entity)) {
++            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
++            throw new IllegalStateException(reason);
++        }
++    }
++
++    public final int id; /* We don't override getId as the spec requires that it be unique (with respect to all other threads) */
++
++    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
++
++    public TickThread(final String name) {
++        this(null, name);
++    }
++
++    public TickThread(final Runnable run, final String name) {
++        this(run, name, ID_GENERATOR.incrementAndGet());
++    }
++
++    private TickThread(final Runnable run, final String name, final int id) {
++        super(run, name);
++        this.id = id;
++    }
++
++    public static TickThread getCurrentTickThread() {
++        return (TickThread)Thread.currentThread();
++    }
++
++    public static boolean isTickThread() {
++        return Bukkit.isPrimaryThread();
++    }
++
++    public static boolean isTickThreadFor(final ServerLevel world, final int chunkX, final int chunkZ) {
++        return Bukkit.isPrimaryThread();
++    }
++
++    public static boolean isTickThreadFor(final Entity entity) {
++        return Bukkit.isPrimaryThread();
++    }
++}
+diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
+index bbf0d9d9c44fe8d7add2f978994ec129420814c7..78669fa035b7537ff7e533cf32aaf2995625424f 100644
+--- a/src/main/java/org/spigotmc/AsyncCatcher.java
++++ b/src/main/java/org/spigotmc/AsyncCatcher.java
+@@ -9,7 +9,7 @@ public class AsyncCatcher
+ 
+     public static void catchOp(String reason)
+     {
+-        if ( AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread )
++        if ( (AsyncCatcher.enabled || io.papermc.paper.util.TickThread.STRICT_THREAD_CHECKS) && Thread.currentThread() != MinecraftServer.getServer().serverThread ) // Paper
+         {
+             throw new IllegalStateException( "Asynchronous " + reason + "!" );
+         }

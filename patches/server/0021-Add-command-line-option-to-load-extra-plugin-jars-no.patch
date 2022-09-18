@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Tue, 18 May 2021 14:39:44 -0700
+Subject: [PATCH] Add command line option to load extra plugin jars not in the
+ plugins folder
+
+ex: java -jar paperclip.jar nogui -add-plugin=/path/to/plugin.jar -add-plugin=/path/to/another/plugin_jar.jar
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index eb5c7e15366ee5902d8c754a1e9daec50d26fb17..37fefdf0d96cd2b6e23b6e69ee5a8db16f0e51da 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -405,10 +405,15 @@ public final class CraftServer implements Server {
+     public void loadPlugins() {
+         this.pluginManager.registerInterface(JavaPluginLoader.class);
+ 
+-        File pluginFolder = (File) console.options.valueOf("plugins");
++        File pluginFolder = this.getPluginsFolder(); // Paper
+ 
+-        if (pluginFolder.exists()) {
+-            Plugin[] plugins = this.pluginManager.loadPlugins(pluginFolder);
++        // Paper start
++        if (true || pluginFolder.exists()) {
++            if (!pluginFolder.exists()) {
++                pluginFolder.mkdirs();
++            }
++            Plugin[] plugins = this.pluginManager.loadPlugins(pluginFolder, this.extraPluginJars());
++            // Paper end
+             for (Plugin plugin : plugins) {
+                 try {
+                     String message = String.format("Loading %s", plugin.getDescription().getFullName());
+@@ -423,6 +428,35 @@ public final class CraftServer implements Server {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public File getPluginsFolder() {
++        return (File) this.console.options.valueOf("plugins");
++    }
++
++    private List<File> extraPluginJars() {
++        @SuppressWarnings("unchecked")
++        final List<File> jars = (List<File>) this.console.options.valuesOf("add-plugin");
++        final List<File> list = new ArrayList<>();
++        for (final File file : jars) {
++            if (!file.exists()) {
++                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument does not exist, cannot load a plugin from it!", file.getAbsolutePath());
++                continue;
++            }
++            if (!file.isFile()) {
++                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument is not a file, cannot load a plugin from it!", file.getAbsolutePath());
++                continue;
++            }
++            if (!file.getName().endsWith(".jar")) {
++                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument is not a jar file, cannot load a plugin from it!", file.getAbsolutePath());
++                continue;
++            }
++            list.add(file);
++        }
++        return list;
++    }
++    // Paper end
++
+     public void enablePlugins(PluginLoadOrder type) {
+         if (type == PluginLoadOrder.STARTUP) {
+             this.helpMap.clear();
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index ef0d91e72e4ffb829b976da44a5cfe4eedc8703a..0572703c3820d7febeb9da9e0636044209138078 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -149,6 +149,12 @@ public class Main {
+                         .ofType(File.class)
+                         .defaultsTo(new File("paper.yml"))
+                         .describedAs("Yml file");
++
++                acceptsAll(asList("add-plugin", "add-extra-plugin-jar"), "Specify paths to extra plugin jars to be loaded in addition to those in the plugins folder. This argument can be specified multiple times, once for each extra plugin jar path.")
++                        .withRequiredArg()
++                        .ofType(File.class)
++                        .defaultsTo(new File[] {})
++                        .describedAs("Jar file");
+                 // Paper end
+             }
+         };
