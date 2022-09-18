@@ -94,10 +94,12 @@
      }
  
      private boolean isEquipped(Item item) {
-@@ -513,6 +541,18 @@
+@@ -511,7 +539,19 @@
+             super.handleEntityEvent(status);
+         }
  
-     }
- 
++    }
++
 +    // Paper start - Inventory close reason; unused code, but to keep signatures aligned
 +    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        closeContainer();
@@ -107,12 +109,11 @@
 +    // Paper start - special close for unloaded inventory
 +    public void closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        this.containerMenu = this.inventoryMenu;
-+    }
+     }
 +    // Paper end - special close for unloaded inventory
-+
+ 
      public void closeContainer() {
          this.containerMenu = this.inventoryMenu;
-     }
 @@ -523,8 +563,14 @@
      public void rideTick() {
          if (!this.level().isClientSide && this.wantsToStopRiding() && this.isPassenger()) {
@@ -317,7 +318,27 @@
      }
  
      @Override
-@@ -1144,10 +1235,15 @@
+@@ -1134,8 +1225,17 @@
+     }
+ 
+     public void attack(Entity target) {
+-        if (target.isAttackable()) {
+-            if (!target.skipAttackInteraction(this)) {
++        // Paper start - PlayerAttackEntityEvent
++        boolean willAttack = target.isAttackable() && !target.skipAttackInteraction(this); // Vanilla logic
++        io.papermc.paper.event.player.PrePlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PrePlayerAttackEntityEvent(
++            (org.bukkit.entity.Player) this.getBukkitEntity(),
++            target.getBukkitEntity(),
++            willAttack
++        );
++
++        if (playerAttackEntityEvent.callEvent() && willAttack) { // Logic moved to willAttack local variable.
++            {
++        // Paper end - PlayerAttackEntityEvent
+                 float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+                 ItemStack itemstack = this.getWeaponItem();
+                 DamageSource damagesource = (DamageSource) Optional.ofNullable(itemstack.getItem().getDamageSource(this)).orElse(this.damageSources().playerAttack(this));
+@@ -1144,10 +1244,15 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
@@ -334,7 +355,7 @@
                      if (iprojectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, this, true)) {
                          this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
                          return;
-@@ -1159,7 +1255,7 @@
+@@ -1159,7 +1264,7 @@
                      boolean flag1;
  
                      if (this.isSprinting() && flag) {
@@ -343,7 +364,7 @@
                          flag1 = true;
                      } else {
                          flag1 = false;
-@@ -1168,7 +1264,9 @@
+@@ -1168,7 +1273,9 @@
                      f += itemstack.getItem().getAttackDamageBonus(target, f, damagesource);
                      boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround() && !this.onClimbable() && !this.isInWater() && !this.hasEffect(MobEffects.BLINDNESS) && !this.isPassenger() && target instanceof LivingEntity && !this.isSprinting();
  
@@ -353,7 +374,7 @@
                          f *= 1.5F;
                      }
  
-@@ -1202,13 +1300,17 @@
+@@ -1202,13 +1309,17 @@
                              if (target instanceof LivingEntity) {
                                  LivingEntity entityliving1 = (LivingEntity) target;
  
@@ -373,7 +394,7 @@
                          }
  
                          LivingEntity entityliving2;
-@@ -1223,8 +1325,13 @@
+@@ -1223,8 +1334,13 @@
                                  if (entityliving2 != this && entityliving2 != target && !this.isAlliedTo((Entity) entityliving2) && (!(entityliving2 instanceof ArmorStand) || !((ArmorStand) entityliving2).isMarker()) && this.distanceToSqr((Entity) entityliving2) < 9.0D) {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
@@ -389,7 +410,7 @@
                                      Level world = this.level();
  
                                      if (world instanceof ServerLevel) {
-@@ -1235,26 +1342,43 @@
+@@ -1235,26 +1351,43 @@
                                  }
                              }
  
@@ -437,7 +458,7 @@
                              }
                          }
  
-@@ -1308,9 +1432,14 @@
+@@ -1308,9 +1441,14 @@
                              }
                          }
  
@@ -454,7 +475,7 @@
                      }
                  }
  
-@@ -1351,7 +1480,14 @@
+@@ -1351,7 +1489,14 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -470,7 +491,7 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1391,7 +1527,13 @@
+@@ -1391,7 +1536,13 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos) {
@@ -485,7 +506,7 @@
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
      }
-@@ -1545,12 +1687,24 @@
+@@ -1545,12 +1696,24 @@
      }
  
      public void startFallFlying() {
@@ -511,7 +532,7 @@
      }
  
      @Override
-@@ -1664,11 +1818,30 @@
+@@ -1664,11 +1827,30 @@
      public int getXpNeededForNextLevel() {
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
@@ -543,7 +564,7 @@
              }
  
          }
-@@ -1748,13 +1921,20 @@
+@@ -1748,13 +1930,20 @@
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -571,7 +592,7 @@
          }
  
      }
-@@ -1798,26 +1978,55 @@
+@@ -1798,26 +1987,55 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
@@ -634,12 +655,10 @@
      }
  
      @Override
-@@ -2003,20 +2212,31 @@
-     @Override
-     public ImmutableList<Pose> getDismountPoses() {
+@@ -2005,18 +2223,29 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
-+    }
-+
+     }
+ 
 +    // Paper start - PlayerReadyArrowEvent
 +    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
 +        return !(this instanceof ServerPlayer) ||
@@ -648,9 +667,9 @@
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
 +                ).callEvent();
-     }
++    }
 +    // Paper end - PlayerReadyArrowEvent
- 
++
      @Override
      public ItemStack getProjectile(ItemStack stack) {
          if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
