@@ -7,7 +7,7 @@ Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index f0423df165bf7d0f3fad21d26b64f31ba3e6aeee..7b8196db1fd1e283dc9ef71e3fe5137cc5920ba9 100644
+index 79bf95d5a19046b142d0162dd6b739b7f0f52e59..84432bf9dd99332098f952ea777ee97d987f9eb2 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -8,17 +8,37 @@ java {
@@ -49,7 +49,7 @@ index f0423df165bf7d0f3fad21d26b64f31ba3e6aeee..7b8196db1fd1e283dc9ef71e3fe5137c
      // Paper end
  
      compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
-@@ -77,9 +97,24 @@ tasks.withType<Javadoc> {
+@@ -78,9 +98,24 @@ tasks.withType<Javadoc> {
          "https://guava.dev/releases/31.0.1-jre/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/1.30/",
          "https://javadoc.io/doc/org.jetbrains/annotations/23.0.0/", // Paper - we don't want Java 5 annotations
@@ -77,16 +77,15 @@ index f0423df165bf7d0f3fad21d26b64f31ba3e6aeee..7b8196db1fd1e283dc9ef71e3fe5137c
      doLast {
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88ad3bab097
+index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af85e287a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.chat;
 +
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
-+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -115,7 +114,11 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +     */
 +    @NotNull
 +    static ChatRenderer defaultRenderer() {
-+        return viewerUnaware((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++        return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++    }
++
++    @ApiStatus.Internal
++    sealed interface Default extends ChatRenderer, ViewerUnaware permits ViewerUnawareImpl.Default {
 +    }
 +
 +    /**
@@ -127,17 +130,7 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +     */
 +    @NotNull
 +    static ChatRenderer viewerUnaware(final @NotNull ViewerUnaware renderer) {
-+        return new ChatRenderer() {
-+            private @MonotonicNonNull Component message;
-+
-+            @Override
-+            public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
-+                if (this.message == null) {
-+                    this.message = renderer.render(source, sourceDisplayName, message);
-+                }
-+                return this.message;
-+            }
-+        };
++        return new ViewerUnawareImpl(renderer);
 +    }
 +
 +    /**
@@ -157,6 +150,50 @@ index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88a
 +        @ApiStatus.OverrideOnly
 +        @NotNull
 +        Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9adeb880f7948f937891d83e256c808b5eb40a27
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.chat;
++
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.jetbrains.annotations.NotNull;
++
++sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnaware permits ViewerUnawareImpl.Default {
++
++    private final ViewerUnaware unaware;
++
++    private @MonotonicNonNull Component message;
++
++    ViewerUnawareImpl(final ViewerUnaware unaware) {
++        this.unaware = unaware;
++    }
++
++    @Override
++    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
++        return this.render(source, sourceDisplayName, message);
++    }
++
++    @Override
++    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message) {
++        if (this.message == null) {
++            this.message = this.unaware.render(source, sourceDisplayName, message);
++        }
++        return this.message;
++    }
++
++    static final class Default extends ViewerUnawareImpl implements ChatRenderer.Default {
++
++        Default(final ViewerUnaware unaware) {
++            super(unaware);
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
@@ -275,6 +312,164 @@ index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c
 +    @Override
 +    public final void setCancelled(final boolean cancelled) {
 +        this.cancelled = cancelled;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd216f7333795fc6bc5bec593f9cc0e3c2c1a27e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.Experimental
++public class AsyncChatCommandDecorateEvent extends AsyncChatDecorateEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    public AsyncChatCommandDecorateEvent(boolean async, @Nullable Player player, @NotNull Component originalMessage, boolean isPreview, @NotNull Component result) {
++        super(async, player, originalMessage, isPreview, result);
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..347122b12ad98115133ef98db69b271ee0cec194
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
+@@ -0,0 +1,119 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.server.ServerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * This event is fired when the server decorates a component for chat purposes. It can be called
++ * under the following circumstances:
++ * <ul>
++ *     <li><b>Previewing:</b> If the client requests a preview response, this event is fired to decorate the component
++ *     before it is sent back to the client for signing.</li>
++ *     <li><b>Chat:</b> If the client sends a chat packet without having signed a preview (the client could have previews
++ *     disabled or they sent the message too quickly) this event is fired to generated the decorated component. Note
++ *     that when this is the case, the message will show up as modified as the decorated component wasn't signed
++ *     by the client.</li>
++ * </ul>
++ * @see AsyncChatCommandDecorateEvent for the decoration of messages sent via commands
++ */
++@ApiStatus.Experimental
++public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Player player;
++    private final Component originalMessage;
++    private final boolean isPreview;
++    private Component result;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public AsyncChatDecorateEvent(final boolean async, final @Nullable Player player, final @NotNull Component originalMessage, final boolean isPreview, final @NotNull Component result) {
++        super(async);
++        this.player = player;
++        this.originalMessage = originalMessage;
++        this.isPreview = isPreview;
++        this.result = result;
++    }
++
++    /**
++     * Gets the player (if available) associated with this event.
++     * <p>
++     * Certain commands request decorations without a player context
++     * which is why this is possibly null.
++     *
++     * @return the player or null
++     */
++    public @Nullable Player player() {
++        return this.player;
++    }
++
++    /**
++     * Gets the original decoration input
++     *
++     * @return the input
++     */
++    public @NotNull Component originalMessage() {
++        return this.originalMessage;
++    }
++
++    /**
++     * Gets the decoration result. This may already be different from
++     * {@link #originalMessage()} if some other listener to this event
++     * <b>OR</b> the legacy preview event ({@link org.bukkit.event.player.AsyncPlayerChatPreviewEvent}
++     * changed the result.
++     *
++     * @return the result
++     */
++    public @NotNull Component result() {
++        return this.result;
++    }
++
++    /**
++     * Sets the resulting decorated component.
++     *
++     * @param result the result
++     */
++    public void result(@NotNull Component result) {
++        this.result = result;
++    }
++
++    /**
++     * If this decorating is part of a preview request/response.
++     *
++     * @return true if part of previewing
++     */
++    public boolean isPreview() {
++        return this.isPreview;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * A cancelled decorating event means that no changes to the result component
++     * will have any effect. The decorated component will be equal to the original
++     * component.
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
@@ -475,10 +670,10 @@ index 0000000000000000000000000000000000000000..bff9a6295db367c6b89d69fb55459a40
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191ec673544 100644
+index 72143df182e55b70726b066b6b276021c1f4f4d7..c800da7aba43de995682eb724ccf8b7066d6cad3 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -357,7 +357,9 @@ public final class Bukkit {
+@@ -358,7 +358,9 @@ public final class Bukkit {
       *
       * @param message the message
       * @return the number of players
@@ -488,7 +683,7 @@ index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191
      public static int broadcastMessage(@NotNull String message) {
          return server.broadcastMessage(message);
      }
-@@ -1071,6 +1073,19 @@ public final class Bukkit {
+@@ -1072,6 +1074,19 @@ public final class Bukkit {
          server.shutdown();
      }
  
@@ -508,7 +703,7 @@ index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191
      /**
       * Broadcasts the specified message to every user with the given
       * permission name.
-@@ -1080,6 +1095,21 @@ public final class Bukkit {
+@@ -1081,6 +1096,21 @@ public final class Bukkit {
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
       */
@@ -530,7 +725,7 @@ index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191
      public static int broadcast(@NotNull String message, @NotNull String permission) {
          return server.broadcast(message, permission);
      }
-@@ -1318,6 +1348,7 @@ public final class Bukkit {
+@@ -1319,6 +1349,7 @@ public final class Bukkit {
          return server.createInventory(owner, type);
      }
  
@@ -538,7 +733,7 @@ index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1343,6 +1374,38 @@ public final class Bukkit {
+@@ -1344,6 +1375,38 @@ public final class Bukkit {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -577,7 +772,7 @@ index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191
      public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title) {
          return server.createInventory(owner, type, title);
      }
-@@ -1361,6 +1424,7 @@ public final class Bukkit {
+@@ -1362,6 +1425,7 @@ public final class Bukkit {
          return server.createInventory(owner, size);
      }
  
@@ -585,7 +780,7 @@ index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -1373,10 +1437,30 @@ public final class Bukkit {
+@@ -1374,10 +1438,30 @@ public final class Bukkit {
       * @throws IllegalArgumentException if the size is not a multiple of 9
       */
      @NotNull
@@ -616,7 +811,7 @@ index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191
      /**
       * Creates an empty merchant.
       *
-@@ -1384,7 +1468,20 @@ public final class Bukkit {
+@@ -1385,7 +1469,20 @@ public final class Bukkit {
       * when the merchant inventory is viewed
       * @return a new merchant
       */
@@ -637,7 +832,7 @@ index 9db999c8c9645fa0161bc3a85fbfdd09283989fd..b23b6bf1af91c9460fdb231000df6191
      public static Merchant createMerchant(@Nullable String title) {
          return server.createMerchant(title);
      }
-@@ -1501,22 +1598,47 @@ public final class Bukkit {
+@@ -1502,22 +1599,47 @@ public final class Bukkit {
          return server.isPrimaryThread();
      }
  
@@ -810,10 +1005,10 @@ index 803fa0019869127ee8c7e4fb1777a59c43e66f8a..c65f0d6569c130b4920a9e71ad24af64
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b918f8859 100644
+index c0a3b44c728ec98ecce4d1e71746747d87582aa9..4d5c3af2e1f0030aa7415fbe9d11fe3580854fd5 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -58,13 +58,13 @@ import org.jetbrains.annotations.Nullable;
+@@ -59,13 +59,13 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a server implementation.
   */
@@ -829,7 +1024,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
       */
      public static final String BROADCAST_CHANNEL_ADMINISTRATIVE = "bukkit.broadcast.admin";
  
-@@ -72,7 +72,7 @@ public interface Server extends PluginMessageRecipient {
+@@ -73,7 +73,7 @@ public interface Server extends PluginMessageRecipient {
       * Used for all announcement messages, such as informing users that a
       * player has joined.
       * <p>
@@ -838,7 +1033,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
       */
      public static final String BROADCAST_CHANNEL_USERS = "bukkit.broadcast.user";
  
-@@ -294,7 +294,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -295,7 +295,9 @@ public interface Server extends PluginMessageRecipient {
       *
       * @param message the message
       * @return the number of players
@@ -848,7 +1043,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
      public int broadcastMessage(@NotNull String message);
  
      /**
-@@ -910,8 +912,33 @@ public interface Server extends PluginMessageRecipient {
+@@ -911,8 +913,33 @@ public interface Server extends PluginMessageRecipient {
       * @param permission the required permission {@link Permissible
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
@@ -882,7 +1077,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
  
      /**
       * Gets the player by the given name, regardless if they are offline or
-@@ -1109,6 +1136,7 @@ public interface Server extends PluginMessageRecipient {
+@@ -1110,6 +1137,7 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
  
@@ -890,7 +1085,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1134,6 +1162,36 @@ public interface Server extends PluginMessageRecipient {
+@@ -1135,6 +1163,36 @@ public interface Server extends PluginMessageRecipient {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -927,7 +1122,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title);
  
      /**
-@@ -1148,6 +1206,22 @@ public interface Server extends PluginMessageRecipient {
+@@ -1149,6 +1207,22 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
  
@@ -950,7 +1145,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -1158,10 +1232,13 @@ public interface Server extends PluginMessageRecipient {
+@@ -1159,10 +1233,13 @@ public interface Server extends PluginMessageRecipient {
       *     viewed
       * @return a new inventory
       * @throws IllegalArgumentException if the size is not a multiple of 9
@@ -964,7 +1159,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
      /**
       * Creates an empty merchant.
       *
-@@ -1169,7 +1246,18 @@ public interface Server extends PluginMessageRecipient {
+@@ -1170,7 +1247,18 @@ public interface Server extends PluginMessageRecipient {
       * when the merchant inventory is viewed
       * @return a new merchant
       */
@@ -983,7 +1178,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
      Merchant createMerchant(@Nullable String title);
  
      /**
-@@ -1265,20 +1353,41 @@ public interface Server extends PluginMessageRecipient {
+@@ -1266,20 +1354,41 @@ public interface Server extends PluginMessageRecipient {
       */
      boolean isPrimaryThread();
  
@@ -1025,7 +1220,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
      String getShutdownMessage();
  
      /**
-@@ -1635,7 +1744,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1661,7 +1770,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends the component to the player
           *
           * @param component the components to send
@@ -1035,7 +1230,7 @@ index 485848dfa12bda15adda0d8f3a83f779a9ec05fe..01f4329d23a5e33f321df394107eaf1b
          public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1644,7 +1755,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1670,7 +1781,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends an array of components as a single message to the player
           *
           * @param components the components to send
@@ -1139,10 +1334,10 @@ index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb
                  return warning == null || warning.value();
              }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 9fa83c728cf686ef0b9913a86873a3d58492c16b..cc491837d149da716f197577f51a25ec31c03344 100644
+index 7e0c6c57976a00f989fe4e5dce83cd986b460e72..1d3bb553c944f5920e81e295f8cd5b7194d37aac 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -43,7 +43,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a world, which may contain entities, chunks and blocks
   */
@@ -1151,7 +1346,7 @@ index 9fa83c728cf686ef0b9913a86873a3d58492c16b..cc491837d149da716f197577f51a25ec
  
      /**
       * Gets the {@link Block} at the given coordinates
-@@ -635,6 +635,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -638,6 +638,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @NotNull
      public List<Player> getPlayers();
  
@@ -1610,10 +1805,10 @@ index 9566e4306ada5e82dede0f002aa06da12c44996b..4d5f0837bd0e02a30c943d8969fb6b13
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 922d33ff4fa9d901d3c5c0a9f8399ad8aef62c37..cd287978c34873c7122794e4f3e762915978a1f0 100644
+index 259d878ddd4e4e2b289c0de0325ca8fd6203c484..a829779ac56a271cad463806984991b4713a27be 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a base entity in the world
   */
@@ -1622,7 +1817,7 @@ index 922d33ff4fa9d901d3c5c0a9f8399ad8aef62c37..cd287978c34873c7122794e4f3e76291
  
      /**
       * Gets the entity's current position
-@@ -656,4 +656,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -683,4 +683,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      @Override
      Spigot spigot();
      // Spigot end
@@ -1644,7 +1839,7 @@ index 922d33ff4fa9d901d3c5c0a9f8399ad8aef62c37..cd287978c34873c7122794e4f3e76291
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33bde29296 100644
+index c652660f8e053b066d0d40a89ab6f1b86655f71b..2c5fc4f62b2c16de1f4f94f52aae5baf8af6d694 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -37,7 +37,28 @@ import org.jetbrains.annotations.Nullable;
@@ -1676,8 +1871,8 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
 +    // Paper end
  
      /**
-      * Gets the "friendly" name to display of this player. This may include
-@@ -47,7 +68,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * {@inheritDoc}
+@@ -54,7 +75,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * places defined by plugins.
       *
       * @return the friendly name
@@ -1687,7 +1882,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      @NotNull
      public String getDisplayName();
  
-@@ -59,15 +82,50 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -66,15 +89,50 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * places defined by plugins.
       *
       * @param name The new display name.
@@ -1738,7 +1933,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      public String getPlayerListName();
  
      /**
-@@ -76,14 +134,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -83,14 +141,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * If the value is null, the name will be identical to {@link #getName()}.
       *
       * @param name new player list name
@@ -1757,7 +1952,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      @Nullable
      public String getPlayerListHeader();
  
-@@ -91,7 +153,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -98,7 +160,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Gets the currently displayed player list footer for this player.
       *
       * @return player list header or null
@@ -1767,7 +1962,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      @Nullable
      public String getPlayerListFooter();
  
-@@ -99,14 +163,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -106,14 +170,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Sets the currently displayed player list header for this player.
       *
       * @param header player list header, null for empty
@@ -1786,7 +1981,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      public void setPlayerListFooter(@Nullable String footer);
  
      /**
-@@ -115,7 +183,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -122,7 +190,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param header player list header, null for empty
       * @param footer player list footer, null for empty
@@ -1796,7 +1991,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      public void setPlayerListHeaderFooter(@Nullable String header, @Nullable String footer);
  
      /**
-@@ -153,9 +223,25 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -160,9 +230,25 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Kicks player with custom kick message.
       *
       * @param message kick message
@@ -1822,7 +2017,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      /**
       * Says a message (or runs a command).
       *
-@@ -500,6 +586,90 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -514,6 +600,90 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull EquipmentSlot slot, @NotNull ItemStack item);
  
@@ -1913,7 +2108,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      /**
       * Send a sign change. This fakes a sign change packet for a user at
       * a certain location. This will not actually change the world in any way.
-@@ -514,7 +684,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -528,7 +698,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param lines the new text on the sign or null to clear it
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -1923,7 +2118,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
  
      /**
-@@ -533,7 +705,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -547,7 +719,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if dyeColor is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -1933,7 +2128,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
  
      /**
-@@ -553,7 +727,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -567,7 +741,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if dyeColor is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -1943,7 +2138,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
  
      /**
-@@ -1028,6 +1204,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1042,6 +1218,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *     pack correctly.
       * </ul>
       *
@@ -1951,7 +2146,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
-@@ -1041,8 +1218,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1055,8 +1232,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -2009,7 +2204,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      /**
       * Request that the player's client download and switch resource packs.
       * <p>
-@@ -1117,6 +1343,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1131,6 +1357,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *     pack correctly.
       * </ul>
       *
@@ -2017,7 +2212,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
-@@ -1132,8 +1359,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1146,8 +1373,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -2075,7 +2270,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      /**
       * Gets the Scoreboard displayed to this player
       *
-@@ -1249,7 +1525,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1263,7 +1539,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param title Title text
       * @param subtitle Subtitle text
@@ -2084,7 +2279,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
       */
      @Deprecated
      public void sendTitle(@Nullable String title, @Nullable String subtitle);
-@@ -1268,7 +1544,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1282,7 +1558,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
       * @param stay time in ticks for titles to stay. Defaults to 70.
       * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
@@ -2094,7 +2289,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      public void sendTitle(@Nullable String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut);
  
      /**
-@@ -1495,6 +1773,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1509,6 +1787,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public int getClientViewDistance();
  
@@ -2109,7 +2304,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      /**
       * Gets the player's estimated ping in milliseconds.
       *
-@@ -1520,8 +1806,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1534,8 +1820,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * they wish.
       *
       * @return the player's locale
@@ -2120,7 +2315,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      public String getLocale();
  
      /**
-@@ -1563,6 +1851,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1577,6 +1865,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public boolean isAllowingServerListings();
  
@@ -2135,7 +2330,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -1617,11 +1913,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1631,11 +1927,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -2149,7 +2344,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -1632,7 +1930,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1646,7 +1944,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -2159,7 +2354,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1642,7 +1942,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1656,7 +1956,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -2169,7 +2364,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1653,7 +1955,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1667,7 +1969,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -2179,7 +2374,7 @@ index e0f9ba3da29261823d48042b74a33acb9f48d597..fcab7ff11d06ae712d56d1eead5dca33
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1664,7 +1968,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1678,7 +1982,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send
@@ -4019,7 +4214,7 @@ index 03ca87a1cbace2459174bb7bb8847bda766e80c5..b37938745f916b5f0111b07b1a1c9752
       * Returns the name of the plugin.
       * <p>
 diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
-index ff3fcb2697eb00736238d0efdcaefe43043334d3..75acd6f8f3d774bb79e8e513125e801c5569a244 100644
+index 2ff3a11f1f9c115722ea224873e7eb6dc6dc63e6..474274fdffe4041bf4bfb146fcc66424eb5be78a 100644
 --- a/src/main/java/org/bukkit/scoreboard/Objective.java
 +++ b/src/main/java/org/bukkit/scoreboard/Objective.java
 @@ -19,14 +19,35 @@ public interface Objective {
@@ -4069,10 +4264,10 @@ index ff3fcb2697eb00736238d0efdcaefe43043334d3..75acd6f8f3d774bb79e8e513125e801c
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Scoreboard.java b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
-index 5c855dbd0da895392f7a6e92cdc90782baf614ad..1ada91d790abedbc9b3aeb6e96467a0d78560f15 100644
+index a15183f302de42956d8965efe5f0585fc2cd030e..ef3e729caf430b08cdf2d680d5a137a1ba56c1c5 100644
 --- a/src/main/java/org/bukkit/scoreboard/Scoreboard.java
 +++ b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
-@@ -27,6 +27,48 @@ public interface Scoreboard {
+@@ -27,6 +27,92 @@ public interface Scoreboard {
      @Deprecated
      @NotNull
      Objective registerNewObjective(@NotNull String name, @NotNull String criteria) throws IllegalArgumentException;
@@ -4093,9 +4288,53 @@ index 5c855dbd0da895392f7a6e92cdc90782baf614ad..1ada91d790abedbc9b3aeb6e96467a0d
 +     *     characters.
 +     * @throws IllegalArgumentException if an objective by that name already
 +     *     exists
++     * @deprecated use {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component)}
 +     */
 +    @NotNull
++    @Deprecated
 +    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName) throws IllegalArgumentException;
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @param renderType Manner of rendering the Objective
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 32767
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if renderType is null
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     * @deprecated use {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component, RenderType)}
++     */
++    @NotNull
++    @Deprecated
++    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 32767
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     */
++    @NotNull
++    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @Nullable net.kyori.adventure.text.Component displayName) throws IllegalArgumentException;
 +    /**
 +     * Registers an Objective on this Scoreboard
 +     *
@@ -4116,31 +4355,47 @@ index 5c855dbd0da895392f7a6e92cdc90782baf614ad..1ada91d790abedbc9b3aeb6e96467a0d
 +     *     exists
 +     */
 +    @NotNull
-+    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
++    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
 +    // Paper end
  
      /**
       * Registers an Objective on this Scoreboard
-@@ -44,8 +86,10 @@ public interface Scoreboard {
-      *     characters.
-      * @throws IllegalArgumentException if an objective by that name already
-      *     exists
-+     * @deprecated in favour of {@link #registerNewObjective(String, String, net.kyori.adventure.text.Component)}
+@@ -47,6 +133,7 @@ public interface Scoreboard {
+      * @deprecated use {@link #registerNewObjective(String, Criteria, String)}
       */
      @NotNull
 +    @Deprecated // Paper
      Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName) throws IllegalArgumentException;
  
      /**
-@@ -66,8 +110,10 @@ public interface Scoreboard {
-      * @throws IllegalArgumentException if renderType is null
-      * @throws IllegalArgumentException if an objective by that name already
-      *     exists
-+     * @deprecated in favour of {@link #registerNewObjective(String, String, net.kyori.adventure.text.Component, RenderType)}
+@@ -70,6 +157,7 @@ public interface Scoreboard {
+      * @deprecated use {@link #registerNewObjective(String, Criteria, String, RenderType)}
       */
      @NotNull
 +    @Deprecated // Paper
      Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+ 
+     /**
+@@ -88,8 +176,10 @@ public interface Scoreboard {
+      *     characters.
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated in favour of {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName) throws IllegalArgumentException;
+ 
+     /**
+@@ -110,8 +200,10 @@ public interface Scoreboard {
+      * @throws IllegalArgumentException if renderType is null
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated in favour of {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component, RenderType)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java

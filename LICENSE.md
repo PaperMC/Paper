@@ -40,7 +40,6 @@ rickyboy320 <rickw320@hotmail.com>
 DoNotSpamPls <7570108+DoNotSpamPls@users.noreply.github.com>
 JRoy <joshroy126@gmail.com>
 ysl3000 <yannicklamprecht@live.de>
-kennytv <jahnke.nassim@gmail.com>
 Machine_Maker <machine@machinemaker.me>
 Ivan Pekov <ivan@mrivanplays.com>
 Camotoy <20743703+Camotoy@users.noreply.github.com>
@@ -50,4 +49,5 @@ Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 LemonCaramel <admin@caramel.moe>
 Noah van der Aa <ndvdaa@gmail.com>
 Doc <nachito94@msn.com>
+Nick Hensel <nickhensel25@icloud.com>
 ```
