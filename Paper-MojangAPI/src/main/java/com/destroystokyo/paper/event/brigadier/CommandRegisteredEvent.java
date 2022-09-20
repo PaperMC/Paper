@@ -5,24 +5,23 @@ import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
-import org.bukkit.Warning;
 import org.bukkit.command.Command;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.server.ServerEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Fired anytime the server synchronizes Bukkit commands to Brigadier.
  *
- * Allows a plugin to control the command node structure for its commands.
+ * <p>Allows a plugin to control the command node structure for its commands.
  * This is done at Plugin Enable time after commands have been registered, but may also
- * run at a later point in the server lifetime due to plugins, a server reload, etc.
+ * run at a later point in the server lifetime due to plugins, a server reload, etc.</p>
  *
- * @deprecated Draft API - Subject to change until confirmed solves desired use cases
+ * <p>This is a draft/experimental API and is subject to change.</p>
  */
-@Deprecated
-@Warning(false)
+@ApiStatus.Experimental
 public class CommandRegisteredEvent<S extends BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
