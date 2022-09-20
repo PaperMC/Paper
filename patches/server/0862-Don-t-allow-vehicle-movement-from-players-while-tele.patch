@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 14 Mar 2022 12:35:37 -0700
+Subject: [PATCH] Don't allow vehicle movement from players while teleporting
+
+Bring the vehicle move packet behavior in line with the
+regular player move packet.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b82d6ebb30c0fdc49f21d993c6a1affbecc27af7..cf3f9d225e4c4114fd14979ac5f7bf8ea45c3765 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -585,6 +585,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         } else {
+             Entity entity = this.player.getRootVehicle();
+ 
++            // Paper start
++            if (this.awaitingPositionFromClient != null || this.player.isImmobile() || entity.isRemoved()) {
++                return;
++            }
++            // Paper end
++
+             if (entity != this.player && entity.getControllingPassenger() == this.player && entity == this.lastVehicle) {
+                 ServerLevel worldserver = this.player.getLevel();
+                 double d0 = entity.getX();final double fromX = d0; // Paper - OBFHELPER
