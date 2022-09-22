@@ -98,6 +98,7 @@ public class YamlConfiguration extends FileConfiguration {
     public void loadFromString(@NotNull String contents) throws InvalidConfigurationException {
         Preconditions.checkArgument(contents != null, "Contents cannot be null");
         yamlLoaderOptions.setProcessComments(options().parseComments());
+        yamlLoaderOptions.setCodePointLimit(options().codePointLimit()); // Paper
 
         MappingNode node;
         try (Reader reader = new UnicodeReader(new ByteArrayInputStream(contents.getBytes(StandardCharsets.UTF_8)))) {
