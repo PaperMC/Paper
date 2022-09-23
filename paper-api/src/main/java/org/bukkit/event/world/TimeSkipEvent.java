@@ -18,7 +18,7 @@ public class TimeSkipEvent extends WorldEvent implements Cancellable {
     private final SkipReason skipReason;
     private long skipAmount;
 
-    public TimeSkipEvent(@NotNull World world, @NotNull SkipReason skipReason, @NotNull long skipAmount) {
+    public TimeSkipEvent(@NotNull World world, @NotNull SkipReason skipReason, long skipAmount) {
         super(world);
         this.skipReason = skipReason;
         this.skipAmount = skipAmount;

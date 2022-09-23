@@ -60,7 +60,7 @@ public class VillagerCareerChangeEvent extends EntityEvent implements Cancellabl
     }
 
     @Override
-    public void setCancelled(@NotNull boolean cancel) {
+    public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }
 

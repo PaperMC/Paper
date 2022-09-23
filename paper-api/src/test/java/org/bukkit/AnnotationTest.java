@@ -74,7 +74,7 @@ public class AnnotationTest {
                 List<ParameterNode> parameters = method.parameters;
 
                 for (int i = 0; i < paramTypes.length; i++) {
-                    if (mustBeAnnotated(paramTypes[i]) && !isWellAnnotated(method.invisibleParameterAnnotations == null ? null : method.invisibleParameterAnnotations[i])) {
+                    if (mustBeAnnotated(paramTypes[i]) ^ isWellAnnotated(method.invisibleParameterAnnotations == null ? null : method.invisibleParameterAnnotations[i])) {
                         ParameterNode paramNode = parameters == null ? null : parameters.get(i);
                         String paramName = paramNode == null ? null : paramNode.name;
 
