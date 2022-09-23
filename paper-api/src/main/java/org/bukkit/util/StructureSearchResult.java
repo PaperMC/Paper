@@ -20,7 +20,7 @@ public interface StructureSearchResult {
      * @return the found structure.
      */
     @NotNull
-     Structure getStructure();
+    Structure getStructure();
 
     /**
      * Return the location of the structure.

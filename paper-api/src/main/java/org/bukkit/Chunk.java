@@ -212,7 +212,8 @@ public interface Chunk extends PersistentDataHolder {
     /**
      * Gets the amount of time in ticks that this chunk has been inhabited.
      *
-     * Note that the time is incremented once per tick per player in the chunk.
+     * Note that the time is incremented once per tick per player within mob
+     * spawning distance of this chunk.
      *
      * @return inhabited time
      */

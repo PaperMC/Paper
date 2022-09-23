@@ -50,7 +50,7 @@ public interface Mob extends LivingEntity, Lootable {
     public boolean isAware();
 
     /**
-     * Get the {@link Sound} this makes while ambiently existing. This sound
+     * Get the {@link Sound} this mob makes while ambiently existing. This sound
      * may change depending on the current state of the entity, and may also
      * return null under specific conditions. This sound is not constant.
      * For instance, villagers will make different passive noises depending

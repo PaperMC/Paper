@@ -13,7 +13,7 @@ public class Vibration {
     private final Destination destination;
     private final int arrivalTime;
 
-    public Vibration(@NotNull Location origin, @NotNull Destination destination, @NotNull int arrivalTime) {
+    public Vibration(@NotNull Location origin, @NotNull Destination destination, int arrivalTime) {
         this.origin = origin;
         this.destination = destination;
         this.arrivalTime = arrivalTime;

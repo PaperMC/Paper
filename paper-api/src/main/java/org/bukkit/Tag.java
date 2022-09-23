@@ -465,7 +465,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> CAULDRONS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("cauldrons"), Material.class);
     /**
-     * Vanilla block tag representing all blocks that make cryustal sounds.
+     * Vanilla block tag representing all blocks that make crystal sounds.
      */
     Tag<Material> CRYSTAL_SOUND_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("crystal_sound_blocks"), Material.class);
     /**

@@ -230,11 +230,11 @@ public enum Effect {
      */
     POINTED_DRIPSTONE_LAND(1045, Type.SOUND),
     /**
-     * The sound played when a pointed driptone drips lava into a cauldron.
+     * The sound played when a pointed dripstone drips lava into a cauldron.
      */
     POINTED_DRIPSTONE_DRIP_LAVA_INTO_CAULDRON(1046, Type.SOUND),
     /**
-     * The sound played when a pointed driptone drips water into a cauldron.
+     * The sound played when a pointed dripstone drips water into a cauldron.
      */
     POINTED_DRIPSTONE_DRIP_WATER_INTO_CAULDRON(1047, Type.SOUND),
     /**
@@ -267,7 +267,7 @@ public enum Effect {
     /**
      * The particles shown when a dripstone drips lava or water.
      *
-     * This effect requires a driptone at the location as well as lava or water
+     * This effect requires a dripstone at the location as well as lava or water
      * at the root of the dripstone.
      */
     DRIPPING_DRIPSTONE(1504, Type.VISUAL),
@@ -283,11 +283,11 @@ public enum Effect {
      */
     ENDER_DRAGON_DESTROY_BLOCK(2008, Type.VISUAL),
     /**
-     * The particles shown when a sponge drys in an ultra warm world (nether).
+     * The particles shown when a sponge dries in an ultra warm world (nether).
      */
     SPONGE_DRY(2009, Type.VISUAL),
     /**
-     * The particles shown when a lightning hits a lightning rod or oxidised
+     * The particles shown when a lightning hits a lightning rod or oxidized
      * copper.
      *
      * Data is the axis at which the particle should be shown. If no data is
@@ -303,7 +303,7 @@ public enum Effect {
      */
     COPPER_WAX_OFF(3004, Type.VISUAL),
     /**
-     * The particles shown when oxidisation is scraped of an oxidised copper
+     * The particles shown when oxidation is scraped of an oxidized copper
      * block.
      */
     OXIDISED_COPPER_SCRAPE(3005, Type.VISUAL),

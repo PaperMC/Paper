@@ -1809,7 +1809,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <ul>
      * <li>A value of 1 will mean the server will attempt to spawn water ambient mobs in
      *     this world on every tick.
-     * <li>A value of 400 will mean the server will attempt to spawn weater ambient mobs
+     * <li>A value of 400 will mean the server will attempt to spawn water ambient mobs
      *     in this world every 400th tick.
      * <li>A value below 0 will be reset back to Minecraft's default.
      * </ul>
