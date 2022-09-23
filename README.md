@@ -19,7 +19,7 @@ Download Paper from our [downloads page](https://papermc.io/downloads).
 Run the Paperclip jar directly from your server. Just like old times
 
   * Documentation on using Paper: [docs.papermc.io](https://docs.papermc.io)
-  * For a sneak peek on upcoming features, [see here](https://github.com/PaperMC/Paper/projects)
+  * For a sneak peek at upcoming features, [see here](https://github.com/PaperMC/Paper/projects)
 
 How To (Plugin Developers)
 ------
@@ -38,7 +38,7 @@ How To (Plugin Developers)
 <dependency>
     <groupId>io.papermc.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.19-R0.1-SNAPSHOT</version>
+    <version>1.19.2-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
  ```
@@ -54,7 +54,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.19-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.19.2-R0.1-SNAPSHOT")
 }
 
 java {
@@ -78,7 +78,7 @@ Support Us
 ------
 First of all, thank you for considering helping out, we really appreciate that!  
 
-PaperMC has various recurring expenses, mostly related to infrastructure. Paper uses [Open Collective](https://opencollective.com/) via the [Open Source Collective fiscal host](https://opencollective.com/opensource) to manage expenses. Open Collective allows us to be extremely transparent, so you can always see how your donations are used. You can read more about finanically supporting PaperMC [on our website](https://papermc.io/sponsors).  
+PaperMC has various recurring expenses, mostly related to infrastructure. Paper uses [Open Collective](https://opencollective.com/) via the [Open Source Collective fiscal host](https://opencollective.com/opensource) to manage expenses. Open Collective allows us to be extremely transparent, so you can always see how your donations are used. You can read more about financially supporting PaperMC [on our website](https://papermc.io/sponsors).  
 
 You can find our collective [here](https://opencollective.com/papermc), or you can donate via GitHub Sponsors [here](https://github.com/sponsors/PaperMC), which will also go towards the collective.
 

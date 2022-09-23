@@ -5,13 +5,13 @@ Subject: [PATCH] Build system changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index b81a893bd5418779544872eb4006adc6b3017a43..044b7c49b569e1170108c912e9307f7fec278762 100644
+index 16776e693165758e47152eb6726969426f180f14..850afb1ae533bfd80ba4cc062a4394123ad22dba 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -14,15 +14,27 @@ dependencies {
      api("com.google.code.gson:gson:2.8.9")
      api("net.md-5:bungeecord-chat:1.16-R0.4")
-     api("org.yaml:snakeyaml:1.30")
+     api("org.yaml:snakeyaml:1.32")
 +    // Paper start
 +    api("com.googlecode.json-simple:json-simple:1.1.1") {
 +        isTransitive = false // includes junit
@@ -37,7 +37,7 @@ index b81a893bd5418779544872eb4006adc6b3017a43..044b7c49b569e1170108c912e9307f7f
      testImplementation("org.apache.commons:commons-lang3:3.12.0")
      testImplementation("junit:junit:4.13.2")
      testImplementation("org.hamcrest:hamcrest-library:1.3")
-@@ -63,7 +75,7 @@ tasks.withType<Javadoc> {
+@@ -64,7 +76,7 @@ tasks.withType<Javadoc> {
      options.links(
          "https://guava.dev/releases/31.0.1-jre/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/1.30/",
@@ -46,3 +46,42 @@ index b81a893bd5418779544872eb4006adc6b3017a43..044b7c49b569e1170108c912e9307f7f
          "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
      )
  
+@@ -79,3 +91,14 @@ tasks.withType<Javadoc> {
+         }
+     }
+ }
++
++// Paper start
++val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
++    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
++    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
++    classpath.from(configurations.compileClasspath)
++}
++tasks.check {
++    dependsOn(scanJar)
++}
++// Paper end
+diff --git a/src/main/java/io/papermc/paper/annotation/DoNotUse.java b/src/main/java/io/papermc/paper/annotation/DoNotUse.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4766e49d819e75e5c2127c698b44078bf2fd6219
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/annotation/DoNotUse.java
+@@ -0,0 +1,18 @@
++package io.papermc.paper.annotation;
++
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Annotation used to mark methods or constructors which should not be called.
++ *
++ * <p>Separate from {@link Deprecated} to differentiate from the large amount of deprecations.</p>
++ */
++@ApiStatus.Internal
++@Retention(RetentionPolicy.RUNTIME)
++@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
++public @interface DoNotUse {
++}

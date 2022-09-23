@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 9 Apr 2020 21:20:33 -0400
+Subject: [PATCH] Don't move existing players to world spawn
+
+This can cause a nasty server lag the spawn chunks are not kept loaded
+or they aren't finished loading yet, or if the world spawn radius is
+larger than the keep loaded range.
+
+By skipping this, we avoid potential for a large spike on server start.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index eae65f79bd1b286f35955bf7a0a5a116ecd12520..61f97fab1e0e3d6c9206c397cecfff868cf0d9d2 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -323,7 +323,7 @@ public class ServerPlayer extends Player {
+         this.stats = server.getPlayerList().getPlayerStats(this);
+         this.advancements = server.getPlayerList().getPlayerAdvancements(this);
+         this.maxUpStep = 1.0F;
+-        this.fudgeSpawnLocation(world);
++        //this.fudgeSpawnLocation(world); // Paper - don't move to spawn on login, only first join
+ 
+         this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
+ 
+@@ -556,7 +556,7 @@ public class ServerPlayer extends Player {
+                 position = Vec3.atCenterOf(((ServerLevel) world).getSharedSpawnPos());
+             }
+             this.level = world;
+-            this.setPos(position.x(), position.y(), position.z());
++            this.setPosRaw(position.x(), position.y(), position.z()); // Paper - don't register to chunks yet
+         }
+         this.gameMode.setLevel((ServerLevel) world);
+     }
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 256bd12178c8dca2889fbcedb9327cc4a1164cf5..d9175bcd1060dbaee90e50466da3c6d816fb614e 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -216,6 +216,8 @@ public abstract class PlayerList {
+             worldserver1 = worldserver;
+         }
+ 
++        if (nbttagcompound == null) player.fudgeSpawnLocation(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
++
+         player.setLevel(worldserver1);
+         String s1 = "local";
+ 

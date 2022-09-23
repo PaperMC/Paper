@@ -25,3 +25,12 @@ configure<PublishingExtension> {
         from(components["java"])
     }
 }
+
+val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
+    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+    classpath.from(configurations.compileClasspath)
+}
+tasks.check {
+    dependsOn(scanJar)
+}
