@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
@@ -18,6 +19,7 @@ import org.bukkit.WorldBorder;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.conversations.Conversable;
@@ -490,6 +492,28 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param block The new block
      */
     public void sendBlockChange(@NotNull Location loc, @NotNull BlockData block);
+
+    /**
+     * Send a multi-block change. This fakes a block change packet for a user
+     * at multiple locations. This will not actually change the world in any
+     * way.
+     * <p>
+     * This method may send multiple packets to the client depending on the
+     * blocks in the collection. A packet must be sent for each chunk section
+     * modified, meaning one packet for each 16x16x16 block area. Even if only
+     * one block is changed in two different chunk sections, two packets will
+     * be sent.
+     * <p>
+     * Additionally, this method cannot guarantee the functionality of changes
+     * being sent to the player in chunks not loaded by the client. It is the
+     * responsibility of the caller to ensure that the client is within range
+     * of the changed blocks or to handle any side effects caused as a result.
+     *
+     * @param blocks the block states to send to the player
+     * @param suppressLightUpdates whether or not light updates should be
+     * suppressed when updating the blocks on the client
+     */
+    public void sendBlockChanges(@NotNull Collection<BlockState> blocks, boolean suppressLightUpdates);
 
     /**
      * Send block damage. This fakes block break progress for a user at a
