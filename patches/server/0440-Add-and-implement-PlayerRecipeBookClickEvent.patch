@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Fri, 5 Jun 2020 18:24:06 -0400
+Subject: [PATCH] Add and implement PlayerRecipeBookClickEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 30a69fa8f8266909fe98bea7ea781789c74bf50b..b7865696d9b939791b0315ab2a231e2dc5872de8 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3228,9 +3228,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             if (!this.player.containerMenu.stillValid(this.player)) {
+                 ServerGamePacketListenerImpl.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
+             } else {
+-                this.server.getRecipeManager().byKey(packet.getRecipe()).ifPresent((irecipe) -> {
+-                    ((RecipeBookMenu) this.player.containerMenu).handlePlacement(packet.isShiftDown(), irecipe, this.player);
+-                });
++                // Paper start - fire event for clicking recipes in the recipe book
++                com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent event = new com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent(
++                    player.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(packet.getRecipe()), packet.isShiftDown());
++                if (event.callEvent() && this.player.containerMenu instanceof RecipeBookMenu<?> recipeBookMenu) { // check if inventory changed during event handling
++                    this.server.getRecipeManager().byKey(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getRecipe())).ifPresent((irecipe) -> {
++                        recipeBookMenu.handlePlacement(event.isMakeAll(), irecipe, this.player);
++                    });
++                }
++                // Paper end
+             }
+         }
+     }
