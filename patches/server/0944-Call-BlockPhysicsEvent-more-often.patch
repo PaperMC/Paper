@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Sun, 7 Aug 2022 22:16:36 +0200
+Subject: [PATCH] Call BlockPhysicsEvent more often
+
+
+diff --git a/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java b/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
+index af7b535d14ef279073b3b2ffa29cf88ca8305d1e..b1c594dc6a6b8a6c737b99272acab9e7dbd0ed63 100644
+--- a/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
++++ b/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
+@@ -119,7 +119,27 @@ public class CollectingNeighborUpdater implements NeighborUpdater {
+         public boolean runNext(Level world) {
+             BlockPos blockPos = this.sourcePos.relative(NeighborUpdater.UPDATE_ORDER[this.idx++]);
+             BlockState blockState = world.getBlockState(blockPos);
+-            blockState.neighborChanged(world, blockPos, this.sourceBlock, this.sourcePos, false);
++            // Paper start
++            try {
++                boolean cancelled = false;
++                org.bukkit.craftbukkit.CraftWorld cworld = world.getWorld();
++                if (cworld != null) {
++                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(
++                        org.bukkit.craftbukkit.block.CraftBlock.at(world, blockPos),
++                        org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(blockState),
++                        org.bukkit.craftbukkit.block.CraftBlock.at(world, sourcePos));
++
++                    if (!event.callEvent()) {
++                        cancelled = true;
++                    }
++                }
++                if (!cancelled) { // continue to check for adjacent block (increase idx)
++                    blockState.neighborChanged(world, blockPos, this.sourceBlock, this.sourcePos, false);
++                }
++            } catch (StackOverflowError ex) {
++                world.lastPhysicsProblem = new BlockPos(blockPos);
++            }
++            // Paper end
+             if (this.idx < NeighborUpdater.UPDATE_ORDER.length && NeighborUpdater.UPDATE_ORDER[this.idx] == this.skipDirection) {
+                 ++this.idx;
+             }
