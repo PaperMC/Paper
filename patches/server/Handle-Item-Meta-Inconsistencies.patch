@@ -116,21 +116,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
 @@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
- 
-     @Override
-     public boolean containsEnchantment(Enchantment ench) {
--        return this.getEnchantmentLevel(ench) > 0;
-+        return this.hasItemMeta() && this.getItemMeta().hasEnchant(ench); // Paper - use meta
-     }
- 
-     @Override
-     public int getEnchantmentLevel(Enchantment ench) {
--        Validate.notNull(ench, "Cannot find null enchantment");
--        if (this.handle == null) {
--            return 0;
--        }
+         if (this.handle == null) {
+             return 0;
+         }
 -        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
-+        return this.hasItemMeta() ? this.getItemMeta().getEnchantLevel(ench) : 0; // Paper - replace entire method with meta
++        return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle); // Paper
      }
  
      @Override
@@ -173,10 +163,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                listCopy.add(list.get(i));
 -            }
 +        // Paper start - replace entire method
-+        final ItemMeta itemMeta = this.getItemMeta();
-+        if (itemMeta == null) return 0;
-+        int level = itemMeta.getEnchantLevel(ench);
++        int level = getEnchantmentLevel(ench);
 +        if (level > 0) {
++            final ItemMeta itemMeta = this.getItemMeta();
++            if (itemMeta == null) return 0;
 +            itemMeta.removeEnchant(ench);
 +            this.setItemMeta(itemMeta);
          }
