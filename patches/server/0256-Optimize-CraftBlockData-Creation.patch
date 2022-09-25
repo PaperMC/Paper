@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: miclebrick <miclebrick@outlook.com>
+Date: Thu, 23 Aug 2018 11:45:32 -0400
+Subject: [PATCH] Optimize CraftBlockData Creation
+
+Avoids a hashmap lookup by cacheing a reference to the CraftBlockData
+and cloning it when one is needed.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+index 51ac731cf49e6d2cd574e48f26c4b151e9014826..61a792c5ccf3688d4f78c6e7461090f63a0cc26a 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -696,6 +696,14 @@ public abstract class BlockBehaviour {
+             this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
+             this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
+         }
++        // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
++        private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
++
++        public org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData() {
++            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.block.data.CraftBlockData.createData(asState());
++            return (org.bukkit.craftbukkit.block.data.CraftBlockData) cachedCraftBlockData.clone();
++        }
++        // Paper end
+ 
+         // Paper start
+         protected boolean shapeExceedsCube = true;
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index 8a4dcbbfdc4ef9f7fcd1eb04db010f93f5f06933..514e1ab74cd24cfcf1dd031e69a8ebfaddf9d3dc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -539,7 +539,17 @@ public class CraftBlockData implements BlockData {
+         return craft;
+     }
+ 
++    // Paper start - optimize creating BlockData to not need a map lookup
++    static {
++        // Initialize cached data for all IBlockData instances after registration
++        Block.BLOCK_STATE_REGISTRY.iterator().forEachRemaining(BlockState::createCraftBlockData);
++    }
+     public static CraftBlockData fromData(BlockState data) {
++        return data.createCraftBlockData();
++    }
++
++    public static CraftBlockData createData(BlockState data) {
++        // Paper end
+         return CraftBlockData.MAP.getOrDefault(data.getBlock().getClass(), CraftBlockData::new).apply(data);
+     }
+ 
