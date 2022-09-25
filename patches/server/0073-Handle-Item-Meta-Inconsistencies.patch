@@ -70,7 +70,7 @@ index e937186aaf819a77c80beeb9e08413a1f781c13a..0e19f49ca2496b1c42d27289bcea15d2
  
      public boolean isEnchanted() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 4b79b96579efbc4dd9a10e7183ed08b73b488794..3745033afb8923ce06cbf13b55c4e96f2a89573f 100644
+index 4b79b96579efbc4dd9a10e7183ed08b73b488794..c9093275d2b78b6e2f59e64efab0b4775ff0b43b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -6,7 +6,6 @@ import java.util.Map;
@@ -115,22 +115,12 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..3745033afb8923ce06cbf13b55c4e96f
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -216,66 +198,34 @@ public final class CraftItemStack extends ItemStack {
- 
-     @Override
-     public boolean containsEnchantment(Enchantment ench) {
--        return this.getEnchantmentLevel(ench) > 0;
-+        return this.hasItemMeta() && this.getItemMeta().hasEnchant(ench); // Paper - use meta
-     }
- 
-     @Override
-     public int getEnchantmentLevel(Enchantment ench) {
--        Validate.notNull(ench, "Cannot find null enchantment");
--        if (this.handle == null) {
--            return 0;
--        }
+@@ -225,57 +207,29 @@ public final class CraftItemStack extends ItemStack {
+         if (this.handle == null) {
+             return 0;
+         }
 -        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
-+        return this.hasItemMeta() ? this.getItemMeta().getEnchantLevel(ench) : 0; // Paper - replace entire method with meta
++        return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle); // Paper
      }
  
      @Override
@@ -173,10 +163,10 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..3745033afb8923ce06cbf13b55c4e96f
 -                listCopy.add(list.get(i));
 -            }
 +        // Paper start - replace entire method
-+        final ItemMeta itemMeta = this.getItemMeta();
-+        if (itemMeta == null) return 0;
-+        int level = itemMeta.getEnchantLevel(ench);
++        int level = getEnchantmentLevel(ench);
 +        if (level > 0) {
++            final ItemMeta itemMeta = this.getItemMeta();
++            if (itemMeta == null) return 0;
 +            itemMeta.removeEnchant(ench);
 +            this.setItemMeta(itemMeta);
          }
