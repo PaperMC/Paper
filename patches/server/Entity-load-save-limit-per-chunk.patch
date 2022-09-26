@@ -38,21 +38,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
 @@ -0,0 +0,0 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
- 
-         } else {
-             ListTag listTag = new ListTag();
-+            final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper
-             dataList.getEntities().forEach((entity) -> {
-+                // Paper start
-+                final EntityType<?> entityType = entity.getType();
-+                final int saveLimit = this.level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
-+                if (saveLimit > -1) {
-+                    if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
-+                        return;
-+                    }
-+                    savedEntityCounts.merge(entityType, 1, Integer::sum);
+             return null;
+         }
+         ListTag listTag = new ListTag();
++        final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper
+         entities.forEach((entity) -> { // diff here: use entities parameter
++            // Paper start
++            final EntityType<?> entityType = entity.getType();
++            final int saveLimit = level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++            if (saveLimit > -1) {
++                if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                    return;
 +                }
-+                // Paper end
-                 CompoundTag compoundTag = new CompoundTag();
-                 if (entity.save(compoundTag)) {
-                     listTag.add(compoundTag);
++                savedEntityCounts.merge(entityType, 1, Integer::sum);
++            }
++            // Paper end
+             CompoundTag compoundTag = new CompoundTag();
+             if (entity.save(compoundTag)) {
+                 listTag.add(compoundTag);

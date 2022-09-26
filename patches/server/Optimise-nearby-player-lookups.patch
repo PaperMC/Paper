@@ -1,5 +1,5 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Spottedleaf <spottedleaf@spottedleaf.dev>
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Thu, 27 Aug 2020 16:22:52 -0700
 Subject: [PATCH] Optimise nearby player lookups
 
@@ -43,27 +43,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
      public final ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new ReferenceOpenHashSet<>();
  
+     // Paper - rewrite chunk system
 +    // Paper start - optimise checkDespawn
 +    public static final int GENERAL_AREA_MAP_SQUARE_RADIUS = 40;
 +    public static final double GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE = 16.0 * (GENERAL_AREA_MAP_SQUARE_RADIUS - 1);
 +    public static final double GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE_SQUARED = GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE * GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE;
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerGeneralAreaMap;
 +    // Paper end - optimise checkDespawn
-+
-     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
-     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
-     public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
+ 
+     // Paper start - distance maps
+     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, net.minecraft.server.ChunkSystem.getSendViewDistance(player)));
+         }
          // Paper end - use distance map to optimise entity tracker
-         // Note: players need to be explicitly added to distance maps before they can be updated
-         this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerGeneralAreaMap.add(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
-         // Paper start - per player mob spawning
-         if (this.playerMobDistanceMap != null) {
-             this.playerMobDistanceMap.add(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
+     }
+ 
+     void removePlayerFromDistanceMaps(ServerPlayer player) {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.playerMobSpawnMap.remove(player);
          this.playerChunkTickRangeMap.remove(player);
@@ -73,13 +72,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.playerMobDistanceMap != null) {
              this.playerMobDistanceMap.remove(player);
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, net.minecraft.server.ChunkSystem.getSendViewDistance(player)));
          }
          // Paper end - use distance map to optimise entity tracker
-         this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerGeneralAreaMap.update(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
-         // Paper start - per player mob spawning
-         if (this.playerMobDistanceMap != null) {
-             this.playerMobDistanceMap.update(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
+     }
+     // Paper end
+     // Paper start
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
              });

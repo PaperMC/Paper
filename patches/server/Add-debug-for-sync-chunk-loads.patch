@@ -207,8 +207,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import java.util.ArrayList;
 @@ -0,0 +0,0 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("version"), new VersionCommand());
-         commands.put(Set.of("debug", "chunkinfo"), new ChunkDebugCommand());
          commands.put(Set.of("fixlight"), new FixLightCommand());
+         commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
 +        commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
  
          return commands.entrySet().stream()
@@ -302,21 +302,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-                 this.level.asyncChunkTaskManager.raisePriority(x1, z1, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
-                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.level, x1, z1);
+                 // Paper start - async chunk io/loading
+                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, x1, z1); // Paper - rewrite chunk system
                  // Paper end
 +                com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x1, z1); // Paper - sync load info
                  this.level.timings.syncChunkLoad.startTiming(); // Paper
              chunkproviderserver_b.managedBlock(completablefuture::isDone);
-                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
+                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.popChunkWait(); // Paper - async chunk debug  // Paper - rewrite chunk system
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-     };
-     public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
-     // Paper end
+         return this.entityLookup;
+     }
+     // Paper end - rewrite chunk system
 +    // Paper start
 +    @Override
 +    public boolean hasChunk(int chunkX, int chunkZ) {

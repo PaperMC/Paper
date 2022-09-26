@@ -40,46 +40,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - use distance map to optimise tracker
  
      void addPlayerToDistanceMaps(ServerPlayer player) {
-         int chunkX = MCUtil.getChunkCoordinate(player.getX());
-         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+         this.playerChunkManager.addPlayer(player); // Paper - replace chunk loader
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             this.playerMobDistanceMap.add(player, chunkX, chunkZ, net.minecraft.server.ChunkSystem.getTickViewDistance(player));
+         }
+         // Paper end - per player mob spawning
 +        // Paper start - use distance map to optimise entity tracker
 +        for (int i = 0, len = TRACKING_RANGE_TYPES.length; i < len; ++i) {
 +            com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
 +            int trackRange = this.entityTrackerTrackRanges[i];
 +
-+            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
++            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, net.minecraft.server.ChunkSystem.getSendViewDistance(player)));
 +        }
 +        // Paper end - use distance map to optimise entity tracker
-         // Note: players need to be explicitly added to distance maps before they can be updated
-         this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
-         // Paper start - per player mob spawning
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
- 
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             this.playerMobDistanceMap.remove(player);
+         }
+         // Paper end - per player mob spawning
 +        // Paper start - use distance map to optimise tracker
 +        for (int i = 0, len = TRACKING_RANGE_TYPES.length; i < len; ++i) {
 +            this.playerEntityTrackerTrackMaps[i].remove(player);
 +        }
 +        // Paper end - use distance map to optimise tracker
-         // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
-         this.playerMobSpawnMap.remove(player);
-         this.playerChunkTickRangeMap.remove(player);
+     }
+ 
+     void updateMaps(ServerPlayer player) {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         int chunkX = MCUtil.getChunkCoordinate(player.getX());
-         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
-         // Note: players need to be explicitly added to distance maps before they can be updated
+             this.playerMobDistanceMap.update(player, chunkX, chunkZ, net.minecraft.server.ChunkSystem.getTickViewDistance(player));
+         }
+         // Paper end - per player mob spawning
 +        // Paper start - use distance map to optimise entity tracker
 +        for (int i = 0, len = TRACKING_RANGE_TYPES.length; i < len; ++i) {
 +            com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
 +            int trackRange = this.entityTrackerTrackRanges[i];
 +
-+            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
++            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, net.minecraft.server.ChunkSystem.getSendViewDistance(player)));
 +        }
 +        // Paper end - use distance map to optimise entity tracker
-         this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
-         // Paper start - per player mob spawning
-         if (this.playerMobDistanceMap != null) {
+     }
+     // Paper end
+     // Paper start
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
@@ -193,49 +196,53 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          List<ServerPlayer> list1 = this.level.players();
          ObjectIterator objectiterator = this.entityMap.values().iterator();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }));
+         // Paper end
          DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
-         List<Entity> list = Lists.newArrayList();
-         List<Entity> list1 = Lists.newArrayList();
+-        List<Entity> list = Lists.newArrayList();
+-        List<Entity> list1 = Lists.newArrayList();
 -        ObjectIterator objectiterator = this.entityMap.values().iterator();
-+        // Paper start - optimise entity tracker
-+        // use the chunk entity list, not the whole trackedEntities map...
-+        Entity[] entities = chunk.entities.getRawData();
-+        for (int i = 0, size = chunk.entities.size(); i < size; ++i) {
-+            Entity entity = entities[i];
-+            if (entity == player) {
-+                continue;
-+            }
-+            ChunkMap.TrackedEntity tracker = this.entityMap.get(entity.getId());
-+            if (tracker != null) { // dumb plugins... move on...
-+                tracker.updatePlayer(player);
-+            }
- 
+-
 -        while (objectiterator.hasNext()) {
 -            ChunkMap.TrackedEntity playerchunkmap_entitytracker = (ChunkMap.TrackedEntity) objectiterator.next();
 -            Entity entity = playerchunkmap_entitytracker.entity;
-+            // keep the vanilla logic here - this is REQUIRED or else passengers and their vehicles disappear!
-+            // (and god knows what the leash thing is)
- 
+-
 -            if (entity != player && entity.chunkPosition().equals(chunk.getPos())) {
 -                playerchunkmap_entitytracker.updatePlayer(player);
 -                if (entity instanceof Mob && ((Mob) entity).getLeashHolder() != null) {
 -                    list.add(entity);
 -                }
-+            if (entity instanceof Mob && ((Mob)entity).getLeashHolder() != null) {
-+                list.add(entity);
-+            }
- 
+-
 -                if (!entity.getPassengers().isEmpty()) {
 -                    list1.add(entity);
 -                }
-+            if (!entity.getPassengers().isEmpty()) {
-+                list1.add(entity);
-             }
-         }
-+        // Paper end - optimise entity tracker
+-            }
+-        }
+-
+-        Iterator iterator;
+-        Entity entity1;
+-
+-        if (!list.isEmpty()) {
+-            iterator = list.iterator();
+-
+-            while (iterator.hasNext()) {
+-                entity1 = (Entity) iterator.next();
+-                player.connection.send(new ClientboundSetEntityLinkPacket(entity1, ((Mob) entity1).getLeashHolder()));
+-            }
+-        }
+-
+-        if (!list1.isEmpty()) {
+-            iterator = list1.iterator();
+-
+-            while (iterator.hasNext()) {
+-                entity1 = (Entity) iterator.next();
+-                player.connection.send(new ClientboundSetPassengersPacket(entity1));
+-            }
+-        }
++        // Paper - no longer needed - this was used to account for clients bugging out since they needed a chunk to store entities, but they no longer need a chunk
  
-         Iterator iterator;
-         Entity entity1;
+     }
+ 
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.lastSectionPos = SectionPos.of((EntityAccess) entity);
          }
@@ -292,9 +299,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.server.level.ServerPlayer;
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-     }
-     // Paper end
  
+     public boolean updatingSectionStatus = false;
+     // Paper end
 +    // Paper start - optimise entity tracking
 +    final org.spigotmc.TrackingRange.TrackingRangeType trackingRangeType = org.spigotmc.TrackingRange.getTrackingRangeType(this);
 +
@@ -327,10 +334,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return chunkMap.playerEntityTrackerTrackMaps[type.ordinal()].getObjectsInRange(MCUtil.getCoordinateKey(this));
 +    }
 +    // Paper end - optimise entity tracking
-+
+ 
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
-         this.passengers = ImmutableList.of();
 diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/TrackingRange.java

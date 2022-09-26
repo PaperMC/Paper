@@ -1,5 +1,5 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Spottedleaf <spottedleaf@spottedleaf.dev>
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 4 May 2020 10:06:24 -0700
 Subject: [PATCH] Highly optimise single and multi-AABB VoxelShapes and
  collisions
@@ -1497,8 +1497,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour {
-             return this.conditionallyFullOpaque;
-         }
+         protected boolean isTicking;
+         protected FluidState fluid;
          // Paper end
 +        // Paper start
 +        private long blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_SPECIAL_BLOCK;
@@ -1511,10 +1511,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          public void initCache() {
              this.fluid = this.getBlock().getFluidState(this.asState()); // Paper - moved from getFluid()
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour {
-             }
              this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
-             this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque() ? -1 : this.cache.lightBlock; // Paper - cache opacity for light
--
+             this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque() ? -1 : this.cache.lightBlock; // Paper - starlight - cache opacity for light
+ 
 +            // Paper start
 +            if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(this)) {
 +                this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_SPECIAL_BLOCK;

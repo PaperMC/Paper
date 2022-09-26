@@ -1048,29 +1048,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         completablefuture1.thenAcceptAsync((either) -> {
-             either.ifLeft((chunk) -> {
-                 this.tickingGenerated.getAndIncrement();
--                MutableObject<ClientboundLevelChunkWithLightPacket> mutableobject = new MutableObject();
-+                MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> mutableobject = new MutableObject<>(); // Paper - Anti-Xray - Bypass
- 
-                 this.getPlayers(chunkcoordintpair, false).forEach((entityplayer) -> {
-                     this.playerLoadedChunk(entityplayer, mutableobject, chunk);
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             while (objectiterator.hasNext()) {
-                 ChunkHolder playerchunk = (ChunkHolder) objectiterator.next();
-                 ChunkPos chunkcoordintpair = playerchunk.getPos();
--                MutableObject<ClientboundLevelChunkWithLightPacket> mutableobject = new MutableObject();
-+                MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> mutableobject = new MutableObject<>(); // Paper - Anti-Xray - Bypass
- 
-                 this.getPlayers(chunkcoordintpair, false).forEach((entityplayer) -> {
-                     SectionPos sectionposition = entityplayer.getLastSectionPos();
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      }
  
--    protected void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<ClientboundLevelChunkWithLightPacket> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) {
-+    protected void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - Anti-Xray - Bypass
+-    public void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<ClientboundLevelChunkWithLightPacket> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - public
++    public void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - public // Paper - Anti-Xray - Bypass
          if (player.level == this.level) {
              if (newWithinViewDistance && !oldWithinViewDistance) {
                  ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos.toLong());
@@ -1205,9 +1187,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public LevelChunk(Level world, ChunkPos pos, UpgradeData upgradeData, LevelChunkTicks<Block> blockTickScheduler, LevelChunkTicks<Fluid> fluidTickScheduler, long inhabitedTime, @Nullable LevelChunkSection[] sectionArrayInitializer, @Nullable LevelChunk.PostLoadProcessor entityLoader, @Nullable BlendingData blendingData) {
 -        super(pos, upgradeData, world, world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), inhabitedTime, sectionArrayInitializer, blendingData);
 +        super(pos, upgradeData, world, net.minecraft.server.MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), inhabitedTime, sectionArrayInitializer, blendingData); // Paper - Anti-Xray - The world isn't ready yet, use server singleton for registry
-         this.tickersInLevel = Maps.newHashMap();
-         this.clientLightReady = false;
-         this.level = (ServerLevel) world; // CraftBukkit - type
+         // Paper start - rewrite light engine
+         this.setBlockNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
+         this.setSkyNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
@@ -1560,7 +1542,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                  List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
-                 if (playersInRange.isEmpty()) return;
+                 if (playersInRange.isEmpty()) return true; // Paper - rewrite player chunk loader
  
 -                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null, true);
 +                // Paper start - Anti-Xray - Bypass
@@ -1575,8 +1557,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }));
 +                    // Paper end
                  }
-             });
-         });
+         // Paper - rewrite player chunk loader
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java

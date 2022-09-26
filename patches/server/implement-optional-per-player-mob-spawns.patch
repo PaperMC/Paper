@@ -261,20 +261,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      int viewDistance;
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
  
-     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
-     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
+     // Paper - rewrite chunk system
+ 
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
-+            this.playerMobDistanceMap.add(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
++            this.playerMobDistanceMap.add(player, chunkX, chunkZ, net.minecraft.server.ChunkSystem.getTickViewDistance(player));
 +        }
 +        // Paper end - per player mob spawning
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
+         this.playerChunkManager.removePlayer(player); // Paper - replace chunk loader
  
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
@@ -284,12 +285,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      void updateMaps(ServerPlayer player) {
-         int chunkX = MCUtil.getChunkCoordinate(player.getX());
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
+         this.playerChunkManager.updatePlayer(player); // Paper - replace chunk loader
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
-+            this.playerMobDistanceMap.update(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
++            this.playerMobDistanceMap.update(player, chunkX, chunkZ, net.minecraft.server.ChunkSystem.getTickViewDistance(player));
 +        }
 +        // Paper end - per player mob spawning
      }
@@ -304,9 +306,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      protected ChunkGenerator generator() {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         }
+         });
      }
-     // Paper end
+ 
 +    // Paper start
 +    public void updatePlayerMobTypeMap(Entity entity) {
 +        if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
@@ -331,26 +333,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return entityPlayer.mobCounts[mobCategory.ordinal()];
 +    }
 +    // Paper end
- 
++
      private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
-diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/DistanceManager.java
-+++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -0,0 +0,0 @@ public abstract class DistanceManager {
- 
-     }
- 
-+    // Paper start
-+    public int getSimulationDistance() {
-+        return this.simulationDistance;
-+    }
-+    // Paper end
-+
-     public int getNaturalSpawnChunkCount() {
-         this.naturalSpawnChunkCounter.runAllUpdates();
-         return this.naturalSpawnChunkCounter.chunks.size();
+         double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
@@ -397,8 +383,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.maxHealthCache = this.getMaxHealth();
 +        this.cachedSingleMobDistanceMap = new com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
      }
-     // Paper start - Chunk priority
-     public BlockPos getPointInFront(double inFront) {
+ 
+     // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java

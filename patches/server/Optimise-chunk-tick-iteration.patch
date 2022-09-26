@@ -1,5 +1,5 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Spottedleaf <spottedleaf@spottedleaf.dev>
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Thu, 7 May 2020 05:48:54 -0700
 Subject: [PATCH] Optimise chunk tick iteration
 
@@ -75,14 +75,23 @@ diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
+ import org.bukkit.entity.Player;
+ // CraftBukkit end
+ 
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
++
+ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider {
+ 
+     private static final byte CHUNK_TYPE_REPLACEABLE = -1;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
 +    public final ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new ReferenceOpenHashSet<>();
  
-     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
-     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
+     // Paper - rewrite chunk system
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
@@ -147,14 +156,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  ChunkPos chunkcoordintpair = chunk1.getPos();
  
 -                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
-+                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
++                if ((true || this.level.isNaturalSpawningAllowed(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning // Paper - the chunk is known ticking
                      chunk1.incrementInhabitedTime(j);
 -                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning
 +                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
                          NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                      }
  
-@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+-                    if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
++                    if (true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) { // Paper - the chunk is known ticking
                          this.level.tickChunk(chunk1, k);
                      }
                  }

@@ -856,6 +856,137 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.map.values().iterator();
 +    }
 +}
+diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java b/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.maplist;
++
++import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
++import java.util.Arrays;
++import java.util.Iterator;
++import java.util.NoSuchElementException;
++
++/**
++ * @author Spottedleaf
++ */
++public final class ReferenceList<E> implements Iterable<E> {
++
++    protected final Reference2IntOpenHashMap<E> referenceToIndex = new Reference2IntOpenHashMap<>(2, 0.8f);
++    {
++        this.referenceToIndex.defaultReturnValue(Integer.MIN_VALUE);
++    }
++
++    protected static final Object[] EMPTY_LIST = new Object[0];
++
++    protected Object[] references = EMPTY_LIST;
++    protected int count;
++
++    public int size() {
++        return this.count;
++    }
++
++    public boolean contains(final E obj) {
++        return this.referenceToIndex.containsKey(obj);
++    }
++
++    public boolean remove(final E obj) {
++        final int index = this.referenceToIndex.removeInt(obj);
++        if (index == Integer.MIN_VALUE) {
++            return false;
++        }
++
++        // move the object at the end to this index
++        final int endIndex = --this.count;
++        final E end = (E)this.references[endIndex];
++        if (index != endIndex) {
++            // not empty after this call
++            this.referenceToIndex.put(end, index); // update index
++        }
++        this.references[index] = end;
++        this.references[endIndex] = null;
++
++        return true;
++    }
++
++    public boolean add(final E obj) {
++        final int count = this.count;
++        final int currIndex = this.referenceToIndex.putIfAbsent(obj, count);
++
++        if (currIndex != Integer.MIN_VALUE) {
++            return false; // already in this list
++        }
++
++        Object[] list = this.references;
++
++        if (list.length == count) {
++            // resize required
++            list = this.references = Arrays.copyOf(list, (int)Math.max(4L, count * 2L)); // overflow results in negative
++        }
++
++        list[count] = obj;
++        this.count = count + 1;
++
++        return true;
++    }
++
++    public E getChecked(final int index) {
++        if (index < 0 || index >= this.count) {
++            throw new IndexOutOfBoundsException("Index: " + index + " is out of bounds, size: " + this.count);
++        }
++        return (E)this.references[index];
++    }
++
++    public E getUnchecked(final int index) {
++        return (E)this.references[index];
++    }
++
++    public Object[] getRawData() {
++        return this.references;
++    }
++
++    public void clear() {
++        this.referenceToIndex.clear();
++        Arrays.fill(this.references, 0, this.count, null);
++        this.count = 0;
++    }
++
++    @Override
++    public Iterator<E> iterator() {
++        return new Iterator<>() {
++            private E lastRet;
++            private int current;
++
++            @Override
++            public boolean hasNext() {
++                return this.current < ReferenceList.this.count;
++            }
++
++            @Override
++            public E next() {
++                if (this.current >= ReferenceList.this.count) {
++                    throw new NoSuchElementException();
++                }
++                return this.lastRet = (E)ReferenceList.this.references[this.current++];
++            }
++
++            @Override
++            public void remove() {
++                final E lastRet = this.lastRet;
++
++                if (lastRet == null) {
++                    throw new IllegalStateException();
++                }
++                this.lastRet = null;
++
++                ReferenceList.this.remove(lastRet);
++                --this.current;
++            }
++        };
++    }
++}
 diff --git a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -4544,6 +4675,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.server.level.ChunkHolder;
 +import net.minecraft.server.level.ChunkMap;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.server.level.TicketType;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.level.ChunkPos;
@@ -4775,28 +4907,52 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public static void onChunkBorder(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkBorder(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.playerChunk = holder;
 +    }
 +
-+    public static void onChunkNotBorder(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkNotBorder(final LevelChunk chunk, final ChunkHolder holder) {
 +
 +    }
 +
-+    public static void onChunkTicking(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkTicking(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.level.getChunkSource().tickingChunks.add(chunk);
 +    }
 +
-+    public static void onChunkNotTicking(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkNotTicking(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.level.getChunkSource().tickingChunks.remove(chunk);
 +    }
 +
-+    public static void onChunkEntityTicking(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkEntityTicking(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.level.getChunkSource().entityTickingChunks.add(chunk);
 +    }
 +
-+    public static void onChunkNotEntityTicking(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkNotEntityTicking(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.level.getChunkSource().entityTickingChunks.remove(chunk);
++    }
++
++    public static ChunkHolder getUnloadingChunkHolder(final ServerLevel level, final int chunkX, final int chunkZ) {
++        return level.chunkSource.chunkMap.getUnloadingChunkHolder(chunkX, chunkZ);
++    }
++
++    public static int getSendViewDistance(final ServerPlayer player) {
++        return getLoadViewDistance(player);
++    }
++
++    public static int getLoadViewDistance(final ServerPlayer player) {
++        final ServerLevel level = player.getLevel();
++        if (level == null) {
++            return Bukkit.getViewDistance() + 1;
++        }
++        return level.chunkSource.chunkMap.getEffectiveViewDistance() + 1;
++    }
++
++    public static int getTickViewDistance(final ServerPlayer player) {
++        final ServerLevel level = player.getLevel();
++        if (level == null) {
++            return Bukkit.getSimulationDistance();
++        }
++        return level.chunkSource.chunkMap.distanceManager.getSimulationDistance();
 +    }
 +
 +    private ChunkSystem() {
@@ -5905,6 +6061,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      protected void purgeStaleTickets() {
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
+         this.playerTicketManager.updateViewDistance(viewDistance);
+     }
+ 
++    // Paper start
++    public int getSimulationDistance() {
++        return this.simulationDistance;
++    }
++    // Paper end
++
+     public void updateSimulationDistance(int simulationDistance) {
+         if (simulationDistance != this.simulationDistance) {
+             this.simulationDistance = simulationDistance;
+@@ -0,0 +0,0 @@ public abstract class DistanceManager {
      }
  
      public void removeTicketsOnClosing() {
@@ -6339,6 +6508,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
      // CraftBukkit end
  
++    public boolean isRealPlayer; // Paper
 +    public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
 +
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, @Nullable ProfilePublicKey publicKey) {
@@ -6396,6 +6566,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public BlockState getBlockState(BlockPos pos) {
          return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+     }
+ 
+     public void placeNewPlayer(Connection connection, ServerPlayer player) {
++        player.isRealPlayer = true; // Paper
+         GameProfile gameprofile = player.getGameProfile();
+         GameProfileCache usercache = this.server.getProfileCache();
+         Optional<GameProfile> optional = usercache.get(gameprofile.getId());
 diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
@@ -6864,7 +7046,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit end
  
 +    // Paper start
-+    public final com.destroystokyo.paper.util.maplist.EntityList entities = new com.destroystokyo.paper.util.maplist.EntityList();
 +    public @Nullable ChunkHolder playerChunk;
 +
 +    static final int NEIGHBOUR_CACHE_RADIUS = 3;

@@ -41,9 +41,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static void onEntityPreAdd(final ServerLevel level, final Entity entity) {
 -
++        // Paper start - duplicate uuid resolving
 +        if (net.minecraft.server.level.ChunkMap.checkDupeUUID(level, entity)) {
 +            return;
 +        }
++        if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level.paperConfig().entities.spawning.duplicateUuid.mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.NOTHING) {
++            if (((Entity) entity).addedToWorldStack != null) {
++                ((Entity) entity).addedToWorldStack.printStackTrace();
++            }
++            net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((Entity) entity).printStackTrace();
++        }
++        // Paper end - duplicate uuid resolving
      }
  
      public static void onChunkHolderCreate(final ServerLevel level, final ChunkHolder holder) {
@@ -60,7 +68,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }));
              // CraftBukkit end
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         });
+         throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
 +    // Paper start
@@ -107,32 +115,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
      public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> prepareTickingChunk(ChunkHolder holder) {
-         ChunkPos chunkcoordintpair = holder.getPos();
-         CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkRangeFuture(chunkcoordintpair, 1, (i) -> {
-diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-+++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-@@ -0,0 +0,0 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
- 
-     private boolean addEntityUuid(T entity) {
-         if (!this.knownUuids.add(entity.getUUID())) {
-+            // Paper start
-+            T conflict = this.visibleEntityStorage.getEntity(entity.getUUID());
-+            if (conflict != null && ((Entity) conflict).isRemoved()) {
-+                stopTracking(conflict); // remove the existing entity
-+                return true;
-+            }
-+            // Paper end
-             PersistentEntitySectionManager.LOGGER.warn("UUID of added entity already exists: {}", entity);
-+            // Paper start
-+            if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level.paperConfig().entities.spawning.duplicateUuid.mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.NOTHING) {
-+                if (((Entity) entity).addedToWorldStack != null) {
-+                    ((Entity) entity).addedToWorldStack.printStackTrace();
-+                }
-+                net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((Entity) entity).printStackTrace();
-+            }
-+            // Paper end
-             return false;
-         } else {
-             return true;
+         throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }

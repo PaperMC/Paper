@@ -92,7 +92,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-         Thread thread = new Thread(() -> {
+         Thread thread = new io.papermc.paper.util.TickThread(() -> { // Paper - rewrite chunk system
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      // CraftBukkit start
@@ -127,7 +127,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Spigot end
 +        // Paper start - move final shutdown items here
 +        LOGGER.info("Flushing Chunk IO");
-         com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.close(true, true); // Paper
+         io.papermc.paper.chunk.system.io.RegionFileIOThread.close(true); // Paper // Paper - rewrite chunk system
 +        LOGGER.info("Closing Thread Pool");
 +        Util.shutdownExecutors(); // Paper
 +        LOGGER.info("Closing Server");
@@ -268,18 +268,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          SkullBlockEntity.clear();
      }
  
-diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ChunkMap.java
-+++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             MutableBoolean mutableboolean = new MutableBoolean();
- 
-             do {
-+                boolean isShuttingDown = level.getServer().hasStopped(); // Paper
-                 mutableboolean.setFalse();
-                 list.stream().map((playerchunk) -> {
-                     CompletableFuture completablefuture;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -329,19 +317,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          // Paper start - Prevent tile entity and entity crashes
                          final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
                          net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
- 
-     @Override
-     public boolean isPrimaryThread() {
--        return Thread.currentThread().equals(console.serverThread); // Paper - Fix issues with detecting main thread properly
-+        return Thread.currentThread().equals(console.serverThread) || Thread.currentThread().equals(net.minecraft.server.MinecraftServer.getServer().shutdownThread); // Paper - Fix issues with detecting main thread properly, the only time Watchdog will be used is during a crash shutdown which is a "try our best" scenario
-     }
- 
-     // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
@@ -509,14 +484,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -0,0 +0,0 @@ import org.bukkit.Bukkit;
- public class WatchdogThread extends Thread
+ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Paper - rewrite chunk system
  {
  
 +    public static final boolean DISABLE_WATCHDOG = Boolean.getBoolean("disable.watchdog"); // Paper
      private static WatchdogThread instance;
      private long timeoutTime;
      private boolean restart;
-@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
      {
          if ( WatchdogThread.instance == null )
          {
@@ -524,7 +499,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              WatchdogThread.instance = new WatchdogThread( timeoutTime * 1000L, restart );
              WatchdogThread.instance.start();
          } else
-@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
              // Paper start
              Logger log = Bukkit.getServer().getLogger();
              long currentTime = WatchdogThread.monotonicMillis();
@@ -541,16 +516,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  lastEarlyWarning = currentTime;
                  if (isLongTimeout) {
                  // Paper end
-@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
-                 log.log( Level.SEVERE, "------------------------------" );
-                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
-                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
--                WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
-+                WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( server.serverThread.getId(), Integer.MAX_VALUE ), log );
-                 log.log( Level.SEVERE, "------------------------------" );
-                 //
-                 // Paper start - Only print full dump on long timeouts
-@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
  
                  if ( isLongTimeout )
                  {

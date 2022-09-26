@@ -84,7 +84,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public ChunkAccess getUnloadingChunk(int chunkX, int chunkZ) {
-+        ChunkHolder chunkHolder = this.pendingUnloads.get(ChunkPos.asLong(chunkX, chunkZ));
++        ChunkHolder chunkHolder = net.minecraft.server.ChunkSystem.getUnloadingChunkHolder(this.level, chunkX, chunkZ);
 +        return chunkHolder == null ? null : chunkHolder.getAvailableChunkNow();
 +    }
 +    // Paper end
@@ -92,50 +92,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
          // Spigot start
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
-diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-@@ -0,0 +0,0 @@ public class ChunkStatus {
-         return this.chunkType;
-     }
- 
-+    // Paper start
-+    public static ChunkStatus getStatus(String name) {
-+        try {
-+            // We need this otherwise we return EMPTY for invalid names
-+            ResourceLocation key = new ResourceLocation(name);
-+            return Registry.CHUNK_STATUS.getOptional(key).orElse(null);
-+        } catch (Exception ex) {
-+            return null; // invalid name
-+        }
-+    }
-+    // Paper end
-     public static ChunkStatus byName(String id) {
-         return (ChunkStatus) Registry.CHUNK_STATUS.get(ResourceLocation.tryParse(id));
-     }
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -0,0 +0,0 @@ public class ChunkSerializer {
-         }));
-     }
- 
-+    // Paper start
-+    public static @Nullable ChunkStatus getStatus(@Nullable CompoundTag compound) {
-+        if (compound == null) {
-+            return null;
-+        }
-+
-+        // Note: Copied from below
-+        return ChunkStatus.getStatus(compound.getString("Status"));
-+    }
-+    // Paper end
-+
-     public static ChunkStatus.ChunkType getChunkTypeFromTag(@Nullable CompoundTag nbt) {
-         return nbt != null ? ChunkStatus.byName(nbt.getString("Status")).getChunkType() : ChunkStatus.ChunkType.PROTOCHUNK;
-     }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
