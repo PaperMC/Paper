@@ -5,7 +5,7 @@ Subject: [PATCH] Rewrite chunk system
 
 
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
-index ef8dcbb6bbc0769e9ccfdadb05e6a46c070eda98..f6dfaaa0ccd8caeb4bd4b94254aebe7e96732f12 100644
+index 9a5fa60cb8156fe254a123e237d957ccb82f7195..0f7d36933e34e1d1b9dd27d8b0c35ff883818526 100644
 --- a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
 +++ b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
 @@ -41,14 +41,14 @@ public final class StarLightInterface {
@@ -15671,7 +15671,7 @@ index 99d44faab5b5da244fdc170c73d73723c174c8fd..7c709be5d43bcd45064c79e84d5b2fff
  
      private final class EntityCallbacks implements LevelCallback<Entity> {
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index 89f3380632b098aaf95d68a386bc7e72c8c27f5c..3a2e4d42a8509f8f5a0e2c34e1f6568fce82cd80 100644
+index 3fb8d2626a1ef097c05fa5810bc1e051b4a6ad44..63d1a121a97a8dbc9b640d21580b084898a232bf 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 @@ -36,15 +36,14 @@ import net.minecraft.world.level.chunk.ChunkStatus;
@@ -15713,18 +15713,7 @@ index 89f3380632b098aaf95d68a386bc7e72c8c27f5c..3a2e4d42a8509f8f5a0e2c34e1f6568f
              this.theLightEngine.relightChunks(chunks, (ChunkPos chunkPos) -> {
                  chunkLightCallback.accept(chunkPos);
                  ((java.util.concurrent.Executor)((ServerLevel)this.theLightEngine.getWorld()).getChunkSource().mainThreadProcessor).execute(() -> {
-@@ -160,9 +158,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
-             for (int dz = -1; dz <= 1; ++dz) {
-                 ChunkHolder neighbour = world.getChunkSource().chunkMap.getUpdatingChunkIfPresent(CoordinateUtils.getChunkKey(dx + chunkX, dz + chunkZ));
-                 if (neighbour != null) {
--                    neighbour.chunkToSave = neighbour.chunkToSave.thenCombine(updateFuture, (final ChunkAccess curr, final Void ignore) -> {
--                        return curr;
--                    });
-+                    // Paper - rewrite chunk system - not needed, light ticket will keep these chunks loaded
-                 }
-             }
-         }
-@@ -283,17 +279,11 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -269,17 +267,11 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
      private void addTask(int x, int z, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
@@ -15744,7 +15733,7 @@ index 89f3380632b098aaf95d68a386bc7e72c8c27f5c..3a2e4d42a8509f8f5a0e2c34e1f6568f
      }
  
      @Override
-@@ -351,74 +341,15 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -337,74 +329,15 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
                  }
              });
          }
