@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 19 Aug 2020 05:05:54 +0100
+Subject: [PATCH] Buffer joins to world
+
+This patch buffers the number of logins which will attempt to join
+the world per tick, this attempts to reduce the impact that join floods
+has on the server
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index b8e35f493458ba9e072953dffe6b2429f1d821ec..c1a59f54f537395bebf6d78459beef3013ea67d9 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -425,8 +425,23 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+     // Paper end
+ 
++    private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper
++    private static int joinAttemptsThisTick; // Paper
++    private static int currTick; // Paper
+     public void tick() {
+         this.flushQueue();
++        // Paper start
++        if (currTick != net.minecraft.server.MinecraftServer.currentTick) {
++            currTick = net.minecraft.server.MinecraftServer.currentTick;
++            joinAttemptsThisTick = 0;
++        }
++        // Paper end
++        if (this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl) {
++            if ( ((net.minecraft.server.network.ServerLoginPacketListenerImpl) this.packetListener).state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT // Paper
++                || (joinAttemptsThisTick++ < MAX_PER_TICK)) { // Paper - limit the number of joins which can be processed each tick
++                ((net.minecraft.server.network.ServerLoginPacketListenerImpl) this.packetListener).tick();
++            } // Paper
++        }
+         PacketListener packetlistener = this.packetListener;
+ 
+         if (packetlistener instanceof TickablePacketListener) {

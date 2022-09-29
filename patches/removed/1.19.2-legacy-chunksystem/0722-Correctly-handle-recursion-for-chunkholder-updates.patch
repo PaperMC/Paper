@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 21 Mar 2021 17:32:47 -0700
+Subject: [PATCH] Correctly handle recursion for chunkholder updates
+
+If a chunk ticket level is brought up while unloading it would
+cause a recursive call which would handle the increase but then
+the caller would think the chunk would be unloaded.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+index c4046b364d1896b781e23c92b241ec73c239d3a0..9c0bf31c3c362632241c95338a3f8d67bbd4fdc5 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
++++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+@@ -472,8 +472,10 @@ public class ChunkHolder {
+         playerchunkmap.onFullChunkStatusChange(this.pos, playerchunk_state);
+     }
+ 
++    protected long updateCount; // Paper - correctly handle recursion
+     protected void updateFutures(ChunkMap chunkStorage, Executor executor) {
+         io.papermc.paper.util.TickThread.ensureTickThread("Async ticket level update"); // Paper
++        long updateCount = ++this.updateCount; // Paper - correctly handle recursion
+         ChunkStatus chunkstatus = ChunkHolder.getStatus(this.oldTicketLevel);
+         ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
+         boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
+@@ -515,6 +517,12 @@ public class ChunkHolder {
+ 
+             // Run callback right away if the future was already done
+             chunkStorage.callbackExecutor.run();
++            // Paper start - correctly handle recursion
++            if (this.updateCount != updateCount) {
++                // something else updated ticket level for us.
++                return;
++            }
++            // Paper end - correctly handle recursion
+         }
+         // CraftBukkit end
+ 
