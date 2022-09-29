@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mezz <tehgeek@gmail.com>
+Date: Wed, 9 Aug 2017 17:51:22 -0500
+Subject: [PATCH] Fix MC-117075: TE Unload Lag Spike
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 1954a93a1f566c1c79cdc2e0eb1b41141d6b5fde..6cc047624746d33ed971ec2dc8f64490bdcaeea8 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -696,6 +696,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         // Spigot start
+         // Iterator iterator = this.blockEntityTickers.iterator();
+         int tilesThisCycle = 0;
++        var toRemove = new it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet<TickingBlockEntity>(net.minecraft.Util.identityStrategy()); // Paper - use removeAll
++        toRemove.add(null);
+         for (tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Paper - Disable tick limiters
+             this.tileTickPosition = (this.tileTickPosition < this.blockEntityTickers.size()) ? this.tileTickPosition : 0;
+             TickingBlockEntity tickingblockentity = (TickingBlockEntity) this.blockEntityTickers.get(tileTickPosition);
+@@ -703,7 +705,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             if (tickingblockentity == null) {
+                 this.getCraftServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
+                 tilesThisCycle--;
+-                this.blockEntityTickers.remove(this.tileTickPosition--);
+                 continue;
+             }
+             // Spigot end
+@@ -711,12 +712,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             if (tickingblockentity.isRemoved()) {
+                 // Spigot start
+                 tilesThisCycle--;
+-                this.blockEntityTickers.remove(this.tileTickPosition--);
++                toRemove.add(tickingblockentity); // Paper - use removeAll
+                 // Spigot end
+             } else if (this.shouldTickBlocksAt(tickingblockentity.getPos())) {
+                 tickingblockentity.tick();
+             }
+         }
++        this.blockEntityTickers.removeAll(toRemove);
+ 
+         timings.tileEntityTick.stopTiming(); // Spigot
+         this.tickingBlockEntities = false;

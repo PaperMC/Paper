@@ -856,6 +856,137 @@ index 0000000000000000000000000000000000000000..277cfd9d1e8fff5d9b5e534b75c3c516
 +        return this.map.values().iterator();
 +    }
 +}
+diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java b/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..190c5f0b02a3d99054704ae1afbffb3498ddffe1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java
+@@ -0,0 +1,125 @@
++package com.destroystokyo.paper.util.maplist;
++
++import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
++import java.util.Arrays;
++import java.util.Iterator;
++import java.util.NoSuchElementException;
++
++/**
++ * @author Spottedleaf
++ */
++public final class ReferenceList<E> implements Iterable<E> {
++
++    protected final Reference2IntOpenHashMap<E> referenceToIndex = new Reference2IntOpenHashMap<>(2, 0.8f);
++    {
++        this.referenceToIndex.defaultReturnValue(Integer.MIN_VALUE);
++    }
++
++    protected static final Object[] EMPTY_LIST = new Object[0];
++
++    protected Object[] references = EMPTY_LIST;
++    protected int count;
++
++    public int size() {
++        return this.count;
++    }
++
++    public boolean contains(final E obj) {
++        return this.referenceToIndex.containsKey(obj);
++    }
++
++    public boolean remove(final E obj) {
++        final int index = this.referenceToIndex.removeInt(obj);
++        if (index == Integer.MIN_VALUE) {
++            return false;
++        }
++
++        // move the object at the end to this index
++        final int endIndex = --this.count;
++        final E end = (E)this.references[endIndex];
++        if (index != endIndex) {
++            // not empty after this call
++            this.referenceToIndex.put(end, index); // update index
++        }
++        this.references[index] = end;
++        this.references[endIndex] = null;
++
++        return true;
++    }
++
++    public boolean add(final E obj) {
++        final int count = this.count;
++        final int currIndex = this.referenceToIndex.putIfAbsent(obj, count);
++
++        if (currIndex != Integer.MIN_VALUE) {
++            return false; // already in this list
++        }
++
++        Object[] list = this.references;
++
++        if (list.length == count) {
++            // resize required
++            list = this.references = Arrays.copyOf(list, (int)Math.max(4L, count * 2L)); // overflow results in negative
++        }
++
++        list[count] = obj;
++        this.count = count + 1;
++
++        return true;
++    }
++
++    public E getChecked(final int index) {
++        if (index < 0 || index >= this.count) {
++            throw new IndexOutOfBoundsException("Index: " + index + " is out of bounds, size: " + this.count);
++        }
++        return (E)this.references[index];
++    }
++
++    public E getUnchecked(final int index) {
++        return (E)this.references[index];
++    }
++
++    public Object[] getRawData() {
++        return this.references;
++    }
++
++    public void clear() {
++        this.referenceToIndex.clear();
++        Arrays.fill(this.references, 0, this.count, null);
++        this.count = 0;
++    }
++
++    @Override
++    public Iterator<E> iterator() {
++        return new Iterator<>() {
++            private E lastRet;
++            private int current;
++
++            @Override
++            public boolean hasNext() {
++                return this.current < ReferenceList.this.count;
++            }
++
++            @Override
++            public E next() {
++                if (this.current >= ReferenceList.this.count) {
++                    throw new NoSuchElementException();
++                }
++                return this.lastRet = (E)ReferenceList.this.references[this.current++];
++            }
++
++            @Override
++            public void remove() {
++                final E lastRet = this.lastRet;
++
++                if (lastRet == null) {
++                    throw new IllegalStateException();
++                }
++                this.lastRet = null;
++
++                ReferenceList.this.remove(lastRet);
++                --this.current;
++            }
++        };
++    }
++}
 diff --git a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..c89f6986eda5a132a948732ea1b6923370685317
@@ -4530,10 +4661,10 @@ index 207f1c1fc9d4451d27047bb8362bded8cd53e32f..021a26a6b1c258deffc26c035ab52a4e
                      } else {
 diff --git a/src/main/java/net/minecraft/server/ChunkSystem.java b/src/main/java/net/minecraft/server/ChunkSystem.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..83dc09f6526206690c474b50a7a6e71cefc93ab4
+index 0000000000000000000000000000000000000000..c59fca05484c30b28e883f5b5dde0362f294b517
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/ChunkSystem.java
-@@ -0,0 +1,269 @@
+@@ -0,0 +1,294 @@
 +package net.minecraft.server;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -4544,6 +4675,7 @@ index 0000000000000000000000000000000000000000..83dc09f6526206690c474b50a7a6e71c
 +import net.minecraft.server.level.ChunkHolder;
 +import net.minecraft.server.level.ChunkMap;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.server.level.TicketType;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.level.ChunkPos;
@@ -4775,28 +4907,52 @@ index 0000000000000000000000000000000000000000..83dc09f6526206690c474b50a7a6e71c
 +        }
 +    }
 +
-+    public static void onChunkBorder(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkBorder(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.playerChunk = holder;
 +    }
 +
-+    public static void onChunkNotBorder(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkNotBorder(final LevelChunk chunk, final ChunkHolder holder) {
 +
 +    }
 +
-+    public static void onChunkTicking(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkTicking(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.level.getChunkSource().tickingChunks.add(chunk);
 +    }
 +
-+    public static void onChunkNotTicking(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkNotTicking(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.level.getChunkSource().tickingChunks.remove(chunk);
 +    }
 +
-+    public static void onChunkEntityTicking(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkEntityTicking(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.level.getChunkSource().entityTickingChunks.add(chunk);
 +    }
 +
-+    public static void onChunkNotEntityTicking(LevelChunk chunk, ChunkHolder holder) {
++    public static void onChunkNotEntityTicking(final LevelChunk chunk, final ChunkHolder holder) {
 +        chunk.level.getChunkSource().entityTickingChunks.remove(chunk);
++    }
++
++    public static ChunkHolder getUnloadingChunkHolder(final ServerLevel level, final int chunkX, final int chunkZ) {
++        return level.chunkSource.chunkMap.getUnloadingChunkHolder(chunkX, chunkZ);
++    }
++
++    public static int getSendViewDistance(final ServerPlayer player) {
++        return getLoadViewDistance(player);
++    }
++
++    public static int getLoadViewDistance(final ServerPlayer player) {
++        final ServerLevel level = player.getLevel();
++        if (level == null) {
++            return Bukkit.getViewDistance() + 1;
++        }
++        return level.chunkSource.chunkMap.getEffectiveViewDistance() + 1;
++    }
++
++    public static int getTickViewDistance(final ServerPlayer player) {
++        final ServerLevel level = player.getLevel();
++        if (level == null) {
++            return Bukkit.getSimulationDistance();
++        }
++        return level.chunkSource.chunkMap.distanceManager.getSimulationDistance();
 +    }
 +
 +    private ChunkSystem() {
@@ -5882,7 +6038,7 @@ index 91a9b9ff0d7821a2261e7137fb1b3989ba096b88..1fbe1b6de925f71763f79fe3d2371b70
  
          @Override
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index 6c98676827ceb6999f340fa2b06a0b3e1cb4cae2..f08089b8672454acf8c2309e850466b335248692 100644
+index 6c98676827ceb6999f340fa2b06a0b3e1cb4cae2..fbe62a31ab199d83a1db0a4e0b1a813824e6f2c2 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
 @@ -60,8 +60,9 @@ public abstract class DistanceManager {
@@ -5904,7 +6060,20 @@ index 6c98676827ceb6999f340fa2b06a0b3e1cb4cae2..f08089b8672454acf8c2309e850466b3
      }
  
      protected void purgeStaleTickets() {
-@@ -382,7 +384,7 @@ public abstract class DistanceManager {
+@@ -319,6 +321,12 @@ public abstract class DistanceManager {
+         this.playerTicketManager.updateViewDistance(viewDistance);
+     }
+ 
++    // Paper start
++    public int getSimulationDistance() {
++        return this.simulationDistance;
++    }
++    // Paper end
++
+     public void updateSimulationDistance(int simulationDistance) {
+         if (simulationDistance != this.simulationDistance) {
+             this.simulationDistance = simulationDistance;
+@@ -382,7 +390,7 @@ public abstract class DistanceManager {
      }
  
      public void removeTicketsOnClosing() {
@@ -6332,19 +6501,20 @@ index aa396df025115c7fd866cbc63a44c2c17abfde84..b2f79a0c9caa6783816afc36531c9437
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // Holder holder = worlddimension.typeHolder(); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index e2ed77972fcec43fef5f3af044479849f78901a9..84564ca128d2dfc79c0b5a13b699cf6fc80bdea7 100644
+index e2ed77972fcec43fef5f3af044479849f78901a9..bdad7b404067ab65d85d1628db9009896a43a052 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -243,6 +243,8 @@ public class ServerPlayer extends Player {
+@@ -243,6 +243,9 @@ public class ServerPlayer extends Player {
      public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
      // CraftBukkit end
  
++    public boolean isRealPlayer; // Paper
 +    public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
 +
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, @Nullable ProfilePublicKey publicKey) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile, publicKey);
          this.chatVisibility = ChatVisiblity.FULL;
-@@ -306,6 +308,8 @@ public class ServerPlayer extends Player {
+@@ -306,6 +309,8 @@ public class ServerPlayer extends Player {
          this.maxUpStep = 1.0F;
          this.fudgeSpawnLocation(world);
  
@@ -6396,6 +6566,18 @@ index 96ab71f72b43758b86f8990a74a238ad68e10890..32d6e4b194c3c4eca7009059f8d18589
      @Override
      public BlockState getBlockState(BlockPos pos) {
          return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 6987bee4bf2c1f3d47ffdd5329f6c0c63a2962a5..474843e57028ade5ef36ac5cda4924dbd95f6fe4 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -175,6 +175,7 @@ public abstract class PlayerList {
+     }
+ 
+     public void placeNewPlayer(Connection connection, ServerPlayer player) {
++        player.isRealPlayer = true; // Paper
+         GameProfile gameprofile = player.getGameProfile();
+         GameProfileCache usercache = this.server.getProfileCache();
+         Optional<GameProfile> optional = usercache.get(gameprofile.getId());
 diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 index 288fdbef407d11ab430d5d7026dfad148c3c1065..6fefa619299d3202158490630d62c16aef71e831 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
@@ -6848,7 +7030,7 @@ index d484aaae8614e78fdb984b26304b1de8b649e4bd..fabc7df600c89b01d97a76eb0b1206a3
          this.levelHeightAccessor = heightLimitView;
          this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index e518e8e417f2eee43ff0847c24b6858054e7c9a9..ab986a3d1dc2f605b5b84d2b62cd97007e3a2c22 100644
+index e518e8e417f2eee43ff0847c24b6858054e7c9a9..bcd0287d99eeba2b3534b4a298dc4b79b293ec58 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -25,6 +25,7 @@ import net.minecraft.nbt.CompoundTag;
@@ -6859,12 +7041,11 @@ index e518e8e417f2eee43ff0847c24b6858054e7c9a9..ab986a3d1dc2f605b5b84d2b62cd9700
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.util.profiling.ProfilerFiller;
  import net.minecraft.world.entity.Entity;
-@@ -124,6 +125,110 @@ public class LevelChunk extends ChunkAccess {
+@@ -124,6 +125,109 @@ public class LevelChunk extends ChunkAccess {
  
      // CraftBukkit end
  
 +    // Paper start
-+    public final com.destroystokyo.paper.util.maplist.EntityList entities = new com.destroystokyo.paper.util.maplist.EntityList();
 +    public @Nullable ChunkHolder playerChunk;
 +
 +    static final int NEIGHBOUR_CACHE_RADIUS = 3;
@@ -6970,7 +7151,7 @@ index e518e8e417f2eee43ff0847c24b6858054e7c9a9..ab986a3d1dc2f605b5b84d2b62cd9700
      public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
          this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
          Iterator iterator = protoChunk.getBlockEntities().values().iterator();
-@@ -233,6 +338,18 @@ public class LevelChunk extends ChunkAccess {
+@@ -233,6 +337,18 @@ public class LevelChunk extends ChunkAccess {
          }
      }
  
@@ -6989,7 +7170,7 @@ index e518e8e417f2eee43ff0847c24b6858054e7c9a9..ab986a3d1dc2f605b5b84d2b62cd9700
      @Override
      public FluidState getFluidState(BlockPos pos) {
          return this.getFluidState(pos.getX(), pos.getY(), pos.getZ());
-@@ -354,6 +471,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -354,6 +470,7 @@ public class LevelChunk extends ChunkAccess {
          return this.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
      }
  
@@ -6997,7 +7178,7 @@ index e518e8e417f2eee43ff0847c24b6858054e7c9a9..ab986a3d1dc2f605b5b84d2b62cd9700
      @Nullable
      public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
          // CraftBukkit start
-@@ -535,7 +653,25 @@ public class LevelChunk extends ChunkAccess {
+@@ -535,7 +652,25 @@ public class LevelChunk extends ChunkAccess {
  
      // CraftBukkit start
      public void loadCallback() {
@@ -7023,7 +7204,7 @@ index e518e8e417f2eee43ff0847c24b6858054e7c9a9..ab986a3d1dc2f605b5b84d2b62cd9700
          if (server != null) {
              /*
               * If it's a new world, the first few chunks are generated inside
-@@ -574,6 +710,22 @@ public class LevelChunk extends ChunkAccess {
+@@ -574,6 +709,22 @@ public class LevelChunk extends ChunkAccess {
          server.getPluginManager().callEvent(unloadEvent);
          // note: saving can be prevented, but not forced if no saving is actually required
          this.mustNotSave = !unloadEvent.isSaveChunk();
