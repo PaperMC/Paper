@@ -3051,6 +3051,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 +import it.unimi.dsi.fastutil.shorts.ShortCollection;
 +import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
++import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.core.SectionPos;
 +import net.minecraft.server.level.ServerChunkCache;
@@ -3067,7 +3068,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.lighting.LevelLightEngine;
 +import java.util.ArrayDeque;
 +import java.util.ArrayList;
-+import java.util.HashSet;
 +import java.util.List;
 +import java.util.Set;
 +import java.util.concurrent.CompletableFuture;
@@ -3693,7 +3693,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        protected static final class ChunkTasks {
 +
-+            public final Set<BlockPos> changedPositions = new HashSet<>();
++            public final Set<BlockPos> changedPositions = new ObjectOpenHashSet<>();
 +            public Boolean[] changedSectionSet;
 +            public ShortOpenHashSet queuedEdgeChecksSky;
 +            public ShortOpenHashSet queuedEdgeChecksBlock;
@@ -4554,8 +4554,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - replace light engine impl
 +    protected final ChunkAccess getChunk(final int chunkX, final int chunkZ) {
 +        return ((ServerLevel)this.theLightEngine.getWorld()).getChunkSource().getChunkAtImmediately(chunkX, chunkZ);
-+    }
-+
+     }
+ 
 +    protected long relightCounter;
 +
 +    public int relight(java.util.Set<ChunkPos> chunks_param,
@@ -4643,20 +4643,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            world.getChunkSource().addRegionTicket(ca.spottedleaf.starlight.common.light.StarLightInterface.CHUNK_WORK_TICKET, pos, 0, pos);
 +        }
 +
-+        // append future to this chunk and 1 radius neighbours chunk save futures
-+        // this prevents us from saving the world without first waiting for the light engine
-+
-+        for (int dx = -1; dx <= 1; ++dx) {
-+            for (int dz = -1; dz <= 1; ++dz) {
-+                ChunkHolder neighbour = world.getChunkSource().chunkMap.getUpdatingChunkIfPresent(CoordinateUtils.getChunkKey(dx + chunkX, dz + chunkZ));
-+                if (neighbour != null) {
-+                    neighbour.chunkToSave = neighbour.chunkToSave.thenCombine(updateFuture, (final ChunkAccess curr, final Void ignore) -> {
-+                        return curr;
-+                    });
-+                }
-+            }
-+        }
-+
 +        updateFuture.thenAcceptAsync((final Void ignore) -> {
 +            final int newReferences = this.chunksBeingWorkedOn.get(key);
 +            if (newReferences == 1) {
@@ -4677,8 +4663,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public boolean hasLightWork() {
 +        // route to new light engine
 +        return this.theLightEngine.hasUpdates();
-     }
- 
++    }
++
 +    @Override
 +    public LayerLightEventListener getLayerListener(final LightLayer lightType) {
 +        return lightType == LightLayer.BLOCK ? this.theLightEngine.getBlockReader() : this.theLightEngine.getSkyReader();
