@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emma=20B=C3=B6cker?= <stckoverflw@gmail.com>
+Date: Fri, 30 Sep 2022 20:11:49 +0200
+Subject: [PATCH] fix BlockDestroyEvent being fired wrong when breaking one of
+ the blocks
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BedBlock.java b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+index 654a859a37bf991c7a7fa8a44a3d20f8feb223db..a568acaa5c79bce233c8346f0617516519375d68 100644
+--- a/src/main/java/net/minecraft/world/level/block/BedBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+@@ -213,7 +213,10 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+                 BlockState iblockdata1 = world.getBlockState(blockposition1);
+ 
+                 if (iblockdata1.is((Block) this) && iblockdata1.getValue(BedBlock.PART) == BedPart.HEAD) {
+-                    world.setBlock(blockposition1, Blocks.AIR.defaultBlockState(), 35);
++                    // Paper start - fix BlockDestroyEvent being fired wrong when breaking one of the blocks
++//                    world.setBlock(blockposition1, Blocks.AIR.defaultBlockState(), 35);
++                    world.destroyBlock(blockposition1, false, player, 0);
++                    // Paper end
+                     world.levelEvent(player, 2001, blockposition1, Block.getId(iblockdata1));
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+index fa97966d39f01301a8ba976c02dc697e0a74bfb1..58d33333873ee003cae64dd438c431ce667fa73a 100644
+--- a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+@@ -104,9 +104,13 @@ public class DoublePlantBlock extends BushBlock {
+             BlockState iblockdata1 = world.getBlockState(blockposition1);
+ 
+             if (iblockdata1.is(state.getBlock()) && iblockdata1.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.LOWER) {
+-                BlockState iblockdata2 = iblockdata1.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) iblockdata1.getValue(BlockStateProperties.WATERLOGGED) ? Blocks.WATER.defaultBlockState() : Blocks.AIR.defaultBlockState();
+ 
+-                world.setBlock(blockposition1, iblockdata2, 35);
++                // Paper start - fix BlockDestroyEvent being fired wrong when breaking one of the blocks
++//                BlockState iblockdata2 = iblockdata1.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) iblockdata1.getValue(BlockStateProperties.WATERLOGGED) ? Blocks.WATER.defaultBlockState() : Blocks.AIR.defaultBlockState();
++//                world.setBlock(blockposition1, iblockdata2, 35, 0);
++                world.destroyBlock(blockposition1, false, player, 0);
++                // Paper end
++
+                 world.levelEvent(player, 2001, blockposition1, Block.getId(iblockdata1));
+             }
+         }
