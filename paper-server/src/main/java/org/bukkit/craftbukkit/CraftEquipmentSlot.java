@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import net.minecraft.world.EnumHand;
 import net.minecraft.world.entity.EnumItemSlot;
 import org.bukkit.inventory.EquipmentSlot;
 
@@ -28,5 +29,19 @@ public class CraftEquipmentSlot {
 
     public static EnumItemSlot getNMS(EquipmentSlot slot) {
         return slots[slot.ordinal()];
+    }
+
+    public static EquipmentSlot getHand(EnumHand enumhand) {
+        return (enumhand == EnumHand.MAIN_HAND) ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND;
+    }
+
+    public static EnumHand getHand(EquipmentSlot hand) {
+        if (hand == EquipmentSlot.HAND) {
+            return EnumHand.MAIN_HAND;
+        } else if (hand == EquipmentSlot.OFF_HAND) {
+            return EnumHand.OFF_HAND;
+        }
+
+        throw new IllegalArgumentException("EquipmentSlot." + hand + " is not a hand");
     }
 }

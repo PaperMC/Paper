@@ -431,11 +431,12 @@
              this.hurtDir = 0.0F;
              Entity entity1 = damagesource.getEntity();
  
-@@ -1258,19 +1485,29 @@
+@@ -1258,19 +1485,32 @@
              EnumHand[] aenumhand = EnumHand.values();
              int i = aenumhand.length;
  
 +            // CraftBukkit start
++            EnumHand hand = null;
 +            ItemStack itemstack1 = ItemStack.EMPTY;
              for (int j = 0; j < i; ++j) {
                  EnumHand enumhand = aenumhand[j];
@@ -443,6 +444,7 @@
 +                itemstack1 = this.getItemInHand(enumhand);
  
                  if (itemstack1.is(Items.TOTEM_OF_UNDYING)) {
++                    hand = enumhand; // CraftBukkit
                      itemstack = itemstack1.copy();
 -                    itemstack1.shrink(1);
 +                    // itemstack1.subtract(1); // CraftBukkit
@@ -452,7 +454,8 @@
  
 -            if (itemstack != null) {
 -                if (this instanceof EntityPlayer) {
-+            EntityResurrectEvent event = new EntityResurrectEvent((LivingEntity) this.getBukkitEntity());
++            org.bukkit.inventory.EquipmentSlot handSlot = (hand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand) : null;
++            EntityResurrectEvent event = new EntityResurrectEvent((LivingEntity) this.getBukkitEntity(), handSlot);
 +            event.setCancelled(itemstack == null);
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
 +
@@ -465,7 +468,7 @@
                      EntityPlayer entityplayer = (EntityPlayer) this;
  
                      entityplayer.awardStat(StatisticList.ITEM_USED.get(Items.TOTEM_OF_UNDYING));
-@@ -1278,14 +1515,16 @@
+@@ -1278,14 +1518,16 @@
                  }
  
                  this.setHealth(1.0F);
@@ -487,7 +490,7 @@
          }
      }
  
-@@ -1390,14 +1629,22 @@
+@@ -1390,14 +1632,22 @@
                      IBlockData iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
  
                      if (this.level.getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level, blockposition)) {
@@ -512,7 +515,7 @@
                      this.level.addFreshEntity(entityitem);
                  }
              }
-@@ -1417,21 +1664,40 @@
+@@ -1417,21 +1667,40 @@
  
          boolean flag = this.lastHurtByPlayerTime > 0;
  
@@ -556,7 +559,7 @@
  
      }
  
-@@ -1504,6 +1770,28 @@
+@@ -1504,6 +1773,28 @@
          return itemstack.getEatingSound();
      }
  
@@ -585,7 +588,7 @@
      @Override
      public void setOnGround(boolean flag) {
          super.setOnGround(flag);
-@@ -1559,9 +1847,14 @@
+@@ -1559,9 +1850,14 @@
          int i = this.calculateFallDamage(f, f1);
  
          if (i > 0) {
@@ -601,7 +604,7 @@
              return true;
          } else {
              return flag;
-@@ -1610,7 +1903,7 @@
+@@ -1610,7 +1906,7 @@
  
      protected float getDamageAfterArmorAbsorb(DamageSource damagesource, float f) {
          if (!damagesource.isBypassArmor()) {
@@ -610,7 +613,7 @@
              f = CombatMath.getDamageAfterAbsorb(f, (float) this.getArmorValue(), (float) this.getAttributeValue(GenericAttributes.ARMOR_TOUGHNESS));
          }
  
-@@ -1623,7 +1916,8 @@
+@@ -1623,7 +1919,8 @@
          } else {
              int i;
  
@@ -620,7 +623,7 @@
                  i = (this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
                  float f1 = f * (float) j;
-@@ -1656,29 +1950,172 @@
+@@ -1656,29 +1953,172 @@
          }
      }
  
@@ -803,7 +806,7 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1699,9 +2136,19 @@
+@@ -1699,9 +2139,19 @@
      }
  
      public final void setArrowCount(int i) {
@@ -824,7 +827,7 @@
      public final int getStingerCount() {
          return (Integer) this.entityData.get(EntityLiving.DATA_STINGER_COUNT_ID);
      }
-@@ -1996,6 +2443,12 @@
+@@ -1996,6 +2446,12 @@
  
      public abstract ItemStack getItemBySlot(EnumItemSlot enumitemslot);
  
@@ -837,7 +840,7 @@
      @Override
      public abstract void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack);
  
-@@ -2239,6 +2692,7 @@
+@@ -2239,6 +2695,7 @@
                  }
  
                  if (this.onGround && !this.level.isClientSide) {
@@ -845,7 +848,7 @@
                      this.setSharedFlag(7, false);
                  }
              } else {
-@@ -2772,6 +3226,7 @@
+@@ -2772,6 +3229,7 @@
          }
  
          if (!this.level.isClientSide) {
@@ -853,7 +856,7 @@
              this.setSharedFlag(7, flag);
          }
  
-@@ -2931,14 +3386,21 @@
+@@ -2931,14 +3389,21 @@
  
      @Override
      public boolean isPickable() {
@@ -877,7 +880,7 @@
      @Override
      public float getYHeadRot() {
          return this.yHeadRot;
-@@ -3133,7 +3595,25 @@
+@@ -3133,7 +3598,26 @@
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
                      this.triggerItemUseEffects(this.useItem, 16);
@@ -886,7 +889,8 @@
 +                    ItemStack itemstack;
 +                    if (this instanceof EntityPlayer) {
 +                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
-+                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
++                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
++                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand);
 +                        level.getCraftServer().getPluginManager().callEvent(event);
 +
 +                        if (event.isCancelled()) {
@@ -904,7 +908,7 @@
  
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
-@@ -3211,6 +3691,12 @@
+@@ -3211,6 +3695,12 @@
      }
  
      public boolean randomTeleport(double d0, double d1, double d2, boolean flag) {
@@ -917,7 +921,7 @@
          double d3 = this.getX();
          double d4 = this.getY();
          double d5 = this.getZ();
-@@ -3235,16 +3721,41 @@
+@@ -3235,16 +3725,41 @@
              }
  
              if (flag2) {
@@ -962,7 +966,7 @@
          } else {
              if (flag) {
                  world.broadcastEntityEvent(this, (byte) 46);
-@@ -3254,7 +3765,7 @@
+@@ -3254,7 +3769,7 @@
                  ((EntityCreature) this).getNavigation().stop();
              }
  
@@ -971,7 +975,7 @@
          }
      }
  
-@@ -3337,7 +3848,7 @@
+@@ -3337,7 +3852,7 @@
      }
  
      public void stopSleeping() {
@@ -980,7 +984,7 @@
          World world = this.level;
  
          java.util.Objects.requireNonNull(this.level);
-@@ -3369,7 +3880,7 @@
+@@ -3369,7 +3884,7 @@
  
      @Nullable
      public EnumDirection getBedOrientation() {
@@ -989,7 +993,7 @@
  
          return blockposition != null ? BlockBed.getBedOrientation(this.level, blockposition) : null;
      }
-@@ -3417,7 +3928,7 @@
+@@ -3417,7 +3932,7 @@
                  Pair<MobEffect, Float> pair = (Pair) iterator.next();
  
                  if (!world.isClientSide && pair.getFirst() != null && world.random.nextFloat() < (Float) pair.getSecond()) {

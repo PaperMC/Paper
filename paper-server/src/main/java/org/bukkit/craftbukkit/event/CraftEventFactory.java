@@ -31,6 +31,7 @@ import net.minecraft.world.entity.EntityExperienceOrb;
 import net.minecraft.world.entity.EntityInsentient;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.entity.animal.EntityAnimal;
 import net.minecraft.world.entity.animal.EntityFish;
 import net.minecraft.world.entity.animal.EntityGolem;
@@ -77,6 +78,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftRaid;
 import org.bukkit.craftbukkit.CraftServer;
@@ -304,10 +306,10 @@ public class CraftEventFactory {
     /**
      * Player Harvest Block Event
      */
-    public static PlayerHarvestBlockEvent callPlayerHarvestBlockEvent(World world, BlockPosition blockposition, EntityHuman who, List<ItemStack> itemsToHarvest) {
+    public static PlayerHarvestBlockEvent callPlayerHarvestBlockEvent(World world, BlockPosition blockposition, EntityHuman who, EnumHand enumhand, List<ItemStack> itemsToHarvest) {
         List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = new ArrayList<>(itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList()));
         Player player = (Player) who.getBukkitEntity();
-        PlayerHarvestBlockEvent playerHarvestBlockEvent = new PlayerHarvestBlockEvent(player, CraftBlock.at(world, blockposition), bukkitItemsToHarvest);
+        PlayerHarvestBlockEvent playerHarvestBlockEvent = new PlayerHarvestBlockEvent(player, CraftBlock.at(world, blockposition), CraftEquipmentSlot.getHand(enumhand), bukkitItemsToHarvest);
         Bukkit.getPluginManager().callEvent(playerHarvestBlockEvent);
         return playerHarvestBlockEvent;
     }
@@ -315,13 +317,15 @@ public class CraftEventFactory {
     /**
      * Player Fish Bucket Event
      */
-    public static PlayerBucketEntityEvent callPlayerFishBucketEvent(EntityLiving fish, EntityHuman entityHuman, ItemStack originalBucket, ItemStack entityBucket) {
+    public static PlayerBucketEntityEvent callPlayerFishBucketEvent(EntityLiving fish, EntityHuman entityHuman, ItemStack originalBucket, ItemStack entityBucket, EnumHand enumhand) {
         Player player = (Player) entityHuman.getBukkitEntity();
+        EquipmentSlot hand = CraftEquipmentSlot.getHand(enumhand);
+
         PlayerBucketEntityEvent event;
         if (fish instanceof EntityFish) {
-            event = new PlayerBucketFishEvent(player, (Fish) fish.getBukkitEntity(), CraftItemStack.asBukkitCopy(originalBucket), CraftItemStack.asBukkitCopy(entityBucket));
+            event = new PlayerBucketFishEvent(player, (Fish) fish.getBukkitEntity(), CraftItemStack.asBukkitCopy(originalBucket), CraftItemStack.asBukkitCopy(entityBucket), hand);
         } else {
-            event = new PlayerBucketEntityEvent(player, fish.getBukkitEntity(), CraftItemStack.asBukkitCopy(originalBucket), CraftItemStack.asBukkitCopy(entityBucket));
+            event = new PlayerBucketEntityEvent(player, fish.getBukkitEntity(), CraftItemStack.asBukkitCopy(originalBucket), CraftItemStack.asBukkitCopy(entityBucket), hand);
         }
         Bukkit.getPluginManager().callEvent(event);
         return event;
@@ -406,15 +410,15 @@ public class CraftEventFactory {
     }
 
     public static EntityPlaceEvent callEntityPlaceEvent(ItemActionContext itemactioncontext, Entity entity) {
-        return callEntityPlaceEvent(itemactioncontext.getLevel(), itemactioncontext.getClickedPos(), itemactioncontext.getClickedFace(), itemactioncontext.getPlayer(), entity);
+        return callEntityPlaceEvent(itemactioncontext.getLevel(), itemactioncontext.getClickedPos(), itemactioncontext.getClickedFace(), itemactioncontext.getPlayer(), entity, itemactioncontext.getHand());
     }
 
-    public static EntityPlaceEvent callEntityPlaceEvent(World world, BlockPosition clickPosition, EnumDirection clickedFace, EntityHuman human, Entity entity) {
+    public static EntityPlaceEvent callEntityPlaceEvent(World world, BlockPosition clickPosition, EnumDirection clickedFace, EntityHuman human, Entity entity, EnumHand enumhand) {
         Player who = (human == null) ? null : (Player) human.getBukkitEntity();
         org.bukkit.block.Block blockClicked = CraftBlock.at(world, clickPosition);
         org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
 
-        EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), who, blockClicked, blockFace);
+        EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), who, blockClicked, blockFace, CraftEquipmentSlot.getHand(enumhand));
         entity.level.getCraftServer().getPluginManager().callEvent(event);
 
         return event;
@@ -423,15 +427,15 @@ public class CraftEventFactory {
     /**
      * Bucket methods
      */
-    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand) {
-        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemInHand, Items.BUCKET);
+    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, EnumHand enumhand) {
+        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemInHand, Items.BUCKET, enumhand);
     }
 
-    public static PlayerBucketFillEvent callPlayerBucketFillEvent(WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket) {
-        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket);
+    public static PlayerBucketFillEvent callPlayerBucketFillEvent(WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket, EnumHand enumhand) {
+        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket, enumhand);
     }
 
-    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.world.item.Item item) {
+    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.world.item.Item item, EnumHand enumhand) {
         Player player = (Player) who.getBukkitEntity();
         CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
         Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
@@ -441,13 +445,14 @@ public class CraftEventFactory {
         Block block = CraftBlock.at(world, changed);
         Block blockClicked = CraftBlock.at(world, clicked);
         BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
+        EquipmentSlot hand = CraftEquipmentSlot.getHand(enumhand);
 
         PlayerEvent event;
         if (isFilling) {
-            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
+            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand, hand);
             ((PlayerBucketFillEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
         } else {
-            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
+            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand, hand);
             ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
         }
 
@@ -1097,10 +1102,10 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static PlayerItemMendEvent callPlayerItemMendEvent(EntityHuman entity, EntityExperienceOrb orb, net.minecraft.world.item.ItemStack nmsMendedItem, int repairAmount) {
+    public static PlayerItemMendEvent callPlayerItemMendEvent(EntityHuman entity, EntityExperienceOrb orb, net.minecraft.world.item.ItemStack nmsMendedItem, EnumItemSlot slot, int repairAmount) {
         Player player = (Player) entity.getBukkitEntity();
         org.bukkit.inventory.ItemStack bukkitStack = CraftItemStack.asCraftMirror(nmsMendedItem);
-        PlayerItemMendEvent event = new PlayerItemMendEvent(player, bukkitStack, (ExperienceOrb) orb.getBukkitEntity(), repairAmount);
+        PlayerItemMendEvent event = new PlayerItemMendEvent(player, bukkitStack, CraftEquipmentSlot.getSlot(slot), (ExperienceOrb) orb.getBukkitEntity(), repairAmount);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
@@ -1379,14 +1384,14 @@ public class CraftEventFactory {
         return itemInHand;
     }
 
-    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(EntityInsentient entity, EntityHuman player) {
-        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity());
+    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(EntityInsentient entity, EntityHuman player, EnumHand enumhand) {
+        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(enumhand));
         entity.level.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
 
-    public static PlayerLeashEntityEvent callPlayerLeashEntityEvent(EntityInsentient entity, Entity leashHolder, EntityHuman player) {
-        PlayerLeashEntityEvent event = new PlayerLeashEntityEvent(entity.getBukkitEntity(), leashHolder.getBukkitEntity(), (Player) player.getBukkitEntity());
+    public static PlayerLeashEntityEvent callPlayerLeashEntityEvent(EntityInsentient entity, Entity leashHolder, EntityHuman player, EnumHand enumhand) {
+        PlayerLeashEntityEvent event = new PlayerLeashEntityEvent(entity.getBukkitEntity(), leashHolder.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(enumhand));
         entity.level.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
