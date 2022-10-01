@@ -22,6 +22,9 @@ https://bugs.mojang.com/browse/MC-147659
   Some witch huts spawn the incorrect cat
   Note: Marked as Won't Fix, makes 0 sense
 
+https://bugs.mojang.com/browse/MC-179072
+  Creepers do not defuse when switching from Survival to Creative/Spectator
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/server/commands/DeOpCommands.java b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
@@ -50,6 +53,24 @@ index 43e77cef0fce75f59aeb05e161668bebb8fca229..ef50fbf8cb3f008827850b5ed3342200
              }
          }
  
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
+index 19540fd4a7f992888fadb6501d0c8a5a7e71fcf6..e241ae250f4f04a17ef2c583d00b065a4ca56a4c 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
+@@ -21,6 +21,13 @@ public class SwellGoal extends Goal {
+         return this.creeper.getSwellDir() > 0 || livingEntity != null && this.creeper.distanceToSqr(livingEntity) < 9.0D;
+     }
+ 
++    // Paper start - Fix MC-179072
++    @Override
++    public boolean canContinueToUse() {
++        return !net.minecraft.world.entity.EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(this.creeper.getTarget()) && canUse();
++    }
++    // Paper end
++
+     @Override
+     public void start() {
+         this.creeper.getNavigation().stop();
 diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
 index c17d9a7cb69d3b6ea6e17b689921fa239db3552b..a4690391df0aa26abea1ad92e6143eb19c5d1143 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
