@@ -4,6 +4,7 @@ import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,15 +19,22 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     //
     private final ItemStack item;
+    private final EquipmentSlot slot;
     private final ExperienceOrb experienceOrb;
     private int repairAmount;
     private boolean cancelled;
 
-    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
+    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
         super(who);
         this.item = item;
+        this.slot = slot;
         this.experienceOrb = experienceOrb;
         this.repairAmount = repairAmount;
+    }
+
+    @Deprecated
+    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
+        this(who, item, null, experienceOrb, repairAmount);
     }
 
     /**
@@ -39,6 +47,17 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     @NotNull
     public ItemStack getItem() {
         return item;
+    }
+
+    /**
+     * Get the {@link EquipmentSlot} in which the repaired {@link ItemStack}
+     * may be found.
+     *
+     * @return the repaired slot
+     */
+    @NotNull
+    public EquipmentSlot getSlot() {
+        return slot;
     }
 
     /**

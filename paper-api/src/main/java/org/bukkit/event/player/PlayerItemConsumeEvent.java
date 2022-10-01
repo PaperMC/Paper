@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,15 +23,28 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean isCancelled = false;
     private ItemStack item;
+    private final EquipmentSlot hand;
 
     /**
      * @param player the player consuming
      * @param item the ItemStack being consumed
+     * @param hand the hand that was used
      */
-    public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item) {
+    public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item, @NotNull final EquipmentSlot hand) {
         super(player);
 
         this.item = item;
+        this.hand = hand;
+    }
+
+    /**
+     * @param player the player consuming
+     * @param item the ItemStack being consumed
+     * @deprecated use {@link #PlayerItemConsumeEvent(Player, ItemStack, EquipmentSlot)}
+     */
+    @Deprecated
+    public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item) {
+        this(player, item, EquipmentSlot.HAND);
     }
 
     /**
@@ -56,6 +70,16 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
         } else {
             this.item = item;
         }
+    }
+
+    /**
+     * Get the hand used to consume the item.
+     *
+     * @return the hand
+     */
+    @NotNull
+    public EquipmentSlot getHand() {
+        return hand;
     }
 
     @Override

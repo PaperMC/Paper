@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,11 +17,18 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
     private final Entity entity;
     private boolean cancelled = false;
     private final Player player;
+    private final EquipmentSlot hand;
 
-    public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher) {
+    public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher, @NotNull EquipmentSlot hand) {
         this.leashHolder = leashHolder;
         this.entity = what;
         this.player = leasher;
+        this.hand = hand;
+    }
+
+    @Deprecated
+    public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher) {
+        this(what, leashHolder, leasher, EquipmentSlot.HAND);
     }
 
     /**
@@ -51,6 +59,16 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
     @NotNull
     public final Player getPlayer() {
         return player;
+    }
+
+    /**
+     * Returns the hand used by the player to leash the entity.
+     *
+     * @return the hand
+     */
+    @NotNull
+    public EquipmentSlot getHand() {
+        return hand;
     }
 
     @NotNull

@@ -5,6 +5,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,12 +19,14 @@ public class PlayerBucketEntityEvent extends PlayerEvent implements Cancellable 
     private final Entity entity;
     private final ItemStack originalBucket;
     private final ItemStack entityBucket;
+    private final EquipmentSlot hand;
 
-    public PlayerBucketEntityEvent(@NotNull Player player, @NotNull Entity entity, @NotNull ItemStack originalBucket, @NotNull ItemStack entityBucket) {
+    public PlayerBucketEntityEvent(@NotNull Player player, @NotNull Entity entity, @NotNull ItemStack originalBucket, @NotNull ItemStack entityBucket, @NotNull EquipmentSlot hand) {
         super(player);
         this.entity = entity;
         this.originalBucket = originalBucket;
         this.entityBucket = entityBucket;
+        this.hand = hand;
     }
 
     /**
@@ -59,6 +62,16 @@ public class PlayerBucketEntityEvent extends PlayerEvent implements Cancellable 
     @NotNull
     public ItemStack getEntityBucket() {
         return entityBucket;
+    }
+
+    /**
+     * Get the hand that was used to bucket the entity.
+     *
+     * @return the hand
+     */
+    @NotNull
+    public EquipmentSlot getHand() {
+        return hand;
     }
 
     @Override

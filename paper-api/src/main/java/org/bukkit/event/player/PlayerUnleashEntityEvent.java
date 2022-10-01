@@ -4,18 +4,28 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.entity.EntityUnleashEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called prior to an entity being unleashed due to a player's action.
  */
 public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Cancellable {
-    private final Player player;
+
     private boolean cancelled = false;
 
-    public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player) {
+    private final Player player;
+    private final EquipmentSlot hand;
+
+    public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player, @NotNull EquipmentSlot hand) {
         super(entity, UnleashReason.PLAYER_UNLEASH);
         this.player = player;
+        this.hand = hand;
+    }
+
+    @Deprecated
+    public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player) {
+        this(entity, player, EquipmentSlot.HAND);
     }
 
     /**
@@ -26,6 +36,16 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
     @NotNull
     public Player getPlayer() {
         return player;
+    }
+
+    /**
+     * Get the hand used by the player to unleash the entity.
+     *
+     * @return the hand
+     */
+    @NotNull
+    public EquipmentSlot getHand() {
+        return hand;
     }
 
     @Override

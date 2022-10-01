@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.Warning;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,8 +17,8 @@ import org.jetbrains.annotations.NotNull;
 @Warning(false)
 public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
 
-    public PlayerBucketFishEvent(@NotNull Player player, @NotNull Fish fish, @NotNull ItemStack waterBucket, @NotNull ItemStack fishBucket) {
-        super(player, fish, waterBucket, fishBucket);
+    public PlayerBucketFishEvent(@NotNull Player player, @NotNull Fish fish, @NotNull ItemStack waterBucket, @NotNull ItemStack fishBucket, @NotNull EquipmentSlot hand) {
+        super(player, fish, waterBucket, fishBucket, hand);
     }
 
     /**

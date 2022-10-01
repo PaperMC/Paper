@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,12 +24,19 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
     private final Block harvestedBlock;
+    private final EquipmentSlot hand;
     private final List<ItemStack> itemsHarvested;
 
-    public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull List<ItemStack> itemsHarvested) {
+    public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull EquipmentSlot hand, @NotNull List<ItemStack> itemsHarvested) {
         super(player);
         this.harvestedBlock = harvestedBlock;
+        this.hand = hand;
         this.itemsHarvested = itemsHarvested;
+    }
+
+    @Deprecated
+    public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull List<ItemStack> itemsHarvested) {
+        this(player, harvestedBlock, EquipmentSlot.HAND, itemsHarvested);
     }
 
     /**
@@ -39,6 +47,16 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
     @NotNull
     public Block getHarvestedBlock() {
         return harvestedBlock;
+    }
+
+    /**
+     * Get the hand used to harvest the block.
+     *
+     * @return the hand
+     */
+    @NotNull
+    public EquipmentSlot getHand() {
+        return hand;
     }
 
     /**

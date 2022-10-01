@@ -19,11 +19,16 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
     private final ItemStack armorStandItem;
     private final EquipmentSlot slot;
 
-    public PlayerArmorStandManipulateEvent(@NotNull final Player who, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot) {
-        super(who, clickedEntity);
+    public PlayerArmorStandManipulateEvent(@NotNull final Player who, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot, @NotNull EquipmentSlot hand) {
+        super(who, clickedEntity, hand);
         this.playerItem = playerItem;
         this.armorStandItem = armorStandItem;
         this.slot = slot;
+    }
+
+    @Deprecated
+    public PlayerArmorStandManipulateEvent(@NotNull final Player who, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot) {
+        this(who, clickedEntity, playerItem, armorStandItem, slot, EquipmentSlot.HAND);
     }
 
     /**
@@ -68,6 +73,18 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
     @NotNull
     public EquipmentSlot getSlot() {
         return this.slot;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Note that this is not the hand of the armor stand that was changed, but rather
+     * the hand used by the player to swap items with the armor stand.
+     */
+    @NotNull
+    @Override
+    public EquipmentSlot getHand() {
+        return super.getHand();
     }
 
     @NotNull

@@ -5,6 +5,7 @@ import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,12 +19,18 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     private int exp;
     private final State state;
     private final FishHook hookEntity;
+    private final EquipmentSlot hand;
 
-    public PlayerFishEvent(@NotNull final Player player, @Nullable final Entity entity, @NotNull final FishHook hookEntity, @NotNull final State state) {
+    public PlayerFishEvent(@NotNull final Player player, @Nullable final Entity entity, @NotNull final FishHook hookEntity, @Nullable EquipmentSlot hand, @NotNull final State state) {
         super(player);
         this.entity = entity;
         this.hookEntity = hookEntity;
+        this.hand = hand;
         this.state = state;
+    }
+
+    public PlayerFishEvent(@NotNull final Player player, @Nullable final Entity entity, @NotNull final FishHook hookEntity, @NotNull final State state) {
+        this(player, entity, hookEntity, null, state);
     }
 
     /**
@@ -82,6 +89,19 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      */
     public void setExpToDrop(int amount) {
         exp = amount;
+    }
+
+    /**
+     * Get the hand that was used in this event.
+     * <p>
+     * The hand used is only present when the event state is {@link State#FISHING}.
+     * In all other states, the hand is null.
+     *
+     * @return the hand
+     */
+    @Nullable
+    public EquipmentSlot getHand() {
+        return hand;
     }
 
     /**
