@@ -491,7 +491,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean leaveVehicle();
 
     /**
-     * Get the vehicle that this player is inside. If there is no vehicle,
+     * Get the vehicle that this entity is inside. If there is no vehicle,
      * null will be returned.
      *
      * @return The current vehicle.
