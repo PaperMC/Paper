@@ -4,6 +4,24 @@ Date: Wed, 28 Sep 2022 22:45:49 -0700
 Subject: [PATCH] fix Jigsaw block kicking user
 
 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/JigsawBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/JigsawBlockEntity.java
+index fee4aef1bdae1b1ca57ff0b6c3fd2ec31439c37b..b56e4be3228489b5b910c23bde1717d5d3e2ad9a 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/JigsawBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/JigsawBlockEntity.java
+@@ -108,7 +108,12 @@ public class JigsawBlockEntity extends BlockEntity {
+     public void generate(ServerLevel world, int maxDepth, boolean keepJigsaws) {
+         BlockPos blockPos = this.getBlockPos().relative(this.getBlockState().getValue(JigsawBlock.ORIENTATION).front());
+         Registry<StructureTemplatePool> registry = world.registryAccess().registryOrThrow(Registry.TEMPLATE_POOL_REGISTRY);
+-        Holder<StructureTemplatePool> holder = registry.getHolderOrThrow(this.pool);
++        // Paper start - Replace getHolderOrThrow with a null check
++        Holder<StructureTemplatePool> holder = registry.getHolder(this.pool).orElse(null);
++        if (holder == null) {
++            return;
++        }
++        // Paper end
+         JigsawPlacement.generateJigsaw(world, holder, this.target, maxDepth, blockPos, keepJigsaws);
+     }
+ 
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool.java b/src/main/java/net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool.java
 index de7435f6596e200c8511224a0479c2ad499b2a97..bcf9eb1096b09748bcabba05bc9ffac494d3c611 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/pools/StructureTemplatePool.java
