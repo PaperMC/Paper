@@ -923,10 +923,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b2e961bbd33c6ecb7f049365b7aff6c5caa262ff
+index 0000000000000000000000000000000000000000..18c64590b35a26a27a884494d6905989fc45af03
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,431 @@
+@@ -0,0 +1,432 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -1234,12 +1234,8 @@ index 0000000000000000000000000000000000000000..b2e961bbd33c6ecb7f049365b7aff6c5
 +
 +    public static PaperConfigurations setup(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
 +        final Path legacy = Files.isSymbolicLink(legacyConfig) ? Files.readSymbolicLink(legacyConfig) : legacyConfig;
-+        final Path replacementFile = legacy.resolveSibling(legacyConfig.getFileName() + "-README.txt");
-+        if (Files.notExists(replacementFile)) {
-+            Files.createFile(replacementFile);
-+            Files.writeString(replacementFile, String.format(MOVED_NOTICE, configDir.toAbsolutePath()));
-+        }
 +        if (needsConverting(legacyConfig)) {
++            final String legacyFileName = legacyConfig.getFileName().toString();
 +            try {
 +                if (Files.exists(configDir) && !Files.isDirectory(configDir)) {
 +                    throw new RuntimeException("Paper needs to create a '" + CONFIG_DIR + "' folder in the root of your server. You already have a non-directory named '" + CONFIG_DIR + "'. Please remove it and restart the server.");
@@ -1249,7 +1245,7 @@ index 0000000000000000000000000000000000000000..b2e961bbd33c6ecb7f049365b7aff6c5
 +                    throw new RuntimeException("Paper needs to create a '" + BACKUP_DIR + "' directory in the '" + CONFIG_DIR + "' folder. You already have a non-directory named '" + BACKUP_DIR + "'. Please remove it and restart the server.");
 +                }
 +                createDirectoriesSymlinkAware(backupDir);
-+                final String backupFileName = legacyConfig.getFileName().toString() + ".old";
++                final String backupFileName = legacyFileName + ".old";
 +                final Path legacyConfigBackup = backupDir.resolve(backupFileName);
 +                if (Files.exists(legacyConfigBackup) && !Files.isRegularFile(legacyConfigBackup)) {
 +                    throw new RuntimeException("Paper needs to create a '" + backupFileName + "' file in the '" + BACKUP_DIR + "' folder. You already have a non-file named '" + backupFileName + "'. Please remove it and restart the server.");
@@ -1258,9 +1254,14 @@ index 0000000000000000000000000000000000000000..b2e961bbd33c6ecb7f049365b7aff6c5
 +                if (Files.isSymbolicLink(legacyConfig)) {
 +                    Files.delete(legacyConfig);
 +                }
++                final Path replacementFile = legacy.resolveSibling(legacyFileName + "-README.txt");
++                if (Files.notExists(replacementFile)) {
++                    Files.createFile(replacementFile);
++                    Files.writeString(replacementFile, String.format(MOVED_NOTICE, configDir.toAbsolutePath()));
++                }
 +                convert(legacyConfigBackup, configDir, worldFolder, spigotConfig);
 +            } catch (final IOException ex) {
-+                throw new RuntimeException("Could not convert '" + legacyConfig.getFileName().toString() + "' to the new configuration format", ex);
++                throw new RuntimeException("Could not convert '" + legacyFileName + "' to the new configuration format", ex);
 +            }
 +        }
 +        try {
