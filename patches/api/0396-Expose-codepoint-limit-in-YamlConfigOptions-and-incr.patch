@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 22 Sep 2022 07:04:30 +0100
+Subject: [PATCH] Expose codepoint limit in YamlConfigOptions, and increase
+ default
+
+
+diff --git a/src/main/java/org/bukkit/configuration/file/YamlConfiguration.java b/src/main/java/org/bukkit/configuration/file/YamlConfiguration.java
+index 0a03cefda788b1dc57ddd61914492a15788aa3d5..df98d2c12ef4867118aba3452c3aba1175faab4e 100644
+--- a/src/main/java/org/bukkit/configuration/file/YamlConfiguration.java
++++ b/src/main/java/org/bukkit/configuration/file/YamlConfiguration.java
+@@ -96,6 +96,7 @@ public class YamlConfiguration extends FileConfiguration {
+     public void loadFromString(@NotNull String contents) throws InvalidConfigurationException {
+         Preconditions.checkArgument(contents != null, "Contents cannot be null");
+         yamlLoaderOptions.setProcessComments(options().parseComments());
++        yamlLoaderOptions.setCodePointLimit(options().codePointLimit()); // Paper
+ 
+         MappingNode node;
+         try (Reader reader = new UnicodeReader(new ByteArrayInputStream(contents.getBytes(StandardCharsets.UTF_8)))) {
+diff --git a/src/main/java/org/bukkit/configuration/file/YamlConfigurationOptions.java b/src/main/java/org/bukkit/configuration/file/YamlConfigurationOptions.java
+index 3f7f6caf5fcf38b65c282cd83b93e45a272b138f..2a64bc9ab9ae4a7931ebce238cdab7a37e5f85b2 100644
+--- a/src/main/java/org/bukkit/configuration/file/YamlConfigurationOptions.java
++++ b/src/main/java/org/bukkit/configuration/file/YamlConfigurationOptions.java
+@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
+ public class YamlConfigurationOptions extends FileConfigurationOptions {
+     private int indent = 2;
+     private int width = 80;
++    private int codePointLimit = 64 * 1024 * 1024; // 64 MB // Paper
+ 
+     protected YamlConfigurationOptions(@NotNull YamlConfiguration configuration) {
+         super(configuration);
+@@ -122,4 +123,29 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
+         this.width = value;
+         return this;
+     }
++
++    // Paper start
++    /**
++     * Gets the maximum code point limit, that being, the maximum length of the document
++     * in which the loader will read
++     *
++     * @return The current value
++     */
++    public int codePointLimit() {
++        return codePointLimit;
++    }
++
++    /**
++     * Sets the maximum code point limit, that being, the maximum length of the document
++     * in which the loader will read
++     *
++     * @param codePointLimit new codepoint limit
++     * @return This object, for chaining
++     */
++    @NotNull
++    public YamlConfigurationOptions codePointLimit(int codePointLimit) {
++        this.codePointLimit = codePointLimit;
++        return this;
++    }
++    // Paper end
+ }

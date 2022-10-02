@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 11 Jul 2022 11:56:41 -0700
+Subject: [PATCH] Fix a bunch of vanilla bugs
+
+https://bugs.mojang.com/browse/MC-253884
+  show raid entity event to all tracking players
+
+https://bugs.mojang.com/browse/MC-253721
+  wrong msg for opping multiple players
+
+https://bugs.mojang.com/browse/MC-248588
+  respect mob griefing gamerule for draining water cauldrons
+
+https://bugs.mojang.com/browse/MC-244739
+  play goat eating sound for last item in stack
+
+https://bugs.mojang.com/browse/MC-243057
+  ignore furnace fuel slot in recipe book click
+
+diff --git a/src/main/java/net/minecraft/server/commands/DeOpCommands.java b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
+index cca2618d90306eed9894c5fa7b6ed96b68210688..10769c60bd53438d44fbc6192667acdf4cc95594 100644
+--- a/src/main/java/net/minecraft/server/commands/DeOpCommands.java
++++ b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
+@@ -33,7 +33,7 @@ public class DeOpCommands {
+             if (playerList.isOp(gameProfile)) {
+                 playerList.deop(gameProfile);
+                 ++i;
+-                source.sendSuccess(Component.translatable("commands.deop.success", targets.iterator().next().getName()), true);
++                source.sendSuccess(Component.translatable("commands.deop.success", gameProfile.getName()), true); // Paper - fixes MC-253721
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/OpCommand.java b/src/main/java/net/minecraft/server/commands/OpCommand.java
+index 43e77cef0fce75f59aeb05e161668bebb8fca229..ef50fbf8cb3f008827850b5ed33422007be09bd2 100644
+--- a/src/main/java/net/minecraft/server/commands/OpCommand.java
++++ b/src/main/java/net/minecraft/server/commands/OpCommand.java
+@@ -38,7 +38,7 @@ public class OpCommand {
+             if (!playerList.isOp(gameProfile)) {
+                 playerList.op(gameProfile);
+                 ++i;
+-                source.sendSuccess(Component.translatable("commands.op.success", targets.iterator().next().getName()), true);
++                source.sendSuccess(Component.translatable("commands.op.success", gameProfile.getName()), true); // Paper - fixes MC-253721
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index c17d9a7cb69d3b6ea6e17b689921fa239db3552b..a4690391df0aa26abea1ad92e6143eb19c5d1143 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -211,9 +211,10 @@ public class Goat extends Animal {
+             player.setItemInHand(hand, itemstack1);
+             return InteractionResult.sidedSuccess(this.level.isClientSide);
+         } else {
++            boolean isFood = this.isFood(itemstack); // Paper - track before stack is possibly decreased to 0 (Fixes MC-244739)
+             InteractionResult enuminteractionresult = super.mobInteract(player, hand);
+ 
+-            if (enuminteractionresult.consumesAction() && this.isFood(itemstack)) {
++            if (enuminteractionresult.consumesAction() && isFood) { // Paper
+                 this.level.playSound((Player) null, (Entity) this, this.getEatingSound(itemstack), SoundSource.NEUTRAL, 1.0F, Mth.randomBetween(this.level.random, 0.8F, 1.2F));
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raids.java b/src/main/java/net/minecraft/world/entity/raid/Raids.java
+index fa8fcdfea51a35e4a482d3d7b18159099da62706..feb89eb69994bdd1d2f95d2b9992e69251b2bee7 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raids.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raids.java
+@@ -125,7 +125,7 @@ public class Raids extends SavedData {
+                     // CraftBukkit end
+                 } else {
+                     player.removeEffect(MobEffects.BAD_OMEN);
+-                    player.connection.send(new ClientboundEntityEventPacket(player, (byte) 43));
++                    this.level.broadcastEntityEvent(player, net.minecraft.world.entity.EntityEvent.BAD_OMEN_TRIGGERED /* (byte) 43 */); // Paper - Fix MC-253884
+                 }
+ 
+                 if (flag) {
+@@ -140,7 +140,7 @@ public class Raids extends SavedData {
+                     }
+                     // CraftBukkit end
+                     raid.absorbBadOmen(player);
+-                    player.connection.send(new ClientboundEntityEventPacket(player, (byte) 43));
++                    this.level.broadcastEntityEvent(player, net.minecraft.world.entity.EntityEvent.BAD_OMEN_TRIGGERED /* (byte) 43 */); // Paper - Fix MC-253884
+                     if (!raid.hasFirstWaveSpawned()) {
+                         player.awardStat(Stats.RAID_TRIGGER);
+                         CriteriaTriggers.BAD_OMEN.trigger(player);
+diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+index a223959f766ac41aff7aeff80606f5e7c37ebf49..1a90860bc39afb8bade96a5c6c40861dbb68c21e 100644
+--- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+@@ -63,7 +63,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
+         if (!world.isClientSide && entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
+             // CraftBukkit start
+-            if (entity.mayInteract(world, pos)) {
++            if ((entity instanceof net.minecraft.world.entity.player.Player || world.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity.mayInteract(world, pos)) { // Paper - Fixes MC-248588
+                 if (!this.handleEntityOnFireInsideWithEvent(state, world, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
+                     return;
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+index 4977f3fad3bfc12fd4c5f9fbe8beea2895247c57..c6aeda6497cb59673b469588142f5f15a338389d 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+@@ -669,13 +669,10 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+ 
+     @Override
+     public void fillStackedContents(StackedContents finder) {
+-        Iterator iterator = this.items.iterator();
+-
+-        while (iterator.hasNext()) {
+-            ItemStack itemstack = (ItemStack) iterator.next();
+-
+-            finder.accountStack(itemstack);
+-        }
++        // Paper start - don't account fuel stack (fixes MC-243057)
++        finder.accountStack(this.items.get(SLOT_INPUT));
++        finder.accountStack(this.items.get(SLOT_RESULT));
++        // Paper end
+ 
+     }
+ }

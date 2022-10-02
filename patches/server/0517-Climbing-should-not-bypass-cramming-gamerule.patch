@@ -1,0 +1,157 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sun, 23 Aug 2020 20:59:00 +0200
+Subject: [PATCH] Climbing should not bypass cramming gamerule
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index a3f3de0c231619702fff29062b1fb47f335783c6..0e8a5c3fbbafa90f0975733a534aace646e73fde 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1897,6 +1897,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     }
+ 
+     public boolean isPushable() {
++        // Paper start
++        return isCollidable(false);
++    }
++
++    public boolean isCollidable(boolean ignoreClimbing) {
++        // Paper end
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index 22f36cd3df49160f1b6668befdd05c2268edaa49..e39965c2e50bc8ee424ea07819346e0611398e28 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -45,11 +45,17 @@ public final class EntitySelector {
+     }
+ 
+     public static Predicate<Entity> pushableBy(Entity entity) {
++        // Paper start - ignoreClimbing param
++        return pushable(entity, false);
++    }
++
++    public static Predicate<Entity> pushable(Entity entity, boolean ignoreClimbing) {
++        // Paper end
+         Team scoreboardteambase = entity.getTeam();
+         Team.CollisionRule scoreboardteambase_enumteampush = scoreboardteambase == null ? Team.CollisionRule.ALWAYS : scoreboardteambase.getCollisionRule();
+ 
+         return (Predicate) (scoreboardteambase_enumteampush == Team.CollisionRule.NEVER ? Predicates.alwaysFalse() : EntitySelector.NO_SPECTATORS.and((entity1) -> {
+-            if (!entity1.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(entity1)) { // CraftBukkit - collidable API
++            if (!entity1.isCollidable(ignoreClimbing) || !entity1.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(entity1)) { // CraftBukkit - collidable API // Paper - isCollidable
+                 return false;
+             } else if (entity.level.isClientSide && (!(entity1 instanceof Player) || !((Player) entity1).isLocalPlayer())) {
+                 return false;
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 8910fed602d6055911d87eb3d12e1d707b5e8ea9..0896cbe04be6a5471088c321296506415fccbed6 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3360,7 +3360,7 @@ public abstract class LivingEntity extends Entity {
+             return;
+         }
+         // Paper end - don't run getEntities if we're not going to use its result
+-        List<Entity> list = this.level.getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
++        List<Entity> list = this.level.getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushable(this, level.paperConfig().collisions.fixClimbingBypassingCrammingRule)); // Paper - fix climbing bypassing cramming rule
+ 
+         if (!list.isEmpty()) {
+             // Paper - move up
+@@ -3523,9 +3523,16 @@ public abstract class LivingEntity extends Entity {
+         return !this.isRemoved() && this.collides; // CraftBukkit
+     }
+ 
++    // Paper start
+     @Override
+     public boolean isPushable() {
+-        return this.isAlive() && !this.isSpectator() && !this.onClimbable() && this.collides; // CraftBukkit
++        return this.isCollidable(level.paperConfig().collisions.fixClimbingBypassingCrammingRule);
++    }
++
++    @Override
++    public boolean isCollidable(boolean ignoreClimbing) {
++        return this.isAlive() && !this.isSpectator() && (ignoreClimbing || !this.onClimbable()) && this.collides; // CraftBukkit
++        // Paper end
+     }
+ 
+     // CraftBukkit start - collidable API
+diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+index e9f6e31cd557410a4ad4ced7086c4a846f13a4f6..50d4595b81f24949011c7565c5e3fc8c26c86019 100644
+--- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
++++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+@@ -82,7 +82,7 @@ public class Bat extends AmbientCreature {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Parrot.java b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
+index 90b98b823855037ce6efab1f478d875f225f65ed..a2977596c672a5a435f56bb20fbfb7b59882dda6 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Parrot.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
+@@ -382,8 +382,8 @@ public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
+-        return super.isPushable(); // CraftBukkit - collidable API
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
++        return super.isCollidable(ignoreClimbing); // CraftBukkit - collidable API // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index 119ee27ceb873c67d1d0904da903401e216eb450..04a119e6641898454253e2478bc1b4dff181b5ee 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -243,7 +243,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return !this.isVehicle();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index 7ff1e7e4d493770bfdbc0ad5e8f10387cefc42d2..b136cdc13d94bc34c998a1986e0c93525356ac5c 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -342,7 +342,7 @@ public class ArmorStand extends LivingEntity {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+index 7d60f56b2e8206e8e546abdd06ea74a2ead6e75d..4984b2b3294e425247b595bcf36812728fb4cd16 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+@@ -147,7 +147,7 @@ public abstract class AbstractMinecart extends Entity {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return true;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+index 5d927b6331f3d5cb7dd34be3e7ea4443f52f9ead..8471c34d02ba5819580754f98ce8cc0b50a0b328 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+@@ -157,7 +157,7 @@ public class Boat extends Entity {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return true;
+     }
+ 

@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Thu, 25 Nov 2021 10:25:09 +0100
+Subject: [PATCH] Prevent excessive velocity through repeated crits
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 327dc44770656932879ffe58d9bbacb6ca3d0713..49718f6fbdd4ffe38afe4b5001d9de69097976f4 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -2651,14 +2651,27 @@ public abstract class LivingEntity extends Entity {
+         return this.hasEffect(MobEffects.JUMP) ? (double) (0.1F * (float) (this.getEffect(MobEffects.JUMP).getAmplifier() + 1)) : 0.0D;
+     }
+ 
++    protected long lastJumpTime = 0L; // Paper
+     protected void jumpFromGround() {
+         double d0 = (double) this.getJumpPower() + this.getJumpBoostPower();
+         Vec3 vec3d = this.getDeltaMovement();
++        // Paper start
++        long time = System.nanoTime();
++        boolean canCrit = true;
++        if (this instanceof net.minecraft.world.entity.player.Player) {
++            canCrit = false;
++            if (time - this.lastJumpTime > (long)(0.250e9)) {
++                this.lastJumpTime = time;
++                canCrit = true;
++            }
++        }
++        // Paper end
+ 
+         this.setDeltaMovement(vec3d.x, d0, vec3d.z);
+         if (this.isSprinting()) {
+             float f = this.getYRot() * 0.017453292F;
+ 
++            if (canCrit) // Paper
+             this.setDeltaMovement(this.getDeltaMovement().add((double) (-Mth.sin(f) * 0.2F), 0.0D, (double) (Mth.cos(f) * 0.2F)));
+         }
+ 
