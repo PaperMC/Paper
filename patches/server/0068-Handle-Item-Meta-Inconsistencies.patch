@@ -69,8 +69,36 @@ index e937186aaf819a77c80beeb9e08413a1f781c13a..0e19f49ca2496b1c42d27289bcea15d2
      }
  
      public boolean isEnchanted() {
+diff --git a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
+index 22925b2f44fc510832ef07290d3109f0394f7d30..6955a1c91e9dbf06a0411c74ad5c6a3edb7dc8bc 100644
+--- a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
++++ b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
+@@ -59,11 +59,22 @@ public class EnchantmentHelper {
+         return Registry.ENCHANTMENT.getKey(enchantment);
+     }
+ 
++    // Paper start
++    public static int getItemCustomEnchantmentLevel(org.bukkit.enchantments.Enchantment bukkitEnchant, ItemStack stack) {
++        return getItemEnchantmentLevel(stack, () -> {
++            Enchantment enchantment = org.bukkit.craftbukkit.enchantments.CraftEnchantment.getRaw(bukkitEnchant);
++            return enchantment != null ? getEnchantmentId(enchantment) : org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(bukkitEnchant.getKey());
++        });
++    }
+     public static int getItemEnchantmentLevel(Enchantment enchantment, ItemStack stack) {
++        return getItemEnchantmentLevel(stack, () -> getEnchantmentId(enchantment));
++    }
++    private static int getItemEnchantmentLevel(ItemStack stack, java.util.function.Supplier<ResourceLocation> enchantLocation) {
++        // Paper end
+         if (stack.isEmpty()) {
+             return 0;
+         } else {
+-            ResourceLocation resourceLocation = getEnchantmentId(enchantment);
++            ResourceLocation resourceLocation = enchantLocation.get(); // Paper
+             ListTag listTag = stack.getEnchantmentTags();
+ 
+             for(int i = 0; i < listTag.size(); ++i) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 4b79b96579efbc4dd9a10e7183ed08b73b488794..c9093275d2b78b6e2f59e64efab0b4775ff0b43b 100644
+index 4b79b96579efbc4dd9a10e7183ed08b73b488794..9391bbe64fe4abf39e94ff85a4cbed903c41cacb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -6,7 +6,6 @@ import java.util.Map;
@@ -120,7 +148,7 @@ index 4b79b96579efbc4dd9a10e7183ed08b73b488794..c9093275d2b78b6e2f59e64efab0b477
              return 0;
          }
 -        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
-+        return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle); // Paper
++        return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemCustomEnchantmentLevel(ench, handle); // Paper
      }
  
      @Override
