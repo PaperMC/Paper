@@ -1,0 +1,153 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 15 May 2021 10:04:43 -0700
+Subject: [PATCH] additions to PlayerGameModeChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java b/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java
+index d446e52aa0951af5f759fa7a91908f4d818bd4a5..3fcdc509649b3d67bfd74404bcdf8d7a65c1babf 100644
+--- a/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java
++++ b/src/main/java/net/minecraft/server/commands/DefaultGameModeCommands.java
+@@ -31,9 +31,13 @@ public class DefaultGameModeCommands {
+         GameType gameType = minecraftServer.getForcedGameType();
+         if (gameType != null) {
+             for(ServerPlayer serverPlayer : minecraftServer.getPlayerList().getPlayers()) {
+-                if (serverPlayer.setGameMode(gameType)) {
+-                    ++i;
++                // Paper start - extend PlayerGameModeChangeEvent
++                org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameType, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, net.kyori.adventure.text.Component.empty());
++                if (event != null && event.isCancelled()) {
++                    source.sendSuccess(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), false);
+                 }
++                // Paper end
++                    ++i;
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/GameModeCommand.java b/src/main/java/net/minecraft/server/commands/GameModeCommand.java
+index 65089c0e78c9913a92ae9c66d664f48e2112ad92..7882ee2b7813d437d3b7580f046f38e79fc9e7b6 100644
+--- a/src/main/java/net/minecraft/server/commands/GameModeCommand.java
++++ b/src/main/java/net/minecraft/server/commands/GameModeCommand.java
+@@ -50,9 +50,14 @@ public class GameModeCommand {
+         int i = 0;
+ 
+         for(ServerPlayer serverPlayer : targets) {
+-            if (serverPlayer.setGameMode(gameMode)) {
++            // Paper start - extend PlayerGameModeChangeEvent
++            org.bukkit.event.player.PlayerGameModeChangeEvent event = serverPlayer.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND, net.kyori.adventure.text.Component.empty());
++            if (event != null && !event.isCancelled()) {
+                 logGamemodeChange(context.getSource(), serverPlayer, gameMode);
+                 ++i;
++            } else if (event != null && event.cancelMessage() != null) {
++                context.getSource().sendSuccess(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), true);
++                // Paper end
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index ee6581758784c5aeab40fb35775b18031fb191ea..73864c47e7f13a48243478bc24d4887aa70791b3 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1795,8 +1795,15 @@ public class ServerPlayer extends Player {
+     }
+ 
+     public boolean setGameMode(GameType gameMode) {
+-        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
+-            return false;
++        // Paper start - Add cause and nullable message to event
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
++        return event == null ? false : event.isCancelled();
++    }
++    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, net.kyori.adventure.text.Component message) {
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
++        if (event == null || event.isCancelled()) {
++            // Paper end
++            return null;
+         } else {
+             this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
+             if (gameMode == GameType.SPECTATOR) {
+@@ -1808,7 +1815,7 @@ public class ServerPlayer extends Player {
+ 
+             this.onUpdateAbilities();
+             this.updateEffectVisibility();
+-            return true;
++            return event; // Paper
+         }
+     }
+ 
+@@ -2210,6 +2217,16 @@ public class ServerPlayer extends Player {
+     }
+ 
+     public void loadGameTypes(@Nullable CompoundTag nbt) {
++        // Paper start
++        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != ServerPlayer.readPlayerMode(nbt, "playerGameType")) {
++            if (new org.bukkit.event.player.PlayerGameModeChangeEvent(this.getBukkitEntity(), org.bukkit.GameMode.getByValue(this.server.getDefaultGameType().getId()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null).callEvent()) {
++                this.gameMode.setGameModeForPlayer(this.server.getForcedGameType(), GameType.DEFAULT_MODE);
++            } else {
++                this.gameMode.setGameModeForPlayer(ServerPlayer.readPlayerMode(nbt,"playerGameType"), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
++            }
++            return;
++        }
++        // Paper end
+         this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(ServerPlayer.readPlayerMode(nbt, "playerGameType")), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 32746dfbc2fdfc150583676b1bf0762398b76d75..1ad1f958a9b6e1bc21f1c505aa7ea54950de6cad 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -73,18 +73,24 @@ public class ServerPlayerGameMode {
+     }
+ 
+     public boolean changeGameModeForPlayer(GameType gameMode) {
++        // Paper end
++        PlayerGameModeChangeEvent event = this.changeGameModeForPlayer(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
++        return event == null ? false : event.isCancelled();
++    }
++    public PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, net.kyori.adventure.text.Component cancelMessage) {
++        // Paper end
+         if (gameMode == this.gameModeForPlayer) {
+-            return false;
++            return null; // Paper
+         } else {
+             // CraftBukkit start
+-            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this.player.getBukkitEntity(), GameMode.getByValue(gameMode.getId()));
++            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this.player.getBukkitEntity(), GameMode.getByValue(gameMode.getId()), cause, cancelMessage); // Paper
+             this.level.getCraftServer().getPluginManager().callEvent(event);
+             if (event.isCancelled()) {
+-                return false;
++                return event; // Paper
+             }
+             // CraftBukkit end
+             this.setGameModeForPlayer(gameMode, this.gameModeForPlayer);
+-            return true;
++            return event; // Paper
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 161b5d6f0d420ac7b6ed112d1b03d42c3aaec421..de4c3849cc60151de8f3a873adad2bc36e30fbc4 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2903,7 +2903,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                     this.player = this.server.getPlayerList().respawn(this.player, false);
+                     if (this.server.isHardcore()) {
+-                        this.player.setGameMode(GameType.SPECTATOR);
++                        this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper
+                         ((GameRules.BooleanValue) this.player.getLevel().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS)).set(false, this.server);
+                     }
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 41167d0da3d88466d4251c0adc56b4fd215c3bce..3be62930b3f69fda6ab8b21eae43e2544b2706cf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1465,7 +1465,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             throw new IllegalArgumentException("Mode cannot be null");
+         }
+ 
+-        this.getHandle().setGameMode(GameType.byId(mode.getValue()));
++        this.getHandle().setGameMode(GameType.byId(mode.getValue()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.PLUGIN, null); // Paper
+     }
+ 
+     @Override
