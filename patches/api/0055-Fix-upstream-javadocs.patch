@@ -5,11 +5,70 @@ Subject: [PATCH] Fix upstream javadocs
 
 Upstream still refuses to use Java 8 with the API so they are likely unaware these are even issues.
 
+diff --git a/src/main/java/org/bukkit/BanList.java b/src/main/java/org/bukkit/BanList.java
+index 96ef22fe879c7be4f67bbb4d60c45ad11764dd5b..5dc9f9ede98d93925c99ee382e93f15f33589583 100644
+--- a/src/main/java/org/bukkit/BanList.java
++++ b/src/main/java/org/bukkit/BanList.java
+@@ -27,6 +27,9 @@ public interface BanList {
+ 
+     /**
+      * Gets a {@link BanEntry} by target.
++     * <p>
++     * Bans by name for ban type {@link Type#NAME NAME} are no longer supported and this method will return
++     * null when trying to request them. The replacement is bans by UUID.
+      *
+      * @param target entry parameter to search for
+      * @return the corresponding entry, or null if none found
+@@ -35,8 +38,11 @@ public interface BanList {
+     public BanEntry getBanEntry(@NotNull String target);
+ 
+     /**
+-     * Adds a ban to the this list. If a previous ban exists, this will
++     * Adds a ban to this list. If a previous ban exists, this will
+      * update the previous entry.
++     * <p>
++     * Bans by name for ban type {@link Type#NAME NAME} are no longer supported and this method will return
++     * null when trying to request them. The replacement is bans by UUID.
+      *
+      * @param target the target of the ban
+      * @param reason reason for the ban, null indicates implementation default
+@@ -60,6 +66,9 @@ public interface BanList {
+     /**
+      * Gets if a {@link BanEntry} exists for the target, indicating an active
+      * ban status.
++     * <p>
++     * Bans by name for ban type {@link Type#NAME NAME} are no longer supported.
++     * The replacement is bans by UUID.
+      *
+      * @param target the target to find
+      * @return true if a {@link BanEntry} exists for the name, indicating an
+@@ -70,6 +79,9 @@ public interface BanList {
+     /**
+      * Removes the specified target from this list, therefore indicating a
+      * "not banned" status.
++     * <p>
++     * Bans by name for ban type {@link Type#NAME NAME} are no longer supported.
++     * The replacement is bans by UUID.
+      *
+      * @param target the target to remove from this list
+      */
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index d3d8c5ac59cee2ec24e91223e0c994016a4f9752..82757d3013e01a6bfbb685929955d3e7dad8508c 100644
+index f66552fd08092761ac83b112aa1aa7584cfe0c32..72d414b756d3531ca83362b20097ab63656fecb1 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -1334,6 +1334,8 @@ public final class Bukkit {
+@@ -1269,10 +1269,7 @@ public final class Bukkit {
+     }
+ 
+     /**
+-     * Gets a ban list for the supplied type.
+-     * <p>
+-     * Bans by name are no longer supported and this method will return
+-     * null when trying to request them. The replacement is bans by UUID.
++     * Gets a ban list for the supplied type. <!-- Paper Remove notice: wrong place -->
+      *
+      * @param type the type of list to fetch, cannot be null
+      * @return a ban list of the specified type
+@@ -1334,6 +1331,8 @@ public final class Bukkit {
  
      /**
       * Gets every player that has ever played on this server.
@@ -31,8 +90,47 @@ index 0cf808356a1a5c6fc4bcf97a694ed9beb80a776a..dc765dea47a9a1c1520fb16ddb24f814
       * @param z Z-coordinate (0-15)
       * @return temperature at given coordinate
       */
+diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
+index a89fff5c164881be0286ec2240e94dd5883ecc40..0272ed71899a53b6f3761a3283391caa744d464d 100644
+--- a/src/main/java/org/bukkit/RegionAccessor.java
++++ b/src/main/java/org/bukkit/RegionAccessor.java
+@@ -158,7 +158,7 @@ public interface RegionAccessor {
+      * Creates a tree at the given {@link Location}
+      *
+      * @param location Location to spawn the tree
+-     * @param random Random to use to generated the tree
++     * @param random Random to use to generate the tree
+      * @param type Type of the tree to create
+      * @return true if the tree was created successfully, otherwise false
+      */
+@@ -170,14 +170,14 @@ public interface RegionAccessor {
+      * The provided consumer gets called for every block which gets changed
+      * as a result of the tree generation. When the consumer gets called no
+      * modifications to the world are done yet. Which means, that calling
+-     * {@link #getBlockState(Location)} in the consumer while return the state
++     * {@link #getBlockState(Location)} in the consumer will return the state
+      * of the block before the generation.
+      * <p>
+      * Modifications done to the {@link BlockState} in the consumer are respected,
+      * which means that it is not necessary to call {@link BlockState#update()}
+      *
+      * @param location Location to spawn the tree
+-     * @param random Random to use to generated the tree
++     * @param random Random to use to generate the tree
+      * @param type Type of the tree to create
+      * @param stateConsumer The consumer which should get called for every block which gets changed
+      * @return true if the tree was created successfully, otherwise false
+@@ -197,7 +197,7 @@ public interface RegionAccessor {
+      * If it returns {@code false} the block won't get set in the world.
+      *
+      * @param location Location to spawn the tree
+-     * @param random Random to use to generated the tree
++     * @param random Random to use to generate the tree
+      * @param type Type of the tree to create
+      * @param statePredicate The predicate which should get used to test if a block should be set or not.
+      * @return true if the tree was created successfully, otherwise false
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index a8d3addae5b0ed261d6a27052ad4e54970de597c..3485db7548e93242f99977a236eb3bcebedfb964 100644
+index 7d06f2a8f17cf42eeb05567e3f5c0c16074af9bc..9b5dcd897df91e6ba3c71c216e7a180b76a96694 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -510,13 +510,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
@@ -50,7 +148,19 @@ index a8d3addae5b0ed261d6a27052ad4e54970de597c..3485db7548e93242f99977a236eb3bce
       */
      public int getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
  
-@@ -1129,6 +1126,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -1076,10 +1073,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     public Set<OfflinePlayer> getBannedPlayers();
+ 
+     /**
+-     * Gets a ban list for the supplied type.
+-     * <p>
+-     * Bans by name are no longer supported and this method will return
+-     * null when trying to request them. The replacement is bans by UUID.
++     * Gets a ban list for the supplied type. <!-- Paper Remove notice: wrong place -->
+      *
+      * @param type the type of list to fetch, cannot be null
+      * @return a ban list of the specified type
+@@ -1129,6 +1123,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
  
      /**
       * Gets every player that has ever played on this server.
@@ -59,6 +169,50 @@ index a8d3addae5b0ed261d6a27052ad4e54970de597c..3485db7548e93242f99977a236eb3bce
       *
       * @return an array containing all previous players
       */
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 749d3de7dad480965be536938733d72bdfc2995b..d6b9d7c790399ea5dface159dd41c46920f71dda 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -1258,11 +1258,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+ 
+     /**
+      * Spawn a {@link FallingBlock} entity at the given {@link Location} of
+-     * the specified {@link Material}. The material dictates what is falling.
++     * the specified {@link BlockData}. The block data dictates what is falling.
+      * When the FallingBlock hits the ground, it will place that block.
+-     * <p>
+-     * The Material must be a block type, check with {@link Material#isBlock()
+-     * material.isBlock()}. The Material may not be air.
+      *
+      * @param location The {@link Location} to spawn the FallingBlock
+      * @param data The block data
+@@ -2612,7 +2609,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+     /**
+      * Find the closest nearby structure of a given {@link StructureType}.
+      * Finding unexplored structures can, and will, block if the world is
+-     * looking in chunks that gave not generated yet. This can lead to the world
++     * looking in chunks that have not generated yet. This can lead to the world
+      * temporarily freezing while locating an unexplored structure.
+      * <p>
+      * The {@code radius} is not a rigid square radius. Each structure may alter
+@@ -2646,7 +2643,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+     /**
+      * Find the closest nearby structure of a given {@link StructureType}.
+      * Finding unexplored structures can, and will, block if the world is
+-     * looking in chunks that gave not generated yet. This can lead to the world
++     * looking in chunks that have not generated yet. This can lead to the world
+      * temporarily freezing while locating an unexplored structure.
+      * <p>
+      * The {@code radius} is not a rigid square radius. Each structure may alter
+@@ -2679,7 +2676,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+     /**
+      * Find the closest nearby structure of a given {@link Structure}. Finding
+      * unexplored structures can, and will, block if the world is looking in
+-     * chunks that gave not generated yet. This can lead to the world
++     * chunks that have not generated yet. This can lead to the world
+      * temporarily freezing while locating an unexplored structure.
+      * <p>
+      * The {@code radius} is not a rigid square radius. Each structure may alter
 diff --git a/src/main/java/org/bukkit/block/Bed.java b/src/main/java/org/bukkit/block/Bed.java
 index f9bd74f9ce6bd6650726e5a993f9b6e292cdc74d..f4c37ce1fe7aac3dde8485ee51fc8888ed56e79e 100644
 --- a/src/main/java/org/bukkit/block/Bed.java
@@ -102,6 +256,67 @@ index 12a7ca1808cb80daceb7695a2f0e8f97e0e21a49..0d5ef61e100d972a5cf308b23d5e8f2f
       */
      @NotNull
      Material getPlacementMaterial();
+diff --git a/src/main/java/org/bukkit/block/data/FaceAttachable.java b/src/main/java/org/bukkit/block/data/FaceAttachable.java
+index 9599e1237b9717ddbf84c3738bf6c1293e8b3c54..950266b4bb0a2fabeb9539c5676ed58f0b0fe620 100644
+--- a/src/main/java/org/bukkit/block/data/FaceAttachable.java
++++ b/src/main/java/org/bukkit/block/data/FaceAttachable.java
+@@ -38,7 +38,7 @@ public interface FaceAttachable extends BlockData {
+          */
+         WALL,
+         /**
+-         * The switch is mounted to the ceiling and pointing dowanrds.
++         * The switch is mounted to the ceiling and pointing downwards.
+          */
+         CEILING;
+     }
+diff --git a/src/main/java/org/bukkit/block/data/type/CommandBlock.java b/src/main/java/org/bukkit/block/data/type/CommandBlock.java
+index 9a7122c907308e4e0a4d0eab815df16899503c19..3b1dab4c1c38477fbe651382f37fdb042ce67cd1 100644
+--- a/src/main/java/org/bukkit/block/data/type/CommandBlock.java
++++ b/src/main/java/org/bukkit/block/data/type/CommandBlock.java
+@@ -4,7 +4,7 @@ import org.bukkit.block.data.Directional;
+ 
+ /**
+  * 'conditional' denotes whether this command block is conditional or not, i.e.
+- * will only execute if the preceeding command block also executed successfully.
++ * will only execute if the preceding command block also executed successfully.
+  */
+ public interface CommandBlock extends Directional {
+ 
+diff --git a/src/main/java/org/bukkit/block/data/type/Gate.java b/src/main/java/org/bukkit/block/data/type/Gate.java
+index 494f97d47b52bc99b13748c1b57730fbd37d8f51..ebc98607b93294847f95e793304bc5d2528de2a3 100644
+--- a/src/main/java/org/bukkit/block/data/type/Gate.java
++++ b/src/main/java/org/bukkit/block/data/type/Gate.java
+@@ -5,7 +5,7 @@ import org.bukkit.block.data.Openable;
+ import org.bukkit.block.data.Powerable;
+ 
+ /**
+- * 'in_wall" indicates if the fence gate is attached to a wall, and if true the
++ * 'in_wall' indicates if the fence gate is attached to a wall, and if true the
+  * texture is lowered by a small amount to blend in better.
+  */
+ public interface Gate extends Directional, Openable, Powerable {
+diff --git a/src/main/java/org/bukkit/block/data/type/Switch.java b/src/main/java/org/bukkit/block/data/type/Switch.java
+index be06f8db02ca41d5cc3a5dc02951ad27e3cc8f9d..d91a07c7bcb36b3810bb2db89afef1eefd89253d 100644
+--- a/src/main/java/org/bukkit/block/data/type/Switch.java
++++ b/src/main/java/org/bukkit/block/data/type/Switch.java
+@@ -21,7 +21,7 @@ public interface Switch extends Directional, FaceAttachable, Powerable {
+      * Sets the value of the 'face' property.
+      *
+      * @param face the new 'face' value
+-     * @deprecated use {@link #getAttachedFace()}
++     * @deprecated use {@link #setAttachedFace(AttachedFace)}
+      */
+     @Deprecated
+     void setFace(@NotNull Face face);
+@@ -42,7 +42,7 @@ public interface Switch extends Directional, FaceAttachable, Powerable {
+          */
+         WALL,
+         /**
+-         * The switch is mounted to the ceiling and pointing dowanrds.
++         * The switch is mounted to the ceiling and pointing downwards.
+          */
+         CEILING;
+     }
 diff --git a/src/main/java/org/bukkit/entity/ArmorStand.java b/src/main/java/org/bukkit/entity/ArmorStand.java
 index 91fc11dda99de506be83d40df8929bf7cd8e8d85..7dc631ebd009f5f5c3ac1699c3f3515c47609c05 100644
 --- a/src/main/java/org/bukkit/entity/ArmorStand.java
@@ -115,6 +330,32 @@ index 91fc11dda99de506be83d40df8929bf7cd8e8d85..7dc631ebd009f5f5c3ac1699c3f3515c
 +    org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/entity/Arrow.java b/src/main/java/org/bukkit/entity/Arrow.java
+index 8814519df13c5e9475774f4bce4c8c6a462c2978..be9a35790fc664721ac94f3708613eb77631a0c5 100644
+--- a/src/main/java/org/bukkit/entity/Arrow.java
++++ b/src/main/java/org/bukkit/entity/Arrow.java
+@@ -73,7 +73,7 @@ public interface Arrow extends AbstractArrow {
+      * Removes a custom potion effect from this arrow.
+      *
+      * @param type the potion effect type to remove
+-     * @return true if the an effect was removed as a result of this call
++     * @return true if the effect was removed as a result of this call
+      * @throws IllegalArgumentException if this operation would leave the Arrow
+      * in a state with no Custom Effects and PotionType.UNCRAFTABLE
+      */
+diff --git a/src/main/java/org/bukkit/entity/EnderDragon.java b/src/main/java/org/bukkit/entity/EnderDragon.java
+index 0449664d7cd0c52ac34d2101110f1ab42070257c..57f8e7bf4c7b4c4a4e793cfd5d7db74384d8b1b5 100644
+--- a/src/main/java/org/bukkit/entity/EnderDragon.java
++++ b/src/main/java/org/bukkit/entity/EnderDragon.java
+@@ -30,7 +30,7 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
+          */
+         FLY_TO_PORTAL,
+         /**
+-         * The dragon will land on on the portal. If the dragon is not near
++         * The dragon will land on the portal. If the dragon is not near
+          * the portal, it will fly to it before mounting.
+          */
+         LAND_ON_PORTAL,
 diff --git a/src/main/java/org/bukkit/entity/HumanEntity.java b/src/main/java/org/bukkit/entity/HumanEntity.java
 index 09936f3a2376a46721bbc8365c989581c2a789ef..3845a726adbd0e75d7bf2aeeb6da8cb571d51a8f 100644
 --- a/src/main/java/org/bukkit/entity/HumanEntity.java
@@ -131,6 +372,19 @@ index 09936f3a2376a46721bbc8365c989581c2a789ef..3845a726adbd0e75d7bf2aeeb6da8cb5
      /**
       * Returns the name of this player
       *
+diff --git a/src/main/java/org/bukkit/entity/ItemFrame.java b/src/main/java/org/bukkit/entity/ItemFrame.java
+index b688b3856cb3068a539fcecfbfa113f8ab4160a9..c275b881cbd11307a6dcc7190d7a7d4063000ad8 100644
+--- a/src/main/java/org/bukkit/entity/ItemFrame.java
++++ b/src/main/java/org/bukkit/entity/ItemFrame.java
+@@ -75,7 +75,7 @@ public interface ItemFrame extends Hanging {
+     public void setRotation(@NotNull Rotation rotation) throws IllegalArgumentException;
+ 
+     /**
+-     * Returns whether the item frame is be visible or not.
++     * Returns whether the item frame is visible or not.
+      *
+      * @return whether the item frame is visible or not
+      */
 diff --git a/src/main/java/org/bukkit/entity/Mob.java b/src/main/java/org/bukkit/entity/Mob.java
 index 2926fa6071bc7640cc10280b5c3962b0ce7686f1..4f63988848443aff55619bc12ef12c925642a3f9 100644
 --- a/src/main/java/org/bukkit/entity/Mob.java
@@ -146,8 +400,21 @@ index 2926fa6071bc7640cc10280b5c3962b0ce7686f1..4f63988848443aff55619bc12ef12c92
      /**
       * Instructs this Mob to set the specified LivingEntity as its target.
       * <p>
+diff --git a/src/main/java/org/bukkit/entity/PigZombie.java b/src/main/java/org/bukkit/entity/PigZombie.java
+index ae9eaaa8e38e1d9dfc459926c7fc51ddb89de84a..b2ec535bb1b0ce0c114ddd7638b90218b05cd835 100644
+--- a/src/main/java/org/bukkit/entity/PigZombie.java
++++ b/src/main/java/org/bukkit/entity/PigZombie.java
+@@ -44,8 +44,6 @@ public interface PigZombie extends Zombie {
+ 
+     /**
+      * <b>Not applicable to this entity</b>
+-     *
+-     * @return UnsuppotedOperationException
+      */
+     @Override
+     public int getConversionTime();
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index be2626e57d77f570a61cb822d3804245c0419cb3..a95efd61d171d1194ae545d8d89710aca82e40a6 100644
+index 0833c4dbc31d90ae0e7f37fe86359b9d46bb8d41..5d8cd14e4511daedaf46b926e2c3a470bf5c480a 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -310,15 +310,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
@@ -170,6 +437,15 @@ index be2626e57d77f570a61cb822d3804245c0419cb3..a95efd61d171d1194ae545d8d89710ac
       * <p>
       * Note: This will overwrite the players current inventory, health,
       * motion, etc, with the state from the saved dat file.
+@@ -553,7 +553,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     /**
+      * Plays an effect to just this player.
+      *
+-     * @param <T> the data based based on the type of the effect
++     * @param <T> the data based on the type of the effect
+      * @param loc the location to play the effect at
+      * @param effect the {@link Effect}
+      * @param data a data bit needed for some effects
 @@ -831,7 +831,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * Use supplied alternative character to the section symbol to represent legacy color codes.
@@ -179,6 +455,24 @@ index be2626e57d77f570a61cb822d3804245c0419cb3..a95efd61d171d1194ae545d8d89710ac
       * @param message The message to send
       * @deprecated use {@link #sendActionBar(net.kyori.adventure.text.Component)}
       */
+@@ -1264,7 +1264,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+ 
+     /**
+      * Allows this player to see a player that was previously hidden. If
+-     * another another plugin had hidden the player too, then the player will
++     * another plugin had hidden the player too, then the player will
+      * remain hidden until the other plugin calls this method too.
+      *
+      * @param plugin Plugin that wants to show the player
+@@ -1293,7 +1293,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+ 
+     /**
+      * Allows this player to see an entity that was previously hidden. If
+-     * another another plugin had hidden the entity too, then the entity will
++     * another plugin had hidden the entity too, then the entity will
+      * remain hidden until the other plugin calls this method too.
+      *
+      * @param plugin Plugin that wants to show the entity
 diff --git a/src/main/java/org/bukkit/entity/Slime.java b/src/main/java/org/bukkit/entity/Slime.java
 index a5ad3250cebfeb302c58e0bfd6db1295913c927e..bfac874840cf1f36afba16ae4d176c5821a68cfb 100644
 --- a/src/main/java/org/bukkit/entity/Slime.java
@@ -200,6 +494,19 @@ index a5ad3250cebfeb302c58e0bfd6db1295913c927e..bfac874840cf1f36afba16ae4d176c58
       * @param sz The new size of the slime.
       */
      public void setSize(int sz);
+diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
+index 6bf3af3ed81b66f61e53105d3591165ea74dba0e..a91400cd8bb4c72d1f3200a17f6de025540fe09d 100644
+--- a/src/main/java/org/bukkit/entity/Villager.java
++++ b/src/main/java/org/bukkit/entity/Villager.java
+@@ -202,7 +202,7 @@ public interface Villager extends AbstractVillager {
+          */
+         NITWIT,
+         /**
+-         * Sheperd profession. Wears a brown robe. Shepherds primarily trade for
++         * Shepherd profession. Wears a brown robe. Shepherds primarily trade for
+          * wool items, and shears.
+          */
+         SHEPHERD,
 diff --git a/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java b/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java
 index 44f7f6939a27b9a0a796d91eac4b7c97ec90a643..641c71ab66bd2499b35cf3c1d533fd105d096e10 100644
 --- a/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java
@@ -215,11 +522,55 @@ index 44f7f6939a27b9a0a796d91eac4b7c97ec90a643..641c71ab66bd2499b35cf3c1d533fd10
   */
  public class BlockExplodeEvent extends BlockEvent implements Cancellable {
      private static final HandlerList handlers = new HandlerList();
+diff --git a/src/main/java/org/bukkit/event/block/BlockPlaceEvent.java b/src/main/java/org/bukkit/event/block/BlockPlaceEvent.java
+index be0a2d1f234d8265d98e54e518a994957b1f3ab7..4e3c406ba883aae553e8d69b6b719b872cd6096c 100644
+--- a/src/main/java/org/bukkit/event/block/BlockPlaceEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockPlaceEvent.java
+@@ -114,7 +114,7 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
+ 
+     /**
+      * Gets the value whether the player would be allowed to build here.
+-     * Defaults to spawn if the server was going to stop them (such as, the
++     * Defaults to false if the server was going to stop them (such as, the
+      * player is in Spawn). Note that this is an entirely different check
+      * than BLOCK_CANBUILD, as this refers to a player, not universe-physics
+      * rule like cactus on dirt.
+diff --git a/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java b/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
+index 2ff1b1308571d8f8056d3359e8a8ba4a589c3726..e9a6e5be5f33a342f7e5c496f0f1c64b2f302ace 100644
+--- a/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
++++ b/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
+@@ -80,7 +80,7 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
+     /**
+      * Get a list of available {@link EnchantmentOffer} for the player. You can
+      * modify the values to change the available offers for the player. An offer
+-     * may be null, if there isn't a enchantment offer at a specific slot. There
++     * may be null, if there isn't an enchantment offer at a specific slot. There
+      * are 3 slots in the enchantment table available to modify.
+      *
+      * @return list of available enchantment offers
+diff --git a/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java b/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
+index a37febd0d4dd5b733e9ee72628fdf9395fec4367..9cee218b9ee14688356f16b1f58512186286e7e9 100644
+--- a/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
++++ b/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
+@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+- * Called when a lingering potion applies it's effects. Happens
++ * Called when a lingering potion applies its effects. Happens
+  * once every 5 ticks
+  */
+ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellable {
 diff --git a/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java b/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
-index e9de00e9e434d36117a672fa9fbfc7c52f284b67..9a06487e0f76cd7765e6f900b7458a3cf0aa44e7 100644
+index e9de00e9e434d36117a672fa9fbfc7c52f284b67..4065432c884324b107d04f4ccd486085b0c440e7 100644
 --- a/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
-@@ -158,7 +158,8 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
+@@ -154,11 +154,12 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
+          */
+         DROWNED,
+         /**
+-         * When an cow is spawned by shearing a mushroom cow
++         * When a cow is spawned by shearing a mushroom cow
           */
          SHEARED,
          /**
@@ -244,6 +595,54 @@ index 10d0e18dfd423b108fe381e8142867eb10399359..099efafa14c10910e4ed04abb1823f0c
   */
  public class EntityExplodeEvent extends EntityEvent implements Cancellable {
      private static final HandlerList handlers = new HandlerList();
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPickupItemEvent.java b/src/main/java/org/bukkit/event/entity/EntityPickupItemEvent.java
+index c866df03d66dd8724e12c7353da4cf144c70b2c8..94ee5a3354722aa5d825da727b7b7071fdc6bacc 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPickupItemEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPickupItemEvent.java
+@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+- * Thrown when a entity picks an item up from the ground
++ * Thrown when an entity picks an item up from the ground
+  */
+ public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPlaceEvent.java b/src/main/java/org/bukkit/event/entity/EntityPlaceEvent.java
+index 327876e0ad7dcfeb71d9d22afe1c04bcd71c3bf9..71d664dd89995f088c47d17b38547d530319470c 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPlaceEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPlaceEvent.java
+@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+ /**
+- * Triggered when a entity is created in the world by a player "placing" an item
++ * Triggered when an entity is created in the world by a player "placing" an item
+  * on a block.
+  * <br>
+  * Note that this event is currently only fired for four specific placements:
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPotionEffectEvent.java b/src/main/java/org/bukkit/event/entity/EntityPotionEffectEvent.java
+index 01c5e8b71338fbb4b1605e45bf2a2e705188f6b5..c9f395064656dd0126410eb3c6e197baa450c063 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPotionEffectEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPotionEffectEvent.java
+@@ -133,7 +133,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable
+     public enum Action {
+ 
+         /**
+-         * When the potion effect is added because the entity didn't have it's
++         * When the potion effect is added because the entity didn't have its
+          * type.
+          */
+         ADDED,
+@@ -238,7 +238,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable
+          */
+         SPIDER_SPAWN,
+         /**
+-         * When the entity gets effects from a totem item saving it's life.
++         * When the entity gets effects from a totem item saving its life.
+          */
+         TOTEM,
+         /**
 diff --git a/src/main/java/org/bukkit/event/entity/EntityRegainHealthEvent.java b/src/main/java/org/bukkit/event/entity/EntityRegainHealthEvent.java
 index d51d2ec1d04d9ea8a25a70d0d856f2355ebfcb4a..7ecff9fcee19fc94be784474fea620e5dd434731 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityRegainHealthEvent.java
@@ -256,6 +655,19 @@ index d51d2ec1d04d9ea8a25a70d0d856f2355ebfcb4a..7ecff9fcee19fc94be784474fea620e5
 +         * When an animal regains health from eating consumables
           */
          EATING,
+         /**
+diff --git a/src/main/java/org/bukkit/event/entity/EntityTargetEvent.java b/src/main/java/org/bukkit/event/entity/EntityTargetEvent.java
+index dee186e99463a56394bbc2039d1e763d109125b9..c6e4d69eecd2789b1d78fe99fe590932e9758ba1 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityTargetEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityTargetEvent.java
+@@ -156,7 +156,7 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
+         FOLLOW_LEADER,
+         /**
+          * When another entity tempts this entity by having a desired item such
+-         * as wheat in it's hand.
++         * as wheat in its hand.
+          */
+         TEMPT,
          /**
 diff --git a/src/main/java/org/bukkit/event/entity/PiglinBarterEvent.java b/src/main/java/org/bukkit/event/entity/PiglinBarterEvent.java
 index c17ff41a688b2cbd877cda25d4ec033ac8ef5524..bd67b7cba78b9bbdd82a5a40048e658a979e3108 100644
@@ -271,8 +683,72 @@ index c17ff41a688b2cbd877cda25d4ec033ac8ef5524..bd67b7cba78b9bbdd82a5a40048e658a
   */
  public class PiglinBarterEvent extends EntityEvent implements Cancellable {
  
+diff --git a/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java b/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
+index 79797a2be7fb139d528116d34d13e51d39b96e56..0921484e921dbd200725b9298f655720618b5362 100644
+--- a/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/InventoryClickEvent.java
+@@ -92,7 +92,7 @@ public class InventoryClickEvent extends InventoryInteractEvent {
+     /**
+      * Gets the ItemStack currently in the clicked slot.
+      *
+-     * @return the item in the clicked
++     * @return the item in the clicked slot
+      */
+     @Nullable
+     public ItemStack getCurrentItem() {
+diff --git a/src/main/java/org/bukkit/event/inventory/InventoryOpenEvent.java b/src/main/java/org/bukkit/event/inventory/InventoryOpenEvent.java
+index 9013d043503d175004ad276799e5935b7fa59dc4..ceae092eb782698803c6c3df41267dde20ba62b2 100644
+--- a/src/main/java/org/bukkit/event/inventory/InventoryOpenEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/InventoryOpenEvent.java
+@@ -7,7 +7,7 @@ import org.bukkit.inventory.InventoryView;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+- * Represents a player related inventory event
++ * Called when a player opens an inventory
+  */
+ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+diff --git a/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java b/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
+index 6782024735a885ba0b1b4dba4a576740c1410366..8977f7609431c3c46324a82de84d4a32f4b71c57 100644
+--- a/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
+@@ -24,6 +24,20 @@ public class PrepareAnvilEvent extends PrepareInventoryResultEvent {
+         return (AnvilInventory) super.getInventory();
+     }
+ 
++    /**
++     * {@inheritDoc}
++     *
++     * <p>
++     * Note: by default custom recipes in anvil are disabled
++     * you should define a repair cost on the anvil inventory
++     * greater or equals to zero in order to allow that.
++     *
++     * @param result result item
++     */
++    public void setResult(@Nullable ItemStack result) {
++        super.setResult(result);
++    }
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+diff --git a/src/main/java/org/bukkit/generator/ChunkGenerator.java b/src/main/java/org/bukkit/generator/ChunkGenerator.java
+index 0cc6e29a5af28e95f87f415d6b2424d4622a6f34..c0b749a5bbf4980d01fed74768bb61909b579cb9 100644
+--- a/src/main/java/org/bukkit/generator/ChunkGenerator.java
++++ b/src/main/java/org/bukkit/generator/ChunkGenerator.java
+@@ -627,7 +627,7 @@ public abstract class ChunkGenerator {
+          * Get the biome at x, y, z within chunk being generated
+          *
+          * @param x the x location in the chunk from 0-15 inclusive
+-         * @param y the y location in the chunk from minimum (inclusive) -
++         * @param y the y location in the chunk from minHeight (inclusive) -
+          * maxHeight (exclusive)
+          * @param z the z location in the chunk from 0-15 inclusive
+          * @return Biome value
 diff --git a/src/main/java/org/bukkit/inventory/EntityEquipment.java b/src/main/java/org/bukkit/inventory/EntityEquipment.java
-index d5b50a4a954fed35d37f03f1a277cc173ca106df..a91fa5386afd7a1137adb921ad5adb798604772f 100644
+index d5b50a4a954fed35d37f03f1a277cc173ca106df..c69904f3ee7f3a41d6cebcd401abf8385dfbf868 100644
 --- a/src/main/java/org/bukkit/inventory/EntityEquipment.java
 +++ b/src/main/java/org/bukkit/inventory/EntityEquipment.java
 @@ -37,9 +37,23 @@ public interface EntityEquipment {
@@ -362,9 +838,9 @@ index d5b50a4a954fed35d37f03f1a277cc173ca106df..a91fa5386afd7a1137adb921ad5adb79
 +     * <pre>{@code
 +     * EntityEquipment equipment = entity.getEquipment();
 +     * if (equipment instanceof PlayerInventory) {
-+     *     equipment.getItemInHand(); // will return a mirror
++     *     equipment.getHelmet(); // will return a mirror
 +     * } else {
-+     *     equipment.getItemInHand(); // will return a copy
++     *     equipment.getHelmet(); // will return a copy
 +     * }
 +     * }</pre>
       *
@@ -529,3 +1005,139 @@ index 62fbd7f6d8195bebcab7f704a0a485a1bbeca26c..5461f7fa75f5a065bb333b4a113640b5
       *
       * @return the currently held item
       * @see #getItemInMainHand()
+diff --git a/src/main/java/org/bukkit/inventory/ShapedRecipe.java b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
+index e57e600283702dd7fc60fa3baa1e1cc1b8574873..76b78f388dd3539917976e66831e51006692a2aa 100644
+--- a/src/main/java/org/bukkit/inventory/ShapedRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
+@@ -38,8 +38,7 @@ public class ShapedRecipe implements Recipe, Keyed {
+      * @param result The item you want the recipe to create.
+      * @see ShapedRecipe#shape(String...)
+      * @see ShapedRecipe#setIngredient(char, Material)
+-     * @see ShapedRecipe#setIngredient(char, Material, int)
+-     * @see ShapedRecipe#setIngredient(char, MaterialData)
++     * @see ShapedRecipe#setIngredient(char, RecipeChoice)
+      */
+     public ShapedRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
+         Preconditions.checkArgument(key != null, "key");
+diff --git a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+index df4c52f1f0be2409c7506b09167bd58b5602fa7a..74449a635aca84adcc1652e1e85f2d27dcaf6842 100644
+--- a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+@@ -38,11 +38,8 @@ public class ShapelessRecipe implements Recipe, Keyed {
+      * @param key the unique recipe key
+      * @param result The item you want the recipe to create.
+      * @see ShapelessRecipe#addIngredient(Material)
+-     * @see ShapelessRecipe#addIngredient(MaterialData)
+-     * @see ShapelessRecipe#addIngredient(Material,int)
+      * @see ShapelessRecipe#addIngredient(int,Material)
+-     * @see ShapelessRecipe#addIngredient(int,MaterialData)
+-     * @see ShapelessRecipe#addIngredient(int,Material,int)
++     * @see ShapelessRecipe#addIngredient(RecipeChoice)
+      */
+     public ShapelessRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
+         Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
+@@ -184,7 +181,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
+ 
+     /**
+      * Removes multiple instances of an ingredient from the list. If there are
+-     * less instances then specified, all will be removed. Only removes exact
++     * fewer instances than specified, all will be removed. Only removes exact
+      * matches, with a data value of 0.
+      *
+      * @param count The number of copies to remove.
+diff --git a/src/main/java/org/bukkit/inventory/StonecuttingRecipe.java b/src/main/java/org/bukkit/inventory/StonecuttingRecipe.java
+index 07c3dff4d6190ef388d9c1e1c36f67f00a3e8e66..597a18a767b68b47e81454b7d44613c7178c1366 100644
+--- a/src/main/java/org/bukkit/inventory/StonecuttingRecipe.java
++++ b/src/main/java/org/bukkit/inventory/StonecuttingRecipe.java
+@@ -28,7 +28,7 @@ public class StonecuttingRecipe implements Recipe, Keyed {
+     }
+ 
+     /**
+-     * Create a cooking recipe to craft the specified ItemStack.
++     * Create a Stonecutting recipe to craft the specified ItemStack.
+      *
+      * @param key The unique recipe key
+      * @param result The item you want the recipe to create.
+@@ -42,7 +42,7 @@ public class StonecuttingRecipe implements Recipe, Keyed {
+     }
+ 
+     /**
+-     * Sets the input of this cooking recipe.
++     * Sets the input of this Stonecutting recipe.
+      *
+      * @param input The input material.
+      * @return The changed recipe, so you can chain calls.
+@@ -64,7 +64,7 @@ public class StonecuttingRecipe implements Recipe, Keyed {
+     }
+ 
+     /**
+-     * Sets the input of this cooking recipe.
++     * Sets the input of this Stonecutting recipe.
+      *
+      * @param input The input choice.
+      * @return The changed recipe, so you can chain calls.
+diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+index 049c70c935fd7a781280d223f74bbbf87223f505..f78714c2a6d9da162c9802552984cbfad76ff728 100644
+--- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+@@ -305,7 +305,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+     /**
+      * Return an immutable copy of all {@link Attribute}s and their
+      * {@link AttributeModifier}s for a given {@link EquipmentSlot}.<br>
+-     * Any {@link AttributeModifier} that does have have a given
++     * Any {@link AttributeModifier} that does have a given
+      * {@link EquipmentSlot} will be returned. This is because
+      * AttributeModifiers without a slot are active in any slot.<br>
+      * If there are no attributes set for the given slot, an empty map
+diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
+index 86a0a6f9e8487d6dfaf60876ace3dcc9b4722826..571b43c2809d2b248feebc7decba6017a67c8aee 100644
+--- a/src/main/java/org/bukkit/scoreboard/Objective.java
++++ b/src/main/java/org/bukkit/scoreboard/Objective.java
+@@ -88,7 +88,7 @@ public interface Objective {
+      *
+      * @return true if scores are modifiable
+      * @throws IllegalStateException if this objective has been unregistered
+-     * @see Criterias#HEALTH
++     * @see Criteria#HEALTH
+      */
+     boolean isModifiable() throws IllegalStateException;
+ 
+diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
+index 4d625f79ba2e3fe074feade98f7c1bc2798cb82e..937a28638c251509ebeb254178a4583fe03c52d0 100644
+--- a/src/main/java/org/bukkit/scoreboard/Team.java
++++ b/src/main/java/org/bukkit/scoreboard/Team.java
+@@ -277,7 +277,7 @@ public interface Team {
+      * Gets the Set of entries on the team
+      *
+      * @return entries on the team
+-     * @throws IllegalStateException if this entries has been unregistered\
++     * @throws IllegalStateException if this team has been unregistered
+      */
+     @NotNull
+     Set<String> getEntries() throws IllegalStateException;
+diff --git a/src/main/java/org/bukkit/util/BoundingBox.java b/src/main/java/org/bukkit/util/BoundingBox.java
+index 9883983c33fcff0f4c1e23867adafa436e2ed96f..5017b73bcec0d4d5256d89db14201c03829dc981 100644
+--- a/src/main/java/org/bukkit/util/BoundingBox.java
++++ b/src/main/java/org/bukkit/util/BoundingBox.java
+@@ -358,7 +358,7 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
+      * <p>
+      * Negative values will shrink the bounding box in the corresponding
+      * direction. Shrinking will be limited to the point where the affected
+-     * opposite faces would meet if the they shrank at uniform speeds.
++     * opposite faces would meet if they shrank at uniform speeds.
+      *
+      * @param negativeX the amount of expansion in the negative x direction
+      * @param negativeY the amount of expansion in the negative y direction
+diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
+index 612958a331575d1da2715531ebdf6b1168f2e860..9a7768d41270714d4a1c89b4dcb436cc66f57545 100644
+--- a/src/main/java/org/bukkit/util/CachedServerIcon.java
++++ b/src/main/java/org/bukkit/util/CachedServerIcon.java
+@@ -5,7 +5,7 @@ import org.bukkit.event.server.ServerListPingEvent;
+ import org.jetbrains.annotations.Nullable;
+ 
+ /**
+- * This is a cached version of a server-icon. It's internal representation
++ * This is a cached version of a server-icon. Its internal representation
+  * and implementation is undefined.
+  *
+  * @see Server#getServerIcon()
