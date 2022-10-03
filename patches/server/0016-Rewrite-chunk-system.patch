@@ -12891,7 +12891,7 @@ index c905602d23cdf3af1de7ab4419f11856b07da2ba..fa1ab9974859c75075f3090e36e0de58
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 86c33f029ae56fcace51b69763202be9f8bc5f44..b550f302b1bb6ef92987c8c3431b94c3ba3a091d 100644
+index 86c33f029ae56fcace51b69763202be9f8bc5f44..2ba3bb4e5670ece798a8882801a856d82851c00a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -50,17 +50,12 @@ public class ChunkHolder {
@@ -13148,7 +13148,7 @@ index 86c33f029ae56fcace51b69763202be9f8bc5f44..b550f302b1bb6ef92987c8c3431b94c3
  
                  if (chunk != null) {
                      int j = this.lightEngine.getMinLightSection();
-@@ -340,66 +305,34 @@ public class ChunkHolder {
+@@ -340,66 +305,32 @@ public class ChunkHolder {
      }
  
      public void broadcast(Packet<?> packet, boolean onlyOnWatchDistanceEdge) {
@@ -13178,14 +13178,12 @@ index 86c33f029ae56fcace51b69763202be9f8bc5f44..b550f302b1bb6ef92987c8c3431b94c3
 -                throw chunkStorage.debugFuturesAndCreateReportedException(new IllegalStateException("null value previously set for chunk status"), s);
 +        Object[] backingSet = players.getBackingSet();
 +        for (int i = 0, len = backingSet.length; i < len; ++i) {
-+            Object temp = backingSet[i];
-+            if (!(temp instanceof ServerPlayer)) {
++            if (!(backingSet[i] instanceof ServerPlayer player)) {
 +                continue;
              }
 -
 -            if (either == ChunkHolder.NOT_DONE_YET || either.right().isEmpty()) {
 -                return completablefuture;
-+            ServerPlayer player = (ServerPlayer)temp;
 +            if (!this.chunkMap.playerChunkManager.isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)) {
 +                continue;
              }
@@ -13235,7 +13233,7 @@ index 86c33f029ae56fcace51b69763202be9f8bc5f44..b550f302b1bb6ef92987c8c3431b94c3
      }
  
      public final ChunkPos getPos() { // Paper - final for inline
-@@ -407,207 +340,10 @@ public class ChunkHolder {
+@@ -407,207 +338,10 @@ public class ChunkHolder {
      }
  
      public final int getTicketLevel() { // Paper - final for inline
@@ -13445,7 +13443,7 @@ index 86c33f029ae56fcace51b69763202be9f8bc5f44..b550f302b1bb6ef92987c8c3431b94c3
  
      public static ChunkStatus getStatus(int level) {
          return level < 33 ? ChunkStatus.FULL : ChunkStatus.getStatusAroundFullChunk(level - 33);
-@@ -617,38 +353,14 @@ public class ChunkHolder {
+@@ -617,38 +351,14 @@ public class ChunkHolder {
          return ChunkHolder.FULL_CHUNK_STATUSES[Mth.clamp(33 - distance + 1, (int) 0, ChunkHolder.FULL_CHUNK_STATUSES.length - 1)];
      }
  
@@ -13487,7 +13485,7 @@ index 86c33f029ae56fcace51b69763202be9f8bc5f44..b550f302b1bb6ef92987c8c3431b94c3
      }
  
      @FunctionalInterface
-@@ -697,15 +409,15 @@ public class ChunkHolder {
+@@ -697,15 +407,15 @@ public class ChunkHolder {
  
      // Paper start
      public final boolean isEntityTickingReady() {
@@ -13507,7 +13505,7 @@ index 86c33f029ae56fcace51b69763202be9f8bc5f44..b550f302b1bb6ef92987c8c3431b94c3
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index cbd4e749574c55c6e52f42b62dd6da8cfcca97f9..eda47a2c2a26fcf3434af140e1436395b2506cb0 100644
+index cbd4e749574c55c6e52f42b62dd6da8cfcca97f9..13814643e28e36c72173d0d62b9271a7f6113f6a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -122,10 +122,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -14419,7 +14417,7 @@ index cbd4e749574c55c6e52f42b62dd6da8cfcca97f9..eda47a2c2a26fcf3434af140e1436395
          return sectionposition;
      }
  
-@@ -1307,65 +824,40 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1307,65 +824,38 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int k1;
          int l1;
  
@@ -14473,29 +14471,26 @@ index cbd4e749574c55c6e52f42b62dd6da8cfcca97f9..eda47a2c2a26fcf3434af140e1436395
 -        Set<ServerPlayer> set = this.playerMap.getPlayers(chunkPos.toLong());
 -        Builder<ServerPlayer> builder = ImmutableList.builder();
 -        Iterator iterator = set.iterator();
--
--        while (iterator.hasNext()) {
--            ServerPlayer entityplayer = (ServerPlayer) iterator.next();
--            SectionPos sectionposition = entityplayer.getLastSectionPos();
 +        // Paper start - per player view distance
 +        // there can be potential desync with player's last mapped section and the view distance map, so use the
 +        // view distance map here.
-+        List<ServerPlayer> ret = new java.util.ArrayList<>(4);
-+
 +        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> players = this.playerChunkManager.broadcastMap.getObjectsInRange(chunkPos);
 +        if (players == null) {
-+            return ret;
++            return java.util.Collections.emptyList();
 +        }
+ 
+-        while (iterator.hasNext()) {
+-            ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+-            SectionPos sectionposition = entityplayer.getLastSectionPos();
++        List<ServerPlayer> ret = new java.util.ArrayList<>(players.size());
  
 -            if (onlyOnWatchDistanceEdge && ChunkMap.isChunkOnRangeBorder(chunkPos.x, chunkPos.z, sectionposition.x(), sectionposition.z(), this.viewDistance) || !onlyOnWatchDistanceEdge && ChunkMap.isChunkInRange(chunkPos.x, chunkPos.z, sectionposition.x(), sectionposition.z(), this.viewDistance)) {
 -                builder.add(entityplayer);
 +        Object[] backingSet = players.getBackingSet();
 +        for (int i = 0, len = backingSet.length; i < len; ++i) {
-+            Object temp = backingSet[i];
-+            if (!(temp instanceof ServerPlayer)) {
++            if (!(backingSet[i] instanceof ServerPlayer player)) {
 +                continue;
 +            }
-+            ServerPlayer player = (ServerPlayer)temp;
 +            if (!this.playerChunkManager.isChunkSent(player, chunkPos.x, chunkPos.z, onlyOnWatchDistanceEdge)) {
 +                continue;
              }
@@ -14508,7 +14503,7 @@ index cbd4e749574c55c6e52f42b62dd6da8cfcca97f9..eda47a2c2a26fcf3434af140e1436395
      }
  
      public void addEntity(Entity entity) {
-@@ -1560,7 +1052,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1560,7 +1050,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          @Override
          protected boolean isChunkToRemove(long pos) {
@@ -14517,7 +14512,7 @@ index cbd4e749574c55c6e52f42b62dd6da8cfcca97f9..eda47a2c2a26fcf3434af140e1436395
          }
  
          @Nullable
-@@ -1641,7 +1133,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1641,7 +1131,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (player != this.entity) {
                  Vec3 vec3d = player.position().subtract(this.entity.position());
