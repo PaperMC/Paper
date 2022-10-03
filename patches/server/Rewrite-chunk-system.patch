@@ -13178,14 +13178,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                throw chunkStorage.debugFuturesAndCreateReportedException(new IllegalStateException("null value previously set for chunk status"), s);
 +        Object[] backingSet = players.getBackingSet();
 +        for (int i = 0, len = backingSet.length; i < len; ++i) {
-+            Object temp = backingSet[i];
-+            if (!(temp instanceof ServerPlayer)) {
++            if (!(backingSet[i] instanceof ServerPlayer player)) {
 +                continue;
              }
 -
 -            if (either == ChunkHolder.NOT_DONE_YET || either.right().isEmpty()) {
 -                return completablefuture;
-+            ServerPlayer player = (ServerPlayer)temp;
 +            if (!this.chunkMap.playerChunkManager.isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)) {
 +                continue;
              }
@@ -14473,29 +14471,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        Set<ServerPlayer> set = this.playerMap.getPlayers(chunkPos.toLong());
 -        Builder<ServerPlayer> builder = ImmutableList.builder();
 -        Iterator iterator = set.iterator();
--
--        while (iterator.hasNext()) {
--            ServerPlayer entityplayer = (ServerPlayer) iterator.next();
--            SectionPos sectionposition = entityplayer.getLastSectionPos();
 +        // Paper start - per player view distance
 +        // there can be potential desync with player's last mapped section and the view distance map, so use the
 +        // view distance map here.
-+        List<ServerPlayer> ret = new java.util.ArrayList<>(4);
-+
 +        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> players = this.playerChunkManager.broadcastMap.getObjectsInRange(chunkPos);
 +        if (players == null) {
-+            return ret;
++            return java.util.Collections.emptyList();
 +        }
+ 
+-        while (iterator.hasNext()) {
+-            ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+-            SectionPos sectionposition = entityplayer.getLastSectionPos();
++        List<ServerPlayer> ret = new java.util.ArrayList<>(players.size());
  
 -            if (onlyOnWatchDistanceEdge && ChunkMap.isChunkOnRangeBorder(chunkPos.x, chunkPos.z, sectionposition.x(), sectionposition.z(), this.viewDistance) || !onlyOnWatchDistanceEdge && ChunkMap.isChunkInRange(chunkPos.x, chunkPos.z, sectionposition.x(), sectionposition.z(), this.viewDistance)) {
 -                builder.add(entityplayer);
 +        Object[] backingSet = players.getBackingSet();
 +        for (int i = 0, len = backingSet.length; i < len; ++i) {
-+            Object temp = backingSet[i];
-+            if (!(temp instanceof ServerPlayer)) {
++            if (!(backingSet[i] instanceof ServerPlayer player)) {
 +                continue;
 +            }
-+            ServerPlayer player = (ServerPlayer)temp;
 +            if (!this.playerChunkManager.isChunkSent(player, chunkPos.x, chunkPos.z, onlyOnWatchDistanceEdge)) {
 +                continue;
              }
