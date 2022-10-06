@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Big-Crazy <dogwithhats@gmail.com>
+Date: Wed, 5 Oct 2022 21:54:57 -0400
+Subject: [PATCH] Prevents nether portals from accepting locations above the
+ nether ceiling as valid locations for generating portals / teleporting
+ entities
+
+
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+index 386a73f32f2504af81107852307dcd393d4d8a11..eefd322613ba2bd3b6dcd99aec74de617c6112c6 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+@@ -67,6 +67,9 @@ public class PortalForcer {
+                 if (!worldborder.isWithinBounds(pos)) {
+                     return false;
+                 }
++                if (pos.getY() > level.paperConfig().environment.netherCeilingVoidDamageHeight) {
++                    return false;
++                }
+                 return lowest.getBlockState(pos).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
+             },
+             blockposition, i, Double.MAX_VALUE, PoiManager.Occupancy.ANY, true, records
+@@ -124,32 +127,36 @@ public class PortalForcer {
+             j = Math.min(i, this.level.getHeight(Heightmap.Types.MOTION_BLOCKING, blockposition_mutableblockposition1.getX(), blockposition_mutableblockposition1.getZ()));
+             boolean flag = true;
+ 
+-            if (worldborder.isWithinBounds((BlockPos) blockposition_mutableblockposition1) && worldborder.isWithinBounds((BlockPos) blockposition_mutableblockposition1.move(enumdirection, 1))) {
+-                blockposition_mutableblockposition1.move(enumdirection.getOpposite(), 1);
++            //check to see if the portal is trying to generate below nether-ceiling-void-damage-height
++            if (j < entity.level.paperConfig().environment.netherCeilingVoidDamageHeight) {
+ 
+-                for (k = j; k >= this.level.getMinBuildHeight(); --k) {
+-                    blockposition_mutableblockposition1.setY(k);
+-                    if (this.level.isEmptyBlock(blockposition_mutableblockposition1)) {
+-                        for (l = k; k > this.level.getMinBuildHeight() && this.level.isEmptyBlock(blockposition_mutableblockposition1.move(Direction.DOWN)); --k) {
+-                            ;
+-                        }
++                if (worldborder.isWithinBounds((BlockPos) blockposition_mutableblockposition1) && worldborder.isWithinBounds((BlockPos) blockposition_mutableblockposition1.move(enumdirection, 1))) {
++                    blockposition_mutableblockposition1.move(enumdirection.getOpposite(), 1);
+ 
+-                        if (k + 4 <= i) {
+-                            int i1 = l - k;
++                    for (k = j; k >= this.level.getMinBuildHeight(); --k) {
++                        blockposition_mutableblockposition1.setY(k);
++                        if (this.level.isEmptyBlock(blockposition_mutableblockposition1)) {
++                            for (l = k; k > this.level.getMinBuildHeight() && this.level.isEmptyBlock(blockposition_mutableblockposition1.move(Direction.DOWN)); --k) {
++                                ;
++                            }
+ 
+-                            if (i1 <= 0 || i1 >= 3) {
+-                                blockposition_mutableblockposition1.setY(k);
+-                                if (this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, 0)) {
+-                                    double d2 = blockposition.distSqr(blockposition_mutableblockposition1);
++                            if (k + 4 <= i) {
++                                int i1 = l - k;
+ 
+-                                    if (this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, -1) && this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, 1) && (d0 == -1.0D || d0 > d2)) {
+-                                        d0 = d2;
+-                                        blockposition1 = blockposition_mutableblockposition1.immutable();
+-                                    }
++                                if (i1 <= 0 || i1 >= 3) {
++                                    blockposition_mutableblockposition1.setY(k);
++                                    if (this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, 0)) {
++                                        double d2 = blockposition.distSqr(blockposition_mutableblockposition1);
++
++                                        if (this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, -1) && this.canHostFrame(blockposition_mutableblockposition1, blockposition_mutableblockposition, enumdirection, 1) && (d0 == -1.0D || d0 > d2)) {
++                                            d0 = d2;
++                                            blockposition1 = blockposition_mutableblockposition1.immutable();
++                                        }
+ 
+-                                    if (d0 == -1.0D && (d1 == -1.0D || d1 > d2)) {
+-                                        d1 = d2;
+-                                        blockposition2 = blockposition_mutableblockposition1.immutable();
++                                        if (d0 == -1.0D && (d1 == -1.0D || d1 > d2)) {
++                                            d1 = d2;
++                                            blockposition2 = blockposition_mutableblockposition1.immutable();
++                                        }
+                                     }
+                                 }
+                             }
+@@ -158,7 +165,6 @@ public class PortalForcer {
+                 }
+             }
+         }
+-
+         if (d0 == -1.0D && d1 != -1.0D) {
+             blockposition1 = blockposition2;
+             d0 = d1;
