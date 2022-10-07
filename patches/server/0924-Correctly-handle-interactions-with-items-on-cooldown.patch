@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 16 Jun 2022 21:57:02 -0700
+Subject: [PATCH] Correctly handle interactions with items on cooldown
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 5a60f5dc202c44b06ca34e9a19d45cb715f74fd3..0a5f8d990cce5df339fd9b2b0fcb291a20ddad41 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -512,6 +512,7 @@ public class ServerPlayerGameMode {
+         BlockState iblockdata = world.getBlockState(blockposition);
+         InteractionResult enuminteractionresult = InteractionResult.PASS;
+         boolean cancelledBlock = false;
++        boolean cancelledItem = false; // Paper - correctly handle items on cooldown
+ 
+         if (this.gameModeForPlayer == GameType.SPECTATOR) {
+             MenuProvider itileinventory = iblockdata.getMenuProvider(world, blockposition);
+@@ -519,10 +520,10 @@ public class ServerPlayerGameMode {
+         }
+ 
+         if (player.getCooldowns().isOnCooldown(stack.getItem())) {
+-            cancelledBlock = true;
++            cancelledItem = true; // Paper - correctly handle items on cooldown
+         }
+ 
+-        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, blockposition, hitResult.getDirection(), stack, cancelledBlock, hand, hitResult.getLocation()); // Paper
++        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, blockposition, hitResult.getDirection(), stack, cancelledBlock, cancelledItem, hand, hitResult.getLocation()); // Paper
+         this.firedInteract = true;
+         this.interactResult = event.useItemInHand() == Event.Result.DENY;
+         this.interactPosition = blockposition.immutable();
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 3bdde2057c9c2ac0e12cf3edab1c3150838dce01..03b3f29bde2bf6cb4e7b08a775bcc380a9404543 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -498,6 +498,12 @@ public class CraftEventFactory {
+     }
+ 
+     public static PlayerInteractEvent callPlayerInteractEvent(net.minecraft.world.entity.player.Player who, Action action, BlockPos position, Direction direction, ItemStack itemstack, boolean cancelledBlock, InteractionHand hand, Vec3 hitVec) {
++        // Paper start - correctly handle items on cooldown
++        return callPlayerInteractEvent(who, action, position, direction, itemstack, cancelledBlock, false, hand, hitVec);
++    }
++
++    public static PlayerInteractEvent callPlayerInteractEvent(net.minecraft.world.entity.player.Player who, Action action, BlockPos position, Direction direction, ItemStack itemstack, boolean cancelledBlock, boolean cancelledItem, InteractionHand hand, Vec3 hitVec) {
++        // Paper end - correctly handle items on cooldown
+         // Paper end
+         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
+@@ -531,6 +537,11 @@ public class CraftEventFactory {
+         if (cancelledBlock) {
+             event.setUseInteractedBlock(Event.Result.DENY);
+         }
++        // Paper start
++        if (cancelledItem) {
++            event.setUseItemInHand(Result.DENY);
++        }
++        // Paper end
+         craftServer.getPluginManager().callEvent(event);
+ 
+         return event;
