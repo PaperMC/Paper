@@ -66,7 +66,7 @@ public class YamlConfiguration extends FileConfiguration {
         yamlLoaderOptions.setMaxAliasesForCollections(Integer.MAX_VALUE); // SPIGOT-5881: Not ideal, but was default pre SnakeYAML 1.26
         yamlLoaderOptions.setCodePointLimit(Integer.MAX_VALUE); // SPIGOT-7161: Not ideal, but was default pre SnakeYAML 1.32
 
-        yaml = new BukkitYaml(constructor, representer, yamlDumperOptions, yamlLoaderOptions);
+        yaml = new Yaml(constructor, representer, yamlDumperOptions, yamlLoaderOptions);
     }
 
     @NotNull
