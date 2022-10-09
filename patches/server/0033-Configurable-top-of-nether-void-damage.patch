@@ -3,22 +3,47 @@ From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 1 Mar 2016 23:58:50 -0600
 Subject: [PATCH] Configurable top of nether void damage
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index ab2671c21f2f44973fb2507b178ac8e1e03bc8dc..ce5f30b761ddaa2b3b241903d75770d0c5050d92 100644
+index ab2671c21f2f44973fb2507b178ac8e1e03bc8dc..3273b29bdd37a5dac5c8a1be38f514bdbdffbeeb 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -705,7 +705,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -705,7 +705,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      }
  
      public void checkOutOfWorld() {
 -        if (this.getY() < (double) (this.level.getMinBuildHeight() - 64)) {
 +        // Paper start - Configurable nether ceiling damage
 +        if (this.getY() < (double) (this.level.getMinBuildHeight() - 64) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
-+            && level.paperConfig().environment.netherCeilingVoidDamageHeight > 0
-+            && this.getY() >= this.level.paperConfig().environment.netherCeilingVoidDamageHeight
++            && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> this.getY() >= v)
 +            && (!(this instanceof Player player) || !player.getAbilities().invulnerable))) {
 +            // Paper end
              this.outOfWorld();
          }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+index bb05ea288432ece497957c3503c3435655ce8997..f9cddc20563c2d44fdb1f91ae2b2f9b2321e4d81 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+@@ -55,7 +55,7 @@ public class PortalForcer {
+         Optional<PoiRecord> optional = villageplace.getInSquare((holder) -> {
+             return holder.is(PoiTypes.NETHER_PORTAL);
+         }, blockposition, i, PoiManager.Occupancy.ANY).filter((villageplacerecord) -> {
+-            return worldborder.isWithinBounds(villageplacerecord.getPos());
++            return worldborder.isWithinBounds(villageplacerecord.getPos()) && !this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> villageplacerecord.getPos().getY() >= v); // Paper - don't teleport into void damage
+         }).sorted(Comparator.comparingDouble((PoiRecord villageplacerecord) -> { // CraftBukkit - decompile error
+             return villageplacerecord.getPos().distSqr(blockposition);
+         }).thenComparingInt((villageplacerecord) -> {
+@@ -90,6 +90,11 @@ public class PortalForcer {
+         BlockPos blockposition2 = null;
+         WorldBorder worldborder = this.level.getWorldBorder();
+         int i = Math.min(this.level.getMaxBuildHeight(), this.level.getMinBuildHeight() + this.level.getLogicalHeight()) - 1;
++        // Paper start - if ceiling void damage is enabled, make sure the max height doesn't exceed the void damage height
++        if (this.level.paperConfig().environment.netherCeilingVoidDamageHeight.enabled()) {
++            i = Math.min(i, this.level.paperConfig().environment.netherCeilingVoidDamageHeight.intValue() - 1);
++        }
++        // Paper end
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
+         Iterator iterator = BlockPos.spiralAround(blockposition, createRadius, Direction.EAST, Direction.SOUTH).iterator(); // CraftBukkit
  

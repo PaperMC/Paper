@@ -923,10 +923,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18c64590b35a26a27a884494d6905989fc45af03
+index 0000000000000000000000000000000000000000..1055a079a061d8761be13d3b9efbbd90d193caa2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,432 @@
+@@ -0,0 +1,435 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -947,11 +947,12 @@ index 0000000000000000000000000000000000000000..18c64590b35a26a27a884494d6905989
 +import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
++import io.papermc.paper.configuration.transformation.world.ZeroWorldHeight;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.EngineMode;
-+import io.papermc.paper.configuration.type.IntOrDefault;
++import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 +import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -965,7 +966,6 @@ index 0000000000000000000000000000000000000000..18c64590b35a26a27a884494d6905989
 +import net.minecraft.world.item.Item;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 +import org.apache.commons.lang3.RandomStringUtils;
-+import org.bukkit.command.Command;
 +import org.bukkit.configuration.ConfigurationSection;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.jetbrains.annotations.VisibleForTesting;
@@ -988,9 +988,7 @@ index 0000000000000000000000000000000000000000..18c64590b35a26a27a884494d6905989
 +import java.nio.file.Files;
 +import java.nio.file.Path;
 +import java.nio.file.StandardCopyOption;
-+import java.util.HashMap;
 +import java.util.List;
-+import java.util.Map;
 +import java.util.function.Function;
 +import java.util.function.Supplier;
 +
@@ -1135,7 +1133,8 @@ index 0000000000000000000000000000000000000000..18c64590b35a26a27a884494d6905989
 +                    .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
 +                    .register(new TypeToken<Table<?, ?, ?>>() {}, new TableSerializer())
 +                    .register(new StringRepresentableSerializer())
-+                    .register(IntOrDefault.SERIALIZER)
++                    .register(IntOr.Default.SERIALIZER)
++                    .register(IntOr.Disabled.SERIALIZER)
 +                    .register(DoubleOrDefault.SERIALIZER)
 +                    .register(BooleanOrDefault.SERIALIZER)
 +                    .register(Duration.SERIALIZER)
@@ -1162,7 +1161,11 @@ index 0000000000000000000000000000000000000000..18c64590b35a26a27a884494d6905989
 +            builder.addAction(path, TransformAction.remove());
 +        }
 +        builder.build().apply(node);
-+        // ADD FUTURE TRANSFORMS HERE
++
++        final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
++        ZeroWorldHeight.apply(versionedBuilder);
++        // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
++        versionedBuilder.build().apply(node);
 +    }
 +
 +    @Override
@@ -1171,8 +1174,8 @@ index 0000000000000000000000000000000000000000..18c64590b35a26a27a884494d6905989
 +        for (NodePath path : RemovedConfigurations.REMOVED_GLOBAL_PATHS) {
 +            builder.addAction(path, TransformAction.remove());
 +        }
++        // ADD FUTURE TRANSFORMS TO builder HERE
 +        builder.build().apply(node);
-+        // ADD FUTURE TRANSFORMS HERE
 +    }
 +
 +    private static final List<Transformations.DefaultsAware> DEFAULT_AWARE_TRANSFORMATIONS = List.of(FeatureSeedsGeneration::apply);
@@ -1430,10 +1433,10 @@ index 0000000000000000000000000000000000000000..1bb16fc7598cd53e822d84b69d6a9727
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e2c612dd55fcb2769fb06f7878b8d0873f2be139
+index 0000000000000000000000000000000000000000..3d2e67dc559ee3910b17ca86a46030ec05232250
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,467 @@
+@@ -0,0 +1,466 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1449,13 +1452,18 @@ index 0000000000000000000000000000000000000000..e2c612dd55fcb2769fb06f7878b8d087
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.EngineMode;
-+import io.papermc.paper.configuration.type.IntOrDefault;
++import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
 +import io.papermc.paper.configuration.type.fallback.AutosavePeriod;
 +import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
++import java.util.Arrays;
++import java.util.List;
++import java.util.Map;
++import java.util.function.Function;
++import java.util.stream.Collectors;
 +import net.minecraft.Util;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.Registry;
@@ -1475,16 +1483,10 @@ index 0000000000000000000000000000000000000000..e2c612dd55fcb2769fb06f7878b8d087
 +import org.spongepowered.configurate.objectmapping.meta.Required;
 +import org.spongepowered.configurate.objectmapping.meta.Setting;
 +
-+import java.util.Arrays;
-+import java.util.List;
-+import java.util.Map;
-+import java.util.function.Function;
-+import java.util.stream.Collectors;
-+
 +@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class WorldConfiguration extends ConfigurationPart {
 +    private static final Logger LOGGER = LogUtils.getLogger();
-+    static final int CURRENT_VERSION = 28;
++    static final int CURRENT_VERSION = 29; // (when you change the version, change the comment, so it conflicts on rebases): zero height fixes
 +
 +    private transient final SpigotWorldConfig spigotConfig;
 +    private transient final ResourceLocation worldKey;
@@ -1575,8 +1577,8 @@ index 0000000000000000000000000000000000000000..e2c612dd55fcb2769fb06f7878b8d087
 +            public WaterAnimalSpawnHeight wateranimalSpawnHeight;
 +
 +            public class WaterAnimalSpawnHeight extends ConfigurationPart {
-+                public IntOrDefault maximum = IntOrDefault.USE_DEFAULT;
-+                public IntOrDefault minimum = IntOrDefault.USE_DEFAULT;
++                public IntOr.Default maximum = IntOr.Default.USE_DEFAULT;
++                public IntOr.Default minimum = IntOr.Default.USE_DEFAULT;
 +            }
 +
 +            public SlimeSpawnHeight slimeSpawnHeight;
@@ -1775,7 +1777,7 @@ index 0000000000000000000000000000000000000000..e2c612dd55fcb2769fb06f7878b8d087
 +        public int portalCreateRadius = 16;
 +        public boolean portalSearchVanillaDimensionScaling = true;
 +        public boolean disableTeleportationSuffocationCheck = false;
-+        public int netherCeilingVoidDamageHeight = 0;
++        public IntOr.Disabled netherCeilingVoidDamageHeight = IntOr.Disabled.DISABLED;
 +    }
 +
 +    public Spawn spawn;
@@ -1802,8 +1804,8 @@ index 0000000000000000000000000000000000000000..e2c612dd55fcb2769fb06f7878b8d087
 +        public boolean preventTntFromMovingInWater = false;
 +        public boolean splitOverstackedLoot = true;
 +        public boolean fixCuringZombieVillagerDiscountExploit = true;
-+        public int fallingBlockHeightNerf = 0;
-+        public int tntEntityHeightNerf = 0;
++        public IntOr.Disabled fallingBlockHeightNerf = IntOr.Disabled.DISABLED;
++        public IntOr.Disabled tntEntityHeightNerf = IntOr.Disabled.DISABLED;
 +    }
 +
 +    public UnsupportedSettings unsupportedSettings;
@@ -2910,16 +2912,18 @@ index 0000000000000000000000000000000000000000..10d3dd361cd26dc849ebd53c1235aa8e
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/Transformations.java b/src/main/java/io/papermc/paper/configuration/transformation/Transformations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0300fb1e09d41465e4a50bfdc987b9571289d399
+index 0000000000000000000000000000000000000000..96e8d03bd4a4d43633a94bb251054610ac07315a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/Transformations.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,41 @@
 +package io.papermc.paper.configuration.transformation;
 +
++import io.papermc.paper.configuration.Configuration;
 +import io.papermc.paper.configuration.Configurations;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.NodePath;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++import org.spongepowered.configurate.transformation.TransformAction;
 +
 +import static org.spongepowered.configurate.NodePath.path;
 +
@@ -2942,6 +2946,10 @@ index 0000000000000000000000000000000000000000..0300fb1e09d41465e4a50bfdc987b957
 +            System.arraycopy(parents, 0, newPath, 0, parents.length);
 +            return newPath;
 +        });
++    }
++
++    public static ConfigurationTransformation.VersionedBuilder versionedBuilder() {
++        return ConfigurationTransformation.versionedBuilder().versionKey(Configuration.VERSION_FIELD);
 +    }
 +
 +    @FunctionalInterface
@@ -3581,6 +3589,58 @@ index 0000000000000000000000000000000000000000..6af307481a6752529d87869760945cb1
 +        moveFromRootAndRename(builder, path("game-mechanics", oldKey), newKey, parents);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/ZeroWorldHeight.java b/src/main/java/io/papermc/paper/configuration/transformation/world/ZeroWorldHeight.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dcb1f3722de215800ddb0285538bc188d02af054
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/ZeroWorldHeight.java
+@@ -0,0 +1,46 @@
++package io.papermc.paper.configuration.transformation.world;
++
++import io.papermc.paper.configuration.type.IntOr;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurateException;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++import org.spongepowered.configurate.transformation.TransformAction;
++
++import static org.spongepowered.configurate.NodePath.path;
++
++/**
++ * Several configurations that set a y-level used '0' as the "disabled" value.
++ * Since 0 is now a valid value, they need to be updated.
++ */
++public class ZeroWorldHeight implements TransformAction {
++
++    private static final int VERSION = 29;
++
++    private static final String FIXES_KEY = "fixes";
++    private static final String FALLING_BLOCK_HEIGHT_NERF_KEY = "falling-block-height-nerf";
++    private static final String TNT_ENTITY_HEIGHT_NERF_KEY = "tnt-entity-height-nerf";
++
++    private static final String ENVIRONMENT_KEY = "environment";
++    private static final String NETHER_CEILING_VOID_DAMAGE_HEIGHT_KEY = "nether-ceiling-void-damage-height";
++
++    private static final ZeroWorldHeight INSTANCE = new ZeroWorldHeight();
++
++    public static void apply(ConfigurationTransformation.VersionedBuilder builder) {
++        final ConfigurationTransformation transformation = ConfigurationTransformation.builder()
++            .addAction(path(FIXES_KEY, FALLING_BLOCK_HEIGHT_NERF_KEY), INSTANCE)
++            .addAction(path(FIXES_KEY, TNT_ENTITY_HEIGHT_NERF_KEY), INSTANCE)
++            .addAction(path(ENVIRONMENT_KEY, NETHER_CEILING_VOID_DAMAGE_HEIGHT_KEY), INSTANCE)
++            .build();
++        builder.addVersion(VERSION, transformation);
++    }
++
++    @Override
++    public Object @Nullable [] visitPath(NodePath path, ConfigurationNode value) throws ConfigurateException {
++        if (value.getInt() == 0) {
++            value.set(IntOr.Disabled.DISABLED);
++        }
++        return null;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..3e422b74a377fa3edaf82dd960e7449c998c2912
@@ -3857,64 +3917,97 @@ index 0000000000000000000000000000000000000000..99e90636051fa0c770ee2eafb7f0d29c
 +        return description;
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/configuration/type/IntOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/IntOrDefault.java
+diff --git a/src/main/java/io/papermc/paper/configuration/type/IntOr.java b/src/main/java/io/papermc/paper/configuration/type/IntOr.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3278045dbf081cc4099e2eac3a6c4fac3012be4b
+index 0000000000000000000000000000000000000000..a03e82fa80a548e18634ac2f536a995c3f518498
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/configuration/type/IntOrDefault.java
-@@ -0,0 +1,56 @@
++++ b/src/main/java/io/papermc/paper/configuration/type/IntOr.java
+@@ -0,0 +1,89 @@
 +package io.papermc.paper.configuration.type;
 +
 +import com.mojang.logging.LogUtils;
++import java.lang.reflect.Type;
++import java.util.OptionalInt;
++import java.util.function.Function;
++import java.util.function.IntPredicate;
++import java.util.function.Predicate;
 +import org.apache.commons.lang3.math.NumberUtils;
 +import org.slf4j.Logger;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
-+import java.lang.reflect.Type;
-+import java.util.OptionalInt;
-+import java.util.function.Predicate;
++public interface IntOr {
 +
-+public record IntOrDefault(OptionalInt value) {
-+    private static final String DEFAULT_VALUE = "default";
-+    private static final Logger LOGGER = LogUtils.getLogger();
-+    public static final IntOrDefault USE_DEFAULT = new IntOrDefault(OptionalInt.empty());
-+    public static final ScalarSerializer<IntOrDefault> SERIALIZER = new Serializer();
++    Logger LOGGER = LogUtils.getLogger();
 +
-+    public int or(final int fallback) {
-+        return this.value.orElse(fallback);
++    default int or(final int fallback) {
++        return this.value().orElse(fallback);
 +    }
 +
-+    private static final class Serializer extends ScalarSerializer<IntOrDefault> {
-+        Serializer() {
-+            super(IntOrDefault.class);
++    OptionalInt value();
++
++    default int intValue() {
++        return this.value().orElseThrow();
++    }
++
++    record Default(OptionalInt value) implements IntOr {
++        private static final String DEFAULT_VALUE = "default";
++        public static final Default USE_DEFAULT = new Default(OptionalInt.empty());
++        public static final ScalarSerializer<Default> SERIALIZER = new Serializer<>(Default.class, Default::new, DEFAULT_VALUE, USE_DEFAULT);
++    }
++
++    record Disabled(OptionalInt value) implements IntOr {
++        private static final String DISABLED_VALUE = "disabled";
++        public static final Disabled DISABLED = new Disabled(OptionalInt.empty());
++        public static final ScalarSerializer<Disabled> SERIALIZER = new Serializer<>(Disabled.class, Disabled::new, DISABLED_VALUE, DISABLED);
++
++        public boolean test(IntPredicate predicate) {
++            return this.value.isPresent() && predicate.test(this.value.getAsInt());
++        }
++
++        public boolean enabled() {
++            return this.value.isPresent();
++        }
++    }
++
++    final class Serializer<T extends IntOr> extends ScalarSerializer<T> {
++
++        private final Function<OptionalInt, T> creator;
++        private final String otherSerializedValue;
++        private final T otherValue;
++
++        public Serializer(Class<T> classOfT, Function<OptionalInt, T> creator, String otherSerializedValue, T otherValue) {
++            super(classOfT);
++            this.creator = creator;
++            this.otherSerializedValue = otherSerializedValue;
++            this.otherValue = otherValue;
 +        }
 +
 +        @Override
-+        public IntOrDefault deserialize(final Type type, final Object obj) throws SerializationException {
++        public T deserialize(Type type, Object obj) throws SerializationException {
 +            if (obj instanceof String string) {
-+                if (DEFAULT_VALUE.equalsIgnoreCase(string)) {
-+                    return USE_DEFAULT;
++                if (this.otherSerializedValue.equalsIgnoreCase(string)) {
++                    return this.otherValue;
 +                }
 +                if (NumberUtils.isParsable(string)) {
-+                    return new IntOrDefault(OptionalInt.of(Integer.parseInt(string)));
++                    return this.creator.apply(OptionalInt.of(Integer.parseInt(string)));
 +                }
 +            } else if (obj instanceof Number num) {
 +                if (num.intValue() != num.doubleValue() || num.intValue() != num.longValue()) {
 +                    LOGGER.error("{} cannot be converted to an integer without losing information", num);
 +                }
-+                return new IntOrDefault(OptionalInt.of(num.intValue()));
++                return this.creator.apply(OptionalInt.of(num.intValue()));
 +            }
-+            throw new SerializationException(obj + "(" + type + ") is not a integer or '" + DEFAULT_VALUE + "'");
++            throw new SerializationException(obj + "(" + type + ") is not a integer or '" + this.otherSerializedValue + "'");
 +        }
 +
 +        @Override
-+        protected Object serialize(final IntOrDefault item, final Predicate<Class<?>> typeSupported) {
++        protected Object serialize(T item, Predicate<Class<?>> typeSupported) {
 +            final OptionalInt value = item.value();
 +            if (value.isPresent()) {
 +                return value.getAsInt();
 +            } else {
-+                return DEFAULT_VALUE;
++                return this.otherSerializedValue;
 +            }
 +        }
 +    }
