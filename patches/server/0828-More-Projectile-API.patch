@@ -5,6 +5,31 @@ Subject: [PATCH] More Projectile API
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+index fee09e6ff72cf1da389d5811dd005642cd50a5b4..4f276b2a86735a2c664738450ae0fbdd82031d4e 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+@@ -98,6 +98,11 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+     @Override
+     protected void onHit(HitResult hitResult) {
+         super.onHit(hitResult);
++        // Paper start - More projectile API
++        this.splash(hitResult);
++    }
++    public void splash(@org.jetbrains.annotations.Nullable HitResult hitResult) {
++        // Paper end - More projectile API
+         if (!this.level.isClientSide) {
+             ItemStack itemstack = this.getItem();
+             Potion potionregistry = PotionUtils.getPotion(itemstack);
+@@ -110,7 +115,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+                 if (this.isLingering()) {
+                     this.makeAreaOfEffectCloud(itemstack, potionregistry);
+                 } else {
+-                    this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null);
++                    this.applySplash(list, hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null); // Paper - nullable hitResult
+                 }
+             }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
 index 40e5b19bc8fa3de3b3d54da0762aee5bd7bb8d7b..825fdc6162797ade8e76e1ca3a863ed5fb48f936 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
@@ -41,31 +66,6 @@ index 40e5b19bc8fa3de3b3d54da0762aee5bd7bb8d7b..825fdc6162797ade8e76e1ca3a863ed5
 +    // Paper end
  
  }
-diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index fee09e6ff72cf1da389d5811dd005642cd50a5b4..4f276b2a86735a2c664738450ae0fbdd82031d4e 100644
---- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-+++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-@@ -98,6 +98,11 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
-     @Override
-     protected void onHit(HitResult hitResult) {
-         super.onHit(hitResult);
-+        // Paper start - More projectile API
-+        this.splash(hitResult);
-+    }
-+    public void splash(@org.jetbrains.annotations.Nullable HitResult hitResult) {
-+        // Paper end - More projectile API
-         if (!this.level.isClientSide) {
-             ItemStack itemstack = this.getItem();
-             Potion potionregistry = PotionUtils.getPotion(itemstack);
-@@ -110,7 +115,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
-                 if (this.isLingering()) {
-                     this.makeAreaOfEffectCloud(itemstack, potionregistry);
-                 } else {
--                    this.applySplash(list, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null);
-+                    this.applySplash(list, hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null); // Paper - nullable hitResult
-                 }
-             }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
 index 15abd085eeb0a31a925c1a8d6de903c9d4625a29..40ae8e43f40f9bf457d2917ac4f131b21e4f8dd2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
