@@ -30,6 +30,74 @@ index fee09e6ff72cf1da389d5811dd005642cd50a5b4..4f276b2a86735a2c664738450ae0fbdd
                  }
              }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
+index 40e5b19bc8fa3de3b3d54da0762aee5bd7bb8d7b..825fdc6162797ade8e76e1ca3a863ed5fb48f936 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
+@@ -21,5 +21,31 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
+     public void setBounce(boolean doesBounce) {
+         this.doesBounce = doesBounce;
+     }
++    // Paper start
++    @Override
++    public boolean hasLeftShooter() {
++        return this.getHandle().leftOwner;
++    }
++
++    @Override
++    public void setHasLeftShooter(boolean leftShooter) {
++        this.getHandle().leftOwner = leftShooter;
++    }
++
++    @Override
++    public boolean hasBeenShot() {
++        return this.getHandle().hasBeenShot;
++    }
++
++    @Override
++    public void setHasBeenShot(boolean beenShot) {
++        this.getHandle().hasBeenShot = beenShot;
++    }
++
++    @Override
++    public net.minecraft.world.entity.projectile.Projectile getHandle() {
++        return (net.minecraft.world.entity.projectile.Projectile) entity;
++    }
++    // Paper end
+ 
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
+index 15abd085eeb0a31a925c1a8d6de903c9d4625a29..40ae8e43f40f9bf457d2917ac4f131b21e4f8dd2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
+@@ -108,6 +108,27 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
+         return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(getHandle().getPickupItem());
+     }
+ 
++    @Override
++    public void setLifetimeTicks(int ticks) {
++        this.getHandle().life = ticks;
++    }
++
++    @Override
++    public int getLifetimeTicks() {
++        return this.getHandle().life;
++    }
++
++    @org.jetbrains.annotations.NotNull
++    @Override
++    public org.bukkit.Sound getHitSound() {
++        return org.bukkit.craftbukkit.CraftSound.getBukkit(this.getHandle().soundEvent);
++    }
++
++    @Override
++    public void setHitSound(@org.jetbrains.annotations.NotNull org.bukkit.Sound sound) {
++        this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.getSoundEffect(sound));
++    }
++
+     @Override
+     public void setNoPhysics(boolean noPhysics) {
+         this.getHandle().setNoPhysics(noPhysics);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 index c242f654c88ca1773429348939d3bb2ffae3768c..d1c7ab67cba881d96b7a5e9220130d86d0514304 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
@@ -157,6 +225,51 @@ index 6bfa984781a483d048ef4318761203c701d8a632..5e0c2c5094e1578162d1a50d50701fbd
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
+index 20b54f8896be1f8744a29e1d0205e58d27049f1f..ca8a9b2773d70a8800b2179b164ce33d7e2bdc5e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
+@@ -40,6 +40,40 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
+         this.getHandle().setTarget(target == null ? null : ((CraftEntity) target).getHandle());
+     }
+ 
++    @Override
++    public org.bukkit.util.Vector getTargetDelta() {
++        net.minecraft.world.entity.projectile.ShulkerBullet bullet = this.getHandle();
++        return new org.bukkit.util.Vector(bullet.targetDeltaX, bullet.targetDeltaY, bullet.targetDeltaZ);
++    }
++
++    @Override
++    public void setTargetDelta(org.bukkit.util.Vector vector) {
++        net.minecraft.world.entity.projectile.ShulkerBullet bullet = this.getHandle();
++        bullet.targetDeltaX = vector.getX();
++        bullet.targetDeltaY = vector.getY();
++        bullet.targetDeltaZ = vector.getZ();
++    }
++
++    @Override
++    public org.bukkit.block.BlockFace getCurrentMovementDirection() {
++        return org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(this.getHandle().currentMoveDirection);
++    }
++
++    @Override
++    public void setCurrentMovementDirection(org.bukkit.block.BlockFace movementDirection) {
++        this.getHandle().currentMoveDirection = org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(movementDirection);
++    }
++
++    @Override
++    public int getFlightSteps() {
++        return this.getHandle().flightSteps;
++    }
++
++    @Override
++    public void setFlightSteps(int steps) {
++        this.getHandle().flightSteps = steps;
++    }
++
+     @Override
+     public String toString() {
+         return "CraftShulkerBullet";
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
 index 0db8aa840ea026d48215ac5dc80ffde5f12725b1..397e0df15a0e64e5bc522f62f3b327a5039ec4c8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
@@ -194,6 +307,26 @@ index 0db8aa840ea026d48215ac5dc80ffde5f12725b1..397e0df15a0e64e5bc522f62f3b327a5
      @Override
      public net.minecraft.world.entity.projectile.ThrownPotion getHandle() {
          return (net.minecraft.world.entity.projectile.ThrownPotion) entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
+index 832981b07ef5c633ef00a382f56798ee87eec0df..faf071201b7c1414225a33fe9641eac9477d53c7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
+@@ -59,5 +59,15 @@ public class CraftTrident extends CraftArrow implements Trident {
+         com.google.common.base.Preconditions.checkArgument(loyaltyLevel >= 0 && loyaltyLevel <= 127, "The loyalty level has to be between 0 and 127");
+         this.getHandle().setLoyalty((byte) loyaltyLevel);
+     }
++
++    @Override
++    public boolean hasDealtDamage() {
++        return this.getHandle().dealtDamage;
++    }
++
++    @Override
++    public void setHasDealtDamage(boolean hasDealtDamage) {
++        this.getHandle().dealtDamage = hasDealtDamage;
++    }
+     // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 index f3abcd5949011eaef3d1ba68f4cc0751042d2834..bfb1ad0b6e20e10fee53f94a3e6c4f8aad7aae7d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java

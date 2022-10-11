@@ -5,6 +5,47 @@ Subject: [PATCH] More Projectile API
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
+diff --git a/src/main/java/org/bukkit/entity/AbstractArrow.java b/src/main/java/org/bukkit/entity/AbstractArrow.java
+index 225a24898acd25038ea2a8448f9f3b57643d3026..d173010d51d05928c35bb4bf5fbc08ce221ec474 100644
+--- a/src/main/java/org/bukkit/entity/AbstractArrow.java
++++ b/src/main/java/org/bukkit/entity/AbstractArrow.java
+@@ -151,6 +151,36 @@ public interface AbstractArrow extends Projectile {
+     @NotNull
+     org.bukkit.inventory.ItemStack getItemStack();
+ 
++    /**
++     * Sets the amount of ticks this arrow has been alive in the world
++     * This is used to determine when the arrow should be automatically despawned.
++     *
++     * @param ticks lifetime ticks
++     */
++    void setLifetimeTicks(int ticks);
++
++    /**
++     * Gets how many ticks this arrow has been in the world for.
++     *
++     * @return ticks this arrow has been in the world
++     */
++    int getLifetimeTicks();
++
++    /**
++     * Gets the sound that is played when this arrow hits an entity.
++     *
++     * @return sound that plays
++     */
++    @NotNull
++    org.bukkit.Sound getHitSound();
++
++    /**
++     * Sets the sound that is played when this arrow hits an entity.
++     *
++     * @param sound sound that is played
++     */
++    void setHitSound(@NotNull org.bukkit.Sound sound);
++
+     /**
+      * Sets this arrow to "noclip" status.
+      *
 diff --git a/src/main/java/org/bukkit/entity/Firework.java b/src/main/java/org/bukkit/entity/Firework.java
 index 0d31aa0b22cf1e849572294e2cfe38b48c9210af..571712e17551f24b369044b8215b722f7183ae7d 100644
 --- a/src/main/java/org/bukkit/entity/Firework.java
@@ -136,6 +177,122 @@ index d1b37530319f6d37ee37f62080289c1e45848bc8..e94c7e279356c510f60508b26277d489
 +    void setWaitTime(int ticks);
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/entity/Projectile.java b/src/main/java/org/bukkit/entity/Projectile.java
+index a523fca4baab447181ef91df67fa69b24e010149..6935f8806ca1ed87fa761e73bc0f6c41ab60453e 100644
+--- a/src/main/java/org/bukkit/entity/Projectile.java
++++ b/src/main/java/org/bukkit/entity/Projectile.java
+@@ -43,4 +43,45 @@ public interface Projectile extends Entity {
+      */
+     @Deprecated(forRemoval = true) // Paper
+     public void setBounce(boolean doesBounce);
++    // Paper start
++
++    /**
++     * Gets whether the projectile has left the
++     * hitbox of their shooter and can now hit entities.
++     *
++     * @return has left shooter's hitbox
++     */
++    boolean hasLeftShooter();
++
++    /**
++     * Sets whether the projectile has left the
++     * hitbox of their shooter and can now hit entities.
++     *
++     * This is recalculated each tick if the projectile has a shooter.
++     *
++     * @param leftShooter has left shooter's hitbox
++     */
++    void setHasLeftShooter(boolean leftShooter);
++
++    /**
++     * Gets whether the projectile has been
++     * shot into the world and has sent a projectile
++     * shot game event.
++     *
++     * @return has been shot into the world
++     */
++    boolean hasBeenShot();
++
++    /**
++     * Sets whether the projectile has been
++     * shot into the world and has sent a projectile
++     * shot game event in the next tick.
++     *
++     * Setting this to false will cause a game event
++     * to fire and the value to be set back to true.
++     *
++     * @param beenShot has been in shot into the world
++     */
++    void setHasBeenShot(boolean beenShot);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/ShulkerBullet.java b/src/main/java/org/bukkit/entity/ShulkerBullet.java
+index 4623e0d767b343cbdc6fcf20b3b2ff7ff14863cf..dd69a68d1f005c25329bb0366d161ae9b061e108 100644
+--- a/src/main/java/org/bukkit/entity/ShulkerBullet.java
++++ b/src/main/java/org/bukkit/entity/ShulkerBullet.java
+@@ -18,4 +18,61 @@ public interface ShulkerBullet extends Projectile {
+      * @param target the entity to target
+      */
+     void setTarget(@Nullable Entity target);
++    // Paper start
++    /**
++     * Gets the relative offset that this shulker bullet should move towards,
++     * note that this will change each tick as the skulker bullet approaches the target.
++     *
++     * @return target delta offset
++     */
++    @org.jetbrains.annotations.NotNull
++    org.bukkit.util.Vector getTargetDelta();
++
++
++    /**
++     * Sets the relative offset that this shulker bullet should move towards,
++     * note that this will change each tick as the skulker bullet approaches the target.
++     * This is usually relative towards their target.
++     *
++     * @param vector target
++     */
++    void setTargetDelta(@org.jetbrains.annotations.NotNull org.bukkit.util.Vector vector);
++
++    /**
++     * Gets the current movement direction.
++     * This is used to determine the next movement direction to ensure
++     * that the bullet does not move in the same direction.
++     *
++     * @return null or their current direction
++     */
++    @Nullable
++    org.bukkit.block.BlockFace getCurrentMovementDirection();
++
++    /**
++     * Set the current movement direction.
++     * This is used to determine the next movement direction to ensure
++     * that the bullet does not move in the same direction.
++     *
++     * Set to null to simply pick a random direction.
++     *
++     * @param movementDirection null or a direction
++     */
++    void setCurrentMovementDirection(@Nullable org.bukkit.block.BlockFace movementDirection);
++
++    /**
++     * Gets how many ticks this shulker bullet
++     * will attempt to move in its current direction.
++     *
++     * @return number of steps
++     */
++    int getFlightSteps();
++
++    /**
++     * Sets how many ticks this shulker bullet
++     * will attempt to move in its current direction.
++     *
++     * @param steps number of steps
++     */
++    void setFlightSteps(int steps);
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/entity/ThrownPotion.java b/src/main/java/org/bukkit/entity/ThrownPotion.java
 index 7051e07b4e456aae0ec9e37808b59e5fa62a4027..225ac312613b9e8f3cf680819f2ebe350d1bf48a 100644
 --- a/src/main/java/org/bukkit/entity/ThrownPotion.java
@@ -179,3 +336,32 @@ index 7051e07b4e456aae0ec9e37808b59e5fa62a4027..225ac312613b9e8f3cf680819f2ebe35
 +    void splash();
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/entity/Trident.java b/src/main/java/org/bukkit/entity/Trident.java
+index c8015ff610e3c1222cb368ea1d8a0c2f3785d9c7..02584eced96944a551140f8150c65a7c0f4bb55e 100644
+--- a/src/main/java/org/bukkit/entity/Trident.java
++++ b/src/main/java/org/bukkit/entity/Trident.java
+@@ -38,5 +38,24 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
+      * @throws IllegalArgumentException if the loyalty level is lower than 0 or greater than 127
+      */
+     void setLoyaltyLevel(int loyaltyLevel);
++
++    /**
++     * Gets if this trident has dealt damage to an
++     * entity yet or has hit the floor.
++     *
++     * If neither of these events have occurred yet, this will
++     * return false.
++     *
++     * @return has dealt damage
++     */
++    boolean hasDealtDamage();
++
++    /**
++     * Sets if this trident has dealt damage to an entity
++     * yet or has hit the floor.
++     *
++     * @param hasDealtDamage has dealt damage or hit the floor
++     */
++    void setHasDealtDamage(boolean hasDealtDamage);
+ }
+ // Paper end

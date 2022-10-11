@@ -5,12 +5,30 @@ Subject: [PATCH] Missing Entity Behavior API
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/org/bukkit/entity/AbstractHorse.java b/src/main/java/org/bukkit/entity/AbstractHorse.java
-index 0d88dce9978243a1f995c5fb448c5d71b01136eb..cad47139de57642fb3bb483e7a5acaa7fea78cb4 100644
+index 0d88dce9978243a1f995c5fb448c5d71b01136eb..1c117ca4aebc2ff9e2f5458346fa0c090a0d7280 100644
 --- a/src/main/java/org/bukkit/entity/AbstractHorse.java
 +++ b/src/main/java/org/bukkit/entity/AbstractHorse.java
-@@ -119,4 +119,58 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
+@@ -106,17 +106,72 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
+      * Gets whether the horse is currently grazing hay.
+      *
+      * @return true if eating hay
++     * @deprecated use {@link #isEatingGrass()}, this name is incorrect
+      */
++    @Deprecated // Paper - Horse API
+     boolean isEatingHaystack();
+ 
+     /**
+      * Sets whether the horse is grazing hay.
+      *
+      * @param eatingHaystack new hay grazing status
++     * @deprecated use {@link #setEatingGrass(boolean)}, this name is incorrect
+      */
++    @Deprecated // Paper - Horse API
+     void setEatingHaystack(boolean eatingHaystack);
+ 
      @NotNull
      @Override
      public AbstractHorseInventory getInventory();
@@ -20,9 +38,7 @@ index 0d88dce9978243a1f995c5fb448c5d71b01136eb..cad47139de57642fb3bb483e7a5acaa7
 +     * Gets if a horse is in their eating grass animation.
 +     *
 +     * @return eating grass animation is active
-+     * @deprecated use {@link #isEatingHaystack()}
 +     */
-+    @Deprecated
 +    public boolean isEatingGrass();
 +
 +    /**
@@ -33,7 +49,6 @@ index 0d88dce9978243a1f995c5fb448c5d71b01136eb..cad47139de57642fb3bb483e7a5acaa7
 +     * @param eating eating grass animation is active
 +     * @deprecated use {@link #setEatingHaystack(boolean)}
 +     */
-+    @Deprecated
 +    public void setEatingGrass(boolean eating);
 +
 +    /**
@@ -69,11 +84,39 @@ index 0d88dce9978243a1f995c5fb448c5d71b01136eb..cad47139de57642fb3bb483e7a5acaa7
 +    public void setEating(boolean eating);
 +    // Paper end - Horse API
  }
+diff --git a/src/main/java/org/bukkit/entity/Bat.java b/src/main/java/org/bukkit/entity/Bat.java
+index bd73f22ef7e79e1ade69e860e7ae1d3dcd6fc858..b9f8b14d90a758672642222675d2f5664d4f67b4 100644
+--- a/src/main/java/org/bukkit/entity/Bat.java
++++ b/src/main/java/org/bukkit/entity/Bat.java
+@@ -24,4 +24,23 @@ public interface Bat extends Ambient {
+      * @param state the new state
+      */
+     void setAwake(boolean state);
++
++    // Paper start
++    /**
++     * Gets the location that this bat is currently trying to move towards.
++     *
++     * @return target location, or null if it's going to find a new location
++     */
++    @org.jetbrains.annotations.Nullable
++    org.bukkit.Location getTargetLocation();
++
++    /**
++     * Sets the location that this bat is currently trying to move towards.
++     * <p>
++     * This can be set to null to cause the bat to recalculate its target location
++     *
++     * @param location location to move towards (world is ignored, will always use the entity's world)
++     */
++    void setTargetLocation(@org.jetbrains.annotations.Nullable org.bukkit.Location location);
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/entity/Bee.java b/src/main/java/org/bukkit/entity/Bee.java
-index adb20a9abba33c32d553f620fa82b27dff64ab5f..ca6baec5ce00b4d169ab4ff416f616db32615010 100644
+index adb20a9abba33c32d553f620fa82b27dff64ab5f..1f6702b0de00b87dbed7f6d93e911655e8667b0b 100644
 --- a/src/main/java/org/bukkit/entity/Bee.java
 +++ b/src/main/java/org/bukkit/entity/Bee.java
-@@ -93,4 +93,28 @@ public interface Bee extends Animals {
+@@ -93,4 +93,56 @@ public interface Bee extends Animals {
       * @param ticks Ticks the bee cannot enter a hive for
       */
      void setCannotEnterHiveTicks(int ticks);
@@ -100,6 +143,34 @@ index adb20a9abba33c32d553f620fa82b27dff64ab5f..ca6baec5ce00b4d169ab4ff416f616db
 +     * @return is rolling
 +     */
 +    boolean isRolling();
++
++    /**
++     * Sets how many crops this bee has grown since it last
++     * pollinated.
++     * @param crops number of crops
++     */
++    void setCropsGrownSincePollination(int crops);
++
++    /**
++     * Gets how many crops this bee has grown since it last
++     * pollinated.
++     * @return number of crops
++     */
++    int getCropsGrownSincePollination();
++
++    /**
++     * Sets how many ticks this bee has gone without pollinating.
++     *
++     * @param ticks number of ticks
++     */
++    void setTicksSincePollination(int ticks);
++
++    /**
++     * Gets how many ticks this bee has gone without pollinating
++     *
++     * @return number of ticks
++     */
++    int getTicksSincePollination();
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Cat.java b/src/main/java/org/bukkit/entity/Cat.java
@@ -143,6 +214,47 @@ index c2a566b864c82ffb094b7334d9e6e25a1bfc87d1..c340fecb61bac66baf0f44189d21bc85
 +    public boolean isHeadUp();
 +    // Paper End - More cat api
  }
+diff --git a/src/main/java/org/bukkit/entity/Chicken.java b/src/main/java/org/bukkit/entity/Chicken.java
+index cb3ec6ef6c38c2071cb6ad91da094fca2de8d5c6..b4c1a262602d4ca5ffc9fcc21d6aa79af8c040a7 100644
+--- a/src/main/java/org/bukkit/entity/Chicken.java
++++ b/src/main/java/org/bukkit/entity/Chicken.java
+@@ -3,4 +3,35 @@ package org.bukkit.entity;
+ /**
+  * Represents a Chicken.
+  */
+-public interface Chicken extends Animals {}
++// Paper start
++public interface Chicken extends Animals {
++
++    /**
++     * Gets if this chicken was spawned as a chicken jockey.
++     *
++     * @return is chicken jockey
++     */
++    boolean isChickenJockey();
++
++    /**
++     * Sets if this chicken was spawned as a chicken jockey.
++     *
++     * @param isChickenJockey is chicken jockey
++     */
++    void setIsChickenJockey(boolean isChickenJockey);
++
++    /**
++     * Gets the number of ticks till this chicken lays an egg.
++     *
++     * @return ticks till the chicken lays an egg
++     */
++    int getEggLayTime();
++
++    /**
++     * Sets the number of ticks till this chicken lays an egg.
++     *
++     * @param eggLayTime ticks till the chicken lays an egg
++     */
++    void setEggLayTime(int eggLayTime);
++}
++// Paper end
 diff --git a/src/main/java/org/bukkit/entity/Enderman.java b/src/main/java/org/bukkit/entity/Enderman.java
 index 94f3a8c4bf8cf14263d34d866db66728e98dfdb0..7937a0e082199554d3e8db1f9811be29abc9b3fd 100644
 --- a/src/main/java/org/bukkit/entity/Enderman.java
@@ -182,6 +294,33 @@ index 94f3a8c4bf8cf14263d34d866db66728e98dfdb0..7937a0e082199554d3e8db1f9811be29
 +     * @param hasBeenStaredAt whether the enderman has been stared at
 +     */
 +    void setHasBeenStaredAt(boolean hasBeenStaredAt);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Endermite.java b/src/main/java/org/bukkit/entity/Endermite.java
+index 9e7f42caab1204036f4203354c115fd40c6def92..138d2530de2410f4a9424dabd3e5ce0cd1c1dcd2 100644
+--- a/src/main/java/org/bukkit/entity/Endermite.java
++++ b/src/main/java/org/bukkit/entity/Endermite.java
+@@ -23,4 +23,22 @@ public interface Endermite extends Monster {
+      */
+     @Deprecated
+     void setPlayerSpawned(boolean playerSpawned);
++    // Paper start
++    /**
++     * Sets how many ticks this endermite has been living for.
++     * If this value is greater than 2400, this endermite will despawn.
++     *
++     * @param ticks lifetime ticks
++     */
++    void setLifetimeTicks(int ticks);
++
++    /**
++     * Gets how long this endermite has been living for.
++     * This value will tick up while {@link LivingEntity#getRemoveWhenFarAway()} is false.
++     * If this value is greater than 2400, this endermite will despawn.
++     *
++     * @return lifetime ticks
++     */
++    int getLifetimeTicks();
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Fox.java b/src/main/java/org/bukkit/entity/Fox.java
@@ -268,6 +407,112 @@ index d8eb2b5007091c25a14321cb389f3219d76ce452..0fc8a4fcc3ec2ce60bb095c31eb35333
 +     * @throws IllegalArgumentException if the explosion power is less than 0 or greater than 127
 +     */
 +    void setExplosionPower(int explosionPower);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Llama.java b/src/main/java/org/bukkit/entity/Llama.java
+index d23226ccb0f6c25028f000ce31346cd0a8898e6a..bc84b892cae5fe7019a3ad481e9da79956efa1fe 100644
+--- a/src/main/java/org/bukkit/entity/Llama.java
++++ b/src/main/java/org/bukkit/entity/Llama.java
+@@ -67,4 +67,56 @@ public interface Llama extends ChestedHorse, RangedEntity { // Paper
+     @NotNull
+     @Override
+     LlamaInventory getInventory();
++
++    // Paper start
++    /**
++     * Checks if this llama is in a caravan.
++     * This means that this llama is currently following
++     * another llama.
++     *
++     * @return is in caravan
++     */
++    boolean inCaravan();
++
++    /**
++     * Joins a caravan, with the provided llama being the leader
++     * of the caravan.
++     * This llama will then follow the provided llama.
++     *
++     * @param llama head of caravan to join
++     */
++    void joinCaravan(@NotNull Llama llama);
++
++    /**
++     * Leaves the current caravan that they are in.
++     */
++    void leaveCaravan();
++
++    /**
++     * Get the llama that this llama is following.
++     * <p>
++     * Does not necessarily mean the leader of the entire caravan.
++     *
++     * @return the llama currently being followed
++     */
++    @org.jetbrains.annotations.Nullable
++    Llama getCaravanHead();
++
++    /**
++     * Checks if another llama is currently following behind
++     * this llama.
++     *
++     * @return true if being followed in the caravan
++     */
++    boolean hasCaravanTail();
++
++    /**
++     * Gets the llama that is currently following behind
++     * this llama.
++     *
++     * @return the llama following this llama, or null if none is following them
++     */
++    @org.jetbrains.annotations.Nullable
++    Llama getCaravanTail();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/MushroomCow.java b/src/main/java/org/bukkit/entity/MushroomCow.java
+index 939a3dbfcf38f38e4e39d28973ef723157ce0a50..738d547d2a6966122cb2f9f6e94263ee526d9fab 100644
+--- a/src/main/java/org/bukkit/entity/MushroomCow.java
++++ b/src/main/java/org/bukkit/entity/MushroomCow.java
+@@ -35,4 +35,40 @@ public interface MushroomCow extends Cow {
+          */
+         BROWN;
+     }
++    // Paper start
++
++    /**
++     * Gets how long the effect applied to stew
++     * from this mushroom cow is.
++     *
++     * @return duration of the effect (in ticks)
++     */
++    int getStewEffectDuration();
++
++    /**
++     * Sets how long the effect applied to stew
++     * from this mushroom cow is.
++     *
++     * @param duration duration of the effect (in ticks)
++     */
++    void setStewEffectDuration(int duration);
++
++    /**
++     * Gets the type of effect applied to stew
++     * from this mushroom cow is.
++     *
++     * @return effect type, or null if an effect is currently not set
++     */
++    @org.jetbrains.annotations.Nullable
++    org.bukkit.potion.PotionEffectType getStewEffectType();
++
++    /**
++     * Sets the type of effect applied to stew
++     * from this mushroom cow is.
++     *
++     * @param type new effect type
++     *             or null if this cow does not give effects
++     */
++    void setStewEffect(@org.jetbrains.annotations.Nullable org.bukkit.potion.PotionEffectType type);
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Panda.java b/src/main/java/org/bukkit/entity/Panda.java
@@ -362,6 +607,32 @@ index 1f027927a1194f4f8e86c1375a2772e6e261c151..57cf24cfd15a541f60aafc8507c18934
      public enum Gene {
  
          NORMAL(false),
+diff --git a/src/main/java/org/bukkit/entity/Phantom.java b/src/main/java/org/bukkit/entity/Phantom.java
+index a40b045f08b85e22e75459b547e7e7c0b95103ed..277bebe057439a0c48b0c6e9c003b27565eb4bd2 100644
+--- a/src/main/java/org/bukkit/entity/Phantom.java
++++ b/src/main/java/org/bukkit/entity/Phantom.java
+@@ -40,5 +40,21 @@ public interface Phantom extends Flying {
+      * @param shouldBurnInDay True to burn in sunlight
+      */
+     public void setShouldBurnInDay(boolean shouldBurnInDay);
++
++    /**
++     * Gets the location that this phantom circles around when not attacking a player
++     * This will be changed after attacking a player.
++     *
++     * @return circling location
++     */
++    @org.jetbrains.annotations.NotNull
++    org.bukkit.Location getAnchorLocation();
++
++    /**
++     * Sets the location that this phantom circles around when not attacking a player
++     *
++     * @param location circling location (world is ignored, will always use the entity's world)
++     */
++    void setAnchorLocation(@org.jetbrains.annotations.NotNull org.bukkit.Location location);
+     // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/entity/Piglin.java b/src/main/java/org/bukkit/entity/Piglin.java
 index 6fdc0e0bb62189dbf3cf9ce7a87b7fbb995956a3..d4cb4b0ed1d9766a87867dcf1a3a839526ba9332 100644
 --- a/src/main/java/org/bukkit/entity/Piglin.java
@@ -393,10 +664,10 @@ index 6fdc0e0bb62189dbf3cf9ce7a87b7fbb995956a3..d4cb4b0ed1d9766a87867dcf1a3a8395
 +
  }
 diff --git a/src/main/java/org/bukkit/entity/PolarBear.java b/src/main/java/org/bukkit/entity/PolarBear.java
-index 479f7a7c54c85cb685f56e60906650d1989c03ff..60267ee382de80fab86b440ff72a2455f427d148 100644
+index 479f7a7c54c85cb685f56e60906650d1989c03ff..4e526ba6aa462a484984fb9f0512b8db113086fe 100644
 --- a/src/main/java/org/bukkit/entity/PolarBear.java
 +++ b/src/main/java/org/bukkit/entity/PolarBear.java
-@@ -3,4 +3,21 @@ package org.bukkit.entity;
+@@ -3,4 +3,22 @@ package org.bukkit.entity;
  /**
   * Represents a polar bear.
   */
@@ -417,6 +688,7 @@ index 479f7a7c54c85cb685f56e60906650d1989c03ff..60267ee382de80fab86b440ff72a2455
 +     * @param standing whether the polar bear should be standing
 +     */
 +    void setStanding(boolean standing);
++
 +}
 +// Paper end
 diff --git a/src/main/java/org/bukkit/entity/Raider.java b/src/main/java/org/bukkit/entity/Raider.java
@@ -444,6 +716,73 @@ index 987f9b0866b213450b4de1310600161c8587a545..144fdcfd1f35b6346b672006905aedb8
 +    void setCelebrating(boolean celebrating);
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/entity/Ravager.java b/src/main/java/org/bukkit/entity/Ravager.java
+index 4374d5206d4d15a4d8d228c137ed9a96821a1f02..0eb7214472f3a43641a3526000af6beeefb7b36f 100644
+--- a/src/main/java/org/bukkit/entity/Ravager.java
++++ b/src/main/java/org/bukkit/entity/Ravager.java
+@@ -3,4 +3,61 @@ package org.bukkit.entity;
+ /**
+  * Illager beast.
+  */
+-public interface Ravager extends Raider { }
++// Paper start - Missing Entity Behavior
++public interface Ravager extends Raider {
++
++    /**
++     * Gets how many ticks this ravager is attacking for.
++     * When attacking, the ravager cannot move.
++     *
++     * @return ticks attacking or -1 if they are currently not attacking
++     */
++    int getAttackTicks();
++
++    /**
++     * Sets how many ticks this ravager is attacking for.
++     * When attacking, the ravager cannot move.
++     * This will tick down till it gets to -1, where this ravager will no longer be attacking.
++     *
++     * @param ticks ticks attacking or -1 if they should no longer be attacking
++     */
++    void setAttackTicks(int ticks);
++
++    /**
++     * Gets how many ticks the ravager is stunned for.
++     * The ravager cannot move or attack while stunned.
++     * At 0, this will cause the ravager to roar.
++     *
++     * @return ticks stunned or -1 if they are currently not stunned
++     */
++    int getStunnedTicks();
++
++    /**
++     * Sets how many ticks the ravager is stunned for.
++     * The ravager cannot move or attack while stunned.
++     * At 0, this will cause the ravager to roar.
++     *
++     * @param ticks ticks stunned or -1 if they should no longer be stunned
++     */
++    void setStunnedTicks(int ticks);
++
++    /**
++     * Gets how many ticks the ravager is roaring for.
++     * While roaring, the ravager cannot move
++     *
++     * @return ticks roaring or -1 if they are currently not roaring
++     */
++    int getRoarTicks();
++
++    /**
++     * Sets how many ticks the ravager is roaring for.
++     * While roaring, the ravager cannot move
++     * This will tick down till it gets to -1, where it is no longer active.
++     * If set to 11, this will play a sound and hurt nearby players.
++     *
++     * @param ticks ticks roaring or -1 if they should no longer be roaring
++     */
++    void setRoarTicks(int ticks);
++
++}
++// Paper end
 diff --git a/src/main/java/org/bukkit/entity/Trident.java b/src/main/java/org/bukkit/entity/Trident.java
 index 28cdb3b544572ba7aeb9061e3163e3895ac7d4e6..c8015ff610e3c1222cb368ea1d8a0c2f3785d9c7 100644
 --- a/src/main/java/org/bukkit/entity/Trident.java
@@ -563,6 +902,37 @@ index 627e3c1a96ae3331f5aa2dd7803dd2a31c7204be..3c447d2300c866ae605eeca97bd869f4
 +    void setLimitedLifetimeTicks(int ticks);
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/entity/WanderingTrader.java b/src/main/java/org/bukkit/entity/WanderingTrader.java
+index da76e1ed5406322073dd8c7a89ca55aa68620ac4..9f25774659b29d8fcca3eb9d9487edff42dbad13 100644
+--- a/src/main/java/org/bukkit/entity/WanderingTrader.java
++++ b/src/main/java/org/bukkit/entity/WanderingTrader.java
+@@ -53,5 +53,26 @@ public interface WanderingTrader extends AbstractVillager {
+      * @return whether the mob will drink
+      */
+     public boolean canDrinkMilk();
++
++    /**
++     * Gets the location that this wandering trader is currently
++     * wandering towards.
++     * <p>
++     * This will return null if the wandering trader has finished
++     * wandering towards the given location.
++     *
++     * @return the location currently wandering towards, or null if not wandering
++     */
++    @org.jetbrains.annotations.Nullable
++    org.bukkit.Location getWanderingTowards();
++
++    /**
++     * Sets the location that this wandering trader is currently wandering towards.
++     * <p>
++     * This can be set to null to prevent the wandering trader from wandering further.
++     *
++     * @param location location to wander towards (world is ignored, will always use the entity's world)
++     */
++    void setWanderingTowards(@org.jetbrains.annotations.Nullable org.bukkit.Location location);
+     // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/entity/Warden.java b/src/main/java/org/bukkit/entity/Warden.java
 index 3794db8867b53f3b3735ad82fdd8765a26df2bfb..efaa45f41bc1dc8df6665c55b4e5ade343d60d4c 100644
 --- a/src/main/java/org/bukkit/entity/Warden.java
@@ -652,4 +1022,52 @@ index 7cc1d9a966454af70b7c25735fe474fe3eb97eb4..ad2eaee347cd2864aef30d2af48c1be6
 +     */
 +    void setConversionTime(int time, boolean broadcastEntityEvent);
 +    // Paper stop - missing entity behaviour api - converting without entity event
+ }
+diff --git a/src/main/java/org/bukkit/entity/minecart/ExplosiveMinecart.java b/src/main/java/org/bukkit/entity/minecart/ExplosiveMinecart.java
+index a4411daca0d8a770b0d15e08847b82df8a3ec27f..50464aa8c38cd47fc049ee022e25cb4976260fa0 100644
+--- a/src/main/java/org/bukkit/entity/minecart/ExplosiveMinecart.java
++++ b/src/main/java/org/bukkit/entity/minecart/ExplosiveMinecart.java
+@@ -6,4 +6,19 @@ import org.bukkit.entity.Minecart;
+  * Represents a Minecart with TNT inside it that can explode when triggered.
+  */
+ public interface ExplosiveMinecart extends Minecart {
++    // Paper start - Entity API
++    /**
++     * Set the number of ticks until the minecart explodes after being primed.
++     *
++     * @param fuseTicks fuse ticks or -1 if the fuse isn't primed
++     */
++    void setFuseTicks(int fuseTicks);
++
++    /**
++     * Retrieve the number of ticks until the explosive minecart explodes
++     *
++     * @return number of ticks or -1 if the fuse isn't primed
++     */
++    int getFuseTicks();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
+index db69687a7ad4b18d17ab1677cae5d8dd4dcd3678..8e4c6ec409f49d4a3378c466acc47f62c7689c0b 100644
+--- a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
++++ b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
+@@ -24,4 +24,19 @@ public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntit
+      * @param enabled new enabled state
+      */
+     void setEnabled(boolean enabled);
++    // Paper start
++    /**
++     * Gets the number of ticks that this hopper minecart cannot pickup items up for.
++     *
++     * @return ticks left on cooldown
++     */
++    int getPickupCooldown();
++
++    /**
++     * Sets the number of ticks that this hopper minecart cannot pickup items for.
++     *
++     * @param cooldown cooldown length in ticks
++     */
++    void setPickupCooldown(int cooldown);
++    // Paper end
  }
