@@ -6,7 +6,7 @@ Subject: [PATCH] More Projectile API
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
 diff --git a/src/main/java/org/bukkit/entity/AbstractArrow.java b/src/main/java/org/bukkit/entity/AbstractArrow.java
-index 225a24898acd25038ea2a8448f9f3b57643d3026..6b0358c5c159e784395d56caec6d33ddb0bd4278 100644
+index 225a24898acd25038ea2a8448f9f3b57643d3026..d173010d51d05928c35bb4bf5fbc08ce221ec474 100644
 --- a/src/main/java/org/bukkit/entity/AbstractArrow.java
 +++ b/src/main/java/org/bukkit/entity/AbstractArrow.java
 @@ -151,6 +151,36 @@ public interface AbstractArrow extends Projectile {
@@ -14,7 +14,7 @@ index 225a24898acd25038ea2a8448f9f3b57643d3026..6b0358c5c159e784395d56caec6d33dd
      org.bukkit.inventory.ItemStack getItemStack();
  
 +    /**
-+     * Sets the ticks for how long this arrow has been in the world for.
++     * Sets the amount of ticks this arrow has been alive in the world
 +     * This is used to determine when the arrow should be automatically despawned.
 +     *
 +     * @param ticks lifetime ticks
@@ -22,9 +22,9 @@ index 225a24898acd25038ea2a8448f9f3b57643d3026..6b0358c5c159e784395d56caec6d33dd
 +    void setLifetimeTicks(int ticks);
 +
 +    /**
-+     * Gets the ticks for how long this arrow has been in the world for.
++     * Gets how many ticks this arrow has been in the world for.
 +     *
-+     * @return lifetime ticks this arrow has been in the world
++     * @return ticks this arrow has been in the world
 +     */
 +    int getLifetimeTicks();
 +
@@ -178,7 +178,7 @@ index d1b37530319f6d37ee37f62080289c1e45848bc8..e94c7e279356c510f60508b26277d489
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Projectile.java b/src/main/java/org/bukkit/entity/Projectile.java
-index a523fca4baab447181ef91df67fa69b24e010149..53f2c21e1cd07df0a246cc53d0af919aa26f8b46 100644
+index a523fca4baab447181ef91df67fa69b24e010149..6935f8806ca1ed87fa761e73bc0f6c41ab60453e 100644
 --- a/src/main/java/org/bukkit/entity/Projectile.java
 +++ b/src/main/java/org/bukkit/entity/Projectile.java
 @@ -43,4 +43,45 @@ public interface Projectile extends Entity {
@@ -217,7 +217,7 @@ index a523fca4baab447181ef91df67fa69b24e010149..53f2c21e1cd07df0a246cc53d0af919a
 +    /**
 +     * Sets whether the projectile has been
 +     * shot into the world and has sent a projectile
-+     * shot game event.
++     * shot game event in the next tick.
 +     *
 +     * Setting this to false will cause a game event
 +     * to fire and the value to be set back to true.
@@ -228,26 +228,27 @@ index a523fca4baab447181ef91df67fa69b24e010149..53f2c21e1cd07df0a246cc53d0af919a
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/ShulkerBullet.java b/src/main/java/org/bukkit/entity/ShulkerBullet.java
-index 4623e0d767b343cbdc6fcf20b3b2ff7ff14863cf..00e63e8df54cd6a3cbe0ca8578c6e74e6ab0223d 100644
+index 4623e0d767b343cbdc6fcf20b3b2ff7ff14863cf..dd69a68d1f005c25329bb0366d161ae9b061e108 100644
 --- a/src/main/java/org/bukkit/entity/ShulkerBullet.java
 +++ b/src/main/java/org/bukkit/entity/ShulkerBullet.java
-@@ -18,4 +18,59 @@ public interface ShulkerBullet extends Projectile {
+@@ -18,4 +18,61 @@ public interface ShulkerBullet extends Projectile {
       * @param target the entity to target
       */
      void setTarget(@Nullable Entity target);
-+
++    // Paper start
 +    /**
-+     * Gets where the shulker bullet should move towards.
-+     * This is usually relative towards their target.
++     * Gets the relative offset that this shulker bullet should move towards,
++     * note that this will change each tick as the skulker bullet approaches the target.
 +     *
-+     * @return target
++     * @return target delta offset
 +     */
 +    @org.jetbrains.annotations.NotNull
 +    org.bukkit.util.Vector getTargetDelta();
 +
 +
 +    /**
-+     * Sets where the shulker bullet should move towards.
++     * Sets the relative offset that this shulker bullet should move towards,
++     * note that this will change each tick as the skulker bullet approaches the target.
 +     * This is usually relative towards their target.
 +     *
 +     * @param vector target
@@ -276,20 +277,21 @@ index 4623e0d767b343cbdc6fcf20b3b2ff7ff14863cf..00e63e8df54cd6a3cbe0ca8578c6e74e
 +    void setCurrentMovementDirection(@Nullable org.bukkit.block.BlockFace movementDirection);
 +
 +    /**
-+     * Gets how many steps that the shulker bullet will try to move in
-+     * the target delta.
++     * Gets how many ticks this shulker bullet
++     * will attempt to move in its current direction.
 +     *
 +     * @return number of steps
 +     */
 +    int getFlightSteps();
 +
 +    /**
-+     * Sets how many steps that the shulker bullet will try to move in
-+     * the target delta.
++     * Sets how many ticks this shulker bullet
++     * will attempt to move in its current direction.
 +     *
 +     * @param steps number of steps
 +     */
 +    void setFlightSteps(int steps);
++    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/ThrownPotion.java b/src/main/java/org/bukkit/entity/ThrownPotion.java
 index 7051e07b4e456aae0ec9e37808b59e5fa62a4027..225ac312613b9e8f3cf680819f2ebe350d1bf48a 100644
