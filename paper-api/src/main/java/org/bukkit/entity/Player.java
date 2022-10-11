@@ -3625,6 +3625,24 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
     // Paper end - Teleport API
 
+    // Paper start
+    /**
+     * Displays elder guardian effect with a sound
+     *
+     * @see #showElderGuardian(boolean)
+     */
+    default void showElderGuardian() {
+        showElderGuardian(false);
+    }
+
+    /**
+     * Displays elder guardian effect and optionally plays a sound
+     *
+     * @param silent whether sound should be silenced
+     */
+    void showElderGuardian(boolean silent);
+    // Paper end
+
     @NotNull
     @Override
     Spigot spigot();
