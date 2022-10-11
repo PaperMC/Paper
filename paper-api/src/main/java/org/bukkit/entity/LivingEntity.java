@@ -1341,4 +1341,24 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @Deprecated
     void setHurtDirection(float hurtDirection);
     // Paper end - hurt direction API
+
+    // Paper start - swing hand API
+    /**
+     * Makes this entity swing their hand.
+     *
+     * <p>This method does nothing if this entity does not
+     * have an animation for swinging their hand.
+     *
+     * @param hand hand to be swung, either {@link org.bukkit.inventory.EquipmentSlot#HAND} or {@link org.bukkit.inventory.EquipmentSlot#OFF_HAND}
+     * @throws IllegalArgumentException if invalid hand is passed
+     */
+    default void swingHand(@NotNull org.bukkit.inventory.EquipmentSlot hand) {
+        com.google.common.base.Preconditions.checkArgument(hand != null && hand.isHand(), String.format("Expected a valid hand, got \"%s\" instead!", hand));
+        if (hand == org.bukkit.inventory.EquipmentSlot.HAND) {
+            this.swingMainHand();
+        } else {
+            this.swingOffHand();
+        }
+    }
+    // Paper end - swing hand API
 }
