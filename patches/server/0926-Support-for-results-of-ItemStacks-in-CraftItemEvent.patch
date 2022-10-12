@@ -5,10 +5,10 @@ Subject: [PATCH] Support for results of ItemStacks in CraftItemEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 63c9040ed2349eec500ba6e9090440347c514a3b..4e6ba6588872172d1255c559e712be2ecdd733c6 100644
+index 63c9040ed2349eec500ba6e9090440347c514a3b..807aa6bccbfa62e84202ba12b1c5ffd58c79e862 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -3280,12 +3280,33 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3280,12 +3280,32 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                          org.bukkit.inventory.Inventory top = inventory.getTopInventory();
                          if (packet.getSlotNum() == 0 && top instanceof CraftingInventory) {
                              org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
@@ -21,14 +21,13 @@ index 63c9040ed2349eec500ba6e9090440347c514a3b..4e6ba6588872172d1255c559e712be2e
 +                                if (packet.getClickType() == net.minecraft.world.inventory.ClickType.QUICK_MOVE && action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
 +                                    for (itemstack = this.player.containerMenu.quickMoveStack(this.player, packet.getSlotNum()); !itemstack.isEmpty() && ItemStack.isSame(this.player.containerMenu.slots.get(packet.getSlotNum()).getItem(), itemstack); itemstack = this.player.containerMenu.quickMoveStack(player, packet.getSlotNum())) {
 +                                        if (this.player.containerMenu.slots.get(packet.getSlotNum()).mayPickup(this.player) && (this.player.getInventory().getSlotWithRemainingSpace(this.player.containerMenu.slots.get(packet.getSlotNum()).getItem()) != -1 || this.player.getInventory().getFreeSlot() != -1)) {
-+                                            itemResultCount++;
++                                            itemResultCount += itemstack.getCount();
 +                                        }
 +                                    }
 +                                }
 +                                int remainResults = itemResultCount;
 +                                while(remainResults > 0) {
-+                                    int resultAmount = Math.min(baseResult.getMaxStackSize(), itemResultCount);
-+
++                                    int resultAmount = Math.min(baseResult.getMaxStackSize(), remainResults);
 +                                    remainResults -= resultAmount;
 +                                    org.bukkit.inventory.ItemStack result = baseResult.clone();
 +                                    result.setAmount(resultAmount);
