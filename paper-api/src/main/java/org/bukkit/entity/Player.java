@@ -3641,6 +3641,59 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param silent whether sound should be silenced
      */
     void showElderGuardian(boolean silent);
+
+    /**
+     * Returns the player's cooldown in ticks until the next Warden warning can occur.
+     *
+     * @return ticks until next Warden warning can occur. 0 means there is no cooldown left.
+     */
+    int getWardenWarningCooldown();
+
+    /**
+     * Sets the player's cooldown in ticks until next Warden warning can occur.
+     *
+     * @param cooldown ticks until next Warden warning can occur. 0 means there is no cooldown left. Values less than 0 are set to 0.
+     */
+    void setWardenWarningCooldown(int cooldown);
+
+    /**
+     * Returns time since last Warden warning in ticks.
+     *
+     * @return ticks since last Warden warning
+     */
+    int getWardenTimeSinceLastWarning();
+
+    /**
+     * Sets time since last Warden warning in ticks.
+     *
+     * @param time ticks since last Warden warning
+     */
+    void setWardenTimeSinceLastWarning(int time);
+
+    /**
+     * Returns the player's current Warden warning level.
+     *
+     * @return current Warden warning level
+     */
+    int getWardenWarningLevel();
+
+    /**
+     * Sets the player's Warden warning level.
+     * <p>
+     * <b>Note:</b> This will not actually spawn the Warden.
+     * Even if the warning level is over threshold, the player still needs to activate a Shrieker in order to summon the Warden.
+     *
+     * @param warningLevel player's Warden warning level. The warning level is internally limited to valid values.
+     */
+    void setWardenWarningLevel(int warningLevel);
+
+    /**
+     * Increases the player's Warden warning level if possible and not on cooldown.
+     * <p>
+     * <b>Note:</b> This will not actually spawn the Warden.
+     * Even if the warning level is over threshold, the player still needs to activate a Shrieker in order to summon the Warden.
+     */
+    void increaseWardenWarningLevel();
     // Paper end
 
     @NotNull
