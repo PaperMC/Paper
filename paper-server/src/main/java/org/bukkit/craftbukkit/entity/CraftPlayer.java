@@ -3300,6 +3300,41 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void showElderGuardian(boolean silent) {
         if (getHandle().connection != null) getHandle().connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.GUARDIAN_ELDER_EFFECT, silent ? 0F : 1F));
     }
+
+    @Override
+    public int getWardenWarningCooldown() {
+        return this.getHandle().wardenSpawnTracker.cooldownTicks;
+    }
+
+    @Override
+    public void setWardenWarningCooldown(int cooldown) {
+        this.getHandle().wardenSpawnTracker.cooldownTicks = Math.max(cooldown, 0);
+    }
+
+    @Override
+    public int getWardenTimeSinceLastWarning() {
+        return this.getHandle().wardenSpawnTracker.ticksSinceLastWarning;
+    }
+
+    @Override
+    public void setWardenTimeSinceLastWarning(int time) {
+        this.getHandle().wardenSpawnTracker.ticksSinceLastWarning = time;
+    }
+
+    @Override
+    public int getWardenWarningLevel() {
+        return this.getHandle().wardenSpawnTracker.getWarningLevel();
+    }
+
+    @Override
+    public void setWardenWarningLevel(int warningLevel) {
+        this.getHandle().wardenSpawnTracker.setWarningLevel(warningLevel);
+    }
+
+    @Override
+    public void increaseWardenWarningLevel() {
+        this.getHandle().wardenSpawnTracker.increaseWarningLevel();
+    }
     // Paper end
 
     public Player.Spigot spigot()
