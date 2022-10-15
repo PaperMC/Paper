@@ -3,7 +3,10 @@ From: Aikar <aikar@aikar.co>
 Date: Tue, 28 Jan 2014 19:13:57 -0500
 Subject: [PATCH] Add ItemStack Recipe API helper methods
 
-Allows using ExactChoice Recipes with easier methodss
+Allows using ExactChoice Recipes with easier methods
+
+Redirects some of upstream's APIs to these new methods to avoid
+usage of magic values and the deprecated RecipeChoice#getItemStack
 
 diff --git a/src/main/java/org/bukkit/inventory/ShapedRecipe.java b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
 index ad2ab6e97ccf6900d19f8bfbe08181d4c7743a99..ecf8cd763ae600c11be6385ea6240e4d2c08abc9 100644
@@ -24,7 +27,7 @@ index ad2ab6e97ccf6900d19f8bfbe08181d4c7743a99..ecf8cd763ae600c11be6385ea6240e4d
       * Get a copy of the ingredients map.
       *
 diff --git a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
-index 75b47c608d0a902e4ea5f03c395667f47dec8980..ff5a0e378a7c1e0f89d81144629251dc61af6355 100644
+index 75b47c608d0a902e4ea5f03c395667f47dec8980..7485da0de3712619b8d89d0b21f60fe20dafad6b 100644
 --- a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
 +++ b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
 @@ -142,6 +142,40 @@ public class ShapelessRecipe implements Recipe, Keyed {
@@ -55,8 +58,8 @@ index 75b47c608d0a902e4ea5f03c395667f47dec8980..ff5a0e378a7c1e0f89d81144629251dc
 +    public ShapelessRecipe removeIngredient(int count, @NotNull ItemStack item) {
 +        Iterator<RecipeChoice> iterator = ingredients.iterator();
 +        while (count > 0 && iterator.hasNext()) {
-+            ItemStack stack = iterator.next().getItemStack();
-+            if (stack.equals(item)) {
++            RecipeChoice choice = iterator.next();
++            if (choice.test(item)) {
 +                iterator.remove();
 +                count--;
 +            }
@@ -68,3 +71,21 @@ index 75b47c608d0a902e4ea5f03c395667f47dec8980..ff5a0e378a7c1e0f89d81144629251dc
      /**
       * Removes an ingredient from the list.
       *
+@@ -165,7 +199,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
+      */
+     @NotNull
+     public ShapelessRecipe removeIngredient(@NotNull Material ingredient) {
+-        return removeIngredient(ingredient, 0);
++        return removeIngredient(new ItemStack(ingredient)); // Paper - avoid using deprecated methods (magic values; RecipeChoice#getItemStack)
+     }
+ 
+     /**
+@@ -192,7 +226,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
+      */
+     @NotNull
+     public ShapelessRecipe removeIngredient(int count, @NotNull Material ingredient) {
+-        return removeIngredient(count, ingredient, 0);
++        return removeIngredient(count, new ItemStack(ingredient)); // Paper - avoid using deprecated methods (magic values; RecipeChoice#getItemStack)
+     }
+ 
+     /**
