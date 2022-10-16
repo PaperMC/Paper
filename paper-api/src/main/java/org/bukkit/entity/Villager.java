@@ -64,8 +64,11 @@ public interface Villager extends AbstractVillager {
      * A villager with a level of 1 and no experience is liable to lose its
      * profession.
      *
+     * This doesn't update the trades of this villager.
+     *
      * @param level the new level
      * @throws IllegalArgumentException if level not between [1, 5]
+     * @see #increaseLevel(int)
      */
     public void setVillagerLevel(int level);
 
@@ -85,6 +88,34 @@ public interface Villager extends AbstractVillager {
     public void setVillagerExperience(int experience);
 
     // Paper start
+    /**
+     * Increases the level of this villager.
+     * The villager will also unlock new recipes unlike the raw
+     * method {@link #setVillagerLevel(int)}.
+     * <p>
+     * A villager with a level of 1 and no experience is liable to lose its
+     * profession.
+     * <p>
+     * A master villager has a level of 5 in its profession and
+     * will unlock 10 trades (2 per level).
+     *
+     * @param amount The amount of level
+     * @return Whether trades are unlocked
+     * @throws IllegalArgumentException if current level plus the amount
+     * isn't between [1, 5] or the amount isn't positive
+     * @see #setVillagerLevel(int)
+     */
+    boolean increaseLevel(int amount);
+
+    /**
+     * Gives to this villager some potential new trades
+     * based to its profession and level.
+     * @param amount The amount of trades to give
+     * @return Whether trades are added
+     * @throws IllegalArgumentException if the amount isn't positive
+     */
+    boolean addTrades(int amount);
+
     /**
      * Gets the amount of times a villager has restocked their trades today
      * @return The amount of trade restocks.
