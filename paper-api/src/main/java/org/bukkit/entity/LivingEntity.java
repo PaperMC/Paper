@@ -1361,4 +1361,18 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
         }
     }
     // Paper end - swing hand API
+
+    // Paper start - knockback API
+    /**
+     * Knocks back this entity from a specific direction with a specified strength. Mechanics such
+     * as knockback resistance will be factored in.
+     *
+     * The direction specified in this method will be the direction of the source of the knockback,
+     * so the entity will be pushed in the opposite direction.
+     * @param strength The strength of the knockback. Must be greater than 0.
+     * @param directionX The relative x position of the knockback source direction
+     * @param directionZ The relative z position of the knockback source direction
+     */
+    void knockback(double strength, double directionX, double directionZ);
+    // Paper end - knockback API
 }
