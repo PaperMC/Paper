@@ -99,6 +99,34 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     // Paper start
     @Override
+    public boolean increaseLevel(int amount) {
+        Preconditions.checkArgument(amount > 0, "Level earned must be positive");
+        int supposedFinalLevel = this.getVillagerLevel() + amount;
+        Preconditions.checkArgument(net.minecraft.world.entity.npc.VillagerData.MIN_VILLAGER_LEVEL <= supposedFinalLevel && supposedFinalLevel <= net.minecraft.world.entity.npc.VillagerData.MAX_VILLAGER_LEVEL,
+            "Final level reached after the donation (%d) must be between [%d, %d]".formatted(supposedFinalLevel, net.minecraft.world.entity.npc.VillagerData.MIN_VILLAGER_LEVEL, net.minecraft.world.entity.npc.VillagerData.MAX_VILLAGER_LEVEL));
+
+        it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.world.entity.npc.VillagerTrades.ItemListing[]> trades =
+            net.minecraft.world.entity.npc.VillagerTrades.TRADES.get(this.getHandle().getVillagerData().getProfession());
+
+        if (trades == null || trades.isEmpty()) {
+            this.getHandle().setVillagerData(this.getHandle().getVillagerData().setLevel(supposedFinalLevel));
+            return false;
+        }
+
+        while (amount > 0) {
+            this.getHandle().increaseMerchantCareer();
+            amount--;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean addTrades(int amount) {
+        Preconditions.checkArgument(amount > 0, "Number of trades unlocked must be positive");
+        return this.getHandle().updateTrades(amount);
+    }
+
+    @Override
     public int getRestocksToday() {
         return getHandle().numberOfRestocksToday;
     }
