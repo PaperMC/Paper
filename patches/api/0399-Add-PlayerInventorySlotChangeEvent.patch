@@ -6,16 +6,16 @@ Subject: [PATCH] Add PlayerInventorySlotChangeEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/player/PlayerInventorySlotChangeEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerInventorySlotChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e86443b3b2e17f95be483acc06593212d9eefc03
+index 0000000000000000000000000000000000000000..0a3e3b56b754d8838674c88105bd1312b96eb69d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PlayerInventorySlotChangeEvent.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,99 @@
 +package io.papermc.paper.event.player;
 +
 +import org.bukkit.entity.Player;
-+import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.Inventory;
 +import org.bukkit.inventory.ItemStack;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -24,20 +24,35 @@ index 0000000000000000000000000000000000000000..e86443b3b2e17f95be483acc06593212
 + */
 +public class PlayerInventorySlotChangeEvent extends PlayerEvent {
 +    private static final HandlerList handlers = new HandlerList();
++    private final int rawSlot;
 +    private final int slot;
 +    private final ItemStack oldItemStack;
 +    private final ItemStack newItemStack;
 +    private boolean triggerAdvancements = true;
 +
-+    public PlayerInventorySlotChangeEvent(@NotNull Player player, int slot, @NotNull ItemStack oldItemStack, @NotNull ItemStack newItemStack) {
++    public PlayerInventorySlotChangeEvent(@NotNull Player player, int rawSlot, @NotNull ItemStack oldItemStack, @NotNull ItemStack newItemStack) {
 +        super(player);
-+        this.slot = slot;
++        this.rawSlot = rawSlot;
++        this.slot = player.getOpenInventory().convertSlot(rawSlot);
 +        this.oldItemStack = oldItemStack;
 +        this.newItemStack = newItemStack;
 +    }
 +
 +    /**
-+     * The slot number that was changed.
++     * The raw slot number that was changed.
++     *
++     * @return The raw slot number.
++     */
++    public int getRawSlot() {
++        return rawSlot;
++    }
++
++    /**
++     * The slot number that was changed, ready for passing to
++     * {@link Inventory#getItem(int)}. Note that there may be two slots with
++     * the same slot number, since a view links two different inventories.
++     * <p>
++     * If no inventory is opened, internal crafting view is used for conversion.
 +     *
 +     * @return The slot number.
 +     */
