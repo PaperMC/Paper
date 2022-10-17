@@ -1,0 +1,120 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Mon, 17 Oct 2022 18:00:34 -0400
+Subject: [PATCH] Paper Item API
+
+
+diff --git a/src/main/java/io/papermc/paper/inventory/item/PaperItemStack.java b/src/main/java/io/papermc/paper/inventory/item/PaperItemStack.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1d8b4b61099fd41520534fc00c3b9f819a28520d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/item/PaperItemStack.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.inventory.item;
++
++import net.minecraft.world.item.Items;
++
++public class PaperItemStack {
++
++
++    public static net.minecraft.world.item.ItemStack asVanillaCopy(io.papermc.paper.inventory.item.ItemStack paperItemStack) {
++        return new net.minecraft.world.item.ItemStack(Items.STONE);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/inventory/item/VanillaItemStack.java b/src/main/java/io/papermc/paper/inventory/item/VanillaItemStack.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a65181da52bfdb986b12d355e76a3c675d3f89d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/item/VanillaItemStack.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper.inventory.item;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.text.event.HoverEvent;
++import net.minecraft.world.item.Item;
++import org.bukkit.Material;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.inventory.meta.ItemMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.function.UnaryOperator;
++
++public class VanillaItemStack implements ItemStack {
++
++    private final net.minecraft.world.item.ItemStack itemStack;
++
++    public VanillaItemStack(@NotNull net.minecraft.world.item.ItemStack vanilla) {
++        this.itemStack = vanilla;
++    }
++
++    @Override
++    public @NotNull Material getMaterial() {
++        return CraftMagicNumbers.getMaterial(this.itemStack.getItem());
++    }
++
++    @Override
++    public void setMaterial(@NotNull Material material) {
++        this.itemStack.setItem(CraftMagicNumbers.getItem(material));
++    }
++
++    @Override
++    public int getSize() {
++        return this.itemStack.getCount();
++    }
++
++    @Override
++    public void setSize(int size) {
++        this.itemStack.setCount(size);
++    }
++
++    @Override
++    public @Nullable ItemMeta getMeta() {
++        return null;
++    }
++
++    @Override
++    public void setMeta(@Nullable ItemMeta meta) {
++
++    }
++
++    @Override
++    public @NotNull HoverEvent<HoverEvent.ShowItem> asHoverEvent(@NotNull UnaryOperator<HoverEvent.ShowItem> op) {
++        Key key = CraftMagicNumbers.getMaterial(this.itemStack.getItem()).getKey();
++
++        return HoverEvent.showItem(op.apply(HoverEvent.ShowItem.of(key, this.itemStack.getCount(), PaperAdventure.asBinaryTagHolder(this.itemStack.getTag()))));
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
+index 873185fd4d4c994130f2e7c271b3e03cefb2278c..17797e17d936ce8f3adf474ca1e509f3027c0a90 100644
+--- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
++++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
+@@ -75,8 +75,10 @@ public class CraftEnchantment extends Enchantment {
+     }
+ 
+     @Override
+-    public boolean canEnchantItem(ItemStack item) {
+-        return this.target.canEnchant(CraftItemStack.asNMSCopy(item));
++    // Paper start
++    public boolean canEnchantItem(io.papermc.paper.inventory.item.ItemStack item) {
++        return this.target.canEnchant(io.papermc.paper.inventory.item.PaperItemStack.asVanillaCopy(item));
++    // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 1628913b1e9b91e68dcd942a38da4aed95b12d4a..d94cc30aa6e10ea53775dfdda6cb383f687cbe36 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -528,8 +528,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+ 
+     @Override
+-    public String getTranslationKey(org.bukkit.inventory.ItemStack itemStack) {
+-        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
++    public String getTranslationKey(io.papermc.paper.inventory.item.ItemStack itemStack) {
++        net.minecraft.world.item.ItemStack nmsItemStack = io.papermc.paper.inventory.item.PaperItemStack.asVanillaCopy(itemStack);
+         return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
+     }
+ 
