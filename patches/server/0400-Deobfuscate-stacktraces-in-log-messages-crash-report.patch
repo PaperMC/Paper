@@ -456,10 +456,10 @@ index 0000000000000000000000000000000000000000..eb910d4abf91488fa7cf1f5d47e0ee91
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/TraceUtil.java b/src/main/java/io/papermc/paper/util/TraceUtil.java
-index 2d5494d2813b773e60ddba6790b750a9a08f21f8..7695bf44503f161523ea612ef8a884ae574a2e21 100644
+index 2d5494d2813b773e60ddba6790b750a9a08f21f8..0b210bdf7c1f5962afbd44195af6f84f625635e3 100644
 --- a/src/main/java/io/papermc/paper/util/TraceUtil.java
 +++ b/src/main/java/io/papermc/paper/util/TraceUtil.java
-@@ -6,13 +6,15 @@ public final class TraceUtil {
+@@ -6,13 +6,20 @@ public final class TraceUtil {
  
      public static void dumpTraceForThread(Thread thread, String reason) {
          Bukkit.getLogger().warning(thread.getName() + ": " + reason);
@@ -475,6 +475,11 @@ index 2d5494d2813b773e60ddba6790b750a9a08f21f8..7695bf44503f161523ea612ef8a884ae
 +        final Throwable throwable = new Throwable(reason);
 +        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(throwable);
 +        throwable.printStackTrace();
++    }
++
++    public static void printStackTrace(Throwable thr) {
++        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
++        thr.printStackTrace();
      }
  }
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
@@ -502,7 +507,7 @@ index f114d5dab86aa2cdd59c78406c9d82f9caededca..99fa9f1952ee7ed79b223ff210a658e4
          }
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index a283cce82069bf5dfd64229d102a19dfda158daf..b8e35f493458ba9e072953dffe6b2429f1d821ec 100644
+index a283cce82069bf5dfd64229d102a19dfda158daf..8f74a505087cae01520fcfaad833c73215de8036 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -62,13 +62,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -522,6 +527,37 @@ index a283cce82069bf5dfd64229d102a19dfda158daf..b8e35f493458ba9e072953dffe6b2429
      });
      private final PacketFlow receiving;
      private final Queue<Connection.PacketHolder> queue = Queues.newConcurrentLinkedQueue();
+@@ -192,7 +192,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+             }
+         }
+-        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) throwable.printStackTrace(); // Spigot
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) io.papermc.paper.util.TraceUtil.printStackTrace(throwable); // Spigot // Paper
+     }
+ 
+     protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index 99f56658c70f99592fb40c9df0ce3e47053d1bd5..45c1bc8d8675282bd8eef44ae8a5db25620a94e9 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -332,7 +332,7 @@ public final class MCUtil {
+     public static void ensureMain(String reason, Runnable run) {
+         if (!isMainThread()) {
+             if (reason != null) {
+-                new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
++                io.papermc.paper.util.TraceUtil.printStackTrace(new IllegalStateException("Asynchronous " + reason + "!"));
+             }
+             getProcessQueue().add(run);
+             return;
+@@ -357,7 +357,7 @@ public final class MCUtil {
+     public static <T> T ensureMain(String reason, Supplier<T> run) {
+         if (!isMainThread()) {
+             if (reason != null) {
+-                new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
++                io.papermc.paper.util.TraceUtil.printStackTrace(new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns "));
+             }
+             Waitable<T> wait = new Waitable<T>() {
+                 @Override
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index abfcba1c3db090563191e8adea6d8250ae2d138e..487991163f12c1ded3f5d35a718aa89b1fb9278f 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
@@ -534,6 +570,46 @@ index abfcba1c3db090563191e8adea6d8250ae2d138e..487991163f12c1ded3f5d35a718aa89b
          paperConfigurations.initializeGlobalConfiguration();
          paperConfigurations.initializeWorldDefaultsConfiguration();
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 93ef138cdcf2633768b0452511933ec4a14f1ceb..c5822b4ecb16f1f20c39a296755ee656973a0f7c 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1020,9 +1020,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
+         // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
+         if (!entity.valid || entity.level != this.level || this.entityMap.containsKey(entity.getId())) {
+-            new Throwable("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.level.getWorld().getName()
++            io.papermc.paper.util.TraceUtil.dumpTraceForThread("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.level.getWorld().getName()
+                 + ": " + entity  + (this.entityMap.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""))
+-                .printStackTrace();
++                ;
+             return;
+         }
+         if (entity instanceof ServerPlayer && ((ServerPlayer) entity).supressTrackerForLogin) return; // Delay adding to tracker until after list packets
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index c0e17bbf04723da76ea6952d9558dd4d34b00f6c..8cc266e25d25d154158b36e456804ac80a47364e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -218,7 +218,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     public final UUID uuid;
+     public boolean hasPhysicsEvent = true; // Paper
+     public static Throwable getAddToWorldStackTrace(Entity entity) {
+-        return new Throwable(entity + " Added to world at " + new java.util.Date());
++        final Throwable thr = new Throwable(entity + " Added to world at " + new java.util.Date());
++        io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
++        return thr;
+     }
+ 
+     @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+@@ -1289,7 +1291,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         if (entity.isRemoved()) {
+             // Paper start
+             if (DEBUG_ENTITIES) {
+-                new Throwable("Tried to add entity " + entity + " but it was marked as removed already").printStackTrace(); // CraftBukkit
++                io.papermc.paper.util.TraceUtil.dumpTraceForThread("Tried to add entity " + entity + " but it was marked as removed already"); // CraftBukkit
+                 getAddToWorldStackTrace(entity).printStackTrace();
+             }
+             // Paper end
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 index a24ef433d0c9d06b86fd612978cfd6d877036791..1b38326c9a709536dc4cccf9af93aede98a1a782 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
@@ -551,6 +627,54 @@ index a24ef433d0c9d06b86fd612978cfd6d877036791..1b38326c9a709536dc4cccf9af93aede
      });
      final MinecraftServer server;
      public volatile boolean running;
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 4d501687f46722f2dcb51a8715a0be9ca4905d5f..059cee21b636dcdda34def41309fea026aeafeb0 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -205,7 +205,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
+                 MutableComponent ichatmutablecomponent = Component.translatable("multiplayer.disconnect.invalid_player_data");
+                 // Paper start
+                 if (MinecraftServer.getServer().isDebugging()) {
+-                    exception.printStackTrace();
++                    io.papermc.paper.util.TraceUtil.printStackTrace(exception);
+                 }
+                 // Paper end
+ 
+diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+index 6599f874d9f97e9ef4862039ecad7277bbc5fd91..7edd4b88eb0476f0630630bc4681e859bd145b2b 100644
+--- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
++++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+@@ -364,7 +364,7 @@ public class OldUsersConverter {
+                         try {
+                             root = NbtIo.readCompressed(new java.io.FileInputStream(file5));
+                         } catch (Exception exception) {
+-                            exception.printStackTrace();
++                            io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
+                             ServerInternalException.reportInternalException(exception); // Paper
+                         }
+ 
+@@ -378,7 +378,7 @@ public class OldUsersConverter {
+                             try {
+                                 NbtIo.writeCompressed(root, new java.io.FileOutputStream(file2));
+                             } catch (Exception exception) {
+-                                exception.printStackTrace();
++                                io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
+                                 ServerInternalException.reportInternalException(exception); // Paper
+                             }
+                        }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 941bd6c43d3de9e5c947c2b7a3f42388c3fea25a..07eeea03796cd6330a9788ef357cf307a02b4ace 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -640,7 +640,7 @@ public class LevelChunk extends ChunkAccess {
+                     + " (" + getBlockState(blockposition) + ") where there was no entity tile!\n" +
+                     "Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16) +
+                     "\nWorld: " + level.getLevel().dimension().location());
+-            e.printStackTrace();
++            io.papermc.paper.util.TraceUtil.printStackTrace(e);
+             ServerInternalException.reportInternalException(e);
+             // Paper end
+             // CraftBukkit end
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
 index 3c1992e212a6d6f1db4d5b807b38d71913619fc0..9c1aff17aabd062640e3f451a2ef8c50a7c62f10 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
