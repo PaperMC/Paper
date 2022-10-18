@@ -13,9 +13,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.event.player;
 +
 +import org.bukkit.entity.Player;
-+import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.Inventory;
 +import org.bukkit.inventory.ItemStack;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -24,20 +24,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + */
 +public class PlayerInventorySlotChangeEvent extends PlayerEvent {
 +    private static final HandlerList handlers = new HandlerList();
++    private final int rawSlot;
 +    private final int slot;
 +    private final ItemStack oldItemStack;
 +    private final ItemStack newItemStack;
 +    private boolean triggerAdvancements = true;
 +
-+    public PlayerInventorySlotChangeEvent(@NotNull Player player, int slot, @NotNull ItemStack oldItemStack, @NotNull ItemStack newItemStack) {
++    public PlayerInventorySlotChangeEvent(@NotNull Player player, int rawSlot, @NotNull ItemStack oldItemStack, @NotNull ItemStack newItemStack) {
 +        super(player);
-+        this.slot = slot;
++        this.rawSlot = rawSlot;
++        this.slot = player.getOpenInventory().convertSlot(rawSlot);
 +        this.oldItemStack = oldItemStack;
 +        this.newItemStack = newItemStack;
 +    }
 +
 +    /**
-+     * The slot number that was changed.
++     * The raw slot number that was changed.
++     *
++     * @return The raw slot number.
++     */
++    public int getRawSlot() {
++        return rawSlot;
++    }
++
++    /**
++     * The slot number that was changed, ready for passing to
++     * {@link Inventory#getItem(int)}. Note that there may be two slots with
++     * the same slot number, since a view links two different inventories.
++     * <p>
++     * If no inventory is opened, internal crafting view is used for conversion.
 +     *
 +     * @return The slot number.
 +     */
