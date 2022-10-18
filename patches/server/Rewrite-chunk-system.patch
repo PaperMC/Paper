@@ -10312,6 +10312,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (!currState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && nextState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
 +                        nextState = this.updateCurrentState(ChunkHolder.FullChunkStatus.BORDER);
 +                        holderManager.ensureInAutosave(this);
++                        chunk.pushChunkIntoLoadedMap();
 +                        this.changeEntityChunkStatus(ChunkHolder.FullChunkStatus.BORDER);
 +                        chunk.onChunkLoad(this);
 +                        this.onFullChunkLoadChange(true, changedFullStatus);
@@ -16721,6 +16722,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
+-    // CraftBukkit start
+-    public void loadCallback() {
+-        // Paper start - neighbour cache
 +    // Paper start - new load callbacks
 +    private io.papermc.paper.chunk.system.scheduling.NewChunkHolder chunkHolder;
 +    public io.papermc.paper.chunk.system.scheduling.NewChunkHolder getChunkHolder() {
@@ -16740,6 +16744,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    /* Note: We skip the light neighbour chunk loading done for the vanilla full chunk */
 +    /* Starlight does not need these chunks for lighting purposes because of edge checks */
++    public void pushChunkIntoLoadedMap() {
+         int chunkX = this.chunkPos.x;
+         int chunkZ = this.chunkPos.z;
+         ServerChunkCache chunkProvider = this.level.getChunkSource();
+@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
+             }
+         }
+         this.setNeighbourLoaded(0, 0, this);
++        this.level.getChunkSource().addLoadedChunk(this);
++    }
 +
 +    public void onChunkLoad(io.papermc.paper.chunk.system.scheduling.NewChunkHolder chunkHolder) {
 +        // figure out how this should interface with:
@@ -16779,16 +16793,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - new load callbacks
 +
-     // CraftBukkit start
-     public void loadCallback() {
++    // CraftBukkit start
++    public void loadCallback() {
 +        if (this.loadedTicketLevel) { LOGGER.error("Double calling chunk load!", new Throwable()); } // Paper
-         // Paper start - neighbour cache
-         int chunkX = this.chunkPos.x;
-         int chunkZ = this.chunkPos.z;
-@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
-         // Paper end - neighbour cache
++        // Paper - rewrite chunk system - move into separate callback
+         this.loadedTicketLevel = true;
+-        // Paper end - neighbour cache
++        // Paper - rewrite chunk system - move into separate callback
          org.bukkit.Server server = this.level.getCraftServer();
-         this.level.getChunkSource().addLoadedChunk(this); // Paper
+-        this.level.getChunkSource().addLoadedChunk(this); // Paper
++        // Paper - rewrite chunk system - move into separate callback
 +        ((ServerLevel)this.level).getChunkSource().chunkMap.playerChunkManager.onChunkLoad(this.chunkPos.x, this.chunkPos.z); // Paper - rewrite player chunk management
          if (server != null) {
              /*
