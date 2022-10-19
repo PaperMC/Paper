@@ -823,6 +823,25 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @NotNull
     Pose getPose();
 
+    // Paper start
+    /**
+     * Returns if the entity is in sneak mode
+     *
+     * @return true if the entity is in sneak mode
+     */
+    boolean isSneaking();
+
+    /**
+     * Sets the sneak mode the entity.
+     * <p>
+     * Note: For most Entities this does not update Entity's pose
+     * and just makes its name tag less visible.
+     *
+     * @param sneak true if the entity should be sneaking
+     */
+    void setSneaking(boolean sneak);
+    // Paper end
+
     /**
      * Get the category of spawn to which this entity belongs.
      *
