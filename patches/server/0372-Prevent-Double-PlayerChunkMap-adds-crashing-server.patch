@@ -7,18 +7,17 @@ Suspected case would be around the technique used in .stopRiding
 Stack will identify any causer of this and warn instead of crashing.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 428d3a9c9c55d482bd7db8fd2784d1e55dea0528..de7e20400f7c70c84c5659d449952eb40caee163 100644
+index 428d3a9c9c55d482bd7db8fd2784d1e55dea0528..68d072d3b84fb19aae9c20151c342c81131038ca 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1018,6 +1018,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1018,6 +1018,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      public void addEntity(Entity entity) {
          org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
 +        // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
 +        if (!entity.valid || entity.level != this.level || this.entityMap.containsKey(entity.getId())) {
-+            new Throwable("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.level.getWorld().getName()
-+                + ": " + entity  + (this.entityMap.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""))
-+                .printStackTrace();
++            LOGGER.error("Illegal ChunkMap::addEntity for world " + this.level.getWorld().getName()
++                + ": " + entity  + (this.entityMap.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""), new Throwable());
 +            return;
 +        }
 +        // Paper end
