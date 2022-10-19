@@ -4975,7 +4975,7 @@ index 0000000000000000000000000000000000000000..c59fca05484c30b28e883f5b5dde0362
 +}
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b310d51b7fe3e8cef0a450674725969fe1ce78a4
+index 0000000000000000000000000000000000000000..9db975e84609956b2206076e30f17a350adb77d6
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -0,0 +1,511 @@
@@ -5292,7 +5292,7 @@ index 0000000000000000000000000000000000000000..b310d51b7fe3e8cef0a450674725969f
 +    public static void ensureMain(String reason, Runnable run) {
 +        if (!isMainThread()) {
 +            if (reason != null) {
-+                new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
++                MinecraftServer.LOGGER.warn("Asynchronous " + reason + "!", new IllegalStateException());
 +            }
 +            getProcessQueue().add(run);
 +            return;
@@ -5317,7 +5317,7 @@ index 0000000000000000000000000000000000000000..b310d51b7fe3e8cef0a450674725969f
 +    public static <T> T ensureMain(String reason, Supplier<T> run) {
 +        if (!isMainThread()) {
 +            if (reason != null) {
-+                new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
++                MinecraftServer.LOGGER.warn("Asynchronous " + reason + "! Blocking thread until it returns ", new IllegalStateException());
 +            }
 +            Waitable<T> wait = new Waitable<T>() {
 +                @Override
@@ -5329,7 +5329,7 @@ index 0000000000000000000000000000000000000000..b310d51b7fe3e8cef0a450674725969f
 +            try {
 +                return wait.get();
 +            } catch (InterruptedException | ExecutionException e) {
-+                e.printStackTrace();
++                MinecraftServer.LOGGER.warn("Encountered exception", e);
 +            }
 +            return null;
 +        }
@@ -6627,7 +6627,7 @@ index 9fdfeab462e5f5c5e09c5fee2dfe1fca89330086..18d56618a1e8ff5ba408523f620333db
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index ad34d8af3e5bba7ec4f41a10c423ed1262c58f6d..2bad9717ec4ec16309856a83d8e19735ae1fcbec 100644
+index 9001040060383cff5a51028d652315467c7d51ec..e283e8383a52c74cebd16fa7642a5e3993b2ed1a 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -260,6 +260,7 @@ public abstract class LivingEntity extends Entity {
@@ -6639,7 +6639,7 @@ index ad34d8af3e5bba7ec4f41a10c423ed1262c58f6d..2bad9717ec4ec16309856a83d8e19735
      @Override
      public float getBukkitYaw() {
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 77c6f4ff7131b7317a0c0193ead21eabe38517cb..738c54ce0a0fb7fee6b584a6d96a8b74931222e5 100644
+index 9eaf96ca2300a839e4990d1447a3d8903d0c2b02..2a0f65134c8ffdbcce3af606db02693eaa4ee471 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -242,6 +242,7 @@ public abstract class Mob extends LivingEntity {

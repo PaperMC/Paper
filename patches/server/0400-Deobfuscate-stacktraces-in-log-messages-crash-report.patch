@@ -536,37 +536,6 @@ index a283cce82069bf5dfd64229d102a19dfda158daf..8f74a505087cae01520fcfaad833c732
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 99f56658c70f99592fb40c9df0ce3e47053d1bd5..b39da428cb9b67eda8a722e8c88b6fce4d7544fa 100644
---- a/src/main/java/net/minecraft/server/MCUtil.java
-+++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -332,7 +332,7 @@ public final class MCUtil {
-     public static void ensureMain(String reason, Runnable run) {
-         if (!isMainThread()) {
-             if (reason != null) {
--                new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
-+                io.papermc.paper.util.TraceUtil.printStackTrace(new IllegalStateException("Asynchronous " + reason + "!"));
-             }
-             getProcessQueue().add(run);
-             return;
-@@ -357,7 +357,7 @@ public final class MCUtil {
-     public static <T> T ensureMain(String reason, Supplier<T> run) {
-         if (!isMainThread()) {
-             if (reason != null) {
--                new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
-+                io.papermc.paper.util.TraceUtil.printStackTrace(new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns "));
-             }
-             Waitable<T> wait = new Waitable<T>() {
-                 @Override
-@@ -369,7 +369,7 @@ public final class MCUtil {
-             try {
-                 return wait.get();
-             } catch (InterruptedException | ExecutionException e) {
--                e.printStackTrace();
-+                io.papermc.paper.util.TraceUtil.printStackTrace(e);
-             }
-             return null;
-         }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index abfcba1c3db090563191e8adea6d8250ae2d138e..487991163f12c1ded3f5d35a718aa89b1fb9278f 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
@@ -579,22 +548,6 @@ index abfcba1c3db090563191e8adea6d8250ae2d138e..487991163f12c1ded3f5d35a718aa89b
          paperConfigurations.initializeGlobalConfiguration();
          paperConfigurations.initializeWorldDefaultsConfiguration();
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
-diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 93ef138cdcf2633768b0452511933ec4a14f1ceb..c5822b4ecb16f1f20c39a296755ee656973a0f7c 100644
---- a/src/main/java/net/minecraft/server/level/ChunkMap.java
-+++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1020,9 +1020,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
-         // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
-         if (!entity.valid || entity.level != this.level || this.entityMap.containsKey(entity.getId())) {
--            new Throwable("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.level.getWorld().getName()
-+            io.papermc.paper.util.TraceUtil.dumpTraceForThread("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.level.getWorld().getName()
-                 + ": " + entity  + (this.entityMap.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""))
--                .printStackTrace();
-+                ;
-             return;
-         }
-         if (entity instanceof ServerPlayer && ((ServerPlayer) entity).supressTrackerForLogin) return; // Delay adding to tracker until after list packets
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index c0e17bbf04723da76ea6952d9558dd4d34b00f6c..8cc266e25d25d154158b36e456804ac80a47364e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
