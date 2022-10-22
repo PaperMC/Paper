@@ -50,4 +50,5 @@ LemonCaramel <admin@caramel.moe>
 Noah van der Aa <ndvdaa@gmail.com>
 Doc <nachito94@msn.com>
 Nick Hensel <nickhensel25@icloud.com>
+vytskalt <vytskalt@protonmail.com>
 ```
