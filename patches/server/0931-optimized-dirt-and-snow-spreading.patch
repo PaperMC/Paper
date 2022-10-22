@@ -5,7 +5,7 @@ Subject: [PATCH] optimized dirt and snow spreading
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
-index 61783f17b655cbb6430d22fb3a81931ab3ea130c..fded7b0c9db55ebf096bfe9745d7599cd884268f 100644
+index 61783f17b655cbb6430d22fb3a81931ab3ea130c..af46c05a34292d271fd4a809398e6b299e10b12b 100644
 --- a/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
 @@ -18,8 +18,13 @@ public abstract class SpreadingSnowyDirtBlock extends SnowyDirtBlock {
@@ -44,11 +44,11 @@ index 61783f17b655cbb6430d22fb3a81931ab3ea130c..fded7b0c9db55ebf096bfe9745d7599c
          if (this instanceof GrassBlock && world.paperConfig().tickRates.grassSpread != 1 && (world.paperConfig().tickRates.grassSpread < 1 || (MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper
 -        if (!SpreadingSnowyDirtBlock.canBeGrass(state, world, pos)) {
 +        // Paper start
-+        net.minecraft.world.level.chunk.ChunkAccess chunk = world.getChunkIfLoaded(pos);
-+        if (chunk == null) { // Is this needed?
++        net.minecraft.world.level.chunk.ChunkAccess cachedBlockChunk = world.getChunkIfLoaded(pos);
++        if (cachedBlockChunk == null) { // Is this needed?
 +            return;
 +        }
-+        if (!SpreadingSnowyDirtBlock.canBeGrass(chunk, state, world, pos)) {
++        if (!SpreadingSnowyDirtBlock.canBeGrass(cachedBlockChunk, state, world, pos)) {
 +        // Paper end
              // CraftBukkit start
              if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
@@ -65,13 +65,13 @@ index 61783f17b655cbb6430d22fb3a81931ab3ea130c..fded7b0c9db55ebf096bfe9745d7599c
 +                        continue;
 +                    }
 +                    net.minecraft.world.level.chunk.ChunkAccess access;
-+                    if (chunk.locX == blockposition1.getX() >> 4 && chunk.locZ == blockposition1.getZ() >> 4) {
-+                        access = chunk;
++                    if (cachedBlockChunk.locX == blockposition1.getX() >> 4 && cachedBlockChunk.locZ == blockposition1.getZ() >> 4) {
++                        access = cachedBlockChunk;
 +                    } else {
 +                        access = world.getChunkAt(blockposition1);
 +                    }
 +                    if (access.getBlockState(blockposition1).is(Blocks.DIRT) && SpreadingSnowyDirtBlock.canPropagate(access, iblockdata1, world, blockposition1)) {
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, (BlockState) iblockdata1.setValue(SpreadingSnowyDirtBlock.SNOWY, chunk.getBlockState(blockposition1.above()).is(Blocks.SNOW))); // CraftBukkit
++                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, (BlockState) iblockdata1.setValue(SpreadingSnowyDirtBlock.SNOWY, access.getBlockState(blockposition1.above()).is(Blocks.SNOW))); // CraftBukkit
 +                    // Paper end
                      }
                  }
