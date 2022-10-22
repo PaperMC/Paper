@@ -34,29 +34,10 @@ index 7d9056f9d841fbbdeaf1e323d818f2f1267b47e8..4940e101250874111e9c55aeb5b87b28
      public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
          return new ItemStack(Items.GLOW_BERRIES);
 diff --git a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
-index ae9052efc48dc05c7b41cb18c4330d7e62839a07..4d1e1cf4c541793492a02681087a6242e7977acd 100644
+index 4e30917fbc5c539fefc8dc391b902241f7c5ad35..b7517d1e8a5d5eb719de5eda424b7dd2449f1182 100644
 --- a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
-@@ -40,16 +40,36 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
- 
-     @Override
-     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
--        if ((Integer) state.getValue(GrowingPlantHeadBlock.AGE) < 25 && random.nextDouble() < (100.0D / world.spigotConfig.kelpModifier) * this.growPerTickProbability) { // Spigot
-+        // Paper start
-+        final int modifier;
-+        if (state.is(Blocks.TWISTING_VINES) || state.is(Blocks.TWISTING_VINES_PLANT)) {
-+            modifier = world.spigotConfig.twistingVinesModifier;
-+        } else if (state.is(Blocks.WEEPING_VINES) || state.is(Blocks.WEEPING_VINES_PLANT)) {
-+            modifier = world.spigotConfig.weepingVinesModifier;
-+        } else if (state.is(Blocks.CAVE_VINES) || state.is(Blocks.CAVE_VINES_PLANT)) {
-+            modifier = world.spigotConfig.caveVinesModifier;
-+        } else if (state.is(Blocks.KELP) || state.is(Blocks.KELP_PLANT)) {
-+            modifier = world.spigotConfig.kelpModifier;
-+        } else {
-+            modifier = 100; // Above cases are exhaustive as of 1.18
-+        }
-+        if ((Integer) state.getValue(GrowingPlantHeadBlock.AGE) < 25 && random.nextDouble() < (modifier / 100.0D) * this.growPerTickProbability) { // Spigot // Paper - fix growth modifier having the reverse effect
-+            // Paper end
+@@ -56,12 +56,18 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
              BlockPos blockposition1 = pos.relative(this.growthDirection);
  
              if (this.canGrowInto(world.getBlockState(blockposition1))) {
@@ -77,32 +58,22 @@ index ae9052efc48dc05c7b41cb18c4330d7e62839a07..4d1e1cf4c541793492a02681087a6242
          return (BlockState) state.cycle(GrowingPlantHeadBlock.AGE);
      }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 40984144a062230fd45cc6c707b03e5cd7d89efc..cf96f9fdc4ae561f01d44503b9851c60140e4ea7 100644
+index 102b038e2566cba4f259a61e502ff0808c47234c..6bcc46795d1f78746192cc107c4a1f61580ec3c5 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -103,6 +103,12 @@ public class SpigotWorldConfig
-     public int bambooModifier;
-     public int sweetBerryModifier;
-     public int kelpModifier;
-+    // Paper start
-+    public int twistingVinesModifier;
-+    public int weepingVinesModifier;
-+    public int caveVinesModifier;
-+    public int glowBerryModifier;
-+    // Paper end
+@@ -106,6 +106,7 @@ public class SpigotWorldConfig
+     public int twistingVinesModifier;
+     public int weepingVinesModifier;
+     public int caveVinesModifier;
++    public int glowBerryModifier; // Paper
      private int getAndValidateGrowth(String crop)
      {
          int modifier = this.getInt( "growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100 );
-@@ -133,6 +139,12 @@ public class SpigotWorldConfig
-         this.bambooModifier = this.getAndValidateGrowth( "Bamboo" );
-         this.sweetBerryModifier = this.getAndValidateGrowth( "SweetBerry" );
-         this.kelpModifier = this.getAndValidateGrowth( "Kelp" );
-+        // Paper start
-+        this.twistingVinesModifier = this.getAndValidateGrowth("TwistingVines");
-+        this.weepingVinesModifier = this.getAndValidateGrowth("WeepingVines");
-+        this.caveVinesModifier = this.getAndValidateGrowth("CaveVines");
-+        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry");
-+        // Paper end
+@@ -139,6 +140,7 @@ public class SpigotWorldConfig
+         this.twistingVinesModifier = this.getAndValidateGrowth( "TwistingVines" );
+         this.weepingVinesModifier = this.getAndValidateGrowth( "WeepingVines" );
+         this.caveVinesModifier = this.getAndValidateGrowth( "CaveVines" );
++        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry"); // Paper
      }
  
      public double itemMerge;
