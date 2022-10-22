@@ -20,4 +20,14 @@ public class ServerEnvironment {
     public static boolean userIsRootOrAdmin() {
         return RUNNING_AS_ROOT_OR_ADMIN;
     }
+
+    public static String awtDependencyCheck() {
+        try {
+            new java.awt.Color(0);
+        } catch (UnsatisfiedLinkError e) {
+            return e.getClass().getName() + ": " + e.getMessage();
+        }
+
+        return null;
+    }
 }

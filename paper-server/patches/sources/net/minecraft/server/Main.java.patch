@@ -43,7 +43,7 @@
          OptionParser optionparser = new OptionParser();
          OptionSpec<Void> optionspec = optionparser.accepts("nogui");
          OptionSpec<Void> optionspec1 = optionparser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -90,50 +100,92 @@
+@@ -90,50 +100,104 @@
          OptionSpec<String> optionspec15 = optionparser.nonOptions();
  
          try {
@@ -125,6 +125,18 @@
 -            File file = new File((String) optionset.valueOf(optionspec9));
 -            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file);
 -            String s = (String) Optional.ofNullable((String) optionset.valueOf(optionspec10)).orElse(dedicatedserversettings.getProperties().levelName);
++            // Paper start - Detect headless JRE
++            String awtException = io.papermc.paper.util.ServerEnvironment.awtDependencyCheck();
++            if (awtException != null) {
++                Main.LOGGER.error("You are using a headless JRE distribution.");
++                Main.LOGGER.error("This distribution is missing certain graphic libraries that the Minecraft server needs to function.");
++                Main.LOGGER.error("For instructions on how to install the non-headless JRE, see https://docs.papermc.io/misc/java-install");
++                Main.LOGGER.error("");
++                Main.LOGGER.error(awtException);
++                return;
++            }
++            // Paper end - Detect headless JRE
++
 +            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
 +            // Paper start - fix SPIGOT-5824
 +            File file;
@@ -146,7 +158,7 @@
              Dynamic dynamic;
  
              if (convertable_conversionsession.hasWorldData()) {
-@@ -174,13 +226,31 @@
+@@ -174,13 +238,31 @@
              }
  
              Dynamic<?> dynamic1 = dynamic;
@@ -179,7 +191,7 @@
  
              WorldStem worldstem;
  
-@@ -189,6 +259,7 @@
+@@ -189,6 +271,7 @@
  
                  worldstem = (WorldStem) Util.blockUntilDone((executor) -> {
                      return WorldLoader.load(worldloader_c, (worldloader_a) -> {
@@ -187,7 +199,7 @@
                          Registry<LevelStem> iregistry = worldloader_a.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM);
  
                          if (dynamic1 != null) {
-@@ -201,7 +272,7 @@
+@@ -201,7 +284,7 @@
                              WorldOptions worldoptions;
                              WorldDimensions worlddimensions;
  
@@ -196,7 +208,7 @@
                                  worldsettings = MinecraftServer.DEMO_SETTINGS;
                                  worldoptions = WorldOptions.DEMO_OPTIONS;
                                  worlddimensions = WorldPresets.createNormalWorldDimensions(worldloader_a.datapackWorldgen());
-@@ -209,7 +280,7 @@
+@@ -209,7 +292,7 @@
                                  DedicatedServerProperties dedicatedserverproperties = dedicatedserversettings.getProperties();
  
                                  worldsettings = new LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(worldloader_a.dataConfiguration().enabledFeatures()), worldloader_a.dataConfiguration());
@@ -205,7 +217,7 @@
                                  worlddimensions = dedicatedserverproperties.createDimensions(worldloader_a.datapackWorldgen());
                              }
  
-@@ -225,32 +296,45 @@
+@@ -225,32 +308,45 @@
                  return;
              }
  
@@ -256,7 +268,7 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
                      dedicatedserver.halt(true);
-@@ -259,6 +343,7 @@
+@@ -259,6 +355,7 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -264,7 +276,7 @@
          } catch (Exception exception1) {
              Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
          }
-@@ -295,7 +380,7 @@
+@@ -295,7 +392,7 @@
      }
  
      public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, RegistryAccess dynamicRegistryManager, boolean recreateRegionFiles) {
