@@ -9,10 +9,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/TamableAnimal.java
 +++ b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
 @@ -0,0 +0,0 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+         }
+ 
+         this.orderedToSit = nbt.getBoolean("Sitting");
+-        this.setInSittingPose(this.orderedToSit);
++        this.setInSittingPose(this.orderedToSit, false); // Paper - Don't fire event
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
      }
  
      public void setInSittingPose(boolean inSittingPose) {
-+        if (!new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), inSittingPose).callEvent()) return; // Paper start - call EntityToggleSitEvent
++    // Paper start
++        this.setInSittingPose(inSittingPose, true);
++    }
++    public void setInSittingPose(boolean inSittingPose, boolean callEvent) {
++    // Paper end
++        if (callEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), inSittingPose).callEvent()) return; // Paper start - call EntityToggleSitEvent
          byte b = this.entityData.get(DATA_FLAGS_ID);
          if (inSittingPose) {
              this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
@@ -21,10 +35,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
 @@ -0,0 +0,0 @@ public class Fox extends Animal {
+ 
+         this.setSleeping(nbt.getBoolean("Sleeping"));
+         this.setFoxType(Fox.Type.byName(nbt.getString("Type")));
+-        this.setSitting(nbt.getBoolean("Sitting"));
++        this.setSitting(nbt.getBoolean("Sitting"), false); // Paper
+         this.setIsCrouching(nbt.getBoolean("Crouching"));
+         if (this.level instanceof ServerLevel) {
+             this.setTargetGoals();
+@@ -0,0 +0,0 @@ public class Fox extends Animal {
      }
  
      public void setSitting(boolean sitting) {
-+        if (!new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return; // Paper start - call EntityToggleSitEvent
++        this.setSitting(sitting, true);
++    }
++    // Paper start
++    public void setSitting(boolean sitting, boolean fireEvent) {
++        if (fireEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
++    // Paper end
          this.setFlag(1, sitting);
      }
  
