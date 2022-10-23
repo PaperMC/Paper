@@ -5,26 +5,54 @@ Subject: [PATCH] Added EntityToggleSitEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/TamableAnimal.java b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
-index acc25fb309568864dd7b53ad6a7a3ee6ff18e82a..3d36b2198c07d1402f4b196d7c24682c6496ea48 100644
+index acc25fb309568864dd7b53ad6a7a3ee6ff18e82a..49f52baa02db18af6d8626754423ff157eb9c09c 100644
 --- a/src/main/java/net/minecraft/world/entity/TamableAnimal.java
 +++ b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
-@@ -125,6 +125,7 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -67,7 +67,7 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+         }
+ 
+         this.orderedToSit = nbt.getBoolean("Sitting");
+-        this.setInSittingPose(this.orderedToSit);
++        this.setInSittingPose(this.orderedToSit, false); // Paper - Don't fire event
+     }
+ 
+     @Override
+@@ -125,6 +125,12 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
      }
  
      public void setInSittingPose(boolean inSittingPose) {
-+        if (!new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), inSittingPose).callEvent()) return; // Paper start - call EntityToggleSitEvent
++    // Paper start
++        this.setInSittingPose(inSittingPose, true);
++    }
++    public void setInSittingPose(boolean inSittingPose, boolean callEvent) {
++    // Paper end
++        if (callEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), inSittingPose).callEvent()) return; // Paper start - call EntityToggleSitEvent
          byte b = this.entityData.get(DATA_FLAGS_ID);
          if (inSittingPose) {
              this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
-index 6a66b5d1a3d8615dcc15057f03476e9ccbf4b4f2..b1cb17d69bcbeca42136f97fcd136acde87f6568 100644
+index 6a66b5d1a3d8615dcc15057f03476e9ccbf4b4f2..06b11bdbccd76f166561bcaff444066cc46b4663 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
-@@ -434,6 +434,7 @@ public class Fox extends Animal {
+@@ -421,7 +421,7 @@ public class Fox extends Animal {
+ 
+         this.setSleeping(nbt.getBoolean("Sleeping"));
+         this.setFoxType(Fox.Type.byName(nbt.getString("Type")));
+-        this.setSitting(nbt.getBoolean("Sitting"));
++        this.setSitting(nbt.getBoolean("Sitting"), false); // Paper
+         this.setIsCrouching(nbt.getBoolean("Crouching"));
+         if (this.level instanceof ServerLevel) {
+             this.setTargetGoals();
+@@ -434,6 +434,12 @@ public class Fox extends Animal {
      }
  
      public void setSitting(boolean sitting) {
-+        if (!new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return; // Paper start - call EntityToggleSitEvent
++        this.setSitting(sitting, true);
++    }
++    // Paper start
++    public void setSitting(boolean sitting, boolean fireEvent) {
++        if (fireEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
++    // Paper end
          this.setFlag(1, sitting);
      }
  
