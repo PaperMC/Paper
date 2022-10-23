@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize anyPlayerCloseEnoughForSpawning to use distance maps
 Use a distance map to find the players in range quickly
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index b550f302b1bb6ef92987c8c3431b94c3ba3a091d..2add24517d38708a84e7f8ec25fbe9c62309375e 100644
+index 2ba3bb4e5670ece798a8882801a856d82851c00a..a61f55ed1fbe5aac5289014cb95cb6950b4c77fa 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -83,16 +83,29 @@ public class ChunkHolder {
@@ -15,7 +15,7 @@ index b550f302b1bb6ef92987c8c3431b94c3ba3a091d..2add24517d38708a84e7f8ec25fbe9c6
      public void onChunkAdd() {
 -
 +        // Paper start - optimise anyPlayerCloseEnoughForSpawning
-+        long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
++        long key = io.papermc.paper.util.MCUtil.getCoordinateKey(this.pos);
 +        this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
 +        this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
 +        // Paper end - optimise anyPlayerCloseEnoughForSpawning
@@ -42,7 +42,7 @@ index b550f302b1bb6ef92987c8c3431b94c3ba3a091d..2add24517d38708a84e7f8ec25fbe9c6
          this.newChunkHolder = newChunkHolder; // Paper - rewrite chunk system
          this.chunkToSaveHistory = null;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 8dce24ae70057115feff193a1307eb2437e16773..50e9d29b5a0ea6d11a44c41c49d6f52bc464e6e2 100644
+index 999a675dd42c37b27e40d1a32b77641188b8d432..63536642f005b6936734397e2347c504084f3f6c 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -152,12 +152,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -69,7 +69,7 @@ index 8dce24ae70057115feff193a1307eb2437e16773..50e9d29b5a0ea6d11a44c41c49d6f52b
 +        this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
          // Paper start - per player mob spawning
          if (this.playerMobDistanceMap != null) {
-             this.playerMobDistanceMap.add(player, chunkX, chunkZ, net.minecraft.server.ChunkSystem.getTickViewDistance(player));
+             this.playerMobDistanceMap.add(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
 @@ -168,6 +180,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      void removePlayerFromDistanceMaps(ServerPlayer player) {
          this.playerChunkManager.removePlayer(player); // Paper - replace chunk loader
@@ -88,7 +88,7 @@ index 8dce24ae70057115feff193a1307eb2437e16773..50e9d29b5a0ea6d11a44c41c49d6f52b
 +        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
          // Paper start - per player mob spawning
          if (this.playerMobDistanceMap != null) {
-             this.playerMobDistanceMap.update(player, chunkX, chunkZ, net.minecraft.server.ChunkSystem.getTickViewDistance(player));
+             this.playerMobDistanceMap.update(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
 @@ -267,6 +284,38 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
@@ -262,7 +262,7 @@ index d3c3db919e9b0507e8543313d9028394e5163673..52cba8f68d274cce106304aef1249a95
  
      public String getDebugStatus() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 60264feb656861d5a9474fe4285ac69d8d12269e..44766ea7e5dd8f8411b52cf259187d7557cc0c23 100644
+index 8a20fa6d1c357f6d9787032c31dd0d0f80bd74be..67bcda3e1d343b59dd1842f5eb982a71859d4d7b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -657,6 +657,37 @@ public class ServerChunkCache extends ChunkSource {
@@ -292,8 +292,8 @@ index 60264feb656861d5a9474fe4285ac69d8d12269e..44766ea7e5dd8f8411b52cf259187d75
 +                }
 +
 +                int range = Math.min(event.getSpawnRadius(), 32); // limit to max view distance
-+                int chunkX = net.minecraft.server.MCUtil.getChunkCoordinate(player.getX());
-+                int chunkZ = net.minecraft.server.MCUtil.getChunkCoordinate(player.getZ());
++                int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
++                int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
 +
 +                playerChunkMap.playerMobSpawnMap.addOrUpdate(player, chunkX, chunkZ, range);
 +                player.lastEntitySpawnRadiusSquared = (double)((range << 4) * (range << 4)); // used in anyPlayerCloseEnoughForSpawning

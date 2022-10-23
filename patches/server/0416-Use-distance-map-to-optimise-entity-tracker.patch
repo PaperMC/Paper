@@ -6,13 +6,13 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 Use the distance map to find candidate players for tracking.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index a25ef2f2362b6f9b0cc8bfb33b6da66dc0f59347..e75b72d7bb51e50b46e639fbff4d9a01533f50c8 100644
+index 63536642f005b6936734397e2347c504084f3f6c..ed6e0a186dba26bee5ebcc02120c24ecb38d6892 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -66,6 +66,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
  import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
  import net.minecraft.network.protocol.game.DebugPackets;
- import net.minecraft.server.MCUtil;
+ import io.papermc.paper.util.MCUtil;
 +import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.progress.ChunkProgressListener;
  import net.minecraft.server.network.ServerPlayerConnection;
@@ -42,7 +42,7 @@ index a25ef2f2362b6f9b0cc8bfb33b6da66dc0f59347..e75b72d7bb51e50b46e639fbff4d9a01
      void addPlayerToDistanceMaps(ServerPlayer player) {
          this.playerChunkManager.addPlayer(player); // Paper - replace chunk loader
 @@ -175,6 +193,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             this.playerMobDistanceMap.add(player, chunkX, chunkZ, net.minecraft.server.ChunkSystem.getTickViewDistance(player));
+             this.playerMobDistanceMap.add(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
          }
          // Paper end - per player mob spawning
 +        // Paper start - use distance map to optimise entity tracker
@@ -50,7 +50,7 @@ index a25ef2f2362b6f9b0cc8bfb33b6da66dc0f59347..e75b72d7bb51e50b46e639fbff4d9a01
 +            com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
 +            int trackRange = this.entityTrackerTrackRanges[i];
 +
-+            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, net.minecraft.server.ChunkSystem.getSendViewDistance(player)));
++            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, io.papermc.paper.chunk.system.ChunkSystem.getSendViewDistance(player)));
 +        }
 +        // Paper end - use distance map to optimise entity tracker
      }
@@ -69,7 +69,7 @@ index a25ef2f2362b6f9b0cc8bfb33b6da66dc0f59347..e75b72d7bb51e50b46e639fbff4d9a01
  
      void updateMaps(ServerPlayer player) {
 @@ -202,6 +233,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             this.playerMobDistanceMap.update(player, chunkX, chunkZ, net.minecraft.server.ChunkSystem.getTickViewDistance(player));
+             this.playerMobDistanceMap.update(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
          }
          // Paper end - per player mob spawning
 +        // Paper start - use distance map to optimise entity tracker
@@ -77,7 +77,7 @@ index a25ef2f2362b6f9b0cc8bfb33b6da66dc0f59347..e75b72d7bb51e50b46e639fbff4d9a01
 +            com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
 +            int trackRange = this.entityTrackerTrackRanges[i];
 +
-+            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, net.minecraft.server.ChunkSystem.getSendViewDistance(player)));
++            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, io.papermc.paper.chunk.system.ChunkSystem.getSendViewDistance(player)));
 +        }
 +        // Paper end - use distance map to optimise entity tracker
      }
@@ -287,14 +287,14 @@ index a25ef2f2362b6f9b0cc8bfb33b6da66dc0f59347..e75b72d7bb51e50b46e639fbff4d9a01
              return object instanceof ChunkMap.TrackedEntity ? ((ChunkMap.TrackedEntity) object).entity.getId() == this.entity.getId() : false;
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 32623f90a5bc4fb6fe99897c682ef4f55f056dea..6a86125c6f6daa0a443601db4fea19531225ad33 100644
+index 32623f90a5bc4fb6fe99897c682ef4f55f056dea..26c8b19d484032f5d0935ba8672a3121a3197d67 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -57,6 +57,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
  import net.minecraft.network.syncher.SynchedEntityData;
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.MCUtil;
++import io.papermc.paper.util.MCUtil;
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.server.level.ServerPlayer;
