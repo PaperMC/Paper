@@ -11,8 +11,28 @@ server threads
 
 Allow usage of a single thread executor by not using ForkJoin so single core CPU's.
 
+diff --git a/src/main/java/io/papermc/paper/util/ServerWorkerThread.java b/src/main/java/io/papermc/paper/util/ServerWorkerThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b60f59cf5cc8eb84a6055b7861857dece7f2501b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/ServerWorkerThread.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.util;
++
++import java.util.concurrent.atomic.AtomicInteger;
++import net.minecraft.Util;
++
++public class ServerWorkerThread extends Thread {
++    private static final AtomicInteger threadId = new AtomicInteger(1);
++    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
++        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
++        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
++        this.setDaemon(true);
++        this.setUncaughtExceptionHandler(Util::onThreadException);
++    }
++}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 336a26733b5bf73455f8ec10347c1e08b8e866f7..4fce18c52c8144460ebf0c1e336dce712d796cc6 100644
+index 336a26733b5bf73455f8ec10347c1e08b8e866f7..0773447354542925826369625f21e26aa30ebff4 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
 @@ -79,8 +79,8 @@ public class Util {
@@ -43,7 +63,7 @@ index 336a26733b5bf73455f8ec10347c1e08b8e866f7..4fce18c52c8144460ebf0c1e336dce71
          } else {
 -            executorService = new ForkJoinPool(i, (forkJoinPool) -> {
 -                ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(forkJoinPool) {
-+            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new net.minecraft.server.ServerWorkerThread(target, s, priorityModifier));
++            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new io.papermc.paper.util.ServerWorkerThread(target, s, priorityModifier));
 +        }
 +        /*
                      @Override
@@ -58,7 +78,7 @@ index 336a26733b5bf73455f8ec10347c1e08b8e866f7..4fce18c52c8144460ebf0c1e336dce71
          return executorService;
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index afce3acc552df092636b205964e06b399b7db8e2..5e1a0ab40d9d03844c6e0b962bb15d3b4b40d229 100644
+index 25aac194eb486a5b8707aa0a655fd8259ad7409c..6afa9ab5cb864ff286341582d6d70648d8a86efb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -306,6 +306,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -69,23 +89,3 @@ index afce3acc552df092636b205964e06b399b7db8e2..5e1a0ab40d9d03844c6e0b962bb15d3b
          thread.start();
          return s0;
      }
-diff --git a/src/main/java/net/minecraft/server/ServerWorkerThread.java b/src/main/java/net/minecraft/server/ServerWorkerThread.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..480129f430da33157342becb9d3b010f9f7c5edd
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/ServerWorkerThread.java
-@@ -0,0 +1,14 @@
-+package net.minecraft.server;
-+
-+import java.util.concurrent.atomic.AtomicInteger;
-+import net.minecraft.Util;
-+
-+public class ServerWorkerThread extends Thread {
-+    private static final AtomicInteger threadId = new AtomicInteger(1);
-+    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
-+        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
-+        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
-+        this.setDaemon(true);
-+        this.setUncaughtExceptionHandler(Util::onThreadException);
-+    }
-+}
