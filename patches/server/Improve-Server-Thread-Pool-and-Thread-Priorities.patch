@@ -11,6 +11,26 @@ server threads
 
 Allow usage of a single thread executor by not using ForkJoin so single core CPU's.
 
+diff --git a/src/main/java/io/papermc/paper/util/ServerWorkerThread.java b/src/main/java/io/papermc/paper/util/ServerWorkerThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/ServerWorkerThread.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.util;
++
++import java.util.concurrent.atomic.AtomicInteger;
++import net.minecraft.Util;
++
++public class ServerWorkerThread extends Thread {
++    private static final AtomicInteger threadId = new AtomicInteger(1);
++    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
++        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
++        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
++        this.setDaemon(true);
++        this.setUncaughtExceptionHandler(Util::onThreadException);
++    }
++}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/Util.java
@@ -43,7 +63,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
 -            executorService = new ForkJoinPool(i, (forkJoinPool) -> {
 -                ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(forkJoinPool) {
-+            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new net.minecraft.server.ServerWorkerThread(target, s, priorityModifier));
++            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new io.papermc.paper.util.ServerWorkerThread(target, s, priorityModifier));
 +        }
 +        /*
                      @Override
@@ -69,23 +89,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          thread.start();
          return s0;
      }
-diff --git a/src/main/java/net/minecraft/server/ServerWorkerThread.java b/src/main/java/net/minecraft/server/ServerWorkerThread.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/ServerWorkerThread.java
-@@ -0,0 +0,0 @@
-+package net.minecraft.server;
-+
-+import java.util.concurrent.atomic.AtomicInteger;
-+import net.minecraft.Util;
-+
-+public class ServerWorkerThread extends Thread {
-+    private static final AtomicInteger threadId = new AtomicInteger(1);
-+    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
-+        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
-+        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
-+        this.setDaemon(true);
-+        this.setUncaughtExceptionHandler(Util::onThreadException);
-+    }
-+}
