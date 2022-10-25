@@ -16825,10 +16825,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void unloadCallback() {
 +        if (!this.loadedTicketLevel) { LOGGER.error("Double calling chunk unload!", new Throwable()); } // Paper
          org.bukkit.Server server = this.level.getCraftServer();
+-        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
 +        this.chunkHolder.getEntityChunk().callEntitiesUnloadEvent(); // Paper - rewrite chunk system
-         org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
++        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, true); // Paper - rewrite chunk system - force save to true so that mustNotSave is correctly set below
          server.getPluginManager().callEvent(unloadEvent);
          // note: saving can be prevented, but not forced if no saving is actually required
+         this.mustNotSave = !unloadEvent.isSaveChunk();
+@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
+ 
+     @Override
+     public boolean isUnsaved() {
+-        return super.isUnsaved() && !this.mustNotSave;
++        return super.isUnsaved(); // Paper - rewrite chunk system - do NOT clobber the dirty flag
+     }
+     // CraftBukkit end
+ 
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
          });
      }
