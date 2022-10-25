@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Tue, 25 Oct 2022 21:15:37 +0200
+Subject: [PATCH] Add /paper dumplisteners command
+
+Co-authored-by: TwoLeggedCat <80929284+TwoLeggedCat@users.noreply.github.com>
+
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+index 724592234e2a178a518f6ab7d09c3180780371a7..92154550b41b2e1d03deb1271b71bb3baa735e0a 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommand.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
+@@ -2,6 +2,7 @@ package io.papermc.paper.command;
+ 
+ import io.papermc.paper.command.subcommands.ChunkDebugCommand;
+ import io.papermc.paper.command.subcommands.DumpItemCommand;
++import io.papermc.paper.command.subcommands.DumpListenersCommand;
+ import io.papermc.paper.command.subcommands.EntityCommand;
+ import io.papermc.paper.command.subcommands.FixLightCommand;
+ import io.papermc.paper.command.subcommands.HeapDumpCommand;
+@@ -50,6 +51,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
+         commands.put(Set.of("dumpitem"), new DumpItemCommand());
+         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
++        commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
+ 
+         return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2bc2a31ede6575f73d92871e9bd42abfa712a299
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
+@@ -0,0 +1,56 @@
++package io.papermc.paper.command.subcommands;
++
++import io.papermc.paper.command.PaperSubcommand;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import org.bukkit.command.CommandSender;
++import org.bukkit.event.HandlerList;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Comparator;
++import java.util.stream.Stream;
++
++@DefaultQualifier(NotNull.class)
++public class DumpListenersCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(CommandSender sender, String subCommand, String[] args) {
++        this.doDumpListeners(sender, args);
++        return true;
++    }
++
++    public void doDumpListeners(CommandSender sender, String[] args) {
++        if (args.length == 0) {
++            sender.sendMessage(Component.text("Usage: /paper dumplisteners [className]", NamedTextColor.RED));
++            return;
++        }
++
++        try {
++            HandlerList handlers = (HandlerList) Class.forName(args[0]).getMethod("getHandlerList").invoke(null);
++
++            if (handlers.getRegisteredListeners().length == 0) {
++                sender.sendMessage(Component.text(args[0] + " does not have any registered listeners."));
++                return;
++            }
++
++            Component listeners = Stream.of(handlers.getRegisteredListeners())
++                .sorted(Comparator.comparingInt(listener -> listener.getPriority().getSlot()))
++                .map(listener ->
++                    Component.text(listener.getPlugin().getName(), NamedTextColor.GREEN).append(Component.space())
++                        .append(Component.text("(" + listener.getListener().getClass().getName() + ")", NamedTextColor.GRAY).hoverEvent(Component.text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")", NamedTextColor.GRAY))))
++                .collect(Component.toComponent(Component.newline()));
++
++            sender.sendMessage(Component.text("Listeners for " + args[0] + ":").append(Component.newline())
++                .append(listeners).append(Component.newline())
++                .append(Component.text("Total listeners: " + handlers.getRegisteredListeners().length)));
++
++        } catch (ClassNotFoundException e) {
++            sender.sendMessage(Component.text("Unable to find a class named '" + args[0] + "'.", NamedTextColor.RED));
++        } catch (NoSuchMethodException e) {
++            sender.sendMessage(Component.text("Class '" + args[0] + "' does not have a valid getHandlerList method.", NamedTextColor.RED));
++        } catch (ReflectiveOperationException e) {
++            sender.sendMessage(Component.text("Something went wrong, see the console for more details.", NamedTextColor.RED));
++            e.printStackTrace();
++        }
++    }
++}
