@@ -16675,7 +16675,7 @@ index e6240f891e396d91e31b02fdf3084be77e9d6697..00cb9dafc711607f28529ea9afbcdb49
  
      public int getIndex() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index e75ec8f6aa597b5f3048d6269fba45eef057bc71..0e2a15d623e5ff5c34252e4b714713a6a670e755 100644
+index e75ec8f6aa597b5f3048d6269fba45eef057bc71..81092acad680e6c797745d24badba4dd488bb246 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -183,6 +183,43 @@ public class LevelChunk extends ChunkAccess {
@@ -16819,16 +16819,27 @@ index e75ec8f6aa597b5f3048d6269fba45eef057bc71..0e2a15d623e5ff5c34252e4b714713a6
  
              if (this.needsDecoration) {
                  try (co.aikar.timings.Timing ignored = this.level.timings.chunkLoadPopulate.startTiming()) { // Paper
-@@ -716,7 +817,9 @@ public class LevelChunk extends ChunkAccess {
+@@ -716,8 +817,10 @@ public class LevelChunk extends ChunkAccess {
      }
  
      public void unloadCallback() {
 +        if (!this.loadedTicketLevel) { LOGGER.error("Double calling chunk unload!", new Throwable()); } // Paper
          org.bukkit.Server server = this.level.getCraftServer();
+-        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
 +        this.chunkHolder.getEntityChunk().callEntitiesUnloadEvent(); // Paper - rewrite chunk system
-         org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
++        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, true); // Paper - rewrite chunk system - force save to true so that mustNotSave is correctly set below
          server.getPluginManager().callEvent(unloadEvent);
          // note: saving can be prevented, but not forced if no saving is actually required
+         this.mustNotSave = !unloadEvent.isSaveChunk();
+@@ -741,7 +844,7 @@ public class LevelChunk extends ChunkAccess {
+ 
+     @Override
+     public boolean isUnsaved() {
+-        return super.isUnsaved() && !this.mustNotSave;
++        return super.isUnsaved(); // Paper - rewrite chunk system - do NOT clobber the dirty flag
+     }
+     // CraftBukkit end
+ 
 @@ -804,7 +907,10 @@ public class LevelChunk extends ChunkAccess {
          });
      }
