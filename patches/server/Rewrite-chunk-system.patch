@@ -5671,7 +5671,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.autoSaveQueue.remove(holder);
 +
 +            holder.lastAutoSave = currentTick;
-+            if (holder.save(false, false)) {
++            if (holder.save(false, false) != null) {
 +                ++autoSaved;
 +            }
 +
@@ -5703,12 +5703,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        boolean needsFlush = false;
 +        final int flushInterval = 50;
 +
++        int savedChunk = 0;
++        int savedEntity = 0;
++        int savedPoi = 0;
++
 +        for (int i = 0, len = holders.size(); i < len; ++i) {
 +            final NewChunkHolder holder = holders.get(i);
 +            try {
-+                if (holder.save(shutdown, false)) {
++                final NewChunkHolder.SaveStat saveStat = holder.save(shutdown, false);
++                if (saveStat != null) {
 +                    ++saved;
 +                    needsFlush = flush;
++                    if (saveStat.savedChunk()) {
++                        ++savedChunk;
++                    }
++                    if (saveStat.savedEntityChunk()) {
++                        ++savedEntity;
++                    }
++                    if (saveStat.savedPoiChunk()) {
++                        ++savedPoi;
++                    }
 +                }
 +            } catch (final ThreadDeath thr) {
 +                throw thr;
@@ -5731,7 +5745,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            RegionFileIOThread.flush();
 +        }
 +        if (logProgress) {
-+            LOGGER.info("Saved " + saved + " chunks in world '" + this.world.getWorld().getName() + "' in " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) + "s");
++            LOGGER.info("Saved " + savedChunk + " block chunks, " + savedEntity + " entity chunks, " + savedPoi + " poi chunks in world '" + this.world.getWorld().getName() + "' in " + format.format(1.0E-9 * (System.nanoTime() - start)) + "s");
 +        }
 +    }
 +
@@ -10955,7 +10969,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public long lastAutoSave;
 +
-+    public boolean save(final boolean shutdown, final boolean unloading) {
++    public static final record SaveStat(boolean savedChunk, boolean savedEntityChunk, boolean savedPoiChunk) {}
++
++    public SaveStat save(final boolean shutdown, final boolean unloading) {
 +        TickThread.ensureTickThread(this.world, this.chunkX, this.chunkZ, "Cannot save data off-main");
 +
 +        ChunkAccess chunk = this.getCurrentChunk();
@@ -11002,7 +11018,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        return executedUnloadTask | canSaveChunk | canSaveEntities | canSavePOI;
++        return executedUnloadTask | canSaveChunk | canSaveEntities | canSavePOI ? new SaveStat(executedUnloadTask || canSaveChunk, canSaveEntities, canSavePOI): null;
 +    }
 +
 +    static final class AsyncChunkSerializeTask implements Runnable {
@@ -16832,10 +16848,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // note: saving can be prevented, but not forced if no saving is actually required
          this.mustNotSave = !unloadEvent.isSaveChunk();
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
+         // Paper end
+     }
  
++    // Paper start - add dirty system to tick lists
++    @Override
++    public void setUnsaved(boolean needsSaving) {
++        if (!needsSaving) {
++            this.blockTicks.clearDirty();
++            this.fluidTicks.clearDirty();
++        }
++        super.setUnsaved(needsSaving);
++    }
++    // Paper end - add dirty system to tick lists
++
      @Override
      public boolean isUnsaved() {
 -        return super.isUnsaved() && !this.mustNotSave;
++        // Paper start - add dirty system to tick lists
++        long gameTime = this.level.getLevelData().getGameTime();
++        if (this.blockTicks.isDirty(gameTime) || this.fluidTicks.isDirty(gameTime)) {
++            return true;
++        }
++        // Paper end - add dirty system to tick lists
 +        return super.isUnsaved(); // Paper - rewrite chunk system - do NOT clobber the dirty flag
      }
      // CraftBukkit end
@@ -17672,6 +17707,75 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  Iterator iterator = set.iterator();
  
                  while (iterator.hasNext()) {
+diff --git a/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java b/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
++++ b/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
+@@ -0,0 +0,0 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+     @Nullable
+     private BiConsumer<LevelChunkTicks<T>, ScheduledTick<T>> onTickAdded;
+ 
++    // Paper start - add dirty flag
++    private boolean dirty;
++    private long lastSaved = Long.MIN_VALUE;
++
++    public boolean isDirty(final long tick) {
++        return this.dirty || (!this.tickQueue.isEmpty() && tick != this.lastSaved);
++    }
++
++    public void clearDirty() {
++        this.dirty = false;
++    }
++    // Paper end - add dirty flag
++
+     public LevelChunkTicks() {
+     }
+ 
+@@ -0,0 +0,0 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+     public ScheduledTick<T> poll() {
+         ScheduledTick<T> scheduledTick = this.tickQueue.poll();
+         if (scheduledTick != null) {
++            this.dirty = true; // Paper - add dirty flag
+             this.ticksPerPosition.remove(scheduledTick);
+         }
+ 
+@@ -0,0 +0,0 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+     @Override
+     public void schedule(ScheduledTick<T> orderedTick) {
+         if (this.ticksPerPosition.add(orderedTick)) {
++            this.dirty = true; // Paper - add dirty flag
+             this.scheduleUnchecked(orderedTick);
+         }
+ 
+@@ -0,0 +0,0 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+         while(iterator.hasNext()) {
+             ScheduledTick<T> scheduledTick = iterator.next();
+             if (predicate.test(scheduledTick)) {
+-                iterator.remove();
++                iterator.remove(); this.dirty = true; // Paper - add dirty flag
+                 this.ticksPerPosition.remove(scheduledTick);
+             }
+         }
+@@ -0,0 +0,0 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+ 
+     @Override
+     public ListTag save(long l, Function<T, String> function) {
++        this.lastSaved = l; // Paper - add dirty system to level ticks
+         ListTag listTag = new ListTag();
+         if (this.pendingTicks != null) {
+             for(SavedTick<T> savedTick : this.pendingTicks) {
+@@ -0,0 +0,0 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+ 
+     public void unpack(long time) {
+         if (this.pendingTicks != null) {
++            // Paper start - add dirty system to level chunk ticks
++            if (this.tickQueue.isEmpty()) {
++                this.lastSaved = time;
++            }
++            // Paper end - add dirty system to level chunk ticks
+             int i = -this.pendingTicks.size();
+ 
+             for(SavedTick<T> savedTick : this.pendingTicks) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
