@@ -5480,10 +5480,10 @@ index 0000000000000000000000000000000000000000..fb42d776f15f735fb59e972e00e2b512
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7a513a6fd8caa61e0444b38daa0ff20d9475220e
+index 0000000000000000000000000000000000000000..e4dcadc24b3d73178ee1a4b64b8c6343e5285e59
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1190 @@
+@@ -0,0 +1,1204 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -5671,7 +5671,7 @@ index 0000000000000000000000000000000000000000..7a513a6fd8caa61e0444b38daa0ff20d
 +            this.autoSaveQueue.remove(holder);
 +
 +            holder.lastAutoSave = currentTick;
-+            if (holder.save(false, false)) {
++            if (holder.save(false, false) != null) {
 +                ++autoSaved;
 +            }
 +
@@ -5703,12 +5703,26 @@ index 0000000000000000000000000000000000000000..7a513a6fd8caa61e0444b38daa0ff20d
 +        boolean needsFlush = false;
 +        final int flushInterval = 50;
 +
++        int savedChunk = 0;
++        int savedEntity = 0;
++        int savedPoi = 0;
++
 +        for (int i = 0, len = holders.size(); i < len; ++i) {
 +            final NewChunkHolder holder = holders.get(i);
 +            try {
-+                if (holder.save(shutdown, false)) {
++                final NewChunkHolder.SaveStat saveStat = holder.save(shutdown, false);
++                if (saveStat != null) {
 +                    ++saved;
 +                    needsFlush = flush;
++                    if (saveStat.savedChunk()) {
++                        ++savedChunk;
++                    }
++                    if (saveStat.savedEntityChunk()) {
++                        ++savedEntity;
++                    }
++                    if (saveStat.savedPoiChunk()) {
++                        ++savedPoi;
++                    }
 +                }
 +            } catch (final ThreadDeath thr) {
 +                throw thr;
@@ -5731,7 +5745,7 @@ index 0000000000000000000000000000000000000000..7a513a6fd8caa61e0444b38daa0ff20d
 +            RegionFileIOThread.flush();
 +        }
 +        if (logProgress) {
-+            LOGGER.info("Saved " + saved + " chunks in world '" + this.world.getWorld().getName() + "' in " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) + "s");
++            LOGGER.info("Saved " + savedChunk + " block chunks, " + savedEntity + " entity chunks, " + savedPoi + " poi chunks in world '" + this.world.getWorld().getName() + "' in " + format.format(1.0E-9 * (System.nanoTime() - start)) + "s");
 +        }
 +    }
 +
@@ -9232,10 +9246,10 @@ index 0000000000000000000000000000000000000000..396d72c00e47cf1669ae20dc839c1c96
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4ce6df7082d4f7ed3651e3d57e379f95dd05715e
+index 0000000000000000000000000000000000000000..8013dd333e27aa5fd0beb431fa32491eec9f5246
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2075 @@
+@@ -0,0 +1,2077 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -10955,7 +10969,9 @@ index 0000000000000000000000000000000000000000..4ce6df7082d4f7ed3651e3d57e379f95
 +
 +    public long lastAutoSave;
 +
-+    public boolean save(final boolean shutdown, final boolean unloading) {
++    public static final record SaveStat(boolean savedChunk, boolean savedEntityChunk, boolean savedPoiChunk) {}
++
++    public SaveStat save(final boolean shutdown, final boolean unloading) {
 +        TickThread.ensureTickThread(this.world, this.chunkX, this.chunkZ, "Cannot save data off-main");
 +
 +        ChunkAccess chunk = this.getCurrentChunk();
@@ -11002,7 +11018,7 @@ index 0000000000000000000000000000000000000000..4ce6df7082d4f7ed3651e3d57e379f95
 +            }
 +        }
 +
-+        return executedUnloadTask | canSaveChunk | canSaveEntities | canSavePOI;
++        return executedUnloadTask | canSaveChunk | canSaveEntities | canSavePOI ? new SaveStat(executedUnloadTask || canSaveChunk, canSaveEntities, canSavePOI): null;
 +    }
 +
 +    static final class AsyncChunkSerializeTask implements Runnable {
@@ -16675,7 +16691,7 @@ index e6240f891e396d91e31b02fdf3084be77e9d6697..00cb9dafc711607f28529ea9afbcdb49
  
      public int getIndex() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index e75ec8f6aa597b5f3048d6269fba45eef057bc71..81092acad680e6c797745d24badba4dd488bb246 100644
+index e75ec8f6aa597b5f3048d6269fba45eef057bc71..4c931b6eaec6f97927077423d186afb9de4ca73f 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -183,6 +183,43 @@ public class LevelChunk extends ChunkAccess {
@@ -16831,16 +16847,35 @@ index e75ec8f6aa597b5f3048d6269fba45eef057bc71..81092acad680e6c797745d24badba4dd
          server.getPluginManager().callEvent(unloadEvent);
          // note: saving can be prevented, but not forced if no saving is actually required
          this.mustNotSave = !unloadEvent.isSaveChunk();
-@@ -741,7 +844,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -739,9 +842,26 @@ public class LevelChunk extends ChunkAccess {
+         // Paper end
+     }
  
++    // Paper start - add dirty system to tick lists
++    @Override
++    public void setUnsaved(boolean needsSaving) {
++        if (!needsSaving) {
++            this.blockTicks.clearDirty();
++            this.fluidTicks.clearDirty();
++        }
++        super.setUnsaved(needsSaving);
++    }
++    // Paper end - add dirty system to tick lists
++
      @Override
      public boolean isUnsaved() {
 -        return super.isUnsaved() && !this.mustNotSave;
++        // Paper start - add dirty system to tick lists
++        long gameTime = this.level.getLevelData().getGameTime();
++        if (this.blockTicks.isDirty(gameTime) || this.fluidTicks.isDirty(gameTime)) {
++            return true;
++        }
++        // Paper end - add dirty system to tick lists
 +        return super.isUnsaved(); // Paper - rewrite chunk system - do NOT clobber the dirty flag
      }
      // CraftBukkit end
  
-@@ -804,7 +907,10 @@ public class LevelChunk extends ChunkAccess {
+@@ -804,7 +924,10 @@ public class LevelChunk extends ChunkAccess {
          });
      }
  
@@ -16851,7 +16886,7 @@ index e75ec8f6aa597b5f3048d6269fba45eef057bc71..81092acad680e6c797745d24badba4dd
          ChunkPos chunkcoordintpair = this.getPos();
  
          for (int i = 0; i < this.postProcessing.length; ++i) {
-@@ -842,6 +948,11 @@ public class LevelChunk extends ChunkAccess {
+@@ -842,6 +965,11 @@ public class LevelChunk extends ChunkAccess {
  
          this.pendingBlockEntities.clear();
          this.upgradeData.upgrade(this);
@@ -16863,7 +16898,7 @@ index e75ec8f6aa597b5f3048d6269fba45eef057bc71..81092acad680e6c797745d24badba4dd
      }
  
      @Nullable
-@@ -891,7 +1002,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -891,7 +1019,7 @@ public class LevelChunk extends ChunkAccess {
      }
  
      public ChunkHolder.FullChunkStatus getFullStatus() {
@@ -17672,6 +17707,75 @@ index e66e52da84408eb705d23504e500bd8a98322b0e..298ea7c5776c4476dbb69e68debbd503
                  Iterator iterator = set.iterator();
  
                  while (iterator.hasNext()) {
+diff --git a/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java b/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
+index 9f6c2e5b5d9e8d714a47c770e255d06c0ef7c190..ac807277a6b26d140ea9873d17c7aa4fb5fe37b2 100644
+--- a/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
++++ b/src/main/java/net/minecraft/world/ticks/LevelChunkTicks.java
+@@ -25,6 +25,19 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+     @Nullable
+     private BiConsumer<LevelChunkTicks<T>, ScheduledTick<T>> onTickAdded;
+ 
++    // Paper start - add dirty flag
++    private boolean dirty;
++    private long lastSaved = Long.MIN_VALUE;
++
++    public boolean isDirty(final long tick) {
++        return this.dirty || (!this.tickQueue.isEmpty() && tick != this.lastSaved);
++    }
++
++    public void clearDirty() {
++        this.dirty = false;
++    }
++    // Paper end - add dirty flag
++
+     public LevelChunkTicks() {
+     }
+ 
+@@ -50,6 +63,7 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+     public ScheduledTick<T> poll() {
+         ScheduledTick<T> scheduledTick = this.tickQueue.poll();
+         if (scheduledTick != null) {
++            this.dirty = true; // Paper - add dirty flag
+             this.ticksPerPosition.remove(scheduledTick);
+         }
+ 
+@@ -59,6 +73,7 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+     @Override
+     public void schedule(ScheduledTick<T> orderedTick) {
+         if (this.ticksPerPosition.add(orderedTick)) {
++            this.dirty = true; // Paper - add dirty flag
+             this.scheduleUnchecked(orderedTick);
+         }
+ 
+@@ -83,7 +98,7 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+         while(iterator.hasNext()) {
+             ScheduledTick<T> scheduledTick = iterator.next();
+             if (predicate.test(scheduledTick)) {
+-                iterator.remove();
++                iterator.remove(); this.dirty = true; // Paper - add dirty flag
+                 this.ticksPerPosition.remove(scheduledTick);
+             }
+         }
+@@ -101,6 +116,7 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+ 
+     @Override
+     public ListTag save(long l, Function<T, String> function) {
++        this.lastSaved = l; // Paper - add dirty system to level ticks
+         ListTag listTag = new ListTag();
+         if (this.pendingTicks != null) {
+             for(SavedTick<T> savedTick : this.pendingTicks) {
+@@ -117,6 +133,11 @@ public class LevelChunkTicks<T> implements SerializableTickContainer<T>, TickCon
+ 
+     public void unpack(long time) {
+         if (this.pendingTicks != null) {
++            // Paper start - add dirty system to level chunk ticks
++            if (this.tickQueue.isEmpty()) {
++                this.lastSaved = time;
++            }
++            // Paper end - add dirty system to level chunk ticks
+             int i = -this.pendingTicks.size();
+ 
+             for(SavedTick<T> savedTick : this.pendingTicks) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 index 6d44634ae6dcbc392011f248f6ab429b9845af55..29465d24b6c9160fcd6293006dcc26bcfbeb5e10 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
