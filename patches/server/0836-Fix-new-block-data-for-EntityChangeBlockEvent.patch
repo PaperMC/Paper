@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SoSeDiK <mrsosedik@gmail.com>
+Date: Mon, 21 Mar 2022 20:00:53 +0200
+Subject: [PATCH] Fix new block data for EntityChangeBlockEvent
+
+Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+index cc44e975aef8e9dabfbc740dd5a0db3a55c5831e..80aa539f7c6a6ee44338de084cdcdf5fb4ef996a 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+@@ -79,7 +79,7 @@ public class EatBlockGoal extends Goal {
+ 
+                 if (this.level.getBlockState(blockposition1).is(Blocks.GRASS_BLOCK)) {
+                     // CraftBukkit
+-                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.AIR.defaultBlockState(), !this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)).isCancelled()) {
++                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.DIRT.defaultBlockState(), !this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)).isCancelled()) { // Paper - Fix wrong block state
+                         this.level.levelEvent(2001, blockposition1, Block.getId(Blocks.GRASS_BLOCK.defaultBlockState()));
+                         this.level.setBlock(blockposition1, Blocks.DIRT.defaultBlockState(), 2);
+                     }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index 2dcda3b03796655da443e1b3dd68c6f6bca20d21..37d3b670a93c26b87ffc5c93ad7828f45b4b0217 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -176,7 +176,11 @@ public class Silverfish extends Monster {
+ 
+                             if (block instanceof InfestedBlock) {
+                                 // CraftBukkit start
+-                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()).isCancelled()) {
++                                // Paper start
++                                BlockState afterState = world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? net.minecraft.world.level.block.Blocks.AIR.defaultBlockState() : ((InfestedBlock) block).hostStateByInfested(world.getBlockState(blockposition1));
++                                org.bukkit.event.entity.EntityChangeBlockEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, afterState);
++                                if (event.isCancelled()) {
++                                // Paper end
+                                     continue;
+                                 }
+                                 // CraftBukkit end
