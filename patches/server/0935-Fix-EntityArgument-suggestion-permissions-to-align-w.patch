@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 26 Oct 2022 13:13:12 -0700
+Subject: [PATCH] Fix EntityArgument suggestion permissions to align with
+ EntitySelector#checkPermissions
+
+Fixes where the user has permission for selectors but not their
+suggestions, which especially matters when we force suggestions to
+the server for this type
+
+diff --git a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
+index a2ea64b7ec5f47224312a1e08dd64347be6f7c43..5d649058d3a0cc858f0c943e3ac1998d598f7270 100644
+--- a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
+@@ -128,7 +128,12 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
+             StringReader stringreader = new StringReader(suggestionsbuilder.getInput());
+ 
+             stringreader.setCursor(suggestionsbuilder.getStart());
+-            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2), true); // Paper
++            // Paper start
++            final boolean permission = object instanceof CommandSourceStack stack
++                    ? stack.hasPermission(2, "minecraft.command.selector")
++                    : icompletionprovider.hasPermission(2);
++            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, permission, true); // Paper
++            // Paper end
+ 
+             try {
+                 argumentparserselector.parse();
