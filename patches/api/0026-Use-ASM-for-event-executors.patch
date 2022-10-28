@@ -6,7 +6,7 @@ Subject: [PATCH] Use ASM for event executors.
 Uses method handles for private or static methods.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 7b8196db1fd1e283dc9ef71e3fe5137cc5920ba9..f0f8047cb3a43b447dc50b730dab3d0bc471b25a 100644
+index 3320666626cdadefc045331d33c3e9e9741344fc..68d751b045665f8006cc56e7fd3e2b2dcbda5a02 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -39,6 +39,9 @@ dependencies {
@@ -118,10 +118,10 @@ index 0000000000000000000000000000000000000000..c83672427324bd068ed52916f700b684
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b8d5c13980858dc27fb5383726b7ebcaf14adcb8
+index 0000000000000000000000000000000000000000..084c31af1a7ba32bb4c3dc8f16f67fd09ce0b6a4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,54 @@
 +package com.destroystokyo.paper.event.executor.asm;
 +
 +import java.lang.reflect.Method;
@@ -136,6 +136,9 @@ index 0000000000000000000000000000000000000000..b8d5c13980858dc27fb5383726b7ebca
 +import static org.objectweb.asm.Opcodes.*;
 +
 +public class ASMEventExecutorGenerator {
++
++    private static final String EXECUTE_DESCRIPTOR = "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Event;)V";
++
 +    @NotNull
 +    public static byte[] generateEventExecutor(@NotNull Method m, @NotNull String name) {
 +        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
@@ -147,7 +150,7 @@ index 0000000000000000000000000000000000000000..b8d5c13980858dc27fb5383726b7ebca
 +        methodGenerator.returnValue();
 +        methodGenerator.endMethod();
 +        // Generate the execute method
-+        methodGenerator = new GeneratorAdapter(writer.visitMethod(ACC_PUBLIC, "execute", "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Event;)V", null, null), ACC_PUBLIC, "execute", "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Listener;)V");
++        methodGenerator = new GeneratorAdapter(writer.visitMethod(ACC_PUBLIC, "execute", EXECUTE_DESCRIPTOR, null, null), ACC_PUBLIC, "execute", EXECUTE_DESCRIPTOR);
 +        methodGenerator.loadArg(0);
 +        methodGenerator.checkCast(Type.getType(m.getDeclaringClass()));
 +        methodGenerator.loadArg(1);
