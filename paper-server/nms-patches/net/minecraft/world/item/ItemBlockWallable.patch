@@ -1,0 +1,36 @@
+--- a/net/minecraft/world/item/ItemBlockWallable.java
++++ b/net/minecraft/world/item/ItemBlockWallable.java
+@@ -9,6 +9,12 @@
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.state.IBlockData;
+ import net.minecraft.world.phys.shapes.VoxelShapeCollision;
++// CraftBukkit start
++import net.minecraft.server.level.EntityPlayer;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.event.block.BlockCanBuildEvent;
++// CraftBukkit end
+ 
+ public class ItemBlockWallable extends ItemBlock {
+ 
+@@ -42,7 +48,19 @@
+             }
+         }
+ 
+-        return iblockdata1 != null && world.isUnobstructed(iblockdata1, blockposition, VoxelShapeCollision.empty()) ? iblockdata1 : null;
++        // CraftBukkit start
++        if (iblockdata1 != null) {
++            boolean defaultReturn = world.isUnobstructed(iblockdata1, blockposition, VoxelShapeCollision.empty());
++            org.bukkit.entity.Player player = (blockactioncontext.getPlayer() instanceof EntityPlayer) ? (org.bukkit.entity.Player) blockactioncontext.getPlayer().getBukkitEntity() : null;
++
++            BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(world, blockposition), player, CraftBlockData.fromData(iblockdata1), defaultReturn);
++            blockactioncontext.getLevel().getCraftServer().getPluginManager().callEvent(event);
++
++            return (event.isBuildable()) ? iblockdata1 : null;
++        } else {
++            return null;
++        }
++        // CraftBukkit end
+     }
+ 
+     @Override
