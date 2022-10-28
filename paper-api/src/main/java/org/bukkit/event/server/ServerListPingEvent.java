@@ -20,15 +20,22 @@ import org.jetbrains.annotations.NotNull;
 public class ServerListPingEvent extends ServerEvent implements Iterable<Player> {
     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
     private static final HandlerList handlers = new HandlerList();
+    private final String hostname;
     private final InetAddress address;
     private final boolean shouldSendChatPreviews;
     private String motd;
     private final int numPlayers;
     private int maxPlayers;
 
+    @Deprecated
     public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final boolean shouldSendChatPreviews, final int numPlayers, final int maxPlayers) {
+        this("", address, motd, shouldSendChatPreviews, numPlayers, maxPlayers);
+    }
+
+    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final boolean shouldSendChatPreviews, final int numPlayers, final int maxPlayers) {
         super(true);
         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
+        this.hostname = hostname;
         this.address = address;
         this.motd = motd;
         this.shouldSendChatPreviews = shouldSendChatPreviews;
@@ -36,23 +43,41 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
         this.maxPlayers = maxPlayers;
     }
 
+    @Deprecated
+    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, boolean shouldSendChatPreviews, final int maxPlayers) {
+        this("", address, motd, shouldSendChatPreviews, maxPlayers);
+    }
+
     /**
      * This constructor is intended for implementations that provide the
      * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
      * count.
      *
+     * @param hostname The hostname that was used to connect to the server
      * @param address the address of the pinger
      * @param motd the message of the day
      * @param shouldSendChatPreviews if the server should send chat previews
      * @param maxPlayers the max number of players
      */
-    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, boolean shouldSendChatPreviews, final int maxPlayers) {
+    protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, boolean shouldSendChatPreviews, final int maxPlayers) {
         super(true);
         this.numPlayers = MAGIC_PLAYER_COUNT;
+        this.hostname = hostname;
         this.address = address;
         this.motd = motd;
         this.shouldSendChatPreviews = shouldSendChatPreviews;
         this.maxPlayers = maxPlayers;
+    }
+
+    /**
+     * Gets the hostname that the player used to connect to the server, or
+     * blank if unknown
+     *
+     * @return The hostname
+     */
+    @NotNull
+    public String getHostname() {
+        return hostname;
     }
 
     /**
