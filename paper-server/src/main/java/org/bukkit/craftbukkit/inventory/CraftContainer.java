@@ -20,7 +20,6 @@ import net.minecraft.world.inventory.ContainerLoom;
 import net.minecraft.world.inventory.ContainerMerchant;
 import net.minecraft.world.inventory.ContainerProperties;
 import net.minecraft.world.inventory.ContainerShulkerBox;
-import net.minecraft.world.inventory.ContainerSmithing;
 import net.minecraft.world.inventory.ContainerSmoker;
 import net.minecraft.world.inventory.ContainerStonecutter;
 import net.minecraft.world.inventory.ContainerWorkbench;
@@ -183,10 +182,8 @@ public class CraftContainer extends Container {
                 delegate = new ContainerHopper(windowId, bottom, top);
                 break;
             case ANVIL:
-                setupAnvil(top, bottom); // SPIGOT-6783 - manually set up slots so we can use the delegated inventory and not the automatically created one
-                break;
             case SMITHING:
-                delegate = new ContainerSmithing(windowId, bottom);
+                setupAnvil(top, bottom); // SPIGOT-6783 - manually set up slots so we can use the delegated inventory and not the automatically created one
                 break;
             case BEACON:
                 delegate = new ContainerBeacon(windowId, bottom);
