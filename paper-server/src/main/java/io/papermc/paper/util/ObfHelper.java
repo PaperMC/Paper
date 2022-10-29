@@ -80,10 +80,10 @@ public enum ObfHelper {
     }
 
     private static @Nullable Set<ClassMapping> loadMappingsIfPresent() {
-        try (final @Nullable InputStream mappingsInputStream = ObfHelper.class.getClassLoader().getResourceAsStream("META-INF/mappings/reobf.tiny")) {
-            if (mappingsInputStream == null) {
-                return null;
-            }
+        if (!MappingEnvironment.hasMappings()) {
+            return null;
+        }
+        try (final InputStream mappingsInputStream = MappingEnvironment.mappingsStream()) {
             final IMappingFile mappings = IMappingFile.load(mappingsInputStream); // Mappings are mojang->spigot
             final Set<ClassMapping> classes = new HashSet<>();
 

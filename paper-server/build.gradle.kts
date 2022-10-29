@@ -62,6 +62,7 @@ dependencies {
     testImplementation("org.ow2.asm:asm-tree:9.7.1")
     testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
     implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
+    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
 }
 
 paperweight {
@@ -189,20 +190,41 @@ val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatM
         runtime.filterNot { it.asFile.absolutePath == vanilla }
     }
 
-tasks.registerRunTask("runServerJar") {
-    description = "Spin up a test server from the serverJar archiveFile"
-    classpath(tasks.serverJar.flatMap { it.archiveFile })
+tasks.registerRunTask("runServer") {
+    description = "Spin up a test server from the Mojang mapped server jar"
+    classpath(tasks.includeMappings.flatMap { it.outputJar })
     classpath(runtimeClasspathWithoutVanillaServer)
 }
 
-tasks.registerRunTask("runReobf") {
+tasks.registerRunTask("runReobfServer") {
     description = "Spin up a test server from the reobfJar output jar"
     classpath(tasks.reobfJar.flatMap { it.outputJar })
     classpath(runtimeClasspathWithoutVanillaServer)
 }
 
-tasks.registerRunTask("runDev") {
-    description = "Spin up a non-relocated Mojang-mapped test server"
+tasks.registerRunTask("runDevServer") {
+    description = "Spin up a test server without assembling a jar"
     classpath(sourceSets.main.map { it.runtimeClasspath })
     jvmArgs("-DPaper.pushPaperAssetsRoot=true")
+}
+
+tasks.registerRunTask("runBundler") {
+    description = "Spin up a test server from the Mojang mapped bundler jar"
+    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createMojmapBundlerJar").flatMap { it.outputZip })
+    mainClass.set(null as String?)
+}
+tasks.registerRunTask("runReobfBundler") {
+    description = "Spin up a test server from the reobf bundler jar"
+    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
+    mainClass.set(null as String?)
+}
+tasks.registerRunTask("runPaperclip") {
+    description = "Spin up a test server from the Mojang mapped Paperclip jar"
+    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createMojmapPaperclipJar").flatMap { it.outputZip })
+    mainClass.set(null as String?)
+}
+tasks.registerRunTask("runReobfPaperclip") {
+    description = "Spin up a test server from the reobf Paperclip jar"
+    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
+    mainClass.set(null as String?)
 }

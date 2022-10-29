@@ -14,7 +14,7 @@ import java.util.List;
 public class PluginFlagProviderSource implements ProviderSource<List<Path>, List<Path>> {
 
     public static final PluginFlagProviderSource INSTANCE = new PluginFlagProviderSource();
-    private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("File '%s' specified through 'add-plugin' argument"::formatted);
+    private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("File '%s' specified through 'add-plugin' argument"::formatted, false);
     private static final Logger LOGGER = LogUtils.getClassLogger();
 
     @Override
@@ -27,6 +27,11 @@ public class PluginFlagProviderSource implements ProviderSource<List<Path>, List
                 LOGGER.error("Error preparing plugin context: " + e.getMessage(), e);
             }
         }
+        // Paper start - Remap plugins
+        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null && !files.isEmpty()) {
+            return io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.rewriteExtraPlugins(files);
+        }
+        // Paper end - Remap plugins
         return files;
     }
 

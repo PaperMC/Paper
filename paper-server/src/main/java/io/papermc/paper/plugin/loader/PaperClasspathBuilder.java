@@ -1,5 +1,6 @@
 package io.papermc.paper.plugin.loader;
 
+import io.papermc.paper.plugin.PluginInitializerManager;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
 import io.papermc.paper.plugin.loader.library.PaperLibraryStore;
@@ -45,9 +46,12 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
         }
 
         List<Path> paths = paperLibraryStore.getPaths();
+        if (PluginInitializerManager.instance().pluginRemapper != null) {
+            paths = PluginInitializerManager.instance().pluginRemapper.remapLibraries(paths);
+        }
         URL[] urls = new URL[paths.size()];
         for (int i = 0; i < paths.size(); i++) {
-            Path path = paperLibraryStore.getPaths().get(i);
+            Path path = paths.get(i);
             try {
                 urls[i] = path.toUri().toURL();
             } catch (MalformedURLException e) {

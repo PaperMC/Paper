@@ -22,9 +22,10 @@ import java.util.jar.JarFile;
  */
 public abstract class PluginFileType<T, C extends PluginMeta> {
 
+    public static final String PAPER_PLUGIN_YML = "paper-plugin.yml";
     private static final List<String> CONFIG_TYPES = new ArrayList<>();
     
-    public static final PluginFileType<PaperPluginParent, PaperPluginMeta> PAPER = new PluginFileType<>("paper-plugin.yml", PaperPluginParent.FACTORY) {
+    public static final PluginFileType<PaperPluginParent, PaperPluginMeta> PAPER = new PluginFileType<>(PAPER_PLUGIN_YML, PaperPluginParent.FACTORY) {
         @Override
         protected void register(EntrypointHandler entrypointHandler, PaperPluginParent parent) {
             PaperPluginParent.PaperBootstrapProvider bootstrapPluginProvider = null;

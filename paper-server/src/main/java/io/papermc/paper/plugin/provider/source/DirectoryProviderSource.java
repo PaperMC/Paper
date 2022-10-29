@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 public class DirectoryProviderSource implements ProviderSource<Path, List<Path>> {
 
     public static final DirectoryProviderSource INSTANCE = new DirectoryProviderSource();
-    private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("Directory '%s'"::formatted);
+    private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("Directory '%s'"::formatted, false); // Paper - Remap plugins
     private static final Logger LOGGER = LogUtils.getClassLogger();
 
     @Override
@@ -37,6 +37,11 @@ public class DirectoryProviderSource implements ProviderSource<Path, List<Path>>
                 LOGGER.error("Error preparing plugin context: " + e.getMessage(), e);
             }
         });
+        // Paper start - Remap plugins
+        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) {
+            return io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.rewritePluginDirectory(files);
+        }
+        // Paper end - Remap plugins
         return files;
     }
 

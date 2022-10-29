@@ -6,10 +6,12 @@ import io.papermc.paper.plugin.entrypoint.Entrypoint;
 import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
 import io.papermc.paper.plugin.provider.PluginProvider;
 import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
+import io.papermc.paper.pluginremap.PluginRemapper;
+import java.util.function.Function;
 import joptsimple.OptionSet;
 import net.minecraft.server.dedicated.DedicatedServer;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.plugin.java.LibraryLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -25,10 +27,15 @@ public class PluginInitializerManager {
     private static PluginInitializerManager impl;
     private final Path pluginDirectory;
     private final Path updateDirectory;
+    public final io.papermc.paper.pluginremap.@org.checkerframework.checker.nullness.qual.MonotonicNonNull PluginRemapper pluginRemapper; // Paper
 
     PluginInitializerManager(final Path pluginDirectory, final Path updateDirectory) {
         this.pluginDirectory = pluginDirectory;
         this.updateDirectory = updateDirectory;
+        this.pluginRemapper = Boolean.getBoolean("paper.disablePluginRemapping")
+            ? null
+            : PluginRemapper.create(pluginDirectory);
+        LibraryLoader.REMAPPER = this.pluginRemapper == null ? Function.identity() : this.pluginRemapper::remapLibraries;
     }
 
     private static PluginInitializerManager parse(@NotNull final OptionSet minecraftOptionSet) throws Exception {
@@ -96,6 +103,7 @@ public class PluginInitializerManager {
     public static void load(OptionSet optionSet) throws Exception {
         // We have to load the bukkit configuration inorder to get the update folder location.
         io.papermc.paper.plugin.PluginInitializerManager pluginSystem = io.papermc.paper.plugin.PluginInitializerManager.init(optionSet);
+        if (pluginSystem.pluginRemapper != null) pluginSystem.pluginRemapper.loadingPlugins();
 
         // Register the default plugin directory
         io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.DirectoryProviderSource.INSTANCE, pluginSystem.pluginDirectoryPath());
