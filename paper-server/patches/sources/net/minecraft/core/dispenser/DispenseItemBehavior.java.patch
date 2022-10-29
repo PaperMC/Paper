@@ -404,7 +404,7 @@
 -                PrimedTnt entitytntprimed = new PrimedTnt(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, (LivingEntity) null);
 +                // CraftBukkit start
 +                // EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, (EntityLiving) null);
-+
+ 
 +                ItemStack itemstack1 = stack.split(1);
 +                org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
 +                CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
@@ -429,7 +429,7 @@
 +                        return stack;
 +                    }
 +                }
- 
++
 +                PrimedTnt entitytntprimed = new PrimedTnt(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), (LivingEntity) null);
 +                // CraftBukkit end
 +
@@ -441,10 +441,11 @@
                  return stack;
              }
          });
-@@ -314,6 +608,30 @@
+@@ -313,7 +607,31 @@
+                 ServerLevel worldserver = pointer.level();
                  Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
                  BlockPos blockposition = pointer.pos().relative(enumdirection);
- 
++
 +                // CraftBukkit start
 +                org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
 +                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
@@ -457,7 +458,7 @@
 +                if (event.isCancelled()) {
 +                    return stack;
 +                }
-+
+ 
 +                if (!event.getItem().equals(craftItem)) {
 +                    // Chain to handler for new item
 +                    ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
@@ -534,7 +535,21 @@
                  if (iblockdata.is(BlockTags.BEEHIVES, (blockbase_blockdata) -> {
                      return blockbase_blockdata.hasProperty(BeehiveBlock.HONEY_LEVEL) && blockbase_blockdata.getBlock() instanceof BeehiveBlock;
                  }) && (Integer) iblockdata.getValue(BeehiveBlock.HONEY_LEVEL) >= 5) {
-@@ -426,6 +792,31 @@
+@@ -402,6 +768,13 @@
+                 this.setSuccess(true);
+                 if (iblockdata.is(Blocks.RESPAWN_ANCHOR)) {
+                     if ((Integer) iblockdata.getValue(RespawnAnchorBlock.CHARGE) != 4) {
++                        // Paper start - Call missing BlockDispenseEvent
++                        ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition, stack, this);
++                        if (result != null) {
++                            this.setSuccess(false);
++                            return result;
++                        }
++                        // Paper end - Call missing BlockDispenseEvent
+                         RespawnAnchorBlock.charge((Entity) null, worldserver, blockposition, iblockdata);
+                         stack.shrink(1);
+                     } else {
+@@ -426,6 +799,31 @@
                      this.setSuccess(false);
                      return stack;
                  } else {
@@ -566,3 +581,30 @@
                      Iterator iterator1 = list.iterator();
  
                      Armadillo armadillo;
+@@ -454,6 +852,13 @@
+                 Optional<BlockState> optional = HoneycombItem.getWaxed(iblockdata);
+ 
+                 if (optional.isPresent()) {
++                    // Paper start - Call missing BlockDispenseEvent
++                    ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition, stack, this);
++                    if (result != null) {
++                        this.setSuccess(false);
++                        return result;
++                    }
++                    // Paper end - Call missing BlockDispenseEvent
+                     worldserver.setBlockAndUpdate(blockposition, (BlockState) optional.get());
+                     worldserver.levelEvent(3003, blockposition, 0);
+                     stack.shrink(1);
+@@ -481,6 +886,12 @@
+                     if (!worldserver.getBlockState(blockposition1).is(BlockTags.CONVERTABLE_TO_MUD)) {
+                         return this.defaultDispenseItemBehavior.dispense(pointer, stack);
+                     } else {
++                        // Paper start - Call missing BlockDispenseEvent
++                        ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition1, stack, this);
++                        if (result != null) {
++                            return result;
++                        }
++                        // Paper end - Call missing BlockDispenseEvent
+                         if (!worldserver.isClientSide) {
+                             for (int k = 0; k < 5; ++k) {
+                                 worldserver.sendParticles(ParticleTypes.SPLASH, (double) blockposition.getX() + worldserver.random.nextDouble(), (double) (blockposition.getY() + 1), (double) blockposition.getZ() + worldserver.random.nextDouble(), 1, 0.0D, 0.0D, 0.0D, 1.0D);

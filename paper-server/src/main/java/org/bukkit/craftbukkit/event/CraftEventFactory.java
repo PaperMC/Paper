@@ -2196,6 +2196,32 @@ public class CraftEventFactory {
     }
     // Paper end
 
+    // Paper start - Call missing BlockDispenseEvent
+    @Nullable
+    public static ItemStack handleBlockDispenseEvent(net.minecraft.core.dispenser.BlockSource pointer, BlockPos to, ItemStack itemStack, net.minecraft.core.dispenser.DispenseItemBehavior instance) {
+        org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemStack.copyWithCount(1));
+
+        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
+        if (!net.minecraft.world.level.block.DispenserBlock.eventFired) {
+            if (!event.callEvent()) {
+                return itemStack;
+            }
+        }
+
+        if (!event.getItem().equals(craftItem)) {
+            // Chain to handler for new item
+            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+            if (itemBehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && itemBehavior != instance) {
+                itemBehavior.dispense(pointer, eventStack);
+                return itemStack;
+            }
+        }
+        return null;
+    }
+    // Paper end - Call missing BlockDispenseEvent
+
     // Paper start - add EntityFertilizeEggEvent
     /**
      * Calls the {@link io.papermc.paper.event.entity.EntityFertilizeEggEvent}.
