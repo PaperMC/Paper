@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Sat, 29 Oct 2022 15:41:56 +0200
+Subject: [PATCH] Call missing BlockDispenseEvent
+
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 9d601bf258a6d209a889afa7ba7f839c01f83cd8..f2f5b033893df21acffa0d39870022d5c2d6318c 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -1083,6 +1083,14 @@ public interface DispenseItemBehavior {
+                 BlockState iblockdata = worldserver.getBlockState(blockposition);
+ 
+                 this.setSuccess(true);
++
++                // Paper start
++                ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition, stack, this);
++                if (result != null) {
++                    return result;
++                }
++                // Paper end
++
+                 if (iblockdata.is(Blocks.RESPAWN_ANCHOR)) {
+                     if ((Integer) iblockdata.getValue(RespawnAnchorBlock.CHARGE) != 4) {
+                         RespawnAnchorBlock.charge(worldserver, blockposition, iblockdata);
+@@ -1104,6 +1112,14 @@ public interface DispenseItemBehavior {
+                 BlockPos blockposition = pointer.getPos().relative((Direction) pointer.getBlockState().getValue(DispenserBlock.FACING));
+                 ServerLevel worldserver = pointer.getLevel();
+                 BlockState iblockdata = worldserver.getBlockState(blockposition);
++
++                // Paper start
++                ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition, stack, this);
++                if (result != null) {
++                    return result;
++                }
++                // Paper end
++
+                 Optional<BlockState> optional = HoneycombItem.getWaxed(iblockdata);
+ 
+                 if (optional.isPresent()) {
+@@ -1129,6 +1145,13 @@ public interface DispenseItemBehavior {
+                     BlockPos blockposition = pointer.getPos();
+                     BlockPos blockposition1 = pointer.getPos().relative((Direction) pointer.getBlockState().getValue(DispenserBlock.FACING));
+ 
++                    // Paper start
++                    ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition1, stack, this);
++                    if (result != null) {
++                        return result;
++                    }
++                    // Paper end
++
+                     if (!worldserver.getBlockState(blockposition1).is(BlockTags.CONVERTABLE_TO_MUD)) {
+                         return this.defaultDispenseItemBehavior.dispense(pointer, stack);
+                     } else {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 03b3f29bde2bf6cb4e7b08a775bcc380a9404543..f58896e531791f702d1b511b9f58a26329738558 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1920,5 +1920,28 @@ public class CraftEventFactory {
+         io.papermc.paper.event.block.BlockPreDispenseEvent event = new io.papermc.paper.event.block.BlockPreDispenseEvent(block, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), slot);
+         return event.callEvent();
+     }
++
++    public static ItemStack handleBlockDispenseEvent(net.minecraft.core.BlockSource pointer, BlockPos to, ItemStack itemStack, net.minecraft.core.dispenser.DispenseItemBehavior instance) {
++        org.bukkit.block.Block bukkitBlock = pointer.getLevel().getWorld().getBlockAt(pointer.getPos().getX(), pointer.getPos().getY(), pointer.getPos().getZ());
++        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemStack);
++
++        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(to.getX(), to.getY(), to.getZ()));
++        if (!net.minecraft.world.level.block.DispenserBlock.eventFired) { // unused but if one day spigot fix their duplicate event
++            if (!event.callEvent()) {
++                return itemStack;
++            }
++        }
++
++        if (!event.getItem().equals(craftItem)) {
++            // Chain to handler for new item
++            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++            net.minecraft.core.dispenser.DispenseItemBehavior idispensebehavior = net.minecraft.world.level.block.DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
++            if (idispensebehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && idispensebehavior != instance) {
++                idispensebehavior.dispense(pointer, eventStack);
++                return itemStack;
++            }
++        }
++        return null;
++    }
+     // Paper end
+ }
