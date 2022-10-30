@@ -2232,7 +2232,7 @@ public class CraftEventFactory {
         if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack); // Paper - Fix NPE with equippable and items without behavior
             if (itemBehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && itemBehavior != instance) {
                 itemBehavior.dispense(pointer, eventStack);
                 return itemStack;

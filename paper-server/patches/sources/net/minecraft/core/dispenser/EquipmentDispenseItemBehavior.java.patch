@@ -14,7 +14,25 @@
  
  public class EquipmentDispenseItemBehavior extends DefaultDispenseItemBehavior {
  
-@@ -34,7 +39,34 @@
+@@ -18,10 +23,15 @@
+ 
+     @Override
+     protected ItemStack execute(BlockSource pointer, ItemStack stack) {
+-        return EquipmentDispenseItemBehavior.dispenseEquipment(pointer, stack) ? stack : super.execute(pointer, stack);
++        return EquipmentDispenseItemBehavior.dispenseEquipment(pointer, stack, this) ? stack : super.execute(pointer, stack); // Paper - fix possible StackOverflowError
+     }
+ 
+-    public static boolean dispenseEquipment(BlockSource pointer, ItemStack stack) {
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
++    public static boolean dispenseEquipment(BlockSource pointer, ItemStack armor) {
++        // Paper start
++        return dispenseEquipment(pointer, armor, null);
++    }
++    public static boolean dispenseEquipment(BlockSource pointer, ItemStack stack, @javax.annotation.Nullable DispenseItemBehavior currentBehavior) {
+         BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
+         List<LivingEntity> list = pointer.level().getEntitiesOfClass(LivingEntity.class, new AABB(blockposition), (entityliving) -> {
+             return entityliving.canEquipWithDispenser(stack);
+@@ -34,7 +44,34 @@
              EquipmentSlot enumitemslot = entityliving.getEquipmentSlotForItem(stack);
              ItemStack itemstack1 = stack.split(1);
  
@@ -38,8 +56,8 @@
 +                stack.grow(1);
 +                // Chain to handler for new item
 +                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-+                DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
-+                if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != EquipmentDispenseItemBehavior.INSTANCE) {
++                DispenseItemBehavior idispensebehavior = DispenserBlock.getDispenseBehavior(pointer, eventStack); // Paper - Fix NPE with equippable and items without behavior
++                if (idispensebehavior != DispenseItemBehavior.NOOP && (currentBehavior == null || idispensebehavior != currentBehavior)) { // Paper - fix possible StackOverflowError
 +                    idispensebehavior.dispense(pointer, eventStack);
 +                    return true;
 +                }
