@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableBiMap;
 import com.mojang.logging.LogUtils;
 import io.leangen.geantyref.TypeToken;
 import io.papermc.paper.configuration.serializer.collections.MapSerializer;
+import io.papermc.paper.util.MappingEnvironment;
 import io.papermc.paper.util.ObfHelper;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -68,7 +69,7 @@ public final class PacketClassSerializer extends ScalarSerializer<Class<? extend
     @Override
     protected @Nullable Object serialize(final Class<? extends Packet<?>> packetClass, final Predicate<Class<?>> typeSupported) {
         final String name = packetClass.getName();
-        @Nullable String mojName = ObfHelper.INSTANCE.mappingsByMojangName() == null ? name : MOJANG_TO_OBF.inverse().get(name); // if the mappings are null, running on moj-mapped server
+        @Nullable String mojName = ObfHelper.INSTANCE.mappingsByMojangName() == null || !MappingEnvironment.reobf() ? name : MOJANG_TO_OBF.inverse().get(name); // if the mappings are null, running on moj-mapped server
         if (mojName == null && MOJANG_TO_OBF.containsKey(name)) {
             mojName = name;
         }

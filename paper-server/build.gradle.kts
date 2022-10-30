@@ -63,6 +63,12 @@ dependencies {
     testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
     implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
     implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
+    // Paper start - Remap reflection
+    val reflectionRewriterVersion = "0.0.3"
+    implementation("io.papermc:reflection-rewriter:$reflectionRewriterVersion")
+    implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
+    implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
+    // Paper end - Remap reflection
 }
 
 paperweight {

@@ -10,6 +10,8 @@ import org.checkerframework.framework.qual.DefaultQualifier;
 
 @DefaultQualifier(NonNull.class)
 public final class MappingEnvironment {
+    public static final boolean DISABLE_PLUGIN_REMAPPING = Boolean.getBoolean("paper.disablePluginRemapping");
+    public static final String LEGACY_CB_VERSION = "v1_21_R3";
     private static final @Nullable String MAPPINGS_HASH = readMappingsHash();
     private static final boolean REOBF = checkReobf();
 

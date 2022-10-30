@@ -131,36 +131,26 @@ public class Commodore {
     }
 
     // Paper start - Plugin rewrites
-    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
-    private static Map<String, String> initReplacementsMap() {
-        Map<String, String> getAndRemove = new HashMap<>();
-        // Be wary of maven shade's relocations
-
-        final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
-        if (Boolean.getBoolean( "debug.rewriteForIde") && manifest != null)
-        {
-            // unversion incoming calls for pre-relocate debug work
-            final String NMS_REVISION_PACKAGE = "v" + manifest.getMainAttributes().getValue("CraftBukkit-Package-Version") + "/";
-
-            getAndRemove.put("org/bukkit/".concat("craftbukkit/" + NMS_REVISION_PACKAGE), NMS_REVISION_PACKAGE);
+    private static final String CB_PACKAGE_PREFIX = "org/bukkit/".concat("craftbukkit/");
+    private static final String LEGACY_CB_PACKAGE_PREFIX = CB_PACKAGE_PREFIX + io.papermc.paper.util.MappingEnvironment.LEGACY_CB_VERSION + "/";
+    private static String runtimeCbPkgPrefix() {
+        if (io.papermc.paper.util.MappingEnvironment.reobf()) {
+            return LEGACY_CB_PACKAGE_PREFIX;
         }
-
-        return getAndRemove;
+        return CB_PACKAGE_PREFIX;
     }
 
     @Nonnull
     private static String getOriginalOrRewrite(@Nonnull String original)
     {
-        String rewrite = null;
-        for ( Map.Entry<String, String> entry : SEARCH_AND_REMOVE.entrySet() )
-        {
-            if ( original.contains( entry.getKey() ) )
-            {
-                rewrite = original.replace( entry.getValue(), "" );
+        // Relocation is applied in reobf, and when mappings are present they handle the relocation
+        if (!io.papermc.paper.util.MappingEnvironment.reobf() && !io.papermc.paper.util.MappingEnvironment.hasMappings()) {
+            if (original.contains(LEGACY_CB_PACKAGE_PREFIX)) {
+                original = original.replace(LEGACY_CB_PACKAGE_PREFIX, CB_PACKAGE_PREFIX);
             }
         }
 
-        return rewrite != null ? rewrite : original;
+        return original;
     }
     // Paper end - Plugin rewrites
 
@@ -245,6 +235,7 @@ public class Commodore {
             visitor = new LimitedClassRemapper(cw, new SimpleRemapper(Commodore.ENUM_RENAMES));
         }
 
+        visitor = io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor); // Paper
         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
             final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
             String className;

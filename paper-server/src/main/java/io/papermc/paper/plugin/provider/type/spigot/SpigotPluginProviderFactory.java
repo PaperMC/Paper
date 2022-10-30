@@ -1,9 +1,12 @@
 package io.papermc.paper.plugin.provider.type.spigot;
 
+import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
 import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
 import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
+import io.papermc.paper.util.MappingEnvironment;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.java.LibraryLoader;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.IOException;
@@ -14,6 +17,12 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 class SpigotPluginProviderFactory implements PluginTypeFactory<SpigotPluginProvider, PluginDescriptionFile> {
+
+    static {
+        if (!MappingEnvironment.DISABLE_PLUGIN_REMAPPING) {
+			LibraryLoader.LIBRARY_LOADER_FACTORY = BytecodeModifyingURLClassLoader::new;
+		}
+    }
 
     @Override
     public SpigotPluginProvider build(JarFile file, PluginDescriptionFile configuration, Path source) throws InvalidDescriptionException {

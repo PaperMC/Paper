@@ -75,6 +75,7 @@ import org.bukkit.potion.PotionType;
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
     public static final CraftMagicNumbers INSTANCE = new CraftMagicNumbers();
+    public static final boolean DISABLE_OLD_API_SUPPORT = Boolean.getBoolean("paper.disableOldApiSupport"); // Paper
 
     private final Commodore commodore = new Commodore();
 
@@ -347,7 +348,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
         }
 
-        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
+        if (!DISABLE_OLD_API_SUPPORT && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
             CraftLegacy.init();
         }
 
@@ -362,6 +363,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
+        // Paper start
+        if (DISABLE_OLD_API_SUPPORT) {
+            // Make sure we still go through our reflection rewriting if needed
+            return io.papermc.paper.pluginremap.reflect.ReflectionRemapper.processClass(clazz);
+        }
+        // Paper end
         try {
             clazz = this.commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
         } catch (Exception ex) {

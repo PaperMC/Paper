@@ -29,6 +29,9 @@ public enum StacktraceDeobfuscator {
     });
 
     public void deobfuscateThrowable(final Throwable throwable) {
+        if (!MappingEnvironment.reobf()) {
+            return;
+        }
         if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
             return;
         }
@@ -44,6 +47,9 @@ public enum StacktraceDeobfuscator {
     }
 
     public StackTraceElement[] deobfuscateStacktrace(final StackTraceElement[] traceElements) {
+        if (!MappingEnvironment.reobf()) {
+            return traceElements;
+        }
         if (GlobalConfiguration.get() != null && !GlobalConfiguration.get().logging.deobfuscateStacktraces) { // handle null as true
             return traceElements;
         }

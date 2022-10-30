@@ -2,12 +2,12 @@ package io.papermc.paper.plugin.loader;
 
 import io.papermc.paper.plugin.PluginInitializerManager;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
+import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
+import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
 import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
 import io.papermc.paper.plugin.loader.library.PaperLibraryStore;
-import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
 import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
-import org.jetbrains.annotations.NotNull;
-
+import io.papermc.paper.util.MappingEnvironment;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 
 public class PaperClasspathBuilder implements PluginClasspathBuilder {
 
@@ -60,7 +61,10 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
         }
 
         try {
-            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), new URLClassLoader(urls, getClass().getClassLoader()));
+            final URLClassLoader libraryLoader = MappingEnvironment.DISABLE_PLUGIN_REMAPPING
+                ? new URLClassLoader(urls, this.getClass().getClassLoader())
+                : new BytecodeModifyingURLClassLoader(urls, this.getClass().getClassLoader());
+            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), libraryLoader);
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
