@@ -3439,7 +3439,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
 +++ b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
 @@ -0,0 +0,0 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
-     private static final HandlerList handlers = new HandlerList();
+     private final String hostname;
      private final InetAddress address;
      private final boolean shouldSendChatPreviews;
 -    private String motd;
@@ -3447,10 +3447,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final int numPlayers;
      private int maxPlayers;
  
-+    @Deprecated // Paper
-     public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final boolean shouldSendChatPreviews, final int numPlayers, final int maxPlayers) {
-         super(true);
+@@ -0,0 +0,0 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
          Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
+         this.hostname = hostname;
          this.address = address;
 -        this.motd = motd;
 +        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
@@ -3461,21 +3460,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       * @param motd the message of the day
       * @param shouldSendChatPreviews if the server should send chat previews
       * @param maxPlayers the max number of players
-+     * @deprecated in favour of {@link #ServerListPingEvent(java.net.InetAddress, net.kyori.adventure.text.Component, boolean, int)}
++     * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.InetAddress, net.kyori.adventure.text.Component, boolean, int)}
       */
 +    @Deprecated // Paper
-     protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, boolean shouldSendChatPreviews, final int maxPlayers) {
+     protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, boolean shouldSendChatPreviews, final int maxPlayers) {
          super(true);
          this.numPlayers = MAGIC_PLAYER_COUNT;
+         this.hostname = hostname;
          this.address = address;
 +        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
 +        this.shouldSendChatPreviews = shouldSendChatPreviews;
 +        this.maxPlayers = maxPlayers;
 +    }
 +    // Paper start
++    @Deprecated
 +    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, boolean shouldSendChatPreviews, final int numPlayers, final int maxPlayers) {
++        this("", address, motd, shouldSendChatPreviews, numPlayers, maxPlayers);
++    }
++    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, boolean shouldSendChatPreviews, final int numPlayers, final int maxPlayers) {
 +        super(true);
 +        Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online (%s)", numPlayers);
++        this.hostname = hostname;
 +        this.address = address;
          this.motd = motd;
          this.shouldSendChatPreviews = shouldSendChatPreviews;
@@ -3490,10 +3495,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param address the address of the pinger
 +     * @param motd the message of the day
 +     * @param maxPlayers the max number of players
++     * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.InetAddress, net.kyori.adventure.text.Component, boolean, int)}
 +     */
++    @Deprecated
 +    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, boolean shouldSendChatPreviews, final int maxPlayers) {
-+        super(true);
++        this("", address, motd, shouldSendChatPreviews, maxPlayers);
++    }
++
++    /**
++     * This constructor is intended for implementations that provide the
++     * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
++     * count.
++     *
++     * @param hostname The hostname that was used to connect to the server
++     * @param address the address of the pinger
++     * @param motd the message of the day
++     * @param maxPlayers the max number of players
++     */
++    protected ServerListPingEvent(final @NotNull String hostname, final @NotNull InetAddress address, final @NotNull net.kyori.adventure.text.Component motd, final boolean shouldSendChatPreviews, final int maxPlayers) {
 +        this.numPlayers = MAGIC_PLAYER_COUNT;
++        this.hostname = hostname;
 +        this.address = address;
 +        this.motd = motd;
 +        this.shouldSendChatPreviews = shouldSendChatPreviews;
@@ -3518,7 +3539,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
  
      /**
-      * Get the address the ping is coming from.
+      * Gets the hostname that the player used to connect to the server, or
 @@ -0,0 +0,0 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
       * Get the message of the day message.
       *
