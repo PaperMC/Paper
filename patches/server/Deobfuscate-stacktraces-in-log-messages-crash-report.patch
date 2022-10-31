@@ -9,13 +9,6 @@ diff --git a/build.gradle.kts b/build.gradle.kts
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -0,0 +0,0 @@
-+import io.papermc.paperweight.tasks.BaseTask
- import io.papermc.paperweight.util.*
-+import java.nio.file.Files
- 
- plugins {
-     java
 @@ -0,0 +0,0 @@ dependencies {
            Scanning takes about 1-2 seconds so adding this speeds up the server start.
       */
@@ -36,37 +29,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  // Paper end
  
 +// Paper start - include reobf mappings in jar for stacktrace deobfuscation
-+abstract class IncludeMappings : BaseTask() {
-+    @get:InputFile
-+    abstract val inputJar: RegularFileProperty
-+
-+    @get:InputFile
-+    abstract val mappings: RegularFileProperty
-+
-+    @get:OutputFile
-+    abstract val outputJar: RegularFileProperty
-+
-+    override fun init() {
-+        super.init()
-+        outputJar.convention(defaultOutput())
-+    }
-+
-+    @TaskAction
-+    private fun addMappings() {
-+        outputJar.get().asFile.parentFile.mkdirs()
-+        inputJar.get().asFile.copyTo(outputJar.get().asFile, overwrite = true)
-+        outputJar.get().path.openZip().use { fs ->
-+            val dir = fs.getPath("META-INF/mappings/")
-+            Files.createDirectories(dir)
-+            val target = dir.resolve("reobf.tiny")
-+            Files.copy(mappings.path, target)
-+        }
-+    }
-+}
-+
-+val includeMappings = tasks.register<IncludeMappings>("includeMappings") {
++val includeMappings = tasks.register<io.papermc.paperweight.tasks.IncludeMappings>("includeMappings") {
 +    inputJar.set(tasks.fixJarForReobf.flatMap { it.outputJar })
 +    mappings.set(tasks.reobfJar.flatMap { it.mappingsFile })
++    mappingsDest.set("META-INF/mappings/reobf.tiny")
 +}
 +
 +tasks.reobfJar {
