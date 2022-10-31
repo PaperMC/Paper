@@ -6,17 +6,10 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index e260462933a9f7065b2360e6bf9e4ee56069a705..a1a8c4778742584125d6084fa761b1bc86f6a842 100644
+index e260462933a9f7065b2360e6bf9e4ee56069a705..2ff278cdc3dfef4644b12755be2e3a69a43e1f07 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -1,4 +1,6 @@
-+import io.papermc.paperweight.tasks.BaseTask
- import io.papermc.paperweight.util.*
-+import java.nio.file.Files
- 
- plugins {
-     java
-@@ -19,12 +21,14 @@ dependencies {
+@@ -19,12 +19,14 @@ dependencies {
            Scanning takes about 1-2 seconds so adding this speeds up the server start.
       */
      implementation("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - implementation
@@ -31,42 +24,15 @@ index e260462933a9f7065b2360e6bf9e4ee56069a705..a1a8c4778742584125d6084fa761b1bc
      runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
      runtimeOnly("mysql:mysql-connector-java:8.0.29")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
-@@ -104,6 +108,45 @@ tasks.check {
+@@ -104,6 +106,18 @@ tasks.check {
  }
  // Paper end
  
 +// Paper start - include reobf mappings in jar for stacktrace deobfuscation
-+abstract class IncludeMappings : BaseTask() {
-+    @get:InputFile
-+    abstract val inputJar: RegularFileProperty
-+
-+    @get:InputFile
-+    abstract val mappings: RegularFileProperty
-+
-+    @get:OutputFile
-+    abstract val outputJar: RegularFileProperty
-+
-+    override fun init() {
-+        super.init()
-+        outputJar.convention(defaultOutput())
-+    }
-+
-+    @TaskAction
-+    private fun addMappings() {
-+        outputJar.get().asFile.parentFile.mkdirs()
-+        inputJar.get().asFile.copyTo(outputJar.get().asFile, overwrite = true)
-+        outputJar.get().path.openZip().use { fs ->
-+            val dir = fs.getPath("META-INF/mappings/")
-+            Files.createDirectories(dir)
-+            val target = dir.resolve("reobf.tiny")
-+            Files.copy(mappings.path, target)
-+        }
-+    }
-+}
-+
-+val includeMappings = tasks.register<IncludeMappings>("includeMappings") {
++val includeMappings = tasks.register<io.papermc.paperweight.tasks.IncludeMappings>("includeMappings") {
 +    inputJar.set(tasks.fixJarForReobf.flatMap { it.outputJar })
 +    mappings.set(tasks.reobfJar.flatMap { it.mappingsFile })
++    mappingsDest.set("META-INF/mappings/reobf.tiny")
 +}
 +
 +tasks.reobfJar {
