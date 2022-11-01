@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 2 Apr 2020 01:42:39 -0400
+Subject: [PATCH] Prevent Double PlayerChunkMap adds crashing server
+
+Suspected case would be around the technique used in .stopRiding
+Stack will identify any causer of this and warn instead of crashing.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 7b6a35026978485b676ea92324d3290ad9da3705..160147561c03f18d955467ba48e4e368d26c2ca5 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1018,6 +1018,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+     public void addEntity(Entity entity) {
+         org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
++        // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
++        if (!entity.valid || entity.level != this.level || this.entityMap.containsKey(entity.getId())) {
++            LOGGER.error("Illegal ChunkMap::addEntity for world " + this.level.getWorld().getName()
++                + ": " + entity  + (this.entityMap.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""), new Throwable());
++            return;
++        }
++        // Paper end
+         if (!(entity instanceof EnderDragonPart)) {
+             EntityType<?> entitytypes = entity.getType();
+             int i = entitytypes.clientTrackingRange() * 16;
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 9abe233a02b6e5fdeda7a602223188897df5a2e4..7cc21dab89dcb50ee4034e1e39b6a27478fd983b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2344,7 +2344,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+         public void onTrackingStart(Entity entity) {
+             org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
+-            ServerLevel.this.getChunkSource().addEntity(entity);
++            // ServerLevel.this.getChunkSource().addEntity(entity); // Paper - moved down below valid=true
+             if (entity instanceof ServerPlayer) {
+                 ServerPlayer entityplayer = (ServerPlayer) entity;
+ 
+@@ -2378,6 +2378,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+             entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
+             entity.valid = true; // CraftBukkit
++            ServerLevel.this.getChunkSource().addEntity(entity);
+             // Paper start - Set origin location when the entity is being added to the world
+             if (entity.getOriginVector() == null) {
+                 entity.setOrigin(entity.getBukkitEntity().getLocation());
