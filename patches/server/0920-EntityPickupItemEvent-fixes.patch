@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 4 Jul 2022 21:45:36 -0700
+Subject: [PATCH] EntityPickupItemEvent fixes
+
+Fixes double firing of the event in PiglinAi
+
+Fixes cancelling the event for piglins still triggering the
+advancement trigger
+
+Fires the event when a Raider tries to pick up a raid banner
+to become raid leader.
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+index 793576928dad6752dddd86e62d4c0800d8515fc4..abeb7285dc0d1e6687feaae8be2dbde1d61b7f11 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+@@ -413,7 +413,7 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+ 
+     @Override
+     protected void pickUpItem(ItemEntity item) {
+-        this.onItemPickup(item);
++        // this.onItemPickup(item); // Paper - call in PiglinAi#pickUpItem after EntityPickupItemEvent is fired
+         PiglinAi.pickUpItem(this, item);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+index 0ee023afcf5673df4b069f70ce90a2c3417d71b6..eedb4445c3aa47f09f5964fafff5e6f7f8b02c02 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+@@ -231,7 +231,10 @@ public class PiglinAi {
+         ItemStack itemstack;
+ 
+         // CraftBukkit start
+-        if (drop.getItem().is(Items.GOLD_NUGGET) && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, 0, false).isCancelled()) {
++        // Paper start - fix event firing twice
++        if (drop.getItem().is(Items.GOLD_NUGGET) /* && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, 0, false).isCancelled() */) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, 0, false).isCancelled()) return;
++            // Paper end
+             piglin.take(drop, drop.getItem().getCount());
+             itemstack = drop.getItem();
+             drop.discard();
+@@ -241,6 +244,7 @@ public class PiglinAi {
+         } else {
+             return;
+         }
++        piglin.onItemPickup(drop); // Paper - moved from Piglin#pickUpItem
+         // CraftBukkit end
+ 
+         if (PiglinAi.isLovedItem(itemstack, piglin)) { // CraftBukkit - Changes to allow for custom payment in bartering
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raider.java b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+index 5f68945264d138ae04d6bcbd5bde310b42e30713..e5ccbaf72f29731f1d1aa939b9297b644a408cd4 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raider.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+@@ -245,6 +245,11 @@ public abstract class Raider extends PatrollingMonster {
+         boolean flag = this.hasActiveRaid() && this.getCurrentRaid().getLeader(this.getWave()) != null;
+ 
+         if (this.hasActiveRaid() && !flag && ItemStack.matches(itemstack, Raid.getLeaderBannerInstance())) {
++            // Paper start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, item, 0, false).isCancelled()) {
++                return;
++            }
++            // Paper end
+             EquipmentSlot enumitemslot = EquipmentSlot.HEAD;
+             ItemStack itemstack1 = this.getItemBySlot(enumitemslot);
+             double d0 = (double) this.getEquipmentDropChance(enumitemslot);
