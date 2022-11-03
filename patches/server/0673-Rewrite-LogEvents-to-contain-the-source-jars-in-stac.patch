@@ -142,18 +142,45 @@ index 0000000000000000000000000000000000000000..6ffd1befe64c6c3036c22e05ed1c4480
 +}
 diff --git a/src/main/java/io/papermc/paper/logging/ExtraClassInfoLogEvent.java b/src/main/java/io/papermc/paper/logging/ExtraClassInfoLogEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..558427c65b4051923f73d15d85ee519be005060a
+index 0000000000000000000000000000000000000000..e58dd3db1f97c049610d8f85a6f787f8d1011f73
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/logging/ExtraClassInfoLogEvent.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,104 @@
 +package io.papermc.paper.logging;
 +
++import io.papermc.paper.util.ObfHelper;
++import java.lang.reflect.Field;
++import java.lang.reflect.Method;
++import java.util.Collections;
++import java.util.LinkedHashMap;
++import java.util.Map;
 +import org.apache.logging.log4j.core.LogEvent;
 +import org.apache.logging.log4j.core.impl.ExtendedClassInfo;
 +import org.apache.logging.log4j.core.impl.ExtendedStackTraceElement;
 +import org.apache.logging.log4j.core.impl.ThrowableProxy;
 +
 +public class ExtraClassInfoLogEvent extends DelegateLogEvent {
++    private static final Map<Class<?>, ExtendedClassInfo> EXTRA_INFO_CACHE = Collections.synchronizedMap(new LinkedHashMap<>(256, 0.75f, true) {
++        @Override
++        protected boolean removeEldestEntry(final Map.Entry<Class<?>, ExtendedClassInfo> eldest) {
++            return this.size() > 255;
++        }
++    });
++    private static final Method TO_CACHE_ENTRY;
++    private static final Field ELEMENT;
++
++    static {
++        try {
++            final Class<?> cls = Class.forName("org.apache.logging.log4j.core.impl.ThrowableProxyHelper");
++            TO_CACHE_ENTRY = cls.getDeclaredMethod("toCacheEntry", Class.class, boolean.class);
++            TO_CACHE_ENTRY.setAccessible(true);
++            ELEMENT = Class.forName("org.apache.logging.log4j.core.impl.ThrowableProxyHelper.CacheEntry")
++                .getDeclaredField("element");
++            ELEMENT.setAccessible(true);
++        } catch (final ReflectiveOperationException ex) {
++            throw new RuntimeException(ex);
++        }
++    }
 +
 +    private boolean fixed;
 +
@@ -176,6 +203,10 @@ index 0000000000000000000000000000000000000000..558427c65b4051923f73d15d85ee519b
 +        for (int i = 0; i < stackTrace.length; i++) {
 +            ExtendedClassInfo classInfo = stackTrace[i].getExtraClassInfo();
 +            if (classInfo.getLocation().equals("?")) {
++                if (this.handleDeobfed(stackTrace, i)) {
++                    continue;
++                }
++
 +                StackTraceElement element = stackTrace[i].getStackTraceElement();
 +                String classLoaderName = element.getClassLoaderName();
 +                if (classLoaderName != null) {
@@ -192,6 +223,31 @@ index 0000000000000000000000000000000000000000..558427c65b4051923f73d15d85ee519b
 +                rewriteStackTrace(proxy);
 +            }
 +        }
++    }
++
++    private boolean handleDeobfed(
++        final ExtendedStackTraceElement[] stackTrace,
++        final int i
++    ) {
++        final String className = stackTrace[i].getClassName();
++        final String reobf = ObfHelper.INSTANCE.reobfClassName(className);
++        if (!reobf.equals(className)) {
++            try {
++                final ExtendedClassInfo extraInfo = EXTRA_INFO_CACHE.computeIfAbsent(Class.forName(reobf), k -> {
++                    try {
++                        final Object cacheEntry = TO_CACHE_ENTRY.invoke(null, k, true);
++                        return (ExtendedClassInfo) ELEMENT.get(cacheEntry);
++                    } catch (final ReflectiveOperationException e) {
++                        throw new RuntimeException(e);
++                    }
++                });
++                stackTrace[i] = new ExtendedStackTraceElement(stackTrace[i].getStackTraceElement(), extraInfo);
++                return true;
++            } catch (final ReflectiveOperationException e) {
++                throw new RuntimeException(e);
++            }
++        }
++        return false;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/logging/ExtraClassInfoRewritePolicy.java b/src/main/java/io/papermc/paper/logging/ExtraClassInfoRewritePolicy.java
