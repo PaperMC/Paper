@@ -5,19 +5,30 @@ Subject: [PATCH] Fix MC-121706
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/RangedBowAttackGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/RangedBowAttackGoal.java
-index 6558b0d4bea99948fdc2b51751f3cfdc239d4b67..cfd0f516143838c6eda7c21f7ed4dcbfd776e864 100644
+index 6558b0d4bea99948fdc2b51751f3cfdc239d4b67..a774f0114ec90e9ea2f856f5e02c6b0269e9fb50 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/RangedBowAttackGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/RangedBowAttackGoal.java
-@@ -111,10 +111,10 @@ public class RangedBowAttackGoal<T extends Monster & RangedAttackMob> extends Go
+@@ -102,18 +102,18 @@ public class RangedBowAttackGoal<T extends Monster & RangedAttackMob> extends Go
+                 this.strafingTime = 0;
+             }
  
-                 this.mob.getMoveControl().strafe(this.strafingBackwards ? -0.5F : 0.5F, this.strafingClockwise ? 0.5F : -0.5F);
-                 this.mob.lookAt(livingEntity, 30.0F, 30.0F);
++            // Paper start - Fix MC-121708
+             if (this.strafingTime > -1) {
+                 if (d > (double)(this.attackRadiusSqr * 0.75F)) {
+                     this.strafingBackwards = false;
++                    this.mob.lookAt(livingEntity, 30.0F, 30.0F);
++                    this.mob.getMoveControl().strafe(this.strafingBackwards ? -0.5F : 0.5F, this.strafingClockwise ? 0.5F : -0.5F);
+                 } else if (d < (double)(this.attackRadiusSqr * 0.25F)) {
+                     this.strafingBackwards = true;
++                    this.mob.getLookControl().setLookAt(livingEntity, 30.0F, 30.0F);
+                 }
+-
+-                this.mob.getMoveControl().strafe(this.strafingBackwards ? -0.5F : 0.5F, this.strafingClockwise ? 0.5F : -0.5F);
+-                this.mob.lookAt(livingEntity, 30.0F, 30.0F);
 -            } else {
 -                this.mob.getLookControl().setLookAt(livingEntity, 30.0F, 30.0F);
              }
++            // Paper end
  
-+            this.mob.getLookControl().setLookAt(livingEntity, 30.0F, 30.0F); // Paper - Fix MC-121706
-+
              if (this.mob.isUsingItem()) {
                  if (!bl && this.seeTime < -60) {
-                     this.mob.stopUsingItem();
