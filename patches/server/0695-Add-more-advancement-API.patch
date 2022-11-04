@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: syldium <syldium@mailo.com>
 Date: Fri, 9 Jul 2021 18:50:40 +0200
-Subject: [PATCH] Add advancement display API
+Subject: [PATCH] Add more advancement API
 
 
 diff --git a/src/main/java/io/papermc/paper/advancement/PaperAdvancementDisplay.java b/src/main/java/io/papermc/paper/advancement/PaperAdvancementDisplay.java
@@ -86,10 +86,10 @@ index db939a754e9308ad68f1b09a970f7a1b00a673bf..538f19f15b553d14ad95f09b1c81359f
      public DisplayInfo(ItemStack icon, Component title, Component description, @Nullable ResourceLocation background, FrameType frame, boolean showToast, boolean announceToChat, boolean hidden) {
          this.title = title;
 diff --git a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancement.java b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancement.java
-index c47cae84f3b6970247d78382f48ae8ddbc202b59..0a46eeefa7d704350321828166f0049d497e3e41 100644
+index c47cae84f3b6970247d78382f48ae8ddbc202b59..77fe2fbec4902317b9d2a959ff8cfd00fe18b60b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancement.java
 +++ b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancement.java
-@@ -29,12 +29,33 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
+@@ -29,12 +29,38 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
          return Collections.unmodifiableCollection(this.handle.getCriteria().keySet());
      }
  
@@ -100,6 +100,11 @@ index c47cae84f3b6970247d78382f48ae8ddbc202b59..0a46eeefa7d704350321828166f0049d
 -            return null;
 +    public io.papermc.paper.advancement.AdvancementDisplay getDisplay() {
 +        return this.handle.getDisplay() == null ? null : this.handle.getDisplay().paper;
++    }
++
++    @Deprecated @io.papermc.paper.annotation.DoNotUse
++    public AdvancementDisplay getDisplay0() { // May be called by plugins via Commodore
++        return this.handle.getDisplay() == null ? null : new CraftAdvancementDisplay(this.handle.getDisplay());
 +    }
 +
 +    @Override
@@ -127,6 +132,42 @@ index c47cae84f3b6970247d78382f48ae8ddbc202b59..0a46eeefa7d704350321828166f0049d
      }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementDisplay.java b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementDisplay.java
+index 4aa8cda2bf72627b153e636a408fb3971caf2309..e29d7c6e1cef10a76c8630855fada11cee583d30 100644
+--- a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementDisplay.java
++++ b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementDisplay.java
+@@ -6,6 +6,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.util.CraftChatMessage;
+ import org.bukkit.inventory.ItemStack;
+ 
++@Deprecated // Paper
+ public class CraftAdvancementDisplay implements org.bukkit.advancement.AdvancementDisplay {
+ 
+     private final DisplayInfo handle;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index 27646d963bd1158f3fe0a9c0593a312404f0e7b0..e5259280c31d0ba6cfef527f9ac1ebd55a9ae859 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -54,6 +54,7 @@ public class Commodore
+     ) );
+ 
+     // Paper start - Plugin rewrites
++    private static final String CB_PACKAGE = org.bukkit.Bukkit.getServer().getClass().getPackageName().replace('.', '/');
+     private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
+     private static final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
+     private static Map<String, String> initReplacementsMap()
+@@ -434,6 +435,11 @@ public class Commodore
+                         {
+                             desc = getOriginalOrRewrite(desc);
+                         }
++                        if (owner.equals("org/bukkit/advancement/Advancement") && name.equals("getDisplay") && desc.endsWith(")Lorg/bukkit/advancement/AdvancementDisplay;")) {
++                            super.visitTypeInsn(Opcodes.CHECKCAST, CB_PACKAGE + "/advancement/CraftAdvancement");
++                            super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, CB_PACKAGE + "/advancement/CraftAdvancement", "getDisplay0", desc, false);
++                            return;
++                        }
+                         // Paper end
+ 
+                         if ( modern )
 diff --git a/src/test/java/io/papermc/paper/advancement/AdvancementFrameTest.java b/src/test/java/io/papermc/paper/advancement/AdvancementFrameTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..4d043e0e43ef8bb75788e195f95b5a50a51a2a48
