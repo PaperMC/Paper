@@ -43,13 +43,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - Plugin rewrites
 +    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
-+    private static final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
 +    private static Map<String, String> initReplacementsMap()
 +    {
 +        Map<String, String> getAndRemove = new HashMap<>();
 +        // Be wary of maven shade's relocations
-+        getAndRemove.put( "org/bukkit/".concat( "craftbukkit/libs/it/unimi/dsi/fastutil/" ), "org/bukkit/".concat( "craftbukkit/libs/" ) ); // Remap fastutil to our location
 +
++        final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
 +        if ( Boolean.getBoolean( "debug.rewriteForIde" ) && manifest != null)
 +        {
 +            // unversion incoming calls for pre-relocate debug work
@@ -182,3 +181,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          if ( modern )
                          {
                              if ( owner.equals( "org/bukkit/Material" ) )
+@@ -0,0 +0,0 @@ public class Commodore
+                     @Override
+                     public void visitLdcInsn(Object value)
+                     {
++                        // Paper start
++                        if (value instanceof Type type) {
++                            if (type.getSort() == Type.OBJECT || type.getSort() == Type.ARRAY) {
++                                value = Type.getType(getOriginalOrRewrite(type.getDescriptor()));
++                            }
++                        }
++                        // Paper end
+                         if ( value instanceof String && ( (String) value ).equals( "com.mysql.jdbc.Driver" ) )
+                         {
+                             super.visitLdcInsn( "com.mysql.cj.jdbc.Driver" );
