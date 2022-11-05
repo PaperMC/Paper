@@ -8,7 +8,7 @@ our own relocation. Also lets us rewrite NMS calls for when we're
 debugging in an IDE pre-relocate.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index a679133a3de51e26eb19932ece9ade292879aefd..89a32de0a3fbb7465b078b2aa1cc1d156a4a174d 100644
+index a679133a3de51e26eb19932ece9ade292879aefd..2c537a80951ddf98d3135ca19a34a238484c2d88 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 @@ -6,7 +6,9 @@ import java.io.FileOutputStream;
@@ -37,19 +37,18 @@ index a679133a3de51e26eb19932ece9ade292879aefd..89a32de0a3fbb7465b078b2aa1cc1d15
  /**
   * This file is imported from Commodore.
   *
-@@ -46,6 +53,42 @@ public class Commodore
+@@ -46,6 +53,41 @@ public class Commodore
              "org/bukkit/inventory/ItemStack (I)V setTypeId"
      ) );
  
 +    // Paper start - Plugin rewrites
 +    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
-+    private static final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
 +    private static Map<String, String> initReplacementsMap()
 +    {
 +        Map<String, String> getAndRemove = new HashMap<>();
 +        // Be wary of maven shade's relocations
-+        getAndRemove.put( "org/bukkit/".concat( "craftbukkit/libs/it/unimi/dsi/fastutil/" ), "org/bukkit/".concat( "craftbukkit/libs/" ) ); // Remap fastutil to our location
 +
++        final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
 +        if ( Boolean.getBoolean( "debug.rewriteForIde" ) && manifest != null)
 +        {
 +            // unversion incoming calls for pre-relocate debug work
@@ -80,7 +79,7 @@ index a679133a3de51e26eb19932ece9ade292879aefd..89a32de0a3fbb7465b078b2aa1cc1d15
      public static void main(String[] args)
      {
          OptionParser parser = new OptionParser();
-@@ -130,15 +173,86 @@ public class Commodore
+@@ -130,15 +172,86 @@ public class Commodore
  
          cr.accept( new ClassVisitor( Opcodes.ASM9, cw )
          {
@@ -167,7 +166,7 @@ index a679133a3de51e26eb19932ece9ade292879aefd..89a32de0a3fbb7465b078b2aa1cc1d15
                          if ( owner.equals( "org/bukkit/block/Biome" ) )
                          {
                              switch ( name )
-@@ -306,6 +420,14 @@ public class Commodore
+@@ -306,6 +419,14 @@ public class Commodore
                              return;
                          }
  
@@ -182,3 +181,17 @@ index a679133a3de51e26eb19932ece9ade292879aefd..89a32de0a3fbb7465b078b2aa1cc1d15
                          if ( modern )
                          {
                              if ( owner.equals( "org/bukkit/Material" ) )
+@@ -395,6 +516,13 @@ public class Commodore
+                     @Override
+                     public void visitLdcInsn(Object value)
+                     {
++                        // Paper start
++                        if (value instanceof Type type) {
++                            if (type.getSort() == Type.OBJECT || type.getSort() == Type.ARRAY) {
++                                value = Type.getType(getOriginalOrRewrite(type.getDescriptor()));
++                            }
++                        }
++                        // Paper end
+                         if ( value instanceof String && ( (String) value ).equals( "com.mysql.jdbc.Driver" ) )
+                         {
+                             super.visitLdcInsn( "com.mysql.cj.jdbc.Driver" );
