@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: FriwiDev <friwidev@gmail.com>
+Date: Mon, 3 Oct 2022 18:16:30 +0200
+Subject: [PATCH] Fix nothing mlg
+
+The issue here is that when jumping and sneaking right before
+the end of a long fall, the client will send incorrect move
+packets resulting in a teleport back. Due to this, the move
+packet (impact) of the player will not be considered for fall
+damage. The following move packet to the impact packet will
+have a positive y-value again due to the player jumping,
+resulting in a fall damage reset.
+
+Solution: Apply fall damage also while moving wrongly, but
+supply the real values the player sent to the damage calculation.
+This will not have any real negative effect, as the
+doCheckFallDamage method is meant to be called repeatedly anyway.
+
+Mojira-ID: MC-255653
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 602f78652d4e4df265e844fec4450e10443dd087..4ab50df1e4c855587ef030cf3f2a1502798cb721 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1564,6 +1564,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                             }
+                             if (!this.player.noPhysics && !this.player.isSleeping() && teleportBack) { // Paper end - optimise out extra getCubes
+                                 this.internalTeleport(d3, d4, d5, f, f1, Collections.emptySet(), false); // CraftBukkit - SPIGOT-1807: Don't call teleport event, when the client thinks the player is falling, because the chunks are not loaded on the client yet.
++                                this.player.doCheckFallDamage(this.player.getY() - prevY, packet.isOnGround()); // Paper - fix nothing mlg (sneaking and jumping before impact)
+                             } else {
+                                 // CraftBukkit start - fire PlayerMoveEvent
+                                 // Rest to old location first
