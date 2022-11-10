@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Tue, 2 Aug 2022 19:16:23 +0200
+Subject: [PATCH] Fix command preprocess cancelling and command changing
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index e2310de1152e56ab51bff144e6c32cd4d74798a9..334690049d7b74f4b001a2b1421e39a737534656 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2259,13 +2259,24 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(this.getCraftPlayer(), command, new LazyPlayerSet(this.server));
+         this.cserver.getPluginManager().callEvent(event);
+ 
+-        if (event.isCancelled()) {
+-            return;
+-        }
+         command = event.getMessage().substring(1);
+ 
+-        ParseResults<CommandSourceStack> parseresults = this.parseCommand(command);
+-        Map<String, PlayerChatMessage> map = (packet.command().equals(command)) ? this.collectSignedArguments(packet, PreviewableCommand.of(parseresults)) : Collections.emptyMap();
++        // Paper start - send message headers for cancelled or changed commands
++        ParseResults<CommandSourceStack> parseresults = this.parseCommand(packet.command());
++        Map<String, PlayerChatMessage> map = this.collectSignedArguments(packet, PreviewableCommand.of(parseresults));
++        if (event.isCancelled() || !packet.command().equals(command)) {
++            for (final PlayerChatMessage message : map.values()) {
++                player.server.getPlayerList().broadcastMessageHeader(message, Set.of());
++            }
++            if (event.isCancelled()) {
++                return;
++            }
++
++            // Remove signatures if the command was changed and use the changed command source stack
++            map.clear();
++            parseresults = this.parseCommand(command);
++        }
++        // Paper end
+         // CraftBukkit end
+         Iterator iterator = map.values().iterator();
+ 
+@@ -2569,6 +2580,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                 }
+             });
+         } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) { // Re-add "Command Only" flag check
++            this.server.getPlayerList().broadcastMessageHeader(message, Set.of()); // Paper
+             this.send(new ClientboundSystemChatPacket(Component.translatable("chat.cannotSend").withStyle(ChatFormatting.RED), false));
+         } else {
+             this.chat(s, message, true);
