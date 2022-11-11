@@ -215,10 +215,10 @@ index 65ee888280f917ccd11146505b7389513280a863..04bf08cbe45763f1338390c5ab4b0dcb
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java b/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e1198552a
+index 0000000000000000000000000000000000000000..a73e35e7c71c1337c2846010b3ccd6875cae640e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,88 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.destroystokyo.paper.io.SyncLoadFinder;
@@ -231,9 +231,14 @@ index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e
 +import java.io.FileOutputStream;
 +import java.io.PrintStream;
 +import java.io.StringWriter;
++import java.nio.charset.StandardCharsets;
 +import java.time.LocalDateTime;
 +import java.time.format.DateTimeFormatter;
 +import java.util.List;
++
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.event.HoverEvent;
++import net.minecraft.server.MinecraftServer;
 +import org.bukkit.command.CommandSender;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -242,6 +247,7 @@ index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e
 +import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
 +import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class SyncLoadInfoCommand implements PaperSubcommand {
@@ -256,9 +262,15 @@ index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e
 +        return CommandUtil.getListMatchingLast(sender, args, "clear");
 +    }
 +
++    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
++
 +    private void doSyncLoadInfo(final CommandSender sender, final String[] args) {
 +        if (!SyncLoadFinder.ENABLED) {
-+            sender.sendMessage(text("This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.", RED));
++            String systemFlag = "-Dpaper.debug-sync-loads=true";
++            sender.sendMessage(text().color(RED).append(text("This command requires the server startup flag '")).append(
++                text(systemFlag, WHITE).clickEvent(ClickEvent.copyToClipboard(systemFlag))
++                                       .hoverEvent(HoverEvent.showText(text("Click to copy the system flag")))).append(
++                text("' to be set.")));
 +            return;
 +        }
 +
@@ -269,7 +281,7 @@ index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e
 +        }
 +
 +        File file = new File(new File(new File("."), "debug"),
-+            "sync-load-info" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
++            "sync-load-info" + FORMATTER.format(LocalDateTime.now()) + ".txt");
 +        file.getParentFile().mkdirs();
 +        sender.sendMessage(text("Writing sync load info to " + file, GREEN));
 +
@@ -283,17 +295,15 @@ index 0000000000000000000000000000000000000000..1120aef5b0dd983c467167f77245884e
 +            jsonWriter.setLenient(false);
 +            Streams.write(data, jsonWriter);
 +
-+            String fileData = stringWriter.toString();
-+
 +            try (
-+                PrintStream out = new PrintStream(new FileOutputStream(file), false, "UTF-8")
++                PrintStream out = new PrintStream(new FileOutputStream(file), false, StandardCharsets.UTF_8)
 +            ) {
-+                out.print(fileData);
++                out.print(stringWriter);
 +            }
 +            sender.sendMessage(text("Successfully written sync load information!", GREEN));
 +        } catch (Throwable thr) {
-+            sender.sendMessage(text("Failed to write sync load information!", RED));
-+            thr.printStackTrace();
++            sender.sendMessage(text("Failed to write sync load information! See the console for more info.", RED));
++            MinecraftServer.LOGGER.warn("Error occurred while dumping sync chunk load info", thr);
 +        }
 +    }
 +}
