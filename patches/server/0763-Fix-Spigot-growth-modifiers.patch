@@ -10,6 +10,40 @@ Also fix above-mentioned modifiers from having the reverse effect
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
+diff --git a/src/main/java/net/minecraft/world/level/block/CactusBlock.java b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+index 1ec242205b82a5a1f10deb2312795cc5dc157a76..359172280fc5d8826fc23a7d9c030da0a9d146cd 100644
+--- a/src/main/java/net/minecraft/world/level/block/CactusBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+@@ -59,14 +59,26 @@ public class CactusBlock extends Block {
+                 int j = (Integer) state.getValue(CactusBlock.AGE);
+ 
+                 int modifier = world.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+-                if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
++                boolean fastGrow = modifier >= (16 * 100f); // Paper
++                if (j == 15 || (fastGrow && random.nextFloat() < modifier / (16 * 100f))) { // Spigot - SPIGOT-7159: Better modifier resolution // Paper handle fastGrow >= 1600
+                     CraftEventFactory.handleBlockGrowEvent(world, blockposition1, this.defaultBlockState()); // CraftBukkit
+                     BlockState iblockdata1 = (BlockState) state.setValue(CactusBlock.AGE, 0);
+ 
+                     world.setBlock(pos, iblockdata1, 4);
+                     world.neighborChanged(iblockdata1, blockposition1, this, pos, false);
+-                } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    world.setBlock(pos, (BlockState) state.setValue(CactusBlock.AGE, j + 1), 4);
++                    // Paper start - handle fast grow check (we don't have time to wait some tick later)
++                    if (fastGrow) {
++                        tick(state, world, blockposition1, random);
++                    }
++                    // Paper end
++                } else if (!fastGrow && (modifier >= 100 || random.nextFloat() < (modifier / 100.0f))) { // Spigot - SPIGOT-7159: Better modifier resolution // Paper handle lower bound < 100
++                    // Paper start - handle upper bound > 100 -> break vanilla behavior but less than spigot
++                    int grow = 1;
++                    if (modifier > 100 && random.nextFloat() < modifier / (16 * 100f)) {
++                        grow = Math.round(modifier / 100f);
++                    }
++                    // Paper end
++                    world.setBlock(pos, (BlockState) state.setValue(CactusBlock.AGE, Math.min(j + grow, 15)), 4); // Paper clamp
+                 }
+ 
+             }
 diff --git a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
 index 7d9056f9d841fbbdeaf1e323d818f2f1267b47e8..4940e101250874111e9c55aeb5b87b28602246f0 100644
 --- a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
@@ -57,6 +91,37 @@ index 4e30917fbc5c539fefc8dc391b902241f7c5ad35..b7517d1e8a5d5eb719de5eda424b7dd2
      protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
          return (BlockState) state.cycle(GrowingPlantHeadBlock.AGE);
      }
+diff --git a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+index 6b400a4759c8c8612a3b5c96ca0d87ef9dc71435..3e6814960ea6c41e35d91a67656ed2ff7851e4a1 100644
+--- a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+@@ -56,11 +56,23 @@ public class SugarCaneBlock extends Block {
+                 int j = (Integer) state.getValue(SugarCaneBlock.AGE);
+ 
+                 int modifier = world.spigotConfig.caneModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+-                if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
++                boolean fastGrow = modifier >= (16 * 100f); // Paper
++                if (j == 15 || (fastGrow && random.nextFloat() < modifier / (16 * 100f))) { // Spigot - SPIGOT-7159: Better modifier resolution // Paper handle fastGrow >= 1600
+                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos.above(), this.defaultBlockState()); // CraftBukkit
+                     world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, 0), 4);
+-                } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, j + 1), 4);
++                    // Paper start - handle fast grow check (we don't have time to wait some tick later)
++                    if (fastGrow) {
++                        tick(state, world, pos, random);
++                    }
++                    // Paper end
++                } else if (!fastGrow && (modifier >= 100 || random.nextFloat() < (modifier / 100.0f))) { // Spigot - SPIGOT-7159: Better modifier resolution // Paper handle lower bound < 100
++                    // Paper start - handle upper bound > 100 -> break vanilla behavior but less than spigot
++                    int grow = 1;
++                    if (modifier > 100 && random.nextFloat() < modifier / (16 * 100f)) {
++                        grow = Math.round(modifier / 100f);
++                    }
++                    // Paper end
++                    world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, Math.min(j + grow, 15)), 4); // Paper clamp
+                 }
+             }
+         }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 index 102b038e2566cba4f259a61e502ff0808c47234c..6bcc46795d1f78746192cc107c4a1f61580ec3c5 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
