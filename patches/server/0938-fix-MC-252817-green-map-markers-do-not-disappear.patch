@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: braindead <totsuka.sama@gmail.com>
+Date: Sat, 5 Nov 2022 17:47:26 -0400
+Subject: [PATCH] fix MC-252817 (green map markers do not disappear).
+
+this bug is caused by the fact that the itemframe's item is set to empty before the green marker is requested to be removed. this is fixed by getting the mapid from this method's parameter, rather than the air block now stored by the item frame.
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index d2a77b4ca343d19e1c70afe3f3906a9bd53d0eec..b9cb39efe14a877ddedc5a5e4141ee5199ea8daf 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -283,7 +283,9 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     private void removeFramedMap(ItemStack itemstack) {
+-        this.getFramedMapId().ifPresent((i) -> {
++        // Paper start - fix MC-252817 (green map markers do not disappear)
++        this.getFramedMapIdFromItem(itemstack).ifPresent((i) -> {
++            // Paper end
+             MapItemSavedData worldmap = MapItem.getSavedData(i, this.level);
+ 
+             if (worldmap != null) {
+@@ -301,7 +303,12 @@ public class ItemFrame extends HangingEntity {
+ 
+     public OptionalInt getFramedMapId() {
+         ItemStack itemstack = this.getItem();
++        // Paper start - fix MC-252817 (green map markers do not disappear)
++        return this.getFramedMapIdFromItem(itemstack);
++    }
+ 
++    public OptionalInt getFramedMapIdFromItem(ItemStack itemstack) {
++        // Paper end
+         if (itemstack.is(Items.FILLED_MAP)) {
+             Integer integer = MapItem.getMapId(itemstack);
+ 
