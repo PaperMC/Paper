@@ -16,14 +16,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return RUNNING_AS_ROOT_OR_ADMIN;
      }
 +
-+    public static boolean isMissingAWTDependency() {
++    public static String awtDependencyCheck() {
 +        try {
 +            new java.awt.Color(0);
 +        } catch (UnsatisfiedLinkError e) {
-+            return true;
++            return e.getClass().getName() + ": " + e.getMessage();
 +        }
 +
-+        return false;
++        return null;
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
@@ -35,10 +35,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 +            // Paper start - Warn on headless
-+            if (io.papermc.paper.util.ServerEnvironment.isMissingAWTDependency()) {
++            String awtException = io.papermc.paper.util.ServerEnvironment.awtDependencyCheck();
++            if (awtException != null) {
 +                Main.LOGGER.error("You are using a headless JRE distribution.");
 +                Main.LOGGER.error("This distribution is missing certain graphic libraries that the Minecraft server needs to function.");
 +                Main.LOGGER.error("For instructions on how to install the non-headless JRE, see https://docs.papermc.io/misc/java-install");
++                Main.LOGGER.error("");
++                Main.LOGGER.error(awtException);
 +                return;
 +            }
 +            // Paper end
