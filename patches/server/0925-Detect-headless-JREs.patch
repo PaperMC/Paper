@@ -8,7 +8,7 @@ This patch detects the missing dependency and stops the server with a clear erro
 containing a link to instructions on how to install a non-headless JRE.
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
-index 6bd0afddbcc461149dfe9a5c7a86fff6ea13a5f1..025731a189cff83576648232a91de69922241123 100644
+index 6bd0afddbcc461149dfe9a5c7a86fff6ea13a5f1..148d233f4f5278ff39eacdaa0f4f0e7d73be936a 100644
 --- a/src/main/java/io/papermc/paper/util/ServerEnvironment.java
 +++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
 @@ -37,4 +37,14 @@ public class ServerEnvironment {
@@ -16,29 +16,32 @@ index 6bd0afddbcc461149dfe9a5c7a86fff6ea13a5f1..025731a189cff83576648232a91de699
          return RUNNING_AS_ROOT_OR_ADMIN;
      }
 +
-+    public static boolean isMissingAWTDependency() {
++    public static String awtDependencyCheck() {
 +        try {
 +            new java.awt.Color(0);
 +        } catch (UnsatisfiedLinkError e) {
-+            return true;
++            return e.getClass().getName() + ": " + e.getMessage();
 +        }
 +
-+        return false;
++        return null;
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 5962f7a2b185d7d54a0f9e341a4fdf6e6f1c1ec5..88ef769abfa163f923258d1f83d47b28c491eaca 100644
+index 5962f7a2b185d7d54a0f9e341a4fdf6e6f1c1ec5..0066b1abc008d245825abf1d256cb87fa9c2d877 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -155,6 +155,15 @@ public class Main {
+@@ -155,6 +155,18 @@ public class Main {
                  return;
              }
  
 +            // Paper start - Warn on headless
-+            if (io.papermc.paper.util.ServerEnvironment.isMissingAWTDependency()) {
++            String awtException = io.papermc.paper.util.ServerEnvironment.awtDependencyCheck();
++            if (awtException != null) {
 +                Main.LOGGER.error("You are using a headless JRE distribution.");
 +                Main.LOGGER.error("This distribution is missing certain graphic libraries that the Minecraft server needs to function.");
 +                Main.LOGGER.error("For instructions on how to install the non-headless JRE, see https://docs.papermc.io/misc/java-install");
++                Main.LOGGER.error("");
++                Main.LOGGER.error(awtException);
 +                return;
 +            }
 +            // Paper end
