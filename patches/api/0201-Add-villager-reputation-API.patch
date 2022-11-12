@@ -6,13 +6,15 @@ Subject: [PATCH] Add villager reputation API
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/villager/Reputation.java b/src/main/java/com/destroystokyo/paper/entity/villager/Reputation.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1cc9ef255df888cb7dd7f7f2c5014e818d1be613
+index 0000000000000000000000000000000000000000..0a69e21b0b3001c9cc50951b4b8bd593f6fa74be
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/villager/Reputation.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,57 @@
 +package com.destroystokyo.paper.entity.villager;
 +
 +import com.google.common.base.Preconditions;
++
++import java.util.EnumMap;
 +import java.util.Map;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -20,26 +22,17 @@ index 0000000000000000000000000000000000000000..1cc9ef255df888cb7dd7f7f2c5014e81
 + * A reputation score for a player on a villager.
 + */
 +public final class Reputation {
-+    private static final ReputationType[] REPUTATION_TYPES = ReputationType.values(); // Avoid allocation
++
 +    @NotNull
-+    private final int[] reputation;
++    private final Map<ReputationType, Integer> reputation;
 +
 +    public Reputation() {
-+        this(new int[REPUTATION_TYPES.length]);
++        this(new EnumMap<>(ReputationType.class));
 +    }
 +
-+    // Package level to avoid plugins creating reputations with "magic values".
-+    Reputation(@NotNull int[] reputation) {
-+        this.reputation = reputation;
-+    }
-+
-+    public Reputation(@NotNull final Map<ReputationType, Integer> reputation) {
-+        this();
++    public Reputation(@NotNull Map<ReputationType, Integer> reputation) {
 +        Preconditions.checkNotNull(reputation, "reputation cannot be null");
-+
-+        for (Map.Entry<ReputationType, Integer> entry : reputation.entrySet()) {
-+            setReputation(entry.getKey(), entry.getValue());
-+        }
++        this.reputation = reputation;
 +    }
 +
 +    /**
@@ -50,7 +43,7 @@ index 0000000000000000000000000000000000000000..1cc9ef255df888cb7dd7f7f2c5014e81
 +     */
 +    public int getReputation(@NotNull ReputationType type) {
 +        Preconditions.checkNotNull(type, "the reputation type cannot be null");
-+        return reputation[type.ordinal()];
++        return this.reputation.getOrDefault(type, 0);
 +    }
 +
 +    /**
@@ -61,7 +54,17 @@ index 0000000000000000000000000000000000000000..1cc9ef255df888cb7dd7f7f2c5014e81
 +     */
 +    public void setReputation(@NotNull ReputationType type, int value) {
 +        Preconditions.checkNotNull(type, "the reputation type cannot be null");
-+        reputation[type.ordinal()] = value;
++        this.reputation.put(type, value);
++    }
++
++    /**
++     * Gets if a reputation value is currently set for a specific {@link ReputationType}.
++     *
++     * @param type The {@link ReputationType type} to check
++     * @return If there is a value for this {@link ReputationType type} set.
++     */
++    public boolean hasReputationSet(@NotNull ReputationType type) {
++        return this.reputation.containsKey(type);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/entity/villager/ReputationType.java b/src/main/java/com/destroystokyo/paper/entity/villager/ReputationType.java
