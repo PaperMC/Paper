@@ -1,6 +1,23 @@
 --- a/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EndDragonFight.java
-@@ -111,14 +111,20 @@
+@@ -74,6 +74,7 @@
+     private static final int GATEWAY_DISTANCE = 96;
+     public static final int DRAGON_SPAWN_Y = 128;
+     private final Predicate<Entity> validPlayer;
++    private static final Component DEFAULT_BOSS_EVENT_NAME = Component.translatable("entity.minecraft.ender_dragon"); // Paper - ensure reset EnderDragon boss event name
+     public final ServerBossEvent dragonEvent;
+     public final ServerLevel level;
+     private final BlockPos origin;
+@@ -102,7 +103,7 @@
+     }
+ 
+     public EndDragonFight(ServerLevel world, long gatewaysSeed, EndDragonFight.Data data, BlockPos origin) {
+-        this.dragonEvent = (ServerBossEvent) (new ServerBossEvent(Component.translatable("entity.minecraft.ender_dragon"), BossEvent.BossBarColor.PINK, BossEvent.BossBarOverlay.PROGRESS)).setPlayBossMusic(true).setCreateWorldFog(true);
++        this.dragonEvent = (ServerBossEvent) (new ServerBossEvent(DEFAULT_BOSS_EVENT_NAME, BossEvent.BossBarColor.PINK, BossEvent.BossBarOverlay.PROGRESS)).setPlayBossMusic(true).setCreateWorldFog(true); // Paper - ensure reset EnderDragon boss event name
+         this.gateways = new ObjectArrayList();
+         this.ticksSinceLastPlayerScan = 21;
+         this.skipArenaLoadedCheck = false;
+@@ -111,14 +112,20 @@
          this.origin = origin;
          this.validPlayer = EntitySelector.ENTITY_STILL_ALIVE.and(EntitySelector.withinDistance((double) origin.getX(), (double) (128 + origin.getY()), (double) origin.getZ(), 192.0D));
          this.needsStateScanning = data.needsStateScanning;
@@ -23,7 +40,7 @@
          this.gateways.addAll((Collection) data.gateways.orElseGet(() -> {
              ObjectArrayList<Integer> objectarraylist = new ObjectArrayList(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
  
-@@ -206,9 +212,9 @@
+@@ -206,9 +213,9 @@
              this.dragonUUID = entityenderdragon.getUUID();
              EndDragonFight.LOGGER.info("Found that there's a dragon still alive ({})", entityenderdragon);
              this.dragonKilled = false;
@@ -35,7 +52,7 @@
                  this.dragonUUID = null;
              }
          }
-@@ -404,9 +410,23 @@
+@@ -404,8 +411,22 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
              this.spawnNewGateway();
@@ -53,15 +70,14 @@
 +                // this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
 +            } else {
 +                eggEvent.setCancelled(true);
-             }
++            }
 +            if (eggEvent.callEvent()) {
 +                eggEvent.getNewState().update(true);
 +                // Paper end - Add DragonEggFormEvent
-+            }
+             }
  
              this.previouslyKilled = true;
-             this.dragonKilled = true;
-@@ -449,6 +469,11 @@
+@@ -449,6 +470,11 @@
              }
          }
  
@@ -73,7 +89,7 @@
          if (worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation)) {
              int i = Mth.positiveCeilDiv(4, 16);
  
-@@ -469,6 +494,7 @@
+@@ -469,6 +495,7 @@
              entityenderdragon.moveTo((double) this.origin.getX(), (double) (128 + this.origin.getY()), (double) this.origin.getZ(), this.level.random.nextFloat() * 360.0F, 0.0F);
              this.level.addFreshEntity(entityenderdragon);
              this.dragonUUID = entityenderdragon.getUUID();
@@ -81,7 +97,18 @@
          }
  
          return entityenderdragon;
-@@ -513,7 +539,7 @@
+@@ -480,6 +507,10 @@
+             this.ticksSinceDragonSeen = 0;
+             if (dragon.hasCustomName()) {
+                 this.dragonEvent.setName(dragon.getDisplayName());
++                // Paper start - ensure reset EnderDragon boss event name
++            } else {
++                this.dragonEvent.setName(DEFAULT_BOSS_EVENT_NAME);
++                // Paper end - ensure reset EnderDragon boss event name
+             }
+         }
+ 
+@@ -513,7 +544,7 @@
          return this.previouslyKilled;
      }
  
@@ -90,7 +117,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              BlockPos blockposition = this.portalLocation;
  
-@@ -540,19 +566,19 @@
+@@ -540,19 +571,19 @@
                  List<EndCrystal> list1 = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockposition1.relative(enumdirection, 2)));
  
                  if (list1.isEmpty()) {
@@ -114,7 +141,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              for (BlockPattern.BlockPatternMatch shapedetector_shapedetectorcollection = this.findExitPortal(); shapedetector_shapedetectorcollection != null; shapedetector_shapedetectorcollection = this.findExitPortal()) {
                  for (int i = 0; i < this.exitPortalPattern.getWidth(); ++i) {
-@@ -571,9 +597,10 @@
+@@ -571,9 +602,10 @@
              this.respawnStage = DragonRespawnAnimation.START;
              this.respawnTime = 0;
              this.spawnExitPortal(false);
