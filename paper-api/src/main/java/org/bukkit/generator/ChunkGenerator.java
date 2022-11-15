@@ -42,12 +42,12 @@ import org.jetbrains.annotations.Nullable;
  * Some aspects of world generation can be delegated to the Vanilla generator.
  * The following methods can be overridden to enable this:
  * <ul>
- * <li>{@link ChunkGenerator#shouldGenerateNoise()}</li>
- * <li>{@link ChunkGenerator#shouldGenerateSurface()}</li>
- * <li>{@link ChunkGenerator#shouldGenerateCaves()}</li>
- * <li>{@link ChunkGenerator#shouldGenerateDecorations()}</li>
- * <li>{@link ChunkGenerator#shouldGenerateMobs()}</li>
- * <li>{@link ChunkGenerator#shouldGenerateStructures()}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateNoise()} or {@link ChunkGenerator#shouldGenerateNoise(WorldInfo, Random, int, int)}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateSurface()} or {@link ChunkGenerator#shouldGenerateSurface(WorldInfo, Random, int, int)}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateCaves()} or {@link ChunkGenerator#shouldGenerateCaves(WorldInfo, Random, int, int)}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateDecorations()} or {@link ChunkGenerator#shouldGenerateDecorations(WorldInfo, Random, int, int)}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateMobs()} or {@link ChunkGenerator#shouldGenerateMobs(WorldInfo, Random, int, int)}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateStructures()} or {@link ChunkGenerator#shouldGenerateStructures(WorldInfo, Random, int, int)}</li>
  * </ul>
  */
 public abstract class ChunkGenerator {
@@ -373,10 +373,51 @@ public abstract class ChunkGenerator {
      * <p>
      * The Vanilla noise is generated <b>before</b>
      * {@link #generateNoise(WorldInfo, Random, int, int, ChunkData)} is called.
+     * <p>
+     * This is method is not called (and has therefore no effect), if
+     * {@link #shouldGenerateNoise(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla noise
+     * @see #shouldGenerateNoise(WorldInfo, Random, int, int)
      */
     public boolean shouldGenerateNoise() {
+        return false;
+    }
+
+    /**
+     * Gets if the server should generate Vanilla noise.
+     * <p>
+     * The Vanilla noise is generated <b>before</b>
+     * {@link #generateNoise(WorldInfo, Random, int, int, ChunkData)} is called.
+     * <p>
+     * Only this method is called if both this and
+     * {@link #shouldGenerateNoise()} are overridden.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
+     * @return true if the server should generate Vanilla noise
+     * @see #shouldGenerateNoise()
+     */
+    public boolean shouldGenerateNoise(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ) {
+        return shouldGenerateNoise();
+    }
+
+    /**
+     * Gets if the server should generate Vanilla surface.
+     * <p>
+     * The Vanilla surface is generated <b>before</b>
+     * {@link #generateSurface(WorldInfo, Random, int, int, ChunkData)} is
+     * called.
+     * <p>
+     * This is method is not called (and has therefore no effect), if
+     * {@link #shouldGenerateSurface(WorldInfo, Random, int, int)} is overridden.
+     *
+     * @return true if the server should generate Vanilla surface
+     * @see #shouldGenerateSurface(WorldInfo, Random, int, int)
+     */
+    public boolean shouldGenerateSurface() {
         return false;
     }
 
@@ -386,11 +427,19 @@ public abstract class ChunkGenerator {
      * The Vanilla surface is generated <b>before</b>
      * {@link #generateSurface(WorldInfo, Random, int, int, ChunkData)} is
      * called.
+     * <p>
+     * Only this method is called if both this and
+     * {@link #shouldGenerateSurface()} are overridden.
      *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
      * @return true if the server should generate Vanilla surface
+     * @see #shouldGenerateSurface()
      */
-    public boolean shouldGenerateSurface() {
-        return false;
+    public boolean shouldGenerateSurface(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ) {
+        return shouldGenerateSurface();
     }
 
     /**
@@ -413,10 +462,51 @@ public abstract class ChunkGenerator {
      * <p>
      * The Vanilla caves are generated <b>before</b>
      * {@link #generateCaves(WorldInfo, Random, int, int, ChunkData)} is called.
+     * <p>
+     * This is method is not called (and has therefore no effect), if
+     * {@link #shouldGenerateCaves(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla caves
+     * @see #shouldGenerateCaves(WorldInfo, Random, int, int)
      */
     public boolean shouldGenerateCaves() {
+        return false;
+    }
+
+    /**
+     * Gets if the server should generate Vanilla caves.
+     * <p>
+     * The Vanilla caves are generated <b>before</b>
+     * {@link #generateCaves(WorldInfo, Random, int, int, ChunkData)} is called.
+     * <p>
+     * Only this method is called if both this and
+     * {@link #shouldGenerateCaves()} are overridden.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
+     * @return true if the server should generate Vanilla caves
+     * @see #shouldGenerateCaves()
+     */
+    public boolean shouldGenerateCaves(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ) {
+        return shouldGenerateCaves();
+    }
+
+    /**
+     * Gets if the server should generate Vanilla decorations after this
+     * ChunkGenerator.
+     * <p>
+     * The Vanilla decoration are generated <b>before</b> any
+     * {@link BlockPopulator} are called.
+     * <p>
+     * This is method is not called (and has therefore no effect), if
+     * {@link #shouldGenerateDecorations(WorldInfo, Random, int, int)} is overridden.
+     *
+     * @return true if the server should generate Vanilla decorations
+     * @see #shouldGenerateDecorations(WorldInfo, Random, int, int)
+     */
+    public boolean shouldGenerateDecorations() {
         return false;
     }
 
@@ -426,31 +516,83 @@ public abstract class ChunkGenerator {
      * <p>
      * The Vanilla decoration are generated <b>before</b> any
      * {@link BlockPopulator} are called.
+     * <p>
+     * Only this method is called if both this and
+     * {@link #shouldGenerateDecorations()} are overridden.
      *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
      * @return true if the server should generate Vanilla decorations
+     * @see #shouldGenerateDecorations()
      */
-    public boolean shouldGenerateDecorations() {
-        return false;
+    public boolean shouldGenerateDecorations(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ) {
+        return shouldGenerateDecorations();
     }
 
     /**
      * Gets if the server should generate Vanilla mobs after this
      * ChunkGenerator.
+     * <p>
+     * This is method is not called (and has therefore no effect), if
+     * {@link #shouldGenerateMobs(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla mobs
+     * @see #shouldGenerateMobs(WorldInfo, Random, int, int)
      */
     public boolean shouldGenerateMobs() {
         return false;
     }
 
     /**
+     * Gets if the server should generate Vanilla mobs after this
+     * ChunkGenerator.
+     * <p>
+     * Only this method is called if both this and
+     * {@link #shouldGenerateMobs()} are overridden.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
+     * @return true if the server should generate Vanilla mobs
+     * @see #shouldGenerateMobs()
+     */
+    public boolean shouldGenerateMobs(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ) {
+        return shouldGenerateMobs();
+    }
+
+    /**
      * Gets if the server should generate Vanilla structures after this
      * ChunkGenerator.
+     * <p>
+     * This is method is not called (and has therefore no effect), if
+     * {@link #shouldGenerateStructures(WorldInfo, Random, int, int)} is overridden.
      *
      * @return true if the server should generate Vanilla structures
+     * @see #shouldGenerateStructures(WorldInfo, Random, int, int)
      */
     public boolean shouldGenerateStructures() {
         return false;
+    }
+
+    /**
+     * Gets if the server should generate Vanilla structures after this
+     * ChunkGenerator.
+     * <p>
+     * Only this method is called if both this and
+     * {@link #shouldGenerateStructures()} are overridden.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param chunkX The X-coordinate of the chunk
+     * @param chunkZ The Z-coordinate of the chunk
+     * @return true if the server should generate Vanilla structures
+     * @see #shouldGenerateStructures()
+     */
+    public boolean shouldGenerateStructures(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ) {
+        return shouldGenerateStructures();
     }
 
     /**
