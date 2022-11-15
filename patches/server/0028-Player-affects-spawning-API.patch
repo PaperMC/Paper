@@ -5,7 +5,7 @@ Subject: [PATCH] Player affects spawning API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index 5c3b11f738c1ea19981cc878aa6c2323497391a0..b91a61be7c4829fce0ff8da290eab580e20bb78d 100644
+index 5c3b11f738c1ea19981cc878aa6c2323497391a0..6fd874a83a248e6a7d427d18d11fc608544662c5 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 @@ -29,6 +29,11 @@ public final class EntitySelector {
@@ -13,15 +13,15 @@ index 5c3b11f738c1ea19981cc878aa6c2323497391a0..b91a61be7c4829fce0ff8da290eab580
  
      private EntitySelector() {}
 +    // Paper start
-+    public static final Predicate<Entity> affectsSpawning = (entity) -> {
-+        return !entity.isSpectator() && entity.isAlive() && (entity instanceof net.minecraft.server.level.ServerPlayer) && ((net.minecraft.server.level.ServerPlayer) entity).affectsSpawning;
++    public static final Predicate<Entity> PLAYER_AFFECTS_SPAWNING = (entity) -> {
++        return !entity.isSpectator() && entity.isAlive() && entity instanceof Player player && player.affectsSpawning;
 +    };
 +    // Paper end
  
      public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
          double d4 = max * max;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index ce04fa5ae8c539fd6f6aa7648a4cdce6b680463e..0b056e65b2efe0f96a6beecfc41709bfa18983ca 100644
+index 7e9954dc290e7ee069cceb45a744bb2c9a8b7f17..ae35b7119f06f751b1d3e51f4d516c5fe61d9445 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -790,7 +790,7 @@ public abstract class Mob extends LivingEntity {
@@ -29,10 +29,23 @@ index ce04fa5ae8c539fd6f6aa7648a4cdce6b680463e..0b056e65b2efe0f96a6beecfc41709bf
              this.discard();
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Player entityhuman = this.level.getNearestPlayer(this, -1.0D);
-+            Player entityhuman = this.level.findNearbyPlayer(this, -1.0D, EntitySelector.affectsSpawning); // Paper
++            Player entityhuman = this.level.findNearbyPlayer(this, -1.0D, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper
  
              if (entityhuman != null) {
                  double d0 = entityhuman.distanceToSqr((Entity) this);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
+index 114352b9e8aeea7c728b6b58047e38e2530401a9..43e481377ba1596e740eacefd21d9664b7807883 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
+@@ -24,7 +24,7 @@ public class SkeletonTrapGoal extends Goal {
+ 
+     @Override
+     public boolean canUse() {
+-        return this.horse.level.hasNearbyAlivePlayer(this.horse.getX(), this.horse.getY(), this.horse.getZ(), 10.0D);
++        return this.horse.level.hasNearbyAlivePlayerThatAffectsSpawning(this.horse.getX(), this.horse.getY(), this.horse.getZ(), 10.0D); // Paper - Affects Spawning API
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 index 87f66fd33e404367d924137b2d8aac3b06937f43..2dcda3b03796655da443e1b3dd68c6f6bca20d21 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
@@ -46,6 +59,19 @@ index 87f66fd33e404367d924137b2d8aac3b06937f43..2dcda3b03796655da443e1b3dd68c6f6
          } else {
              return false;
          }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 1b48576beca178af14bfab297bd427b5f5bdaf42..d3ca0706e8dc3160d2100d23788dd3d501b29215 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -324,7 +324,7 @@ public class Zombie extends Monster {
+ 
+                     if (NaturalSpawner.isSpawnPositionOk(entitypositiontypes_surface, this.level, blockposition, entitytypes) && SpawnPlacements.checkSpawnRules(entitytypes, worldserver, MobSpawnType.REINFORCEMENT, blockposition, this.level.random)) {
+                         entityzombie.setPos((double) i1, (double) j1, (double) k1);
+-                        if (!this.level.hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && this.level.isUnobstructed(entityzombie) && this.level.noCollision((Entity) entityzombie) && !this.level.containsAnyLiquid(entityzombie.getBoundingBox())) {
++                        if (!this.level.hasNearbyAlivePlayerThatAffectsSpawning((double) i1, (double) j1, (double) k1, 7.0D) && this.level.isUnobstructed(entityzombie) && this.level.noCollision((Entity) entityzombie) && !this.level.containsAnyLiquid(entityzombie.getBoundingBox())) { // Paper - Affects Spawning API
+                             entityzombie.setTarget(entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET, true); // CraftBukkit
+                             entityzombie.finalizeSpawn(worldserver, this.level.getCurrentDifficultyAt(entityzombie.blockPosition()), MobSpawnType.REINFORCEMENT, (SpawnGroupData) null, (CompoundTag) null);
+                             worldserver.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
 index 0232baa005e2839317d7ac2d64c88fb93bc29e5e..08b0b7b9146f58c4eb263d5ce1fee1b08d43fafe 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
@@ -61,7 +87,7 @@ index 0232baa005e2839317d7ac2d64c88fb93bc29e5e..08b0b7b9146f58c4eb263d5ce1fee1b0
      // CraftBukkit start
      public boolean fauxSleeping;
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index ab22310d5ab4ad7014b88080cbd44a2881002b55..c5b9b19763fd944b4f31c6d3c9b71d372f8403cf 100644
+index ab22310d5ab4ad7014b88080cbd44a2881002b55..b0ac72a69e13f2376aa4c66d9a1f5a01b480785c 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -51,7 +51,7 @@ public abstract class BaseSpawner {
@@ -69,47 +95,41 @@ index ab22310d5ab4ad7014b88080cbd44a2881002b55..c5b9b19763fd944b4f31c6d3c9b71d37
  
      public boolean isNearPlayer(Level world, BlockPos pos) {
 -        return world.hasNearbyAlivePlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange);
-+        return world.isAffectsSpawningPlayerNearby((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper
++        return world.hasNearbyAlivePlayerThatAffectsSpawning((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper - Affects Spawning API
      }
  
      public void clientTick(Level world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index f62e4e36dd26bde067e4787fd0da1440b15a57fa..be2ec73b5900354a9c340b0a03affd59dbf55377 100644
+index f62e4e36dd26bde067e4787fd0da1440b15a57fa..abd74c6502e07857e0f64c5f99534b68975acd69 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
-@@ -82,8 +82,8 @@ public interface EntityGetter {
+@@ -82,6 +82,11 @@ public interface EntityGetter {
          }
      }
  
--    @Nullable
--    default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
-+    default Player findNearbyPlayer(Entity entity, double d0, @Nullable Predicate<Entity> predicate) { return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), d0, predicate); } // Paper
-+    @Nullable default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) { // Paper
++    // Paper start
++    default @Nullable Player findNearbyPlayer(Entity entity, double maxDistance, @Nullable Predicate<Entity> predicate) {
++        return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), maxDistance, predicate);
++    }
++    // Paper end
+     @Nullable
+     default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
          double d = -1.0D;
-         Player player = null;
- 
-@@ -111,6 +111,27 @@ public interface EntityGetter {
+@@ -111,6 +116,20 @@ public interface EntityGetter {
          return this.getNearestPlayer(x, y, z, maxDistance, predicate);
      }
  
-+    // Paper end
-+    default boolean isAffectsSpawningPlayerNearby(double d0, double d1, double d2, double d3) {
-+        java.util.Iterator iterator = this.players().iterator();
-+        double d4;
-+        do {
-+            Player entityhuman;
-+            do {
-+                if (!iterator.hasNext()) {
-+                    return false;
++    // Paper start
++    default boolean hasNearbyAlivePlayerThatAffectsSpawning(double x, double y, double z, double range) {
++        for (Player player : this.players()) {
++            if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
++                double distanceSqr = player.distanceToSqr(x, y, z);
++                if (range < 0.0D || distanceSqr < range * range) {
++                    return true;
 +                }
-+
-+                entityhuman = (Player) iterator.next();
-+            } while (!EntitySelector.affectsSpawning.test(entityhuman));
-+
-+            d4 = entityhuman.distanceToSqr(d0, d1, d2);
-+        } while (d3 >= 0.0D && d4 >= d3 * d3);
-+
-+        return true;
++            }
++        }
++        return false;
 +    }
 +    // Paper end
 +
