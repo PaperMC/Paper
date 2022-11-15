@@ -25,10 +25,10 @@ Also adds Netty Channel Flush Consolidation to reduce the amount of flushing
 Also avoids spamming closed channel exception by rechecking closed state in dispatch
 and then catch exceptions and close if they fire.
 
-Part of this commit was authored by: Spottedleaf
+Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f7d57d800 100644
+index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..8bc8b6013ea5803e091cf3534130b72278b9c29e 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -116,6 +116,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -160,7 +160,7 @@ index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f
          ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
  
          if (callbacks != null) {
-@@ -275,28 +359,64 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -275,28 +359,72 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              });
          }
@@ -185,10 +185,6 @@ index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f
      }
  
 -    private void flushQueue() {
--        try { // Paper - add pending task queue
--        if (this.channel != null && this.channel.isOpen()) {
--            Queue queue = this.queue;
--
 +    // Paper start - rewrite this to be safer if ran off main thread
 +    private boolean flushQueue() { // void -> boolean
 +        if (!isConnected()) {
@@ -198,19 +194,16 @@ index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f
 +            return processQueue();
 +        } else if (isPending) {
 +            // Should only happen during login/status stages
-             synchronized (this.queue) {
--                Connection.PacketHolder networkmanager_queuedpacket;
--
--                while ((networkmanager_queuedpacket = (Connection.PacketHolder) this.queue.poll()) != null) {
--                    this.sendPacket(networkmanager_queuedpacket.packet, networkmanager_queuedpacket.listener);
--                }
++            synchronized (this.queue) {
 +                return this.processQueue();
 +            }
 +        }
 +        return false;
 +    }
 +    private boolean processQueue() {
-+        try { // Paper - add pending task queue
+         try { // Paper - add pending task queue
+-        if (this.channel != null && this.channel.isOpen()) {
+-            Queue queue = this.queue;
 +        if (this.queue.isEmpty()) return true;
 +        // If we are on main, we are safe here in that nothing else should be processing queue off main anymore
 +        // But if we are not on main due to login/status, the parent is synchronized on packetQueue
@@ -223,19 +216,32 @@ index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f
 +                return true;
 +            }
  
+-            synchronized (this.queue) {
+-                Connection.PacketHolder networkmanager_queuedpacket;
++            // Paper start - checking isConsumed flag and skipping packet sending
++            if (queued.isConsumed()) {
++                continue;
++            }
++            // Paper end - checking isConsumed flag and skipping packet sending
+ 
+-                while ((networkmanager_queuedpacket = (Connection.PacketHolder) this.queue.poll()) != null) {
+-                    this.sendPacket(networkmanager_queuedpacket.packet, networkmanager_queuedpacket.listener);
 +            Packet<?> packet = queued.packet;
 +            if (!packet.isReady()) {
 +                return false;
 +            } else {
 +                iterator.remove();
-+                this.sendPacket(packet, queued.listener);
++                if (queued.tryMarkConsumed()) { // Paper - try to mark isConsumed flag for de-duplicating packet
++                    this.sendPacket(packet, queued.listener);
+                 }
+-
              }
          }
 +        return true;
          } finally { // Paper start - add pending task queue
              Runnable r;
              while ((r = this.pendingTasks.poll()) != null) {
-@@ -304,6 +424,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -304,6 +432,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              }
          } // Paper end - add pending task queue
      }
@@ -243,7 +249,7 @@ index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f
  
      public void tick() {
          this.flushQueue();
-@@ -340,9 +461,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -340,9 +469,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return this.address;
      }
  
@@ -266,7 +272,7 @@ index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f
          // Spigot End
          if (this.channel.isOpen()) {
              this.channel.close(); // We can't wait as this may be called from an event loop.
-@@ -460,7 +594,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -460,7 +602,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -275,7 +281,7 @@ index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f
              } else {
                  this.disconnectionHandled = true;
                  if (this.getDisconnectedReason() != null) {
-@@ -468,7 +602,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -468,7 +610,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                  } else if (this.getPacketListener() != null) {
                      this.getPacketListener().onDisconnect(Component.translatable("multiplayer.disconnect.generic"));
                  }
@@ -284,6 +290,25 @@ index 8b1c39cc7f77ca36d0341fb68de1441cc61f19e4..593ea68037b467797aeeaee331a0349f
                  // Paper start - Add PlayerConnectionCloseEvent
                  final PacketListener packetListener = this.getPacketListener();
                  if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl) {
+@@ -508,6 +650,18 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         @Nullable
+         final PacketSendListener listener;
+ 
++        // Paper start - isConsumed flag for the connection
++        private java.util.concurrent.atomic.AtomicBoolean isConsumed = new java.util.concurrent.atomic.AtomicBoolean(false);
++
++        public boolean tryMarkConsumed() {
++            return isConsumed.compareAndSet(false, true);
++        }
++
++        public boolean isConsumed() {
++            return isConsumed.get();
++        }
++        // Paper end - isConsumed flag for the connection
++
+         public PacketHolder(Packet<?> packet, @Nullable PacketSendListener callbacks) {
+             this.packet = packet;
+             this.listener = callbacks;
 diff --git a/src/main/java/net/minecraft/network/protocol/Packet.java b/src/main/java/net/minecraft/network/protocol/Packet.java
 index 74bfe0d3942259c45702b099efdc4e101a4e3022..e8fcd56906d26f6dc87959e32c4c7c78cfea9658 100644
 --- a/src/main/java/net/minecraft/network/protocol/Packet.java
