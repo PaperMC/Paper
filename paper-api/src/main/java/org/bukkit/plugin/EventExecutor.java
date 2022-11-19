@@ -70,9 +70,18 @@ public interface EventExecutor {
             try {
                 EventExecutor asmExecutor = executorClass.newInstance();
                 // Define a wrapper to conform to bukkit stupidity (passing in events that don't match and wrapper exception)
-                return (listener, event) -> {
-                    if (!eventClass.isInstance(event)) return;
-                    asmExecutor.execute(listener, event);
+                return new EventExecutor() {
+                    @Override
+                    public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
+                        if (!eventClass.isInstance(event)) return;
+                        asmExecutor.execute(listener, event);
+                    }
+
+                    @Override
+                    @NotNull
+                    public String toString() {
+                        return "ASMEventExecutor['" + m + "']";
+                    }
                 };
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new AssertionError("Unable to initialize generated event executor", e);

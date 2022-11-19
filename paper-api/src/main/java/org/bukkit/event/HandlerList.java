@@ -33,6 +33,13 @@ public class HandlerList {
      */
     private static ArrayList<HandlerList> allLists = new ArrayList<HandlerList>();
 
+    // Paper start
+    /**
+     * Event types which have instantiated a {@link HandlerList}.
+     */
+    private static final java.util.Set<String> EVENT_TYPES = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    // Paper end
+
     /**
      * Bake all handler lists. Best used just after all normal event
      * registration is complete, ie just after all plugins are loaded if
@@ -94,6 +101,12 @@ public class HandlerList {
      * The HandlerList is then added to meta-list for use in bakeAll()
      */
     public HandlerList() {
+        // Paper start
+        java.lang.StackWalker.getInstance(java.util.EnumSet.of(java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE), 4)
+            .walk(s -> s.filter(f -> Event.class.isAssignableFrom(f.getDeclaringClass())).findFirst())
+            .map(f -> f.getDeclaringClass().getName())
+            .ifPresent(EVENT_TYPES::add);
+        // Paper end
         handlerslots = new EnumMap<EventPriority, ArrayList<RegisteredListener>>(EventPriority.class);
         for (EventPriority o : EventPriority.values()) {
             handlerslots.put(o, new ArrayList<RegisteredListener>());

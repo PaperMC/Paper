@@ -78,4 +78,27 @@ public class RegisteredListener {
     public boolean isIgnoringCancelled() {
         return ignoreCancelled;
     }
+
+    // Paper start
+    /**
+     * Get the executor for this registration.
+     *
+     * @return executor
+     */
+    @NotNull
+    public EventExecutor getExecutor() {
+        return this.executor;
+    }
+
+    @Override
+    public String toString() {
+        return "RegisteredListener{"
+            + "plugin=\"" + this.plugin.getName()
+            + "\", listener=\"" + this.listener
+            + "\", executor=\"" + this.executor
+            + "\", priority=\"" + this.priority.name() + " (" + this.priority.getSlot() + ")"
+            + "\", ignoringCancelled=" + this.ignoreCancelled
+            + "}";
+    }
+    // Paper end
 }
