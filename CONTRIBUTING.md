@@ -254,9 +254,14 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Wed, 8 Jun 2022 22:20:16 -0700
 Subject: [PATCH] Paper config files
 
+This patch adds Paper configuration files.
+Access transformers for this patch are below, but before the co-authors.
+
 == AT ==
 public org.spigotmc.SpigotWorldConfig getBoolean(Ljava/lang/String;Z)Z
 public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
+
+Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
 ...
