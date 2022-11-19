@@ -6,6 +6,9 @@ Subject: [PATCH] Rewrite chunk system
 == AT ==
 public net.minecraft.server.level.ChunkMap setViewDistance(I)V
 public net.minecraft.server.level.ChunkHolder pos
+public net.minecraft.server.level.ChunkMap overworldDataStorage
+public-f net.minecraft.world.level.chunk.storage.RegionFileStorage
+public net.minecraft.server.level.ChunkMap getPoiManager()Lnet/minecraft/world/entity/ai/village/poi/PoiManager;
 
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
 index 9a5fa60cb8156fe254a123e237d957ccb82f7195..0f7d36933e34e1d1b9dd27d8b0c35ff883818526 100644
@@ -13529,7 +13532,7 @@ index a7feddc31da0870faa3d32a7108282e9e9143180..2ba3bb4e5670ece798a8882801a856d8
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 6184a93b816d8babe518f9dbfcd97e228adb6704..4ee9c020d8c1b4f7dd7e605caa4af818f71074db 100644
+index 4f8346d25187153ce9c9b61b897a65bd2ed62e65..f69a4df520760fe9e849eb61512f410b82d7a034 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -122,10 +122,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -13661,7 +13664,7 @@ index 6184a93b816d8babe518f9dbfcd97e228adb6704..4ee9c020d8c1b4f7dd7e605caa4af818
 @@ -327,20 +302,22 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      @Nullable
-     public ChunkHolder getUpdatingChunkIfPresent(long pos) {
+     protected ChunkHolder getUpdatingChunkIfPresent(long pos) {
 -        return (ChunkHolder) this.updatingChunkMap.get(pos);
 +        // Paper start - rewrite chunk system
 +        io.papermc.paper.chunk.system.scheduling.NewChunkHolder holder = this.level.chunkTaskScheduler.chunkHolderManager.getChunkHolder(pos);
@@ -17513,7 +17516,7 @@ index 8ba1c073387fa21a20bd42a873ec3cc314eae64e..45cec71b3b2f9444d7be7e5bf9fab166
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index a0b61647e5a7e5989aed52522bc9a43bc487421c..27f766fc72d779cff1b5a88a79961aa7ef91b11f 100644
+index 5631345dee84001be1053fbf92def683be7a97f5..c396076bfb1d41cc0f8248d6f3aa4fc3f7d1c998 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 @@ -34,27 +34,28 @@ import net.minecraft.world.level.ChunkPos;
@@ -17527,7 +17530,7 @@ index a0b61647e5a7e5989aed52522bc9a43bc487421c..27f766fc72d779cff1b5a88a79961aa7
 -    private final IOWorker worker;
 +    // Paper - remove mojang I/O thread
      private final Long2ObjectMap<Optional<R>> storage = new Long2ObjectOpenHashMap<>();
-     public final LongLinkedOpenHashSet dirty = new LongLinkedOpenHashSet();
+     private final LongLinkedOpenHashSet dirty = new LongLinkedOpenHashSet();
      private final Function<Runnable, Codec<R>> codec;
      private final Function<Runnable, R> factory;
      private final DataFixer fixerUpper;
