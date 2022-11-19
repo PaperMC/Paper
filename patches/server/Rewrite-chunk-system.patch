@@ -3,6 +3,12 @@ From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Thu, 11 Mar 2021 02:32:30 -0800
 Subject: [PATCH] Rewrite chunk system
 
+== AT ==
+public net.minecraft.server.level.ChunkMap setViewDistance(I)V
+public net.minecraft.server.level.ChunkHolder pos
+public net.minecraft.server.level.ChunkMap overworldDataStorage
+public-f net.minecraft.world.level.chunk.storage.RegionFileStorage
+public net.minecraft.server.level.ChunkMap getPoiManager()Lnet/minecraft/world/entity/ai/village/poi/PoiManager;
 
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -11939,7 +11945,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            JsonObject worldData = new JsonObject();
 +
 +            ServerLevel world = ((org.bukkit.craftbukkit.CraftWorld)bukkitWorld).getHandle();
-+            List<ServerPlayer> players = world.players;
++            List<ServerPlayer> players = world.players();
 +
 +            worldData.addProperty("is-loaded", loadedWorlds.contains(bukkitWorld));
 +            worldData.addProperty("name", world.getWorld().getName());
@@ -13536,7 +13542,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public final Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap = new Long2ObjectLinkedOpenHashMap();
 -    public volatile Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap;
 -    private final Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
--    public final LongSet entitiesInLevel;
+-    private final LongSet entitiesInLevel;
 +    // Paper - rewrite chunk system
      public final ServerLevel level;
      private final ThreadedLevelLightEngine lightEngine;
@@ -13550,7 +13556,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean modified;
 -    private final ChunkTaskPriorityQueueSorter queueSorter;
 -    private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> worldgenMailbox;
--    public final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mainThreadMailbox;
+-    private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mainThreadMailbox;
 +    // Paper - rewrite chunk system
      public final ChunkProgressListener progressListener;
      private final ChunkStatusUpdateListener chunkStatusListener;
@@ -13658,7 +13664,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      @Nullable
-     public ChunkHolder getUpdatingChunkIfPresent(long pos) {
+     protected ChunkHolder getUpdatingChunkIfPresent(long pos) {
 -        return (ChunkHolder) this.updatingChunkMap.get(pos);
 +        // Paper start - rewrite chunk system
 +        io.papermc.paper.chunk.system.scheduling.NewChunkHolder holder = this.level.chunkTaskScheduler.chunkHolderManager.getChunkHolder(pos);
@@ -15221,7 +15227,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
      }
  
-     public boolean runDistanceManagerUpdates() {
+     boolean runDistanceManagerUpdates() {
 -        boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
 -        boolean flag1 = this.chunkMap.promoteChunkMap();
 -
@@ -15831,7 +15837,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final TicketType<T> type;
      private final int ticketLevel;
      public final T key;
--    public long createdTick;
+-    private long createdTick;
 +    // Paper start - rewrite chunk system
 +    public final long removalTick;
  
@@ -17524,7 +17530,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private final IOWorker worker;
 +    // Paper - remove mojang I/O thread
      private final Long2ObjectMap<Optional<R>> storage = new Long2ObjectOpenHashMap<>();
-     public final LongLinkedOpenHashSet dirty = new LongLinkedOpenHashSet();
+     private final LongLinkedOpenHashSet dirty = new LongLinkedOpenHashSet();
      private final Function<Runnable, Codec<R>> codec;
      private final Function<Runnable, R> factory;
      private final DataFixer fixerUpper;
