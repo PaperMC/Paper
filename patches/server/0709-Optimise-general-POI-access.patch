@@ -32,10 +32,10 @@ had to be specifically modified.
 
 diff --git a/src/main/java/io/papermc/paper/util/PoiAccess.java b/src/main/java/io/papermc/paper/util/PoiAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..966c08e80f26c283c28292c9d34fc5e9ffa7e76f
+index 0000000000000000000000000000000000000000..05640f5f70e81833530e8098d30c400fed7ba6e1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/PoiAccess.java
-@@ -0,0 +1,801 @@
+@@ -0,0 +1,800 @@
 +package io.papermc.paper.util;
 +
 +import com.mojang.datafixers.util.Pair;
@@ -413,11 +413,11 @@ index 0000000000000000000000000000000000000000..966c08e80f26c283c28292c9d34fc5e9
 +                                                  final Predicate<BlockPos> positionPredicate,
 +                                                  final BlockPos sourcePosition,
 +                                                  final int range, // distance on x y z axis
-+                                                  final double maxDistance,
++                                                  final double maxDistanceSquared,
 +                                                  final PoiManager.Occupancy occupancy,
 +                                                  final boolean load) {
 +        final PoiRecord ret = findNearestPoiRecord(
-+                poiStorage, villagePlaceType, positionPredicate, sourcePosition, range, maxDistance, occupancy, load
++                poiStorage, villagePlaceType, positionPredicate, sourcePosition, range, maxDistanceSquared, occupancy, load
 +        );
 +        return ret == null ? null : ret.getPos();
 +    }
@@ -429,7 +429,7 @@ index 0000000000000000000000000000000000000000..966c08e80f26c283c28292c9d34fc5e9
 +                                               final Predicate<BlockPos> positionPredicate,
 +                                               final BlockPos sourcePosition,
 +                                               final int range, // distance on x y z axis
-+                                               final double maxDistance,
++                                               final double maxDistanceSquared,
 +                                               final PoiManager.Occupancy occupancy,
 +                                               final boolean load,
 +                                               final int max,
@@ -445,7 +445,7 @@ index 0000000000000000000000000000000000000000..966c08e80f26c283c28292c9d34fc5e9
 +
 +        final List<PoiRecord> toConvert = new ArrayList<>();
 +        findNearestPoiRecords(
-+                poiStorage, villagePlaceType, newPredicate, sourcePosition, range, maxDistance, occupancy, load, max, toConvert
++                poiStorage, villagePlaceType, newPredicate, sourcePosition, range, maxDistanceSquared, occupancy, load, max, toConvert
 +        );
 +
 +        for (final PoiRecord record : toConvert) {
@@ -460,12 +460,12 @@ index 0000000000000000000000000000000000000000..966c08e80f26c283c28292c9d34fc5e9
 +                                                 final Predicate<BlockPos> positionPredicate,
 +                                                 final BlockPos sourcePosition,
 +                                                 final int range, // distance on x y z axis
-+                                                 final double maxDistance,
++                                                 final double maxDistanceSquared,
 +                                                 final PoiManager.Occupancy occupancy,
 +                                                 final boolean load) {
 +        final List<PoiRecord> ret = new ArrayList<>();
 +        findNearestPoiRecords(
-+                poiStorage, villagePlaceType, positionPredicate, sourcePosition, range, maxDistance, occupancy, load,
++                poiStorage, villagePlaceType, positionPredicate, sourcePosition, range, maxDistanceSquared, occupancy, load,
 +                1, ret
 +        );
 +        return ret.isEmpty() ? null : ret.get(0);
@@ -478,14 +478,13 @@ index 0000000000000000000000000000000000000000..966c08e80f26c283c28292c9d34fc5e9
 +                                             final Predicate<BlockPos> positionPredicate,
 +                                             final BlockPos sourcePosition,
 +                                             final int range, // distance on x y z axis
-+                                             final double maxDistance,
++                                             final double maxDistanceSquared,
 +                                             final PoiManager.Occupancy occupancy,
 +                                             final boolean load,
 +                                             final int max,
 +                                             final List<PoiRecord> ret) {
 +        final Predicate<? super PoiRecord> occupancyFilter = occupancy.getTest();
 +
-+        final double maxDistanceSquared = maxDistance * maxDistance;
 +        final Double2ObjectRBTreeMap<List<PoiRecord>> closestRecords = new Double2ObjectRBTreeMap<>();
 +        int totalRecords = 0;
 +        double furthestDistanceSquared = maxDistanceSquared;
