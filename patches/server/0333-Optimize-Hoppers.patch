@@ -24,6 +24,37 @@ index 1a21f7e590aaeca131256dd7079b9546710ca9ad..eeb794d96ac8cbe36b788d390e638192
  
              this.profiler.push(() -> {
                  return worldserver + " " + worldserver.dimension().location();
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
+index 3f8990d15bd6815db0ccb924e621dfcc3220e0e0..4ce983f131ff190c4c9b35ae0a6be46f6655b971 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
+@@ -21,7 +21,7 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+     public static final int MOVE_ITEM_SPEED = 4;
+     private boolean enabled = true;
+     public int cooldownTime = -1;
+-    private final BlockPos lastPosition = BlockPos.ZERO;
++    private BlockPos lastPosition = BlockPos.ZERO; // Paper
+ 
+     public MinecartHopper(EntityType<? extends MinecartHopper> type, Level world) {
+         super(type, world);
+@@ -90,14 +90,15 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+             BlockPos blockPos = this.blockPosition();
+             if (blockPos.equals(this.lastPosition)) {
+                 --this.cooldownTime;
+-            } else {
++            } else if (this.level.paperConfig().hopper.resetHopperMinecartCooldownOnMove) { // Paper
++                this.lastPosition = blockPos; // Paper
+                 this.setCooldown(0);
+             }
+ 
+             if (!this.isOnCooldown()) {
+                 this.setCooldown(0);
+                 if (this.suckInItems()) {
+-                    this.setCooldown(4);
++                    this.setCooldown(this.level.paperConfig().hopper.hopperMinecartTransferCooldown); // Paper
+                     this.setChanged();
+                 }
+             }
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
 index 4b41d2dd00c1b206c1419ba767a3474947664e53..5e0852c4656813272a7ee6cb9c2331410c1b7739 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
@@ -78,7 +109,7 @@ index a05acf709735b40ca86f978508c63a86065fd405..6a1405a8630e90db3b5a3c9152259ba6
  
      double getLevelY();
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index a507d7f65a94e49ecd18cd18797b156474558390..a7ac6b528aecae528a17af157f8ec29371e4484c 100644
+index a507d7f65a94e49ecd18cd18797b156474558390..00e35fb79ca4aa35482631b266d52d4e7052c95b 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -3,7 +3,6 @@ package net.minecraft.world.level.block.entity;
@@ -248,8 +279,8 @@ index a507d7f65a94e49ecd18cd18797b156474558390..a7ac6b528aecae528a17af157f8ec293
 +    private static void cooldownHopper(Hopper hopper) {
 +        if (hopper instanceof HopperBlockEntity blockEntity) {
 +            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer);
-+        } else if (hopper instanceof MinecartHopper blockEntity) {
-+            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer / 2);
++        } else if (hopper instanceof MinecartHopper minecart) {
++            minecart.setCooldown(minecart.getLevel().paperConfig().hopper.hopperMinecartTransferCooldown);
 +        }
 +    }
 +    // Paper end
