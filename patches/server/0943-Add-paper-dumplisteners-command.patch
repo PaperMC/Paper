@@ -27,10 +27,10 @@ index 724592234e2a178a518f6ab7d09c3180780371a7..92154550b41b2e1d03deb1271b71bb3b
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..46f68fe74c9aed2e6e1a8fb4f7e37b8a85996579
+index 0000000000000000000000000000000000000000..ee6acdcc4fda6699c2d1449bf8ecb9261e287581
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,116 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
@@ -43,7 +43,6 @@ index 0000000000000000000000000000000000000000..46f68fe74c9aed2e6e1a8fb4f7e37b8a
 +import java.util.Locale;
 +import java.util.Set;
 +import java.util.stream.Stream;
-+import net.kyori.adventure.text.Component;
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
@@ -52,10 +51,8 @@ index 0000000000000000000000000000000000000000..46f68fe74c9aed2e6e1a8fb4f7e37b8a
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static net.kyori.adventure.text.Component.newline;
 +import static net.kyori.adventure.text.Component.space;
 +import static net.kyori.adventure.text.Component.text;
-+import static net.kyori.adventure.text.Component.toComponent;
 +import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
 +import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
@@ -94,18 +91,16 @@ index 0000000000000000000000000000000000000000..46f68fe74c9aed2e6e1a8fb4f7e37b8a
 +                return;
 +            }
 +
-+            final Component listeners = Stream.of(handlers.getRegisteredListeners())
++            sender.sendMessage(text("Listeners for " + args[0] + ":"));
++
++            Stream.of(handlers.getRegisteredListeners())
 +                .map(listener -> text(listener.getPlugin().getName(), GREEN)
 +                    .append(space())
 +                    .append(text("(" + listener.getListener().getClass().getName() + ")", GRAY)
 +                        .hoverEvent(text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")", GRAY))))
-+                .collect(toComponent(newline()));
++                .forEach(sender::sendMessage);
 +
-+            sender.sendMessage(text("Listeners for " + args[0] + ":")
-+                .append(newline())
-+                .append(listeners)
-+                .append(newline())
-+                .append(text("Total listeners: " + handlers.getRegisteredListeners().length)));
++            sender.sendMessage(text("Total listeners: " + handlers.getRegisteredListeners().length));
 +
 +        } catch (final ClassNotFoundException e) {
 +            sender.sendMessage(text("Unable to find a class named '" + args[0] + "'. Make sure to use the fully qualified name.", RED));
@@ -142,11 +137,11 @@ index 0000000000000000000000000000000000000000..46f68fe74c9aed2e6e1a8fb4f7e37b8a
 +        try {
 +            return Class.forName(className);
 +        } catch (final ClassNotFoundException ignore) {
-+            try {
-+                for (final Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
++            for (final Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
++                try {
 +                    return Class.forName(className, false, plugin.getClass().getClassLoader());
++                } catch (final Throwable ignore0) {
 +                }
-+            } catch (final ClassNotFoundException ignore0) {
 +            }
 +        }
 +        throw new ClassNotFoundException(className);
