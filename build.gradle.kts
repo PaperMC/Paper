@@ -5,7 +5,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "7.1.2" apply false
-    id("io.papermc.paperweight.core") version "1.3.9"
+    id("io.papermc.paperweight.core") version "1.3.11"
 }
 
 allprojects {
@@ -129,6 +129,11 @@ allprojects {
             }
         }
     }
+}
+
+tasks.collectAtsFromPatches {
+    // Uncomment while updating for a new Minecraft version
+    // extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
 }
 
 tasks.register("printMinecraftVersion") {

@@ -3,6 +3,12 @@ From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Thu, 11 Mar 2021 02:32:30 -0800
 Subject: [PATCH] Rewrite chunk system
 
+== AT ==
+public net.minecraft.server.level.ChunkMap setViewDistance(I)V
+public net.minecraft.server.level.ChunkHolder pos
+public net.minecraft.server.level.ChunkMap overworldDataStorage
+public-f net.minecraft.world.level.chunk.storage.RegionFileStorage
+public net.minecraft.server.level.ChunkMap getPoiManager()Lnet/minecraft/world/entity/ai/village/poi/PoiManager;
 
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightInterface.java
 index 9a5fa60cb8156fe254a123e237d957ccb82f7195..0f7d36933e34e1d1b9dd27d8b0c35ff883818526 100644
@@ -11838,7 +11844,7 @@ index 0000000000000000000000000000000000000000..a6fb7ae77d7cad2243e28a33718e4631
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
-index 9798a1010120125039cbf226a0e3679cc92f92c7..3a0e4934af1f1c711e55ed6f439241364b7448f4 100644
+index 9798a1010120125039cbf226a0e3679cc92f92c7..cf3e083c2ada3275a52c303de16a62576696e83f 100644
 --- a/src/main/java/io/papermc/paper/util/MCUtil.java
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
 @@ -1,16 +1,29 @@
@@ -11939,7 +11945,7 @@ index 9798a1010120125039cbf226a0e3679cc92f92c7..3a0e4934af1f1c711e55ed6f43924136
 +            JsonObject worldData = new JsonObject();
 +
 +            ServerLevel world = ((org.bukkit.craftbukkit.CraftWorld)bukkitWorld).getHandle();
-+            List<ServerPlayer> players = world.players;
++            List<ServerPlayer> players = world.players();
 +
 +            worldData.addProperty("is-loaded", loadedWorlds.contains(bukkitWorld));
 +            worldData.addProperty("name", world.getWorld().getName());
@@ -13526,7 +13532,7 @@ index a7feddc31da0870faa3d32a7108282e9e9143180..2ba3bb4e5670ece798a8882801a856d8
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 1fa6d7ba1c04f9f4773f9303cc220d75415a56fb..82f5316ee44edd64f23178edc9b47f3be8dc39ca 100644
+index 4f8346d25187153ce9c9b61b897a65bd2ed62e65..f69a4df520760fe9e849eb61512f410b82d7a034 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -122,10 +122,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -13536,7 +13542,7 @@ index 1fa6d7ba1c04f9f4773f9303cc220d75415a56fb..82f5316ee44edd64f23178edc9b47f3b
 -    public final Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap = new Long2ObjectLinkedOpenHashMap();
 -    public volatile Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap;
 -    private final Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
--    public final LongSet entitiesInLevel;
+-    private final LongSet entitiesInLevel;
 +    // Paper - rewrite chunk system
      public final ServerLevel level;
      private final ThreadedLevelLightEngine lightEngine;
@@ -13550,7 +13556,7 @@ index 1fa6d7ba1c04f9f4773f9303cc220d75415a56fb..82f5316ee44edd64f23178edc9b47f3b
      private boolean modified;
 -    private final ChunkTaskPriorityQueueSorter queueSorter;
 -    private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> worldgenMailbox;
--    public final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mainThreadMailbox;
+-    private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mainThreadMailbox;
 +    // Paper - rewrite chunk system
      public final ChunkProgressListener progressListener;
      private final ChunkStatusUpdateListener chunkStatusListener;
@@ -13658,7 +13664,7 @@ index 1fa6d7ba1c04f9f4773f9303cc220d75415a56fb..82f5316ee44edd64f23178edc9b47f3b
 @@ -327,20 +302,22 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      @Nullable
-     public ChunkHolder getUpdatingChunkIfPresent(long pos) {
+     protected ChunkHolder getUpdatingChunkIfPresent(long pos) {
 -        return (ChunkHolder) this.updatingChunkMap.get(pos);
 +        // Paper start - rewrite chunk system
 +        io.papermc.paper.chunk.system.scheduling.NewChunkHolder holder = this.level.chunkTaskScheduler.chunkHolderManager.getChunkHolder(pos);
@@ -15007,7 +15013,7 @@ index d38ad1b1eee92a6dbd2b79b4fcdb8959cdb4007d..ffa1e457decf8502c3283352bf5be94d
 +    */ // Paper - rewrite chunk system
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 203bca8839a9c1c0fd8171d3a17d0a55086f20a1..39d96933e2d922e377df866367057f1991471c8d 100644
+index 0bf02ffba51e0dda6d01972c3f8c834c42d72512..e63c655a9c65f0408c3d025ee4619a7923685b3c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -366,7 +366,7 @@ public class ServerChunkCache extends ChunkSource {
@@ -15221,7 +15227,7 @@ index 203bca8839a9c1c0fd8171d3a17d0a55086f20a1..39d96933e2d922e377df866367057f19
 @@ -587,15 +603,7 @@ public class ServerChunkCache extends ChunkSource {
      }
  
-     public boolean runDistanceManagerUpdates() {
+     boolean runDistanceManagerUpdates() {
 -        boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
 -        boolean flag1 = this.chunkMap.promoteChunkMap();
 -
@@ -15321,7 +15327,7 @@ index 203bca8839a9c1c0fd8171d3a17d0a55086f20a1..39d96933e2d922e377df866367057f19
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b24b68aad942401815548fa49b968a7bf1f7939d..c5cc5e2c235b46f15d120b6aa5f71410d535a486 100644
+index 3049d732ce3df71a4755ee9160d4f3fae052d1b6..0d49f73d779b9e44c20ba923d5390acdb4bc81d4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -190,7 +190,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -15824,14 +15830,14 @@ index 275b7f7dd36a2073a3eb9f89f4c832839e5aa9af..660693c6dc0ef86f4013df980b6d0c11
  
      public void setTaskPerBatch(int taskBatchSize) {
 diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
-index ffc43e5d3d0563c9e9c171064511b2c65ddf67e1..768a2667f950a635a562fa8a0c75b31a3ae9190e 100644
+index b346fa94b23d81da7da073f71dd12e672e0f079c..768a2667f950a635a562fa8a0c75b31a3ae9190e 100644
 --- a/src/main/java/net/minecraft/server/level/Ticket.java
 +++ b/src/main/java/net/minecraft/server/level/Ticket.java
 @@ -6,9 +6,12 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
      private final TicketType<T> type;
      private final int ticketLevel;
      public final T key;
--    public long createdTick;
+-    private long createdTick;
 +    // Paper start - rewrite chunk system
 +    public final long removalTick;
  
@@ -15918,7 +15924,7 @@ index 32d6e4b194c3c4eca7009059f8d185896b5ae556..51d3150e732f95be13f5f54d994dab1f
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 50f95d25d95dd4fd57c42d026919061ebdf4bb55..651424daeaf8305810fb36c5fe6cfcbc62a86ff6 100644
+index 2f2d92bfda1713c7454e73cb2d2e77f69184a2d4..1742efe86fe2017e58513f9a63e4b63579327f04 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -784,6 +784,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -17510,7 +17516,7 @@ index 8ba1c073387fa21a20bd42a873ec3cc314eae64e..45cec71b3b2f9444d7be7e5bf9fab166
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index a0b61647e5a7e5989aed52522bc9a43bc487421c..27f766fc72d779cff1b5a88a79961aa7ef91b11f 100644
+index 5631345dee84001be1053fbf92def683be7a97f5..c396076bfb1d41cc0f8248d6f3aa4fc3f7d1c998 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 @@ -34,27 +34,28 @@ import net.minecraft.world.level.ChunkPos;
@@ -17524,7 +17530,7 @@ index a0b61647e5a7e5989aed52522bc9a43bc487421c..27f766fc72d779cff1b5a88a79961aa7
 -    private final IOWorker worker;
 +    // Paper - remove mojang I/O thread
      private final Long2ObjectMap<Optional<R>> storage = new Long2ObjectOpenHashMap<>();
-     public final LongLinkedOpenHashSet dirty = new LongLinkedOpenHashSet();
+     private final LongLinkedOpenHashSet dirty = new LongLinkedOpenHashSet();
      private final Function<Runnable, Codec<R>> codec;
      private final Function<Runnable, R> factory;
      private final DataFixer fixerUpper;
@@ -18079,7 +18085,7 @@ index d5e6123622f6bbc4c3b8b91be7f9ba8e5c1c22d8..6708c2c88251f4e5f623cd785c14b2d3
          return this.getHandle().getGameProfile();
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index 19b938f9b86552034c2a0e4af40e342a17f56504..382879562a808290cc4dd59dcd5022c6c22fb169 100644
+index f1a7f306fa6091462e984e2e3c77604db6434028..23b1725679d195380a902a3b03c6b6ad3aaede19 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -256,7 +256,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {

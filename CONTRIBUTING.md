@@ -236,6 +236,37 @@ There are exceptions, especially in Spigot-related files
 - When in doubt or the code around your change is in a clearly different style,
 use the same style as the surrounding code.
 
+## Access Transformers
+Sometimes, vanilla or CraftBukkit code already contains a field, method, or type you want to access
+but the visibility is too low (e.g. a private field in an entity class). Paper can use access transformers
+to change the visibility or remove the final modifier from fields, methods, and classes. Inside the `build-data/paper.at`
+file, you can add ATs that are applied when you `./gradlew applyPatches`. You can read about the format of ATs 
+[here](https://mcforge.readthedocs.io/en/latest/advanced/accesstransformers/#access-modifiers).
+
+### Important
+ATs should be included in the patch file which requires them within the commit message. Do not commit any changes to the
+`build-data/paper.at` file, just use it to initially change the visibility of members until you have finalized what you 
+need. Then, in the commit message for the patch which requires the ATs, add a header at the bottom of the commit message
+before any co-authors. It should look like the following after you `./gradlew rebuildPatches`.
+```
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 8 Jun 2022 22:20:16 -0700
+Subject: [PATCH] Paper config files
+
+This patch adds Paper configuration files.
+Access transformers for this patch are below, but before the co-authors.
+
+== AT ==
+public org.spigotmc.SpigotWorldConfig getBoolean(Ljava/lang/String;Z)Z
+public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
+
+Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+...
+```
+
 ## Patch Notes
 
 When submitting patches to Paper, we may ask you to add notes to the patch

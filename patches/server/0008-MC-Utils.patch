@@ -3,6 +3,13 @@ From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
 
+== AT ==
+public net.minecraft.server.level.ServerChunkCache mainThread
+public net.minecraft.server.level.ServerLevel chunkSource
+public org.bukkit.craftbukkit.inventory.CraftItemStack handle
+public net.minecraft.server.level.ChunkMap getVisibleChunkIfPresent(J)Lnet/minecraft/server/level/ChunkHolder;
+public net.minecraft.server.level.ServerChunkCache mainThreadProcessor
+public net.minecraft.server.level.ServerChunkCache$MainThreadExecutor
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/concurrent/WeakSeqLock.java b/src/main/java/com/destroystokyo/paper/util/concurrent/WeakSeqLock.java
 new file mode 100644
@@ -5786,7 +5793,7 @@ index f902b1f7062fc2c81e0ce43e8b8599192469e57c..74d1ae0104e8d0795df50f00317fd860
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 91a9b9ff0d7821a2261e7137fb1b3989ba096b88..5095519f9bd009a4d5af49d5b42c5795114411a2 100644
+index 26b8096e073d8aa386c9c11ee4a81c7e46b6e1f8..8c6ca0acde4cb266a844a1670296ac327e3382dc 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -63,6 +63,7 @@ import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
@@ -6044,7 +6051,7 @@ index 91a9b9ff0d7821a2261e7137fb1b3989ba096b88..5095519f9bd009a4d5af49d5b42c5795
  
      @Override
 @@ -1467,7 +1547,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     public class ChunkDistanceManager extends DistanceManager {
+     private class ChunkDistanceManager extends DistanceManager {
  
          protected ChunkDistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
 -            super(workerExecutor, mainThreadExecutor);
@@ -6098,7 +6105,7 @@ index 6c98676827ceb6999f340fa2b06a0b3e1cb4cae2..fbe62a31ab199d83a1db0a4e0b1a8138
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index ce88976db29b9e9524dbe45b16721ef90afb692b..359de6697ec69f68fe79a691c7306d4c0e42fd58 100644
+index c682a90eea94cc55ac2ccdb49612e915fbffc512..85238e1bcb2a7ac8f824f10409ee5a4bc7e6c002 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -50,6 +50,7 @@ import net.minecraft.world.level.storage.LevelStorageSource;
@@ -6106,7 +6113,7 @@ index ce88976db29b9e9524dbe45b16721ef90afb692b..359de6697ec69f68fe79a691c7306d4c
  public class ServerChunkCache extends ChunkSource {
  
 +    public static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
-     public static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
+     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
      private final DistanceManager distanceManager;
      final ServerLevel level;
 @@ -68,6 +69,231 @@ public class ServerChunkCache extends ChunkSource {
@@ -6405,7 +6412,7 @@ index ce88976db29b9e9524dbe45b16721ef90afb692b..359de6697ec69f68fe79a691c7306d4c
          ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index aa396df025115c7fd866cbc63a44c2c17abfde84..6e2cd39d4ca7466bbb480d0d9331f644ccda62cd 100644
+index a3c602f1a1b2dbc6bbb32bffa8745dc71cf20872..f5ed23104c781098e64850b32963d13c1a611b96 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -168,6 +168,7 @@ import org.bukkit.event.weather.LightningStrikeEvent;
@@ -6516,7 +6523,7 @@ index aa396df025115c7fd866cbc63a44c2c17abfde84..6e2cd39d4ca7466bbb480d0d9331f644
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // Holder holder = worlddimension.typeHolder(); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index e2ed77972fcec43fef5f3af044479849f78901a9..bdad7b404067ab65d85d1628db9009896a43a052 100644
+index 76eaa034d85d7a02ab6e094161b65fcd3dff71ef..c20f7eb3ee60fce38be2c817278ecaac8982b279 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -243,6 +243,9 @@ public class ServerPlayer extends Player {
@@ -6582,7 +6589,7 @@ index 96ab71f72b43758b86f8990a74a238ad68e10890..32d6e4b194c3c4eca7009059f8d18589
      public BlockState getBlockState(BlockPos pos) {
          return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 6987bee4bf2c1f3d47ffdd5329f6c0c63a2962a5..474843e57028ade5ef36ac5cda4924dbd95f6fe4 100644
+index 346cacb7627db45d2cc64ab841643af7e974cacb..efbfa3f82bd19bfe09a483306d97464e1782a0ab 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -175,6 +175,7 @@ public abstract class PlayerList {
@@ -6594,7 +6601,7 @@ index 6987bee4bf2c1f3d47ffdd5329f6c0c63a2962a5..474843e57028ade5ef36ac5cda4924db
          GameProfileCache usercache = this.server.getProfileCache();
          Optional<GameProfile> optional = usercache.get(gameprofile.getId());
 diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
-index 288fdbef407d11ab430d5d7026dfad148c3c1065..6fefa619299d3202158490630d62c16aef71e831 100644
+index 337e0a7b3c14e1b1a28744920e0dc0a69e0c5a87..f5829ae484d93b547a5437b85a9621346384a11b 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 +++ b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 @@ -78,6 +78,13 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Profiler
@@ -6640,7 +6647,7 @@ index 9001040060383cff5a51028d652315467c7d51ec..e283e8383a52c74cebd16fa7642a5e39
      @Override
      public float getBukkitYaw() {
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 9eaf96ca2300a839e4990d1447a3d8903d0c2b02..2a0f65134c8ffdbcce3af606db02693eaa4ee471 100644
+index e0131e85b3f2d72d1c6ae64214099b4f67bf5de5..c3357f65d3c5cec3446326b8a68750ee2cc27b9a 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -242,6 +242,7 @@ public abstract class Mob extends LivingEntity {
@@ -6677,7 +6684,7 @@ index a0b5895abc88d297045e05f25bb09527991d43f0..6e0bd0eab0b06a4ac3042496bbb91292
          super(type, world);
          this.xpReward = 5;
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index b32f699740680b792990fa70b230ee5f07f2149b..e937186aaf819a77c80beeb9e08413a1f781c13a 100644
+index cd677153ade91dd56d000fbc2dfc8be0e332a00d..1b83577ec8e78e20051f20a336e5cf3e7836c079 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
 @@ -751,6 +751,25 @@ public final class ItemStack {
@@ -7045,7 +7052,7 @@ index d484aaae8614e78fdb984b26304b1de8b649e4bd..fabc7df600c89b01d97a76eb0b1206a3
          this.levelHeightAccessor = heightLimitView;
          this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index e518e8e417f2eee43ff0847c24b6858054e7c9a9..bcd0287d99eeba2b3534b4a298dc4b79b293ec58 100644
+index b7cb72023dc09a2a39400f457e25417acbd3a7c0..41dda06ac8d9adc263936bc417d35b62a8801565 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -25,6 +25,7 @@ import net.minecraft.nbt.CompoundTag;
@@ -7243,7 +7250,7 @@ index e518e8e417f2eee43ff0847c24b6858054e7c9a9..bcd0287d99eeba2b3534b4a298dc4b79
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-index 9668a960dbd3b4ff3c0635df2fb7cc1af289d235..603111a52346f678aba0fd66b010d8f3026fce40 100644
+index cb4e43177a735442fa2adda8640263bca8cdcb64..92a64c49b1c7227a5b34488ea15d3d8adb0f9c80 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 @@ -74,6 +74,18 @@ public class ProtoChunk extends ChunkAccess {
@@ -7266,7 +7273,7 @@ index 9668a960dbd3b4ff3c0635df2fb7cc1af289d235..603111a52346f678aba0fd66b010d8f3
      public BlockState getBlockState(BlockPos pos) {
          int i = pos.getY();
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index dfd1afc57664dd18c11f8a2547616074ccc55690..21e1d86bd287c5e90db43c9c0247d6b7ee1425ae 100644
+index f66369ddaeab5c5ac643c0979dac3ed21337ff71..038abf2ac104ceecaab11b10d466ea69ec86623e 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 @@ -90,6 +90,18 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
