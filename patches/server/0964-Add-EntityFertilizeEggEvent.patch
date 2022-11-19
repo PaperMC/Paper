@@ -5,30 +5,29 @@ Subject: [PATCH] Add EntityFertilizeEggEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-index 5575730aa6f77a91467c394fa8465c335d73db8e..a24acc83c8b079f0af2f2d0f466149550fa84b81 100644
+index 25503678e7d049a8b3172cfad8a5606958c32302..7f9ec1888eb9c02705426d60cf4e3aa7c6d43115 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-@@ -437,6 +437,18 @@ public class Turtle extends Animal {
+@@ -436,6 +436,17 @@ public class Turtle extends Animal {
+             if (entityplayer == null && this.partner.getLoveCause() != null) {
                  entityplayer = this.partner.getLoveCause();
              }
- 
 +            // Paper start
 +            RandomSource randomsource = this.animal.getRandom();
 +            int experience = randomsource.nextInt(7) + 1;
 +            io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((org.bukkit.entity.LivingEntity) turtle.getBukkitEntity(), (org.bukkit.entity.LivingEntity) partner.getBukkitEntity(), entityplayer == null ? null : entityplayer.getBukkitEntity(), turtle.breedItem == null ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(turtle.breedItem).clone(), experience);
-+            if(!event.callEvent()) {
++            if (!event.callEvent()) {
 +                animal.resetLove();
 +                partner.resetLove(); // stop the pathfinding to avoid infinite loop
 +                return;
 +            }
 +            experience = event.getExperience();
 +            // Paper end
-+
+ 
              if (entityplayer != null) {
                  entityplayer.awardStat(Stats.ANIMALS_BRED);
-                 CriteriaTriggers.BRED_ANIMALS.trigger(entityplayer, this.animal, this.partner, (AgeableMob) null);
-@@ -445,10 +457,9 @@ public class Turtle extends Animal {
-             this.turtle.setHasEgg(true);
+@@ -447,10 +458,9 @@ public class Turtle extends Animal {
+             this.partner.setAge(6000);
              this.animal.resetLove();
              this.partner.resetLove();
 -            RandomSource randomsource = this.animal.getRandom();
@@ -41,17 +40,17 @@ index 5575730aa6f77a91467c394fa8465c335d73db8e..a24acc83c8b079f0af2f2d0f46614955
  
          }
 diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
-index bb6063ae7f4438916306ce876057f7488537b444..9a7f3dab67ef197acff40bcc08e5fdbb14e3a1a3 100644
+index f2e84e832ad95df26fe3b9ba439ce38fc59b3585..63cb093e41ef9eed43c8bbb758596f8df324f47f 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
-@@ -262,6 +262,17 @@ public class Frog extends Animal {
+@@ -265,6 +265,17 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
              serverPlayer = other.getLoveCause();
          }
  
 +        // Paper start
 +        int experience = this.getRandom().nextInt(7) + 1;
 +        io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((org.bukkit.entity.LivingEntity) this.getBukkitEntity(), (org.bukkit.entity.LivingEntity) other.getBukkitEntity(), serverPlayer == null ? null : serverPlayer.getBukkitEntity(), this.breedItem == null ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.breedItem).clone(), experience);
-+        if(!event.callEvent()) {
++        if (!event.callEvent()) {
 +            resetLove();
 +            other.resetLove(); // stop the pathfinding to avoid infinite loop
 +            return;
@@ -62,7 +61,7 @@ index bb6063ae7f4438916306ce876057f7488537b444..9a7f3dab67ef197acff40bcc08e5fdbb
          if (serverPlayer != null) {
              serverPlayer.awardStat(Stats.ANIMALS_BRED);
              CriteriaTriggers.BRED_ANIMALS.trigger(serverPlayer, this, other, (AgeableMob)null);
-@@ -273,8 +284,8 @@ public class Frog extends Animal {
+@@ -276,8 +287,8 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
          other.resetLove();
          this.getBrain().setMemory(MemoryModuleType.IS_PREGNANT, Unit.INSTANCE);
          world.broadcastEntityEvent(this, (byte)18);
