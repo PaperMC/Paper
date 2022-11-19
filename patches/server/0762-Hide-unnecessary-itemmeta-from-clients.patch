@@ -33,7 +33,7 @@ index f9e2392e705a0168b9dc359313e68cbca08b2d3a..2db7071d80a2d288d864ae32f250435d
                              }
                          }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 8a393cc4165c2aec51dcb26f7447dcc796528241..1ef11297bc9017fd3c5ac661167c58617d06200b 100644
+index 8a393cc4165c2aec51dcb26f7447dcc796528241..8bf7d54cbdbc1dc2ec0482855d7f531b2dc648be 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3139,7 +3139,7 @@ public abstract class LivingEntity extends Entity {
@@ -45,7 +45,7 @@ index 8a393cc4165c2aec51dcb26f7447dcc796528241..1ef11297bc9017fd3c5ac661167c5861
              // Paper end
              switch (enumitemslot.getType()) {
                  case HAND:
-@@ -3153,6 +3153,59 @@ public abstract class LivingEntity extends Entity {
+@@ -3153,6 +3153,70 @@ public abstract class LivingEntity extends Entity {
          ((ServerLevel) this.level).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
      }
  
@@ -63,12 +63,12 @@ index 8a393cc4165c2aec51dcb26f7447dcc796528241..1ef11297bc9017fd3c5ac661167c5861
 +            }
 +        }
 +
++        final CompoundTag tag = copy.getTag();
 +        if (level.paperConfig().anticheat.obfuscation.items.hideItemmeta) {
 +            // Some resource packs show different textures when there is more than one item. Since this shouldn't provide a big advantage,
 +            // we'll tell the client if there's one or (more than) two items.
 +            copy.setCount(copy.getCount() > 1 ? 2 : 1);
 +            // We can't just strip out display, leather helmets still use the display.color tag.
-+            final CompoundTag tag = copy.getTag();
 +            if (tag != null) {
 +                if (tag.get("display") instanceof CompoundTag displayTag) {
 +                    displayTag.remove("Lore");
@@ -98,6 +98,17 @@ index 8a393cc4165c2aec51dcb26f7447dcc796528241..1ef11297bc9017fd3c5ac661167c5861
 +                tag.remove("generation");
 +            }
 +        }
++
++        if (level.paperConfig().anticheat.obfuscation.items.hideItemmetaWithVisualEffects && tag != null) {
++            // Lodestone compasses
++            tag.remove("LodestonePos");
++            if (tag.contains("LodestoneDimension")) {
++                // The client shows the glint if either the position or the dimension is present, so we just wipe
++                // the position and fake the dimension
++                tag.putString("LodestoneDimension", "paper:paper");
++            }
++        }
++
 +        return copy;
 +    }
 +    // Paper end
