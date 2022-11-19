@@ -27,25 +27,37 @@ index 724592234e2a178a518f6ab7d09c3180780371a7..92154550b41b2e1d03deb1271b71bb3b
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d744db809da0c5842306dd5dc6bd64e9421189e4
+index 0000000000000000000000000000000000000000..8a5733dbda6c1a602385e9f565a1217f62553ca2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,111 @@
 +package io.papermc.paper.command.subcommands;
 +
++import com.google.common.collect.ImmutableList;
++import com.google.common.reflect.ClassPath;
 +import io.papermc.paper.command.PaperSubcommand;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.minecraft.server.MinecraftServer;
++import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.event.HandlerList;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import java.io.IOException;
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Locale;
++import java.util.Set;
++import java.util.concurrent.CompletableFuture;
 +import java.util.stream.Stream;
 +
 +@DefaultQualifier(NonNull.class)
 +public class DumpListenersCommand implements PaperSubcommand {
++    private static final Set<String> CLASS_CACHE = new HashSet<>();
++
 +    @Override
 +    public boolean execute(CommandSender sender, String subCommand, String[] args) {
 +        this.doDumpListeners(sender, args);
@@ -84,5 +96,49 @@ index 0000000000000000000000000000000000000000..d744db809da0c5842306dd5dc6bd64e9
 +            sender.sendMessage(Component.text("Something went wrong, see the console for more details.", NamedTextColor.RED));
 +            MinecraftServer.LOGGER.warn("Error occurred while dumping listeners for class " + args[0], e);
 +        }
++    }
++
++    @Override
++    public List<String> tabComplete(CommandSender sender, String subCommand, String[] args) {
++        return switch (args.length) {
++            case 0 -> ImmutableList.copyOf(CLASS_CACHE);
++            case 1 -> {
++                if (CLASS_CACHE.isEmpty()) {
++                    populateCache();
++                    yield Collections.emptyList();
++                }
++
++                yield CLASS_CACHE.stream().filter(clazz -> clazz.toLowerCase(Locale.ROOT).contains(args[0].toLowerCase(Locale.ROOT))).toList();
++            }
++
++            default -> Collections.emptyList();
++        };
++    }
++
++    public static void clearClassCache() {
++        CLASS_CACHE.clear();
++    }
++
++    @SuppressWarnings("UnstableApiUsage")
++    private static void populateCache() {
++        clearClassCache();
++
++        CompletableFuture.runAsync(() -> {
++            ClassPath classPath;
++            try {
++                classPath = ClassPath.from(Bukkit.class.getClassLoader());
++            } catch (IOException e) {
++                MinecraftServer.LOGGER.info("Failed get bukkit classpath", e);
++                return;
++            }
++
++            for (ClassPath.ClassInfo classInfo : classPath.getAllClasses()) {
++                try {
++                    Class<?> clazz = classInfo.load();
++                    clazz.getMethod("getHandlerList");
++                    CLASS_CACHE.add(clazz.getName());
++                } catch (NoSuchMethodException | NoClassDefFoundError ignored) {}
++            }
++        });
 +    }
 +}
