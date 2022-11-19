@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MelnCat <melncatuwu@gmail.com>
+Date: Mon, 3 Oct 2022 07:53:37 -0700
+Subject: [PATCH] Fix MC-121048
+
+This moves the setHealth call to below the recordDamage call to prevent
+recordDamage from clearing the CombatTracker, since recordDamage will
+clear the CombatTracker if the entity is dead. This fixes death messages
+such as the "doomed to fall" messages.
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 0318c9483a4d96eb39ff4df9054a9e6398186bc3..c6cbf02c784d4b0a39c61cd65e777fe04e3c3772 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -2194,8 +2194,10 @@ public abstract class LivingEntity extends Entity {
+                 // CraftBukkit end
+                 float f3 = this.getHealth();
+ 
+-                this.setHealth(f3 - f);
++                // Paper start - MC-121048
+                 this.getCombatTracker().recordDamage(damagesource, f3, f);
++                this.setHealth(f3 - f);
++                // Paper end
+                 // CraftBukkit start
+                 if (!human) {
+                     this.setAbsorptionAmount(this.getAbsorptionAmount() - f);
