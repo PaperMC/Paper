@@ -3,6 +3,8 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Fri, 20 Aug 2021 13:03:21 -0700
 Subject: [PATCH] Get entity default attributes
 
+== AT ==
+public net.minecraft.world.entity.ai.attributes.AttributeSupplier getAttributeInstance(Lnet/minecraft/world/entity/ai/attributes/Attribute;)Lnet/minecraft/world/entity/ai/attributes/AttributeInstance;
 
 diff --git a/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java
 new file mode 100644
@@ -42,32 +44,22 @@ index 0000000000000000000000000000000000000000..12135ffeacd648f6bc4d7d327059ea1a
 +}
 diff --git a/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeMap.java b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4ecba0b02c2813a890aecc558698787946d2ccb8
+index 0000000000000000000000000000000000000000..cf9d28ea97d93cec05c9fb768d59e283ca915565
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeMap.java
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.attribute;
 +
-+import com.google.common.collect.Maps;
-+import com.google.common.util.concurrent.Callables;
-+import com.google.common.util.concurrent.Runnables;
 +import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 +import org.bukkit.attribute.Attributable;
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeInstance;
-+import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 +import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
-+import java.util.Map;
-+import java.util.function.Consumer;
-+import java.util.function.Function;
-+
 +public class UnmodifiableAttributeMap implements Attributable {
 +
-+
-+    private final Map<Attribute, AttributeInstance> attributes = Maps.newHashMap();
 +    private final AttributeSupplier handle;
 +
 +    public UnmodifiableAttributeMap(@NotNull AttributeSupplier handle) {
@@ -76,12 +68,11 @@ index 0000000000000000000000000000000000000000..4ecba0b02c2813a890aecc5586987879
 +
 +    @Override
 +    public @Nullable AttributeInstance getAttribute(@NotNull Attribute attribute) {
-+        var nmsAttribute = CraftAttributeMap.toMinecraft(attribute);
-+        var nmsAttributeInstance = this.handle.instances.get(nmsAttribute);
-+        if (nmsAttribute == null) {
++        net.minecraft.world.entity.ai.attributes.Attribute nmsAttribute = CraftAttributeMap.toMinecraft(attribute);
++        if (!this.handle.hasAttribute(nmsAttribute)) {
 +            return null;
 +        }
-+        return new UnmodifiableAttributeInstance(nmsAttributeInstance, attribute);
++        return new UnmodifiableAttributeInstance(this.handle.getAttributeInstance(nmsAttribute), attribute);
 +    }
 +
 +    @Override
