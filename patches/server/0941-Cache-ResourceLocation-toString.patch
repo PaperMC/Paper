@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: montlikadani <montlikada@gmail.com>
+Date: Sun, 20 Nov 2022 19:46:05 +0100
+Subject: [PATCH] Cache ResourceLocation#toString
+
+
+diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
+index 7017dd42f832d928f1008a05f01701667d951644..7acf3abf2d7a29e5d8d28bc3747b42fe35cb8755 100644
+--- a/src/main/java/net/minecraft/resources/ResourceLocation.java
++++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
+@@ -27,6 +27,7 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+     public static final String REALMS_NAMESPACE = "realms";
+     protected final String namespace;
+     protected final String path;
++	 private String cachedString; // Paper - cache ResourceLocation#toString
+ 
+     protected ResourceLocation(String[] id) {
+         this.namespace = StringUtils.isEmpty(id[0]) ? "minecraft" : id[0];
+@@ -99,7 +100,12 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+ 
+     @Override
+     public String toString() {
+-        return this.namespace + ":" + this.path;
++        // Paper start - cache ResourceLocation#toString
++        if (this.cachedString != null) return this.cachedString;
++        final String s = this.namespace + ":" + this.path;
++        this.cachedString = s;
++        return s;
++		 // Paper end
+     }
+ 
+     @Override
+@@ -167,7 +173,10 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+     }
+ 
+     private static boolean isValidPath(String path) {
+-        for(int i = 0; i < path.length(); ++i) {
++        // Paper start - cache ResourceLocation#toString
++        int length = path.length()
++        for(int i = 0; i < length; ++i) {
++		 // Paper end
+             if (!validPathChar(path.charAt(i))) {
+                 return false;
+             }
+@@ -177,7 +186,10 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+     }
+ 
+     private static boolean isValidNamespace(String namespace) {
+-        for(int i = 0; i < namespace.length(); ++i) {
++        // Paper start - cache ResourceLocation#toString
++        int length = namespace.length();
++        for(int i = 0; i < length; ++i) {
++		 // Paper end
+             if (!validNamespaceChar(namespace.charAt(i))) {
+                 return false;
+             }
