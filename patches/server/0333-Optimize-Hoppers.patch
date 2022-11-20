@@ -11,6 +11,8 @@ Subject: [PATCH] Optimize Hoppers
 * Skip subsequent InventoryMoveItemEvents if a plugin does not use the item after first event fire for an iteration
 * Don't check for Entities with Inventories if the block above us is also occluding (not just Inventoried)
 * Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
+* Hopper minecart cooldowns have been reimplemented, and will trigger when a minecart picks up items or goes over a 
+container. This is all under configuration as this behavior is currently not functional on vanilla.
 
 == AT ==
 private-f net.minecraft.world.entity.vehicle.MinecartHopper lastPosition
@@ -28,7 +30,7 @@ index 1a21f7e590aaeca131256dd7079b9546710ca9ad..eeb794d96ac8cbe36b788d390e638192
              this.profiler.push(() -> {
                  return worldserver + " " + worldserver.dimension().location();
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
-index 3b85a2e1cc22ea2a8d2e0e346f3d400b5237b0ca..c0b5f10d053654ba0e592289df0b9b4aff9a748f 100644
+index 3b85a2e1cc22ea2a8d2e0e346f3d400b5237b0ca..45f99857204329b90a1ace7e27e1fd9a8e4ac779 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
 @@ -91,13 +91,19 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
@@ -52,6 +54,15 @@ index 3b85a2e1cc22ea2a8d2e0e346f3d400b5237b0ca..c0b5f10d053654ba0e592289df0b9b4a
                      this.setChanged();
                  }
              }
+@@ -111,7 +117,7 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
+         } else {
+             List<ItemEntity> list = this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(0.25D, 0.0D, 0.25D), EntitySelector.ENTITY_STILL_ALIVE);
+             if (!list.isEmpty()) {
+-                HopperBlockEntity.addItem(this, list.get(0));
++                return HopperBlockEntity.addItem(this, list.get(0)); // Paper - Return result for picked up items
+             }
+ 
+             return false;
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
 index b4fbe1f393e2c348bc0120bf6c55d57d61011787..2650deb381bae30593128fc003c042f42110802c 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
