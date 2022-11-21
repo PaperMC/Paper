@@ -10,7 +10,7 @@ if (!file(".git").isDirectory) {
          the Paper repository using Git, not download a code
          zip from GitHub.
          
-         Built Paper jars are available for download at
+         Pre-built Paper jars are available for download at
          https://papermc.io/downloads
          
          See https://github.com/PaperMC/Paper/blob/master/CONTRIBUTING.md
