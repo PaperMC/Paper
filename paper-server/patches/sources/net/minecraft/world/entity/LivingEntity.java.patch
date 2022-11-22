@@ -1050,7 +1050,7 @@
 +        };
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
-+
+ 
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1175,7 +1175,7 @@
 +            float absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionAmount(Math.max(this.getAbsorptionAmount() - absorptionModifier, 0.0F));
 +            float f2 = absorptionModifier;
- 
++
 +            if (f2 > 0.0F && f2 < 3.4028235E37F && this instanceof net.minecraft.world.entity.player.Player) {
 +                ((net.minecraft.world.entity.player.Player) this).awardStat(Stats.DAMAGE_ABSORBED, Math.round(f2 * 10.0F));
 +            }
@@ -1367,7 +1367,7 @@
              if (this.tickCount % 20 == 0) {
                  this.getCombatTracker().recheckStatus();
              }
-@@ -2687,37 +3282,15 @@
+@@ -2687,38 +3282,16 @@
          gameprofilerfiller.pop();
          gameprofilerfiller.push("rangeChecks");
  
@@ -1390,7 +1390,9 @@
 -        while (this.yBodyRot - this.yBodyRotO >= 180.0F) {
 -            this.yBodyRotO += 360.0F;
 -        }
--
++        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
++        // Paper end
+ 
 -        while (this.getXRot() - this.xRotO < -180.0F) {
 -            this.xRotO -= 360.0F;
 -        }
@@ -1406,11 +1408,10 @@
 -        while (this.yHeadRot - this.yHeadRotO >= 180.0F) {
 -            this.yHeadRotO += 360.0F;
 -        }
-+        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
-+        // Paper end
- 
+-
          gameprofilerfiller.pop();
          this.animStep += f2;
+         if (this.isFallFlying()) {
 @@ -2741,7 +3314,7 @@
          this.elytraAnimationState.tick();
      }
@@ -1562,6 +1563,15 @@
              this.dismountVehicle(entity);
          }
  
+@@ -3258,7 +3877,7 @@
+     }
+ 
+     public void onItemPickup(ItemEntity item) {
+-        Entity entity = item.getOwner();
++        Entity entity = item.thrower != null ? this.level().getGlobalPlayerByUUID(item.thrower) : null; // Paper - check global player list where appropriate
+ 
+         if (entity instanceof ServerPlayer) {
+             CriteriaTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.trigger((ServerPlayer) entity, item.getItem(), this);
 @@ -3284,7 +3903,8 @@
              Vec3 vec3d = new Vec3(this.getX(), this.getEyeY(), this.getZ());
              Vec3 vec3d1 = new Vec3(entity.getX(), entityY, entity.getZ());
@@ -1643,7 +1653,7 @@
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
- 
++
 +                        if (event.isCancelled()) {
 +                            // Update client
 +                            Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
@@ -1667,7 +1677,7 @@
 +                    }
 +                    // Paper end
 +                    // CraftBukkit end
-+
+ 
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
                      }
