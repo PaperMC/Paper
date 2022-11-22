@@ -81,46 +81,37 @@ index 0000000000000000000000000000000000000000..b9c24b8d83b96d8c66cdf879650027f4
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/advancements/Advancement.java b/src/main/java/net/minecraft/advancements/Advancement.java
-index 2c01231dcfbb992c9d2f034fcfd4af52fe8ac265..9219ab40bb3a88d7fad80287d159be500f96f2f3 100644
+index 2c01231dcfbb992c9d2f034fcfd4af52fe8ac265..dd4409790524293be07483f00df05d8a8743e3d9 100644
 --- a/src/main/java/net/minecraft/advancements/Advancement.java
 +++ b/src/main/java/net/minecraft/advancements/Advancement.java
-@@ -53,20 +53,27 @@ public class Advancement {
+@@ -53,8 +53,16 @@ public class Advancement {
              parent.addChild(this);
          }
  
 -        if (display == null) {
 -            this.chatComponent = Component.literal(id.toString());
-+        this.chatComponent = constructDisplayComponent(this.id, this.display); // Paper - moved to static method
-+
++        // Paper start - moved to static method
++        this.chatComponent = constructDisplayComponent(this.id, this.display);
 +    }
-+    // Paper start - copied from constructor
++
 +    public static Component constructDisplayComponent(final @Nullable ResourceLocation id, final @Nullable DisplayInfo display) {
 +        if (id == null && display == null) {
 +            throw new IllegalArgumentException("can't both be null");
 +        } else if (display == null) {
 +            return Component.literal(id.toString());
++        // Paper end
          } else {
--            Component ichatbasecomponent = display.getTitle();
--            ChatFormatting enumchatformat = display.getFrame().getChatColor();
--            MutableComponent ichatmutablecomponent = ComponentUtils.mergeStyles(ichatbasecomponent.copy(), Style.EMPTY.withColor(enumchatformat)).append("\n").append(display.getDescription());
--            MutableComponent ichatmutablecomponent1 = ichatbasecomponent.copy().withStyle((chatmodifier) -> {
--                return chatmodifier.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, ichatmutablecomponent));
-+            Component title = display.getTitle();
-+            ChatFormatting frameColor = display.getFrame().getChatColor();
-+            MutableComponent coloredTitleAndDesc = ComponentUtils.mergeStyles(title.copy(), Style.EMPTY.withColor(frameColor)).append("\n").append(display.getDescription());
-+            MutableComponent withHover = title.copy().withStyle((style) -> {
-+                return style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, coloredTitleAndDesc));
+             Component ichatbasecomponent = display.getTitle();
+             ChatFormatting enumchatformat = display.getFrame().getChatColor();
+@@ -63,7 +71,7 @@ public class Advancement {
+                 return chatmodifier.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, ichatmutablecomponent));
              });
  
 -            this.chatComponent = ComponentUtils.wrapInSquareBrackets(ichatmutablecomponent1).withStyle(enumchatformat);
-+            return ComponentUtils.wrapInSquareBrackets(withHover).withStyle(frameColor);
++            return ComponentUtils.wrapInSquareBrackets(ichatmutablecomponent1).withStyle(enumchatformat); // Paper
          }
--
-     }
-+    // Paper end
  
-     public Advancement.Builder deconstruct() {
-         return new Advancement.Builder(this.parent == null ? null : this.parent.getId(), this.display, this.rewards, this.criteria, this.requirements);
+     }
 diff --git a/src/main/java/net/minecraft/advancements/DisplayInfo.java b/src/main/java/net/minecraft/advancements/DisplayInfo.java
 index db939a754e9308ad68f1b09a970f7a1b00a673bf..538f19f15b553d14ad95f09b1c81359f4c68b17f 100644
 --- a/src/main/java/net/minecraft/advancements/DisplayInfo.java
