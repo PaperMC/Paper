@@ -694,10 +694,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dbfb8746355be22e11d05cac33d18e04b94aa985
+index 0000000000000000000000000000000000000000..01e424792f68bac73ec41726031ebbb53df13da7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,331 @@
+@@ -0,0 +1,354 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -726,17 +726,22 @@ index 0000000000000000000000000000000000000000..dbfb8746355be22e11d05cac33d18e04
 +import net.kyori.adventure.translation.Translator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.ChatFormatting;
++import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.locale.Language;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.ListTag;
 +import net.minecraft.nbt.StringTag;
 +import net.minecraft.nbt.TagParser;
++import net.minecraft.network.chat.ComponentUtils;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.sounds.SoundSource;
 +import net.minecraft.world.BossEvent;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.WrittenBookItem;
-+import org.bukkit.ChatColor;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.bukkit.entity.Entity;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -892,6 +897,24 @@ index 0000000000000000000000000000000000000000..dbfb8746355be22e11d05cac33d18e04
 +                ? locale
 +                : Locale.US
 +        );
++    }
++
++    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
++        final CommandSourceStack css = context != null ? VanillaCommandWrapper.getListener(context) : null;
++        Boolean previous = null;
++        if (css != null && bypassPermissions) {
++            previous = css.bypassSelectorPermissions;
++            css.bypassSelectorPermissions = true;
++        }
++        try {
++            return asAdventure(ComponentUtils.updateForEntity(css, asVanilla(component), scoreboardSubject == null ? null : ((CraftEntity) scoreboardSubject).getHandle(), 0));
++        } catch (CommandSyntaxException e) {
++            throw new IOException(e);
++        } finally {
++            if (css != null && previous != null) {
++                css.bypassSelectorPermissions = previous;
++            }
++        }
 +    }
 +
 +    // BossBar
@@ -1423,6 +1446,18 @@ index 98f2def9125d6faf5859572a004fa8d2fa066417..436f381c727cda72c04859c540dce471
      @Nullable
      public static ChatFormatting getById(int colorIndex) {
          if (colorIndex < 0) {
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index 3308d684fc6cd0a83e190a52693b29d30e0087cb..a5c31a999dd7fb30436b21c04e2cbc95ee4262d2 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -60,6 +60,7 @@ public class CommandSourceStack implements SharedSuggestionProvider {
+     private final CommandSigningContext signingContext;
+     private final TaskChainer chatMessageChainer;
+     public volatile CommandNode currentCommand; // CraftBukkit
++    public boolean bypassSelectorPermissions = false; // Paper
+ 
+     public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
+         this(output, pos, rot, world, level, name, displayName, server, entity, false, (commandcontext, flag, j) -> {
 diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
 index 83ffb7a08630fdaf8655569d82974625c0eaf1ff..4da1ebcd0226897f8b03bd00a851f793df3506f4 100644
 --- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
@@ -1445,6 +1480,19 @@ index 83ffb7a08630fdaf8655569d82974625c0eaf1ff..4da1ebcd0226897f8b03bd00a851f793
              MessageArgument.logResolutionFailure(source, completableFuture);
              return completableFuture;
          }
+diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java
+index 35cc3bba20afd4a47160cc674415ba6a3a0ec0ec..40812e6518b8aacfbd2d8cd65a407d00bb19e991 100644
+--- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java
++++ b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java
+@@ -90,7 +90,7 @@ public class EntitySelector {
+     }
+ 
+     private void checkPermissions(CommandSourceStack source) throws CommandSyntaxException {
+-        if (this.usesSelector && !source.hasPermission(2, "minecraft.command.selector")) { // CraftBukkit
++        if (source.bypassSelectorPermissions || (this.usesSelector && !source.hasPermission(2, "minecraft.command.selector"))) { // CraftBukkit // Paper
+             throw EntityArgument.ERROR_SELECTORS_NOT_ALLOWED.create();
+         }
+     }
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 index c4854debe11b8bb61fa49c76c1854f94c1e7777f..42514a0c7066dc79050c0496d6463528b593f9e4 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
@@ -1693,6 +1741,22 @@ index 06736982f7625c1a532315afe94e5e0c45ec1331..e7d9e2d8c87ddf3658b1c2e0f2a3e98e
              JsonObject jsonobject = new JsonObject();
  
              if (!ichatbasecomponent.getStyle().isEmpty()) {
+diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
+index 3364f5a113b5765300ee5b8957b995231b70d609..10b133e95dbf2edb87764ea9d07974d8146bbed0 100644
+--- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
++++ b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
+@@ -42,6 +42,11 @@ public class ComponentUtils {
+         if (depth > 100) {
+             return text.copy();
+         } else {
++            // Paper start
++            if (text instanceof io.papermc.paper.adventure.AdventureComponent adventureComponent) {
++                text = adventureComponent.deepConverted();
++            }
++            // Paper end
+             MutableComponent mutableComponent = text.getContents().resolve(source, sender, depth + 1);
+ 
+             for(Component component : text.getSiblings()) {
 diff --git a/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java
 index de717cf25308bbade7b2c0a9187cf89238663636..bd82f0316df85b621c1970ff30bbbec0d2712ccd 100644
 --- a/src/main/java/net/minecraft/network/chat/OutgoingPlayerChatMessage.java
@@ -2048,7 +2112,7 @@ index c20f7eb3ee60fce38be2c817278ecaac8982b279..d7e66a9669c67bf7d619bf69dc49daed
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index f63ade8d99295ce9d001aae6f5228a7374e16438..93d02b5de0721e3c5903e80bbf8b3b56ec3ab45d 100644
+index d88a7d01d5b37c13c773a22f8da551c7174af2ab..f1441c9fde9d736d4c053073a88a7a79222f5c5c 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -188,6 +188,8 @@ import org.apache.commons.lang3.StringUtils;
@@ -2528,7 +2592,7 @@ index 4c62df5a3781ec9df4a5c5f1b528649e6e8a62d1..affd1b8c7589ba59330dc0b6fc803cce
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-index 595b56b2ab9a813ba71399d306117294fa90dc65..3527d40102d512d0e276edc969ea3c189aa34ec2 100644
+index 510065ee6a6f6834443eec3e4cb96152b7ec7c3f..b8d33dc1dc31fb2bcde0d74504f3972b0cc28f17 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 +++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 @@ -33,6 +33,7 @@ import net.minecraft.world.level.saveddata.SavedData;
@@ -4395,10 +4459,10 @@ index 78ea79b66cc9e90402ef5cdc2e5e04e0c74b1c26..4fede2161792ba3e7cdf0cc5a1f53318
  
          boolean hadFormat = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index d805ac4274fb6149bf8efea6b771ecfe79aea76f..56a3dc9dcbd2229c60aa64e2d4c0ed147539a5ef 100644
+index d805ac4274fb6149bf8efea6b771ecfe79aea76f..ede9c2d8e98fd42a936045e82b3e2c174f7bac0b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -69,6 +69,38 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -69,6 +69,43 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      private CraftMagicNumbers() {}
  
@@ -4431,6 +4495,11 @@ index d805ac4274fb6149bf8efea6b771ecfe79aea76f..56a3dc9dcbd2229c60aa64e2d4c0ed14
 +    @Override
 +    public net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer() {
 +        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component resolveWithContext(final net.kyori.adventure.text.Component component, final org.bukkit.command.CommandSender context, final org.bukkit.entity.Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
++        return io.papermc.paper.adventure.PaperAdventure.resolveWithContext(component, context, scoreboardSubject, bypassPermissions);
 +    }
 +    // Paper end
 +

@@ -553,10 +553,10 @@ index 0000000000000000000000000000000000000000..eb179aae1e1d2ce842442e49fe275827
 +}
 diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bff9a6295db367c6b89d69fb55459a40828265ea
+index 0000000000000000000000000000000000000000..6e94562d79206d88b74b53814f9423f12a2e6e06
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,177 @@
 +package io.papermc.paper.text;
 +
 +import net.kyori.adventure.text.Component;
@@ -567,7 +567,12 @@ index 0000000000000000000000000000000000000000..bff9a6295db367c6b89d69fb55459a40
 +import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import org.bukkit.Bukkit;
++import org.bukkit.command.CommandSender;
++import org.bukkit.entity.Entity;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.io.IOException;
 +
 +/**
 + * Paper API-specific methods for working with {@link Component}s and related.
@@ -575,6 +580,66 @@ index 0000000000000000000000000000000000000000..bff9a6295db367c6b89d69fb55459a40
 +public final class PaperComponents {
 +    private PaperComponents() {
 +        throw new RuntimeException("PaperComponents is not to be instantiated!");
++    }
++
++    /**
++     * Resolves a component with a specific command sender and subject.
++     * <p>
++     * Note that in Vanilla, elevated permissions are usually required to use
++     * '@' selectors in various component types, but this method should not
++     * check such permissions from the sender.
++     * <p>
++     * A {@link CommandSender} argument is required to resolve:
++     * <ul>
++     *     <li>{@link net.kyori.adventure.text.NBTComponent}</li>
++     *     <li>{@link net.kyori.adventure.text.ScoreComponent}</li>
++     *     <li>{@link net.kyori.adventure.text.SelectorComponent}</li>
++     * </ul>
++     * A {@link Entity} argument is optional to help resolve:
++     * <ul>
++     *     <li>{@link net.kyori.adventure.text.ScoreComponent}</li>
++     * </ul>
++     * {@link net.kyori.adventure.text.TranslatableComponent}s don't require any extra arguments.
++     *
++     * @param input the component to resolve
++     * @param context the command sender to resolve with
++     * @param scoreboardSubject the scoreboard subject to use (for use with {@link net.kyori.adventure.text.ScoreComponent}s)
++     * @return the resolved component
++     * @throws IOException if a syntax error tripped during resolving
++     */
++    public static @NotNull Component resolveWithContext(@NotNull Component input, @Nullable CommandSender context, @Nullable Entity scoreboardSubject) throws IOException {
++        return resolveWithContext(input, context, scoreboardSubject, true);
++    }
++
++    /**
++     * Resolves a component with a specific command sender and subject.
++     * <p>
++     * Note that in Vanilla, elevated permissions are required to use
++     * '@' selectors in various component types. If the boolean {@code bypassPermissions}
++     * argument is {@code false}, the {@link CommandSender} argument will be used to query
++     * those permissions.
++     * <p>
++     * A {@link CommandSender} argument is required to resolve:
++     * <ul>
++     *     <li>{@link net.kyori.adventure.text.NBTComponent}</li>
++     *     <li>{@link net.kyori.adventure.text.ScoreComponent}</li>
++     *     <li>{@link net.kyori.adventure.text.SelectorComponent}</li>
++     * </ul>
++     * A {@link Entity} argument is optional to help resolve:
++     * <ul>
++     *     <li>{@link net.kyori.adventure.text.ScoreComponent}</li>
++     * </ul>
++     * {@link net.kyori.adventure.text.TranslatableComponent}s don't require any extra arguments.
++     *
++     * @param input the component to resolve
++     * @param context the command sender to resolve with
++     * @param scoreboardSubject the scoreboard subject to use (for use with {@link net.kyori.adventure.text.ScoreComponent}s)
++     * @param bypassPermissions true to bypass permissions checks for resolving components
++     * @return the resolved component
++     * @throws IOException if a syntax error tripped during resolving
++     */
++    public static @NotNull Component resolveWithContext(@NotNull Component input, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException {
++        return Bukkit.getUnsafe().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
 +    }
 +
 +    /**
@@ -1303,10 +1368,10 @@ index ac5e263d737973af077e3406a84a84baca4370db..2d91924b7f5ef16a91d40cdc1bfc3d68
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 01e11f882abb6c631f810584aa23646042688435..fa28b5bb0efd9d400277cd8969f38e039e6ea8ac 100644
+index 01e11f882abb6c631f810584aa23646042688435..4f339debf113d103ffe0b5fdb03dfc82eafd1bd5 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -22,6 +22,14 @@ import org.bukkit.plugin.PluginDescriptionFile;
+@@ -22,6 +22,15 @@ import org.bukkit.plugin.PluginDescriptionFile;
   */
  @Deprecated
  public interface UnsafeValues {
@@ -1317,6 +1382,7 @@ index 01e11f882abb6c631f810584aa23646042688435..fa28b5bb0efd9d400277cd8969f38e03
 +    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
 +    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
 +    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
++    net.kyori.adventure.text.Component resolveWithContext(net.kyori.adventure.text.Component component, org.bukkit.command.CommandSender context, org.bukkit.entity.Entity scoreboardSubject, boolean bypassPermissions) throws java.io.IOException;
 +    // Paper end
  
      Material toLegacy(Material material);
