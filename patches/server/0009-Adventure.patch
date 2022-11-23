@@ -694,10 +694,10 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..184dcda55e076e716087222155fbb0f73b066cca
+index 0000000000000000000000000000000000000000..01e424792f68bac73ec41726031ebbb53df13da7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,348 @@
+@@ -0,0 +1,354 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -899,15 +899,21 @@ index 0000000000000000000000000000000000000000..184dcda55e076e716087222155fbb0f7
 +        );
 +    }
 +
-+    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject) throws IOException {
++    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
 +        final CommandSourceStack css = context != null ? VanillaCommandWrapper.getListener(context) : null;
-+        if (css != null) css.bypassSelectorPermissions = true;
++        Boolean previous = null;
++        if (css != null && bypassPermissions) {
++            previous = css.bypassSelectorPermissions;
++            css.bypassSelectorPermissions = true;
++        }
 +        try {
 +            return asAdventure(ComponentUtils.updateForEntity(css, asVanilla(component), scoreboardSubject == null ? null : ((CraftEntity) scoreboardSubject).getHandle(), 0));
 +        } catch (CommandSyntaxException e) {
 +            throw new IOException(e);
 +        } finally {
-+            if (css != null) css.bypassSelectorPermissions = false;
++            if (css != null && previous != null) {
++                css.bypassSelectorPermissions = previous;
++            }
 +        }
 +    }
 +
@@ -4453,7 +4459,7 @@ index 78ea79b66cc9e90402ef5cdc2e5e04e0c74b1c26..4fede2161792ba3e7cdf0cc5a1f53318
  
          boolean hadFormat = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index d805ac4274fb6149bf8efea6b771ecfe79aea76f..7fde7a9b1cd1e8620077d93bea7513be5c43545d 100644
+index d805ac4274fb6149bf8efea6b771ecfe79aea76f..ede9c2d8e98fd42a936045e82b3e2c174f7bac0b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -69,6 +69,43 @@ public final class CraftMagicNumbers implements UnsafeValues {
@@ -4492,8 +4498,8 @@ index d805ac4274fb6149bf8efea6b771ecfe79aea76f..7fde7a9b1cd1e8620077d93bea7513be
 +    }
 +
 +    @Override
-+    public net.kyori.adventure.text.Component resolveWithContext(net.kyori.adventure.text.Component component, org.bukkit.command.CommandSender context, org.bukkit.entity.Entity scoreboardSubject) throws IOException {
-+        return io.papermc.paper.adventure.PaperAdventure.resolveWithContext(component, context, scoreboardSubject);
++    public net.kyori.adventure.text.Component resolveWithContext(final net.kyori.adventure.text.Component component, final org.bukkit.command.CommandSender context, final org.bukkit.entity.Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
++        return io.papermc.paper.adventure.PaperAdventure.resolveWithContext(component, context, scoreboardSubject, bypassPermissions);
 +    }
 +    // Paper end
 +
