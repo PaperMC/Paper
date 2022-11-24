@@ -24,8 +24,8 @@ jobs:
           # Modified extensively by Machine_Maker
           script: |
             async function updatePR(owner, repo, issue_number, purpose, body) {
-              const { data } = await github.rest.issues.get({owner, repo, issue_number});
-              core.info(JSON.stringify(data, null, 2));
+              const { data } = await github.rest.issues.get({ owner, repo, issue_number });
+              core.debug(JSON.stringify(data, null, 2));
             
               const marker = `<!-- bot: ${purpose} -->`;
             
@@ -37,23 +37,35 @@ jobs:
               }
             
               core.info(`Updating the text body of PR #${issue_number} in ${owner}/${repo}`);
-              await github.rest.issues.update({owner, repo, issue_number, body: new_body});
+              await github.rest.issues.update({ owner, repo, issue_number, body: new_body });
             }
 
-            const {owner, repo} = context.repo;
-            const run_id = ${{github.event.workflow_run.id}};
+            const { owner, repo } = context.repo;
+            const run_id = ${{ github.event.workflow_run.id }};
             const repo_id = ${{ github.event.repository.id }};
+            
+            let pulls = [];
+            const event_type = "${{ github.event.workflow_run.event}}";
+            if (event_type === "push") { // if push, it's from the same repo which means `pull_requests` is populated
+              pulls = ${{ toJSON(github.event.workflow_run.pull_requests) }};
+            } else {
+              const pr_branch = "${{ github.event.workflow_run.head_branch }}";
+              const pr_sha = "${{ github.event.workflow_run.head_sha }}";
+              const pr_owner = "${{ github.event.workflow_run.head_repository.owner.login }}";
+              const { data } = await github.rest.pulls.list({ owner, repo, head: `${pr_owner}:${pr_branch}`, state: "open" });
+              core.debug(JSON.stringify(data, null, 2));
+              pulls = data.filter((pr) => pr.head.sha === pr_sha && pr.labels.find((l) => l.name === "build-pr-jar"));
+            }
 
-            const pull_requests = ${{ toJSON(github.event.workflow_run.pull_requests) }};
-            if (!pull_requests.length) {
+            if (!pulls.length) {
               return core.notice("This workflow doesn't have any pull requests!");
+            } else if (pulls.length > 1) {
+              core.info(JSON.stringify(pulls, null, 2));
+              return core.error("Found multiple matching PRs");
             }
-            const pull_request = pull_requests.find((pr) => pr.base.repo.id === repo_id);
-            if (!pull_request) {
-              return core.notice("This workflow doesn't match any pull request!");
-            }
+            const pull_request = pulls[0];
 
-            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {owner, repo, run_id});
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, { owner, repo, run_id });
             if (!artifacts.length) {
               return core.info("Skipping comment due to no artifact found");
             }
