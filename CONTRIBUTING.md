@@ -99,6 +99,9 @@ Your commit will be converted into a patch that you can then PR into Paper.
 
 Modifying previous patches is a bit more complex:
 
+> ! When modifying patches, you should be operating on the sources directory
+> until the modifications are complete, then you should operate on the root directory.
+
 ### Method 1
 
 This method works by temporarily resetting your `HEAD` to the desired commit to
