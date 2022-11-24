@@ -604,6 +604,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 @@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
+ 
+     default void unpackChestVehicleLootTable(@Nullable Player player) {
+         MinecraftServer minecraftServer = this.getLevel().getServer();
+-        if (this.getLootTable() != null && minecraftServer != null) {
++        if (this.getLootableData().shouldReplenish(player) && minecraftServer != null) { // Paper
+             LootTable lootTable = minecraftServer.getLootTables().get(this.getLootTable());
+             if (player != null) {
+                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getLootTable());
+             }
+ 
+-            this.setLootTable((ResourceLocation)null);
++            // this.setLootTable((ResourceLocation)null); // Paper
++            this.getLootableData().processRefill(player); // Paper
++
+             LootContext.Builder builder = (new LootContext.Builder((ServerLevel)this.getLevel())).withParameter(LootContextParams.ORIGIN, this.position()).withOptionalRandomSeed(this.getLootTableSeed());
+             if (player != null) {
+                 builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
+@@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
      default boolean isChestVehicleStillValid(Player player) {
          return !this.isRemoved() && this.position().closerThan(player.position(), 8.0D);
      }
