@@ -3,6 +3,7 @@ From: syldium <syldium@mailo.com>
 Date: Fri, 9 Jul 2021 18:50:40 +0200
 Subject: [PATCH] Add more advancement API
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/advancement/PaperAdvancementDisplay.java b/src/main/java/io/papermc/paper/advancement/PaperAdvancementDisplay.java
 new file mode 100644
@@ -14,6 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.adventure.PaperAdventure;
 +import net.kyori.adventure.text.Component;
++import net.minecraft.advancements.Advancement;
 +import net.minecraft.advancements.DisplayInfo;
 +import net.minecraft.advancements.FrameType;
 +import org.bukkit.NamespacedKey;
@@ -65,6 +67,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.handle.getBackground() == null ? null : CraftNamespacedKey.fromMinecraft(this.handle.getBackground());
 +    }
 +
++    @Override
++    public @NotNull Component displayName() {
++        return PaperAdventure.asAdventure(Advancement.constructDisplayComponent(null, this.handle));
++    }
++
 +    public static @NotNull Frame asPaperFrame(@NotNull FrameType frameType) {
 +        return switch (frameType) {
 +            case TASK -> Frame.TASK;
@@ -73,6 +80,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        };
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/advancements/Advancement.java b/src/main/java/net/minecraft/advancements/Advancement.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/advancements/Advancement.java
++++ b/src/main/java/net/minecraft/advancements/Advancement.java
+@@ -0,0 +0,0 @@ public class Advancement {
+             parent.addChild(this);
+         }
+ 
+-        if (display == null) {
+-            this.chatComponent = Component.literal(id.toString());
++        // Paper start - moved to static method
++        this.chatComponent = constructDisplayComponent(this.id, this.display);
++    }
++
++    public static Component constructDisplayComponent(final @Nullable ResourceLocation id, final @Nullable DisplayInfo display) {
++        if (id == null && display == null) {
++            throw new IllegalArgumentException("can't both be null");
++        } else if (display == null) {
++            return Component.literal(id.toString());
++        // Paper end
+         } else {
+             Component ichatbasecomponent = display.getTitle();
+             ChatFormatting enumchatformat = display.getFrame().getChatColor();
+@@ -0,0 +0,0 @@ public class Advancement {
+                 return chatmodifier.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, ichatmutablecomponent));
+             });
+ 
+-            this.chatComponent = ComponentUtils.wrapInSquareBrackets(ichatmutablecomponent1).withStyle(enumchatformat);
++            return ComponentUtils.wrapInSquareBrackets(ichatmutablecomponent1).withStyle(enumchatformat); // Paper
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/advancements/DisplayInfo.java b/src/main/java/net/minecraft/advancements/DisplayInfo.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/advancements/DisplayInfo.java
@@ -105,6 +144,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse
 +    public AdvancementDisplay getDisplay0() { // May be called by plugins via Commodore
 +        return this.handle.getDisplay() == null ? null : new CraftAdvancementDisplay(this.handle.getDisplay());
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component displayName() {
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(Advancement.constructDisplayComponent(this.handle.getId(), this.handle.getDisplay()));
 +    }
 +
 +    @Override
