@@ -26,6 +26,8 @@ public net.minecraft.world.entity.vehicle.MinecartHopper cooldownTime
 public net.minecraft.world.entity.projectile.AbstractArrow soundEvent
 public net.minecraft.world.entity.monster.Phantom anchorPoint
 public net.minecraft.world.entity.npc.WanderingTrader getWanderTarget()Lnet/minecraft/core/BlockPos;
+public net.minecraft.world.entity.animal.AbstractSchoolingFish leader
+public net.minecraft.world.entity.animal.AbstractSchoolingFish schoolSize
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
@@ -46,15 +48,16 @@ index c9901f8c7f3af57cb2e0bec315caa97adcb6f5ea..8f47d471c29d89bae5ae06a0d495d8c6
          bukkitMap.put(net.minecraft.world.entity.monster.Ghast.class, Ghast.class);
 diff --git a/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java b/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b1861e596b3d7cfd65d3791819ddcf980a8dc37a
+index 0000000000000000000000000000000000000000..41bf71d116ffc5431586ce54abba7f8def6c1dcf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,52 @@
 +package io.papermc.paper.entity;
 +
 +import net.minecraft.world.entity.animal.AbstractSchoolingFish;
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.entity.CraftFish;
++import org.jetbrains.annotations.NotNull;
 +
 +public class PaperSchoolableFish extends CraftFish implements SchoolableFish {
 +
@@ -68,9 +71,9 @@ index 0000000000000000000000000000000000000000..b1861e596b3d7cfd65d3791819ddcf98
 +    }
 +
 +    @Override
-+    public void startFollowing(SchoolableFish fish) {
++    public void startFollowing(@NotNull SchoolableFish fish) {
 +        if (this.getHandle().isFollower()) { // If following a fish already, properly remove the old one
-+            stopFollowing();
++            this.stopFollowing();
 +        }
 +
 +        this.getHandle().startFollowing(((PaperSchoolableFish) fish).getHandle());
@@ -78,10 +81,6 @@ index 0000000000000000000000000000000000000000..b1861e596b3d7cfd65d3791819ddcf98
 +
 +    @Override
 +    public void stopFollowing() {
-+        if (!this.getHandle().isFollower()) { // Avoid nullpointer
-+            return;
-+        }
-+
 +        this.getHandle().stopFollowing();
 +    }
 +
@@ -97,7 +96,7 @@ index 0000000000000000000000000000000000000000..b1861e596b3d7cfd65d3791819ddcf98
 +
 +    @Override
 +    public SchoolableFish getSchoolLeader() {
-+        var leader = this.getHandle().leader;
++        AbstractSchoolingFish leader = this.getHandle().leader;
 +        if (leader == null) {
 +            return null;
 +        }
@@ -106,20 +105,17 @@ index 0000000000000000000000000000000000000000..b1861e596b3d7cfd65d3791819ddcf98
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/animal/AbstractSchoolingFish.java b/src/main/java/net/minecraft/world/entity/animal/AbstractSchoolingFish.java
-index ecdbe66458263bd213a8c00f6c1f50205e4a06d9..9040e0b30fd6efe8a9740f83b6ed12b59c94f440 100644
+index e2efbf08e39f8966cb75c9f06f8e0990fbc1dbb4..ebe6ded8adc9de83f94d5a17968563916bc3ef9e 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/AbstractSchoolingFish.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/AbstractSchoolingFish.java
-@@ -14,8 +14,8 @@ import net.minecraft.world.level.ServerLevelAccessor;
+@@ -52,6 +52,7 @@ public abstract class AbstractSchoolingFish extends AbstractFish {
+     }
  
- public abstract class AbstractSchoolingFish extends AbstractFish {
-     @Nullable
--    private AbstractSchoolingFish leader;
--    private int schoolSize = 1;
-+    public AbstractSchoolingFish leader; // Paper - public
-+    public int schoolSize = 1; // Paper - public
- 
-     public AbstractSchoolingFish(EntityType<? extends AbstractSchoolingFish> type, Level world) {
-         super(type, world);
+     public void stopFollowing() {
++        if (this.leader == null) return; // Avoid NPE, plugins can now set the leader and certain fish goals might cause this method to be called
+         this.leader.removeFollower();
+         this.leader = null;
+     }
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
 index 66293e620dcf2c7ee3e2fc91f8a7cf52f2950de1..f2243f65cdf0e4b327e8597dfefe5b2de8912cef 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
@@ -571,10 +567,10 @@ index 04976616da8c85b1278dad33ff05554aa74a6b33..75c7645fb5732c43d1da15181cf5c7ee
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index b8e5205c165bcba5b8383334f3d0d1daf9d0a8cd..4e8b862ddf46af764481ccc12d20350b8ba1e272 100644
+index d34e1da89e04df311c1627f43790851c23fef0b0..cc86c455588f33463100a58f3be6f21e26dda5da 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -221,10 +221,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -223,10 +223,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                      else { return new CraftSquid(server, (Squid) entity); }
                  }
                  else if (entity instanceof AbstractFish) {
