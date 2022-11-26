@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: astei <andrew@steinborn.me>
+Date: Sat, 26 Nov 2022 10:56:55 +0100
+Subject: [PATCH] Optimize VarInts
+
+https://github.com/PaperMC/Paper/pull/6957#issuecomment-985250854
+
+diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+index 35377576ed182814051c11f902e02e8e921e84e3..3c5fe2e792fafe3bd554e5af0f1c2e24c2ca0422 100644
+--- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
++++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+@@ -88,6 +88,18 @@ public class FriendlyByteBuf extends ByteBuf {
+     }
+ 
+     public static int getVarIntSize(int value) {
++    //Paper start - Optimize VarInts
++        return VARINT_EXACT_BYTE_LENGTHS[Integer.numberOfLeadingZeros(value)]; // Paper - Optimize VarInts
++    }
++    private static final int[] VARINT_EXACT_BYTE_LENGTHS = new int[33];
++    static {
++        for (int i = 0; i <= 32; ++i) {
++            VARINT_EXACT_BYTE_LENGTHS[i] = (int) Math.ceil((31d - (i - 1)) / 7d);
++            VARINT_EXACT_BYTE_LENGTHS[32] = 1; // Special case for the number 0.
++        }
++    }
++    public static int getVarIntSize_(int value) {
++    //Paper end - Optimize VarInts
+         for (int j = 1; j < 5; ++j) {
+             if ((value & -1 << j * 7) == 0) {
+                 return j;
+@@ -504,6 +516,21 @@ public class FriendlyByteBuf extends ByteBuf {
+     }
+ 
+     public FriendlyByteBuf writeVarInt(int value) {
++    // Paper start - Optimize VarInts
++        // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
++        // that the proxy will write, to improve inlining.
++        if ((value & (0xFFFFFFFF << 7)) == 0) {
++            writeByte(value);
++        } else if ((value & (0xFFFFFFFF << 14)) == 0) {
++            int w = (value & 0x7F | 0x80) << 8 | (value >>> 7);
++            writeShort(w);
++        } else {
++            writeVarInt_(value);
++        }
++        return this;
++    }
++    public FriendlyByteBuf writeVarInt_(int value) {
++    // Paper end - Optimize VarInts
+         while ((value & -128) != 0) {
+             this.writeByte(value & 127 | 128);
+             value >>>= 7;
