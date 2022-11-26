@@ -27,35 +27,44 @@ index 724592234e2a178a518f6ab7d09c3180780371a7..92154550b41b2e1d03deb1271b71bb3b
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dab8d6fb489f8b3acc7c8fdaa1b5b6b83fa0eeb4
+index 0000000000000000000000000000000000000000..c80485b9b0c189820687b3a8ff66a855a4b1efa7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,171 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import io.papermc.paper.command.PaperSubcommand;
++import java.io.File;
++import java.io.IOException;
++import java.io.PrintWriter;
 +import java.lang.invoke.MethodHandle;
 +import java.lang.invoke.MethodHandles;
 +import java.lang.reflect.Field;
++import java.time.LocalDateTime;
++import java.time.format.DateTimeFormatter;
++import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.Locale;
 +import java.util.Set;
-+import java.util.stream.Stream;
++import net.kyori.adventure.text.Component;
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.plugin.Plugin;
++import org.bukkit.plugin.RegisteredListener;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static net.kyori.adventure.text.Component.newline;
 +import static net.kyori.adventure.text.Component.space;
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
 +import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 +import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
 +
 +@DefaultQualifier(NonNull.class)
 +public final class DumpListenersCommand implements PaperSubcommand {
@@ -73,13 +82,41 @@ index 0000000000000000000000000000000000000000..dab8d6fb489f8b3acc7c8fdaa1b5b6b8
 +
 +    @Override
 +    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        if (args.length >= 1 && args[0].equals("tofile")) {
++            this.dumpToFile(sender);
++            return true;
++        }
 +        this.doDumpListeners(sender, args);
 +        return true;
 +    }
 +
++    private void dumpToFile(final CommandSender sender) {
++        final File file = new File("debug/listeners-"
++            + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
++        try (final PrintWriter writer = new PrintWriter(file)) {
++            for (final String eventClass : eventClassNames()) {
++                final HandlerList handlers;
++                try {
++                    handlers = (HandlerList) findClass(eventClass).getMethod("getHandlerList").invoke(null);
++                } catch (final ReflectiveOperationException e) {
++                    continue;
++                }
++                if (handlers.getRegisteredListeners().length != 0) {
++                    writer.println(eventClass);
++                }
++                for (final RegisteredListener registeredListener : handlers.getRegisteredListeners()) {
++                    writer.println(" - " + registeredListener);
++                }
++            }
++        } catch (final IOException ex) {
++            throw new RuntimeException(ex);
++        }
++        sender.sendMessage(text("Dumped listeners to " + file, GREEN));
++    }
++
 +    private void doDumpListeners(final CommandSender sender, final String[] args) {
 +        if (args.length == 0) {
-+            sender.sendMessage(text("Usage: /paper dumplisteners [className]", RED));
++            sender.sendMessage(text("Usage: /paper dumplisteners tofile|<className>", RED));
 +            return;
 +        }
 +
@@ -93,12 +130,19 @@ index 0000000000000000000000000000000000000000..dab8d6fb489f8b3acc7c8fdaa1b5b6b8
 +
 +            sender.sendMessage(text("Listeners for " + args[0] + ":"));
 +
-+            Stream.of(handlers.getRegisteredListeners())
-+                .map(listener -> text(listener.getPlugin().getName(), GREEN)
++            for (final RegisteredListener listener : handlers.getRegisteredListeners()) {
++                final Component hoverText = text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")", WHITE)
++                    .append(newline())
++                    .append(text("Listener: " + listener.getListener()))
++                    .append(newline())
++                    .append(text("Executor: " + listener.getExecutor()))
++                    .append(newline())
++                    .append(text("Ignoring cancelled: " + listener.isIgnoringCancelled()));
++
++                sender.sendMessage(text(listener.getPlugin().getName(), GREEN)
 +                    .append(space())
-+                    .append(text("(" + listener.getListener().getClass().getName() + ")", GRAY)
-+                        .hoverEvent(text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")", GRAY))))
-+                .forEach(sender::sendMessage);
++                    .append(text("(" + listener.getListener().getClass().getName() + ")", GRAY).hoverEvent(hoverText)));
++            }
 +
 +            sender.sendMessage(text("Total listeners: " + handlers.getRegisteredListeners().length));
 +
@@ -115,16 +159,23 @@ index 0000000000000000000000000000000000000000..dab8d6fb489f8b3acc7c8fdaa1b5b6b8
 +    @Override
 +    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
 +        return switch (args.length) {
-+            case 0 -> List.copyOf(getEventClasses());
-+            case 1 -> getEventClasses().stream()
++            case 0 -> suggestions();
++            case 1 -> suggestions().stream()
 +                .filter(clazz -> clazz.toLowerCase(Locale.ROOT).contains(args[0].toLowerCase(Locale.ROOT)))
 +                .toList();
 +            default -> Collections.emptyList();
 +        };
 +    }
 +
++    private static List<String> suggestions() {
++        final List<String> ret = new ArrayList<>();
++        ret.add("tofile");
++        ret.addAll(eventClassNames());
++        return ret;
++    }
++
 +    @SuppressWarnings("unchecked")
-+    private static Set<String> getEventClasses() {
++    private static Set<String> eventClassNames() {
 +        try {
 +            return (Set<String>) EVENT_TYPES_HANDLE.invokeExact();
 +        } catch (final Throwable e) {
