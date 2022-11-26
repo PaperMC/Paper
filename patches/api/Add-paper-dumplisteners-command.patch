@@ -4,6 +4,88 @@ Date: Sat, 19 Nov 2022 19:46:44 +0100
 Subject: [PATCH] Add /paper dumplisteners command
 
 
+diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/co/aikar/timings/TimedEventExecutor.java
++++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
+@@ -0,0 +0,0 @@ public class TimedEventExecutor implements EventExecutor {
+             executor.execute(listener, event);
+         }
+     }
++
++    @Override
++    @NotNull
++    public String toString() {
++        return "TimedEventExecutor['" + this.executor.toString() + "']";
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
++++ b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
+ public class MethodHandleEventExecutor implements EventExecutor {
+     private final Class<? extends Event> eventClass;
+     private final MethodHandle handle;
++    private final Method method;
+ 
+     public MethodHandleEventExecutor(@NotNull Class<? extends Event> eventClass, @NotNull MethodHandle handle) {
+         this.eventClass = eventClass;
+         this.handle = handle;
++        this.method = null;
+     }
+ 
+     public MethodHandleEventExecutor(@NotNull Class<? extends Event> eventClass, @NotNull Method m) {
+@@ -0,0 +0,0 @@ public class MethodHandleEventExecutor implements EventExecutor {
+         } catch (IllegalAccessException e) {
+             throw new AssertionError("Unable to set accessible", e);
+         }
++        this.method = m;
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class MethodHandleEventExecutor implements EventExecutor {
+             SneakyThrow.sneaky(t);
+         }
+     }
++
++    @Override
++    @NotNull
++    public String toString() {
++        return "MethodHandleEventExecutor['" + this.method + "']";
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
++++ b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
+ public class StaticMethodHandleEventExecutor implements EventExecutor {
+     private final Class<? extends Event> eventClass;
+     private final MethodHandle handle;
++    private final Method method;
+ 
+     public StaticMethodHandleEventExecutor(@NotNull Class<? extends Event> eventClass, @NotNull Method m) {
+         Preconditions.checkArgument(Modifier.isStatic(m.getModifiers()), "Not a static method: %s", m);
+@@ -0,0 +0,0 @@ public class StaticMethodHandleEventExecutor implements EventExecutor {
+         } catch (IllegalAccessException e) {
+             throw new AssertionError("Unable to set accessible", e);
+         }
++        this.method = m;
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class StaticMethodHandleEventExecutor implements EventExecutor {
+             SneakyThrow.sneaky(throwable);
+         }
+     }
++
++    @Override
++    @NotNull
++    public String toString() {
++        return "StaticMethodHandleEventExecutor['" + this.method + "']";
++    }
+ }
 diff --git a/src/main/java/org/bukkit/event/HandlerList.java b/src/main/java/org/bukkit/event/HandlerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/event/HandlerList.java
@@ -35,3 +117,61 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          handlerslots = new EnumMap<EventPriority, ArrayList<RegisteredListener>>(EventPriority.class);
          for (EventPriority o : EventPriority.values()) {
              handlerslots.put(o, new ArrayList<RegisteredListener>());
+diff --git a/src/main/java/org/bukkit/plugin/EventExecutor.java b/src/main/java/org/bukkit/plugin/EventExecutor.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/plugin/EventExecutor.java
++++ b/src/main/java/org/bukkit/plugin/EventExecutor.java
+@@ -0,0 +0,0 @@ public interface EventExecutor {
+             try {
+                 EventExecutor asmExecutor = executorClass.newInstance();
+                 // Define a wrapper to conform to bukkit stupidity (passing in events that don't match and wrapper exception)
+-                return (listener, event) -> {
+-                    if (!eventClass.isInstance(event)) return;
+-                    asmExecutor.execute(listener, event);
++                return new EventExecutor() {
++                    @Override
++                    public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
++                        if (!eventClass.isInstance(event)) return;
++                        asmExecutor.execute(listener, event);
++                    }
++
++                    @Override
++                    @NotNull
++                    public String toString() {
++                        return "ASMEventExecutor['" + m + "']";
++                    }
+                 };
+             } catch (InstantiationException | IllegalAccessException e) {
+                 throw new AssertionError("Unable to initialize generated event executor", e);
+diff --git a/src/main/java/org/bukkit/plugin/RegisteredListener.java b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/plugin/RegisteredListener.java
++++ b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+@@ -0,0 +0,0 @@ public class RegisteredListener {
+     public boolean isIgnoringCancelled() {
+         return ignoreCancelled;
+     }
++
++    // Paper start
++    /**
++     * Get the executor for this registration.
++     *
++     * @return executor
++     */
++    @NotNull
++    public EventExecutor getExecutor() {
++        return this.executor;
++    }
++
++    @Override
++    public String toString() {
++        return "RegisteredListener{"
++            + "plugin=\"" + this.plugin.getName()
++            + "\", listener=\"" + this.listener
++            + "\", executor=\"" + this.executor
++            + "\", priority=\"" + this.priority.name() + " (" + this.priority.getSlot() + ")"
++            + "\", ignoringCancelled=" + this.ignoreCancelled
++            + "}";
++    }
++    // Paper end
+ }
