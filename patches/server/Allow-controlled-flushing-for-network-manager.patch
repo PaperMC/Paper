@@ -129,6 +129,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return true;
              }
  
+@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
              Packet<?> packet = queued.packet;
              if (!packet.isReady()) {
 +                // Paper start - make only one flush call per sendPacketQueue() call
@@ -139,9 +141,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return false;
              } else {
                  iterator.remove();
--                this.sendPacket(packet, queued.listener);
-+                this.sendPacket(packet, queued.listener, (!iterator.hasNext() && (needsFlush || this.canFlush)) ? Boolean.TRUE : Boolean.FALSE); // Paper - make only one flush call per sendPacketQueue() call
-+                hasWrotePacket = true; // Paper - make only one flush call per sendPacketQueue() call
+                 if (queued.tryMarkConsumed()) { // Paper - try to mark isConsumed flag for de-duplicating packet
+-                    this.sendPacket(packet, queued.listener);
++                    this.sendPacket(packet, queued.listener, (!iterator.hasNext() && (needsFlush || this.canFlush)) ? Boolean.TRUE : Boolean.FALSE); // Paper - make only one flush call per sendPacketQueue() call
++                    hasWrotePacket = true; // Paper - make only one flush call per sendPacketQueue() call
+                 }
              }
          }
-         return true;
