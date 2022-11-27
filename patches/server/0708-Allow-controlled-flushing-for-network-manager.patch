@@ -9,7 +9,7 @@ This patch will be used to optimise out flush calls in later
 patches.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 7bece5bd90d8f372ead5aef473f077a2a1ef9fa2..a71db5b49b1e6a094790d060db9f30a711581db0 100644
+index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34cce89cfe 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -122,6 +122,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -120,7 +120,7 @@ index 7bece5bd90d8f372ead5aef473f077a2a1ef9fa2..a71db5b49b1e6a094790d060db9f30a7
          // If we are on main, we are safe here in that nothing else should be processing queue off main anymore
          // But if we are not on main due to login/status, the parent is synchronized on packetQueue
          java.util.Iterator<PacketHolder> iterator = this.queue.iterator();
-@@ -407,16 +457,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -407,7 +457,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              PacketHolder queued = iterator.next(); // poll -> peek
  
              // Fix NPE (Spigot bug caused by handleDisconnection())
@@ -128,6 +128,8 @@ index 7bece5bd90d8f372ead5aef473f077a2a1ef9fa2..a71db5b49b1e6a094790d060db9f30a7
 +            if (false && queued == null) { // Paper - diff on change, this logic is redundant: iterator guarantees ret of an element - on change, hook the flush logic here
                  return true;
              }
+ 
+@@ -419,11 +469,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              Packet<?> packet = queued.packet;
              if (!packet.isReady()) {
@@ -139,9 +141,10 @@ index 7bece5bd90d8f372ead5aef473f077a2a1ef9fa2..a71db5b49b1e6a094790d060db9f30a7
                  return false;
              } else {
                  iterator.remove();
--                this.sendPacket(packet, queued.listener);
-+                this.sendPacket(packet, queued.listener, (!iterator.hasNext() && (needsFlush || this.canFlush)) ? Boolean.TRUE : Boolean.FALSE); // Paper - make only one flush call per sendPacketQueue() call
-+                hasWrotePacket = true; // Paper - make only one flush call per sendPacketQueue() call
+                 if (queued.tryMarkConsumed()) { // Paper - try to mark isConsumed flag for de-duplicating packet
+-                    this.sendPacket(packet, queued.listener);
++                    this.sendPacket(packet, queued.listener, (!iterator.hasNext() && (needsFlush || this.canFlush)) ? Boolean.TRUE : Boolean.FALSE); // Paper - make only one flush call per sendPacketQueue() call
++                    hasWrotePacket = true; // Paper - make only one flush call per sendPacketQueue() call
+                 }
              }
          }
-         return true;
