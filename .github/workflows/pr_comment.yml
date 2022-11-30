@@ -26,16 +26,12 @@ jobs:
             async function updatePR(owner, repo, issue_number, purpose, body) {
               const { data } = await github.rest.issues.get({ owner, repo, issue_number });
               core.debug(JSON.stringify(data, null, 2));
-            
+
               const marker = `<!-- bot: ${purpose} -->`;
-            
-              let new_body = data.body ? data.body.trim().split(marker)[0] : "";
-              if (!new_body.trim()) {
-                new_body += `${marker}\n${body}`
-              } else {
-                new_body += `${marker}\n---\n${body}`
-              }
-            
+
+              let new_body = data.body ? data.body.trim().split(marker)[0].trim() : "";
+              new_body += `\n${marker}\n---\n${body}`;
+
               core.info(`Updating the text body of PR #${issue_number} in ${owner}/${repo}`);
               await github.rest.issues.update({ owner, repo, issue_number, body: new_body });
             }
@@ -43,7 +39,7 @@ jobs:
             const { owner, repo } = context.repo;
             const run_id = ${{ github.event.workflow_run.id }};
             const repo_id = ${{ github.event.repository.id }};
-            
+
             let pulls = [];
             const event_type = "${{ github.event.workflow_run.event}}";
             if (event_type === "push") { // if push, it's from the same repo which means `pull_requests` is populated
@@ -73,7 +69,7 @@ jobs:
             if (!artifact) {
               return core.info("Skipping comment to no matching artifact found");
             }
-            
+
             const link = `https://nightly.link/${owner}/${repo}/actions/artifacts/${artifact.id}.zip`;
             const body = `Download the paperclip jar for this pull request: [${artifact.name}.zip](${link})`;
             core.info(`Adding a link to ${link}`);
