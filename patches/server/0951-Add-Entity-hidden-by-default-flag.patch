@@ -21,10 +21,10 @@ If no plugin had previously hidden the entity before the entity was hidden by de
 plugin that attempts to show the entity to a player will succeed in doing so.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..4e506395085fc597a0544830355d4490194706f0 100644
+index 55d8ced734a408c990c6c4fbc81707bcb1f27daa..29159963b29dde8cf24fda8c9fa75b1d67eb824f 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -2277,6 +2277,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1466,6 +1466,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          private final int range;
          SectionPos lastSectionPos;
          public final Set<ServerPlayerConnection> seenBy = new ReferenceOpenHashSet<>(); // Paper - optimise map impl
@@ -32,7 +32,7 @@ index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..4e506395085fc597a0544830355d4490
  
          public TrackedEntity(Entity entity, int i, int j, boolean flag) {
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, j, flag, this::broadcast, this.seenBy); // CraftBukkit
-@@ -2385,6 +2386,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1574,6 +1575,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      flag = false;
                  }
                  // CraftBukkit end
@@ -41,10 +41,10 @@ index 77c89376495d90d0e7cbf6cd02c9a1c8d9a4340b..4e506395085fc597a0544830355d4490
                      if (this.seenBy.add(player.connection)) {
                          this.serverEntity.addPairing(player);
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index f925a8d550ecbf2044a37bfe58b30d6578c5f6af..20b2656086ba8e2e517ef0e2a6e417c068e22bc6 100644
+index 6fa47becd0f83ac4273ef3a10c314aa27b08184b..d62e562779346d58c46b27da44953abc3c9e8bd2 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -398,6 +398,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -397,6 +397,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      @javax.annotation.Nullable
      private UUID originWorld;
      public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
@@ -52,8 +52,8 @@ index f925a8d550ecbf2044a37bfe58b30d6578c5f6af..20b2656086ba8e2e517ef0e2a6e417c0
  
      public void setOrigin(@javax.annotation.Nonnull Location location) {
          this.origin = location.toVector();
-@@ -4431,4 +4432,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-         return ((ServerChunkCache) level.getChunkSource()).isPositionTicking(this);
+@@ -4472,4 +4473,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         return ((net.minecraft.server.level.ServerChunkCache) level.getChunkSource()).isPositionTicking(this);
      }
      // Paper end
 +
@@ -68,10 +68,10 @@ index f925a8d550ecbf2044a37bfe58b30d6578c5f6af..20b2656086ba8e2e517ef0e2a6e417c0
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 6549ade8e19807c523e5a1dc68b66585aad438b1..bda909f2523ac8c3ee9b5f103e487523927a8bc7 100644
+index 01132b10799034232e7e5cbb460d848601e04012..11907d947c4da5037dfe768c9ca6156931b2cc58 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -1355,4 +1355,25 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -1390,4 +1390,25 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          return !this.getHandle().level.noCollision(this.getHandle(), aabb);
      }
      // Paper End - Collision API
@@ -98,10 +98,10 @@ index 6549ade8e19807c523e5a1dc68b66585aad438b1..bda909f2523ac8c3ee9b5f103e487523
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 067d64ce06f626ce90b3ccf608d98f3c64fce335..7f6c4657773736dc24f3fd7feb0b5f0bb6314e6b 100644
+index a5220a4e514865c70700527bcd2f941d852564c0..db2dabf6c8e5a1b98e120db4b2931b20353dfa64 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1721,6 +1721,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1765,6 +1765,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
          ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
          if (entry != null) {
@@ -109,7 +109,7 @@ index 067d64ce06f626ce90b3ccf608d98f3c64fce335..7f6c4657773736dc24f3fd7feb0b5f0b
              entry.removePlayer(this.getHandle());
          }
  
-@@ -1758,13 +1759,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1802,13 +1803,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          if (this.equals(entity)) return;
  
          Set<WeakReference<Plugin>> hidingPlugins = this.hiddenEntities.get(entity.getUniqueId());
@@ -134,7 +134,7 @@ index 067d64ce06f626ce90b3ccf608d98f3c64fce335..7f6c4657773736dc24f3fd7feb0b5f0b
          this.hiddenEntities.remove(entity.getUniqueId());
  
          // Paper start
-@@ -1783,9 +1789,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1827,9 +1833,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
@@ -152,7 +152,7 @@ index 067d64ce06f626ce90b3ccf608d98f3c64fce335..7f6c4657773736dc24f3fd7feb0b5f0b
      }
      // Paper start
      private void reregisterPlayer(ServerPlayer player) {
-@@ -1843,7 +1855,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1887,7 +1899,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public boolean canSee(org.bukkit.entity.Entity entity) {
@@ -170,7 +170,15 @@ index 067d64ce06f626ce90b3ccf608d98f3c64fce335..7f6c4657773736dc24f3fd7feb0b5f0b
      }
  
      @Override
-@@ -2892,6 +2913,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2936,6 +2957,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end
+ 
++<<<<<<< HEAD
+     // Paper start
+     @Override
+     public void showElderGuardian(boolean silent) {
+@@ -2978,6 +3000,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
      // Paper end
  
