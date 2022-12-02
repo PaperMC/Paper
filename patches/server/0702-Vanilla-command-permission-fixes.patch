@@ -6,8 +6,12 @@ Subject: [PATCH] Vanilla command permission fixes
 Fixes permission checks for vanilla commands which don't have a
 requirement, as well as for namespaced vanilla commands.
 
+Fixes permission checking for command functions
+
 == AT ==
 public-f com.mojang.brigadier.tree.CommandNode requirement
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/com/mojang/brigadier/builder/ArgumentBuilder.java b/src/main/java/com/mojang/brigadier/builder/ArgumentBuilder.java
 index 899008b2980d13f1be6280cd8cb959c53a29bebf..f875507241ac6769545e91cd3285232b75b892f0 100644
@@ -32,6 +36,26 @@ index 899008b2980d13f1be6280cd8cb959c53a29bebf..f875507241ac6769545e91cd3285232b
      private CommandNode<S> target;
      private RedirectModifier<S> modifier = null;
      private boolean forks;
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index 2ff021966426dd6c7c1081fbcfacf4677b404264..8cd678740dc6475d4ae6db6f35d8b73652588cb4 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -209,8 +209,13 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+ 
+     // CraftBukkit start
+     public boolean hasPermission(int i, String bukkitPermission) {
+-        // World is null when loading functions
+-        return ((this.getLevel() == null || !this.getLevel().getCraftServer().ignoreVanillaPermissions) && this.permissionLevel >= i) || this.getBukkitSender().hasPermission(bukkitPermission);
++        // Paper start - fix incomplete fix
++        if (this.source == CommandSource.NULL) { // CommandSource.NULL is used for datapack loading
++            return this.permissionLevel >= i;
++        } else {
++            return (!this.getLevel().getCraftServer().ignoreVanillaPermissions && this.permissionLevel >= i) || this.getBukkitSender().hasPermission(bukkitPermission);
++        }
++        // Paper end
+     }
+     // CraftBukkit end
+ 
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
 index 9c0b2679964f864671ff4041163d1065c8d9cf84..27093aed1f4112a5414671fd5d9c4e683011506d 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
