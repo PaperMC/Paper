@@ -98,7 +98,7 @@ index 01132b10799034232e7e5cbb460d848601e04012..11907d947c4da5037dfe768c9ca61569
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index a5220a4e514865c70700527bcd2f941d852564c0..db2dabf6c8e5a1b98e120db4b2931b20353dfa64 100644
+index a5220a4e514865c70700527bcd2f941d852564c0..463af03fcf77c56ba9b73951093bf918d6c10360 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1765,6 +1765,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -170,15 +170,7 @@ index a5220a4e514865c70700527bcd2f941d852564c0..db2dabf6c8e5a1b98e120db4b2931b20
      }
  
      @Override
-@@ -2936,6 +2957,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-     }
-     // Paper end
- 
-+<<<<<<< HEAD
-     // Paper start
-     @Override
-     public void showElderGuardian(boolean silent) {
-@@ -2978,6 +3000,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2978,6 +2999,29 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
      // Paper end
  
@@ -187,15 +179,17 @@ index a5220a4e514865c70700527bcd2f941d852564c0..db2dabf6c8e5a1b98e120db4b2931b20
 +    public void setHiddenByDefault(boolean hiddenByDefault) {
 +        // Update server lists
 +        if (hiddenByDefault) {
-+            server.getOnlinePlayers().stream()
-+                .filter(entityPlayer -> entityPlayer != this)
-+                .filter(entityPlayer -> entityPlayer.canSee(this))
-+                .forEach(entityPlayer -> entityPlayer.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, this.getHandle())));
++            for (CraftPlayer player : this.server.getOnlinePlayers()) {
++                if (player == this || !player.canSee(this)) continue;
++
++                player.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, this.getHandle()));
++            }
 +        } else {
-+            server.getOnlinePlayers().stream()
-+                .filter(entityPlayer -> entityPlayer != this)
-+                .filter(entityPlayer -> !entityPlayer.canSee(this))
-+                .forEach(entityPlayer -> entityPlayer.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, this.getHandle())));
++            for (CraftPlayer player : this.server.getOnlinePlayers()) {
++                if (player == this || player.canSee(this)) continue;
++
++                player.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, this.getHandle()));
++            }
 +        }
 +
 +        // Now, process trackers
