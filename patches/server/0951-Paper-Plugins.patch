@@ -523,7 +523,7 @@ index 0000000000000000000000000000000000000000..f9a2c55a354c877749db3f92956de802
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f4793801c960d6a80f8f7bab994e992f59ee725
+index 0000000000000000000000000000000000000000..4974ffe782ef85de1a25748c4171344ebec323be
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 @@ -0,0 +1,195 @@
@@ -588,6 +588,13 @@ index 0000000000000000000000000000000000000000..5f4793801c960d6a80f8f7bab994e992
 +        this.libraryLoader = libraryLoader;
 +
 +        this.logger = logger;
++        if (this.configuration.hasOpenClassloader()) {
++            this.group = PaperPluginClassLoaderStorage.INSTANCE.registerOpenGroup(this);
++        } else {
++            this.group = PaperPluginClassLoaderStorage.INSTANCE.registerAccessBackedGroup(this, (classLoader) -> {
++                return PaperPluginClassLoader.this.dependencyContext.isTransitiveDependency(PaperPluginClassLoader.this.configuration, classLoader.getConfiguration());
++            });
++        }
 +    }
 +
 +    @Override
@@ -687,13 +694,6 @@ index 0000000000000000000000000000000000000000..5f4793801c960d6a80f8f7bab994e992
 +        );
 +
 +        File dataFolder = new File(Bukkit.getPluginsFolder(), pluginDescriptionFile.getName());
-+        if (this.configuration.hasOpenClassloader()) {
-+            this.group = PaperPluginClassLoaderStorage.INSTANCE.registerOpenGroup(this);
-+        } else {
-+            this.group = PaperPluginClassLoaderStorage.INSTANCE.registerAccessBackedGroup(this, (classLoader) -> {
-+                return PaperPluginClassLoader.this.dependencyContext.isTransitiveDependency(PaperPluginClassLoader.this.configuration, classLoader.getConfiguration());
-+            });
-+        }
 +
 +        plugin.init(Bukkit.getServer(), pluginDescriptionFile, dataFolder, this.source.toFile(), this, config);
 +        plugin.logger = this.logger;

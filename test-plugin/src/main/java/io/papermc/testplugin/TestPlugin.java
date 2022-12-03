@@ -34,6 +34,5 @@ public final class TestPlugin extends JavaPlugin implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 }
