@@ -1265,6 +1265,58 @@ index 0000000000000000000000000000000000000000..b97ea6f8ab087eb25e4b5b44d5b92a61
 +    }
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/util/DummyBukkitPluginLoader.java b/src/main/java/io/papermc/paper/plugin/provider/util/DummyBukkitPluginLoader.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c924adba6b5cdc0f8a94f39f8b00807bf9328a57
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/util/DummyBukkitPluginLoader.java
+@@ -0,0 +1,46 @@
++package io.papermc.paper.plugin.provider.util;
++
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import org.bukkit.event.Listener;
++import org.bukkit.plugin.*;
++import org.jetbrains.annotations.NotNull;
++
++import java.io.File;
++import java.util.Map;
++import java.util.Set;
++import java.util.regex.Pattern;
++
++public record DummyBukkitPluginLoader(Plugin plugin) implements PluginLoader {
++
++
++    @Override
++    public @NotNull Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Pattern[] getPluginFileFilters() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(@NotNull Listener listener, @NotNull Plugin plugin) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public void enablePlugin(@NotNull Plugin plugin) {
++        Bukkit.getPluginManager().enablePlugin(plugin);
++    }
++
++    @Override
++    public void disablePlugin(@NotNull Plugin plugin) {
++        Bukkit.getPluginManager().disablePlugin(plugin);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/util/ProviderUtil.java b/src/main/java/io/papermc/paper/plugin/provider/util/ProviderUtil.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..37ee4d9fdcf19ea644d25d29c122ea10d6e2ac95
@@ -1319,57 +1371,6 @@ index 0000000000000000000000000000000000000000..37ee4d9fdcf19ea644d25d29c122ea10
 +        throw new AssertionError(); // Shouldn't happen
 +    }
 +
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/provider/util/UnsupportedBukkitPluginLoader.java b/src/main/java/io/papermc/paper/plugin/provider/util/UnsupportedBukkitPluginLoader.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..5fab4c88eecf52af217e0cfead73af128a7d04dc
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/provider/util/UnsupportedBukkitPluginLoader.java
-@@ -0,0 +1,45 @@
-+package io.papermc.paper.plugin.provider.util;
-+
-+import org.bukkit.event.Event;
-+import org.bukkit.event.Listener;
-+import org.bukkit.plugin.*;
-+import org.jetbrains.annotations.NotNull;
-+
-+import java.io.File;
-+import java.util.Map;
-+import java.util.Set;
-+import java.util.regex.Pattern;
-+
-+public enum UnsupportedBukkitPluginLoader implements PluginLoader {
-+    INSTANCE;
-+
-+    @Override
-+    public @NotNull Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException {
-+        throw new UnsupportedOperationException();
-+    }
-+
-+    @Override
-+    public @NotNull PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException {
-+        throw new UnsupportedOperationException();
-+    }
-+
-+    @Override
-+    public @NotNull Pattern[] getPluginFileFilters() {
-+        throw new UnsupportedOperationException();
-+    }
-+
-+    @Override
-+    public @NotNull Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(@NotNull Listener listener, @NotNull Plugin plugin) {
-+        throw new UnsupportedOperationException();
-+    }
-+
-+    @Override
-+    public void enablePlugin(@NotNull Plugin plugin) {
-+        throw new UnsupportedOperationException();
-+    }
-+
-+    @Override
-+    public void disablePlugin(@NotNull Plugin plugin) {
-+        throw new UnsupportedOperationException();
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryAccess.java b/src/main/java/io/papermc/paper/registry/RegistryAccess.java
 new file mode 100644
@@ -1908,7 +1909,7 @@ index 9db611841b73fed8dc8a71f4d7fdef95af3cf89d..28d9dd2de3e2ce1111badd22bcf3038b
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index 3bea5dd67ad0393160ccede4ac99a3c7baa1803b..7a23ab86ec057b05344738a3205ccc788977b5bc 100644
+index 3bea5dd67ad0393160ccede4ac99a3c7baa1803b..36dfffbe278b58a28ce4feaf6965c08aba210bdd 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 @@ -25,7 +25,6 @@ import org.bukkit.generator.ChunkGenerator;
@@ -2014,7 +2015,7 @@ index 3bea5dd67ad0393160ccede4ac99a3c7baa1803b..7a23ab86ec057b05344738a3205ccc78
 +    }
 +    public final void init(@NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader, @Nullable io.papermc.paper.plugin.configuration.PluginMeta configuration) {
 +    // Paper end
-+        this.loader = io.papermc.paper.plugin.provider.util.UnsupportedBukkitPluginLoader.INSTANCE;
++        this.loader = new io.papermc.paper.plugin.provider.util.DummyBukkitPluginLoader(this);
          this.server = server;
          this.file = file;
          this.description = description;
