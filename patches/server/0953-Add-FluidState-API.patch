@@ -1,0 +1,197 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 4 Dec 2022 19:22:04 -0800
+Subject: [PATCH] Add FluidState API
+
+
+diff --git a/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java b/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..159fc021c3a13d1312b0c0269a831849100a2efd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/fluid/PaperFluidData.java
+@@ -0,0 +1,86 @@
++package io.papermc.paper.block.fluid;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.block.fluid.type.PaperFlowing;
++import io.papermc.paper.block.fluid.type.PaperIdkWhat;
++import java.util.HashMap;
++import java.util.Map;
++import java.util.function.Function;
++import net.minecraft.world.level.block.state.properties.Property;
++import net.minecraft.world.level.material.FluidState;
++import net.minecraft.world.level.material.LavaFluid;
++import net.minecraft.world.level.material.WaterFluid;
++import org.bukkit.Fluid;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++
++public class PaperFluidData implements FluidData {
++
++    private static final Map<Class<? extends net.minecraft.world.level.material.Fluid>, Function<FluidState, PaperFluidData>> MAP = new HashMap<>();
++
++    private final FluidState state;
++
++    protected PaperFluidData(final FluidState state) {
++        this.state = state;
++    }
++
++    /* Registry */
++
++    static {
++        //<editor-fold desc="PaperFluidData Registration" defaultstate="collapsed">
++        register(LavaFluid.Source.class, PaperIdkWhat::new);
++        register(WaterFluid.Source.class, PaperIdkWhat::new);
++        register(LavaFluid.Flowing.class, PaperFlowing::new);
++        register(WaterFluid.Flowing.class, PaperFlowing::new);
++        //</editor-fold>
++    }
++
++    static void register(final Class<? extends net.minecraft.world.level.material.Fluid> fluid, final Function<FluidState, PaperFluidData> creator) {
++        Preconditions.checkState(MAP.put(fluid, creator) == null, "Duplicate mapping %s->%s", fluid, creator);
++        MAP.put(fluid, creator);
++    }
++
++    public static PaperFluidData createData(final FluidState state) {
++        return MAP.getOrDefault(state.getType().getClass(), PaperFluidData::new).apply(state);
++    }
++
++    /* Impl */
++
++    public FluidState getState() {
++        return this.state;
++    }
++
++    protected <T extends Comparable<T>> T get(final Property<T> property) {
++        return this.state.getValue(property);
++    }
++
++    /* API */
++
++    @Override
++    public final Fluid getFluidType() {
++        return CraftMagicNumbers.getFluid(this.state.getType());
++    }
++
++    @Override
++    public PaperFluidData clone() {
++        try {
++            return (PaperFluidData) super.clone();
++        } catch (CloneNotSupportedException ex) {
++            throw new AssertionError("Clone not supported", ex);
++        }
++    }
++
++    @Override
++    public int hashCode() {
++        return this.state.hashCode();
++    }
++
++    @Override
++    public boolean equals(Object obj) {
++        return obj instanceof PaperFluidData paperFluidData && this.state.equals(paperFluidData.state);
++    }
++
++    @Override
++    public String toString() {
++        return "PaperFluidData{" + this.state + "}";
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/fluid/package-info.java b/src/main/java/io/papermc/paper/block/fluid/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cfabb814ebd281aab299c6c655266ff357e08806
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/fluid/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.block.fluid;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
+diff --git a/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowing.java b/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowing.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..47ed91df64d6b5eb3436ee0dbac76873fb37fccc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/fluid/type/PaperFlowing.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.block.fluid.type;
++
++import net.minecraft.world.level.material.FlowingFluid;
++import net.minecraft.world.level.material.FluidState;
++
++public class PaperFlowing extends PaperIdkWhat implements Flowing {
++
++    public PaperFlowing(final FluidState state) {
++        super(state);
++    }
++
++    @Override
++    public int getLevel() {
++        return this.get(FlowingFluid.LEVEL);
++    }
++
++    @Override
++    public int getMinimumLevel() {
++        return FlowingFluid.LEVEL.min;
++    }
++
++    @Override
++    public int getMaximumLevel() {
++        return FlowingFluid.LEVEL.max;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/block/fluid/type/PaperIdkWhat.java b/src/main/java/io/papermc/paper/block/fluid/type/PaperIdkWhat.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4513a2388d713fcdb04257132048389a2dfc194
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/fluid/type/PaperIdkWhat.java
+@@ -0,0 +1,17 @@
++package io.papermc.paper.block.fluid.type;
++
++import io.papermc.paper.block.fluid.PaperFluidData;
++import net.minecraft.world.level.material.FlowingFluid;
++import net.minecraft.world.level.material.FluidState;
++
++public class PaperIdkWhat extends PaperFluidData implements IdkWhat {
++
++    public PaperIdkWhat(final FluidState state) {
++        super(state);
++    }
++
++    @Override
++    public boolean isFalling() {
++        return this.get(FlowingFluid.FALLING);
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/material/FluidState.java b/src/main/java/net/minecraft/world/level/material/FluidState.java
+index 66f712657ae0c4166ecd198f41081d96843296c4..d6ccda8b8301a3a2493ba361bb8fa36f69930422 100644
+--- a/src/main/java/net/minecraft/world/level/material/FluidState.java
++++ b/src/main/java/net/minecraft/world/level/material/FluidState.java
+@@ -28,6 +28,13 @@ public final class FluidState extends StateHolder<Fluid, FluidState> {
+ 
+     // Paper start
+     protected final boolean isEmpty;
++    private @Nullable io.papermc.paper.block.fluid.PaperFluidData cachedPaperFluidData;
++    public io.papermc.paper.block.fluid.PaperFluidData createPaperFluidData() {
++        if (this.cachedPaperFluidData == null) {
++            this.cachedPaperFluidData = io.papermc.paper.block.fluid.PaperFluidData.createData(this);
++        }
++        return this.cachedPaperFluidData.clone();
++    }
+     // Paper end
+     public FluidState(Fluid fluid, ImmutableMap<Property<?>, Comparable<?>> propertiesMap, MapCodec<FluidState> codec) {
+         super(fluid, propertiesMap, codec);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index edce55a0cebe245cd944fcc1df735df66c736e43..66103ed93a67b2435fa53b518f2aa65393cb0de0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -628,4 +628,10 @@ public class CraftBlockData implements BlockData {
+         return !state.requiresCorrectToolForDrops() || nms.isCorrectToolForDrops(state);
+     }
+     // Paper end
++    // Paper start - FluidState API
++    @Override
++    public io.papermc.paper.block.fluid.FluidData getFluidData() {
++        return this.state.getFluidState().createPaperFluidData();
++    }
++    // Paper end
+ }
