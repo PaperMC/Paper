@@ -78,7 +78,7 @@ public class CraftAllay extends CraftCreature implements org.bukkit.entity.Allay
     public void stopDancing() {
         this.getHandle().forceDancing = false;
         this.getHandle().jukeboxPos = null;
-        this.getHandle().setJukeboxPlaying(null, false);
+        this.getHandle().setDancing(false); // Paper - Directly modify set dancing to avoid NPE
     }
 
     @Override
