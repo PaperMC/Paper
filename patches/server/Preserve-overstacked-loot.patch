@@ -17,27 +17,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.compositeFunction = LootItemFunctions.compose(functions);
      }
  
-+    @Deprecated // Paper - preserve overstacked items
-     public static Consumer<ItemStack> createStackSplitter(Consumer<ItemStack> lootConsumer) {
 +    // Paper start - preserve overstacked items
-+        return createStackSplitter(lootConsumer, null);
++    @Deprecated
+     public static Consumer<ItemStack> createStackSplitter(LootContext context, Consumer<ItemStack> consumer) {
++        return createStackSplitter(context, consumer, null);
 +    }
-+
-+    public static Consumer<ItemStack> createStackSplitter(Consumer<ItemStack> lootConsumer, @org.jetbrains.annotations.Nullable net.minecraft.server.level.ServerLevel world) {
-+        boolean skipSplitter = world != null && !world.paperConfig().fixes.splitOverstackedLoot;
-+    // Paper end
++    public static Consumer<ItemStack> createStackSplitter(LootContext context, Consumer<ItemStack> consumer, @org.jetbrains.annotations.Nullable net.minecraft.server.level.ServerLevel level) {
++        boolean skipSplitter = level != null && !level.paperConfig().fixes.splitOverstackedLoot;
++        // Paper end
          return (itemstack) -> {
--            if (itemstack.getCount() < itemstack.getMaxStackSize()) {
-+            if (skipSplitter || itemstack.getCount() < itemstack.getMaxStackSize()) { // Paper - preserve overstacked items
-                 lootConsumer.accept(itemstack);
-             } else {
-                 int i = itemstack.getCount();
+             if (itemstack.isItemEnabled(context.getLevel().enabledFeatures())) {
+-                if (itemstack.getCount() < itemstack.getMaxStackSize()) {
++                if (skipSplitter || itemstack.getCount() < itemstack.getMaxStackSize()) { // Paper - preserve overstacked items
+                     consumer.accept(itemstack);
+                 } else {
+                     int i = itemstack.getCount();
+ 
++
+                     while (i > 0) {
+                         ItemStack itemstack1 = itemstack.copy();
+ 
 @@ -0,0 +0,0 @@ public class LootTable {
      }
  
      public void getRandomItems(LootContext context, Consumer<ItemStack> lootConsumer) {
--        this.getRandomItemsRaw(context, LootTable.createStackSplitter(lootConsumer));
-+        this.getRandomItemsRaw(context, LootTable.createStackSplitter(lootConsumer, context.getLevel())); // Paper - preserve overstacked items
+-        this.getRandomItemsRaw(context, LootTable.createStackSplitter(context, lootConsumer));
++        this.getRandomItemsRaw(context, LootTable.createStackSplitter(context, lootConsumer, context.getLevel())); // Paper - preserve overstacked items
      }
  
      public ObjectArrayList<ItemStack> getRandomItems(LootContext context) {
@@ -49,8 +54,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              NonNullList<ItemStack> nonNullList = NonNullList.create();
              this.entries.forEach((entry) -> {
                  entry.expand(context, (choice) -> {
--                    choice.createItemStack(LootTable.createStackSplitter(nonNullList::add), context);
-+                    choice.createItemStack(LootTable.createStackSplitter(nonNullList::add, context.getLevel()), context); // Paper - preserve overstacked items
+-                    choice.createItemStack(LootTable.createStackSplitter(context, nonNullList::add), context);
++                    choice.createItemStack(LootTable.createStackSplitter(context, nonNullList::add, context.getLevel()), context); // Paper - preserve overstacked items
                  });
              });
              CompoundTag compoundTag = new CompoundTag();

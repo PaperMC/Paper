@@ -118,8 +118,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  DifficultyInstance difficultydamagescaler = this.getCurrentDifficultyAt(blockposition);
                  boolean flag1 = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01D) && !this.getBlockState(blockposition.below()).is(Blocks.LIGHTNING_ROD); // Paper
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         int l;
  
-         gameprofilerfiller.popPush("iceandsnow");
          if (!this.paperConfig().environment.disableIceAndSnow && this.random.nextInt(16) == 0) { // Paper - Disable ice and snow
 -            blockposition = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, this.getBlockRandomPos(j, 0, k, 15));
 -            BlockPos blockposition1 = blockposition.below();
@@ -141,14 +141,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              if (flag) {
+                 int i1 = this.getGameRules().getInt(GameRules.RULE_SNOW_ACCUMULATION_HEIGHT);
+                 BlockState iblockdata;
+ 
 +                blockposition.setY(normalY); // Paper
-                 if (biomebase.shouldSnow(this, blockposition)) {
-                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition, Blocks.SNOW.defaultBlockState(), null); // CraftBukkit
+                 if (i1 > 0 && biomebase.shouldSnow(this, blockposition)) {
+                     iblockdata = this.getBlockState(blockposition);
+                     if (iblockdata.is(Blocks.SNOW)) {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                         org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition, Blocks.SNOW.defaultBlockState(), null); // CraftBukkit
+                     }
                  }
 +                blockposition.setY(downY); // Paper
  
--                BlockState iblockdata = this.getBlockState(blockposition1);
-+                BlockState iblockdata = this.getBlockState(blockposition); // Paper
+-                iblockdata = this.getBlockState(blockposition1);
++                iblockdata = this.getBlockState(blockposition); // Paper
                  Biome.Precipitation biomebase_precipitation = biomebase.getPrecipitation();
  
 -                if (biomebase_precipitation == Biome.Precipitation.RAIN && biomebase.coldEnoughToSnow(blockposition1)) {
@@ -167,19 +174,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          timings.chunkTicksBlocks.startTiming(); // Paper
          if (randomTickSpeed > 0) {
 -            LevelChunkSection[] achunksection = chunk.getSections();
--            int l = achunksection.length;
+-            int j1 = achunksection.length;
 -
--            for (int i1 = 0; i1 < l; ++i1) {
--                LevelChunkSection chunksection = achunksection[i1];
+-            for (int k1 = 0; k1 < j1; ++k1) {
+-                LevelChunkSection chunksection = achunksection[k1];
 -
 -                if (chunksection.isRandomlyTicking()) {
--                    int j1 = chunksection.bottomBlockY();
+-                    int l1 = chunksection.bottomBlockY();
 -
--                    for (int k1 = 0; k1 < randomTickSpeed; ++k1) {
--                        BlockPos blockposition2 = this.getBlockRandomPos(j, j1, k, 15);
+-                    for (l = 0; l < randomTickSpeed; ++l) {
+-                        BlockPos blockposition2 = this.getBlockRandomPos(j, l1, k, 15);
 -
 -                        gameprofilerfiller.push("randomTick");
--                        BlockState iblockdata1 = chunksection.getBlockState(blockposition2.getX() - j, blockposition2.getY() - j1, blockposition2.getZ() - k);
+-                        BlockState iblockdata2 = chunksection.getBlockState(blockposition2.getX() - j, blockposition2.getY() - l1, blockposition2.getZ() - k);
 +            LevelChunkSection[] sections = chunk.getSections();
 +            int minSection = io.papermc.paper.util.WorldUtil.getMinSection(this);
 +            for (int sectionIndex = 0; sectionIndex < sections.length; ++sectionIndex) {
@@ -188,8 +195,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    continue;
 +                }
  
--                        if (iblockdata1.isRandomlyTicking()) {
--                            iblockdata1.randomTick(this, blockposition2, this.random);
+-                        if (iblockdata2.isRandomlyTicking()) {
+-                            iblockdata2.randomTick(this, blockposition2, this.random);
 -                        }
 +                int yPos = (sectionIndex + minSection) << 4;
 +                for (int a = 0; a < randomTickSpeed; ++a) {
@@ -199,7 +206,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        continue;
 +                    }
  
--                        FluidState fluid = iblockdata1.getFluidState();
+-                        FluidState fluid = iblockdata2.getFluidState();
 +                    long raw = section.tickingList.getRaw(index);
 +                    int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
 +                    int randomX = location & 15;
@@ -216,7 +223,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    }
 +                    iblockdata.randomTick(this, blockposition2, this.randomTickRandom);
 +                    // We drop the fluid tick since LAVA is ALREADY TICKED by the above method (See LiquidBlock).
-+                    // TODO CHECK ON UPDATE
++                    // TODO CHECK ON UPDATE (ping the Canadian)
                  }
              }
          }
