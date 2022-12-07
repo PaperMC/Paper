@@ -5863,7 +5863,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.visibleChunkMap = this.updatingChunkMap.clone();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.overworldDataStorage = persistentStateManagerFactory;
-         this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, world.registryAccess(), world);
+         this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
          this.setViewDistance(viewDistance);
 +        // Paper start
 +        this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
@@ -6521,21 +6521,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
-         // Holder holder = worlddimension.typeHolder(); // CraftBukkit - decompile error
+         // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+     public Integer clientViewDistance;
      public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
      // CraftBukkit end
- 
 +    public boolean isRealPlayer; // Paper
 +    public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
-+
-     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, @Nullable ProfilePublicKey publicKey) {
-         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile, publicKey);
-         this.chatVisibility = ChatVisiblity.FULL;
+ 
+     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile) {
+         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
          this.maxUpStep = 1.0F;
          this.fudgeSpawnLocation(world);
@@ -6929,8 +6928,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/PathNavigationRegion.java
 +++ b/src/main/java/net/minecraft/world/level/PathNavigationRegion.java
 @@ -0,0 +0,0 @@ import net.minecraft.core.Holder;
- import net.minecraft.core.Registry;
  import net.minecraft.core.SectionPos;
+ import net.minecraft.core.registries.Registries;
  import net.minecraft.util.profiling.ProfilerFiller;
 +import net.minecraft.server.level.ServerLevel;
  import net.minecraft.world.entity.Entity;
@@ -6980,7 +6979,7 @@ diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -0,0 +0,0 @@ public abstract class BlockBehaviour {
+@@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
  
      public abstract static class BlockStateBase extends StateHolder<Block, BlockState> {
  
@@ -6998,8 +6997,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          private final BlockBehaviour.StatePredicate isRedstoneConductor;
          private final BlockBehaviour.StatePredicate isSuffocating;
          private final BlockBehaviour.StatePredicate isViewBlocking;
-@@ -0,0 +0,0 @@ public abstract class BlockBehaviour {
-             this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
+@@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
+             this.spawnParticlesOnBreak = blockbase_info.spawnParticlesOnBreak;
          }
  
 +        // Paper start
@@ -7010,6 +7009,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
 +
          public void initCache() {
+             this.fluidState = ((Block) this.owner).getFluidState(this.asState());
+             this.isRandomlyTicking = ((Block) this.owner).isRandomlyTicking(this.asState());
              if (!this.getBlock().hasDynamicShape()) {
                  this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
              }
@@ -7017,7 +7018,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          }
  
-@@ -0,0 +0,0 @@ public abstract class BlockBehaviour {
+@@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.getBlock().getOcclusionShape(this.asState(), world, pos);
          }
  
@@ -7631,12 +7632,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      static {
 +        for (org.bukkit.entity.EntityType type : org.bukkit.entity.EntityType.values()) {
 +            if (type == org.bukkit.entity.EntityType.UNKNOWN) continue;
-+            ENTITY_TYPE_ENTITY_TYPES.put(type, net.minecraft.core.Registry.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())));
-+            ENTITY_TYPES_ENTITY_TYPE.put(net.minecraft.core.Registry.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())), type);
++            ENTITY_TYPE_ENTITY_TYPES.put(type, BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())));
++            ENTITY_TYPES_ENTITY_TYPE.put(BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())), type);
 +        }
 +        // Paper end
-         for (Block block : net.minecraft.core.Registry.BLOCK) {
-             BLOCK_MATERIAL.put(block, Material.getMaterial(net.minecraft.core.Registry.BLOCK.getKey(block).getPath().toUpperCase(Locale.ROOT)));
+         for (Block block : BuiltInRegistries.BLOCK) {
+             BLOCK_MATERIAL.put(block, Material.getMaterial(BuiltInRegistries.BLOCK.getKey(block).getPath().toUpperCase(Locale.ROOT)));
          }
 @@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
      public static ResourceLocation key(Material mat) {
