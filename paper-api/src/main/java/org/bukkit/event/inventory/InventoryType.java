@@ -133,7 +133,11 @@ public enum InventoryType {
     /**
      * Pseudo composter inventory with 0 or 1 slots of undefined type.
      */
-    COMPOSTER(1, "Composter")
+    COMPOSTER(1, "Composter"),
+    /**
+     * Pseudo chiseled bookshelf inventory, with 6 slots of undefined type.
+     */
+    CHISELED_BOOKSHELF(6, "Chiseled Bookshelf"),
     ;
 
     private final int size;

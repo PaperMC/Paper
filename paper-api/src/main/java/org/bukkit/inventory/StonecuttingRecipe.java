@@ -121,7 +121,7 @@ public class StonecuttingRecipe implements Recipe, Keyed {
      * null.
      */
     public void setGroup(@NotNull String group) {
-        Preconditions.checkArgument(group != null, "group");
+        Preconditions.checkArgument(group != null, "group cannot be null");
         this.group = group;
     }
 }

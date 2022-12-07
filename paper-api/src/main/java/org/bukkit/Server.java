@@ -859,7 +859,9 @@ public interface Server extends PluginMessageRecipient {
      * message to the client when the player types a message
      *
      * @return true if the server should send a preview, false otherwise
+     * @deprecated chat previews have been removed
      */
+    @Deprecated
     public boolean shouldSendChatPreviews();
 
     /**

@@ -11,5 +11,6 @@ public enum SkullType {
     ZOMBIE,
     PLAYER,
     CREEPER,
-    DRAGON;
+    DRAGON,
+    PIGLIN;
 }

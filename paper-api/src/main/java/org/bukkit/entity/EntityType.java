@@ -276,6 +276,7 @@ public enum EntityType implements Keyed {
     FROG("frog", Frog.class, -1),
     TADPOLE("tadpole", Tadpole.class, -1),
     WARDEN("warden", Warden.class, -1),
+    CAMEL("camel", Camel.class, -1),
     /**
      * A fishing line and bobber.
      */

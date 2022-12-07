@@ -5,6 +5,7 @@ import java.util.Collections;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.recipe.CookingBookCategory;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,6 +19,7 @@ public abstract class CookingRecipe<T extends CookingRecipe> implements Recipe, 
     private float experience;
     private int cookingTime;
     private String group = "";
+    private CookingBookCategory category = CookingBookCategory.MISC;
 
     /**
      * Create a cooking recipe to craft the specified ItemStack.
@@ -167,7 +169,31 @@ public abstract class CookingRecipe<T extends CookingRecipe> implements Recipe, 
      * null.
      */
     public void setGroup(@NotNull String group) {
-        Preconditions.checkArgument(group != null, "group");
+        Preconditions.checkArgument(group != null, "group cannot be null");
         this.group = group;
+    }
+
+    /**
+     * Gets the category which this recipe will appear in the recipe book under.
+     *
+     * Defaults to {@link CookingBookCategory#MISC} if not set.
+     *
+     * @return recipe book category
+     */
+    @NotNull
+    public CookingBookCategory getCategory() {
+        return category;
+    }
+
+    /**
+     * Sets the category which this recipe will appear in the recipe book under.
+     *
+     * Defaults to {@link CookingBookCategory#MISC} if not set.
+     *
+     * @param category recipe book category
+     */
+    public void setCategory(@NotNull CookingBookCategory category) {
+        Preconditions.checkArgument(category != null, "category cannot be null");
+        this.category = category;
     }
 }

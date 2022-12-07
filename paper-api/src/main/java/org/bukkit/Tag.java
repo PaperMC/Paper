@@ -96,11 +96,6 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> LOGS_THAT_BURN = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("logs_that_burn"), Material.class);
     /**
-     * Vanilla block tag representing all log bark variants that appear
-     * naturally in the overworld.
-     */
-    Tag<Material> OVERWORLD_NATURAL_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("overworld_natural_logs"), Material.class);
-    /**
      * Vanilla block tag representing all log and bark variants.
      */
     Tag<Material> LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("logs"), Material.class);
@@ -140,6 +135,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all warped stems.
      */
     Tag<Material> WARPED_STEMS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("warped_stems"), Material.class);
+    /**
+     * Vanilla block tag representing all bamboo blocks.
+     */
+    Tag<Material> BAMBOO_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("bamboo_blocks"), Material.class);
     /**
      * Vanilla block tag representing all banner blocks.
      */
@@ -238,10 +237,6 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> COPPER_ORES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("copper_ores"), Material.class);
     /**
-     * Vanilla block tag representing all non flammable wood.
-     */
-    Tag<Material> NON_FLAMMABLE_WOOD = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("non_flammable_wood"), Material.class);
-    /**
      * Vanilla block tag representing all candles.
      */
     Tag<Material> CANDLES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("candles"), Material.class);
@@ -307,9 +302,25 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> WALL_SIGNS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wall_signs"), Material.class);
     /**
-     * Vanilla block tag representing all signs.
+     * Vanilla block tag representing all regular signs.
      */
     Tag<Material> SIGNS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("signs"), Material.class);
+    /**
+     * Vanilla block tag representing all ceiling signs.
+     */
+    Tag<Material> CEILING_HANGING_SIGNS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("ceiling_hanging_signs"), Material.class);
+    /**
+     * Vanilla block tag representing all wall hanging signs.
+     */
+    Tag<Material> WALL_HANGING_SIGNS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wall_hanging_signs"), Material.class);
+    /**
+     * Vanilla block tag representing all hanging signs.
+     */
+    Tag<Material> ALL_HANGING_SIGNS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("all_hanging_signs"), Material.class);
+    /**
+     * Vanilla block tag representing all signs, regardless of type.
+     */
+    Tag<Material> ALL_SIGNS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("all_signs"), Material.class);
     /**
      * Vanilla block tag representing all blocks immune to dragons.
      */
@@ -662,6 +673,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> SNOW_LAYER_CAN_SURVIVE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("snow_layer_can_survive_on"), Material.class);
     /**
+     * Vanilla block tag representing blocks which cannot be dismounted into.
+     */
+    Tag<Material> INVALID_SPAWN_INSIDE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("invalid_spawn_inside"), Material.class);
+    /**
      * Key for the built in item registry.
      */
     String REGISTRY_ITEMS = "items";
@@ -718,6 +733,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> ITEMS_LECTERN_BOOKS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("lectern_books"), Material.class);
     /**
+     * Vanilla item tag representing all books that may be placed on bookshelves.
+     */
+    Tag<Material> ITEMS_BOOKSHELF_BOOKS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("bookshelf_books"), Material.class);
+    /**
      * Vanilla item tag representing all items that may be placed in beacons.
      */
     Tag<Material> ITEMS_BEACON_PAYMENT_ITEMS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("beacon_payment_items"), Material.class);
@@ -733,6 +752,15 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla item tag representing all compasses.
      */
     Tag<Material> ITEMS_COMPASSES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("compasses"), Material.class);
+    /**
+     * Vanilla item tag representing all hanging signs.
+     */
+    Tag<Material> ITEMS_HANGING_SIGNS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("hanging_signs"), Material.class);
+    /**
+     * Vanilla item tag representing all items which will ignite creepers when
+     * interacted with.
+     */
+    Tag<Material> ITEMS_CREEPER_IGNITERS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("creeper_igniters"), Material.class);
     /**
      * Vanilla item tag representing all items that confer freeze immunity on
      * the wearer.

@@ -143,6 +143,7 @@ public interface Boat extends Vehicle {
         ACACIA(Material.ACACIA_PLANKS),
         DARK_OAK(Material.DARK_OAK_PLANKS),
         MANGROVE(Material.MANGROVE_PLANKS),
+        BAMBOO(Material.BAMBOO_PLANKS),
         ;
 
         private final Material materialBlock;

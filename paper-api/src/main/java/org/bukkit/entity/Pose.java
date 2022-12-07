@@ -47,6 +47,10 @@ public enum Pose {
      */
     USING_TONGUE,
     /**
+     * Entity is sitting.
+     */
+    SITTING,
+    /**
      * Entity is roaring.
      */
     ROARING,

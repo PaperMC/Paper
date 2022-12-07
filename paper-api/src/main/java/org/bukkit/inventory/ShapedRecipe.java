@@ -7,6 +7,7 @@ import java.util.Map;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.recipe.CraftingBookCategory;
 import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,6 +20,7 @@ public class ShapedRecipe implements Recipe, Keyed {
     private String[] rows;
     private Map<Character, RecipeChoice> ingredients = new HashMap<>();
     private String group = "";
+    private CraftingBookCategory category = CraftingBookCategory.MISC;
 
     @Deprecated
     public ShapedRecipe(@NotNull ItemStack result) {
@@ -221,7 +223,31 @@ public class ShapedRecipe implements Recipe, Keyed {
      * null.
      */
     public void setGroup(@NotNull String group) {
-        Preconditions.checkArgument(group != null, "group");
+        Preconditions.checkArgument(group != null, "group cannot be null");
         this.group = group;
+    }
+
+    /**
+     * Gets the category which this recipe will appear in the recipe book under.
+     *
+     * Defaults to {@link CraftingBookCategory#MISC} if not set.
+     *
+     * @return recipe book category
+     */
+    @NotNull
+    public CraftingBookCategory getCategory() {
+        return category;
+    }
+
+    /**
+     * Sets the category which this recipe will appear in the recipe book under.
+     *
+     * Defaults to {@link CraftingBookCategory#MISC} if not set.
+     *
+     * @param category recipe book category
+     */
+    public void setCategory(@NotNull CraftingBookCategory category) {
+        Preconditions.checkArgument(category != null, "category cannot be null");
+        this.category = category;
     }
 }

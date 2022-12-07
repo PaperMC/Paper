@@ -1013,7 +1013,9 @@ public final class Bukkit {
      * message to the client when the player sends a message
      *
      * @return true if the server should send a preview, false otherwise
+     * @deprecated chat previews have been removed
      */
+    @Deprecated
     public static boolean shouldSendChatPreviews() {
         return server.shouldSendChatPreviews();
     }

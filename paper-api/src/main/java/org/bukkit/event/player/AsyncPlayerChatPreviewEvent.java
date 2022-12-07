@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * of the corresponding {@link AsyncPlayerChatEvent} <b>must</b> be formatted in
  * the same way.
  *
- * @deprecated draft API
+ * @deprecated chat previews have been removed
  */
 @Deprecated
 @Warning(false)
