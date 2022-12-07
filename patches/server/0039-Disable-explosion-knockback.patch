@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 14:48:03 -0600
+Subject: [PATCH] Disable explosion knockback
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index c6ce813f7ea6c4dcbd45e9d8c55f56c29dc3ea53..7e4f95e04a880ecb459228c90be462cbbec14620 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1400,6 +1400,7 @@ public abstract class LivingEntity extends Entity {
+                 }
+             }
+ 
++            boolean knockbackCancelled = level.paperConfig().environment.disableExplosionKnockback && source.isExplosion() && this instanceof net.minecraft.world.entity.player.Player; // Paper - Disable explosion knockback
+             if (flag1) {
+                 if (flag) {
+                     this.level.broadcastEntityEvent(this, (byte) 29);
+@@ -1420,6 +1421,7 @@ public abstract class LivingEntity extends Entity {
+                         b0 = 2;
+                     }
+ 
++                    if (!knockbackCancelled) // Paper - Disable explosion knockback
+                     this.level.broadcastEntityEvent(this, b0);
+                 }
+ 
+@@ -1443,6 +1445,7 @@ public abstract class LivingEntity extends Entity {
+                 }
+             }
+ 
++            if (knockbackCancelled) this.level.broadcastEntityEvent(this, (byte) 2); // Paper - Disable explosion knockback
+             if (this.isDeadOrDying()) {
+                 if (!this.checkTotemDeathProtection(source)) {
+                     SoundEvent soundeffect = this.getDeathSound();
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index cce7344c1062e2c9c621e547fdd119c61d2cc4f5..9f7a35e00b5edca6b2d99d3ed60cde8e1aeac4eb 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -256,14 +256,14 @@ public class Explosion {
+                         double d14 = d13;
+ 
+                         if (entity instanceof LivingEntity) {
+-                            d14 = ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13);
++                            d14 = entity instanceof Player && level.paperConfig().environment.disableExplosionKnockback ? 0 : ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13); // Paper - Disable explosion knockback
+                         }
+ 
+                         entity.setDeltaMovement(entity.getDeltaMovement().add(d8 * d14, d9 * d14, d10 * d14));
+                         if (entity instanceof Player) {
+                             Player entityhuman = (Player) entity;
+ 
+-                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying)) {
++                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying) && !level.paperConfig().environment.disableExplosionKnockback) { // Paper - Disable explosion knockback
+                                 this.hitPlayers.put(entityhuman, new Vec3(d8 * d13, d9 * d13, d10 * d13));
+                             }
+                         }
