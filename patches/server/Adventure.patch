@@ -146,14 +146,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    final @Nullable ServerPlayer player;
 +    final @Nullable CommandSourceStack commandSourceStack;
 +    final Component originalMessage;
-+    final boolean isPreview;
 +
-+    public ChatDecorationProcessor(final MinecraftServer server, final @Nullable ServerPlayer player, final @Nullable CommandSourceStack commandSourceStack, final net.minecraft.network.chat.Component originalMessage, final boolean isPreview) {
++    public ChatDecorationProcessor(final MinecraftServer server, final @Nullable ServerPlayer player, final @Nullable CommandSourceStack commandSourceStack, final net.minecraft.network.chat.Component originalMessage) {
 +        this.server = server;
 +        this.player = player;
 +        this.commandSourceStack = commandSourceStack;
 +        this.originalMessage = PaperAdventure.asAdventure(originalMessage);
-+        this.isPreview = isPreview;
 +    }
 +
 +    public CompletableFuture<ChatDecorator.Result> process() {
@@ -190,11 +188,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        final Component initialResult = input.message().component();
 +        final AsyncChatDecorateEvent event;
++        //TODO
 +        if (this.commandSourceStack != null) {
 +            // TODO more command decorate context
-+            event = new AsyncChatCommandDecorateEvent(true, player, this.originalMessage, this.isPreview, initialResult);
++            event = new AsyncChatCommandDecorateEvent(true, player, this.originalMessage, false, initialResult);
 +        } else {
-+            event = new AsyncChatDecorateEvent(true, player, this.originalMessage, this.isPreview, initialResult);
++            event = new AsyncChatDecorateEvent(true, player, this.originalMessage, false, initialResult);
 +        }
 +        this.post(event);
 +        if (!event.isCancelled() && !event.result().equals(initialResult)) {
@@ -1902,8 +1901,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }, chatExecutor);
 -        };
 +        // Paper start - moved to ChatPreviewProcessor
-+        return ChatDecorator.create((sender, commandSourceStack, message, isPreview) -> {
-+            final io.papermc.paper.adventure.ChatDecorationProcessor processor = new io.papermc.paper.adventure.ChatDecorationProcessor(this, sender, commandSourceStack, message, isPreview);
++        return ChatDecorator.create((sender, commandSourceStack, message) -> {
++            final io.papermc.paper.adventure.ChatDecorationProcessor processor = new io.papermc.paper.adventure.ChatDecorationProcessor(this, sender, commandSourceStack, message);
 +            return processor.process();
 +        });
 +        // Paper end
