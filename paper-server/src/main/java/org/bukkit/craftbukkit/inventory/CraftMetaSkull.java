@@ -28,6 +28,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             Material.CREEPER_WALL_HEAD,
             Material.DRAGON_HEAD,
             Material.DRAGON_WALL_HEAD,
+            Material.PIGLIN_HEAD,
+            Material.PIGLIN_WALL_HEAD,
             Material.PLAYER_HEAD,
             Material.PLAYER_WALL_HEAD,
             Material.SKELETON_SKULL,

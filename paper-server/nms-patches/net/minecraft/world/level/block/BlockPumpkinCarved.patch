@@ -1,74 +1,30 @@
 --- a/net/minecraft/world/level/block/BlockPumpkinCarved.java
 +++ b/net/minecraft/world/level/block/BlockPumpkinCarved.java
-@@ -26,6 +26,11 @@
+@@ -26,6 +26,10 @@
  import net.minecraft.world.level.block.state.properties.BlockStateDirection;
  import net.minecraft.world.level.material.Material;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 +import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 +// CraftBukkit end
 +
  public class BlockPumpkinCarved extends BlockFacingHorizontal implements ItemWearable {
  
      public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
-@@ -64,19 +69,28 @@
-         EntityPlayer entityplayer;
-         int j;
+@@ -82,9 +86,14 @@
+     }
  
-+        BlockStateListPopulator blockList = new BlockStateListPopulator(world); // CraftBukkit - Use BlockStateListPopulator
-         if (shapedetector_shapedetectorcollection != null) {
-             for (i = 0; i < this.getOrCreateSnowGolemFull().getHeight(); ++i) {
-                 ShapeDetectorBlock shapedetectorblock = shapedetector_shapedetectorcollection.getBlock(0, i, 0);
+     private static void spawnGolemInWorld(World world, ShapeDetector.ShapeDetectorCollection shapedetector_shapedetectorcollection, Entity entity, BlockPosition blockposition) {
+-        clearPatternBlocks(world, shapedetector_shapedetectorcollection);
++        // clearPatternBlocks(world, shapedetector_shapedetectorcollection); // CraftBukkit - moved down
+         entity.moveTo((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.05D, (double) blockposition.getZ() + 0.5D, 0.0F, 0.0F);
+-        world.addFreshEntity(entity);
++        // CraftBukkit start
++        if (!world.addFreshEntity(entity, SpawnReason.BUILD_IRONGOLEM)) {
++            return;
++        }
++        clearPatternBlocks(world, shapedetector_shapedetectorcollection); // CraftBukkit - from above
++        // CraftBukkit end
+         Iterator iterator = world.getEntitiesOfClass(EntityPlayer.class, entity.getBoundingBox().inflate(5.0D)).iterator();
  
--                world.setBlock(shapedetectorblock.getPos(), Blocks.AIR.defaultBlockState(), 2);
--                world.levelEvent(2001, shapedetectorblock.getPos(), Block.getId(shapedetectorblock.getState()));
-+                blockList.setBlock(shapedetectorblock.getPos(), Blocks.AIR.defaultBlockState(), 2); // CraftBukkit
-+                // world.levelEvent(2001, shapedetectorblock.getPos(), Block.getId(shapedetectorblock.getState())); // CraftBukkit
-             }
- 
-             EntitySnowman entitysnowman = (EntitySnowman) EntityTypes.SNOW_GOLEM.create(world);
-             BlockPosition blockposition1 = shapedetector_shapedetectorcollection.getBlock(0, 2, 0).getPos();
- 
-             entitysnowman.moveTo((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 0.05D, (double) blockposition1.getZ() + 0.5D, 0.0F, 0.0F);
--            world.addFreshEntity(entitysnowman);
-+            // CraftBukkit start
-+            if (!world.addFreshEntity(entitysnowman, SpawnReason.BUILD_SNOWMAN)) {
-+                return;
-+            }
-+            for (BlockPosition pos : blockList.getBlocks()) {
-+                world.levelEvent(2001, pos, Block.getId(world.getBlockState(pos)));
-+            }
-+            blockList.updateList();
-+            // CraftBukkit end
-             iterator = world.getEntitiesOfClass(EntityPlayer.class, entitysnowman.getBoundingBox().inflate(5.0D)).iterator();
- 
-             while (iterator.hasNext()) {
-@@ -96,8 +110,8 @@
-                     for (int k = 0; k < this.getOrCreateIronGolemFull().getHeight(); ++k) {
-                         ShapeDetectorBlock shapedetectorblock2 = shapedetector_shapedetectorcollection.getBlock(i, k, 0);
- 
--                        world.setBlock(shapedetectorblock2.getPos(), Blocks.AIR.defaultBlockState(), 2);
--                        world.levelEvent(2001, shapedetectorblock2.getPos(), Block.getId(shapedetectorblock2.getState()));
-+                        blockList.setBlock(shapedetectorblock2.getPos(), Blocks.AIR.defaultBlockState(), 2); // CraftBukkit
-+                        // world.levelEvent(2001, shapedetectorblock2.getPos(), Block.getId(shapedetectorblock2.getState())); // CraftBukkit
-                     }
-                 }
- 
-@@ -106,7 +120,15 @@
- 
-                 entityirongolem.setPlayerCreated(true);
-                 entityirongolem.moveTo((double) blockposition2.getX() + 0.5D, (double) blockposition2.getY() + 0.05D, (double) blockposition2.getZ() + 0.5D, 0.0F, 0.0F);
--                world.addFreshEntity(entityirongolem);
-+                // CraftBukkit start
-+                if (!world.addFreshEntity(entityirongolem, SpawnReason.BUILD_IRONGOLEM)) {
-+                    return;
-+                }
-+                for (BlockPosition pos : blockList.getBlocks()) {
-+                    world.levelEvent(2001, pos, Block.getId(world.getBlockState(pos)));
-+                }
-+                blockList.updateList();
-+                // CraftBukkit end
-                 iterator = world.getEntitiesOfClass(EntityPlayer.class, entityirongolem.getBoundingBox().inflate(5.0D)).iterator();
- 
-                 while (iterator.hasNext()) {
+         while (iterator.hasNext()) {

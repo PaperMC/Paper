@@ -9,6 +9,7 @@ import net.minecraft.world.inventory.InventoryCrafting;
 import net.minecraft.world.inventory.InventoryEnderChest;
 import net.minecraft.world.inventory.InventoryMerchant;
 import net.minecraft.world.level.block.BlockComposter;
+import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 import net.minecraft.world.level.block.entity.IHopper;
 import net.minecraft.world.level.block.entity.TileEntityBarrel;
 import net.minecraft.world.level.block.entity.TileEntityBlastFurnace;
@@ -489,6 +490,8 @@ public class CraftInventory implements Inventory {
             return InventoryType.BARREL;
         } else if (inventory instanceof TileEntityLectern.LecternInventory) {
             return InventoryType.LECTERN;
+        } else if (inventory instanceof ChiseledBookShelfBlockEntity) {
+            return InventoryType.CHISELED_BOOKSHELF;
         } else if (this instanceof CraftInventoryLoom) {
             return InventoryType.LOOM;
         } else if (this instanceof CraftInventoryCartography) {

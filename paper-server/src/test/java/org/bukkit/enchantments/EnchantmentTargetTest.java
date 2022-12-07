@@ -1,6 +1,6 @@
 package org.bukkit.enchantments;
 
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.EnchantmentSlotType;
 import org.bukkit.Material;
@@ -28,7 +28,7 @@ public class EnchantmentTargetTest {
 
             Assert.assertNotNull("No bukkit target for slot " + nmsSlot, bukkitTarget);
 
-            for (Item item : IRegistry.ITEM) {
+            for (Item item : BuiltInRegistries.ITEM) {
                 Material material = CraftMagicNumbers.getMaterial(item);
 
                 boolean nms = nmsSlot.canEnchant(item);

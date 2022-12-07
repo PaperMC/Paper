@@ -5,7 +5,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import net.minecraft.core.BlockPosition;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ITileEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
@@ -18,7 +18,7 @@ public class BlockStateTest extends AbstractTestingBase {
 
     @Test
     public void testTileEntityBlockStates() {
-        for (Block block : IRegistry.BLOCK) {
+        for (Block block : BuiltInRegistries.BLOCK) {
             Material material = CraftMagicNumbers.getMaterial(block);
             Class<?> blockStateType = CraftBlockStates.getBlockStateType(material);
             boolean isCraftBlockEntityState = CraftBlockEntityState.class.isAssignableFrom(blockStateType);

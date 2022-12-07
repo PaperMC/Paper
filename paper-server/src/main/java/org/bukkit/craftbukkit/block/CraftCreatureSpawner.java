@@ -26,7 +26,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
             throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
 
-        this.getSnapshot().getSpawner().setEntityId(EntityTypes.byString(entityType.getName()).get());
+        this.getSnapshot().setEntityId(EntityTypes.byString(entityType.getName()).get(), this.getWorldHandle().getRandom());
     }
 
     @Override

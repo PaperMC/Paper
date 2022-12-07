@@ -11,7 +11,10 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.features.TreeFeatures;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
 import net.minecraft.world.entity.EntityExperienceOrb;
@@ -79,6 +82,7 @@ import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
 import org.bukkit.entity.Boat;
+import org.bukkit.entity.Camel;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.CaveSpider;
 import org.bukkit.entity.ChestBoat;
@@ -221,7 +225,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public Biome getBiome(int x, int y, int z) {
-        return CraftBlock.biomeBaseToBiome(getHandle().registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY), getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
+        return CraftBlock.biomeBaseToBiome(getHandle().registryAccess().registryOrThrow(Registries.BIOME), getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
     }
 
     @Override
@@ -232,7 +236,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     public void setBiome(int x, int y, int z, Biome biome) {
         Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
-        Holder<BiomeBase> biomeBase = CraftBlock.biomeToBiomeBase(getHandle().registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY), biome);
+        Holder<BiomeBase> biomeBase = CraftBlock.biomeToBiomeBase(getHandle().registryAccess().registryOrThrow(Registries.BIOME), biome);
         setBiome(x, y, z, biomeBase);
     }
 
@@ -327,7 +331,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     public boolean generateTree(GeneratorAccessSeed access, ChunkGenerator chunkGenerator, BlockPosition pos, RandomSource random, TreeType treeType) {
-        Holder<?> gen;
+        ResourceKey<WorldGenFeatureConfigured<?, ?>> gen;
         switch (treeType) {
             case BIG_TREE:
                 gen = TreeFeatures.FANCY_OAK;
@@ -398,7 +402,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 break;
         }
 
-        return ((WorldGenFeatureConfigured<?, ?>) gen.value()).place(access, chunkGenerator, random, pos);
+        Holder<WorldGenFeatureConfigured<?, ?>> holder = access.registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).getHolder(gen).orElse(null);
+        return (holder != null) ? holder.value().place(access, chunkGenerator, random, pos) : false;
     }
 
     @Override
@@ -694,6 +699,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                     entity = EntityTypes.SKELETON_HORSE.create(world);
                 } else if (ZombieHorse.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.ZOMBIE_HORSE.create(world);
+                } else if (Camel.class.isAssignableFrom(clazz)) {
+                    entity = EntityTypes.CAMEL.create(world);
                 } else {
                     entity = EntityTypes.HORSE.create(world);
                 }

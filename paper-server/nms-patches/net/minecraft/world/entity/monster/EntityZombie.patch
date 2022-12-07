@@ -16,7 +16,7 @@
  public class EntityZombie extends EntityMonster {
  
      private static final UUID SPEED_MODIFIER_BABY_UUID = UUID.fromString("B9766B59-9566-4402-BC1F-2EE2A276D836");
-@@ -85,6 +94,7 @@
+@@ -86,6 +95,7 @@
      private boolean canBreakDoors;
      private int inWaterTime;
      public int conversionTime;
@@ -24,7 +24,7 @@
  
      public EntityZombie(EntityTypes<? extends EntityZombie> entitytypes, World world) {
          super(entitytypes, world);
-@@ -201,7 +211,10 @@
+@@ -202,7 +212,10 @@
      public void tick() {
          if (!this.level.isClientSide && this.isAlive() && !this.isNoAi()) {
              if (this.isUnderWaterConverting()) {
@@ -36,7 +36,7 @@
                  if (this.conversionTime < 0) {
                      this.doUnderWaterConversion();
                  }
-@@ -218,6 +231,7 @@
+@@ -219,6 +232,7 @@
          }
  
          super.tick();
@@ -44,7 +44,7 @@
      }
  
      @Override
-@@ -250,6 +264,7 @@
+@@ -251,6 +265,7 @@
      }
  
      public void startUnderWaterConversion(int i) {
@@ -52,7 +52,7 @@
          this.conversionTime = i;
          this.getEntityData().set(EntityZombie.DATA_DROWNED_CONVERSION_ID, true);
      }
-@@ -263,11 +278,15 @@
+@@ -264,11 +279,15 @@
      }
  
      protected void convertToZombieType(EntityTypes<? extends EntityZombie> entitytypes) {
@@ -69,7 +69,7 @@
          }
  
      }
-@@ -307,9 +326,9 @@
+@@ -308,9 +327,9 @@
                      if (SpawnerCreature.isSpawnPositionOk(entitypositiontypes_surface, this.level, blockposition, entitytypes) && EntityPositionTypes.checkSpawnRules(entitytypes, worldserver, EnumMobSpawn.REINFORCEMENT, blockposition, this.level.random)) {
                          entityzombie.setPos((double) i1, (double) j1, (double) k1);
                          if (!this.level.hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && this.level.isUnobstructed(entityzombie) && this.level.noCollision((Entity) entityzombie) && !this.level.containsAnyLiquid(entityzombie.getBoundingBox())) {
@@ -81,7 +81,7 @@
                              this.getAttribute(GenericAttributes.SPAWN_REINFORCEMENTS_CHANCE).addPermanentModifier(new AttributeModifier("Zombie reinforcement caller charge", -0.05000000074505806D, AttributeModifier.Operation.ADDITION));
                              entityzombie.getAttribute(GenericAttributes.SPAWN_REINFORCEMENTS_CHANCE).addPermanentModifier(new AttributeModifier("Zombie reinforcement callee charge", -0.05000000074505806D, AttributeModifier.Operation.ADDITION));
                              break;
-@@ -330,7 +349,14 @@
+@@ -331,7 +350,14 @@
              float f = this.level.getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
  
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < f * 0.3F) {
@@ -97,49 +97,54 @@
              }
          }
  
-@@ -412,21 +438,30 @@
+@@ -413,8 +439,17 @@
+             if (worldserver.getDifficulty() != EnumDifficulty.HARD && this.random.nextBoolean()) {
+                 return flag;
              }
- 
-             EntityVillager entityvillager = (EntityVillager) entityliving;
--            EntityZombieVillager entityzombievillager = (EntityZombieVillager) entityvillager.convertTo(EntityTypes.ZOMBIE_VILLAGER, false);
 +            // CraftBukkit start
 +            flag = zombifyVillager(worldserver, entityvillager, this.blockPosition(), this.isSilent(), CreatureSpawnEvent.SpawnReason.INFECTION) == null;
 +        }
  
+-            EntityZombieVillager entityzombievillager = (EntityZombieVillager) entityvillager.convertTo(EntityTypes.ZOMBIE_VILLAGER, false);
 +        return flag;
 +    }
 +
 +    public static EntityZombieVillager zombifyVillager(WorldServer worldserver, EntityVillager entityvillager, net.minecraft.core.BlockPosition blockPosition, boolean silent, CreatureSpawnEvent.SpawnReason spawnReason) {
-+        EntityZombieVillager entityzombievillager = (EntityZombieVillager) entityvillager.convertTo(EntityTypes.ZOMBIE_VILLAGER, false, EntityTransformEvent.TransformReason.INFECTION, spawnReason);
-+        if (entityzombievillager != null) {
++        {
++            EntityZombieVillager entityzombievillager = (EntityZombieVillager) entityvillager.convertTo(EntityTypes.ZOMBIE_VILLAGER, false, EntityTransformEvent.TransformReason.INFECTION, spawnReason);
 +            // CraftBukkit end
-             entityzombievillager.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityzombievillager.blockPosition()), EnumMobSpawn.CONVERSION, new EntityZombie.GroupDataZombie(false, true), (NBTTagCompound) null);
-             entityzombievillager.setVillagerData(entityvillager.getVillagerData());
-             entityzombievillager.setGossips((NBTBase) entityvillager.getGossips().store(DynamicOpsNBT.INSTANCE).getValue());
-             entityzombievillager.setTradeOffers(entityvillager.getOffers().createTag());
-             entityzombievillager.setVillagerXp(entityvillager.getVillagerXp());
--            if (!this.isSilent()) {
--                worldserver.levelEvent((EntityHuman) null, 1026, this.blockPosition(), 0);
-+            // CraftBukkit start
-+            if (!silent) {
-+                worldserver.levelEvent((EntityHuman) null, 1026, blockPosition, 0);
+ 
+             if (entityzombievillager != null) {
+                 entityzombievillager.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityzombievillager.blockPosition()), EnumMobSpawn.CONVERSION, new EntityZombie.GroupDataZombie(false, true), (NBTTagCompound) null);
+@@ -422,15 +457,17 @@
+                 entityzombievillager.setGossips((NBTBase) entityvillager.getGossips().store(DynamicOpsNBT.INSTANCE));
+                 entityzombievillager.setTradeOffers(entityvillager.getOffers().createTag());
+                 entityzombievillager.setVillagerXp(entityvillager.getVillagerXp());
+-                if (!this.isSilent()) {
+-                    worldserver.levelEvent((EntityHuman) null, 1026, this.blockPosition(), 0);
++                // CraftBukkit start
++                if (!silent) {
++                    worldserver.levelEvent((EntityHuman) null, 1026, blockPosition, 0);
+                 }
+ 
+-                flag = false;
++                // flag = false;
              }
--
--            flag = false;
-+            // CraftBukkit end
-         }
+-        }
  
 -        return flag;
-+        return entityzombievillager; // CraftBukkit
++            return entityzombievillager;
++        }
++        // CraftBukkit end
      }
  
      @Override
-@@ -478,7 +513,7 @@
-                         entitychicken1.finalizeSpawn(worldaccess, difficultydamagescaler, EnumMobSpawn.JOCKEY, (GroupDataEntity) null, (NBTTagCompound) null);
-                         entitychicken1.setChickenJockey(true);
-                         this.startRiding(entitychicken1);
--                        worldaccess.addFreshEntity(entitychicken1);
-+                        worldaccess.addFreshEntity(entitychicken1, CreatureSpawnEvent.SpawnReason.MOUNT); // CraftBukkit
+@@ -483,7 +520,7 @@
+                             entitychicken1.finalizeSpawn(worldaccess, difficultydamagescaler, EnumMobSpawn.JOCKEY, (GroupDataEntity) null, (NBTTagCompound) null);
+                             entitychicken1.setChickenJockey(true);
+                             this.startRiding(entitychicken1);
+-                            worldaccess.addFreshEntity(entitychicken1);
++                            worldaccess.addFreshEntity(entitychicken1, CreatureSpawnEvent.SpawnReason.MOUNT); // CraftBukkit
+                         }
                      }
                  }
-             }

@@ -18,25 +18,27 @@
  
      public ContainerSmithing(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
-@@ -61,13 +66,15 @@
+@@ -61,7 +66,7 @@
          List<RecipeSmithing> list = this.level.getRecipeManager().getRecipesFor(Recipes.SMITHING, this.inputSlots, this.level);
  
          if (list.isEmpty()) {
 -            this.resultSlots.setItem(0, ItemStack.EMPTY);
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
          } else {
-             this.selectedRecipe = (RecipeSmithing) list.get(0);
-             ItemStack itemstack = this.selectedRecipe.assemble(this.inputSlots);
- 
-             this.resultSlots.setRecipeUsed(this.selectedRecipe);
--            this.resultSlots.setItem(0, itemstack);
-+            // CraftBukkit start
-+            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), itemstack);
-+            // CraftBukkit end
+             RecipeSmithing recipesmithing = (RecipeSmithing) list.get(0);
+             ItemStack itemstack = recipesmithing.assemble(this.inputSlots);
+@@ -69,7 +74,9 @@
+             if (itemstack.isItemEnabled(this.level.enabledFeatures())) {
+                 this.selectedRecipe = recipesmithing;
+                 this.resultSlots.setRecipeUsed(recipesmithing);
+-                this.resultSlots.setItem(0, itemstack);
++                // CraftBukkit start
++                org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), itemstack);
++                // CraftBukkit end
+             }
          }
  
-     }
-@@ -83,4 +90,18 @@
+@@ -86,4 +93,18 @@
      public boolean canTakeItemForPickAll(ItemStack itemstack, Slot slot) {
          return slot.container != this.resultSlots && super.canTakeItemForPickAll(itemstack, slot);
      }

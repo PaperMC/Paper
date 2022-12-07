@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.DynamicOpsNBT;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
@@ -333,7 +334,7 @@ public final class CraftLegacy {
                     }
 
                     String name = blockTag.get("Name").asString("");
-                    Block block = IRegistry.BLOCK.get(new MinecraftKey(name));
+                    Block block = BuiltInRegistries.BLOCK.get(new MinecraftKey(name));
                     if (block == null) {
                         continue;
                     }
@@ -411,7 +412,7 @@ public final class CraftLegacy {
                 }
 
                 // Preconditions.checkState(newId.contains("minecraft:"), "Unknown new material for " + matData);
-                Item newMaterial = IRegistry.ITEM.get(new MinecraftKey(newId));
+                Item newMaterial = BuiltInRegistries.ITEM.get(new MinecraftKey(newId));
 
                 if (newMaterial == Items.AIR) {
                     continue;

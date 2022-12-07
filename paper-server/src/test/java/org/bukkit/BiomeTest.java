@@ -1,6 +1,5 @@
 package org.bukkit;
 
-import net.minecraft.data.RegistryGeneration;
 import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -17,14 +16,14 @@ public class BiomeTest extends AbstractTestingBase {
                 continue;
             }
 
-            Assert.assertNotNull("No NMS mapping for " + biome, CraftBlock.biomeToBiomeBase(RegistryGeneration.BIOME, biome));
+            Assert.assertNotNull("No NMS mapping for " + biome, CraftBlock.biomeToBiomeBase(BIOMES, biome));
         }
     }
 
     @Test
     public void testMinecraftToBukkit() {
-        for (BiomeBase biomeBase : RegistryGeneration.BIOME) {
-            Biome biome = CraftBlock.biomeBaseToBiome(RegistryGeneration.BIOME, biomeBase);
+        for (BiomeBase biomeBase : BIOMES) {
+            Biome biome = CraftBlock.biomeBaseToBiome(BIOMES, biomeBase);
             Assert.assertTrue("No Bukkit mapping for " + biomeBase, biome != null && biome != Biome.CUSTOM);
         }
     }

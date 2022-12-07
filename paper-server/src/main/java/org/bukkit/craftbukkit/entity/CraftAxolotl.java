@@ -45,6 +45,6 @@ public class CraftAxolotl extends CraftAnimals implements Axolotl {
     public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "variant");
 
-        getHandle().setVariant(net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.BY_ID[variant.ordinal()]);
+        getHandle().setVariant(net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(variant.ordinal()));
     }
 }

@@ -18,6 +18,7 @@ public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
         }
         CraftFurnaceRecipe ret = new CraftFurnaceRecipe(recipe.getKey(), recipe.getResult(), recipe.getInputChoice(), recipe.getExperience(), recipe.getCookingTime());
         ret.setGroup(recipe.getGroup());
+        ret.setCategory(recipe.getCategory());
         return ret;
     }
 
@@ -25,6 +26,6 @@ public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
     public void addToCraftingManager() {
         ItemStack result = this.getResult();
 
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new net.minecraft.world.item.crafting.FurnaceRecipe(CraftNamespacedKey.toMinecraft(this.getKey()), this.getGroup(), toNMS(this.getInputChoice(), true), CraftItemStack.asNMSCopy(result), getExperience(), getCookingTime()));
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new net.minecraft.world.item.crafting.FurnaceRecipe(CraftNamespacedKey.toMinecraft(this.getKey()), this.getGroup(), CraftRecipe.getCategory(this.getCategory()), toNMS(this.getInputChoice(), true), CraftItemStack.asNMSCopy(result), getExperience(), getCookingTime()));
     }
 }

@@ -1,9 +1,6 @@
 package org.bukkit.craftbukkit.generator;
 
 import static org.junit.Assert.*;
-import net.minecraft.core.IRegistry;
-import net.minecraft.data.RegistryGeneration;
-import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.support.AbstractTestingBase;
@@ -13,7 +10,6 @@ public class ChunkDataTest extends AbstractTestingBase {
 
     private static final BlockData RED_WOOL = Material.RED_WOOL.createBlockData();
     private static final BlockData AIR = Material.AIR.createBlockData();
-    private static final IRegistry<BiomeBase> BIOMES = RegistryGeneration.BIOME;
 
     private boolean testSetBlock(OldCraftChunkData data, int x, int y, int z, BlockData type, BlockData expected) {
         data.setBlock(x, y, z, type);

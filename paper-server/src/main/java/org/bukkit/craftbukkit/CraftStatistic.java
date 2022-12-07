@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.stats.ServerStatisticManager;
 import net.minecraft.stats.StatisticList;
@@ -123,9 +124,9 @@ public enum CraftStatistic {
 
     public static org.bukkit.Statistic getBukkitStatistic(net.minecraft.stats.Statistic<?> statistic) {
         IRegistry statRegistry = statistic.getType().getRegistry();
-        MinecraftKey nmsKey = IRegistry.STAT_TYPE.getKey(statistic.getType());
+        MinecraftKey nmsKey = BuiltInRegistries.STAT_TYPE.getKey(statistic.getType());
 
-        if (statRegistry == IRegistry.CUSTOM_STAT) {
+        if (statRegistry == BuiltInRegistries.CUSTOM_STAT) {
             nmsKey = (MinecraftKey) statistic.getValue();
         }
 
@@ -169,7 +170,7 @@ public enum CraftStatistic {
 
     public static net.minecraft.stats.Statistic getEntityStatistic(org.bukkit.Statistic stat, EntityType entity) {
         if (entity.getName() != null) {
-            EntityTypes<?> nmsEntity = IRegistry.ENTITY_TYPE.get(new MinecraftKey(entity.getName()));
+            EntityTypes<?> nmsEntity = BuiltInRegistries.ENTITY_TYPE.get(new MinecraftKey(entity.getName()));
 
             if (stat == org.bukkit.Statistic.KILL_ENTITY) {
                 return net.minecraft.stats.StatisticList.ENTITY_KILLED.get(nmsEntity);

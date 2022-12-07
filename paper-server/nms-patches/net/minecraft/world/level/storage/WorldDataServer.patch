@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/storage/WorldDataServer.java
 +++ b/net/minecraft/world/level/storage/WorldDataServer.java
-@@ -42,6 +42,15 @@
+@@ -43,6 +43,15 @@
  import net.minecraft.world.level.timers.CustomFunctionCallbackTimers;
  import org.slf4j.Logger;
  
@@ -16,7 +16,7 @@
  public class WorldDataServer implements IWorldDataServer, SaveData {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -81,6 +90,19 @@
+@@ -83,6 +92,19 @@
      private final Set<String> knownServerBrands;
      private boolean wasModded;
      private final CustomFunctionCallbackTimerQueue<MinecraftServer> scheduledEvents;
@@ -34,9 +34,9 @@
 +    }
 +    // CraftBukkit end
  
-     private WorldDataServer(@Nullable DataFixer datafixer, int i, @Nullable NBTTagCompound nbttagcompound, boolean flag, int j, int k, int l, float f, long i1, long j1, int k1, int l1, int i2, boolean flag1, int j2, boolean flag2, boolean flag3, boolean flag4, WorldBorder.c worldborder_c, int k2, int l2, @Nullable UUID uuid, Set<String> set, CustomFunctionCallbackTimerQueue<MinecraftServer> customfunctioncallbacktimerqueue, @Nullable NBTTagCompound nbttagcompound1, NBTTagCompound nbttagcompound2, WorldSettings worldsettings, GeneratorSettings generatorsettings, Lifecycle lifecycle) {
-         if (!generatorsettings.dimensions().containsKey(WorldDimension.OVERWORLD)) {
-@@ -128,7 +150,8 @@
+     private WorldDataServer(@Nullable DataFixer datafixer, int i, @Nullable NBTTagCompound nbttagcompound, boolean flag, int j, int k, int l, float f, long i1, long j1, int k1, int l1, int i2, boolean flag1, int j2, boolean flag2, boolean flag3, boolean flag4, WorldBorder.c worldborder_c, int k2, int l2, @Nullable UUID uuid, Set<String> set, CustomFunctionCallbackTimerQueue<MinecraftServer> customfunctioncallbacktimerqueue, @Nullable NBTTagCompound nbttagcompound1, NBTTagCompound nbttagcompound2, WorldSettings worldsettings, WorldOptions worldoptions, WorldDataServer.a worlddataserver_a, Lifecycle lifecycle) {
+         this.fixerUpper = datafixer;
+@@ -127,7 +149,8 @@
              return (NBTBase) dynamic.get("DimensionData").get("1").get("DragonFight").orElseEmptyMap().getValue();
          });
  
@@ -44,9 +44,9 @@
 +        // CraftBukkit - decompile error
 +        return new WorldDataServer(datafixer, i, nbttagcompound, dynamic.get("WasModded").asBoolean(false), dynamic.get("SpawnX").asInt(0), dynamic.get("SpawnY").asInt(0), dynamic.get("SpawnZ").asInt(0), dynamic.get("SpawnAngle").asFloat(0.0F), j, dynamic.get("DayTime").asLong(j), levelversion.levelDataVersion(), dynamic.get("clearWeatherTime").asInt(0), dynamic.get("rainTime").asInt(0), dynamic.get("raining").asBoolean(false), dynamic.get("thunderTime").asInt(0), dynamic.get("thundering").asBoolean(false), dynamic.get("initialized").asBoolean(true), dynamic.get("DifficultyLocked").asBoolean(false), WorldBorder.c.read(dynamic, WorldBorder.DEFAULT_SETTINGS), dynamic.get("WanderingTraderSpawnDelay").asInt(0), dynamic.get("WanderingTraderSpawnChance").asInt(0), (UUID) dynamic.get("WanderingTraderId").read(UUIDUtil.CODEC).result().orElse(null), (Set) dynamic.get("ServerBrands").asStream().flatMap((dynamic1) -> {
              return dynamic1.asString().result().stream();
-         }).collect(Collectors.toCollection(Sets::newLinkedHashSet)), new CustomFunctionCallbackTimerQueue<>(CustomFunctionCallbackTimers.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream()), (NBTTagCompound) dynamic.get("CustomBossEvents").orElseEmptyMap().getValue(), nbttagcompound1, worldsettings, generatorsettings, lifecycle);
+         }).collect(Collectors.toCollection(Sets::newLinkedHashSet)), new CustomFunctionCallbackTimerQueue<>(CustomFunctionCallbackTimers.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream()), (NBTTagCompound) dynamic.get("CustomBossEvents").orElseEmptyMap().getValue(), nbttagcompound1, worldsettings, worldoptions, worlddataserver_a, lifecycle);
      }
-@@ -148,7 +171,7 @@
+@@ -147,7 +170,7 @@
  
      private void setTagData(IRegistryCustom iregistrycustom, NBTTagCompound nbttagcompound, @Nullable NBTTagCompound nbttagcompound1) {
          NBTTagList nbttaglist = new NBTTagList();
@@ -55,16 +55,16 @@
  
          Objects.requireNonNull(nbttaglist);
          stream.forEach(nbttaglist::add);
-@@ -163,7 +186,7 @@
+@@ -162,7 +185,7 @@
          nbttagcompound.put("Version", nbttagcompound2);
          nbttagcompound.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
-         DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, iregistrycustom);
--        DataResult dataresult = GeneratorSettings.CODEC.encodeStart(dynamicops, this.worldGenSettings);
-+        DataResult<NBTBase> dataresult = GeneratorSettings.CODEC.encodeStart(dynamicops, this.worldGenSettings); // CraftBukkit - decompile error
+         DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, (HolderLookup.b) iregistrycustom);
+-        DataResult dataresult = GeneratorSettings.encode(dynamicops, this.worldOptions, iregistrycustom);
++        DataResult<NBTBase> dataresult = GeneratorSettings.encode(dynamicops, this.worldOptions, iregistrycustom); // CraftBukkit - decompile error
          Logger logger = WorldDataServer.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -211,6 +234,8 @@
+@@ -214,6 +237,8 @@
              nbttagcompound.putUUID("WanderingTraderId", this.wanderingTraderId);
          }
  
@@ -73,7 +73,7 @@
      }
  
      @Override
-@@ -328,6 +353,20 @@
+@@ -331,6 +356,20 @@
  
      @Override
      public void setThundering(boolean flag) {
@@ -94,7 +94,7 @@
          this.thundering = flag;
      }
  
-@@ -348,6 +387,20 @@
+@@ -351,6 +390,20 @@
  
      @Override
      public void setRaining(boolean flag) {
@@ -115,7 +115,7 @@
          this.raining = flag;
      }
  
-@@ -414,6 +467,12 @@
+@@ -417,6 +470,12 @@
      @Override
      public void setDifficulty(EnumDifficulty enumdifficulty) {
          this.settings = this.settings.withDifficulty(enumdifficulty);
@@ -128,11 +128,10 @@
      }
  
      @Override
-@@ -534,4 +593,12 @@
-     public WorldSettings getLevelSettings() {
+@@ -548,6 +607,14 @@
          return this.settings.copy();
      }
-+
+ 
 +    // CraftBukkit start - Check if the name stored in NBT is the correct one
 +    public void checkName(String name) {
 +        if (!this.settings.levelName.equals(name)) {
@@ -140,4 +139,7 @@
 +        }
 +    }
 +    // CraftBukkit end
- }
++
+     /** @deprecated */
+     @Deprecated
+     public static enum a {

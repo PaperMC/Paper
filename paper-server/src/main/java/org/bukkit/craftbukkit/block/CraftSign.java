@@ -11,13 +11,13 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
 
-public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements Sign {
+public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T> implements Sign {
 
     // Lazily initialized only if requested:
     private String[] originalLines = null;
     private String[] lines = null;
 
-    public CraftSign(World world, TileEntitySign tileEntity) {
+    public CraftSign(World world, T tileEntity) {
         super(world, tileEntity);
     }
 
@@ -75,7 +75,7 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
     }
 
     @Override
-    public void applyTo(TileEntitySign sign) {
+    public void applyTo(T sign) {
         super.applyTo(sign);
 
         if (lines != null) {
@@ -94,7 +94,7 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
         Preconditions.checkArgument(sign.isPlaced(), "Sign must be placed");
         Preconditions.checkArgument(sign.getWorld() == player.getWorld(), "Sign must be in same world as Player");
 
-        TileEntitySign handle = ((CraftSign) sign).getTileEntity();
+        TileEntitySign handle = ((CraftSign<?>) sign).getTileEntity();
         handle.isEditable = true;
 
         ((CraftPlayer) player).getHandle().openTextEdit(handle);

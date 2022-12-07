@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
 import java.util.List;
-import java.util.Random;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
@@ -16,6 +15,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyDamageScaler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -125,11 +125,6 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
-    public IRegistryCustom registryAccess() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public List<Entity> getEntities(Entity entity, AxisAlignedBB aabb, Predicate<? super Entity> prdct) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -181,6 +176,16 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
 
     @Override
     public DimensionManager dimensionType() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public IRegistryCustom registryAccess() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public FeatureFlagSet enabledFeatures() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

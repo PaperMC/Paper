@@ -3,6 +3,7 @@ package org.bukkit.generator.structure;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -30,9 +31,9 @@ public class StructureTest extends AbstractTestingBase {
 
     @Test
     public void testMinecraftToBukkitFieldName() {
-        IRegistry<net.minecraft.world.level.levelgen.structure.Structure> structureIRegistry = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(IRegistry.STRUCTURE_REGISTRY);
-        for (net.minecraft.world.level.levelgen.structure.Structure structure : structureIRegistry) {
-            MinecraftKey minecraftKey = structureIRegistry.getKey(structure);
+        IRegistry<net.minecraft.world.level.levelgen.structure.Structure> structureBuiltInRegistries = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(Registries.STRUCTURE);
+        for (net.minecraft.world.level.levelgen.structure.Structure structure : structureBuiltInRegistries) {
+            MinecraftKey minecraftKey = structureBuiltInRegistries.getKey(structure);
 
             try {
                 Structure bukkit = (Structure) Structure.class.getField(minecraftKey.getPath().toUpperCase()).get(null);

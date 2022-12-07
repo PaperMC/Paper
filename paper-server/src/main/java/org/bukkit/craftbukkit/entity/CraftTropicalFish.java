@@ -32,32 +32,32 @@ public class CraftTropicalFish extends CraftFish implements TropicalFish {
 
     @Override
     public DyeColor getPatternColor() {
-        return getPatternColor(getHandle().getVariant());
+        return getPatternColor(getHandle().getPackedVariant());
     }
 
     @Override
     public void setPatternColor(DyeColor color) {
-        getHandle().setVariant(getData(color, getBodyColor(), getPattern()));
+        getHandle().setPackedVariant(getData(color, getBodyColor(), getPattern()));
     }
 
     @Override
     public DyeColor getBodyColor() {
-        return getBodyColor(getHandle().getVariant());
+        return getBodyColor(getHandle().getPackedVariant());
     }
 
     @Override
     public void setBodyColor(DyeColor color) {
-        getHandle().setVariant(getData(getPatternColor(), color, getPattern()));
+        getHandle().setPackedVariant(getData(getPatternColor(), color, getPattern()));
     }
 
     @Override
     public Pattern getPattern() {
-        return getPattern(getHandle().getVariant());
+        return getPattern(getHandle().getPackedVariant());
     }
 
     @Override
     public void setPattern(Pattern pattern) {
-        getHandle().setVariant(getData(getPatternColor(), getBodyColor(), pattern));
+        getHandle().setPackedVariant(getData(getPatternColor(), getBodyColor(), pattern));
     }
 
     public static enum CraftPattern {

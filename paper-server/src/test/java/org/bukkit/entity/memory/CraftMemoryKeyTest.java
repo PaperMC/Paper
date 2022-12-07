@@ -1,7 +1,7 @@
 package org.bukkit.entity.memory;
 
 import net.minecraft.core.GlobalPos;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
@@ -56,7 +56,7 @@ public class CraftMemoryKeyTest extends AbstractTestingBase {
 
     @Test
     public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailableAndSerializerIsNotPresent() {
-        for (MemoryModuleType<?> memoryModuleType : IRegistry.MEMORY_MODULE_TYPE) {
+        for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
             if (!memoryModuleType.getCodec().isPresent()) {
                 MemoryKey bukkitNoKey = CraftMemoryKey.toMemoryKey(memoryModuleType);
                 Assert.assertNull("MemoryModuleType should be null", bukkitNoKey);
@@ -67,10 +67,10 @@ public class CraftMemoryKeyTest extends AbstractTestingBase {
     @Test
     @Ignore("Unit type not yet implemented")
     public void shouldReturnAnInstanceOfMemoryKeyWhenBukkitRepresentationOfKeyisAvailableAndSerializerIsPresent() {
-        for (MemoryModuleType<?> memoryModuleType : IRegistry.MEMORY_MODULE_TYPE) {
+        for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
             if (memoryModuleType.getCodec().isPresent()) {
                 MemoryKey bukkitNoKey = CraftMemoryKey.toMemoryKey(memoryModuleType);
-                Assert.assertNotNull("MemoryModuleType should not be null " + IRegistry.MEMORY_MODULE_TYPE.getKey(memoryModuleType), bukkitNoKey);
+                Assert.assertNotNull("MemoryModuleType should not be null " + BuiltInRegistries.MEMORY_MODULE_TYPE.getKey(memoryModuleType), bukkitNoKey);
             }
         }
     }

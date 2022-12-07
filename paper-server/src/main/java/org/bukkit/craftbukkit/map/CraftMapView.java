@@ -74,22 +74,22 @@ public final class CraftMapView implements MapView {
 
     @Override
     public int getCenterX() {
-        return worldMap.x;
+        return worldMap.centerX;
     }
 
     @Override
     public int getCenterZ() {
-        return worldMap.z;
+        return worldMap.centerZ;
     }
 
     @Override
     public void setCenterX(int x) {
-        worldMap.x = x;
+        worldMap.centerX = x;
     }
 
     @Override
     public void setCenterZ(int z) {
-        worldMap.z = z;
+        worldMap.centerZ = z;
     }
 
     @Override

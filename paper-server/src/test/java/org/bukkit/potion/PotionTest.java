@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
@@ -16,7 +16,7 @@ public class PotionTest extends AbstractTestingBase {
     @Test
     public void testEffectCompleteness() throws Throwable {
         Map<PotionType, String> effects = new EnumMap(PotionType.class);
-        for (Object reg : IRegistry.POTION) {
+        for (Object reg : BuiltInRegistries.POTION) {
             List<MobEffect> eff = ((PotionRegistry) reg).getEffects();
             if (eff.size() != 1) continue;
             int id = MobEffectList.getId(eff.get(0).getEffect());
@@ -34,8 +34,8 @@ public class PotionTest extends AbstractTestingBase {
 
     @Test
     public void testEffectType() {
-        for (MobEffectList nms : IRegistry.MOB_EFFECT) {
-            MinecraftKey key = IRegistry.MOB_EFFECT.getKey(nms);
+        for (MobEffectList nms : BuiltInRegistries.MOB_EFFECT) {
+            MinecraftKey key = BuiltInRegistries.MOB_EFFECT.getKey(nms);
 
             int id = MobEffectList.getId(nms);
             PotionEffectType bukkit = PotionEffectType.getById(id);

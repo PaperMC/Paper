@@ -14,15 +14,12 @@
  public class EntityEnderPearl extends EntityProjectileThrowable {
  
      public EntityEnderPearl(EntityTypes<? extends EntityEnderPearl> entitytypes, World world) {
-@@ -53,21 +60,34 @@
+@@ -53,23 +60,36 @@
                  EntityPlayer entityplayer = (EntityPlayer) entity;
  
                  if (entityplayer.connection.getConnection().isConnected() && entityplayer.level == this.level && !entityplayer.isSleeping()) {
 -                    if (this.random.nextFloat() < 0.05F && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
 -                        EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(this.level);
--
--                        entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
--                        this.level.addFreshEntity(entityendermite);
 +                    // CraftBukkit start - Fire PlayerTeleportEvent
 +                    org.bukkit.craftbukkit.entity.CraftPlayer player = entityplayer.getBukkitEntity();
 +                    org.bukkit.Location location = getBukkitEntity().getLocation();
@@ -36,14 +33,24 @@
 +                        if (this.random.nextFloat() < 0.05F && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
 +                            EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(this.level);
 +
-+                            entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
-+                            this.level.addFreshEntity(entityendermite, CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
++                            if (entityendermite != null) {
++                                entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
++                                this.level.addFreshEntity(entityendermite, CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
++                            }
 +                        }
-+
+ 
+-                        if (entityendermite != null) {
+-                            entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
+-                            this.level.addFreshEntity(entityendermite);
 +                        if (entity.isPassenger()) {
 +                            entity.stopRiding();
-+                        }
-+
+                         }
+-                    }
+ 
+-                    if (entity.isPassenger()) {
+-                        entityplayer.dismountTo(this.getX(), this.getY(), this.getZ());
+-                    } else {
+-                        entity.teleportTo(this.getX(), this.getY(), this.getZ());
 +                        entityplayer.connection.teleport(teleEvent.getTo());
 +                        entity.resetFallDistance();
 +                        CraftEventFactory.entityDamage = this;
@@ -51,19 +58,13 @@
 +                        CraftEventFactory.entityDamage = null;
                      }
 -
--                    if (entity.isPassenger()) {
--                        entityplayer.dismountTo(this.getX(), this.getY(), this.getZ());
--                    } else {
--                        entity.teleportTo(this.getX(), this.getY(), this.getZ());
--                    }
--
 -                    entity.resetFallDistance();
 -                    entity.hurt(DamageSource.FALL, 5.0F);
 +                    // CraftBukkit end
                  }
              } else if (entity != null) {
                  entity.teleportTo(this.getX(), this.getY(), this.getZ());
-@@ -96,7 +116,7 @@
+@@ -98,7 +118,7 @@
      public Entity changeDimension(WorldServer worldserver) {
          Entity entity = this.getOwner();
  

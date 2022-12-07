@@ -11,6 +11,8 @@ import javax.annotation.Nullable;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.level.GeneratorAccess;
+import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
+import net.minecraft.world.level.block.entity.HangingSignBlockEntity;
 import net.minecraft.world.level.block.entity.SculkCatalystBlockEntity;
 import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
 import net.minecraft.world.level.block.entity.SculkShriekerBlockEntity;
@@ -124,6 +126,8 @@ public final class CraftBlockStates {
                 Arrays.asList(
                         Material.ACACIA_SIGN,
                         Material.ACACIA_WALL_SIGN,
+                        Material.BAMBOO_SIGN,
+                        Material.BAMBOO_WALL_SIGN,
                         Material.BIRCH_SIGN,
                         Material.BIRCH_WALL_SIGN,
                         Material.CRIMSON_SIGN,
@@ -145,10 +149,37 @@ public final class CraftBlockStates {
 
         register(
                 Arrays.asList(
+                        Material.ACACIA_HANGING_SIGN,
+                        Material.ACACIA_WALL_HANGING_SIGN,
+                        Material.BAMBOO_HANGING_SIGN,
+                        Material.BAMBOO_WALL_HANGING_SIGN,
+                        Material.BIRCH_HANGING_SIGN,
+                        Material.BIRCH_WALL_HANGING_SIGN,
+                        Material.CRIMSON_HANGING_SIGN,
+                        Material.CRIMSON_WALL_HANGING_SIGN,
+                        Material.DARK_OAK_HANGING_SIGN,
+                        Material.DARK_OAK_WALL_HANGING_SIGN,
+                        Material.JUNGLE_HANGING_SIGN,
+                        Material.JUNGLE_WALL_HANGING_SIGN,
+                        Material.MANGROVE_HANGING_SIGN,
+                        Material.MANGROVE_WALL_HANGING_SIGN,
+                        Material.OAK_HANGING_SIGN,
+                        Material.OAK_WALL_HANGING_SIGN,
+                        Material.SPRUCE_HANGING_SIGN,
+                        Material.SPRUCE_WALL_HANGING_SIGN,
+                        Material.WARPED_HANGING_SIGN,
+                        Material.WARPED_WALL_HANGING_SIGN
+                ), CraftHangingSign.class, CraftHangingSign::new, HangingSignBlockEntity::new
+        );
+
+        register(
+                Arrays.asList(
                         Material.CREEPER_HEAD,
                         Material.CREEPER_WALL_HEAD,
                         Material.DRAGON_HEAD,
                         Material.DRAGON_WALL_HEAD,
+                        Material.PIGLIN_HEAD,
+                        Material.PIGLIN_WALL_HEAD,
                         Material.PLAYER_HEAD,
                         Material.PLAYER_WALL_HEAD,
                         Material.SKELETON_SKULL,
@@ -268,6 +299,7 @@ public final class CraftBlockStates {
         register(Material.BLAST_FURNACE, CraftBlastFurnace.class, CraftBlastFurnace::new, TileEntityBlastFurnace::new);
         register(Material.BREWING_STAND, CraftBrewingStand.class, CraftBrewingStand::new, TileEntityBrewingStand::new);
         register(Material.CHEST, CraftChest.class, CraftChest::new, TileEntityChest::new);
+        register(Material.CHISELED_BOOKSHELF, CraftChiseledBookshelf.class, CraftChiseledBookshelf::new, ChiseledBookShelfBlockEntity::new);
         register(Material.COMPARATOR, CraftComparator.class, CraftComparator::new, TileEntityComparator::new);
         register(Material.CONDUIT, CraftConduit.class, CraftConduit::new, TileEntityConduit::new);
         register(Material.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new, TileEntityLightDetector::new);

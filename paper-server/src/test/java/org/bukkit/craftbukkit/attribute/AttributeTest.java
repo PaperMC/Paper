@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.attribute;
 
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import org.bukkit.attribute.Attribute;
@@ -12,7 +12,7 @@ public class AttributeTest extends AbstractTestingBase {
 
     @Test
     public void testToBukkit() {
-        for (MinecraftKey nms : IRegistry.ATTRIBUTE.keySet()) {
+        for (MinecraftKey nms : BuiltInRegistries.ATTRIBUTE.keySet()) {
             Attribute bukkit = CraftAttributeMap.fromMinecraft(nms.toString());
 
             Assert.assertNotNull(nms.toString(), bukkit);

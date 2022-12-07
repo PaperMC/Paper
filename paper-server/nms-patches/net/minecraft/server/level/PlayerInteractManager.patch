@@ -28,7 +28,7 @@
  public class PlayerInteractManager {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -56,6 +77,13 @@
+@@ -56,9 +77,16 @@
          if (enumgamemode == this.gameModeForPlayer) {
              return false;
          } else {
@@ -39,18 +39,13 @@
 +                return false;
 +            }
 +            // CraftBukkit end
-             this.setGameModeForPlayer(enumgamemode, this.gameModeForPlayer);
+             this.setGameModeForPlayer(enumgamemode, this.previousGameModeForPlayer);
+             this.player.onUpdateAbilities();
+-            this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.a.UPDATE_GAME_MODE, this.player));
++            this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.a.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
+             this.level.updateSleepingPlayerList();
              return true;
          }
-@@ -66,7 +94,7 @@
-         this.gameModeForPlayer = enumgamemode;
-         enumgamemode.updatePlayerAbilities(this.player.getAbilities());
-         this.player.onUpdateAbilities();
--        this.player.server.getPlayerList().broadcastAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.UPDATE_GAME_MODE, new EntityPlayer[]{this.player}));
-+        this.player.server.getPlayerList().broadcastAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.UPDATE_GAME_MODE, new EntityPlayer[]{this.player}), this.player); // CraftBukkit
-         this.level.updateSleepingPlayerList();
-     }
- 
 @@ -88,7 +116,7 @@
      }
  
@@ -179,8 +174,7 @@
 +
 +            // Sword + Creative mode pre-cancel
 +            event.setCancelled(isSwordNoBreak);
- 
--        if (!this.player.getMainHandItem().getItem().canAttackBlock(iblockdata, this.level, blockposition, this.player)) {
++
 +            // Calculate default block experience
 +            IBlockData nmsData = this.level.getBlockState(blockposition);
 +            Block nmsBlock = nmsData.getBlock();
@@ -199,7 +193,8 @@
 +                }
 +                // Let the client know the block still exists
 +                this.player.connection.send(new PacketPlayOutBlockChange(this.level, blockposition));
-+
+ 
+-        if (!this.player.getMainHandItem().getItem().canAttackBlock(iblockdata, this.level, blockposition, this.player)) {
 +                // Brute force all possible updates
 +                for (EnumDirection dir : EnumDirection.values()) {
 +                    this.player.connection.send(new PacketPlayOutBlockChange(level, blockposition.relative(dir)));
@@ -257,20 +252,20 @@
 +                // CraftBukkit start
 +                if (event.isDropItems()) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, level.captureDrops);
-+                }
+                 }
 +                level.captureDrops = null;
 +
 +                // Drop event experience
 +                if (flag && event != null) {
 +                    iblockdata.getBlock().popExperience(this.level, blockposition, event.getExpToDrop());
-                 }
++                }
 +
 +                return true;
 +                // CraftBukkit end
              }
          }
      }
-@@ -313,12 +469,52 @@
+@@ -313,14 +469,54 @@
          }
      }
  
@@ -286,7 +281,9 @@
 +        EnumInteractionResult enuminteractionresult = EnumInteractionResult.PASS;
 +        boolean cancelledBlock = false;
  
-         if (this.gameModeForPlayer == EnumGamemode.SPECTATOR) {
+         if (!iblockdata.getBlock().isEnabled(world.enabledFeatures())) {
+             return EnumInteractionResult.FAIL;
+         } else if (this.gameModeForPlayer == EnumGamemode.SPECTATOR) {
              ITileInventory itileinventory = iblockdata.getMenuProvider(world, blockposition);
 +            cancelledBlock = !(itileinventory instanceof ITileInventory);
 +        }
@@ -323,7 +320,7 @@
  
              if (itileinventory != null) {
                  entityplayer.openMenu(itileinventory);
-@@ -332,7 +528,7 @@
+@@ -334,7 +530,7 @@
              ItemStack itemstack1 = itemstack.copy();
  
              if (!flag1) {
@@ -332,7 +329,7 @@
  
                  if (enuminteractionresult.consumesAction()) {
                      CriterionTriggers.ITEM_USED_ON_BLOCK.trigger(entityplayer, blockposition, itemstack1);
-@@ -340,17 +536,17 @@
+@@ -342,17 +538,17 @@
                  }
              }
  
@@ -353,7 +350,7 @@
                  }
  
                  if (enuminteractionresult1.consumesAction()) {
-@@ -358,10 +554,10 @@
+@@ -360,10 +556,10 @@
                  }
  
                  return enuminteractionresult1;

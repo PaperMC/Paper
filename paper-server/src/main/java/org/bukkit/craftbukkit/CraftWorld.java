@@ -9,7 +9,6 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,11 +26,12 @@ import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
-import net.minecraft.network.protocol.game.PacketPlayOutCustomSoundEffect;
 import net.minecraft.network.protocol.game.PacketPlayOutEntitySound;
+import net.minecraft.network.protocol.game.PacketPlayOutNamedSoundEffect;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateTime;
 import net.minecraft.network.protocol.game.PacketPlayOutWorldEvent;
 import net.minecraft.resources.MinecraftKey;
@@ -43,7 +43,7 @@ import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.sounds.SoundCategory;
-import net.minecraft.tags.TagKey;
+import net.minecraft.sounds.SoundEffect;
 import net.minecraft.util.ArraySetSorted;
 import net.minecraft.util.Unit;
 import net.minecraft.world.EnumDifficulty;
@@ -56,7 +56,6 @@ import net.minecraft.world.entity.projectile.EntityArrow;
 import net.minecraft.world.entity.projectile.EntityTippedArrow;
 import net.minecraft.world.entity.raid.PersistentRaid;
 import net.minecraft.world.level.ChunkCoordIntPair;
-import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.RayTrace;
 import net.minecraft.world.level.biome.BiomeBase;
@@ -661,7 +660,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
-        return !world.explode(source == null ? null : ((CraftEntity) source).getHandle(), x, y, z, power, setFire, breakBlocks ? Explosion.Effect.BREAK : Explosion.Effect.NONE).wasCanceled;
+        return !world.explode(source == null ? null : ((CraftEntity) source).getHandle(), x, y, z, power, setFire, breakBlocks ? net.minecraft.world.level.World.a.MOB : net.minecraft.world.level.World.a.NONE).wasCanceled;
     }
 
     @Override
@@ -1321,7 +1320,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean canGenerateStructures() {
-        return world.serverLevelData.worldGenSettings().generateStructures();
+        return world.serverLevelData.worldGenOptions().generateStructures();
     }
 
     @Override
@@ -1563,7 +1562,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         double y = loc.getY();
         double z = loc.getZ();
 
-        PacketPlayOutCustomSoundEffect packet = new PacketPlayOutCustomSoundEffect(new MinecraftKey(sound), SoundCategory.valueOf(category.name()), new Vec3D(x, y, z), volume, pitch, getHandle().getRandom().nextLong());
+        PacketPlayOutNamedSoundEffect packet = new PacketPlayOutNamedSoundEffect(Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), SoundCategory.valueOf(category.name()), x, y, z, volume, pitch, getHandle().getRandom().nextLong());
         world.getServer().getPlayerList().broadcast(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.dimension(), packet);
     }
 
@@ -1576,7 +1575,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public void playSound(Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
         if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
 
-        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(CraftSound.getSoundEffect(sound), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, getHandle().getRandom().nextLong());
+        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(CraftSound.getSoundEffect(sound)), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, getHandle().getRandom().nextLong());
         PlayerChunkMap.EntityTracker entityTracker = getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
         if (entityTracker != null) {
             entityTracker.broadcastAndSend(packet);

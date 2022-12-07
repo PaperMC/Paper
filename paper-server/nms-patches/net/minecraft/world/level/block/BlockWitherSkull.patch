@@ -1,18 +1,17 @@
 --- a/net/minecraft/world/level/block/BlockWitherSkull.java
 +++ b/net/minecraft/world/level/block/BlockWitherSkull.java
-@@ -26,6 +26,11 @@
+@@ -26,6 +26,10 @@
  import net.minecraft.world.level.block.state.predicate.MaterialPredicate;
  import net.minecraft.world.level.material.Material;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 +import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 +// CraftBukkit end
 +
  public class BlockWitherSkull extends BlockSkull {
  
      @Nullable
-@@ -49,6 +54,7 @@
+@@ -49,6 +53,7 @@
      }
  
      public static void checkSpawn(World world, BlockPosition blockposition, TileEntitySkull tileentityskull) {
@@ -20,45 +19,32 @@
          if (!world.isClientSide) {
              IBlockData iblockdata = tileentityskull.getBlockState();
              boolean flag = iblockdata.is(Blocks.WITHER_SKELETON_SKULL) || iblockdata.is(Blocks.WITHER_SKELETON_WALL_SKULL);
-@@ -58,12 +64,14 @@
-                 ShapeDetector.ShapeDetectorCollection shapedetector_shapedetectorcollection = shapedetector.find(world, blockposition);
+@@ -60,12 +65,18 @@
+                     EntityWither entitywither = (EntityWither) EntityTypes.WITHER.create(world);
  
-                 if (shapedetector_shapedetectorcollection != null) {
-+                    // CraftBukkit start - Use BlockStateListPopulator
-+                    BlockStateListPopulator blockList = new BlockStateListPopulator(world);
-                     for (int i = 0; i < shapedetector.getWidth(); ++i) {
-                         for (int j = 0; j < shapedetector.getHeight(); ++j) {
-                             ShapeDetectorBlock shapedetectorblock = shapedetector_shapedetectorcollection.getBlock(i, j, 0);
+                     if (entitywither != null) {
+-                        BlockPumpkinCarved.clearPatternBlocks(world, shapedetector_shapedetectorcollection);
++                        // BlockPumpkinCarved.clearPatternBlocks(world, shapedetector_shapedetectorcollection); // CraftBukkit - move down
+                         BlockPosition blockposition1 = shapedetector_shapedetectorcollection.getBlock(1, 2, 0).getPos();
  
--                            world.setBlock(shapedetectorblock.getPos(), Blocks.AIR.defaultBlockState(), 2);
--                            world.levelEvent(2001, shapedetectorblock.getPos(), Block.getId(shapedetectorblock.getState()));
-+                            blockList.setBlock(shapedetectorblock.getPos(), Blocks.AIR.defaultBlockState(), 2); // CraftBukkit
-+                            // world.levelEvent(2001, shapedetectorblock.getPos(), Block.getId(shapedetectorblock.getState())); // CraftBukkit
+                         entitywither.moveTo((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 0.55D, (double) blockposition1.getZ() + 0.5D, shapedetector_shapedetectorcollection.getForwards().getAxis() == EnumDirection.EnumAxis.X ? 0.0F : 90.0F, 0.0F);
+                         entitywither.yBodyRot = shapedetector_shapedetectorcollection.getForwards().getAxis() == EnumDirection.EnumAxis.X ? 0.0F : 90.0F;
+                         entitywither.makeInvulnerable();
++                        // CraftBukkit start
++                        if (!world.addFreshEntity(entitywither, SpawnReason.BUILD_WITHER)) {
++                            return;
++                        }
++                        BlockPumpkinCarved.clearPatternBlocks(world, shapedetector_shapedetectorcollection); // CraftBukkit - from above
++                        // CraftBukkit end
+                         Iterator iterator = world.getEntitiesOfClass(EntityPlayer.class, entitywither.getBoundingBox().inflate(50.0D)).iterator();
+ 
+                         while (iterator.hasNext()) {
+@@ -74,7 +85,7 @@
+                             CriterionTriggers.SUMMONED_ENTITY.trigger(entityplayer, (Entity) entitywither);
                          }
+ 
+-                        world.addFreshEntity(entitywither);
++                        // world.addFreshEntity(entitywither); // CraftBukkit - moved up
+                         BlockPumpkinCarved.updatePatternBlocks(world, shapedetector_shapedetectorcollection);
                      }
  
-@@ -73,6 +81,15 @@
-                     entitywither.moveTo((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 0.55D, (double) blockposition1.getZ() + 0.5D, shapedetector_shapedetectorcollection.getForwards().getAxis() == EnumDirection.EnumAxis.X ? 0.0F : 90.0F, 0.0F);
-                     entitywither.yBodyRot = shapedetector_shapedetectorcollection.getForwards().getAxis() == EnumDirection.EnumAxis.X ? 0.0F : 90.0F;
-                     entitywither.makeInvulnerable();
-+                    // CraftBukkit start
-+                    if (!world.addFreshEntity(entitywither, SpawnReason.BUILD_WITHER)) {
-+                        return;
-+                    }
-+                    for (BlockPosition pos : blockList.getBlocks()) {
-+                        world.levelEvent(2001, pos, Block.getId(world.getBlockState(pos)));
-+                    }
-+                    blockList.updateList();
-+                    // CraftBukkit end
-                     Iterator iterator = world.getEntitiesOfClass(EntityPlayer.class, entitywither.getBoundingBox().inflate(50.0D)).iterator();
- 
-                     while (iterator.hasNext()) {
-@@ -81,7 +98,7 @@
-                         CriterionTriggers.SUMMONED_ENTITY.trigger(entityplayer, (Entity) entitywither);
-                     }
- 
--                    world.addFreshEntity(entitywither);
-+                    // world.addFreshEntity(entitywither); // CraftBukkit - moved up
- 
-                     for (int k = 0; k < shapedetector.getWidth(); ++k) {
-                         for (int l = 0; l < shapedetector.getHeight(); ++l) {

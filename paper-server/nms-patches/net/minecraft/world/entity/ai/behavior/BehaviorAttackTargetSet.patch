@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/ai/behavior/BehaviorAttackTargetSet.java
 +++ b/net/minecraft/world/entity/ai/behavior/BehaviorAttackTargetSet.java
-@@ -10,6 +10,13 @@
+@@ -8,6 +8,13 @@
+ import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
  import net.minecraft.world.entity.ai.memory.MemoryModuleType;
- import net.minecraft.world.entity.ai.memory.MemoryStatus;
  
 +// CraftBukkit start
 +import net.minecraft.server.level.EntityPlayer;
@@ -11,30 +11,24 @@
 +import org.bukkit.event.entity.EntityTargetEvent;
 +// CraftBukkit end
 +
- public class BehaviorAttackTargetSet<E extends EntityInsentient> extends Behavior<E> {
+ public class BehaviorAttackTargetSet {
  
-     private final Predicate<E> canAttackPredicate;
-@@ -42,13 +49,21 @@
-     }
- 
-     protected void start(WorldServer worldserver, E e0, long i) {
--        ((Optional) this.targetFinderFunction.apply(e0)).ifPresent((entityliving) -> {
-+        (this.targetFinderFunction.apply(e0)).ifPresent((entityliving) -> { // CraftBukkit - decompile error
-             setAttackTarget(e0, entityliving);
-         });
-     }
- 
-     public static <E extends EntityInsentient> void setAttackTarget(E e0, EntityLiving entityliving) {
--        e0.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, (Object) entityliving);
-+        // CraftBukkit start
-+        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(e0, entityliving, (entityliving instanceof EntityPlayer) ? EntityTargetEvent.TargetReason.CLOSEST_PLAYER : EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
-+        if (event.isCancelled()) {
-+            return;
-+        }
-+        entityliving = (event.getTarget() != null) ? ((CraftLivingEntity) event.getTarget()).getHandle() : null;
-+        // CraftBukkit end
-+
-+        e0.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, entityliving); // CraftBukkit - decompile error
-         e0.getBrain().eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
-     }
- }
+     public BehaviorAttackTargetSet() {}
+@@ -35,6 +42,17 @@
+                             if (!entityinsentient.canAttack(entityliving)) {
+                                 return false;
+                             } else {
++                                // CraftBukkit start
++                                EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityinsentient, entityliving, (entityliving instanceof EntityPlayer) ? EntityTargetEvent.TargetReason.CLOSEST_PLAYER : EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
++                                if (event.isCancelled()) {
++                                    return false;
++                                }
++                                if (event.getTarget() == null) {
++                                    memoryaccessor.erase();
++                                    return true;
++                                }
++                                entityliving = ((CraftLivingEntity) event.getTarget()).getHandle();
++                                // CraftBukkit end
+                                 memoryaccessor.set(entityliving);
+                                 memoryaccessor1.erase();
+                                 return true;

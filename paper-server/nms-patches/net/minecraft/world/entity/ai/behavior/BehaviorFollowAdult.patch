@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/ai/behavior/BehaviorFollowAdult.java
 +++ b/net/minecraft/world/entity/ai/behavior/BehaviorFollowAdult.java
-@@ -10,6 +10,13 @@
+@@ -8,6 +8,13 @@
  import net.minecraft.world.entity.ai.memory.MemoryModuleType;
- import net.minecraft.world.entity.ai.memory.MemoryStatus;
+ import net.minecraft.world.entity.ai.memory.MemoryTarget;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -11,25 +11,28 @@
 +import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 +// CraftBukkit end
 +
- public class BehaviorFollowAdult<E extends EntityAgeable> extends Behavior<E> {
+ public class BehaviorFollowAdult {
  
-     private final UniformInt followRange;
-@@ -38,7 +45,17 @@
-     }
+     public BehaviorFollowAdult() {}
+@@ -25,9 +32,20 @@
+                     if (!entityageable.isBaby()) {
+                         return false;
+                     } else {
+-                        EntityAgeable entityageable1 = (EntityAgeable) behaviorbuilder_b.get(memoryaccessor);
++                        EntityLiving entityageable1 = (EntityAgeable) behaviorbuilder_b.get(memoryaccessor); // CraftBukkit - type
  
-     protected void start(WorldServer worldserver, E e0, long i) {
--        BehaviorUtil.setWalkAndLookTargetMemories(e0, (Entity) this.getNearestAdult(e0), (Float) this.speedModifier.apply(e0), this.followRange.getMinValue() - 1);
-+        // CraftBukkit start
-+        EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(e0, this.getNearestAdult(e0), EntityTargetEvent.TargetReason.FOLLOW_LEADER);
-+        if (event.isCancelled()) {
-+            return;
-+        }
-+        if (event.getTarget() != null) {
-+            BehaviorUtil.setWalkAndLookTargetMemories(e0, ((CraftLivingEntity) event.getTarget()).getHandle(), this.speedModifier.apply(e0), this.followRange.getMinValue() - 1);
-+        } else {
-+            e0.getBrain().eraseMemory(MemoryModuleType.NEAREST_VISIBLE_ADULT);
-+        }
-+        // CraftBukkit end
-     }
+                         if (entityageable.closerThan(entityageable1, (double) (uniformint.getMaxValue() + 1)) && !entityageable.closerThan(entityageable1, (double) uniformint.getMinValue())) {
++                            // CraftBukkit start
++                            EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityageable, entityageable1, EntityTargetEvent.TargetReason.FOLLOW_LEADER);
++                            if (event.isCancelled()) {
++                                return false;
++                            }
++                            if (event.getTarget() == null) {
++                                memoryaccessor.erase();
++                                return true;
++                            }
++                            entityageable1 = ((CraftLivingEntity) event.getTarget()).getHandle();
++                            // CraftBukkit end
+                             MemoryTarget memorytarget = new MemoryTarget(new BehaviorPositionEntity(entityageable1, false), (Float) function.apply(entityageable), uniformint.getMinValue() - 1);
  
-     private EntityAgeable getNearestAdult(E e0) {
+                             memoryaccessor1.set(new BehaviorPositionEntity(entityageable1, true));

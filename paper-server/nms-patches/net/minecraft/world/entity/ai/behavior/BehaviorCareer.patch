@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/ai/behavior/BehaviorCareer.java
 +++ b/net/minecraft/world/entity/ai/behavior/BehaviorCareer.java
-@@ -12,6 +12,12 @@
+@@ -9,6 +9,12 @@
  import net.minecraft.world.entity.npc.EntityVillager;
  import net.minecraft.world.entity.npc.VillagerProfession;
  
@@ -10,31 +10,22 @@
 +import org.bukkit.event.entity.VillagerCareerChangeEvent;
 +// CraftBukkit end
 +
- public class BehaviorCareer extends Behavior<EntityVillager> {
+ public class BehaviorCareer {
  
-     public BehaviorCareer() {
-@@ -28,7 +34,7 @@
-         GlobalPos globalpos = (GlobalPos) entityvillager.getBrain().getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).get();
- 
-         entityvillager.getBrain().eraseMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
--        entityvillager.getBrain().setMemory(MemoryModuleType.JOB_SITE, (Object) globalpos);
-+        entityvillager.getBrain().setMemory(MemoryModuleType.JOB_SITE, globalpos); // CraftBukkit - decompile error
-         worldserver.broadcastEntityEvent(entityvillager, (byte) 14);
-         if (entityvillager.getVillagerData().getProfession() == VillagerProfession.NONE) {
-             MinecraftServer minecraftserver = worldserver.getServer();
-@@ -40,7 +46,14 @@
-                     return villagerprofession.heldJobSite().test(holder);
-                 }).findFirst();
-             }).ifPresent((villagerprofession) -> {
--                entityvillager.setVillagerData(entityvillager.getVillagerData().setProfession(villagerprofession));
-+                // CraftBukkit start - Fire VillagerCareerChangeEvent where Villager gets employed
-+                VillagerCareerChangeEvent event = CraftEventFactory.callVillagerCareerChangeEvent(entityvillager, CraftVillager.nmsToBukkitProfession(villagerprofession), VillagerCareerChangeEvent.ChangeReason.EMPLOYED);
-+                if (event.isCancelled()) {
-+                    return;
-+                }
+     public BehaviorCareer() {}
+@@ -37,7 +43,14 @@
+                                     return villagerprofession.heldJobSite().test(holder);
+                                 }).findFirst();
+                             }).ifPresent((villagerprofession) -> {
+-                                entityvillager.setVillagerData(entityvillager.getVillagerData().setProfession(villagerprofession));
++                                // CraftBukkit start - Fire VillagerCareerChangeEvent where Villager gets employed
++                                VillagerCareerChangeEvent event = CraftEventFactory.callVillagerCareerChangeEvent(entityvillager, CraftVillager.nmsToBukkitProfession(villagerprofession), VillagerCareerChangeEvent.ChangeReason.EMPLOYED);
++                                if (event.isCancelled()) {
++                                    return;
++                                }
 +
-+                entityvillager.setVillagerData(entityvillager.getVillagerData().setProfession(CraftVillager.bukkitToNmsProfession(event.getProfession())));
-+                // CraftBukkit end
-                 entityvillager.refreshBrain(worldserver);
-             });
-         }
++                                entityvillager.setVillagerData(entityvillager.getVillagerData().setProfession(CraftVillager.bukkitToNmsProfession(event.getProfession())));
++                                // CraftBukkit end
+                                 entityvillager.refreshBrain(worldserver);
+                             });
+                             return true;

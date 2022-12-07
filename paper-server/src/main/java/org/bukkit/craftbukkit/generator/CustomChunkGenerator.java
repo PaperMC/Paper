@@ -25,6 +25,7 @@ import net.minecraft.world.level.biome.WorldChunkManager;
 import net.minecraft.world.level.block.ITileEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.chunk.ChunkSection;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunk;
@@ -86,7 +87,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     public CustomChunkGenerator(WorldServer world, net.minecraft.world.level.chunk.ChunkGenerator delegate, ChunkGenerator generator) {
-        super(delegate.structureSets, delegate.structureOverrides, delegate.getBiomeSource());
+        super(delegate.getBiomeSource(), delegate.generationSettingsGetter);
 
         this.world = world;
         this.delegate = delegate;
@@ -117,14 +118,14 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public void createStructures(IRegistryCustom iregistrycustom, RandomState randomstate, StructureManager structuremanager, IChunkAccess ichunkaccess, StructureTemplateManager structuretemplatemanager, long i) {
+    public void createStructures(IRegistryCustom iregistrycustom, ChunkGeneratorStructureState chunkgeneratorstructurestate, StructureManager structuremanager, IChunkAccess ichunkaccess, StructureTemplateManager structuretemplatemanager) {
         SeededRandom random = getSeededRandom();
         int x = ichunkaccess.getPos().x;
         int z = ichunkaccess.getPos().z;
 
-        random.setSeed(MathHelper.getSeed(x, "should-structures".hashCode(), z) ^ i);
+        random.setSeed(MathHelper.getSeed(x, "should-structures".hashCode(), z) ^ world.getSeed());
         if (generator.shouldGenerateStructures(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z)) {
-            super.createStructures(iregistrycustom, randomstate, structuremanager, ichunkaccess, structuretemplatemanager, i);
+            super.createStructures(iregistrycustom, chunkgeneratorstructurestate, structuremanager, ichunkaccess, structuretemplatemanager);
         }
     }
 

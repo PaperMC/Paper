@@ -3,7 +3,7 @@ package org.bukkit.entity;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.entity.EntityTypes;
 import org.bukkit.support.AbstractTestingBase;
@@ -16,7 +16,7 @@ public class EntityTypesTest extends AbstractTestingBase {
     public void testMaps() {
         Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
 
-        for (EntityTypes<?> nms : IRegistry.ENTITY_TYPE) {
+        for (EntityTypes<?> nms : BuiltInRegistries.ENTITY_TYPE) {
             MinecraftKey key = EntityTypes.getKey(nms);
 
             EntityType bukkit = EntityType.fromName(key.getPath());

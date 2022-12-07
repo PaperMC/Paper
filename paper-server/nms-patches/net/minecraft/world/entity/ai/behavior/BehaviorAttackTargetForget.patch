@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/ai/behavior/BehaviorAttackTargetForget.java
 +++ b/net/minecraft/world/entity/ai/behavior/BehaviorAttackTargetForget.java
-@@ -10,6 +10,12 @@
+@@ -8,6 +8,12 @@
+ import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
  import net.minecraft.world.entity.ai.memory.MemoryModuleType;
- import net.minecraft.world.entity.ai.memory.MemoryStatus;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -10,24 +10,25 @@
 +import org.bukkit.event.entity.EntityTargetEvent;
 +// CraftBukkit end
 +
- public class BehaviorAttackTargetForget<E extends EntityInsentient> extends Behavior<E> {
+ public class BehaviorAttackTargetForget {
  
      private static final int TIMEOUT_TO_GET_WITHIN_ATTACK_RANGE = 200;
-@@ -83,6 +89,17 @@
-     }
- 
-     protected void clearAttackTarget(E e0) {
-+        // CraftBukkit start
-+        EntityLiving old = e0.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
-+        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(e0, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
-+        if (event.isCancelled()) {
-+            return;
-+        }
-+        if (event.getTarget() != null) {
-+            e0.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
-+            return;
-+        }
-+        // CraftBukkit end
-         this.onTargetErased.accept(e0, this.getAttackTarget(e0));
-         e0.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
-     }
+@@ -41,6 +47,18 @@
+                     if (entityinsentient.canAttack(entityliving) && (!flag || !isTiredOfTryingToReachTarget(entityinsentient, behaviorbuilder_b.tryGet(memoryaccessor1))) && entityliving.isAlive() && entityliving.level == entityinsentient.level && !predicate.test(entityliving)) {
+                         return true;
+                     } else {
++                        // CraftBukkit start
++                        EntityLiving old = entityinsentient.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
++                        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityinsentient, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
++                        if (event.isCancelled()) {
++                            return false;
++                        }
++                        if (event.getTarget() == null) {
++                            memoryaccessor.erase();
++                            return true;
++                        }
++                        entityliving = ((CraftLivingEntity) event.getTarget()).getHandle();
++                        // CraftBukkit end
+                         biconsumer.accept(entityinsentient, entityliving);
+                         memoryaccessor.erase();
+                         return true;

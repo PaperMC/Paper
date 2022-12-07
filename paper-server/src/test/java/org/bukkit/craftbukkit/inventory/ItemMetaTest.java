@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemBlock;
@@ -151,7 +151,7 @@ public class ItemMetaTest extends AbstractTestingBase {
     public void testBlockStateMeta() {
         List<Block> queue = new ArrayList<>();
 
-        for (Item item : IRegistry.ITEM) {
+        for (Item item : BuiltInRegistries.ITEM) {
             if (item instanceof ItemBlock) {
                 queue.add(((ItemBlock) item).getBlock());
             }

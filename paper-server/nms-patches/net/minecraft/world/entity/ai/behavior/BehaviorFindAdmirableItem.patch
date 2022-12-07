@@ -1,28 +1,23 @@
 --- a/net/minecraft/world/entity/ai/behavior/BehaviorFindAdmirableItem.java
 +++ b/net/minecraft/world/entity/ai/behavior/BehaviorFindAdmirableItem.java
-@@ -35,6 +35,25 @@
+@@ -28,6 +28,20 @@
+                     EntityItem entityitem = (EntityItem) behaviorbuilder_b.get(memoryaccessor2);
  
-     @Override
-     protected void start(WorldServer worldserver, E e0, long i) {
-+        // CraftBukkit start
-+        if (e0 instanceof net.minecraft.world.entity.animal.allay.Allay) {
-+            Entity target = this.getClosestLovedItem(e0);
-+            org.bukkit.event.entity.EntityTargetEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(e0, target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
+                     if (behaviorbuilder_b.tryGet(memoryaccessor3).isEmpty() && predicate.test(entityliving) && entityitem.closerThan(entityliving, (double) i) && entityliving.level.getWorldBorder().isWithinBounds(entityitem.blockPosition())) {
++                        // CraftBukkit start
++                        if (entityliving instanceof net.minecraft.world.entity.animal.allay.Allay) {
++                            org.bukkit.event.entity.EntityTargetEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetEvent(entityliving, entityitem, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
 +
-+            if (event.isCancelled()) {
-+                return;
-+            }
++                            if (event.isCancelled()) {
++                                return false;
++                            }
++                            if (!(event.getTarget() instanceof EntityItem)) {
++                                memoryaccessor2.erase();
++                            }
 +
-+            target = (event.getTarget() == null) ? null : ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
-+            if (target instanceof EntityItem item) {
-+                e0.getBrain().setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, java.util.Optional.of(item));
-+                BehaviorUtil.setWalkAndLookTargetMemories(e0, target, this.speedModifier, 0);
-+            } else {
-+                e0.getBrain().eraseMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
-+            }
-+            return;
-+        }
-+        // CraftBukkit end
-         BehaviorUtil.setWalkAndLookTargetMemories(e0, (Entity) this.getClosestLovedItem(e0), this.speedModifier, 0);
-     }
++                            entityitem = (EntityItem) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
++                        }
++                        // CraftBukkit end
+                         MemoryTarget memorytarget = new MemoryTarget(new BehaviorPositionEntity(entityitem, false), f, 0);
  
+                         memoryaccessor.set(new BehaviorPositionEntity(entityitem, true));

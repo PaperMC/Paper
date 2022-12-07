@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/piglin/EntityPiglin.java
 +++ b/net/minecraft/world/entity/monster/piglin/EntityPiglin.java
-@@ -54,6 +54,18 @@
+@@ -56,6 +56,18 @@
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.IBlockData;
  
@@ -8,7 +8,7 @@
 +import java.util.stream.Collectors;
 +import java.util.HashSet;
 +import java.util.Set;
-+import net.minecraft.core.IRegistry;
++import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.NBTTagList;
 +import net.minecraft.nbt.NBTTagString;
 +import net.minecraft.nbt.NBTBase;
@@ -19,10 +19,10 @@
  public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow, InventoryCarrier {
  
      private static final DataWatcherObject<Boolean> DATA_BABY_ID = DataWatcher.defineId(EntityPiglin.class, DataWatcherRegistry.BOOLEAN);
-@@ -74,6 +86,10 @@
+@@ -76,6 +88,10 @@
      public boolean cannotHunt;
      protected static final ImmutableList<SensorType<? extends Sensor<? super EntityPiglin>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS, SensorType.NEAREST_ITEMS, SensorType.HURT_BY, SensorType.PIGLIN_SPECIFIC_SENSOR);
-     protected static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.LOOK_TARGET, MemoryModuleType.DOORS_TO_CLOSE, MemoryModuleType.NEAREST_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ADULT_PIGLINS, MemoryModuleType.NEARBY_ADULT_PIGLINS, MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryModuleType.HURT_BY, MemoryModuleType.HURT_BY_ENTITY, MemoryModuleType.WALK_TARGET, new MemoryModuleType[]{MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.ATTACK_TARGET, MemoryModuleType.ATTACK_COOLING_DOWN, MemoryModuleType.INTERACTION_TARGET, MemoryModuleType.PATH, MemoryModuleType.ANGRY_AT, MemoryModuleType.UNIVERSAL_ANGER, MemoryModuleType.AVOID_TARGET, MemoryModuleType.ADMIRING_ITEM, MemoryModuleType.TIME_TRYING_TO_REACH_ADMIRE_ITEM, MemoryModuleType.ADMIRING_DISABLED, MemoryModuleType.DISABLE_WALK_TO_ADMIRE_ITEM, MemoryModuleType.CELEBRATE_LOCATION, MemoryModuleType.DANCING, MemoryModuleType.HUNTED_RECENTLY, MemoryModuleType.NEAREST_VISIBLE_BABY_HOGLIN, MemoryModuleType.NEAREST_VISIBLE_NEMESIS, MemoryModuleType.NEAREST_VISIBLE_ZOMBIFIED, MemoryModuleType.RIDE_TARGET, MemoryModuleType.VISIBLE_ADULT_PIGLIN_COUNT, MemoryModuleType.VISIBLE_ADULT_HOGLIN_COUNT, MemoryModuleType.NEAREST_VISIBLE_HUNTABLE_HOGLIN, MemoryModuleType.NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD, MemoryModuleType.NEAREST_PLAYER_HOLDING_WANTED_ITEM, MemoryModuleType.ATE_RECENTLY, MemoryModuleType.NEAREST_REPELLENT});
+     protected static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.LOOK_TARGET, MemoryModuleType.DOORS_TO_CLOSE, MemoryModuleType.NEAREST_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ADULT_PIGLINS, MemoryModuleType.NEARBY_ADULT_PIGLINS, MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS, MemoryModuleType.HURT_BY, MemoryModuleType.HURT_BY_ENTITY, new MemoryModuleType[]{MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.ATTACK_TARGET, MemoryModuleType.ATTACK_COOLING_DOWN, MemoryModuleType.INTERACTION_TARGET, MemoryModuleType.PATH, MemoryModuleType.ANGRY_AT, MemoryModuleType.UNIVERSAL_ANGER, MemoryModuleType.AVOID_TARGET, MemoryModuleType.ADMIRING_ITEM, MemoryModuleType.TIME_TRYING_TO_REACH_ADMIRE_ITEM, MemoryModuleType.ADMIRING_DISABLED, MemoryModuleType.DISABLE_WALK_TO_ADMIRE_ITEM, MemoryModuleType.CELEBRATE_LOCATION, MemoryModuleType.DANCING, MemoryModuleType.HUNTED_RECENTLY, MemoryModuleType.NEAREST_VISIBLE_BABY_HOGLIN, MemoryModuleType.NEAREST_VISIBLE_NEMESIS, MemoryModuleType.NEAREST_VISIBLE_ZOMBIFIED, MemoryModuleType.RIDE_TARGET, MemoryModuleType.VISIBLE_ADULT_PIGLIN_COUNT, MemoryModuleType.VISIBLE_ADULT_HOGLIN_COUNT, MemoryModuleType.NEAREST_VISIBLE_HUNTABLE_HOGLIN, MemoryModuleType.NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD, MemoryModuleType.NEAREST_PLAYER_HOLDING_WANTED_ITEM, MemoryModuleType.ATE_RECENTLY, MemoryModuleType.NEAREST_REPELLENT});
 +    // CraftBukkit start - Custom bartering and interest list
 +    public Set<Item> allowedBarterItems = new HashSet<>();
 +    public Set<Item> interestItems = new HashSet<>();
@@ -30,33 +30,33 @@
  
      public EntityPiglin(EntityTypes<? extends EntityPiglinAbstract> entitytypes, World world) {
          super(entitytypes, world);
-@@ -92,6 +108,14 @@
+@@ -94,6 +110,14 @@
          }
  
-         nbttagcompound.put("Inventory", this.inventory.createTag());
+         this.writeInventoryToTag(nbttagcompound);
 +        // CraftBukkit start
 +        NBTTagList barterList = new NBTTagList();
-+        allowedBarterItems.stream().map(IRegistry.ITEM::getKey).map(MinecraftKey::toString).map(NBTTagString::valueOf).forEach(barterList::add);
++        allowedBarterItems.stream().map(BuiltInRegistries.ITEM::getKey).map(MinecraftKey::toString).map(NBTTagString::valueOf).forEach(barterList::add);
 +        nbttagcompound.put("Bukkit.BarterList", barterList);
 +        NBTTagList interestList = new NBTTagList();
-+        interestItems.stream().map(IRegistry.ITEM::getKey).map(MinecraftKey::toString).map(NBTTagString::valueOf).forEach(interestList::add);
++        interestItems.stream().map(BuiltInRegistries.ITEM::getKey).map(MinecraftKey::toString).map(NBTTagString::valueOf).forEach(interestList::add);
 +        nbttagcompound.put("Bukkit.InterestList", interestList);
 +        // CraftBukkit end
      }
  
      @Override
-@@ -100,6 +124,10 @@
+@@ -102,6 +126,10 @@
          this.setBaby(nbttagcompound.getBoolean("IsBaby"));
          this.setCannotHunt(nbttagcompound.getBoolean("CannotHunt"));
-         this.inventory.fromTag(nbttagcompound.getList("Inventory", 10));
+         this.readInventoryFromTag(nbttagcompound);
 +        // CraftBukkit start
-+        this.allowedBarterItems = nbttagcompound.getList("Bukkit.BarterList", 8).stream().map(NBTBase::getAsString).map(MinecraftKey::tryParse).map(IRegistry.ITEM::get).collect(Collectors.toCollection(HashSet::new));
-+        this.interestItems = nbttagcompound.getList("Bukkit.InterestList", 8).stream().map(NBTBase::getAsString).map(MinecraftKey::tryParse).map(IRegistry.ITEM::get).collect(Collectors.toCollection(HashSet::new));
++        this.allowedBarterItems = nbttagcompound.getList("Bukkit.BarterList", 8).stream().map(NBTBase::getAsString).map(MinecraftKey::tryParse).map(BuiltInRegistries.ITEM::get).collect(Collectors.toCollection(HashSet::new));
++        this.interestItems = nbttagcompound.getList("Bukkit.InterestList", 8).stream().map(NBTBase::getAsString).map(MinecraftKey::tryParse).map(BuiltInRegistries.ITEM::get).collect(Collectors.toCollection(HashSet::new));
 +        // CraftBukkit end
      }
  
      @VisibleForDebug
-@@ -206,7 +234,7 @@
+@@ -223,7 +251,7 @@
  
      @Override
      public BehaviorController<EntityPiglin> getBrain() {
@@ -65,7 +65,7 @@
      }
  
      @Override
-@@ -349,7 +377,7 @@
+@@ -368,7 +396,7 @@
      }
  
      protected void holdInOffHand(ItemStack itemstack) {
@@ -74,7 +74,7 @@
              this.setItemSlot(EnumItemSlot.OFFHAND, itemstack);
              this.setGuaranteedDrop(EnumItemSlot.OFFHAND);
          } else {
-@@ -375,8 +403,8 @@
+@@ -394,8 +422,8 @@
          if (EnchantmentManager.hasBindingCurse(itemstack1)) {
              return false;
          } else {
@@ -85,7 +85,7 @@
  
              return flag && !flag1 ? true : (!flag && flag1 ? false : (this.isAdult() && !itemstack.is(Items.CROSSBOW) && itemstack1.is(Items.CROSSBOW) ? false : super.canReplaceCurrentItem(itemstack, itemstack1)));
          }
-@@ -405,7 +433,7 @@
+@@ -424,7 +452,7 @@
  
      @Override
      protected SoundEffect getAmbientSound() {

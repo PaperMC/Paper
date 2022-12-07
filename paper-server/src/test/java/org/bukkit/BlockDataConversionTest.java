@@ -2,7 +2,7 @@ package org.bukkit;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 /**
- * This test class ensures that all Blocks (as registered in IRegistry.BLOCK)
+ * This test class ensures that all Blocks (as registered in BuiltInRegistries.BLOCK)
  * can be converted into their CraftBlockData equivalent.
  */
 @RunWith(Parameterized.class)
@@ -22,7 +22,7 @@ public class BlockDataConversionTest extends AbstractTestingBase {
     @Parameterized.Parameters(name = "{index}: {0}")
     public static List<Object[]> args() {
         List<Object[]> list = new ArrayList<>();
-        for (Block block : (Iterable<Block>) IRegistry.BLOCK) {
+        for (Block block : (Iterable<Block>) BuiltInRegistries.BLOCK) {
             list.add(new Object[]{block.defaultBlockState()});
         }
         return list;

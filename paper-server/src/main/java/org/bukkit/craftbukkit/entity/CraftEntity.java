@@ -58,6 +58,7 @@ import net.minecraft.world.entity.animal.EntityWaterAnimal;
 import net.minecraft.world.entity.animal.EntityWolf;
 import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
+import net.minecraft.world.entity.animal.camel.Camel;
 import net.minecraft.world.entity.animal.frog.Frog;
 import net.minecraft.world.entity.animal.frog.Tadpole;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -257,6 +258,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                         } else if (entity instanceof EntityHorse) { return new CraftHorse(server, (EntityHorse) entity); }
                         else if (entity instanceof EntityHorseSkeleton) { return new CraftSkeletonHorse(server, (EntityHorseSkeleton) entity); }
                         else if (entity instanceof EntityHorseZombie) { return new CraftZombieHorse(server, (EntityHorseZombie) entity); }
+                        else if (entity instanceof Camel) { return new CraftCamel(server, (Camel) entity); }
                     }
                     else if (entity instanceof EntityRabbit) { return new CraftRabbit(server, (EntityRabbit) entity); }
                     else if (entity instanceof EntityPolarBear) { return new CraftPolarBear(server, (EntityPolarBear) entity); }

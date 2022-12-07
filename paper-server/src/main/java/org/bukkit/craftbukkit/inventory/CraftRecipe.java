@@ -7,6 +7,8 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.recipe.CookingBookCategory;
+import org.bukkit.inventory.recipe.CraftingBookCategory;
 
 public interface CraftRecipe extends Recipe {
 
@@ -26,7 +28,7 @@ public interface CraftRecipe extends Recipe {
             throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
         }
 
-        stack.dissolve();
+        stack.getItems();
         if (requireNotEmpty && stack.itemStacks.length == 0) {
             throw new IllegalArgumentException("Recipe requires at least one non-air choice!");
         }
@@ -35,7 +37,7 @@ public interface CraftRecipe extends Recipe {
     }
 
     public static RecipeChoice toBukkit(RecipeItemStack list) {
-        list.dissolve();
+        list.getItems();
 
         if (list.itemStacks.length == 0) {
             return null;
@@ -57,5 +59,21 @@ public interface CraftRecipe extends Recipe {
 
             return new RecipeChoice.MaterialChoice(choices);
         }
+    }
+
+    public static net.minecraft.world.item.crafting.CraftingBookCategory getCategory(CraftingBookCategory bukkit) {
+        return net.minecraft.world.item.crafting.CraftingBookCategory.valueOf(bukkit.name());
+    }
+
+    public static CraftingBookCategory getCategory(net.minecraft.world.item.crafting.CraftingBookCategory nms) {
+        return CraftingBookCategory.valueOf(nms.name());
+    }
+
+    public static net.minecraft.world.item.crafting.CookingBookCategory getCategory(CookingBookCategory bukkit) {
+        return net.minecraft.world.item.crafting.CookingBookCategory.valueOf(bukkit.name());
+    }
+
+    public static CookingBookCategory getCategory(net.minecraft.world.item.crafting.CookingBookCategory nms) {
+        return CookingBookCategory.valueOf(nms.name());
     }
 }
