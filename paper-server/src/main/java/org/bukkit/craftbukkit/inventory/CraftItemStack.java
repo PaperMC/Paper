@@ -394,11 +394,13 @@ public final class CraftItemStack extends ItemStack {
             case YELLOW_BANNER:
             case YELLOW_WALL_BANNER:
                 return new CraftMetaBanner(item.getTag());
+            case ALLAY_SPAWN_EGG:
             case AXOLOTL_SPAWN_EGG:
             case BAT_SPAWN_EGG:
             case BEE_SPAWN_EGG:
             case BLAZE_SPAWN_EGG:
             case CAT_SPAWN_EGG:
+            case CAMEL_SPAWN_EGG:
             case CAVE_SPIDER_SPAWN_EGG:
             case CHICKEN_SPAWN_EGG:
             case COD_SPAWN_EGG:
@@ -408,6 +410,7 @@ public final class CraftItemStack extends ItemStack {
             case DONKEY_SPAWN_EGG:
             case DROWNED_SPAWN_EGG:
             case ELDER_GUARDIAN_SPAWN_EGG:
+            case ENDER_DRAGON_SPAWN_EGG:
             case ENDERMAN_SPAWN_EGG:
             case ENDERMITE_SPAWN_EGG:
             case EVOKER_SPAWN_EGG:
@@ -419,6 +422,7 @@ public final class CraftItemStack extends ItemStack {
             case HOGLIN_SPAWN_EGG:
             case HORSE_SPAWN_EGG:
             case HUSK_SPAWN_EGG:
+            case IRON_GOLEM_SPAWN_EGG:
             case LLAMA_SPAWN_EGG:
             case MAGMA_CUBE_SPAWN_EGG:
             case MOOSHROOM_SPAWN_EGG:
@@ -442,6 +446,7 @@ public final class CraftItemStack extends ItemStack {
             case SKELETON_HORSE_SPAWN_EGG:
             case SKELETON_SPAWN_EGG:
             case SLIME_SPAWN_EGG:
+            case SNOW_GOLEM_SPAWN_EGG:
             case SPIDER_SPAWN_EGG:
             case SQUID_SPAWN_EGG:
             case STRAY_SPAWN_EGG:
@@ -452,9 +457,11 @@ public final class CraftItemStack extends ItemStack {
             case VEX_SPAWN_EGG:
             case VILLAGER_SPAWN_EGG:
             case VINDICATOR_SPAWN_EGG:
+            case WARDEN_SPAWN_EGG:
             case WANDERING_TRADER_SPAWN_EGG:
             case WITCH_SPAWN_EGG:
             case WITHER_SKELETON_SPAWN_EGG:
+            case WITHER_SPAWN_EGG:
             case WOLF_SPAWN_EGG:
             case ZOGLIN_SPAWN_EGG:
             case ZOMBIE_HORSE_SPAWN_EGG:
