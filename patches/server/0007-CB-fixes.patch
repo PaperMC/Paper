@@ -17,23 +17,23 @@ Subject: [PATCH] CB fixes
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 61f1da79bbd0428c4d99f62974c06183230864b6..a3c602f1a1b2dbc6bbb32bffa8745dc71cf20872 100644
+index caae5d862461c7dcf5fa9bf36e51276925668945..9908ab936780a88992c2690502c85e4d9074371d 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -293,7 +293,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -295,7 +295,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
-         long l = minecraftserver.getWorldData().worldGenSettings().seed();
+         long l = minecraftserver.getWorldData().worldGenOptions().seed();
  
 -        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), resourcekey, chunkgenerator, this.chunkSource.randomState(), this, chunkgenerator.getBiomeSource(), l, datafixer);
 +        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), this.getTypeKey(), chunkgenerator, this.chunkSource.randomState(), this, chunkgenerator.getBiomeSource(), l, datafixer); // Paper - Fix missing CB diff
-         this.structureManager = new StructureManager(this, this.serverLevelData.worldGenSettings(), this.structureCheck); // CraftBukkit
+         this.structureManager = new StructureManager(this, this.serverLevelData.worldGenOptions(), this.structureCheck); // CraftBukkit
          if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
-             this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenSettings().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
+             this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/Marker.java b/src/main/java/net/minecraft/world/entity/Marker.java
-index aef33a96cf8df9400cc60285ef1f7c5ded03b495..059c4c3b59f66ea2b2b23fe1eb106bf9447b607c 100644
+index d9f07a311ec5a253bdfb681414e1f8033a576a23..6f110ece5686d1fc73b93fb9e0a73f2c1bcf4586 100644
 --- a/src/main/java/net/minecraft/world/entity/Marker.java
 +++ b/src/main/java/net/minecraft/world/entity/Marker.java
-@@ -38,8 +38,9 @@ public class Marker extends Entity {
+@@ -39,8 +39,9 @@ public class Marker extends Entity {
      }
  
      @Override
@@ -45,10 +45,10 @@ index aef33a96cf8df9400cc60285ef1f7c5ded03b495..059c4c3b59f66ea2b2b23fe1eb106bf9
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index 9998e1c94b72b90dd3ba4bcce1b4b3653b9b1b2b..963ad3ce1ef83888ae1537ff01accdbb5b04ffa1 100644
+index 99af167b02c1291f9f5fd1a195a3eb65de87002b..874f7ea643d27eec47d51a10ad472af7e8ec402e 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -43,7 +43,7 @@ public class StructureCheck {
+@@ -44,7 +44,7 @@ public class StructureCheck {
      private final Registry<Biome> biomes;
      private final Registry<Structure> structureConfigs;
      private final StructureTemplateManager structureTemplateManager;
@@ -57,7 +57,7 @@ index 9998e1c94b72b90dd3ba4bcce1b4b3653b9b1b2b..963ad3ce1ef83888ae1537ff01accdbb
      private final ChunkGenerator chunkGenerator;
      private final RandomState randomState;
      private final LevelHeightAccessor heightAccessor;
-@@ -53,7 +53,7 @@ public class StructureCheck {
+@@ -54,7 +54,7 @@ public class StructureCheck {
      private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
      private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
  
@@ -67,10 +67,10 @@ index 9998e1c94b72b90dd3ba4bcce1b4b3653b9b1b2b..963ad3ce1ef83888ae1537ff01accdbb
          this.registryAccess = registryManager;
          this.structureTemplateManager = structureTemplateManager;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 7c3d02a8a3bac227692ad2349981bc8c6c600341..4dd952faac05f553b28d1252296b0587369865f4 100644
+index 64db49f699ebd0baf1cce79c1ef20c5b7a83f2b3..a9cfb4e94e8038ccbbe10669198abb9177fb8ebc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2278,7 +2278,13 @@ public final class CraftServer implements Server {
+@@ -2302,7 +2302,13 @@ public final class CraftServer implements Server {
          Validate.notNull(key, "NamespacedKey cannot be null");
  
          LootTables registry = this.getServer().getLootTables();

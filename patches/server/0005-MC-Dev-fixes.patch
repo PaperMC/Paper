@@ -1,0 +1,172 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 30 Mar 2016 19:36:20 -0400
+Subject: [PATCH] MC Dev fixes
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index d33cce0265a85a23d726742e7752331b63449144..dc7a805d3058244ba13c2268666f274e7ec069dc 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -370,7 +370,7 @@ public class Util {
+     }
+ 
+     public static <K> Hash.Strategy<K> identityStrategy() {
+-        return Util.IdentityStrategy.INSTANCE;
++        return (Hash.Strategy<K>) Util.IdentityStrategy.INSTANCE; // Paper - decompile fix
+     }
+ 
+     public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> futures) {
+diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
+index d4c46f44f7a998121482c2fc56d7986881d489d8..6801a3aa5f2f1e9a7a72ff81c09b4944ecb8349d 100644
+--- a/src/main/java/net/minecraft/core/BlockPos.java
++++ b/src/main/java/net/minecraft/core/BlockPos.java
+@@ -379,12 +379,12 @@ public class BlockPos extends Vec3i {
+                     if (this.index == l) {
+                         return this.endOfData();
+                     } else {
+-                        int i = this.index % i;
+-                        int j = this.index / i;
+-                        int k = j % j;
+-                        int l = j / j;
++                        int offsetX = this.index % i; // Paper - decomp fix
++                        int u = this.index / i; // Paper - decomp fix
++                        int offsetY = u % j; // Paper - decomp fix
++                        int offsetZ = u / j; // Paper - decomp fix
+                         ++this.index;
+-                        return this.cursor.set(startX + i, startY + k, startZ + l);
++                        return this.cursor.set(startX + offsetX, startY + offsetY, startZ + offsetZ); // Paper - decomp fix
+                     }
+                 }
+             };
+diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
+index 24e864d1cd376e9f94cfa68fd06f96b239eed888..c0fe7c576f2361e599bc23003da7c49bb7cb62b2 100644
+--- a/src/main/java/net/minecraft/nbt/NbtUtils.java
++++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
+@@ -505,7 +505,7 @@ public final class NbtUtils {
+     }
+ 
+     public static CompoundTag update(DataFixer fixer, DataFixTypes fixTypes, CompoundTag compound, int oldVersion, int targetVersion) {
+-        return fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue();
++        return (CompoundTag) fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue(); // Paper - decompile fix
+     }
+ 
+     public static Component toPrettyComponent(Tag element) {
+diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
+index 2df8fa1ae2dc58291add80fae0599ee4ff5066ee..ed7e1a6fc745df745d5bc79623948bb1015c9252 100644
+--- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
++++ b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
+@@ -138,8 +138,7 @@ public class ComponentUtils {
+             ComponentContents string = text.getContents();
+             if (string instanceof TranslatableContents) {
+                 TranslatableContents translatableContents = (TranslatableContents)string;
+-                String string = translatableContents.getKey();
+-                return Language.getInstance().has(string);
++                return Language.getInstance().has(translatableContents.getKey()); // Paper - decompile fix
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 870db0028becd6b76af76190fae908d0031ed94d..06b1da8b559f9d545f1593d81de7b25e0a12f176 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1747,7 +1747,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             PackRepository resourcepackrepository = this.packRepository;
+ 
+             Objects.requireNonNull(this.packRepository);
+-            return stream.map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error
++            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
+         }, this).thenCompose((immutablelist) -> {
+             MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
+ 
+diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
+index 2f66abf62d303342f5fe614fb3e35e7844497ffc..b346fa94b23d81da7da073f71dd12e672e0f079c 100644
+--- a/src/main/java/net/minecraft/server/level/Ticket.java
++++ b/src/main/java/net/minecraft/server/level/Ticket.java
+@@ -21,7 +21,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
+             return i;
+         } else {
+             int j = Integer.compare(System.identityHashCode(this.type), System.identityHashCode(ticket.type));
+-            return j != 0 ? j : this.type.getComparator().compare(this.key, ticket.key);
++            return j != 0 ? j : this.type.getComparator().compare(this.key, (T)ticket.key); // Paper - decompile fix
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/java/net/minecraft/util/SortedArraySet.java
+index 2dc801061025888192c3bf2c4c38b928c16a0165..ca788f0dcec4a117b410fe8348969e056b138b1e 100644
+--- a/src/main/java/net/minecraft/util/SortedArraySet.java
++++ b/src/main/java/net/minecraft/util/SortedArraySet.java
+@@ -28,7 +28,7 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+     }
+ 
+     public static <T extends Comparable<T>> SortedArraySet<T> create(int initialCapacity) {
+-        return new SortedArraySet<>(initialCapacity, Comparator.naturalOrder());
++        return new SortedArraySet<>(initialCapacity, Comparator.<T>naturalOrder()); // Paper - decompile fix
+     }
+ 
+     public static <T> SortedArraySet<T> create(Comparator<T> comparator) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+index 471b9258320ba0002d741267144c80c149f5f34c..8852cc6253c8bc1a9f7591cd2b0beb95bb4f4d33 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+@@ -106,7 +106,7 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
+ 
+     @Override
+     public Brain<Frog> getBrain() {
+-        return super.getBrain();
++        return (Brain<Frog>) super.getBrain(); // Paper - decompile fix
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index 64314cf4dc53a1a0a5f676fa00503858e0120dfa..45741410a13cffe3419e34b5607b048bbcf1c3ff 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -123,7 +123,7 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+ 
+     @Override
+     public Brain<Hoglin> getBrain() {
+-        return super.getBrain();
++        return (Brain<Hoglin>) super.getBrain(); // Paper - decompile fix
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+index d025df087e7b87fbc89a722226f2f2263c54ac47..2f712bfc1f717ba410bf34669d7b0a919ca218cc 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -78,7 +78,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+         }
+ 
+         this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
+-            return (entry1.getValue()); // CraftBukkit
++            return entry1.getValue(); // CraftBukkit // Paper - decompile fix - *shrugs internally* // todo: is this needed anymore?
+         }));
+         this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
+         RecipeManager.LOGGER.info("Loaded {} recipes", map1.size());
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+index 6b91771a4bf559881a4f3e6c98500e09b33d16e0..21a2800db22f287b9c6a8290326fdf3b94ae94b1 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+@@ -19,7 +19,7 @@ public class EntityLookup<T extends EntityAccess> {
+     public <U extends T> void getEntities(EntityTypeTest<T, U> filter, AbortableIterationConsumer<U> consumer) {
+         for(T entityAccess : this.byId.values()) {
+             U entityAccess2 = (U)((EntityAccess)filter.tryCast(entityAccess));
+-            if (entityAccess2 != null && consumer.accept((T)entityAccess2).shouldAbort()) {
++            if (entityAccess2 != null && consumer.accept(entityAccess2).shouldAbort()) { // Paper - decompile fix
+                 return;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySection.java b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+index 69a19dbf58cde41680d086e78b9a12ffee602dbf..5dcb7f9cab097990148f5a7c4ccbe1556afdd514 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntitySection.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+@@ -44,7 +44,7 @@ public class EntitySection<T extends EntityAccess> {
+         } else {
+             for(T entityAccess : collection) {
+                 U entityAccess2 = (U)((EntityAccess)type.tryCast(entityAccess));
+-                if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box) && consumer.accept((T)entityAccess2).shouldAbort()) {
++                if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box) && consumer.accept(entityAccess2).shouldAbort()) { // Paper - decompile fix
+                     return AbortableIterationConsumer.Continuation.ABORT;
+                 }
+             }
