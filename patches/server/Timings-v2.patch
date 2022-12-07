@@ -1200,7 +1200,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        timings.chunkTicksBlocks.startTiming(); // Paper
          if (randomTickSpeed > 0) {
              LevelChunkSection[] achunksection = chunk.getSections();
-             int l = achunksection.length;
+             int j1 = achunksection.length;
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
              }
          }
@@ -1279,8 +1279,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
 -        org.bukkit.craftbukkit.SpigotTimings.playerConnectionTimer.stopTiming(); // Spigot
  
-         this.chatPreviewThrottler.tick();
      }
+ 
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      }
  
@@ -1372,37 +1372,23 @@ diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
-         return Registry.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(id));
+@@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
      }
  
-+    // Paper start - add id
-+    public final String id;
-+
-     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval) {
-+        this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, maxTrackDistance, trackTickInterval, "custom");
+     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, FeatureFlagSet requiredFeatures) {
++       // Paper start
++        this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, maxTrackDistance, trackTickInterval, requiredFeatures, "custom");
 +    }
-+    public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, String id) {
-+        // Paper end
-         this.builtInRegistryHolder = Registry.ENTITY_TYPE.createIntrusiveHolder(this);
-         this.factory = factory;
-         this.category = spawnGroup;
-@@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
-         this.dimensions = dimensions;
-         this.clientTrackingRange = maxTrackDistance;
-         this.updateInterval = trackTickInterval;
-+
-+        // Paper start - timings
-+        this.id = id;
++    public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, FeatureFlagSet requiredFeatures, String id) {
 +        this.tickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "tick");
 +        this.inactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "inactiveTick");
 +        this.passengerTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerTick");
 +        this.passengerInactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerInactiveTick");
 +        // Paper end
-     }
- 
-     @Nullable
-@@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+         this.builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
+         this.factory = factory;
+         this.category = spawnGroup;
+@@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
          return this.updateInterval;
      }
  
@@ -1415,15 +1401,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean trackDeltas() {
          return this != EntityType.PLAYER && this != EntityType.LLAMA_SPIT && this != EntityType.WITHER && this != EntityType.BAT && this != EntityType.ITEM_FRAME && this != EntityType.GLOW_ITEM_FRAME && this != EntityType.LEASH_KNOT && this != EntityType.PAINTING && this != EntityType.END_CRYSTAL && this != EntityType.EVOKER_FANGS;
      }
-@@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
-                 Util.fetchChoiceType(References.ENTITY_TREE, id);
-             }
- 
--            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions, this.clientTrackingRange, this.updateInterval);
-+            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions, this.clientTrackingRange, this.updateInterval, id); // Paper - add id
-         }
-     }
- 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
@@ -2052,7 +2029,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static byte toLegacyData(BlockState data) {
          return CraftLegacy.toLegacyData(data);
 @@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
-         return CraftCreativeCategory.fromNMS(category);
+         return CreativeCategory.BUILDING_BLOCKS; // TODO: Figure out what to do with this
      }
  
 +    // Paper start
