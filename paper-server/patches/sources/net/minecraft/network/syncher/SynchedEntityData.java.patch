@@ -1,10 +1,12 @@
 --- a/net/minecraft/network/syncher/SynchedEntityData.java
 +++ b/net/minecraft/network/syncher/SynchedEntityData.java
-@@ -51,7 +51,7 @@
+@@ -50,8 +50,8 @@
+         }
      }
  
-     private <T> SynchedEntityData.DataItem<T> getItem(EntityDataAccessor<T> key) {
+-    private <T> SynchedEntityData.DataItem<T> getItem(EntityDataAccessor<T> key) {
 -        return this.itemsById[key.id()];
++    public <T> SynchedEntityData.DataItem<T> getItem(EntityDataAccessor<T> key) { // Paper - public
 +        return (SynchedEntityData.DataItem<T>) this.itemsById[key.id()]; // CraftBukkit - decompile error
      }
  
@@ -23,7 +25,7 @@
      public boolean isDirty() {
          return this.isDirty;
      }
-@@ -140,7 +147,7 @@
+@@ -140,10 +147,24 @@
          if (!Objects.equals(from.serializer(), to.accessor.serializer())) {
              throw new IllegalStateException(String.format(Locale.ROOT, "Invalid entity data item type for field %d on entity %s: old=%s(%s), new=%s(%s)", to.accessor.id(), this.entity, to.value, to.value.getClass(), from.value, from.value.getClass()));
          } else {
@@ -32,3 +34,20 @@
          }
      }
  
++    // Paper start
++    // We need to pack all as we cannot rely on "non default values" or "dirty" ones.
++    // Because these values can possibly be desynced on the client.
++    @Nullable
++    public List<SynchedEntityData.DataValue<?>> packAll() {
++        final List<SynchedEntityData.DataValue<?>> list = new ArrayList<>();
++        for (final DataItem<?> dataItem : this.itemsById) {
++            list.add(dataItem.value());
++        }
++
++        return list;
++    }
++    // Paper end
++
+     public static class DataItem<T> {
+ 
+         final EntityDataAccessor<T> accessor;

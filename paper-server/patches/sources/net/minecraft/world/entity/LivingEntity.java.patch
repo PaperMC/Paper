@@ -297,7 +297,7 @@
              boolean flag = scoreboardteam != null && scoreboard.addPlayerToTeam(this.getStringUUID(), scoreboardteam);
  
              if (!flag) {
-@@ -806,22 +909,47 @@
+@@ -806,11 +909,13 @@
          if (nbt.contains("SleepingX", 99) && nbt.contains("SleepingY", 99) && nbt.contains("SleepingZ", 99)) {
              BlockPos blockposition = new BlockPos(nbt.getInt("SleepingX"), nbt.getInt("SleepingY"), nbt.getInt("SleepingZ"));
  
@@ -311,11 +311,10 @@
          }
  
          if (nbt.contains("Brain", 10)) {
-             this.brain = this.makeBrain(new Dynamic(NbtOps.INSTANCE, nbt.get("Brain")));
-+        }
-+
-+    }
-+
+@@ -819,9 +924,32 @@
+ 
+     }
+ 
 +    // CraftBukkit start
 +    private boolean isTickingEffects = false;
 +    private List<ProcessableEffect> effectsToProcess = Lists.newArrayList();
@@ -329,15 +328,15 @@
 +        private ProcessableEffect(MobEffectInstance effect, EntityPotionEffectEvent.Cause cause) {
 +            this.effect = effect;
 +            this.cause = cause;
-         }
- 
++        }
++
 +        private ProcessableEffect(Holder<MobEffect> type, EntityPotionEffectEvent.Cause cause) {
 +            this.type = type;
 +            this.cause = cause;
 +        }
-     }
++    }
 +    // CraftBukkit end
- 
++
      protected void tickEffects() {
          Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
  
@@ -765,12 +764,10 @@
  
                          this.lastHurtByPlayer = entityhuman1;
                      } else {
-@@ -1356,14 +1658,26 @@
- 
-             return null;
+@@ -1358,12 +1660,24 @@
          }
-+    }
-+
+     }
+ 
 +    // Paper start - only call damage event when actuallyHurt will be called - move out amount computation logic
 +    private float computeAmountFromEntityDamageEvent(final EntityDamageEvent event) {
 +        // Taken from hurt()'s craftbukkit diff.
@@ -780,9 +777,9 @@
 +        amount += (float) event.getDamage(DamageModifier.FREEZING);
 +        amount += (float) event.getDamage(DamageModifier.HARD_HAT);
 +        return amount;
-     }
++    }
 +    // Paper end - only call damage event when actuallyHurt will be called - move out amount computation logic
- 
++
      protected void blockUsingShield(LivingEntity attacker) {
          attacker.blockedByShield(this);
      }
@@ -1157,7 +1154,7 @@
 +        };
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
-+
+ 
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1265,7 +1262,7 @@
 +            if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
 +                this.hurtHelmet(damagesource, f);
 +            }
- 
++
 +            // Apply damage to armor
 +            if (!damagesource.is(DamageTypeTags.BYPASSES_ARMOR)) {
 +                float armorDamage = (float) (event.getDamage() + event.getDamage(DamageModifier.BLOCKING) + event.getDamage(DamageModifier.HARD_HAT));
@@ -1352,27 +1349,26 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1935,9 +2568,19 @@
+@@ -1935,8 +2568,18 @@
      }
  
      public final void setArrowCount(int stuckArrowCount) {
 -        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, stuckArrowCount);
 +        // CraftBukkit start
 +        this.setArrowCount(stuckArrowCount, false);
-     }
- 
++    }
++
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, event.getNewAmount());
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public final int getStingerCount() {
          return (Integer) this.entityData.get(LivingEntity.DATA_STINGER_COUNT_ID);
-     }
 @@ -1999,7 +2642,7 @@
                      this.playSound(soundeffect, this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                  }
@@ -1515,13 +1511,13 @@
 -        while (this.getXRot() - this.xRotO < -180.0F) {
 -            this.xRotO -= 360.0F;
 -        }
-+        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
-+        // Paper end
- 
+-
 -        while (this.getXRot() - this.xRotO >= 180.0F) {
 -            this.xRotO += 360.0F;
 -        }
--
++        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
++        // Paper end
+ 
 -        while (this.yHeadRot - this.yHeadRotO < -180.0F) {
 -            this.yHeadRotO -= 360.0F;
 -        }
@@ -1547,10 +1543,9 @@
              }
  
 -            ItemStack itemstack2 = itemstack1;
--
--            itemstack = this.getItemBySlot(enumitemslot);
 +            ItemStack itemstack2 = itemstack1; final ItemStack oldEquipment = itemstack2; // Paper - PlayerArmorChangeEvent - obfhelper 
-+
+ 
+-            itemstack = this.getItemBySlot(enumitemslot);
 +            itemstack = this.getItemBySlot(enumitemslot); final ItemStack newEquipment = itemstack;// Paper - PlayerArmorChangeEvent - obfhelper
              if (this.equipmentHasChanged(itemstack2, itemstack)) {
 +                // Paper start - PlayerArmorChangeEvent
@@ -1761,7 +1756,19 @@
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
-@@ -3410,9 +4110,14 @@
+@@ -3367,6 +4067,11 @@
+         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+     }
+ 
++    // Paper start - Properly cancel usable items
++    public void resyncUsingItem(ServerPlayer serverPlayer) {
++        this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
++    }
++    // Paper end - Properly cancel usable items
+     private void updatingUsingItem() {
+         if (this.isUsingItem()) {
+             if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
+@@ -3410,9 +4115,14 @@
      }
  
      public void startUsingItem(InteractionHand hand) {
@@ -1777,7 +1784,7 @@
              this.useItem = itemstack;
              this.useItemRemaining = itemstack.getUseDuration(this);
              if (!this.level().isClientSide) {
-@@ -3483,13 +4188,50 @@
+@@ -3483,13 +4193,50 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
@@ -1791,7 +1798,7 @@
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
- 
++
 +                        if (event.isCancelled()) {
 +                            // Update client
 +                            Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
@@ -1803,7 +1810,7 @@
 +                            this.stopUsingItem(); // Paper - event is using an item, clear active item to reset its use
 +                            return;
 +                        }
-+
+ 
 +                        itemstack = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
 +                    } else {
 +                        itemstack = this.useItem.finishUsingItem(this.level(), this);
@@ -1829,7 +1836,7 @@
                  }
  
              }
-@@ -3512,6 +4254,7 @@
+@@ -3512,6 +4259,7 @@
  
      public void releaseUsingItem() {
          if (!this.useItem.isEmpty()) {
@@ -1837,7 +1844,7 @@
              this.useItem.releaseUsing(this.level(), this, this.getUseItemRemainingTicks());
              if (this.useItem.useOnRelease()) {
                  this.updatingUsingItem();
-@@ -3544,12 +4287,69 @@
+@@ -3544,12 +4292,69 @@
          if (this.isUsingItem() && !this.useItem.isEmpty()) {
              Item item = this.useItem.getItem();
  
@@ -1908,7 +1915,7 @@
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
      }
-@@ -3568,12 +4368,18 @@
+@@ -3568,12 +4373,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1929,7 +1936,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4398,43 @@
+@@ -3592,18 +4403,43 @@
              }
  
              if (flag2) {
@@ -1977,7 +1984,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4444,7 @@
+@@ -3613,7 +4449,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1986,7 +1993,7 @@
          }
      }
  
-@@ -3706,7 +4537,7 @@
+@@ -3706,7 +4542,7 @@
      }
  
      public void stopSleeping() {
@@ -1995,7 +2002,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4549,9 @@
+@@ -3718,9 +4554,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -2007,7 +2014,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4571,7 @@
+@@ -3740,7 +4576,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -2016,7 +2023,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4736,7 @@
+@@ -3905,7 +4741,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  

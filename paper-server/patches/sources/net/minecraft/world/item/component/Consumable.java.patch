@@ -33,16 +33,18 @@
              });
          }
  
-@@ -79,6 +95,15 @@
+@@ -79,6 +95,17 @@
          return stack;
      }
  
 +    // CraftBukkit start
 +    public void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack) {
++        final java.util.List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> packets = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>(); // Paper - properly resend entities - collect packets for bundle
 +        itemstack.getAllOfType(ConsumableListener.class).forEach((consumablelistener) -> {
-+            consumablelistener.cancelUsingItem(entityplayer, itemstack);
++            consumablelistener.cancelUsingItem(entityplayer, itemstack, packets); // Paper - properly resend entities - collect packets for bundle
 +        });
-+        entityplayer.server.getPlayerList().sendActivePlayerEffects(entityplayer);
++        entityplayer.server.getPlayerList().sendActiveEffects(entityplayer, packets::add); // Paper - properly resend entities - collect packets for bundle
++        entityplayer.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(packets));
 +    }
 +    // CraftBukkit end
 +

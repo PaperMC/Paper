@@ -1008,7 +1008,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return;
         }
 
-        entityTracker.broadcast(this.getHandle().getAddEntityPacket(entityTracker.serverEntity));
+        // Paper start - resend possibly desynced entity instead of add entity packet
+        for (final ServerPlayerConnection connection : entityTracker.seenBy) {
+            this.getHandle().resendPossiblyDesyncedEntityData(connection.getPlayer());
+        }
+        // Paper end - resend possibly desynced entity instead of add entity packet
     }
 
     public void update(ServerPlayer player) {
