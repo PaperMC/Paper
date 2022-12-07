@@ -61,7 +61,7 @@ repositories {
 }
 
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.19.2+build.28:mergedv2")
+    paramMappings("net.fabricmc:yarn:1.19.3+build.1:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.8.6:fat")
     decompiler("net.minecraftforge:forgeflower:1.5.605.7")
     spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.6")
@@ -133,7 +133,7 @@ allprojects {
 
 tasks.collectAtsFromPatches {
     // Uncomment while updating for a new Minecraft version
-    // extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
+    extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
 }
 
 tasks.register("printMinecraftVersion") {
