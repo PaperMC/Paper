@@ -12727,7 +12727,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              */
 +            Class.forName(net.minecraft.world.entity.npc.VillagerTrades.class.getName());// Paper - load this sync so it won't fail later async
              final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.spin((thread) -> {
-                 DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, config.get(), ops.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataFixers.getDataFixer(), services, LoggerChunkProgressListener::new);
+                 DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, worldLoader.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataFixers.getDataFixer(), services, LoggerChunkProgressListener::new);
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -13548,7 +13548,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final ThreadedLevelLightEngine lightEngine;
      public final BlockableEventLoop<Runnable> mainThreadExecutor; // Paper - public
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     private RandomState randomState;
+     private final ChunkGeneratorStructureState chunkGeneratorState;
      public final Supplier<DimensionDataStorage> overworldDataStorage;
      private final PoiManager poiManager;
 -    public final LongSet toDrop;
@@ -13637,8 +13637,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.playerMap = new PlayerMap();
          this.entityMap = new Int2ObjectOpenHashMap();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         }
  
+         this.chunkGeneratorState = chunkGenerator.createState(iregistrycustom.lookupOrThrow(Registries.STRUCTURE_SET), this.randomState, j);
          this.mainThreadExecutor = mainThreadExecutor;
 -        ProcessorMailbox<Runnable> threadedmailbox = ProcessorMailbox.create(executor, "worldgen");
 +        // Paper - rewrite chunk system
@@ -13660,7 +13660,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.lightEngine = new ThreadedLevelLightEngine(chunkProvider, this, this.level.dimensionType().hasSkyLight(), null, null); // Paper - rewrite chunk system
          this.distanceManager = new ChunkMap.ChunkDistanceManager(executor, mainThreadExecutor);
          this.overworldDataStorage = persistentStateManagerFactory;
-         this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, world.registryAccess(), world);
+         this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      @Nullable
@@ -15336,9 +15336,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      final EntityTickList entityTickList;
 -    public final PersistentEntitySectionManager<Entity> entityManager;
 +    //public final PersistentEntitySectionManager<Entity> entityManager; // Paper - rewrite chunk system
+     private final GameEventDispatcher gameEventDispatcher;
      public boolean noSave;
      private final SleepStatus sleepStatus;
-     private int emptyTime;
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
              }
          }
@@ -15470,10 +15470,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.chunkSource = new ServerChunkCache(this, convertable_conversionsession, datafixer, structuretemplatemanager, executor, chunkgenerator, j, k, flag2, worldloadlistener, null, () -> { // Paper - rewrite chunk system
              return minecraftserver.overworld().getDataStorage();
          });
-         chunkgenerator.ensureStructuresGenerated(this.chunkSource.randomState());
+         this.chunkSource.getGeneratorState().ensureStructuresGenerated();
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
- 
          this.sleepStatus = new SleepStatus();
+         this.gameEventDispatcher = new GameEventDispatcher(this);
          this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
 +
 +        this.chunkTaskScheduler = new io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler(this, io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.workerThreads); // Paper - rewrite chunk system
@@ -15496,10 +15496,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          gameprofilerfiller.push("entityManagement");
 -        this.entityManager.tick();
 +        //this.entityManager.tick(); // Paper - rewrite chunk system
-         gameprofilerfiller.popPush("gameEvents");
-         this.sendGameEvents();
          gameprofilerfiller.pop();
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     }
  
      @Override
      public boolean shouldTickBlocksAt(long chunkPos) {
@@ -15609,7 +15607,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public String getWatchdogStats() {
 -        return String.format(Locale.ROOT, "players: %s, entities: %s [%s], block_entities: %d [%s], block_ticks: %d, fluid_ticks: %d, chunk_source: %s", this.players.size(), this.entityManager.gatherStats(), ServerLevel.getTypeCount(this.entityManager.getEntityGetter().getAll(), (entity) -> {
 +        return String.format(Locale.ROOT, "players: %s, entities: %s [%s], block_entities: %d [%s], block_ticks: %d, fluid_ticks: %d, chunk_source: %s", this.players.size(), this.entityLookup.getDebugInfo(), ServerLevel.getTypeCount(this.entityLookup.getAll(), (entity) -> { // Paper - rewrite chunk system
-             return Registry.ENTITY_TYPE.getKey(entity.getType()).toString();
+             return BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
          }), this.blockEntityTickers.size(), ServerLevel.getTypeCount(this.blockEntityTickers, TickingBlockEntity::getType), this.getBlockTicks().count(), this.getFluidTicks().count(), this.gatherChunkSourceStats());
      }
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -15687,7 +15685,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - rewrite chunk system
      }
  
-     private final class EntityCallbacks implements LevelCallback<Entity> {
+     @Override
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
@@ -15949,15 +15947,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          boolean flag1 = gamerules.getBoolean(GameRules.RULE_REDUCEDDEBUGINFO);
  
          // Spigot - view distance
--        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.registryHolder, worldserver1.dimensionTypeId(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.spigotConfig.viewDistance, worldserver1.spigotConfig.simulationDistance, flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat(), player.getLastDeathLocation()));
-+        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.registryHolder, worldserver1.dimensionTypeId(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetSendDistance(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance(), flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat(), player.getLastDeathLocation())); // Paper - replace old player chunk management
+-        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.synchronizedRegistries, worldserver1.dimensionTypeId(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.spigotConfig.viewDistance, worldserver1.spigotConfig.simulationDistance, flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat(), player.getLastDeathLocation()));
++        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.synchronizedRegistries, worldserver1.dimensionTypeId(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetSendDistance(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance(), flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat(), player.getLastDeathLocation())); // Paper - replace old player chunk management
          player.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
+         playerconnection.send(new ClientboundUpdateEnabledFeaturesPacket(FeatureFlags.REGISTRY.toNames(worldserver1.enabledFeatures())));
          playerconnection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.BRAND, (new FriendlyByteBuf(Unpooled.buffer())).writeUtf(this.getServer().getServerModName())));
-         playerconnection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          // CraftBukkit start
          LevelData worlddata = worldserver1.getLevelData();
-         entityplayer1.connection.send(new ClientboundRespawnPacket(worldserver1.dimensionTypeId(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), entityplayer1.gameMode.getGameModeForPlayer(), entityplayer1.gameMode.getPreviousGameModeForPlayer(), worldserver1.isDebug(), worldserver1.isFlat(), flag, entityplayer1.getLastDeathLocation()));
+         entityplayer1.connection.send(new ClientboundRespawnPacket(worldserver1.dimensionTypeId(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), entityplayer1.gameMode.getGameModeForPlayer(), entityplayer1.gameMode.getPreviousGameModeForPlayer(), worldserver1.isDebug(), worldserver1.isFlat(), (byte) i, entityplayer1.getLastDeathLocation()));
 -        entityplayer1.connection.send(new ClientboundSetChunkCacheRadiusPacket(worldserver1.spigotConfig.viewDistance)); // Spigot
 -        entityplayer1.connection.send(new ClientboundSetSimulationDistancePacket(worldserver1.spigotConfig.simulationDistance)); // Spigot
 +        entityplayer1.connection.send(new ClientboundSetChunkCacheRadiusPacket(worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetSendDistance())); // Spigot // Paper - replace old player chunk management
@@ -16441,7 +16439,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final Optional<PoiSection> noAllocateOptional = Optional.of(this); // Paper - rewrite chunk system
  
      public static Codec<PoiSection> codec(Runnable updateListener) {
-         return RecordCodecBuilder.<PoiSection>create((instance) -> { // Paper - decompile fix
+         return RecordCodecBuilder.<PoiSection>create((instance) -> {
 @@ -0,0 +0,0 @@ public class PoiSection {
          this(updateListener, true, ImmutableList.of());
      }
@@ -16488,7 +16486,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
 +                // Paper start - per player view distance - allow block updates for non-ticking chunks in player view distance
 +                // if copied from above
-+            } else if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || ((ServerLevel)this).getChunkSource().chunkMap.playerChunkManager.broadcastMap.getObjectsInRange(MCUtil.getCoordinateKey(blockposition)) != null)) { // Paper - replace old player chunk management
++            } else if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || ((ServerLevel)this).getChunkSource().chunkMap.playerChunkManager.broadcastMap.getObjectsInRange(io.papermc.paper.util.MCUtil.getCoordinateKey(blockposition)) != null)) { // Paper - replace old player chunk management
 +                ((ServerLevel)this).getChunkSource().blockChanged(blockposition);
 +                // Paper end - per player view distance
              }
@@ -16532,53 +16530,60 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         this.getProfiler().incrementCounter("getEntities");
-         List<T> list = Lists.newArrayList();
  
+     public <T extends Entity> void getEntities(EntityTypeTest<Entity, T> filter, AABB box, Predicate<? super T> predicate, List<? super T> result, int limit) {
+         this.getProfiler().incrementCounter("getEntities");
 -        this.getEntities().get(filter, box, (entity) -> {
 -            if (predicate.test(entity)) {
--                list.add(entity);
+-                result.add(entity);
+-                if (result.size() >= limit) {
+-                    return AbortableIterationConsumer.Continuation.ABORT;
+-                }
 -            }
 -
 -            if (entity instanceof EnderDragon) {
 -                EnderDragon entityenderdragon = (EnderDragon) entity;
 -                EnderDragonPart[] aentitycomplexpart = entityenderdragon.getSubEntities();
--                int i = aentitycomplexpart.length;
+-                int j = aentitycomplexpart.length;
 -
--                for (int j = 0; j < i; ++j) {
--                    EnderDragonPart entitycomplexpart = aentitycomplexpart[j];
+-                for (int k = 0; k < j; ++k) {
+-                    EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
 -                    T t0 = filter.tryCast(entitycomplexpart); // CraftBukkit - decompile error
 -
 -                    if (t0 != null && predicate.test(t0)) {
--                        list.add(t0);
+-                        result.add(t0);
+-                        if (result.size() >= limit) {
+-                            return AbortableIterationConsumer.Continuation.ABORT;
+-                        }
 -                    }
 -                }
 +        // Paper start - optimise this call
-+        if (filter instanceof net.minecraft.world.entity.EntityType) {
-+            ((ServerLevel)this).getEntityLookup().getEntities((net.minecraft.world.entity.EntityType)filter, box, list, predicate);
++        //TODO use limit
++        if (filter instanceof net.minecraft.world.entity.EntityType entityTypeTest) {
++            ((ServerLevel) this).getEntityLookup().getEntities(entityTypeTest, box, result, predicate);
 +        } else {
 +            Predicate<? super T> test = (obj) -> {
 +                return filter.tryCast(obj) != null;
 +            };
-+            predicate = predicate == null ? test : test.and((Predicate)predicate);
++            predicate = predicate == null ? test : test.and((Predicate) predicate);
 +            Class base;
 +            if (filter == null || (base = filter.getBaseClass()) == null || base == Entity.class) {
-+                ((ServerLevel)this).getEntityLookup().getEntities((Entity) null, box, (List)list, (Predicate)predicate);
++                ((ServerLevel) this).getEntityLookup().getEntities((Entity) null, box, (List) result, (Predicate)predicate);
 +            } else {
-+                ((ServerLevel)this).getEntityLookup().getEntities(base, null, box, (List)list, (Predicate)predicate); // Paper - optimise this call
++                ((ServerLevel) this).getEntityLookup().getEntities(base, null, box, (List) result, (Predicate)predicate); // Paper - optimise this call
              }
 -
+-            return AbortableIterationConsumer.Continuation.CONTINUE;
 -        });
 +        }
 +        // Paper end - optimise this call
-         return list;
      }
  
+     @Nullable
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-     public long nextSubTickCount() {
-         return (long) (this.subTickCount++);
+ 
+         private ExplosionInteraction() {}
      }
-+
 +    // Paper start
 +    //protected final io.papermc.paper.world.EntitySliceManager entitySliceManager; // Paper - rewrite chunk system
 +
@@ -17477,7 +17482,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } // Paper end
      }
  
-     public void scanChunk(ChunkPos chunkcoordintpair, StreamTagVisitor streamtagvisitor) throws IOException {
+     public void scanChunk(ChunkPos chunkPos, StreamTagVisitor scanner) throws IOException {
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
      }
  

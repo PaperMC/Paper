@@ -4495,8 +4495,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private final BlockableEventLoop<Runnable> mainThreadExecutor;
 +    public final BlockableEventLoop<Runnable> mainThreadExecutor; // Paper - public
      public ChunkGenerator generator;
-     private RandomState randomState;
-     public final Supplier<DimensionDataStorage> overworldDataStorage;
+     private final RandomState randomState;
+     private final ChunkGeneratorStructureState chunkGeneratorState;
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
@@ -4823,15 +4823,15 @@ diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -0,0 +0,0 @@ public abstract class BlockBehaviour {
-             this.hasPostProcess = blockbase_info.hasPostProcess;
+@@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
              this.emissiveRendering = blockbase_info.emissiveRendering;
              this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
+             this.spawnParticlesOnBreak = blockbase_info.spawnParticlesOnBreak;
 +            this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
          }
  
          // Paper start
-@@ -0,0 +0,0 @@ public abstract class BlockBehaviour {
+@@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.shapeExceedsCube;
          }
          // Paper end
@@ -4849,7 +4849,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - starlight
  
          public void initCache() {
-             if (!this.getBlock().hasDynamicShape()) {
+             this.fluidState = ((Block) this.owner).getFluidState(this.asState());
+@@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
                  this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
              }
              this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
@@ -4929,7 +4930,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
      public static ChunkStatus byName(String id) {
-         return (ChunkStatus) Registry.CHUNK_STATUS.get(ResourceLocation.tryParse(id));
+         return (ChunkStatus) BuiltInRegistries.CHUNK_STATUS.get(ResourceLocation.tryParse(id));
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -5027,16 +5028,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - rewrite light engine
 +
      public ImposterProtoChunk(LevelChunk wrapped, boolean bl) {
-         super(wrapped.getPos(), UpgradeData.EMPTY, wrapped.levelHeightAccessor, wrapped.getLevel().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), wrapped.getBlendingData());
+         super(wrapped.getPos(), UpgradeData.EMPTY, wrapped.levelHeightAccessor, wrapped.getLevel().registryAccess().registryOrThrow(Registries.BIOME), wrapped.getBlendingData());
          this.wrapped = wrapped;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
+     }
  
      public LevelChunk(Level world, ChunkPos pos, UpgradeData upgradeData, LevelChunkTicks<Block> blockTickScheduler, LevelChunkTicks<Fluid> fluidTickScheduler, long inhabitedTime, @Nullable LevelChunkSection[] sectionArrayInitializer, @Nullable LevelChunk.PostLoadProcessor entityLoader, @Nullable BlendingData blendingData) {
-         super(pos, upgradeData, world, world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), inhabitedTime, sectionArrayInitializer, blendingData);
+-        super(pos, upgradeData, world, world.registryAccess().registryOrThrow(Registries.BIOME), inhabitedTime, sectionArrayInitializer, blendingData);
++        super(pos, upgradeData, world, world.registryAccess().registryOrThrow(Registries.BIOME)), inhabitedTime, sectionArrayInitializer, blendingData);
 +        // Paper start - rewrite light engine
 +        this.setBlockNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
 +        this.setSkyNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
@@ -5117,7 +5120,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          LevelChunkSection[] achunksection = new LevelChunkSection[i];
          boolean flag1 = world.dimensionType().hasSkyLight();
          ServerChunkCache chunkproviderserver = world.getChunkSource();
-         LevelLightEngine lightengine = chunkproviderserver.getLightEngine();
+-        LevelLightEngine lightengine = chunkproviderserver.getLightEngine();
++        LevelLightEngine lightengine = chunkproviderserver.getLightEngine();;
 +        // Paper start
 +        ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] blockNibbles = ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world);
 +        ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] skyNibbles = ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world);
@@ -5125,7 +5129,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final int maxSection = io.papermc.paper.util.WorldUtil.getMaxLightSection(world);
 +        boolean canReadSky = world.dimensionType().hasSkyLight();
 +        // Paper end
-         Registry<Biome> iregistry = world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
+         Registry<Biome> iregistry = world.registryAccess().registryOrThrow(Registries.BIOME);
          Codec<PalettedContainer<Holder<Biome>>> codec = ChunkSerializer.makeBiomeCodecRW(iregistry); // CraftBukkit - read/write
          boolean flag2 = false;
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
@@ -5193,9 +5197,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ((LevelChunk)object1).setSkyNibbles(skyNibbles); // Paper - replace light impl
          } else {
              ProtoChunkTicks<Block> protochunkticklist = ProtoChunkTicks.load(nbt.getList("block_ticks", 10), (s) -> {
-                 return Registry.BLOCK.getOptional(ResourceLocation.tryParse(s));
+                 return BuiltInRegistries.BLOCK.getOptional(ResourceLocation.tryParse(s));
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
-                 return Registry.FLUID.getOptional(ResourceLocation.tryParse(s));
+                 return BuiltInRegistries.FLUID.getOptional(ResourceLocation.tryParse(s));
              }, chunkPos);
              ProtoChunk protochunk = new ProtoChunk(chunkPos, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, world, iregistry, blendingdata);
 +            protochunk.setBlockNibbles(blockNibbles); // Paper - replace light impl
