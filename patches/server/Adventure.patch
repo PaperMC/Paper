@@ -3136,7 +3136,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        getHandle().listName = name == null ? null : io.papermc.paper.adventure.PaperAdventure.asVanilla(name);
 +        for (ServerPlayer player : server.getHandle().players) {
 +            if (player.getBukkitEntity().canSee(this)) {
-+                player.connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.UPDATE_DISPLAY_NAME, getHandle()));
++                player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, getHandle()));
 +            }
 +        }
 +    }
@@ -3358,7 +3358,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
 +        if (getHandle().connection == null) return;
-+        final net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.Registry.CHAT_TYPE_REGISTRY);
++        final net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.CHAT_TYPE);
 +        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(message, false));
 +    }
 +
@@ -3465,11 +3465,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void playSound(final net.kyori.adventure.sound.Sound sound, final double x, final double y, final double z) {
 +        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
-+        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = net.minecraft.core.Registry.SOUND_EVENT.getOptional(name);
++        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = BuiltInRegistries.SOUND_EVENT.getOptional(name);
 +        if (event.isPresent()) {
-+            this.getHandle().connection.send(new ClientboundSoundPacket(event.get(), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            this.getHandle().connection.send(new ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get()), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
 +        } else {
-+            this.getHandle().connection.send(new ClientboundCustomSoundPacket(name, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), new Vec3(x, y, z), sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            this.getHandle().connection.send(new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(name)), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
 +        }
 +    }
 +
@@ -3485,11 +3485,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
-+        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = net.minecraft.core.Registry.SOUND_EVENT.getOptional(name);
++        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = BuiltInRegistries.SOUND_EVENT.getOptional(name);
 +        if (event.isPresent()) {
-+            this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(event.get(), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get()), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
 +        } else {
-+            this.getHandle().connection.send(new ClientboundCustomSoundPacket(name, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity.position(), sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            this.getHandle().connection.send(new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(name)), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity.position().x(), entity.position().y(), entity.position().z(), sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
 +        }
 +    }
 +

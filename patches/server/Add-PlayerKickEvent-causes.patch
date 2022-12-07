@@ -115,13 +115,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void disconnect(final Component reason) {
 -        this.disconnect(PaperAdventure.asAdventure(reason));
 +        this.disconnect(PaperAdventure.asAdventure(reason), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++    }
++
++    public void disconnect(final Component reason, PlayerKickEvent.Cause cause) {
++        this.disconnect(PaperAdventure.asAdventure(reason), cause);
      }
  
 -    public void disconnect(net.kyori.adventure.text.Component reason) {
-+    public void disconnect(final Component reason, PlayerKickEvent.Cause cause) {
-+        this.disconnect(PaperAdventure.asAdventure(reason), cause);
-+    }
-+
 +    public void disconnect(net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
          // Paper end
          // CraftBukkit start - fire PlayerKickEvent
@@ -268,39 +268,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         this.detectRateSpam(s); // Spigot
-     }
- 
-+<<<<<<< HEAD
-+=======
-+    private boolean verifyChatMessage(PlayerChatMessage message) {
-+        ChatSender chatsender = this.player.asChatSender();
-+        ProfilePublicKey profilepublickey = chatsender.profilePublicKey();
-+
-+        if (profilepublickey != null) {
-+            if (profilepublickey.data().hasExpired()) {
-+                this.player.sendSystemMessage(Component.translatable("chat.disabled.expiredProfileKey").withStyle(ChatFormatting.RED));
-+                return false;
-+            }
-+
-+            if (!message.verify(chatsender)) {
-+                this.disconnect(Component.translatable("multiplayer.disconnect.unsigned_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event cause
-+                return false;
-+            }
-+        }
-+
-+        if (message.hasExpiredServer(Instant.now())) {
-+            ServerGamePacketListenerImpl.LOGGER.warn("{} sent expired chat: '{}'. Is the client/server system time unsynchronized?", this.player.getName().getString(), message.signedContent().plain());
-+        }
-+
-+        return true;
-+    }
-+
-+>>>>>>> Add PlayerKickEvent causes
-     // Spigot start - spam exclusions
-     private void detectRateSpam(String s) {
-         // CraftBukkit start - replaced with thread safe throttle
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // this.chatSpamTickCount += 20;
          if (this.chatSpamTickCount.addAndGet(20) > 200 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
              // CraftBukkit end
@@ -309,22 +276,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
      }
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-             }
- 
-         }
-+<<<<<<< HEAD
-+=======
-+
-+    }
-+
-+    private void handleValidationFailure(Set<LastSeenMessagesValidator.ErrorCondition> reasons) {
-+        ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message from {}, reasons: {}", this.player.getName().getString(), reasons.stream().map(LastSeenMessagesValidator.ErrorCondition::message).collect(Collectors.joining(",")));
-+        this.disconnect(Component.translatable("multiplayer.disconnect.chat_validation_failed"), org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event cause
-+>>>>>>> Add PlayerKickEvent causes
-     }
- 
-     @Override
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              }
  
