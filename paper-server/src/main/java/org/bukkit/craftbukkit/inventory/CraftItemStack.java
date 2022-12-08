@@ -415,6 +415,7 @@ public final class CraftItemStack extends ItemStack {
             case ENDERMITE_SPAWN_EGG:
             case EVOKER_SPAWN_EGG:
             case FOX_SPAWN_EGG:
+            case FROG_SPAWN_EGG:
             case GHAST_SPAWN_EGG:
             case GLOW_SQUID_SPAWN_EGG:
             case GOAT_SPAWN_EGG:
@@ -451,14 +452,15 @@ public final class CraftItemStack extends ItemStack {
             case SQUID_SPAWN_EGG:
             case STRAY_SPAWN_EGG:
             case STRIDER_SPAWN_EGG:
+            case TADPOLE_SPAWN_EGG:
             case TRADER_LLAMA_SPAWN_EGG:
             case TROPICAL_FISH_SPAWN_EGG:
             case TURTLE_SPAWN_EGG:
             case VEX_SPAWN_EGG:
             case VILLAGER_SPAWN_EGG:
             case VINDICATOR_SPAWN_EGG:
-            case WARDEN_SPAWN_EGG:
             case WANDERING_TRADER_SPAWN_EGG:
+            case WARDEN_SPAWN_EGG:
             case WITCH_SPAWN_EGG:
             case WITHER_SKELETON_SPAWN_EGG:
             case WITHER_SPAWN_EGG:

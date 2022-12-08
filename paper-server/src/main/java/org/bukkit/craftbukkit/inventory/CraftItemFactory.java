@@ -152,6 +152,7 @@ public final class CraftItemFactory implements ItemFactory {
         case ENDERMITE_SPAWN_EGG:
         case EVOKER_SPAWN_EGG:
         case FOX_SPAWN_EGG:
+        case FROG_SPAWN_EGG:
         case GHAST_SPAWN_EGG:
         case GLOW_SQUID_SPAWN_EGG:
         case GOAT_SPAWN_EGG:
@@ -188,6 +189,7 @@ public final class CraftItemFactory implements ItemFactory {
         case SQUID_SPAWN_EGG:
         case STRAY_SPAWN_EGG:
         case STRIDER_SPAWN_EGG:
+        case TADPOLE_SPAWN_EGG:
         case TRADER_LLAMA_SPAWN_EGG:
         case TROPICAL_FISH_SPAWN_EGG:
         case TURTLE_SPAWN_EGG:
