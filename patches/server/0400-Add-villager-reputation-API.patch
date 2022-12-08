@@ -6,20 +6,12 @@ Subject: [PATCH] Add villager reputation API
 == AT ==
 public net.minecraft.world.entity.ai.gossip.GossipContainer$EntityGossips
 public net.minecraft.world.entity.ai.gossip.GossipContainer$EntityGossips <init>()V
+public net.minecraft.world.entity.ai.gossip.GossipContainer gossips
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-index 6c021402ab7522f132193619fae4be4ca70d70f8..4e7b7a3910840908b73c80faf9a83b728186f775 100644
+index a28f359202e6502c6ea5e9c918ec0b3e9a3fca61..76dffb2705e5207db96895f82f1c7c5638f817c6 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-@@ -30,7 +30,7 @@ import org.slf4j.Logger;
- public class GossipContainer {
-     private static final Logger LOGGER = LogUtils.getLogger();
-     public static final int DISCARD_THRESHOLD = 2;
--    private final Map<UUID, GossipContainer.EntityGossips> gossips = Maps.newHashMap();
-+    private final Map<UUID, GossipContainer.EntityGossips> gossips = Maps.newHashMap(); public Map<UUID, GossipContainer.EntityGossips> getReputations() { return this.gossips; } // Paper - add getter for reputations
- 
-     @VisibleForDebug
-     public Map<UUID, Object2IntMap<GossipType>> getGossipEntries() {
 @@ -231,6 +231,43 @@ public class GossipContainer {
          public void remove(GossipType gossipType) {
              this.entries.removeInt(gossipType);
@@ -65,7 +57,7 @@ index 6c021402ab7522f132193619fae4be4ca70d70f8..4e7b7a3910840908b73c80faf9a83b72
  
      static record GossipEntry(UUID target, GossipType type, int value) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
-index 4f73b71fb39eab10c44da31617632a83e4f0b83f..11e44a81934255fd4efa418009d8bb78c785cfd5 100644
+index 4f73b71fb39eab10c44da31617632a83e4f0b83f..1fa8026ca63b7e38870daac59936a10b1950561e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
 @@ -17,6 +17,13 @@ import org.bukkit.entity.Villager;
@@ -90,7 +82,7 @@ index 4f73b71fb39eab10c44da31617632a83e4f0b83f..11e44a81934255fd4efa418009d8bb78
 +    // Paper start - Add villager reputation API
 +    @Override
 +    public Reputation getReputation(UUID uniqueId) {
-+        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips rep = getHandle().getGossips().getReputations().get(uniqueId);
++        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips rep = getHandle().getGossips().gossips.get(uniqueId);
 +        if (rep == null) {
 +            return new Reputation(new java.util.EnumMap<>(com.destroystokyo.paper.entity.villager.ReputationType.class));
 +        }
@@ -100,7 +92,7 @@ index 4f73b71fb39eab10c44da31617632a83e4f0b83f..11e44a81934255fd4efa418009d8bb78
 +
 +    @Override
 +    public Map<UUID, Reputation> getReputations() {
-+        return getHandle().getGossips().getReputations().entrySet()
++        return getHandle().getGossips().gossips.entrySet()
 +            .stream()
 +            .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getPaperReputation()));
 +    }
@@ -108,7 +100,7 @@ index 4f73b71fb39eab10c44da31617632a83e4f0b83f..11e44a81934255fd4efa418009d8bb78
 +    @Override
 +    public void setReputation(UUID uniqueId, Reputation reputation) {
 +        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips nmsReputation =
-+            getHandle().getGossips().getReputations().computeIfAbsent(
++            getHandle().getGossips().gossips.computeIfAbsent(
 +                uniqueId,
 +                key -> new net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips()
 +            );
@@ -124,7 +116,7 @@ index 4f73b71fb39eab10c44da31617632a83e4f0b83f..11e44a81934255fd4efa418009d8bb78
 +
 +    @Override
 +    public void clearReputations() {
-+        getHandle().getGossips().getReputations().clear();
++        getHandle().getGossips().gossips.clear();
 +    }
 +    // Paper end
  }
