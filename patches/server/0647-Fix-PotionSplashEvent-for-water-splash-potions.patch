@@ -6,7 +6,7 @@ Subject: [PATCH] Fix PotionSplashEvent for water splash potions
 Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6221
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index b5e2c391ebcca05db5c960792fcb14991aec4fe2..d3dfeddb7d8719091103bd4d1b850df127ef4bf9 100644
+index b5e2c391ebcca05db5c960792fcb14991aec4fe2..ee1b026fb24be554bcae79475d68872c07e983b8 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 @@ -123,33 +123,50 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
@@ -20,8 +20,8 @@ index b5e2c391ebcca05db5c960792fcb14991aec4fe2..d3dfeddb7d8719091103bd4d1b850df1
 +        // Paper start
 +        List<net.minecraft.world.entity.LivingEntity> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.APPLY_WATER_GET_ENTITIES_PREDICATE);
 +        Map<LivingEntity, Double> affected = new HashMap<>();
-+        List<org.bukkit.entity.Axolotl> rehydrate = new java.util.ArrayList<>();
-+        List<LivingEntity> extinguish = new java.util.ArrayList<>();
++        java.util.Set<LivingEntity> rehydrate = new java.util.HashSet<>();
++        java.util.Set<LivingEntity> extinguish = new java.util.HashSet<>();
          Iterator iterator = list.iterator();
  
          while (iterator.hasNext()) {
@@ -55,16 +55,16 @@ index b5e2c391ebcca05db5c960792fcb14991aec4fe2..d3dfeddb7d8719091103bd4d1b850df1
 +            (org.bukkit.entity.ThrownPotion) this.getBukkitEntity(), affected, rehydrate, extinguish
 +        );
 +        if (event.callEvent()) {
-+            for (LivingEntity affectedEntity : event.getAffectedEntities()) {
-+                if (event.getIntensity(affectedEntity) > 0) {
-+                    ((CraftLivingEntity) affectedEntity).getHandle().hurt(DamageSource.indirectMagic(this, this.getOwner()), 1.0F);
-+                }
++            for (LivingEntity affectedEntity : event.getToDamage()) {
++                ((CraftLivingEntity) affectedEntity).getHandle().hurt(DamageSource.indirectMagic(this, this.getOwner()), 1.0F);
 +            }
 +            for (LivingEntity toExtinguish : event.getToExtinguish()) {
 +                ((CraftLivingEntity) toExtinguish).getHandle().extinguishFire();
 +            }
-+            for (org.bukkit.entity.Axolotl axolotl : event.getToRehydrate()) {
-+                ((Axolotl) ((CraftLivingEntity) axolotl).getHandle()).rehydrate();
++            for (LivingEntity toRehydrate : event.getToRehydrate()) {
++                if (((CraftLivingEntity) toRehydrate).getHandle() instanceof Axolotl axolotl) {
++                    axolotl.rehydrate();
++                }
 +            }
 +            // Paper end
          }

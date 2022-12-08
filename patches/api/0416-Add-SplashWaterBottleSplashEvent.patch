@@ -6,76 +6,125 @@ Subject: [PATCH] Add SplashWaterBottleSplashEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/entity/SplashWaterBottleSplashEvent.java b/src/main/java/io/papermc/paper/event/entity/SplashWaterBottleSplashEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3c2073302b167e6423e14566156258e70becfb2a
+index 0000000000000000000000000000000000000000..edf09aac0f9304f65ebf2cdd0f350bb27a9281a4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/entity/SplashWaterBottleSplashEvent.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,121 @@
 +package io.papermc.paper.event.entity;
 +
 +import java.util.Collection;
-+import java.util.List;
 +import java.util.Map;
-+import org.bukkit.entity.Axolotl;
++import java.util.Set;
++import java.util.stream.Collectors;
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.entity.ThrownPotion;
 +import org.bukkit.event.entity.PotionSplashEvent;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public class SplashWaterBottleSplashEvent extends PotionSplashEvent {
-+    private final @NotNull List<Axolotl> rehydrate;
-+    private final @NotNull List<LivingEntity> extinguish;
++    private final @NotNull Set<LivingEntity> rehydrate;
++    private final @NotNull Set<LivingEntity> extinguish;
 +
 +    public SplashWaterBottleSplashEvent(
 +        final @NotNull ThrownPotion potion,
 +        final @NotNull Map<LivingEntity, Double> affectedEntities,
-+        final @NotNull List<Axolotl> rehydrate,
-+        final @NotNull List<LivingEntity> extinguish
++        final @NotNull Set<LivingEntity> rehydrate,
++        final @NotNull Set<LivingEntity> extinguish
 +    ) {
 +        super(potion, affectedEntities);
 +        this.rehydrate = rehydrate;
 +        this.extinguish = extinguish;
 +    }
 +
-+    // returns copy
++    /**
++     * Gets an immutable collection of entities that
++     * will take damage as a result of this event. Use
++     * other methods on this class to modify which entities
++     * take damage.
++     *
++     * @return an immutable collection of entities
++     * @see #doNotDamageAsWaterSensitive(LivingEntity)
++     * @see #damageAsWaterSensitive(LivingEntity)
++     */
 +    @NotNull
-+    public Collection<LivingEntity> getToDamage() {
-+        return this.getAffectedEntities();
++    public @Unmodifiable Collection<LivingEntity> getToDamage() {
++        return this.affectedEntities.entrySet().stream().filter(entry -> entry.getValue() > 0).map(Map.Entry::getKey).collect(Collectors.toUnmodifiableSet());
 +    }
 +
-+    // mutates above
++    /**
++     * Removes this entity from the group that
++     * will be damaged.
++     *
++     * @param entity entity to remove
++     */
 +    public void doNotDamageAsWaterSensitive(final @NotNull LivingEntity entity) {
 +        this.affectedEntities.remove(entity);
 +    }
 +
-+    // mutates above
++    /**
++     * Adds this entity to the group that
++     * will be damaged
++     *
++     * @param entity entity to add
++     */
 +    public void damageAsWaterSensitive(final @NotNull LivingEntity entity) {
 +        this.affectedEntities.put(entity, 1.0);
 +    }
 +
-+    // mutable
++    /**
++     * Get a mutable collection of entities
++     * that will be rehydrated by this.
++     * <p>
++     * As of 1.19.3 this only will contain Axolotls as they
++     * are the only entity type that can be rehydrated, but
++     * it may change in the future.
++     *
++     * @return the entities
++     */
 +    @NotNull
-+    public List<Axolotl> getToRehydrate() {
++    public Collection<LivingEntity> getToRehydrate() {
 +        return this.rehydrate;
 +    }
 +
-+    // mutable
++    /**
++     * Get a mutable collection of entities that will
++     * be extinguished as a result of this event.
++     *
++     * @return entities to be extinguished
++     */
 +    @NotNull
-+    public List<LivingEntity> getToExtinguish() {
++    public Collection<LivingEntity> getToExtinguish() {
 +        return this.extinguish;
 +    }
 +
++    /**
++     * @return a confusing collection, don't use it
++     * @deprecated Use {@link #getToDamage()}
++     */
 +    @Deprecated
 +    @Override
 +    public @NotNull Collection<LivingEntity> getAffectedEntities() {
 +        return super.getAffectedEntities();
 +    }
 +
++    /**
++     * Doesn't make sense for this event as intensity doesn't vary.
++     * @return a confusing value
++     * @deprecated check if {@link #getToDamage()} contains an entity
++     */
 +    @Deprecated
 +    @Override
 +    public double getIntensity(final @NotNull LivingEntity entity) {
 +        return super.getIntensity(entity);
 +    }
 +
++    /**
++     * Doesn't make sense for this event as intensity doesn't vary.
++     * @deprecated use {@link #damageAsWaterSensitive(LivingEntity)}
++     * or {@link #doNotDamageAsWaterSensitive(LivingEntity)} to change which entities are
++     * damaged
++     */
 +    @Deprecated
 +    @Override
 +    public void setIntensity(final @NotNull LivingEntity entity, final double intensity) {
