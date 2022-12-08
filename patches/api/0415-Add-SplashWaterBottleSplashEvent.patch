@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Thu, 8 Dec 2022 10:12:23 -0700
+Subject: [PATCH] Add SplashWaterBottleSplashEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/entity/SplashWaterBottleSplashEvent.java b/src/main/java/io/papermc/paper/event/entity/SplashWaterBottleSplashEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3c2073302b167e6423e14566156258e70becfb2a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/SplashWaterBottleSplashEvent.java
+@@ -0,0 +1,72 @@
++package io.papermc.paper.event.entity;
++
++import java.util.Collection;
++import java.util.List;
++import java.util.Map;
++import org.bukkit.entity.Axolotl;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.ThrownPotion;
++import org.bukkit.event.entity.PotionSplashEvent;
++import org.jetbrains.annotations.NotNull;
++
++public class SplashWaterBottleSplashEvent extends PotionSplashEvent {
++    private final @NotNull List<Axolotl> rehydrate;
++    private final @NotNull List<LivingEntity> extinguish;
++
++    public SplashWaterBottleSplashEvent(
++        final @NotNull ThrownPotion potion,
++        final @NotNull Map<LivingEntity, Double> affectedEntities,
++        final @NotNull List<Axolotl> rehydrate,
++        final @NotNull List<LivingEntity> extinguish
++    ) {
++        super(potion, affectedEntities);
++        this.rehydrate = rehydrate;
++        this.extinguish = extinguish;
++    }
++
++    // returns copy
++    @NotNull
++    public Collection<LivingEntity> getToDamage() {
++        return this.getAffectedEntities();
++    }
++
++    // mutates above
++    public void doNotDamageAsWaterSensitive(final @NotNull LivingEntity entity) {
++        this.affectedEntities.remove(entity);
++    }
++
++    // mutates above
++    public void damageAsWaterSensitive(final @NotNull LivingEntity entity) {
++        this.affectedEntities.put(entity, 1.0);
++    }
++
++    // mutable
++    @NotNull
++    public List<Axolotl> getToRehydrate() {
++        return this.rehydrate;
++    }
++
++    // mutable
++    @NotNull
++    public List<LivingEntity> getToExtinguish() {
++        return this.extinguish;
++    }
++
++    @Deprecated
++    @Override
++    public @NotNull Collection<LivingEntity> getAffectedEntities() {
++        return super.getAffectedEntities();
++    }
++
++    @Deprecated
++    @Override
++    public double getIntensity(final @NotNull LivingEntity entity) {
++        return super.getIntensity(entity);
++    }
++
++    @Deprecated
++    @Override
++    public void setIntensity(final @NotNull LivingEntity entity, final double intensity) {
++        super.setIntensity(entity, intensity);
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/entity/PotionSplashEvent.java b/src/main/java/org/bukkit/event/entity/PotionSplashEvent.java
+index 80f31a267ef4be88718811484e91a6097106e8d2..97d94aba0a8e86e055abd836dd868b8fe8a486bd 100644
+--- a/src/main/java/org/bukkit/event/entity/PotionSplashEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PotionSplashEvent.java
+@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
+ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancelled;
+-    private final Map<LivingEntity, Double> affectedEntities;
++    protected final Map<LivingEntity, Double> affectedEntities; // Paper
+ 
+     public PotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final Map<LivingEntity, Double> affectedEntities) {
+         super(potion);
