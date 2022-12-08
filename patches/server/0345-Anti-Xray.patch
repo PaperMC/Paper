@@ -1045,7 +1045,7 @@ index 7825d6f0fdcfda6212cff8033ec55fb7db236154..000853110c7a89f2d0403a7a2737025a
  
      public ClientboundLevelChunkWithLightPacket(FriendlyByteBuf buf) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 4b05139db6628808128337dbf817712e339c17d0..8371aac0302c8f7c327e0665d6c44d6482519522 100644
+index 4b05139db6628808128337dbf817712e339c17d0..710017f52ad1a0d338bb0a49e44a26cfc09f8b94 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -630,7 +630,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -1057,13 +1057,18 @@ index 4b05139db6628808128337dbf817712e339c17d0..8371aac0302c8f7c327e0665d6c44d64
          if (player.level == this.level) {
              if (newWithinViewDistance && !oldWithinViewDistance) {
                  ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos.toLong());
-@@ -1126,18 +1126,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1123,21 +1123,26 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+         ServerPlayer entityplayer;
+ 
++        java.util.Map<Object, net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket> refreshPackets = new java.util.HashMap<>(); // Paper - Anti-Xray - Bypass
          for (Iterator iterator = this.getPlayers(chunkcoordintpair, false).iterator(); iterator.hasNext(); entityplayer.trackChunk(chunkcoordintpair, (Packet) mutableobject.getValue())) {
              entityplayer = (ServerPlayer) iterator.next();
-             if (mutableobject.getValue() == null) {
+-            if (mutableobject.getValue() == null) {
 -                mutableobject.setValue(new ClientboundLevelChunkWithLightPacket(chunk1, this.lightEngine, (BitSet) null, (BitSet) null, true));
-+                mutableobject.setValue(new ClientboundLevelChunkWithLightPacket(chunk1, this.lightEngine, (BitSet) null, (BitSet) null, true, true)); // Paper - Anti-Xray
-             }
+-            }
++            Boolean shouldModify = chunk1.getLevel().chunkPacketBlockController.shouldModify(entityplayer, chunk1);
++            mutableobject.setValue(refreshPackets.computeIfAbsent(shouldModify, s -> new ClientboundLevelChunkWithLightPacket(chunk1, this.lightEngine, (BitSet) null, (BitSet) null, true, (Boolean) s))); // Paper - Anti-Xray - Bypass
          }
  
      }
