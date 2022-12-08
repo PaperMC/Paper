@@ -269,9 +269,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.Component;
 +import net.minecraft.Util;
 +import net.minecraft.network.chat.ChatDecorator;
-+import net.minecraft.network.chat.ChatMessageContent;
 +import net.minecraft.network.chat.ChatType;
-+import net.minecraft.network.chat.OutgoingPlayerChatMessage;
++import net.minecraft.network.chat.OutgoingChatMessage;
 +import net.minecraft.network.chat.PlayerChatMessage;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.server.MinecraftServer;
@@ -301,7 +300,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    final boolean async;
 +    final String craftbukkit$originalMessage;
 +    final Component paper$originalMessage;
-+    final OutgoingPlayerChatMessage outgoing;
++    final OutgoingChatMessage outgoing;
 +
 +    static final int MESSAGE_CHANGED = 1;
 +    static final int FORMAT_CHANGED = 2;
@@ -322,18 +321,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +         */
 +        this.message = message;
 +        this.async = async;
-+        if (this.message.signedContent().decorationResult().modernized()) {
-+            this.craftbukkit$originalMessage = this.message.signedContent().decorationResult().message().legacyMessage();
++        if (this.message.requireResult().modernized()) {
++            this.craftbukkit$originalMessage = this.message.requireResult().message().legacyMessage();
 +        } else {
-+            this.craftbukkit$originalMessage = message.signedContent().plain();
++            this.craftbukkit$originalMessage = message.signedContent();
 +        }
 +        /*
 +        this.paper$originalMessage is the input to paper's chat events. This should be the decorated message component.
 +        Even if the legacy preview event modified the format, and the client signed the formatted message, this should
 +        still just be the message component.
 +         */
-+        this.paper$originalMessage = this.message.signedContent().decorationResult().message().component();
-+        this.outgoing = OutgoingPlayerChatMessage.create(this.message);
++        this.paper$originalMessage = this.message.requireResult().message().component();
++        this.outgoing = OutgoingChatMessage.create(this.message);
 +    }
 +
 +    @SuppressWarnings("deprecated")
@@ -386,7 +385,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private ChatRenderer modernRenderer(final String format) {
 +        if (this.flags.get(FORMAT_CHANGED)) {
 +            return legacyRenderer(format);
-+        } else if (this.message.signedContent().decorationResult() instanceof ChatDecorator.LegacyResult legacyResult) {
++        } else if (this.message.requireResult() instanceof ChatDecorator.LegacyResult legacyResult) {
 +            return legacyRenderer(legacyResult.format());
 +        } else {
 +            return defaultRenderer();
@@ -396,7 +395,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private Component modernMessage(final String legacyMessage) {
 +        if (this.flags.get(MESSAGE_CHANGED)) {
 +            return legacySection().deserialize(legacyMessage);
-+        } else if (this.message.unsignedContent().isEmpty() && this.message.signedContent().decorationResult() instanceof ChatDecorator.LegacyResult legacyResult) {
++        } else if (this.message.unsignedContent() == null && this.message.requireResult() instanceof ChatDecorator.LegacyResult legacyResult) {
 +            return legacyResult.message().component();
 +        } else {
 +            return this.paper$originalMessage;
@@ -404,9 +403,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void readLegacyModifications(final String message, final String format, final Player playerSender) {
-+        final ChatMessageContent content = this.message.signedContent();
-+        if (content.decorationResult() instanceof ChatDecorator.LegacyResult result) {
-+            if ((content.isDecorated() || this.message.unsignedContent().isPresent()) && !result.modernized()) {
++        if (this.message.requireResult() instanceof ChatDecorator.LegacyResult result) {
++            if (this.message.unsignedContent() != null && !result.modernized()) {
 +                this.flags.set(MESSAGE_CHANGED, !message.equals(result.message().legacyMessage()));
 +            } else {
 +                this.flags.set(MESSAGE_CHANGED, !message.equals(this.craftbukkit$originalMessage));
@@ -443,8 +441,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void readModernModifications(final AbstractChatEvent chatEvent, final ChatRenderer originalRenderer) {
-+        if (this.message.signedContent().isDecorated()) {
-+            this.flags.set(MESSAGE_CHANGED, !chatEvent.message().equals(this.message.signedContent().decorationResult().message().component()));
++        if (this.message.unsignedContent() != null) {
++            this.flags.set(MESSAGE_CHANGED, !chatEvent.message().equals(this.message.requireResult().message().component()));
 +        } else {
 +            this.flags.set(MESSAGE_CHANGED, !chatEvent.message().equals(this.paper$originalMessage));
 +        }
@@ -456,7 +454,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private void complete(final AbstractChatEvent event) {
 +        if (event.isCancelled()) {
-+            this.outgoing.sendHeadersToRemainingPlayers(this.server.getPlayerList());
 +            return;
 +        }
 +
@@ -536,7 +533,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        private void broadcastToViewers(Collection<Audience> viewers, final Player source, final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
-+            final Supplier<Component> fallbackSupplier = Suppliers.memoize(() -> PaperAdventure.asAdventure(msgFunction instanceof ConstantFunction constantFunction ? constantFunction.component : ChatProcessor.this.message.serverContent()));
++            final Supplier<Component> fallbackSupplier = Suppliers.memoize(() -> PaperAdventure.asAdventure(msgFunction instanceof ConstantFunction constantFunction ? constantFunction.component : ChatProcessor.this.message.decoratedContent()));
 +            final Function<Audience, Component> audienceMsgFunction = !(msgFunction instanceof ConstantFunction || msgFunction == null) ? msgFunction.andThen(PaperAdventure::asAdventure) : viewer -> fallbackSupplier.get();
 +            for (Audience viewer : viewers) {
 +                if (viewer instanceof Player || viewer instanceof ConsoleCommandSender) {
@@ -546,9 +543,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    viewer.sendMessage(source, audienceMsgFunction.apply(viewer), MessageType.CHAT);
 +                }
 +            }
-+
-+            // Make sure to send remaining headers
-+            ChatProcessor.this.outgoing.sendHeadersToRemainingPlayers(ChatProcessor.this.server.getPlayerList());
 +        }
 +
 +        private void sendToViewer(final CommandSender viewer, final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
@@ -563,7 +557,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
 +            final PlayerChatMessage toConsoleMessage = msgFunction == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(msgFunction.apply(ChatProcessor.this.server.console));
-+            ChatProcessor.this.server.logChatMessage(toConsoleMessage.serverContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage, ChatProcessor.this.player.asChatSender()) ? null : "Not Secure");
++            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure");
 +        }
 +
 +        record ConstantFunction(net.minecraft.network.chat.Component component) implements Function<Audience, net.minecraft.network.chat.Component> {
@@ -1693,6 +1687,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!playerChatMessage.isFullyFiltered()) {
                  sender.connection.sendPlayerChatMessage(playerChatMessage, params);
              }
+diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
++++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
+@@ -0,0 +0,0 @@ import net.minecraft.util.ExtraCodecs;
+ import net.minecraft.util.SignatureUpdater;
+ import net.minecraft.util.SignatureValidator;
+ 
+-public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask) {
++// Paper start
++public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask, @Nullable net.minecraft.network.chat.ChatDecorator.Result result) {
++    public PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask) {
++        this(link, signature, signedBody, unsignedContent, filterMask, null);
++    }
++    public PlayerChatMessage withResult(net.minecraft.network.chat.ChatDecorator.Result result) {
++        final PlayerChatMessage msg = this.withUnsignedContent(result.component());
++        return new PlayerChatMessage(msg.link, msg.signature, msg.signedBody, msg.unsignedContent, msg.filterMask, result);
++    }
++    public net.minecraft.network.chat.ChatDecorator.Result requireResult() {
++        return Objects.requireNonNull(this.result, "Requires a decoration result to be set here");
++    }
++    // Paper end
+     public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
+         return instance.group(SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link), MessageSignature.CODEC.optionalFieldOf("signature").forGetter((message) -> {
+             return Optional.ofNullable(message.signature);
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
@@ -1843,6 +1862,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          buf.writeComponent(this.header);
          buf.writeComponent(this.footer);
      }
+diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
++++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+@@ -0,0 +0,0 @@ public class RegistryDataLoader {
+         RegistryOps.RegistryInfoLookup registryInfoLookup = createContext(baseRegistryManager, list);
+         list.forEach((loader) -> {
+             loader.getSecond().load(resourceManager, registryInfoLookup);
++            // Paper start
++            if (loader.getFirst().key() == Registries.CHAT_TYPE) {
++                Registry.register((Registry<ChatType>) loader.getFirst(), ChatType.RAW, new ChatType(new net.minecraft.network.chat.ChatTypeDecoration("%s", List.of(net.minecraft.network.chat.ChatTypeDecoration.Parameter.CONTENT), net.minecraft.network.chat.Style.EMPTY), new net.minecraft.network.chat.ChatTypeDecoration("%s", List.of(net.minecraft.network.chat.ChatTypeDecoration.Parameter.CONTENT), net.minecraft.network.chat.Style.EMPTY))); // CraftBukkit
++            }
++            // Paper end
+         });
+         list.forEach((loader) -> {
+             Registry<?> registry = loader.getFirst();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -2090,7 +2125,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      this.chatMessageChain.append((executor) -> {
                          return CompletableFuture.allOf(completablefuture, completablefuture1).thenAcceptAsync((ovoid) -> {
 -                            PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent((Component) completablefuture1.join()).filter(((FilteredText) completablefuture.join()).mask());
-+                            PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(completablefuture1.join().component()).filter(((FilteredText) completablefuture.join()).mask()); // Paper
++                            PlayerChatMessage playerchatmessage1 = playerchatmessage.filter(((FilteredText) completablefuture.join()).mask()).withResult(completablefuture1.join()); // Paper
  
                              this.broadcastChatMessage(playerchatmessage1);
                          }, this.server.chatExecutor); // CraftBukkit - async chat
