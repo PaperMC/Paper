@@ -4,6 +4,37 @@ Date: Sat, 15 May 2021 20:30:45 -0700
 Subject: [PATCH] Add PlayerKickEvent causes
 
 
+diff --git a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
++++ b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
+@@ -0,0 +0,0 @@ public class SignedMessageChain {
+             } else {
+                 PlayerChatMessage playerChatMessage = new PlayerChatMessage(signedMessageLink, signature, body, (Component)null, FilterMask.PASS_THROUGH);
+                 if (!playerChatMessage.verify(signatureValidator)) {
+-                    throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true);
++                    throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true, org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event causes
+                 } else {
+                     if (playerChatMessage.hasExpiredServer(Instant.now())) {
+                         LOGGER.warn("Received expired chat: '{}'. Is the client/server system time unsynchronized?", (Object)body.content());
+@@ -0,0 +0,0 @@ public class SignedMessageChain {
+ 
+     public static class DecodeException extends ThrowingComponent {
+         private final boolean shouldDisconnect;
++        public final org.bukkit.event.player.PlayerKickEvent.Cause kickCause; // Paper
+ 
+         public DecodeException(Component message, boolean shouldDisconnect) {
++            // Paper start
++            this(message, shouldDisconnect, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++        }
++        public DecodeException(Component message, boolean shouldDisconnect, org.bukkit.event.player.PlayerKickEvent.Cause kickCause) {
++            // Paper end
+             super(message);
+             this.shouldDisconnect = shouldDisconnect;
++            this.kickCause = kickCause; // Paper
+         }
+ 
+         public boolean shouldDisconnect() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -268,6 +299,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Optional<LastSeenMessages> optional = this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages());
  
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+     private void handleMessageDecodeFailure(SignedMessageChain.DecodeException exception) {
+         if (exception.shouldDisconnect()) {
+-            this.disconnect(exception.getComponent());
++            this.disconnect(exception.getComponent(), exception.kickCause); // Paper - kick event causes
+         } else {
+             this.player.sendSystemMessage(exception.getComponent().copy().withStyle(ChatFormatting.RED));
+         }
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      private Optional<LastSeenMessages> tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
          if (!this.updateChatOrder(timestamp)) {
              ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
@@ -277,6 +317,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+             if (optional.isEmpty()) {
+                 ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+-                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED);
++                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
+             }
+ 
+             return optional;
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // this.chatSpamTickCount += 20;
          if (this.chatSpamTickCount.addAndGet(20) > 200 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
              // CraftBukkit end
@@ -285,6 +334,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
      }
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         synchronized (this.lastSeenMessages) {
+             if (!this.lastSeenMessages.applyOffset(packet.offset())) {
+                 ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+-                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED);
++                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
+             }
+ 
+         }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              }
  
@@ -357,6 +415,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+         if (!Objects.equals(profilepublickey_a, profilepublickey_a1)) {
+             if (profilepublickey_a != null && profilepublickey_a1.expiresAt().isBefore(profilepublickey_a.expiresAt())) {
+-                this.disconnect(ProfilePublicKey.EXPIRED_PROFILE_PUBLIC_KEY);
++                this.disconnect(ProfilePublicKey.EXPIRED_PROFILE_PUBLIC_KEY, org.bukkit.event.player.PlayerKickEvent.Cause.EXPIRED_PROFILE_PUBLIC_KEY); // Paper - kick event causes
+             } else {
+                 try {
+                     SignatureValidator signaturevalidator = this.server.getServiceSignatureValidator();
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                     this.resetPlayerChatState(remotechatsession_a.validate(this.player.getGameProfile(), signaturevalidator, Duration.ZERO));
+                 } catch (ProfilePublicKey.ValidationException profilepublickey_b) {
+                     ServerGamePacketListenerImpl.LOGGER.error("Failed to validate profile key: {}", profilepublickey_b.getMessage());
+-                    this.disconnect(profilepublickey_b.getComponent());
++                    this.disconnect(profilepublickey_b.getComponent(), profilepublickey_b.kickCause); // Paper - kick event causes
+                 }
+ 
+             }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -381,6 +457,39 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          // CraftBukkit end
  
+diff --git a/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java b/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
++++ b/src/main/java/net/minecraft/world/entity/player/ProfilePublicKey.java
+@@ -0,0 +0,0 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
+ 
+     public static ProfilePublicKey createValidated(SignatureValidator servicesSignatureVerifier, UUID playerUuid, ProfilePublicKey.Data publicKeyData, Duration gracePeriod) throws ProfilePublicKey.ValidationException {
+         if (publicKeyData.hasExpired(gracePeriod)) {
+-            throw new ProfilePublicKey.ValidationException(EXPIRED_PROFILE_PUBLIC_KEY);
++            throw new ProfilePublicKey.ValidationException(EXPIRED_PROFILE_PUBLIC_KEY, org.bukkit.event.player.PlayerKickEvent.Cause.EXPIRED_PROFILE_PUBLIC_KEY); // Paper - kick event causes
+         } else if (!publicKeyData.validateSignature(servicesSignatureVerifier, playerUuid)) {
+-            throw new ProfilePublicKey.ValidationException(INVALID_SIGNATURE);
++            throw new ProfilePublicKey.ValidationException(INVALID_SIGNATURE, org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PUBLIC_KEY_SIGNATURE); // Paper - kick event causes
+         } else {
+             return new ProfilePublicKey(publicKeyData);
+         }
+@@ -0,0 +0,0 @@ public record ProfilePublicKey(ProfilePublicKey.Data data) {
+     }
+ 
+     public static class ValidationException extends ThrowingComponent {
++        public final org.bukkit.event.player.PlayerKickEvent.Cause kickCause; // Paper
++        @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
+         public ValidationException(Component messageText) {
++            // Paper start
++            this(messageText, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++        }
++        public ValidationException(Component messageText, org.bukkit.event.player.PlayerKickEvent.Cause kickCause) {
++            // Paper end
+             super(messageText);
++            this.kickCause = kickCause; // Paper
+         }
+     }
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
