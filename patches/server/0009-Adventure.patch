@@ -1451,6 +1451,36 @@ index d476bf8435ee585d8c4faa431716524774527acc..36bbe7d0b2089361beda89097c15eca9
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
          this(output, pos, rot, world, level, name, displayName, server, entity, false, (commandcontext, flag, j) -> {
+diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
+index 42242735f8f85b1852381a9f77368527203172b4..4d0694c478d476717fd11f8975955c1741b47abf 100644
+--- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
+@@ -50,10 +50,10 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
+     private static void resolveSignedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
+         MinecraftServer minecraftServer = source.getServer();
+         CompletableFuture<FilteredText> completableFuture = filterPlainText(source, message);
+-        CompletableFuture<Component> completableFuture2 = minecraftServer.getChatDecorator().decorate(source.getPlayer(), message.decoratedContent());
++        CompletableFuture<net.minecraft.network.chat.ChatDecorator.Result> completableFuture2 = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent()); // Paper
+         source.getChatMessageChainer().append((executor) -> {
+             return CompletableFuture.allOf(completableFuture, completableFuture2).thenAcceptAsync((void_) -> {
+-                PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(completableFuture2.join()).filter(completableFuture.join().mask());
++                PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(completableFuture2.join().component()).filter(completableFuture.join().mask()); // Paper
+                 callback.accept(playerChatMessage2);
+             }, executor);
+         });
+@@ -61,10 +61,10 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
+ 
+     private static void resolveDisguisedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
+         MinecraftServer minecraftServer = source.getServer();
+-        CompletableFuture<Component> completableFuture = minecraftServer.getChatDecorator().decorate(source.getPlayer(), message.decoratedContent());
++        CompletableFuture<net.minecraft.network.chat.ChatDecorator.Result> completableFuture = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent()); // Paper
+         source.getChatMessageChainer().append((executor) -> {
+             return completableFuture.thenAcceptAsync((content) -> {
+-                callback.accept(message.withUnsignedContent(content));
++                callback.accept(message.withUnsignedContent(content.component())); // Paper
+             }, executor);
+         });
+     }
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java
 index ca5d08eb4115817f846b312fe35f4ab28a099401..f25b9330e068c7d9e12cb57a7761cfef9ebaf7bc 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelector.java
@@ -1522,14 +1552,14 @@ index 021a26a6b1c258deffc26c035ab52a4ea027d9a1..00d432bd395e7f7fb6ee24e371818d13
                  try {
                      int i = friendlyByteBuf.writerIndex();
 diff --git a/src/main/java/net/minecraft/network/chat/ChatDecorator.java b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
-index 825ab7534f1ad9787ae2a6c2bf9a300f52cbfc95..a12b50fdf62886a529a0dfad84fa44b066127455 100644
+index 825ab7534f1ad9787ae2a6c2bf9a300f52cbfc95..53be8a43d784db5e8450c242adeb06f3fab2717a 100644
 --- a/src/main/java/net/minecraft/network/chat/ChatDecorator.java
 +++ b/src/main/java/net/minecraft/network/chat/ChatDecorator.java
-@@ -10,5 +10,72 @@ public interface ChatDecorator {
+@@ -10,5 +10,64 @@ public interface ChatDecorator {
          return CompletableFuture.completedFuture(message);
      };
  
-+    @io.papermc.paper.annotation.DoNotUse // Paper
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
      CompletableFuture<Component> decorate(@Nullable ServerPlayer sender, Component message);
 +
 +    // Paper start
@@ -1577,24 +1607,16 @@ index 825ab7534f1ad9787ae2a6c2bf9a300f52cbfc95..a12b50fdf62886a529a0dfad84fa44b0
 +        }
 +    }
 +
-+    record ModernResult(Component maybeAdventureComponent, boolean hasNoFormatting, boolean modernized) implements Result {
++    record ModernResult(Component component, boolean hasNoFormatting, boolean modernized) implements Result {
 +        public ModernResult(net.kyori.adventure.text.Component component, boolean hasNoFormatting, boolean modernized) {
 +            this(io.papermc.paper.adventure.PaperAdventure.asVanilla(component), hasNoFormatting, modernized);
 +        }
 +
 +        @Override
-+        public Component component() {
-+            return this.maybeAdventureComponent instanceof io.papermc.paper.adventure.AdventureComponent adventureComponent ? adventureComponent.deepConverted() : this.maybeAdventureComponent;
-+        }
-+
-+        @Override
 +        public MessagePair message() {
-+            final net.kyori.adventure.text.Component adventureComponent = io.papermc.paper.adventure.PaperAdventure.WRAPPER_AWARE_SERIALIZER.deserialize(this.maybeAdventureComponent);
++            final net.kyori.adventure.text.Component adventureComponent = io.papermc.paper.adventure.PaperAdventure.WRAPPER_AWARE_SERIALIZER.deserialize(this.component);
 +            return new MessagePair(adventureComponent, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(adventureComponent));
 +        }
-+    }
-+    default CompletableFuture<PlayerChatMessage> decorate(@Nullable ServerPlayer serverPlayer, @Nullable net.minecraft.commands.CommandSourceStack commandSourceStack, PlayerChatMessage playerChatMessage) {
-+        return this.decorate(serverPlayer, commandSourceStack, playerChatMessage.decoratedContent()).thenApply(result -> playerChatMessage.withUnsignedContent(result.component()));
 +    }
 +    // Paper end
  }
@@ -1688,7 +1710,7 @@ index f8773f2982e6cd40661d138a7c32f219cda9225c..74cf1c043beef03cfd5adf481414a5ee
                  sender.connection.sendPlayerChatMessage(playerChatMessage, params);
              }
 diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-index b3a44ed8f365daf1031d46d879c84d2ea15cd951..acbcb582680c0e3215c4e083a2b01b81e1fcfa25 100644
+index b3a44ed8f365daf1031d46d879c84d2ea15cd951..3c7276598acb3711f8ceccaad95b30c72ea87d77 100644
 --- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 @@ -15,7 +15,19 @@ import net.minecraft.util.ExtraCodecs;
@@ -1712,6 +1734,15 @@ index b3a44ed8f365daf1031d46d879c84d2ea15cd951..acbcb582680c0e3215c4e083a2b01b81
      public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec((instance) -> {
          return instance.group(SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link), MessageSignature.CODEC.optionalFieldOf("signature").forGetter((message) -> {
              return Optional.ofNullable(message.signature);
+@@ -40,7 +52,7 @@ public record PlayerChatMessage(SignedMessageLink link, @Nullable MessageSignatu
+     }
+ 
+     public PlayerChatMessage withUnsignedContent(Component unsignedContent) {
+-        Component component = !unsignedContent.equals(Component.literal(this.signedContent())) ? unsignedContent : null;
++        Component component = !(unsignedContent instanceof io.papermc.paper.adventure.AdventureComponent advComponent ? advComponent.deepConverted() : unsignedContent).equals(Component.literal(this.signedContent())) ? unsignedContent : null; // Paper
+         return new PlayerChatMessage(this.link, this.signature, this.signedBody, component, this.filterMask);
+     }
+ 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
 index 02183c810f9968621b9b20c1f7b54258b620c507..32ef3edebe94a2014168b7e438752a80b2687e5f 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket.java
