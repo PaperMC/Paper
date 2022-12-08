@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a Camel.
  */
-public interface Camel extends AbstractHorse {
+public interface Camel extends AbstractHorse, Sittable {
 
     /**
      * Gets whether this camel is dashing (sprinting).
