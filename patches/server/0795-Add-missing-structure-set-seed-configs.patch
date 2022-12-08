@@ -19,8 +19,158 @@ seeds/salts to the frequency reducer which has a similar effect.
 
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
+diff --git a/src/main/java/io/papermc/paper/registry/LevelSpecificRegistryAccess.java b/src/main/java/io/papermc/paper/registry/LevelSpecificRegistryAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e38962dfc0d900b7c2d549d044b3a05f2bf75c99
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/LevelSpecificRegistryAccess.java
+@@ -0,0 +1,120 @@
++package io.papermc.paper.registry;
++
++import com.google.common.collect.ImmutableMap;
++import com.mojang.serialization.Lifecycle;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Optional;
++import java.util.stream.Stream;
++import net.minecraft.core.Holder;
++import net.minecraft.core.MappedRegistry;
++import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
++import net.minecraft.core.WritableRegistry;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.tags.TagKey;
++import net.minecraft.world.level.levelgen.structure.StructureSet;
++import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.spigotmc.SpigotWorldConfig;
++
++@DefaultQualifier(NonNull.class)
++public class LevelSpecificRegistryAccess implements RegistryAccess.Frozen {
++
++    private final RegistryAccess delegate;
++    private final Map<ResourceKey<? extends Registry<?>>, Registry<?>> registryOverrides;
++
++    public LevelSpecificRegistryAccess(final SpigotWorldConfig spigotConfig, final RegistryAccess.Frozen delegate) {
++        this.delegate = delegate;
++
++        final ImmutableMap.Builder<ResourceKey<? extends Registry<?>>, Registry<?>> overrideBuilder = ImmutableMap.builder();
++        copyTo(overrideBuilder, delegate, Registries.STRUCTURE_SET, structureSetModifier(spigotConfig));
++        this.registryOverrides = overrideBuilder.build();
++    }
++
++    static <T> void copyTo(ImmutableMap.Builder<ResourceKey<? extends Registry<?>>, Registry<?>> overrideBuilder, final RegistryAccess access, final ResourceKey<? extends Registry<T>> key, final RegistryModifier<T> modifier) {
++        Registry<T> existing = access.registryOrThrow(key);
++        // create new registry
++        final WritableRegistry<T> writable = new MappedRegistry<>(key, existing.registryLifecycle());
++        // copy over holders running them through the modifier
++        existing.holders().forEach(holder -> {
++            final T finalValue = modifier.modify(holder.key(), holder.value());
++            writable.register(holder.key(), finalValue, finalValue != holder.value() ? Lifecycle.experimental() : existing.lifecycle(holder.value()));
++        });
++        // copy over tags
++        final Map<TagKey<T>, List<Holder<T>>> tagMap = new HashMap<>();
++        existing.getTags().forEach(tagPair -> {
++            final List<Holder<T>> tagged = new ArrayList<>();
++            tagPair.getSecond().forEach(holder -> {
++                tagged.add(existing.getHolderOrThrow(holder.unwrapKey().orElseThrow()));
++            });
++            tagMap.put(tagPair.getFirst(), tagged);
++        });
++        writable.bindTags(tagMap);
++        overrideBuilder.put(key, writable.freeze());
++    }
++
++    static RegistryModifier<StructureSet> structureSetModifier(SpigotWorldConfig conf) {
++        return (key, existing) -> {
++            if (existing.placement() instanceof RandomSpreadStructurePlacement randomConfig && key.location().getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
++                int seed = randomConfig.salt;
++                switch (key.location().getPath()) {
++                    case "desert_pyramids" -> seed = conf.desertSeed;
++                    case "end_cities" -> seed = conf.endCitySeed;
++                    case "nether_complexes" -> seed = conf.netherSeed;
++                    case "igloos" -> seed = conf.iglooSeed;
++                    case "jungle_temples" -> seed = conf.jungleSeed;
++                    case "woodland_mansions" -> seed = conf.mansionSeed;
++                    case "ocean_monuments" -> seed = conf.monumentSeed;
++                    case "nether_fossils" -> seed = conf.fossilSeed;
++                    case "ocean_ruins" -> seed = conf.oceanSeed;
++                    case "pillager_outposts" -> seed = conf.outpostSeed;
++                    case "ruined_portals" -> seed = conf.portalSeed;
++                    case "shipwrecks" -> seed = conf.shipwreckSeed;
++                    case "swamp_huts" -> seed = conf.swampSeed;
++                    case "villages" -> seed = conf.villageSeed;
++                    case "ancient_cities" -> seed = conf.ancientCitySeed;
++                }
++                return new StructureSet(existing.structures(), new RandomSpreadStructurePlacement(randomConfig.locateOffset, randomConfig.frequencyReductionMethod, randomConfig.frequency, seed, randomConfig.exclusionZone, randomConfig.spacing(), randomConfig.separation(), randomConfig.spreadType()));
++            }
++            return existing;
++        };
++    }
++
++    @SuppressWarnings("unchecked")
++    @Override
++    public <E> Optional<Registry<E>> registry(final ResourceKey<? extends Registry<? extends E>> key) {
++        final @Nullable Registry<E> registryOverride = (Registry<E>) this.registryOverrides.get(key);
++        if (registryOverride != null) {
++            return Optional.of(registryOverride);
++        }
++        return this.delegate.registry(key);
++    }
++
++    @Override
++    public Stream<RegistryEntry<?>> registries() {
++        return this.delegate.registries().map(entry -> {
++            final @Nullable Registry<?> registryOverride = this.registryOverrides.get(entry.key());
++            if (registryOverride != null) {
++                return genericsFtw(registryOverride);
++            }
++            return entry;
++        });
++    }
++
++    private static <E> RegistryEntry<E> genericsFtw(Registry<E> registry) {
++        return new RegistryEntry<>(registry.key(), registry);
++    }
++
++    @FunctionalInterface
++    interface RegistryModifier<T> {
++
++        T modify(ResourceKey<T> key, T existing);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index b91a199f2e426b49ddc72c8e9d0224c05d8a7acd..4903d2469a9a1d04166cb1762ef27d84eea6783d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -527,6 +527,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
+         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
+         super(iworlddataserver, resourcekey, worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig)), executor); // Paper - Async-Anti-Xray - Pass executor
++        this.registryAccess = new io.papermc.paper.registry.LevelSpecificRegistryAccess(this.spigotConfig, minecraftserver.registryAccess()); // Paper
+         this.pvpMode = minecraftserver.isPvpAllowed();
+         this.convertable = convertable_conversionsession;
+         this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
+@@ -1906,9 +1907,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         return this.noSave;
+     }
+ 
++    private final RegistryAccess registryAccess; // Paper
+     @Override
+     public RegistryAccess registryAccess() {
+-        return this.server.registryAccess();
++        return this.registryAccess; // Paper
+     }
+ 
+     public DimensionDataStorage getDataStorage() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 9ef0937b7292ec118d2b65e9b098f5538410dbac..130ac7164c63374120ca2cdfbb1f6c3eefb4b7a5 100644
+index 9ef0937b7292ec118d2b65e9b098f5538410dbac..bf2e9aa7ab6901cf1108c8658b53b251bf745b72 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 @@ -568,7 +568,7 @@ public abstract class ChunkGenerator {
@@ -28,12 +178,12 @@ index 9ef0937b7292ec118d2b65e9b098f5538410dbac..130ac7164c63374120ca2cdfbb1f6c3e
              }
  
 -            if (structureplacement.isStructureChunk(placementCalculator, chunkcoordintpair.x, chunkcoordintpair.z)) {
-+            if (structureplacement.isStructureChunk(placementCalculator, chunkcoordintpair.x, chunkcoordintpair.z, structureplacement instanceof net.minecraft.world.level.chunk.ChunkGeneratorStructureState.KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - add missing structure set configs
++            if (structureplacement.isStructureChunk(placementCalculator, chunkcoordintpair.x, chunkcoordintpair.z, holder::is)) { // Paper - add missing structure set configs
                  if (list.size() == 1) {
                      this.tryGenerateStructure((StructureSet.StructureSelectionEntry) list.get(0), structureAccessor, registryManager, randomstate, structureTemplateManager, placementCalculator.getLevelSeed(), chunk, chunkcoordintpair, sectionposition);
                  } else {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
-index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..51a05900d02dc116ea215730713cd2cf2a4f1c23 100644
+index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..7c42d87ed59ad0e574499aa10eb82f7dee4ed2fe 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
 @@ -50,13 +50,14 @@ public class ChunkGeneratorStructureState {
@@ -48,62 +198,82 @@ index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..51a05900d02dc116ea215730713cd2cf
          }).toList();
  
 -        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, 0L, ChunkGeneratorStructureState.injectSpigot(list, conf)); // Spigot
-+        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, 0L, ChunkGeneratorStructureState.injectSpigot(list, conf), conf); // Spigot
++        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, 0L, list, conf); // Spigot // Paper
      }
  
      public static ChunkGeneratorStructureState createForNormal(RandomState randomstate, long i, BiomeSource worldchunkmanager, HolderLookup<StructureSet> holderlookup, SpigotWorldConfig conf) { // Spigot
-@@ -64,14 +65,24 @@ public class ChunkGeneratorStructureState {
+@@ -64,68 +65,10 @@ public class ChunkGeneratorStructureState {
              return ChunkGeneratorStructureState.hasBiomesForStructureSet((StructureSet) holder_c.value(), worldchunkmanager);
          }).collect(Collectors.toUnmodifiableList());
  
 -        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, i, ChunkGeneratorStructureState.injectSpigot(list, conf)); // Spigot
-+        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, i, ChunkGeneratorStructureState.injectSpigot(list, conf), conf); // Spigot
++        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, i, list, conf); // Spigot // Paper
      }
-+    // Paper start - horrible hack because spigot creates a ton of direct Holders which lose track of the identifying key
-+    public static final class KeyedRandomSpreadStructurePlacement extends RandomSpreadStructurePlacement {
-+        public final net.minecraft.resources.ResourceKey<StructureSet> key;
-+        public KeyedRandomSpreadStructurePlacement(net.minecraft.resources.ResourceKey<StructureSet> key, net.minecraft.core.Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod, float frequency, int salt, java.util.Optional<StructurePlacement.ExclusionZone> exclusionZone, int spacing, int separation, net.minecraft.world.level.levelgen.structure.placement.RandomSpreadType spreadType) {
-+            super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, spacing, separation, spreadType);
-+            this.key = key;
-+        }
-+    }
-+    // Paper end
  
-     // Spigot start
-     private static List<Holder<StructureSet>> injectSpigot(List<Holder<StructureSet>> list, SpigotWorldConfig conf) {
-         return list.stream().map((holder) -> {
-             StructureSet structureset = holder.value();
+-    // Spigot start
+-    private static List<Holder<StructureSet>> injectSpigot(List<Holder<StructureSet>> list, SpigotWorldConfig conf) {
+-        return list.stream().map((holder) -> {
+-            StructureSet structureset = holder.value();
 -            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig) {
-+            final Holder<StructureSet> newHolder; // Paper
-+            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig && holder.unwrapKey().orElseThrow().location().getNamespace().equals(net.minecraft.resources.ResourceLocation.DEFAULT_NAMESPACE)) { // Paper - check namespace cause datapacks could add structure sets with the same path
-                 String name = holder.unwrapKey().orElseThrow().location().getPath();
-                 int seed = randomConfig.salt;
- 
-@@ -118,11 +129,21 @@ public class ChunkGeneratorStructureState {
-                     case "villages":
-                         seed = conf.villageSeed;
-                         break;
-+                    // Paper start
-+                    case "ancient_cities":
-+                        seed = conf.ancientCitySeed;
-+                        break;
-+                    // Paper end
-                 }
- 
+-                String name = holder.unwrapKey().orElseThrow().location().getPath();
+-                int seed = randomConfig.salt;
+-
+-                switch (name) {
+-                    case "desert_pyramids":
+-                        seed = conf.desertSeed;
+-                        break;
+-                    case "end_cities":
+-                        seed = conf.endCitySeed;
+-                        break;
+-                    case "nether_complexes":
+-                        seed = conf.netherSeed;
+-                        break;
+-                    case "igloos":
+-                        seed = conf.iglooSeed;
+-                        break;
+-                    case "jungle_temples":
+-                        seed = conf.jungleSeed;
+-                        break;
+-                    case "woodland_mansions":
+-                        seed = conf.mansionSeed;
+-                        break;
+-                    case "ocean_monuments":
+-                        seed = conf.monumentSeed;
+-                        break;
+-                    case "nether_fossils":
+-                        seed = conf.fossilSeed;
+-                        break;
+-                    case "ocean_ruins":
+-                        seed = conf.oceanSeed;
+-                        break;
+-                    case "pillager_outposts":
+-                        seed = conf.outpostSeed;
+-                        break;
+-                    case "ruined_portals":
+-                        seed = conf.portalSeed;
+-                        break;
+-                    case "shipwrecks":
+-                        seed = conf.shipwreckSeed;
+-                        break;
+-                    case "swamp_huts":
+-                        seed = conf.swampSeed;
+-                        break;
+-                    case "villages":
+-                        seed = conf.villageSeed;
+-                        break;
+-                }
+-
 -                structureset = new StructureSet(structureset.structures(), new RandomSpreadStructurePlacement(randomConfig.locateOffset, randomConfig.frequencyReductionMethod, randomConfig.frequency, seed, randomConfig.exclusionZone, randomConfig.spacing(), randomConfig.separation(), randomConfig.spreadType()));
-+            // Paper start
-+                structureset = new StructureSet(structureset.structures(), new KeyedRandomSpreadStructurePlacement(holder.unwrapKey().orElseThrow(), randomConfig.locateOffset, randomConfig.frequencyReductionMethod, randomConfig.frequency, seed, randomConfig.exclusionZone, randomConfig.spacing(), randomConfig.separation(), randomConfig.spreadType()));
-+                newHolder = Holder.direct(structureset); // I really wish we didn't have to do this here
-+            } else {
-+                newHolder = holder;
-             }
+-            }
 -            return Holder.direct(structureset);
-+            return newHolder;
-+            // Paper end
-         }).collect(Collectors.toUnmodifiableList());
-     }
-     // Spigot end
-@@ -139,12 +160,13 @@ public class ChunkGeneratorStructureState {
+-        }).collect(Collectors.toUnmodifiableList());
+-    }
+-    // Spigot end
++    // Paper - replace
+ 
+     private static boolean hasBiomesForStructureSet(StructureSet structureSet, BiomeSource biomeSource) {
+         Stream<Holder<Biome>> stream = structureSet.structures().stream().flatMap((structureset_a) -> {
+@@ -139,12 +82,13 @@ public class ChunkGeneratorStructureState {
          return stream.anyMatch(set::contains);
      }
  
@@ -118,7 +288,7 @@ index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..51a05900d02dc116ea215730713cd2cf
      }
  
      public List<Holder<StructureSet>> possibleStructureSets() {
-@@ -198,7 +220,13 @@ public class ChunkGeneratorStructureState {
+@@ -198,7 +142,13 @@ public class ChunkGeneratorStructureState {
              HolderSet<Biome> holderset = placement.preferredBiomes();
              RandomSource randomsource = RandomSource.create();
  
@@ -132,20 +302,28 @@ index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..51a05900d02dc116ea215730713cd2cf
              double d0 = randomsource.nextDouble() * 3.141592653589793D * 2.0D;
              int l = 0;
              int i1 = 0;
-@@ -275,7 +303,7 @@ public class ChunkGeneratorStructureState {
+@@ -275,7 +225,7 @@ public class ChunkGeneratorStructureState {
  
          for (int l = centerChunkX - chunkCount; l <= centerChunkX + chunkCount; ++l) {
              for (int i1 = centerChunkZ - chunkCount; i1 <= centerChunkZ + chunkCount; ++i1) {
 -                if (structureplacement.isStructureChunk(this, l, i1)) {
-+                if (structureplacement.isStructureChunk(this, l, i1, structureplacement instanceof KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - add missing structure set configs
++                if (structureplacement.isStructureChunk(this, l, i1, structureSetEntry::is)) { // Paper - add missing structure set configs
                      return true;
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java b/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-index 65dcb14241baadb2c9f8f16919d7b562198ad9c3..594a2dd3b1d4c29c969d1992b8e93795da00e682 100644
+index 65dcb14241baadb2c9f8f16919d7b562198ad9c3..d189c72fd1a4b8d2947266e85561d71e024a7de5 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-@@ -59,10 +59,24 @@ public abstract class StructurePlacement {
+@@ -4,6 +4,7 @@ import com.mojang.datafixers.Products;
+ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
+ import java.util.Optional;
++import java.util.function.Predicate;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.Vec3i;
+@@ -59,10 +60,24 @@ public abstract class StructurePlacement {
          return this.exclusionZone;
      }
  
@@ -154,12 +332,12 @@ index 65dcb14241baadb2c9f8f16919d7b562198ad9c3..594a2dd3b1d4c29c969d1992b8e93795
 +        // Paper start - add missing structure set configs
 +        return this.isStructureChunk(calculator, chunkX, chunkZ, null);
 +    }
-+    public boolean isStructureChunk(ChunkGeneratorStructureState calculator, int chunkX, int chunkZ, @org.jetbrains.annotations.Nullable net.minecraft.resources.ResourceKey<StructureSet> structureSetKey) {
++    public boolean isStructureChunk(ChunkGeneratorStructureState calculator, int chunkX, int chunkZ, @org.jetbrains.annotations.Nullable Predicate<net.minecraft.resources.ResourceKey<StructureSet>> structureSetKeyTest) {
 +        Integer saltOverride = null;
-+        if (structureSetKey != null) {
-+            if (structureSetKey == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.MINESHAFTS) {
++        if (structureSetKeyTest != null) {
++            if (structureSetKeyTest.test(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.MINESHAFTS)) {
 +                saltOverride = calculator.conf.mineshaftSeed;
-+            } else if (structureSetKey == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.BURIED_TREASURES) {
++            } else if (structureSetKeyTest.test(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.BURIED_TREASURES)) {
 +                saltOverride = calculator.conf.buriedTreasureSeed;
 +            }
 +        }
@@ -171,7 +349,7 @@ index 65dcb14241baadb2c9f8f16919d7b562198ad9c3..594a2dd3b1d4c29c969d1992b8e93795
              return false;
          } else {
              return !this.exclusionZone.isPresent() || !this.exclusionZone.get().isPlacementForbidden(calculator, chunkX, chunkZ);
-@@ -77,25 +91,31 @@ public abstract class StructurePlacement {
+@@ -77,25 +92,31 @@ public abstract class StructurePlacement {
  
      public abstract StructurePlacementType<?> type();
  
@@ -208,7 +386,7 @@ index 65dcb14241baadb2c9f8f16919d7b562198ad9c3..594a2dd3b1d4c29c969d1992b8e93795
          int i = chunkX >> 4;
          int j = chunkZ >> 4;
          WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
-@@ -118,7 +138,7 @@ public abstract class StructurePlacement {
+@@ -118,7 +139,7 @@ public abstract class StructurePlacement {
  
      @FunctionalInterface
      public interface FrequencyReducer {
@@ -217,7 +395,7 @@ index 65dcb14241baadb2c9f8f16919d7b562198ad9c3..594a2dd3b1d4c29c969d1992b8e93795
      }
  
      public static enum FrequencyReductionMethod implements StringRepresentable {
-@@ -136,8 +156,8 @@ public abstract class StructurePlacement {
+@@ -136,8 +157,8 @@ public abstract class StructurePlacement {
              this.reducer = generationPredicate;
          }
  
