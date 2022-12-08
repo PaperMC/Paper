@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    private final Map<LivingEntity, Double> affectedEntities;
+    protected final Map<LivingEntity, Double> affectedEntities; // Paper
 
     @Deprecated(since = "1.20.2")
     public PotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final Map<LivingEntity, Double> affectedEntities) {
