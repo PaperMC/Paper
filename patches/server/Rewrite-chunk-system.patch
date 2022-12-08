@@ -2693,8 +2693,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.core.BlockPos;
 +import io.papermc.paper.chunk.system.ChunkSystem;
 +import net.minecraft.server.level.ChunkHolder;
-+import net.minecraft.server.level.ChunkMap;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.util.AbortableIterationConsumer;
 +import net.minecraft.util.Mth;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.entity.EntityType;
@@ -2872,15 +2872,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final Consumer<U> action) {
++    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final AbortableIterationConsumer<U> action) {
 +        for (final Entity entity : this.entityById.values()) {
 +            final Visibility visibility = EntityLookup.getEntityStatus(entity);
 +            if (!visibility.isAccessible()) {
 +                continue;
 +            }
 +            final U casted = filter.tryCast(entity);
-+            if (casted != null) {
-+                action.accept(casted);
++            if (casted != null && action.accept(casted).shouldAbort()) {
++                break;
 +            }
 +        }
 +    }
@@ -2895,13 +2895,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final AABB box, final Consumer<U> action) {
++    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final AABB box, final AbortableIterationConsumer<U> action) {
 +        List<Entity> entities = new ArrayList<>();
 +        this.getEntitiesWithoutDragonParts(null, box, entities, null);
 +        for (int i = 0, len = entities.size(); i < len; ++i) {
 +            final U casted = filter.tryCast(entities.get(i));
-+            if (casted != null) {
-+                action.accept(casted);
++            if (casted != null && action.accept(casted).shouldAbort()) {
++                break;
 +            }
 +        }
 +    }
