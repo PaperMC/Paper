@@ -1045,6 +1045,67 @@ index 0000000000000000000000000000000000000000..01e424792f68bac73ec41726031ebbb5
 +        return ChatFormatting.getByHexValue(color.value());
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/adventure/PaperPlayerMessage.java b/src/main/java/io/papermc/paper/adventure/PaperPlayerMessage.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c953532f395cdb0f1657a6cda5d0203d5e94a5e3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/PaperPlayerMessage.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper.adventure;
++
++import net.kyori.adventure.chat.SignedMessage;
++import net.kyori.adventure.identity.Identity;
++import net.kyori.adventure.text.Component;
++import net.minecraft.network.chat.MessageSignature;
++import net.minecraft.network.chat.PlayerChatMessage;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.time.Instant;
++
++public class PaperPlayerMessage implements SignedMessage {
++
++    private final PlayerChatMessage chatMessage;
++
++    public PaperPlayerMessage(PlayerChatMessage chatMessage) {
++        this.chatMessage = chatMessage;
++    }
++
++    @Override
++    public @NotNull Instant timestamp() {
++        return this.timestamp();
++    }
++
++    @Override
++    public long salt() {
++        return this.salt();
++    }
++
++    @Override
++    public @Nullable Signature signature() {
++        MessageSignature signature = this.chatMessage.signature();
++        if (signature == null) {
++            return null;
++        } else {
++            return SignedMessage.signature(signature.bytes());
++        }
++    }
++
++    @Override
++    public @Nullable Component unsignedContent() {
++        return PaperAdventure.asAdventure(this.chatMessage.unsignedContent());
++    }
++
++    @Override
++    public @NotNull String message() {
++        return this.chatMessage.signedContent();
++    }
++
++    @Override
++    public @NotNull Identity identity() {
++        return Identity.identity(this.chatMessage.sender());
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..7493efba31403cbe7f26e493f165f1b83aa847bb
@@ -3179,7 +3240,7 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..f9863e138994f6c7a7975a852f106faa
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index d2be98416529aea3bdbedd0ea7131bd8de2a0162..3a7667fd0a53649b6b9f21ea1c1fd490532d2313 100644
+index d2be98416529aea3bdbedd0ea7131bd8de2a0162..830ef01cf1a7222e1530aa349ccb458b77a14cc0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -277,14 +277,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -3405,7 +3466,7 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..3a7667fd0a53649b6b9f21ea1c1fd490
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -1955,6 +2048,247 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1955,6 +2048,260 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
@@ -3447,10 +3508,16 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..3a7667fd0a53649b6b9f21ea1c1fd490
 +        this.getHandle().sendChatMessage(new net.minecraft.network.chat.OutgoingChatMessage.Disguised(component), this.getHandle().isTextFilteringEnabled(), this.toHandle(boundChatType));
 +    }
 +
-+//    @Override
-+//    public void sendMessage(net.kyori.adventure.chat.SignedMessage signedMessage, net.kyori.adventure.chat.ChatType.Bound boundChatType) {
-+//        if (getHandle().connection == null) return;
-+//
++    @Override
++    public void sendMessage(net.kyori.adventure.chat.SignedMessage signedMessage, net.kyori.adventure.chat.ChatType.Bound boundChatType) {
++        if (getHandle().connection == null) return;
++
++        net.kyori.adventure.text.Component message = signedMessage.unsignedContent() == null ? net.kyori.adventure.text.Component.text(signedMessage.message()) : signedMessage.unsignedContent();
++        if (signedMessage.isSystem()) {
++            this.sendMessage(message, boundChatType);
++        } else {
++            super.sendMessage(signedMessage, boundChatType);
++        }
 +//        net.minecraft.network.chat.PlayerChatMessage playerChatMessage = new net.minecraft.network.chat.PlayerChatMessage(
 +//            null, // TODO:
 +//            new net.minecraft.network.chat.MessageSignature(signedMessage.signature().bytes()),
@@ -3460,7 +3527,7 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..3a7667fd0a53649b6b9f21ea1c1fd490
 +//        );
 +//
 +//        this.getHandle().sendChatMessage(net.minecraft.network.chat.OutgoingChatMessage.create(playerChatMessage), this.getHandle().isTextFilteringEnabled(), this.toHandle(boundChatType));
-+//    }
++    }
 +
 +    @Deprecated(forRemoval = true)
 +    @Override
@@ -3580,11 +3647,15 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..3a7667fd0a53649b6b9f21ea1c1fd490
 +        }
 +        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
 +        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = BuiltInRegistries.SOUND_EVENT.getOptional(name);
++
++        final Holder<SoundEvent> soundHolder;
 +        if (event.isPresent()) {
-+            this.getHandle().connection.send(new ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get()), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), seed));
++            soundHolder = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get());
 +        } else {
-+            this.getHandle().connection.send(new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(name)), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch(), seed));
++            soundHolder = Holder.direct(SoundEvent.createVariableRangeEvent(name));
 +        }
++
++        this.getHandle().connection.send(new ClientboundSoundPacket(soundHolder, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch(), seed));
 +    }
 +
 +    @Override
@@ -3606,11 +3677,14 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..3a7667fd0a53649b6b9f21ea1c1fd490
 +
 +        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
 +        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = BuiltInRegistries.SOUND_EVENT.getOptional(name);
++        final Holder<SoundEvent> soundHolder;
 +        if (event.isPresent()) {
-+            this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get()), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), seed));
++            soundHolder = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get());
 +        } else {
-+            this.getHandle().connection.send(new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(name)), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity.position().x(), entity.position().y(), entity.position().z(), sound.volume(), sound.pitch(), seed));
++            soundHolder = Holder.direct(SoundEvent.createVariableRangeEvent(name));
 +        }
++
++        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(soundHolder, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), seed));
 +    }
 +
 +    @Override
