@@ -15,10 +15,10 @@ login plugin message packet.
 
 diff --git a/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5de2dabbc076a9482b1d6c299f1cff74313af74e
+index 0000000000000000000000000000000000000000..c4934979b1ed85bfc4f8d9e6f8848b2beaad95c3
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,75 @@
 +package com.destroystokyo.paper.proxy;
 +
 +import io.papermc.paper.configuration.GlobalConfiguration;
@@ -41,7 +41,8 @@ index 0000000000000000000000000000000000000000..5de2dabbc076a9482b1d6c299f1cff74
 +    private static final int SUPPORTED_FORWARDING_VERSION = 1;
 +    public static final int MODERN_FORWARDING_WITH_KEY = 2;
 +    public static final int MODERN_FORWARDING_WITH_KEY_V2 = 3;
-+    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = MODERN_FORWARDING_WITH_KEY_V2;
++    public static final int MODERN_LAZY_SESSION = 4;
++    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = MODERN_LAZY_SESSION;
 +    public static final ResourceLocation PLAYER_INFO_CHANNEL = new ResourceLocation("velocity", "player_info");
 +
 +    public static boolean checkIntegrity(final FriendlyByteBuf buf) {
@@ -94,7 +95,7 @@ index 0000000000000000000000000000000000000000..5de2dabbc076a9482b1d6c299f1cff74
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index d2cba3fb9eb0d344b71c79387d1d160596b1dc62..9c6473beae78cd6e173e28335e6b06f878b162a9 100644
+index d2cba3fb9eb0d344b71c79387d1d160596b1dc62..56210ac6b9525b025b1091a4b42df0f0e99bd859 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -61,6 +61,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
@@ -126,16 +127,16 @@ index d2cba3fb9eb0d344b71c79387d1d160596b1dc62..9c6473beae78cd6e173e28335e6b06f8
      public class LoginHandler {
  
          public void fireEvents() throws Exception {
-+                            // Paper start - Velocity support
-+                            if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
-+                                disconnect("This server requires you to connect with Velocity.");
-+                                return;
-+                            }
-+                            // Paper end
++                        // Paper start - Velocity support
++                        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
++                            disconnect("This server requires you to connect with Velocity.");
++                            return;
++                        }
++                        // Paper end
                          String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
                          java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
                          java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) connection.getRawAddress()).getAddress(); // Paper
-@@ -411,6 +428,60 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -411,6 +428,47 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
      // Spigot end
  
      public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
@@ -166,20 +167,7 @@ index d2cba3fb9eb0d344b71c79387d1d160596b1dc62..9c6473beae78cd6e173e28335e6b06f8
 +
 +            this.gameProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
 +
-+            // We should already have this, but, we'll read it out anyway
-+            //noinspection NonStrictComparisonCanBeEquality
-+            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY_V2) {
-+                final ProfilePublicKey.Data forwardedKeyData = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
-+                final UUID signer = com.destroystokyo.paper.proxy.VelocityProxy.readSignerUuidOrElse(buf, this.gameProfile.getId());
-+                if (this.profilePublicKeyData == null) {
-+                    try {
-+                        ServerLoginPacketListenerImpl.validatePublicKey(forwardedKeyData, signer, this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
-+                        this.profilePublicKeyData = forwardedKeyData;
-+                    } catch (ProfilePublicKey.ValidationException err) {
-+                        this.disconnect("Unable to validate forwarded player key");
-+                    }
-+                }
-+            }
++            //TODO Update handling for lazy sessions, might not even have to do anything?
 +
 +            // Proceed with login
 +            authenticatorPool.execute(() -> {
