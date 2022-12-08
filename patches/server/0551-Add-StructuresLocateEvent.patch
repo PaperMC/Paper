@@ -119,14 +119,15 @@ index 8eaa1a57e904fe7e540b311c6c5c36b755f021fc..92730afcda6f779d0c440c7a8d50bb79
          return Structure.StructureSettings.CODEC.forGetter((feature) -> {
 diff --git a/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..61efebe1d363b34e2043ccc4c6e28bb714c2fa31
+index 0000000000000000000000000000000000000000..cb077ac5e24d6632c46927fef8ecd20f150d3596
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,95 @@
 +package io.papermc.paper.world.structure;
 +
 +import io.papermc.paper.registry.Reference;
-+import net.minecraft.data.BuiltinRegistries;
++import net.minecraft.core.Registry;
++import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.Bootstrap;
@@ -176,11 +177,12 @@ index 0000000000000000000000000000000000000000..61efebe1d363b34e2043ccc4c6e28bb7
 +
 +    @Test
 +    public void testMinecraftToApi() {
-+        assertEquals("configured structure maps should be the same size", BUILT_IN_STRUCTURES.size(), BuiltinRegistries.STRUCTURES.size());
++        Registry<Structure> structureRegistry = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(Registries.STRUCTURE);
++        assertEquals("configured structure maps should be the same size", BUILT_IN_STRUCTURES.size(), structureRegistry.size());
 +
 +        Map<ResourceLocation, Structure> missing = new LinkedHashMap<>();
-+        for (Structure feature : BuiltinRegistries.STRUCTURES) {
-+            final ResourceLocation key = BuiltinRegistries.STRUCTURES.getKey(feature);
++        for (Structure feature : structureRegistry) {
++            final ResourceLocation key = structureRegistry.getKey(feature);
 +            assertNotNull("Missing built-in registry key", key);
 +            if (key.equals(BuiltinStructures.ANCIENT_CITY.location())) {
 +                continue; // TODO remove when upstream adds "jigsaw" StructureType
@@ -195,8 +197,9 @@ index 0000000000000000000000000000000000000000..61efebe1d363b34e2043ccc4c6e28bb7
 +
 +    @Test
 +    public void testApiToMinecraft() {
++        Registry<Structure> structureRegistry = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(Registries.STRUCTURE);
 +        for (NamespacedKey apiKey : DEFAULT_CONFIGURED_STRUCTURES.keySet()) {
-+            assertTrue(apiKey + " does not have a minecraft counterpart", BuiltinRegistries.STRUCTURES.containsKey(CraftNamespacedKey.toMinecraft(apiKey)));
++            assertTrue(apiKey + " does not have a minecraft counterpart", structureRegistry.containsKey(CraftNamespacedKey.toMinecraft(apiKey)));
 +        }
 +    }
 +
@@ -215,16 +218,3 @@ index 0000000000000000000000000000000000000000..61efebe1d363b34e2043ccc4c6e28bb7
 +        System.setOut(out);
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index 084c48ffabac2cd753609add745203e8a55bc09e..6c4689545b30d172850436a73eee58f9b8b49240 100644
---- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
-+++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-@@ -51,7 +51,7 @@ public abstract class AbstractTestingBase {
-         REGISTRY_CUSTOM = layers.compositeAccess().freeze();
-         // Paper start
-         try {
--            java.lang.reflect.Field field = io.papermc.paper.registry.PaperRegistry.class.getDeclaredField("REGISTRY_ACCESS");
-+            java.lang.reflect.Field field = io.papermc.paper.registry.PaperRegistry.class.getDeclaredField("REGISTRgY_ACCESS");
-             field.trySetAccessible();
-             field.set(null, com.google.common.base.Suppliers.ofInstance(REGISTRY_CUSTOM));
-         } catch (ReflectiveOperationException ex) {
