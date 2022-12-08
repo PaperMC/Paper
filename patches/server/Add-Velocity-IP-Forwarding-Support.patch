@@ -41,7 +41,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final int SUPPORTED_FORWARDING_VERSION = 1;
 +    public static final int MODERN_FORWARDING_WITH_KEY = 2;
 +    public static final int MODERN_FORWARDING_WITH_KEY_V2 = 3;
-+    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = MODERN_FORWARDING_WITH_KEY_V2;
++    public static final int MODERN_LAZY_SESSION = 4;
++    public static final byte MAX_SUPPORTED_FORWARDING_VERSION = MODERN_LAZY_SESSION;
 +    public static final ResourceLocation PLAYER_INFO_CHANNEL = new ResourceLocation("velocity", "player_info");
 +
 +    public static boolean checkIntegrity(final FriendlyByteBuf buf) {
@@ -126,12 +127,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public class LoginHandler {
  
          public void fireEvents() throws Exception {
-+                            // Paper start - Velocity support
-+                            if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
-+                                disconnect("This server requires you to connect with Velocity.");
-+                                return;
-+                            }
-+                            // Paper end
++                        // Paper start - Velocity support
++                        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
++                            disconnect("This server requires you to connect with Velocity.");
++                            return;
++                        }
++                        // Paper end
                          String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
                          java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
                          java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) connection.getRawAddress()).getAddress(); // Paper
@@ -166,20 +167,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            this.gameProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
 +
-+            // We should already have this, but, we'll read it out anyway
-+            //noinspection NonStrictComparisonCanBeEquality
-+            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY_V2) {
-+                final ProfilePublicKey.Data forwardedKeyData = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
-+                final UUID signer = com.destroystokyo.paper.proxy.VelocityProxy.readSignerUuidOrElse(buf, this.gameProfile.getId());
-+                if (this.profilePublicKeyData == null) {
-+                    try {
-+                        ServerLoginPacketListenerImpl.validatePublicKey(forwardedKeyData, signer, this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
-+                        this.profilePublicKeyData = forwardedKeyData;
-+                    } catch (ProfilePublicKey.ValidationException err) {
-+                        this.disconnect("Unable to validate forwarded player key");
-+                    }
-+                }
-+            }
++            //TODO Update handling for lazy sessions, might not even have to do anything?
 +
 +            // Proceed with login
 +            authenticatorPool.execute(() -> {
