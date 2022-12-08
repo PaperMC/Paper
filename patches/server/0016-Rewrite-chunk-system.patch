@@ -2675,7 +2675,7 @@ index 8a5e93961dac4d87c81c0e70b6f4124a1f1d2556..0dc94dec1317b3f86d38074c6cbe41ab
      private ChunkSystem() {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c37adf64ad6133a8d79bfad4a852a6a7e284b6d3
+index 0000000000000000000000000000000000000000..61c170555c8854b102c640b0b6a615f9f732edbf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 @@ -0,0 +1,839 @@
@@ -2693,8 +2693,8 @@ index 0000000000000000000000000000000000000000..c37adf64ad6133a8d79bfad4a852a6a7
 +import net.minecraft.core.BlockPos;
 +import io.papermc.paper.chunk.system.ChunkSystem;
 +import net.minecraft.server.level.ChunkHolder;
-+import net.minecraft.server.level.ChunkMap;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.util.AbortableIterationConsumer;
 +import net.minecraft.util.Mth;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.entity.EntityType;
@@ -2872,15 +2872,15 @@ index 0000000000000000000000000000000000000000..c37adf64ad6133a8d79bfad4a852a6a7
 +    }
 +
 +    @Override
-+    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final Consumer<U> action) {
++    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final AbortableIterationConsumer<U> action) {
 +        for (final Entity entity : this.entityById.values()) {
 +            final Visibility visibility = EntityLookup.getEntityStatus(entity);
 +            if (!visibility.isAccessible()) {
 +                continue;
 +            }
 +            final U casted = filter.tryCast(entity);
-+            if (casted != null) {
-+                action.accept(casted);
++            if (casted != null && action.accept(casted).shouldAbort()) {
++                break;
 +            }
 +        }
 +    }
@@ -2895,13 +2895,13 @@ index 0000000000000000000000000000000000000000..c37adf64ad6133a8d79bfad4a852a6a7
 +    }
 +
 +    @Override
-+    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final AABB box, final Consumer<U> action) {
++    public <U extends Entity> void get(final EntityTypeTest<Entity, U> filter, final AABB box, final AbortableIterationConsumer<U> action) {
 +        List<Entity> entities = new ArrayList<>();
 +        this.getEntitiesWithoutDragonParts(null, box, entities, null);
 +        for (int i = 0, len = entities.size(); i < len; ++i) {
 +            final U casted = filter.tryCast(entities.get(i));
-+            if (casted != null) {
-+                action.accept(casted);
++            if (casted != null && action.accept(casted).shouldAbort()) {
++                break;
 +            }
 +        }
 +    }
@@ -13532,7 +13532,7 @@ index a7feddc31da0870faa3d32a7108282e9e9143180..2ba3bb4e5670ece798a8882801a856d8
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index ecb5a18874509341dd691b290ea7d1f8c17e0bd7..159269d15c95261bddd410e337132c67d13c273c 100644
+index 779783037d024792f8052fea0ea8dbe6f06bc181..38143bac35ba18590a26552820b27b9b12279ea6 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -125,10 +125,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -14530,7 +14530,7 @@ index ecb5a18874509341dd691b290ea7d1f8c17e0bd7..159269d15c95261bddd410e337132c67
      }
  
      public void addEntity(Entity entity) {
-@@ -1597,7 +1087,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1595,7 +1085,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          @Override
          protected boolean isChunkToRemove(long pos) {
@@ -14539,7 +14539,7 @@ index ecb5a18874509341dd691b290ea7d1f8c17e0bd7..159269d15c95261bddd410e337132c67
          }
  
          @Nullable
-@@ -1678,7 +1168,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1676,7 +1166,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (player != this.entity) {
                  Vec3 vec3d = player.position().subtract(this.entity.position());
@@ -16640,7 +16640,7 @@ index 53cf5c1292bc919e1c396328211421cb8d4ff8bb..de9aac5a8ef1c95385d0dc532c7764fe
  
      public abstract void applyCarvers(WorldGenRegion chunkRegion, long seed, RandomState noiseConfig, BiomeManager biomeAccess, StructureManager structureAccessor, ChunkAccess chunk, GenerationStep.Carving carverStep);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-index bf66cdb94daa6657e9415adfa16d16983b258ee3..d3fe4f948d7ad8268f143c98211ef89b7fd96da1 100644
+index e2278ed457a7342d0d1b1a5fc1b5bdef6358816b..71df7c590e31932f2b8fc26a2afaaa54f52674ac 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
 @@ -30,6 +30,30 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
