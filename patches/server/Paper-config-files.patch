@@ -1143,7 +1143,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
 +                    .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
 +                    .register(new TypeToken<Table<?, ?, ?>>() {}, new TableSerializer())
-+                    .register(new StringRepresentableSerializer())
++                    .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
 +                    .register(IntOr.Default.SERIALIZER)
 +                    .register(IntOr.Disabled.SERIALIZER)
 +                    .register(DoubleOrDefault.SERIALIZER)
@@ -2476,6 +2476,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import net.minecraft.util.StringRepresentable;
 +import net.minecraft.world.entity.MobCategory;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
@@ -2487,18 +2488,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +public final class StringRepresentableSerializer extends ScalarSerializer<StringRepresentable> {
 +    private static final Map<Type, Function<String, StringRepresentable>> TYPES = Collections.synchronizedMap(Map.ofEntries(
-+        Map.entry(MobCategory.class, s -> {
-+            for (MobCategory value : MobCategory.values()) {
++        createEntry(MobCategory.class)
++    ));
++
++    public StringRepresentableSerializer() {
++        super(StringRepresentable.class);
++    }
++
++    public static boolean isValidFor(final Type type) {
++        return TYPES.containsKey(type);
++    }
++
++    private static <E extends Enum<E> & StringRepresentable> Map.Entry<Type, Function<String, @Nullable StringRepresentable>> createEntry(Class<E> type) {
++        return Map.entry(type, s -> {
++            for (E value : type.getEnumConstants()) {
 +                if (value.getSerializedName().equals(s)) {
 +                    return value;
 +                }
 +            }
 +            return null;
-+        })
-+    ));
-+
-+    public StringRepresentableSerializer() {
-+        super(StringRepresentable.class);
++        });
 +    }
 +
 +    @Override
