@@ -20,91 +20,136 @@ seeds/salts to the frequency reducer which has a similar effect.
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 4ce5d41b23d6204f280e6d4d21713ec5d9a724d1..9579889e4c7dedefc4f901ccac6157c425740481 100644
+index 95dd058fca280a1e16f3d327be2aabeab91be534..f4a321e05098d42026a9a150fe9d11782ff0dfd4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -133,7 +133,7 @@ public abstract class ChunkGenerator {
-     // Spigot start
-     private Stream<StructureSet> possibleStructureSetsSpigot() {
-         return this.possibleStructureSets().map(Holder::value).map((structureset) -> {
--            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig) {
-+            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig && this.structureSets.getKey(structureset).getNamespace().equals(net.minecraft.resources.ResourceLocation.DEFAULT_NAMESPACE)) { // Paper - check namespace cause datapacks could add structure sets with the same path
-                 String name = this.structureSets.getKey(structureset).getPath();
-                 int seed = randomConfig.salt;
- 
-@@ -180,6 +180,11 @@ public abstract class ChunkGenerator {
-                     case "villages":
-                         seed = conf.villageSeed;
-                         break;
-+                        // Paper start
-+                    case "ancient_cities":
-+                        seed = conf.ancientCitySeed;
-+                        break;
-+                        // Paper end
-                 }
- 
-                 structureset = new StructureSet(structureset.structures(), new RandomSpreadStructurePlacement(randomConfig.locateOffset, randomConfig.frequencyReductionMethod, randomConfig.frequency, seed, randomConfig.exclusionZone, randomConfig.spacing(), randomConfig.separation(), randomConfig.spreadType()));
-@@ -236,7 +241,13 @@ public abstract class ChunkGenerator {
-             HolderSet<Biome> holderset = concentricringsstructureplacement.preferredBiomes();
-             RandomSource randomsource = RandomSource.create();
- 
-+            // Paper start
-+            if (this.conf.strongholdSeed != null && this.structureSets.getResourceKey(holder).orElse(null) == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS) {
-+                randomsource.setSeed(this.conf.strongholdSeed);
-+            } else {
-             randomsource.setSeed(this instanceof FlatLevelSource ? 0L : randomstate.legacyLevelSeed());
-+            }
-+            // Paper end
-             double d0 = randomsource.nextDouble() * 3.141592653589793D * 2.0D;
-             int l = 0;
-             int i1 = 0;
-@@ -677,7 +688,7 @@ public abstract class ChunkGenerator {
- 
-             for (int i1 = chunkX - chunkRange; i1 <= chunkX + chunkRange; ++i1) {
-                 for (int j1 = chunkZ - chunkRange; j1 <= chunkZ + chunkRange; ++j1) {
--                    if (structureplacement.isStructureChunk(this, noiseConfig, seed, i1, j1)) {
-+                    if (structureplacement.isStructureChunk(this, noiseConfig, seed, i1, j1, structureSet.unwrapKey().map(ResourceKey::location).orElse(null))) { // Paper
-                         return true;
-                     }
-                 }
-@@ -764,7 +775,7 @@ public abstract class ChunkGenerator {
+@@ -570,7 +570,7 @@ public abstract class ChunkGenerator {
                  }
              }
  
--            if (structureplacement.isStructureChunk(this, noiseConfig, seed, chunkcoordintpair.x, chunkcoordintpair.z)) {
-+            if (structureplacement.isStructureChunk(this, noiseConfig, seed, chunkcoordintpair.x, chunkcoordintpair.z, this.structureSets.getResourceKey(holder).map(ResourceKey::location).orElse(null))) { // Paper
+-            if (structureplacement.isStructureChunk(placementCalculator, chunkcoordintpair.x, chunkcoordintpair.z)) {
++            if (structureplacement.isStructureChunk(placementCalculator, chunkcoordintpair.x, chunkcoordintpair.z, holder::is)) { // Paper - add missing structure set configs
                  if (list.size() == 1) {
-                     this.tryGenerateStructure((StructureSet.StructureSelectionEntry) list.get(0), structureAccessor, registryManager, noiseConfig, structureTemplateManager, seed, chunk, chunkcoordintpair, sectionposition);
+                     this.tryGenerateStructure((StructureSet.StructureSelectionEntry) list.get(0), structureAccessor, registryManager, randomstate, structureTemplateManager, placementCalculator.getLevelSeed(), chunk, chunkcoordintpair, sectionposition);
                  } else {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
+index a310bfbf0d08187375ea17f4b04b276a0b7d0b9f..31d071a26615c418c222df72478e3f60f556a7ad 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
+@@ -50,13 +50,14 @@ public class ChunkGeneratorStructureState {
+     private final Map<ConcentricRingsStructurePlacement, CompletableFuture<List<ChunkPos>>> ringPositions = new Object2ObjectArrayMap();
+     private boolean hasGeneratedPositions;
+     private final List<Holder<StructureSet>> possibleStructureSets;
++    public final SpigotWorldConfig conf; // Paper
+ 
+     public static ChunkGeneratorStructureState createForFlat(RandomState randomstate, long i, BiomeSource worldchunkmanager, Stream<Holder<StructureSet>> stream, SpigotWorldConfig conf) { // Spigot
+         List<Holder<StructureSet>> list = stream.filter((holder) -> {
+             return ChunkGeneratorStructureState.hasBiomesForStructureSet((StructureSet) holder.value(), worldchunkmanager);
+         }).toList();
+ 
+-        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, 0L, ChunkGeneratorStructureState.injectSpigot(list, conf)); // Spigot
++        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, 0L, ChunkGeneratorStructureState.injectSpigot(list, conf), conf); // Spigot
+     }
+ 
+     public static ChunkGeneratorStructureState createForNormal(RandomState randomstate, long i, BiomeSource worldchunkmanager, HolderLookup<StructureSet> holderlookup, SpigotWorldConfig conf) { // Spigot
+@@ -64,14 +65,14 @@ public class ChunkGeneratorStructureState {
+             return ChunkGeneratorStructureState.hasBiomesForStructureSet((StructureSet) holder_c.value(), worldchunkmanager);
+         }).collect(Collectors.toUnmodifiableList());
+ 
+-        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, i, ChunkGeneratorStructureState.injectSpigot(list, conf)); // Spigot
++        return new ChunkGeneratorStructureState(randomstate, worldchunkmanager, i, i, ChunkGeneratorStructureState.injectSpigot(list, conf), conf); // Spigot
+     }
+ 
+     // Spigot start
+     private static List<Holder<StructureSet>> injectSpigot(List<Holder<StructureSet>> list, SpigotWorldConfig conf) {
+         return list.stream().map((holder) -> {
+             StructureSet structureset = holder.value();
+-            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig) {
++            if (structureset.placement() instanceof RandomSpreadStructurePlacement randomConfig && holder.unwrapKey().orElseThrow().location().getNamespace().equals(net.minecraft.resources.ResourceLocation.DEFAULT_NAMESPACE)) { // Paper - check namespace cause datapacks could add structure sets with the same path
+                 String name = holder.unwrapKey().orElseThrow().location().getPath();
+                 int seed = randomConfig.salt;
+ 
+@@ -118,6 +119,11 @@ public class ChunkGeneratorStructureState {
+                     case "villages":
+                         seed = conf.villageSeed;
+                         break;
++                    // Paper start
++                    case "ancient_cities":
++                        seed = conf.ancientCitySeed;
++                        break;
++                    // Paper end
+                 }
+ 
+                 structureset = new StructureSet(structureset.structures(), new RandomSpreadStructurePlacement(randomConfig.locateOffset, randomConfig.frequencyReductionMethod, randomConfig.frequency, seed, randomConfig.exclusionZone, randomConfig.spacing(), randomConfig.separation(), randomConfig.spreadType()));
+@@ -139,12 +145,13 @@ public class ChunkGeneratorStructureState {
+         return stream.anyMatch(set::contains);
+     }
+ 
+-    private ChunkGeneratorStructureState(RandomState noiseConfig, BiomeSource biomeSource, long structureSeed, long concentricRingSeed, List<Holder<StructureSet>> structureSets) {
++    private ChunkGeneratorStructureState(RandomState noiseConfig, BiomeSource biomeSource, long structureSeed, long concentricRingSeed, List<Holder<StructureSet>> structureSets, SpigotWorldConfig conf) { // Paper
+         this.randomState = noiseConfig;
+         this.levelSeed = structureSeed;
+         this.biomeSource = biomeSource;
+         this.concentricRingsSeed = concentricRingSeed;
+         this.possibleStructureSets = structureSets;
++        this.conf = conf; // Paper
+     }
+ 
+     public List<Holder<StructureSet>> possibleStructureSets() {
+@@ -198,7 +205,13 @@ public class ChunkGeneratorStructureState {
+             HolderSet<Biome> holderset = placement.preferredBiomes();
+             RandomSource randomsource = RandomSource.create();
+ 
++            // Paper start
++            if (this.conf.strongholdSeed != null && structureSetEntry.is(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS)) {
++                randomsource.setSeed(this.conf.strongholdSeed);
++            } else {
++            // Paper end
+             randomsource.setSeed(this.concentricRingsSeed);
++            } // Paper
+             double d0 = randomsource.nextDouble() * 3.141592653589793D * 2.0D;
+             int l = 0;
+             int i1 = 0;
+@@ -275,7 +288,7 @@ public class ChunkGeneratorStructureState {
+ 
+         for (int l = centerChunkX - chunkCount; l <= centerChunkX + chunkCount; ++l) {
+             for (int i1 = centerChunkZ - chunkCount; i1 <= centerChunkZ + chunkCount; ++i1) {
+-                if (structureplacement.isStructureChunk(this, l, i1)) {
++                if (structureplacement.isStructureChunk(this, l, i1, structureSetEntry::is)) { // Paper - add missing structure set configs
+                     return true;
+                 }
+             }
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java b/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-index 2fd1284c7f0d8e2cf35d03072089256d990b06eb..8ef0e9fa126cd96289bab48eaa06c2a1fbe4281e 100644
+index 65dcb14241baadb2c9f8f16919d7b562198ad9c3..991d94b6c03ab5b23f5f42dd70fd205bc84c2b9b 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-@@ -59,10 +59,22 @@ public abstract class StructurePlacement {
+@@ -59,10 +59,24 @@ public abstract class StructurePlacement {
          return this.exclusionZone;
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
-     public boolean isStructureChunk(ChunkGenerator chunkGenerator, RandomState noiseConfig, long seed, int chunkX, int chunkZ) {
+     public boolean isStructureChunk(ChunkGeneratorStructureState calculator, int chunkX, int chunkZ) {
 +        // Paper start - add missing structure set configs
-+        return this.isStructureChunk(chunkGenerator, noiseConfig, seed, chunkX, chunkZ, null);
++        return this.isStructureChunk(calculator, chunkX, chunkZ, null);
 +    }
-+    public boolean isStructureChunk(ChunkGenerator chunkGenerator, RandomState noiseConfig, long seed, int chunkX, int chunkZ, @org.jetbrains.annotations.Nullable net.minecraft.resources.ResourceLocation structureSetKey) {
++    public boolean isStructureChunk(ChunkGeneratorStructureState calculator, int chunkX, int chunkZ, @org.jetbrains.annotations.Nullable java.util.function.Predicate<net.minecraft.resources.ResourceKey<StructureSet>> structureSetPredicate) {
 +        Integer saltOverride = null;
-+        if (net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.MINESHAFTS.location().equals(structureSetKey)) {
-+            saltOverride = chunkGenerator.conf.mineshaftSeed;
-+        } else if (net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.BURIED_TREASURES.location().equals(structureSetKey)) {
-+            saltOverride = chunkGenerator.conf.buriedTreasureSeed;
++        if (structureSetPredicate != null) {
++            if (structureSetPredicate.test(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.MINESHAFTS)) {
++                saltOverride = calculator.conf.mineshaftSeed;
++            } else if (structureSetPredicate.test(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.BURIED_TREASURES)) {
++                saltOverride = calculator.conf.buriedTreasureSeed;
++            }
 +        }
 +        // Paper end
-         if (!this.isPlacementChunk(chunkGenerator, noiseConfig, seed, chunkX, chunkZ)) {
+         if (!this.isPlacementChunk(calculator, chunkX, chunkZ)) {
              return false;
--        } else if (this.frequency < 1.0F && !this.frequencyReductionMethod.shouldGenerate(seed, this.salt, chunkX, chunkZ, this.frequency)) {
-+        } else if (this.frequency < 1.0F && !this.frequencyReductionMethod.shouldGenerate(seed, this.salt, chunkX, chunkZ, this.frequency, saltOverride)) { // Paper
+-        } else if (this.frequency < 1.0F && !this.frequencyReductionMethod.shouldGenerate(calculator.getLevelSeed(), this.salt, chunkX, chunkZ, this.frequency)) {
++        } else if (this.frequency < 1.0F && !this.frequencyReductionMethod.shouldGenerate(calculator.getLevelSeed(), this.salt, chunkX, chunkZ, this.frequency, saltOverride)) { // Paper
              return false;
          } else {
-             return !this.exclusionZone.isPresent() || !this.exclusionZone.get().isPlacementForbidden(chunkGenerator, noiseConfig, seed, chunkX, chunkZ);
-@@ -77,25 +89,31 @@ public abstract class StructurePlacement {
+             return !this.exclusionZone.isPresent() || !this.exclusionZone.get().isPlacementForbidden(calculator, chunkX, chunkZ);
+@@ -77,25 +91,31 @@ public abstract class StructurePlacement {
  
      public abstract StructurePlacementType<?> type();
  
@@ -141,7 +186,7 @@ index 2fd1284c7f0d8e2cf35d03072089256d990b06eb..8ef0e9fa126cd96289bab48eaa06c2a1
          int i = chunkX >> 4;
          int j = chunkZ >> 4;
          WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
-@@ -118,7 +136,7 @@ public abstract class StructurePlacement {
+@@ -118,7 +138,7 @@ public abstract class StructurePlacement {
  
      @FunctionalInterface
      public interface FrequencyReducer {
@@ -150,7 +195,7 @@ index 2fd1284c7f0d8e2cf35d03072089256d990b06eb..8ef0e9fa126cd96289bab48eaa06c2a1
      }
  
      public static enum FrequencyReductionMethod implements StringRepresentable {
-@@ -136,8 +154,8 @@ public abstract class StructurePlacement {
+@@ -136,8 +156,8 @@ public abstract class StructurePlacement {
              this.reducer = generationPredicate;
          }
  
