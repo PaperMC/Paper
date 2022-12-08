@@ -9,7 +9,7 @@ This patch will be used to optimise out flush calls in later
 patches.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34cce89cfe 100644
+index 9515626305d8496eac2a7af65ba39fcda60c782a..b996b5c6a8dccd122fbb5d04f446927ae788bad5 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -122,6 +122,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -52,7 +52,7 @@ index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34
      public Connection(PacketFlow side) {
          this.receiving = side;
      }
-@@ -287,7 +320,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -286,7 +319,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              io.papermc.paper.util.MCUtil.isMainThread() && packet.isReady() && this.queue.isEmpty() &&
              (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
          ))) {
@@ -61,7 +61,7 @@ index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34
              return;
          }
          // write the packets to the queue, then flush - antixray hooks there already
-@@ -311,6 +344,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -310,6 +343,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      private void sendPacket(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -76,7 +76,7 @@ index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34
          ConnectionProtocol enumprotocol = ConnectionProtocol.getProtocolForPacket(packet);
          ConnectionProtocol enumprotocol1 = this.getCurrentProtocol();
  
-@@ -321,16 +362,21 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -320,16 +361,21 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
  
          if (this.channel.eventLoop().inEventLoop()) {
@@ -100,7 +100,7 @@ index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34
          if (packetState != currentState) {
              this.setProtocol(packetState);
          }
-@@ -344,7 +390,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -343,7 +389,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
          try {
              // Paper end
@@ -109,7 +109,7 @@ index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34
  
          if (callbacks != null) {
              channelfuture.addListener((future) -> {
-@@ -400,6 +446,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -399,6 +445,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      private boolean processQueue() {
          try { // Paper - add pending task queue
          if (this.queue.isEmpty()) return true;
@@ -120,7 +120,7 @@ index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34
          // If we are on main, we are safe here in that nothing else should be processing queue off main anymore
          // But if we are not on main due to login/status, the parent is synchronized on packetQueue
          java.util.Iterator<PacketHolder> iterator = this.queue.iterator();
-@@ -407,7 +457,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -406,7 +456,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              PacketHolder queued = iterator.next(); // poll -> peek
  
              // Fix NPE (Spigot bug caused by handleDisconnection())
@@ -129,7 +129,7 @@ index ea6c1439e92c24194cde4dcf6388363a8cc5d649..40a0f68c42000757ba8b0e8bdbd4cd34
                  return true;
              }
  
-@@ -419,11 +469,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -418,11 +468,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              Packet<?> packet = queued.packet;
              if (!packet.isReady()) {
