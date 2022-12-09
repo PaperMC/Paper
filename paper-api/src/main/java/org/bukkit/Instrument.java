@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 public enum Instrument {
 
     /**
-     * Piano is the standard instrument for a note block.
+     * Piano (Harp) is the standard instrument for a note block.
      */
     PIANO(0x0, Sound.BLOCK_NOTE_BLOCK_HARP),
     /**
@@ -21,7 +21,7 @@ public enum Instrument {
      */
     SNARE_DRUM(0x2, Sound.BLOCK_NOTE_BLOCK_SNARE),
     /**
-     * Sticks are normally played when a note block is on top of a glass
+     * Sticks (Hat) are normally played when a note block is on top of a glass
      * block.
      */
     STICKS(0x3, Sound.BLOCK_NOTE_BLOCK_HAT),
@@ -78,39 +78,37 @@ public enum Instrument {
     /**
      * Zombie is normally played when a Zombie Head is on top of the note block.
      */
-    ZOMBIE(Sound.BLOCK_NOTE_BLOCK_IMITATE_ZOMBIE),
+    ZOMBIE(0x10, Sound.BLOCK_NOTE_BLOCK_IMITATE_ZOMBIE), // Paper
     /**
      * Skeleton is normally played when a Skeleton Head is on top of the note block.
      */
-    SKELETON(Sound.BLOCK_NOTE_BLOCK_IMITATE_SKELETON),
+    SKELETON(0x11, Sound.BLOCK_NOTE_BLOCK_IMITATE_SKELETON), // Paper
     /**
      * Creeper is normally played when a Creeper Head is on top of the note block.
      */
-    CREEPER(Sound.BLOCK_NOTE_BLOCK_IMITATE_CREEPER),
+    CREEPER(0x12, Sound.BLOCK_NOTE_BLOCK_IMITATE_CREEPER), // Paper
     /**
      * Dragon is normally played when a Dragon Head is on top of the note block.
      */
-    DRAGON(Sound.BLOCK_NOTE_BLOCK_IMITATE_ENDER_DRAGON),
+    DRAGON(0x13, Sound.BLOCK_NOTE_BLOCK_IMITATE_ENDER_DRAGON), // Paper
     /**
      * Wither Skeleton is normally played when a Wither Skeleton Head is on top of the note block.
      */
-    WITHER_SKELETON(Sound.BLOCK_NOTE_BLOCK_IMITATE_WITHER_SKELETON),
+    WITHER_SKELETON(0x14, Sound.BLOCK_NOTE_BLOCK_IMITATE_WITHER_SKELETON), // Paper
     /**
      * Piglin is normally played when a Piglin Head is on top of the note block.
      */
-    PIGLIN(Sound.BLOCK_NOTE_BLOCK_IMITATE_PIGLIN),
+    PIGLIN(0x15, Sound.BLOCK_NOTE_BLOCK_IMITATE_PIGLIN), // Paper
     /**
      * Custom Sound is normally played when a Player Head with the required data is on top of the note block.
      */
-    CUSTOM_HEAD(null);
+    CUSTOM_HEAD(0x16, null); // Paper
 
     private final byte type;
     private final Sound sound;
     private static final Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
 
-    private Instrument(final Sound sound) {
-        this(-1, sound);
-    }
+    // Paper - remove ctor (the server still uses the byte magic value)
 
     private Instrument(final int type, final Sound sound) {
         this.type = (byte) type;
@@ -130,9 +128,8 @@ public enum Instrument {
 
     /**
      * @return The type ID of this instrument.
-     * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     public byte getType() {
         return this.type;
     }
@@ -142,9 +139,8 @@ public enum Instrument {
      *
      * @param type The type ID
      * @return The instrument
-     * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @Nullable
     public static Instrument getByType(final byte type) {
         return BY_DATA.get(type);
