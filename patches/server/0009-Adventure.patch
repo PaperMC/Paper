@@ -3179,7 +3179,7 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..f9863e138994f6c7a7975a852f106faa
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index d2be98416529aea3bdbedd0ea7131bd8de2a0162..e12b4ec0d14901a0246cfea16c65fb046c7a4f6c 100644
+index d2be98416529aea3bdbedd0ea7131bd8de2a0162..6c316c969e87d9da047cd80c15d5579f7f65d1a5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -277,14 +277,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -3405,7 +3405,7 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..e12b4ec0d14901a0246cfea16c65fb04
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -1955,6 +2048,193 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1955,6 +2048,250 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
@@ -3421,6 +3421,54 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..e12b4ec0d14901a0246cfea16c65fb04
 +        this.getHandle().displayName = null;
 +    }
 +
++    @Override
++    public void deleteMessage(net.kyori.adventure.chat.SignedMessage.Signature signature) {
++        if (getHandle().connection == null) return;
++        net.minecraft.network.chat.MessageSignature sig = new net.minecraft.network.chat.MessageSignature(signature.bytes());
++
++        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundDeleteChatPacket(new net.minecraft.network.chat.MessageSignature.Packed(sig)));
++    }
++
++    private net.minecraft.network.chat.ChatType.Bound toHandle(net.kyori.adventure.chat.ChatType.Bound boundChatType) {
++        net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.CHAT_TYPE);
++
++        return new net.minecraft.network.chat.ChatType.Bound(
++            chatTypeRegistry.get(io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.type().key())),
++            io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.name()),
++            io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.target())
++        );
++    }
++
++    @Override
++    public void sendMessage(net.kyori.adventure.text.Component message, net.kyori.adventure.chat.ChatType.Bound boundChatType) {
++        if (getHandle().connection == null) return;
++
++        net.minecraft.network.chat.Component component = io.papermc.paper.adventure.PaperAdventure.asVanilla(message);
++        this.getHandle().sendChatMessage(new net.minecraft.network.chat.OutgoingChatMessage.Disguised(component), this.getHandle().isTextFilteringEnabled(), this.toHandle(boundChatType));
++    }
++
++    @Override
++    public void sendMessage(net.kyori.adventure.chat.SignedMessage signedMessage, net.kyori.adventure.chat.ChatType.Bound boundChatType) {
++        if (getHandle().connection == null) return;
++
++        net.kyori.adventure.text.Component message = signedMessage.unsignedContent() == null ? net.kyori.adventure.text.Component.text(signedMessage.message()) : signedMessage.unsignedContent();
++        if (signedMessage.isSystem()) {
++            this.sendMessage(message, boundChatType);
++        } else {
++            super.sendMessage(signedMessage, boundChatType);
++        }
++//        net.minecraft.network.chat.PlayerChatMessage playerChatMessage = new net.minecraft.network.chat.PlayerChatMessage(
++//            null, // TODO:
++//            new net.minecraft.network.chat.MessageSignature(signedMessage.signature().bytes()),
++//            null, // TODO
++//            io.papermc.paper.adventure.PaperAdventure.asVanilla(signedMessage.unsignedContent()),
++//            net.minecraft.network.chat.FilterMask.PASS_THROUGH
++//        );
++//
++//        this.getHandle().sendChatMessage(net.minecraft.network.chat.OutgoingChatMessage.create(playerChatMessage), this.getHandle().isTextFilteringEnabled(), this.toHandle(boundChatType));
++    }
++
++    @Deprecated(forRemoval = true)
 +    @Override
 +    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
 +        if (getHandle().connection == null) return;
@@ -3530,13 +3578,18 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..e12b4ec0d14901a0246cfea16c65fb04
 +
 +    @Override
 +    public void playSound(final net.kyori.adventure.sound.Sound sound, final double x, final double y, final double z) {
++        final long seed = sound.seed().orElseGet(this.getHandle().getRandom()::nextLong);
 +        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
 +        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = BuiltInRegistries.SOUND_EVENT.getOptional(name);
++
++        final Holder<SoundEvent> soundHolder;
 +        if (event.isPresent()) {
-+            this.getHandle().connection.send(new ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get()), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            soundHolder = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get());
 +        } else {
-+            this.getHandle().connection.send(new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(name)), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            soundHolder = Holder.direct(SoundEvent.createVariableRangeEvent(name));
 +        }
++
++        this.getHandle().connection.send(new ClientboundSoundPacket(soundHolder, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch(), seed));
 +    }
 +
 +    @Override
@@ -3549,14 +3602,18 @@ index d2be98416529aea3bdbedd0ea7131bd8de2a0162..e12b4ec0d14901a0246cfea16c65fb04
 +        } else {
 +            throw new IllegalArgumentException("Sound emitter must be an Entity or self(), but was: " + emitter);
 +        }
++        final long seed = sound.seed().orElseGet(this.getHandle().getRandom()::nextLong);
 +
 +        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
 +        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = BuiltInRegistries.SOUND_EVENT.getOptional(name);
++        final Holder<SoundEvent> soundHolder;
 +        if (event.isPresent()) {
-+            this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get()), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            soundHolder = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get());
 +        } else {
-+            this.getHandle().connection.send(new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(name)), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity.position().x(), entity.position().y(), entity.position().z(), sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            soundHolder = Holder.direct(SoundEvent.createVariableRangeEvent(name));
 +        }
++
++        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(soundHolder, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), seed));
 +    }
 +
 +    @Override
