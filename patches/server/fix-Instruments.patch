@@ -66,11 +66,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            case 16:
 -                instrumentName = "xylophone";
 -                break;
--        }
-+        net.minecraft.world.level.block.state.properties.NoteBlockInstrument nms = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class); // Paper - really?
-         float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
++        // Paper start - fix all this (modeled off of NoteBlock)
++        net.minecraft.world.level.block.state.properties.NoteBlockInstrument nms = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
++        float f;
++        if (nms.isTunable()) {
++            f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
++        } else {
++            f = 1.0f;
+         }
+-        float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
 -        this.getHandle().connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(CraftSound.getSoundEffect("block.note_block." + instrumentName)), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong()));
-+        this.getHandle().connection.send(new ClientboundSoundPacket(nms.getSoundEvent(), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong())); // Paper
++        if (!nms.hasCustomSound()) {
++            this.getHandle().connection.send(new ClientboundSoundPacket(nms.getSoundEvent(), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong()));
++        }
++        // Paper end
      }
  
      @Override
