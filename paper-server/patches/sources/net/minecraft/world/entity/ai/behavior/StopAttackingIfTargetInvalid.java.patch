@@ -13,13 +13,26 @@
  public class StopAttackingIfTargetInvalid {
  
      private static final int TIMEOUT_TO_GET_WITHIN_ATTACK_RANGE = 200;
-@@ -40,6 +46,17 @@
+@@ -40,6 +46,30 @@
                      if (entityinsentient.canAttack(entityliving) && (!shouldForgetIfTargetUnreachable || !StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entityinsentient, behaviorbuilder_b.tryGet(memoryaccessor1))) && entityliving.isAlive() && entityliving.level() == entityinsentient.level() && !condition.test(worldserver, entityliving)) {
                          return true;
                      } else {
++                        // Paper start - better track target change reason
++                        final EntityTargetEvent.TargetReason reason;
++                        if (!entityinsentient.canAttack(entityliving)) {
++                            reason = EntityTargetEvent.TargetReason.TARGET_INVALID;
++                        } else if (shouldForgetIfTargetUnreachable && StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entityinsentient, behaviorbuilder_b.tryGet(memoryaccessor1))) {
++                            reason = EntityTargetEvent.TargetReason.FORGOT_TARGET;
++                        } else if (!entityliving.isAlive()) {
++                            reason = EntityTargetEvent.TargetReason.TARGET_DIED;
++                        } else if (entityliving.level() != entityinsentient.level()) {
++                            reason = EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL;
++                        } else {
++                            reason = EntityTargetEvent.TargetReason.TARGET_INVALID;
++                        }
++                        // Paper end
 +                        // CraftBukkit start
-+                        LivingEntity old = entityinsentient.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
-+                        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityinsentient, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
++                        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityinsentient, null, reason); // Paper
 +                        if (event.isCancelled()) {
 +                            return false;
 +                        }
