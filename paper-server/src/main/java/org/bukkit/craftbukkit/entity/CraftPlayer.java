@@ -775,7 +775,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Sound instrumentSound = instrument.getSound();
         if (instrumentSound == null) return;
 
-        float pitch = note.getPitch();
+        // Paper start - use correct pitch (modeled off of NoteBlock)
+        final net.minecraft.world.level.block.state.properties.NoteBlockInstrument noteBlockInstrument = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
+        final float pitch = noteBlockInstrument.isTunable() ? note.getPitch() : 1.0f;
+        // Paper end
         this.getHandle().connection.send(new ClientboundSoundPacket(CraftSound.bukkitToMinecraftHolder(instrumentSound), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, pitch, this.getHandle().getRandom().nextLong()));
     }
 
