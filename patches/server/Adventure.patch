@@ -3422,6 +3422,54 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
++    public void deleteMessage(net.kyori.adventure.chat.SignedMessage.Signature signature) {
++        if (getHandle().connection == null) return;
++        net.minecraft.network.chat.MessageSignature sig = new net.minecraft.network.chat.MessageSignature(signature.bytes());
++
++        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundDeleteChatPacket(new net.minecraft.network.chat.MessageSignature.Packed(sig)));
++    }
++
++    private net.minecraft.network.chat.ChatType.Bound toHandle(net.kyori.adventure.chat.ChatType.Bound boundChatType) {
++        net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.CHAT_TYPE);
++
++        return new net.minecraft.network.chat.ChatType.Bound(
++            chatTypeRegistry.get(io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.type().key())),
++            io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.name()),
++            io.papermc.paper.adventure.PaperAdventure.asVanilla(boundChatType.target())
++        );
++    }
++
++    @Override
++    public void sendMessage(net.kyori.adventure.text.Component message, net.kyori.adventure.chat.ChatType.Bound boundChatType) {
++        if (getHandle().connection == null) return;
++
++        net.minecraft.network.chat.Component component = io.papermc.paper.adventure.PaperAdventure.asVanilla(message);
++        this.getHandle().sendChatMessage(new net.minecraft.network.chat.OutgoingChatMessage.Disguised(component), this.getHandle().isTextFilteringEnabled(), this.toHandle(boundChatType));
++    }
++
++    @Override
++    public void sendMessage(net.kyori.adventure.chat.SignedMessage signedMessage, net.kyori.adventure.chat.ChatType.Bound boundChatType) {
++        if (getHandle().connection == null) return;
++
++        net.kyori.adventure.text.Component message = signedMessage.unsignedContent() == null ? net.kyori.adventure.text.Component.text(signedMessage.message()) : signedMessage.unsignedContent();
++        if (signedMessage.isSystem()) {
++            this.sendMessage(message, boundChatType);
++        } else {
++            super.sendMessage(signedMessage, boundChatType);
++        }
++//        net.minecraft.network.chat.PlayerChatMessage playerChatMessage = new net.minecraft.network.chat.PlayerChatMessage(
++//            null, // TODO:
++//            new net.minecraft.network.chat.MessageSignature(signedMessage.signature().bytes()),
++//            null, // TODO
++//            io.papermc.paper.adventure.PaperAdventure.asVanilla(signedMessage.unsignedContent()),
++//            net.minecraft.network.chat.FilterMask.PASS_THROUGH
++//        );
++//
++//        this.getHandle().sendChatMessage(net.minecraft.network.chat.OutgoingChatMessage.create(playerChatMessage), this.getHandle().isTextFilteringEnabled(), this.toHandle(boundChatType));
++    }
++
++    @Deprecated(forRemoval = true)
++    @Override
 +    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
 +        if (getHandle().connection == null) return;
 +        final net.minecraft.core.Registry<net.minecraft.network.chat.ChatType> chatTypeRegistry = this.getHandle().level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.CHAT_TYPE);
@@ -3530,13 +3578,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void playSound(final net.kyori.adventure.sound.Sound sound, final double x, final double y, final double z) {
++        final long seed = sound.seed().orElseGet(this.getHandle().getRandom()::nextLong);
 +        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
 +        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = BuiltInRegistries.SOUND_EVENT.getOptional(name);
++
++        final Holder<SoundEvent> soundHolder;
 +        if (event.isPresent()) {
-+            this.getHandle().connection.send(new ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get()), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            soundHolder = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get());
 +        } else {
-+            this.getHandle().connection.send(new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(name)), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            soundHolder = Holder.direct(SoundEvent.createVariableRangeEvent(name));
 +        }
++
++        this.getHandle().connection.send(new ClientboundSoundPacket(soundHolder, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch(), seed));
 +    }
 +
 +    @Override
@@ -3549,14 +3602,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            throw new IllegalArgumentException("Sound emitter must be an Entity or self(), but was: " + emitter);
 +        }
++        final long seed = sound.seed().orElseGet(this.getHandle().getRandom()::nextLong);
 +
 +        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
 +        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = BuiltInRegistries.SOUND_EVENT.getOptional(name);
++        final Holder<SoundEvent> soundHolder;
 +        if (event.isPresent()) {
-+            this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get()), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            soundHolder = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event.get());
 +        } else {
-+            this.getHandle().connection.send(new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(name)), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity.position().x(), entity.position().y(), entity.position().z(), sound.volume(), sound.pitch(), this.getHandle().getRandom().nextLong())); // TODO adventure sound seed
++            soundHolder = Holder.direct(SoundEvent.createVariableRangeEvent(name));
 +        }
++
++        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(soundHolder, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch(), seed));
 +    }
 +
 +    @Override
