@@ -8,7 +8,7 @@ Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6
 Fix splash events cancellation that still show particles/sound
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index b5e2c391ebcca05db5c960792fcb14991aec4fe2..1eec7926627d7956ffdd33f76247829453af3bf2 100644
+index b5e2c391ebcca05db5c960792fcb14991aec4fe2..740ff3fed9c8d637527fda8544eba2b9d7d7280a 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 @@ -105,56 +105,77 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
@@ -125,7 +125,27 @@ index b5e2c391ebcca05db5c960792fcb14991aec4fe2..1eec7926627d7956ffdd33f762478294
          AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level, this.getX(), this.getY(), this.getZ());
          Entity entity = this.getOwner();
  
-@@ -260,6 +283,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -240,10 +263,12 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+         entityareaeffectcloud.setPotion(potion);
+         Iterator iterator = PotionUtils.getCustomEffects(stack).iterator();
+ 
++        boolean noEffects = potion.getEffects().isEmpty(); // Paper
+         while (iterator.hasNext()) {
+             MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
+ 
+             entityareaeffectcloud.addEffect(new MobEffectInstance(mobeffect));
++            noEffects = false; // Paper
+         }
+ 
+         CompoundTag nbttagcompound = stack.getTag();
+@@ -254,12 +279,13 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+ 
+         // CraftBukkit start
+         org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, entityareaeffectcloud);
+-        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved())) {
++        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved() || (noEffects && entityareaeffectcloud.effects.isEmpty() && entityareaeffectcloud.getPotion().getEffects().isEmpty()))) { // Paper - don't spawn area effect cloud if the effects were empty and not changed during the event handling
+             this.level.addFreshEntity(entityareaeffectcloud);
+         } else {
              entityareaeffectcloud.discard();
          }
          // CraftBukkit end
