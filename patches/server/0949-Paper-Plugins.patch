@@ -18,7 +18,8 @@ These patches (will) be merged into this as this PR removes the usages of the fi
 - Automatically disable plugins that fail to load (Aikar <aikar@aikar.co>)
 - Add an asterisk to legacy API plugins (Phoenix616 <max@themoep.de>)
 - Make /plugins list alphabetical (BillyGalbreath <Blake.Galbreath@GMail.com>)
-Also load resources from LibraryLoader (Nick Hensel <nickhensel25@icloud.com>)
+- Also load resources from LibraryLoader (Nick Hensel <nickhensel25@icloud.com>)
+- Future API Plans (API, me)
 
 PATCHES TO MODIFY:
 - Add command line option to load extra plugin jars not in the plugins folder (Jason Penilla <11360596+jpenilla@users.noreply.github.com>)
@@ -5126,22 +5127,22 @@ index f7114d5b8f2f93f62883e24da29afaf9f74ee1a6..00e78a495575abb9496b1849822605b6
  
          return foundFrame.orElse(null);
 diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
-index 0ece775ca7e63184f79fcdd1aa7ed5c16fc9bc9e..205d735f0e1edd8934691baaf369a85bcd93f876 100644
+index d0ee6523477309bc984869774533ee1941ed0cb0..8d06e01ddb5e3c3d8642cd11c5ef0f7bb954588f 100644
 --- a/src/main/java/net/minecraft/server/Bootstrap.java
 +++ b/src/main/java/net/minecraft/server/Bootstrap.java
-@@ -76,6 +76,7 @@ public class Bootstrap {
-                     DispenseItemBehavior.bootStrap();
+@@ -71,6 +71,7 @@ public class Bootstrap {
                      CauldronInteraction.bootStrap();
-                     Registry.register(net.minecraft.core.Registry.CONDITION, new net.minecraft.resources.ResourceLocation("paper", "bedrock_condition_source"), net.minecraft.data.worldgen.SurfaceRuleData.PaperBedrockConditionSource.CODEC.codec()); // Paper - register custom flat bedrock thing. TODO is this the best place to do this?
-+                    io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
-                     Registry.freezeBuiltins();
-                     Bootstrap.wrapStreams();
-                 }
+                     // Paper start - register custom flat bedrock
+                     BuiltInRegistries.bootStrap(() -> {
++                        io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
+                         net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.MATERIAL_CONDITION, new net.minecraft.resources.ResourceLocation("paper", "bedrock_condition_source"), net.minecraft.data.worldgen.SurfaceRuleData.PaperBedrockConditionSource.CODEC.codec());
+                     });
+                     // Paper end
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 0066b1abc008d245825abf1d256cb87fa9c2d877..b81001dbffe8198c8c6729716a16feac8d7212f6 100644
+index 31faf2d6492696f7d0c99a48edbc0d6f15db1209..17f677ec37a21f8ccc95b1d3df711790fc7b478f 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -108,6 +108,17 @@ public class Main {
+@@ -111,6 +111,17 @@ public class Main {
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
@@ -5160,10 +5161,10 @@ index 0066b1abc008d245825abf1d256cb87fa9c2d877..b81001dbffe8198c8c6729716a16feac
              Bootstrap.validate();
              Util.startTimerHackThread();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 07eac5439164a7345476c55277538a152359630a..277b8d1ff65df7143dad21775da4cb286d54cdd1 100644
+index 47df6f4268a63118da8187f4102c876bd37d1680..fa9dd43dd7e19dc6907e88b80b9d59c3be58e063 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -257,7 +257,8 @@ public final class CraftServer implements Server {
+@@ -270,7 +270,8 @@ public final class CraftServer implements Server {
      private final CraftCommandMap commandMap = new CraftCommandMap(this);
      private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
      private final StandardMessenger messenger = new StandardMessenger();
@@ -5173,7 +5174,7 @@ index 07eac5439164a7345476c55277538a152359630a..277b8d1ff65df7143dad21775da4cb28
      private final StructureManager structureManager;
      protected final DedicatedServer console;
      protected final DedicatedPlayerList playerList;
-@@ -359,7 +360,7 @@ public final class CraftServer implements Server {
+@@ -372,7 +373,7 @@ public final class CraftServer implements Server {
          this.saveCommandsConfig();
          this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
          this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
@@ -5182,7 +5183,7 @@ index 07eac5439164a7345476c55277538a152359630a..277b8d1ff65df7143dad21775da4cb28
          this.overrideSpawnLimits();
          console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
          this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-@@ -411,29 +412,7 @@ public final class CraftServer implements Server {
+@@ -424,29 +425,7 @@ public final class CraftServer implements Server {
      }
  
      public void loadPlugins() {
@@ -5213,7 +5214,7 @@ index 07eac5439164a7345476c55277538a152359630a..277b8d1ff65df7143dad21775da4cb28
      }
  
      // Paper start
-@@ -552,15 +531,17 @@ public final class CraftServer implements Server {
+@@ -565,15 +544,17 @@ public final class CraftServer implements Server {
      private void enablePlugin(Plugin plugin) {
          try {
              List<Permission> perms = plugin.getDescription().getPermissions();
@@ -5237,7 +5238,7 @@ index 07eac5439164a7345476c55277538a152359630a..277b8d1ff65df7143dad21775da4cb28
  
              this.pluginManager.enablePlugin(plugin);
          } catch (Throwable ex) {
-@@ -2802,7 +2783,7 @@ public final class CraftServer implements Server {
+@@ -2826,7 +2807,7 @@ public final class CraftServer implements Server {
  
      @Override
      public void reloadPermissions() {
