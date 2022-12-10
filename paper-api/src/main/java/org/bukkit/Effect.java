@@ -25,43 +25,73 @@ public enum Effect {
     BOW_FIRE(1002, Type.SOUND),
     /**
      * Sound of a door opening.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_WOODEN_DOOR_OPEN
      */
+    @Deprecated
     DOOR_TOGGLE(1006, Type.SOUND),
     /**
      * Sound of a door opening.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_IRON_DOOR_OPEN
      */
+    @Deprecated
     IRON_DOOR_TOGGLE(1005, Type.SOUND),
     /**
      * Sound of a trapdoor opening.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_WOODEN_TRAPDOOR_OPEN
      */
+    @Deprecated
     TRAPDOOR_TOGGLE(1007, Type.SOUND),
     /**
      * Sound of a door opening.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_IRON_TRAPDOOR_OPEN
      */
+    @Deprecated
     IRON_TRAPDOOR_TOGGLE(1037, Type.SOUND),
     /**
      * Sound of a door opening.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_FENCE_GATE_OPEN
      */
+    @Deprecated
     FENCE_GATE_TOGGLE(1008, Type.SOUND),
     /**
      * Sound of a door closing.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_WOODEN_DOOR_CLOSE
      */
+    @Deprecated
     DOOR_CLOSE(1012, Type.SOUND),
     /**
      * Sound of a door closing.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_IRON_DOOR_CLOSE
      */
+    @Deprecated
     IRON_DOOR_CLOSE(1011, Type.SOUND),
     /**
      * Sound of a trapdoor closing.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_WOODEN_TRAPDOOR_CLOSE
      */
+    @Deprecated
     TRAPDOOR_CLOSE(1013, Type.SOUND),
     /**
      * Sound of a door closing.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_IRON_TRAPDOOR_CLOSE
      */
+    @Deprecated
     IRON_TRAPDOOR_CLOSE(1036, Type.SOUND),
     /**
      * Sound of a door closing.
+     * @deprecated no longer exists
+     * @see Sound#BLOCK_FENCE_GATE_CLOSE
      */
+    @Deprecated
     FENCE_GATE_CLOSE(1014, Type.SOUND),
     /**
      * Sound of fire being extinguished.
