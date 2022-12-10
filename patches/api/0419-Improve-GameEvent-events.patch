@@ -1,0 +1,220 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 9 Dec 2022 21:21:50 -0800
+Subject: [PATCH] Improve GameEvent events
+
+Adds EntityReceiveGameEvent and expands BlockReceiveGameEvent
+
+diff --git a/src/main/java/io/papermc/paper/event/ReceiveGameEvent.java b/src/main/java/io/papermc/paper/event/ReceiveGameEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..81e2d7accd6705da5386e09ec786fa65859916ed
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/ReceiveGameEvent.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.event;
++
++import org.bukkit.GameEvent;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.entity.Entity;
++import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Common methods for {@link io.papermc.paper.event.entity.EntityReceiveGameEvent} and
++ * {@link org.bukkit.event.block.BlockReceiveGameEvent}.
++ */
++@ApiStatus.NonExtendable
++public interface ReceiveGameEvent extends Cancellable {
++
++    /**
++     * Get the underlying event.
++     *
++     * @return the event
++     */
++    @NotNull GameEvent getEvent();
++
++    /**
++     * Get the entity which triggered this event, if present.
++     *
++     * @return triggering entity or null
++     */
++    @Nullable Entity getTriggerEntity();
++
++    /**
++     * Get the block data change which triggered this event, if present.
++     *
++     * @return triggering block data or null
++     */
++    @Nullable BlockData getTriggerBlockData();
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * Cancels any action the receiver might take because of this game event
++     */
++    @Override
++    void setCancelled(boolean cancel);
++
++    @ApiStatus.Internal
++    boolean callEvent();
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/EntityReceiveGameEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityReceiveGameEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..54e18eae0c6d083e5196b706175cdd2d19f000a2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/EntityReceiveGameEvent.java
+@@ -0,0 +1,81 @@
++package io.papermc.paper.event.entity;
++
++import io.papermc.paper.event.ReceiveGameEvent;
++import org.bukkit.GameEvent;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.entity.Entity;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when an entity receives a game event and hence might take some action.
++ * <p>
++ * Will be called cancelled if the entity's default behavior is to ignore the
++ * event.
++ */
++public class EntityReceiveGameEvent extends EntityEvent implements ReceiveGameEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++    private final GameEvent event;
++    private final Entity triggerEntity;
++    private final BlockData triggerBlockData;
++
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public EntityReceiveGameEvent(final @NotNull Entity target, final @NotNull GameEvent event, final @Nullable Entity triggerEntity, final @Nullable BlockData triggerBlockData) {
++        super(target);
++        this.event = event;
++        this.triggerEntity = triggerEntity;
++        this.triggerBlockData = triggerBlockData;
++    }
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * Gets the entity which received the game event, not to be
++     * confused with the entity which may have caused the game event.
++     * @see #getTriggerEntity()
++     */
++    @Override
++    public @NotNull Entity getEntity() {
++        return super.getEntity();
++    }
++
++    @Override
++    public @NotNull GameEvent getEvent() {
++        return this.event;
++    }
++
++    @Override
++    public @Nullable Entity getTriggerEntity() {
++        return this.triggerEntity;
++    }
++
++    @Override
++    public @Nullable BlockData getTriggerBlockData() {
++        return this.triggerBlockData;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/block/BlockReceiveGameEvent.java b/src/main/java/org/bukkit/event/block/BlockReceiveGameEvent.java
+index e226d1306402324c2684946faa547cccb77fd138..1f5958f0c0b481def6cd67ab4d0f3e96857f4aba 100644
+--- a/src/main/java/org/bukkit/event/block/BlockReceiveGameEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockReceiveGameEvent.java
+@@ -9,29 +9,32 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+ /**
+- * Called when a Sculk sensor receives a game event and hence might activate.
+- *
++ * Called when a block receives a game event and hence might take some action.
++ * <p>
+  * Will be called cancelled if the block's default behavior is to ignore the
+  * event.
+  */
+-public class BlockReceiveGameEvent extends BlockEvent implements Cancellable {
++public class BlockReceiveGameEvent extends BlockEvent implements io.papermc.paper.event.ReceiveGameEvent { // Paper
+ 
+     private static final HandlerList handlers = new HandlerList();
+     private final GameEvent event;
+     private final Entity entity;
++    // Paper start
++    private final org.bukkit.block.data.BlockData blockData;
++    // Paper end
+     private boolean cancelled;
+ 
+-    public BlockReceiveGameEvent(@NotNull GameEvent event, @NotNull Block block, @Nullable Entity entity) {
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public BlockReceiveGameEvent(@NotNull GameEvent event, @NotNull Block block, @Nullable Entity entity, final @Nullable org.bukkit.block.data.BlockData blockData) { // Paper
+         super(block);
+         this.event = event;
+         this.entity = entity;
++        // Paper start
++        this.blockData = blockData;
++        // Paper end
+     }
+ 
+-    /**
+-     * Get the underlying event.
+-     *
+-     * @return the event
+-     */
++    @Override // Paper - move to interface
+     @NotNull
+     public GameEvent getEvent() {
+         return event;
+@@ -41,11 +44,24 @@ public class BlockReceiveGameEvent extends BlockEvent implements Cancellable {
+      * Get the entity which triggered this event, if present.
+      *
+      * @return triggering entity or null
++     * @deprecated use {@link #getTriggerEntity()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public Entity getEntity() {
+         return entity;
+     }
++    // Paper start
++    @Override
++    public @Nullable Entity getTriggerEntity() {
++        return this.entity;
++    }
++
++    @Override
++    public @Nullable org.bukkit.block.data.BlockData getTriggerBlockData() {
++        return this.blockData;
++    }
++    // Paper end
+ 
+     @Override
+     public void setCancelled(boolean cancel) {
