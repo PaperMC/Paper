@@ -1,29 +1,15 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 6 Jul 2020 20:46:50 -0700
-Subject: [PATCH] Improve inlinig for some hot IBlockData methods
+Subject: [PATCH] Improve inlinig for some hot BlockBehavior and FluidState 
+ methods
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 97b0e820d353e8ab4ca9d9e2efd0a8819119b2ab..bfcd61e09a307e99d6f2e7edae33a0a069abcb51 100644
+index 9ebc53d434737c8cd39073470b2b5fcbad167812..25ce337ed266be7bafeacd9eb6f53a9474775fc5 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -730,8 +730,14 @@ public abstract class BlockBehaviour {
-             return this.conditionallyFullOpaque;
-         }
-         // Paper end - starlight
-+        // Paper start
-+        protected boolean isTicking;
-+        protected FluidState fluid;
-+        // Paper end
- 
-         public void initCache() {
-+            this.fluid = this.getBlock().getFluidState(this.asState()); // Paper - moved from getFluid()
-+            this.isTicking = this.getBlock().isRandomlyTicking(this.asState()); // Paper - moved from isTicking()
-             if (!this.getBlock().hasDynamicShape()) {
-                 this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
-             }
-@@ -782,15 +788,15 @@ public abstract class BlockBehaviour {
+@@ -851,15 +851,15 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.shapeExceedsCube; // Paper - moved into shape cache init
          }
  
@@ -42,7 +28,7 @@ index 97b0e820d353e8ab4ca9d9e2efd0a8819119b2ab..bfcd61e09a307e99d6f2e7edae33a0a0
              return this.isAir;
          }
  
-@@ -864,7 +870,7 @@ public abstract class BlockBehaviour {
+@@ -933,7 +933,7 @@ public abstract class BlockBehaviour implements FeatureElement {
              }
          }
  
@@ -51,25 +37,22 @@ index 97b0e820d353e8ab4ca9d9e2efd0a8819119b2ab..bfcd61e09a307e99d6f2e7edae33a0a0
              return this.canOcclude;
          }
  
-@@ -1062,12 +1068,12 @@ public abstract class BlockBehaviour {
+@@ -1135,11 +1135,11 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.getBlock() == block;
          }
  
 -        public FluidState getFluidState() {
--            return this.getBlock().getFluidState(this.asState());
 +        public final FluidState getFluidState() { // Paper
-+            return this.fluid; // Paper - moved into init
+             return this.fluidState;
          }
  
 -        public boolean isRandomlyTicking() {
--            return this.getBlock().isRandomlyTicking(this.asState());
 +        public final boolean isRandomlyTicking() { // Paper
-+            return this.isTicking; // Paper - moved into init
+             return this.isRandomlyTicking;
          }
  
-         public long getSeed(BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/material/FluidState.java b/src/main/java/net/minecraft/world/level/material/FluidState.java
-index d035eaccc09dfeaedf25579b850ccdaecba3f974..66f712657ae0c4166ecd198f41081d96843296c4 100644
+index ea2a04e5298832177fac93568656ac45784d5eb6..27f136815afc360387704fa1f2773e3816cccff6 100644
 --- a/src/main/java/net/minecraft/world/level/material/FluidState.java
 +++ b/src/main/java/net/minecraft/world/level/material/FluidState.java
 @@ -26,8 +26,12 @@ public final class FluidState extends StateHolder<Fluid, FluidState> {
