@@ -2,7 +2,9 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.level.MobSpawnerData;
 import net.minecraft.world.level.block.entity.TileEntityMobSpawner;
 import org.bukkit.World;
 import org.bukkit.block.CreatureSpawner;
@@ -16,7 +18,12 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
 
     @Override
     public EntityType getSpawnedType() {
-        Optional<EntityTypes<?>> type = EntityTypes.by(this.getSnapshot().getSpawner().nextSpawnData.getEntityToSpawn());
+        MobSpawnerData spawnData = this.getSnapshot().getSpawner().nextSpawnData;
+        if (spawnData == null) {
+            return EntityType.PIG; // TODO: Change API contract to nullable?
+        }
+
+        Optional<EntityTypes<?>> type = EntityTypes.by(spawnData.getEntityToSpawn());
         return (type.isEmpty()) ? EntityType.PIG : EntityType.fromName(EntityTypes.getKey(type.get()).getPath());
     }
 
@@ -26,12 +33,18 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
             throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
 
-        this.getSnapshot().setEntityId(EntityTypes.byString(entityType.getName()).get(), this.getWorldHandle().getRandom());
+        RandomSource rand = (this.isPlaced()) ? this.getWorldHandle().getRandom() : RandomSource.create();
+        this.getSnapshot().setEntityId(EntityTypes.byString(entityType.getName()).get(), rand);
     }
 
     @Override
     public String getCreatureTypeName() {
-        Optional<EntityTypes<?>> type = EntityTypes.by(this.getSnapshot().getSpawner().nextSpawnData.getEntityToSpawn());
+        MobSpawnerData spawnData = this.getSnapshot().getSpawner().nextSpawnData;
+        if (spawnData == null) {
+            return ""; // TODO: Change API contract to nullable?
+        }
+
+        Optional<EntityTypes<?>> type = EntityTypes.by(spawnData.getEntityToSpawn());
         return (type.isEmpty()) ? "" : EntityTypes.getKey(type.get()).getPath();
     }
 
