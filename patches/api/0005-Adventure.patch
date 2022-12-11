@@ -316,10 +316,10 @@ index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bd216f7333795fc6bc5bec593f9cc0e3c2c1a27e
+index 0000000000000000000000000000000000000000..feece00981ebf932e64760e7a10a04ad080d0228
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.event.player;
 +
 +import net.kyori.adventure.text.Component;
@@ -334,8 +334,9 @@ index 0000000000000000000000000000000000000000..bd216f7333795fc6bc5bec593f9cc0e3
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    public AsyncChatCommandDecorateEvent(boolean async, @Nullable Player player, @NotNull Component originalMessage, boolean isPreview, @NotNull Component result) {
-+        super(async, player, originalMessage, isPreview, result);
++    @ApiStatus.Internal
++    public AsyncChatCommandDecorateEvent(boolean async, @Nullable Player player, @NotNull Component originalMessage, @NotNull Component result) {
++        super(async, player, originalMessage, result);
 +    }
 +
 +    @Override
@@ -349,10 +350,10 @@ index 0000000000000000000000000000000000000000..bd216f7333795fc6bc5bec593f9cc0e3
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..347122b12ad98115133ef98db69b271ee0cec194
+index 0000000000000000000000000000000000000000..092b5b12053315d355607ccf72e2d6b9e6befcf8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,116 @@
 +package io.papermc.paper.event.player;
 +
 +import net.kyori.adventure.text.Component;
@@ -361,20 +362,16 @@ index 0000000000000000000000000000000000000000..347122b12ad98115133ef98db69b271e
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.server.ServerEvent;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
-+ * This event is fired when the server decorates a component for chat purposes. It can be called
-+ * under the following circumstances:
-+ * <ul>
-+ *     <li><b>Previewing:</b> If the client requests a preview response, this event is fired to decorate the component
-+ *     before it is sent back to the client for signing.</li>
-+ *     <li><b>Chat:</b> If the client sends a chat packet without having signed a preview (the client could have previews
-+ *     disabled or they sent the message too quickly) this event is fired to generated the decorated component. Note
-+ *     that when this is the case, the message will show up as modified as the decorated component wasn't signed
-+ *     by the client.</li>
-+ * </ul>
++ * This event is fired when the server decorates a component for chat purposes. This is called
++ * before {@link AsyncChatEvent} and the other chat events. It is recommended that you modify the
++ * message here, and use the chat events for modifying receivers and later the chat type. If you
++ * want to keep the message as "signed" for the clients who get it, be sure to include the entire
++ * original message somewhere in the final message.
 + * @see AsyncChatCommandDecorateEvent for the decoration of messages sent via commands
 + */
 +@ApiStatus.Experimental
@@ -384,16 +381,14 @@ index 0000000000000000000000000000000000000000..347122b12ad98115133ef98db69b271e
 +
 +    private final Player player;
 +    private final Component originalMessage;
-+    private final boolean isPreview;
 +    private Component result;
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public AsyncChatDecorateEvent(final boolean async, final @Nullable Player player, final @NotNull Component originalMessage, final boolean isPreview, final @NotNull Component result) {
++    public AsyncChatDecorateEvent(final boolean async, final @Nullable Player player, final @NotNull Component originalMessage, final @NotNull Component result) {
 +        super(async);
 +        this.player = player;
 +        this.originalMessage = originalMessage;
-+        this.isPreview = isPreview;
 +        this.result = result;
 +    }
 +
@@ -443,9 +438,12 @@ index 0000000000000000000000000000000000000000..347122b12ad98115133ef98db69b271e
 +     * If this decorating is part of a preview request/response.
 +     *
 +     * @return true if part of previewing
++     * @deprecated chat preview was removed in 1.19.2
 +     */
++    @Deprecated(forRemoval = true)
++    @Contract(value = "-> false", pure = true)
 +    public boolean isPreview() {
-+        return this.isPreview;
++        return false;
 +    }
 +
 +    @Override
