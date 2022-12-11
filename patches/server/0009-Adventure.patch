@@ -100,10 +100,10 @@ index 0000000000000000000000000000000000000000..07cd02c6f9df00844b808218be2afd79
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a9c2b67cab07b3a4e996159176919c7695f62951
+index 0000000000000000000000000000000000000000..e7671b9e2fc5ed01461e4ae1557dfc14075e61bd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,145 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.event.player.AsyncChatCommandDecorateEvent;
@@ -157,13 +157,19 @@ index 0000000000000000000000000000000000000000..a9c2b67cab07b3a4e996159176919c76
 +    public CompletableFuture<ChatDecorator.Result> process() {
 +        return CompletableFuture.supplyAsync(() -> {
 +            ChatDecorator.Result result = new ChatDecorator.ModernResult(this.originalMessage, true, false);
-+            if (canYouHearMe(AsyncPlayerChatPreviewEvent.getHandlerList())) {
++            if (listenToLegacy()) {
 +                result = this.processLegacy(result);
 +            }
 +            return this.processModern(result);
 +        }, this.server.chatExecutor);
 +    }
 +
++    @SuppressWarnings("deprecation")
++    private static boolean listenToLegacy() {
++        return canYouHearMe(AsyncPlayerChatPreviewEvent.getHandlerList());
++    }
++
++    @SuppressWarnings("deprecation")
 +    private ChatDecorator.Result processLegacy(final ChatDecorator.Result input) {
 +        if (this.player != null) {
 +            final CraftPlayer player = this.player.getBukkitEntity();
@@ -188,12 +194,11 @@ index 0000000000000000000000000000000000000000..a9c2b67cab07b3a4e996159176919c76
 +
 +        final Component initialResult = input.message().component();
 +        final AsyncChatDecorateEvent event;
-+        //TODO
 +        if (this.commandSourceStack != null) {
 +            // TODO more command decorate context
-+            event = new AsyncChatCommandDecorateEvent(true, player, this.originalMessage, false, initialResult);
++            event = new AsyncChatCommandDecorateEvent(true, player, this.originalMessage, initialResult);
 +        } else {
-+            event = new AsyncChatDecorateEvent(true, player, this.originalMessage, false, initialResult);
++            event = new AsyncChatDecorateEvent(true, player, this.originalMessage, initialResult);
 +        }
 +        this.post(event);
 +        if (!event.isCancelled() && !event.result().equals(initialResult)) {
