@@ -334,8 +334,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    public AsyncChatCommandDecorateEvent(boolean async, @Nullable Player player, @NotNull Component originalMessage, boolean isPreview, @NotNull Component result) {
-+        super(async, player, originalMessage, isPreview, result);
++    @ApiStatus.Internal
++    public AsyncChatCommandDecorateEvent(boolean async, @Nullable Player player, @NotNull Component originalMessage, @NotNull Component result) {
++        super(async, player, originalMessage, result);
 +    }
 +
 +    @Override
@@ -361,20 +362,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.server.ServerEvent;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
-+ * This event is fired when the server decorates a component for chat purposes. It can be called
-+ * under the following circumstances:
-+ * <ul>
-+ *     <li><b>Previewing:</b> If the client requests a preview response, this event is fired to decorate the component
-+ *     before it is sent back to the client for signing.</li>
-+ *     <li><b>Chat:</b> If the client sends a chat packet without having signed a preview (the client could have previews
-+ *     disabled or they sent the message too quickly) this event is fired to generated the decorated component. Note
-+ *     that when this is the case, the message will show up as modified as the decorated component wasn't signed
-+ *     by the client.</li>
-+ * </ul>
++ * This event is fired when the server decorates a component for chat purposes. This is called
++ * before {@link AsyncChatEvent} and the other chat events. It is recommended that you modify the
++ * message here, and use the chat events for modifying receivers and later the chat type. If you
++ * want to keep the message as "signed" for the clients who get it, be sure to include the entire
++ * original message somewhere in the final message.
 + * @see AsyncChatCommandDecorateEvent for the decoration of messages sent via commands
 + */
 +@ApiStatus.Experimental
@@ -384,16 +381,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private final Player player;
 +    private final Component originalMessage;
-+    private final boolean isPreview;
 +    private Component result;
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public AsyncChatDecorateEvent(final boolean async, final @Nullable Player player, final @NotNull Component originalMessage, final boolean isPreview, final @NotNull Component result) {
++    public AsyncChatDecorateEvent(final boolean async, final @Nullable Player player, final @NotNull Component originalMessage, final @NotNull Component result) {
 +        super(async);
 +        this.player = player;
 +        this.originalMessage = originalMessage;
-+        this.isPreview = isPreview;
 +        this.result = result;
 +    }
 +
@@ -443,9 +438,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * If this decorating is part of a preview request/response.
 +     *
 +     * @return true if part of previewing
++     * @deprecated chat preview was removed in 1.19.2
 +     */
++    @Deprecated(forRemoval = true)
++    @Contract(value = "-> false", pure = true)
 +    public boolean isPreview() {
-+        return this.isPreview;
++        return false;
 +    }
 +
 +    @Override

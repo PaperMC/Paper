@@ -157,13 +157,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public CompletableFuture<ChatDecorator.Result> process() {
 +        return CompletableFuture.supplyAsync(() -> {
 +            ChatDecorator.Result result = new ChatDecorator.ModernResult(this.originalMessage, true, false);
-+            if (canYouHearMe(AsyncPlayerChatPreviewEvent.getHandlerList())) {
++            if (listenToLegacy()) {
 +                result = this.processLegacy(result);
 +            }
 +            return this.processModern(result);
 +        }, this.server.chatExecutor);
 +    }
 +
++    @SuppressWarnings("deprecation")
++    private static boolean listenToLegacy() {
++        return canYouHearMe(AsyncPlayerChatPreviewEvent.getHandlerList());
++    }
++
++    @SuppressWarnings("deprecation")
 +    private ChatDecorator.Result processLegacy(final ChatDecorator.Result input) {
 +        if (this.player != null) {
 +            final CraftPlayer player = this.player.getBukkitEntity();
@@ -188,12 +194,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        final Component initialResult = input.message().component();
 +        final AsyncChatDecorateEvent event;
-+        //TODO
 +        if (this.commandSourceStack != null) {
 +            // TODO more command decorate context
-+            event = new AsyncChatCommandDecorateEvent(true, player, this.originalMessage, false, initialResult);
++            event = new AsyncChatCommandDecorateEvent(true, player, this.originalMessage, initialResult);
 +        } else {
-+            event = new AsyncChatDecorateEvent(true, player, this.originalMessage, false, initialResult);
++            event = new AsyncChatDecorateEvent(true, player, this.originalMessage, initialResult);
 +        }
 +        this.post(event);
 +        if (!event.isCancelled() && !event.result().equals(initialResult)) {
