@@ -25,8 +25,25 @@ https://bugs.mojang.com/browse/MC-147659
 https://bugs.mojang.com/browse/MC-179072
   Creepers do not defuse when switching from Survival to Creative/Spectator
 
+https://bugs.mojang.com/browse/MC-191591
+https://bugs.mojang.com/browse/MC-258360
+  Fix items equipped on AbstractHorse losing NBT
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index c0c31a5d356d0754b478d84f0cef87fc84c4fea1..3c2ed8e7cf54ab5e32df713010b948d568aab9b0 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -347,7 +347,7 @@ public interface DispenseItemBehavior {
+                         }
+                     }
+                     // CraftBukkit end
+-                    ((Saddleable) list.get(0)).equipSaddle(SoundSource.BLOCKS);
++                    ((Saddleable) list.get(0)).equipSaddle(SoundSource.BLOCKS, CraftItemStack.asNMSCopy(event.getItem())); // Paper - Fix saddles losing nbt data - MC-191591
+                     // itemstack.shrink(1); // CraftBukkit - handled above
+                     this.setSuccess(true);
+                     return stack;
 diff --git a/src/main/java/net/minecraft/server/commands/DeOpCommands.java b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
 index cca2618d90306eed9894c5fa7b6ed96b68210688..10769c60bd53438d44fbc6192667acdf4cc95594 100644
 --- a/src/main/java/net/minecraft/server/commands/DeOpCommands.java
@@ -53,6 +70,22 @@ index 43e77cef0fce75f59aeb05e161668bebb8fca229..ef50fbf8cb3f008827850b5ed3342200
              }
          }
  
+diff --git a/src/main/java/net/minecraft/world/entity/Saddleable.java b/src/main/java/net/minecraft/world/entity/Saddleable.java
+index effe4c4fb37fe13aece70cdef4966047d4719af9..7152674d3f3fb98198585cb5ece2bb88877345f9 100644
+--- a/src/main/java/net/minecraft/world/entity/Saddleable.java
++++ b/src/main/java/net/minecraft/world/entity/Saddleable.java
+@@ -9,6 +9,11 @@ public interface Saddleable {
+     boolean isSaddleable();
+ 
+     void equipSaddle(@Nullable SoundSource sound);
++    // Paper start - Fix saddles losing nbt data - MC-191591
++    default void equipSaddle(final @Nullable SoundSource sound, final @Nullable net.minecraft.world.item.ItemStack stack) {
++        this.equipSaddle(sound);
++    }
++    // Paper end
+ 
+     default SoundEvent getSaddleSoundEvent() {
+         return SoundEvents.HORSE_SADDLE;
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
 index 19540fd4a7f992888fadb6501d0c8a5a7e71fcf6..e241ae250f4f04a17ef2c583d00b065a4ca56a4c 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
@@ -87,6 +120,34 @@ index 0b0377fa1483e4fcb31456af6c7e1749bd8af484..e9f7c08ae3ea9c578971b1ede8878857
                  this.level.playSound((Player) null, (Entity) this, this.getEatingSound(itemstack), SoundSource.NEUTRAL, 1.0F, Mth.randomBetween(this.level.random, 0.8F, 1.2F));
              }
  
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index 821b88d0c32f946af9af1c2e211b38446fab4ecb..72d660cd2ade39335024897cffb8b8a151a7cb71 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -221,7 +221,13 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+ 
+     @Override
+     public void equipSaddle(@Nullable SoundSource sound) {
+-        this.inventory.setItem(0, new ItemStack(Items.SADDLE));
++        // Paper start - Fix saddles losing nbt data - MC-191591
++        this.equipSaddle(sound, null);
++    }
++    @Override
++    public void equipSaddle(@Nullable SoundSource sound, @Nullable ItemStack stack) {
++        this.inventory.setItem(0, stack != null ? stack : new ItemStack(Items.SADDLE));
++        // Paper end
+         if (sound != null) {
+             this.level.playSound((Player) null, (Entity) this, this.getSaddleSoundEvent(), sound, 0.5F, 1.0F);
+         }
+@@ -230,7 +236,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+ 
+     public void equipArmor(Player player, ItemStack stack) {
+         if (this.isArmor(stack)) {
+-            this.inventory.setItem(1, new ItemStack(stack.getItem()));
++            this.inventory.setItem(1, stack.copyWithCount(1)); // Paper - fix equipping items with nbt - MC-258360, MC-191591
+             if (!player.getAbilities().instabuild) {
+                 stack.shrink(1);
+             }
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index f174094febfdfdc309f1b50877be60bae8a98156..5f407535298a31a34cfe114dd863fd6a9b977707 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
@@ -123,6 +184,19 @@ index fa8fcdfea51a35e4a482d3d7b18159099da62706..feb89eb69994bdd1d2f95d2b9992e692
                      if (!raid.hasFirstWaveSpawned()) {
                          player.awardStat(Stats.RAID_TRIGGER);
                          CriteriaTriggers.BAD_OMEN.trigger(player);
+diff --git a/src/main/java/net/minecraft/world/item/SaddleItem.java b/src/main/java/net/minecraft/world/item/SaddleItem.java
+index c35375e15c0368fec12d37a4b82668b51d9fe9ff..0c975875f1f2d0236d42a291486a7e78e1702802 100644
+--- a/src/main/java/net/minecraft/world/item/SaddleItem.java
++++ b/src/main/java/net/minecraft/world/item/SaddleItem.java
+@@ -18,7 +18,7 @@ public class SaddleItem extends Item {
+         if (entity instanceof Saddleable saddleable && entity.isAlive()) {
+             if (!saddleable.isSaddled() && saddleable.isSaddleable()) {
+                 if (!user.level.isClientSide) {
+-                    saddleable.equipSaddle(SoundSource.NEUTRAL);
++                    saddleable.equipSaddle(SoundSource.NEUTRAL, stack.copyWithCount(1)); // Paper - Fix saddles losing nbt data - MC-191591
+                     entity.level.gameEvent(entity, GameEvent.EQUIP, entity.position());
+                     stack.shrink(1);
+                 }
 diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
 index a223959f766ac41aff7aeff80606f5e7c37ebf49..1a90860bc39afb8bade96a5c6c40861dbb68c21e 100644
 --- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
