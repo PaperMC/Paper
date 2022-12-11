@@ -12,25 +12,30 @@ public net.minecraft.world.level.pathfinder.Path nodes
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d799fec40afe7dade649a294761d272c83157f0
+index 0000000000000000000000000000000000000000..c0c59c534ddcf5d16d5a55a05956130b525c235b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,168 @@
 +package com.destroystokyo.paper.entity;
 +
++import io.papermc.paper.math.Position;
++import java.lang.ref.WeakReference;
 +import org.apache.commons.lang.Validate;
 +import org.bukkit.Location;
++import org.bukkit.World;
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.entity.Mob;
-+import javax.annotation.Nonnull;
-+import javax.annotation.Nullable;
 +import net.minecraft.world.level.pathfinder.Node;
 +import net.minecraft.world.level.pathfinder.Path;
 +import java.util.ArrayList;
 +import java.util.List;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinder {
++@DefaultQualifier(NonNull.class)
++public class PaperPathfinder implements Pathfinder {
 +
 +    private net.minecraft.world.entity.Mob entity;
 +
@@ -57,31 +62,28 @@ index 0000000000000000000000000000000000000000..2d799fec40afe7dade649a294761d272
 +        return entity.getNavigation().getPath() != null;
 +    }
 +
-+    @Nullable
 +    @Override
 +    public PathResult getCurrentPath() {
-+        Path path = entity.getNavigation().getPath();
-+        return path != null ? new PaperPathResult(path) : null;
++        final @Nullable Path path = entity.getNavigation().getPath();
++        return path != null ? new PaperPathResult(path, this.entity.level.getWorld()) : null;
 +    }
 +
-+    @Nullable
 +    @Override
-+    public PathResult findPath(Location loc) {
-+        Validate.notNull(loc, "Location can not be null");
-+        Path path = entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
-+        return path != null ? new PaperPathResult(path) : null;
++    public PathResult findPath(final Position position) {
++        Validate.notNull(position, "Position cannot be null");
++        final @Nullable Path path = entity.getNavigation().createPath(position.x(), position.y(), position.z(), 0);
++        return path != null ? new PaperPathResult(path, this.entity.level.getWorld()) : null;
 +    }
 +
-+    @Nullable
 +    @Override
 +    public PathResult findPath(LivingEntity target) {
 +        Validate.notNull(target, "Target can not be null");
-+        Path path = entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
-+        return path != null ? new PaperPathResult(path) : null;
++        final @Nullable Path path = entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
++        return path != null ? new PaperPathResult(path, this.entity.level.getWorld()) : null;
 +    }
 +
 +    @Override
-+    public boolean moveTo(@Nonnull PathResult path, double speed) {
++    public boolean moveTo(PathResult path, double speed) {
 +        Validate.notNull(path, "PathResult can not be null");
 +        Path pathEntity = ((PaperPathResult) path).path;
 +        return entity.getNavigation().moveTo(pathEntity, speed);
@@ -117,18 +119,26 @@ index 0000000000000000000000000000000000000000..2d799fec40afe7dade649a294761d272
 +        entity.getNavigation().pathFinder.nodeEvaluator.setCanFloat(canFloat);
 +    }
 +
-+    public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
++    public static class PaperPathResult implements PaperPathfinder.PathResult {
 +
 +        private final Path path;
-+        PaperPathResult(Path path) {
++        private final WeakReference<World> world;
++        PaperPathResult(Path path, World world) {
 +            this.path = path;
++            this.world = new WeakReference<>(world);
 +        }
 +
 +        @Nullable
 +        @Override
 +        public Location getFinalPoint() {
-+            Node point = path.getEndNode();
++            final @Nullable Node point = path.getEndNode();
 +            return point != null ? toLoc(point) : null;
++        }
++
++        @Override
++        public Position getFinalPathPoint() {
++            final @Nullable Node point = this.path.getEndNode();
++            return point != null ? this.toPos(point) : null;
 +        }
 +
 +        @Override
@@ -138,6 +148,11 @@ index 0000000000000000000000000000000000000000..2d799fec40afe7dade649a294761d272
 +                points.add(toLoc(point));
 +            }
 +            return points;
++        }
++
++        @Override
++        public List<Position> getPathPoints() {
++            return this.path.nodes.stream().map(this::toPos).toList();
 +        }
 +
 +        @Override
@@ -153,10 +168,20 @@ index 0000000000000000000000000000000000000000..2d799fec40afe7dade649a294761d272
 +            }
 +            return toLoc(path.nodes.get(path.getNextNodeIndex()));
 +        }
-+    }
 +
-+    private Location toLoc(Node point) {
-+        return new Location(entity.level.getWorld(), point.x, point.y, point.z);
++        @Override
++        public Position getNextPathPoint() {
++            return this.path.hasNext() ? this.toPos(this.path.getNextNode()) : null;
++        }
++
++        @Deprecated
++        private Location toLoc(Node point) {
++            return new Location(this.world.get(), point.x, point.y, point.z);
++        }
++        
++        private Position toPos(final Node point) {
++            return Position.block(point.x, point.y, point.z);
++        }
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Path.java b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
