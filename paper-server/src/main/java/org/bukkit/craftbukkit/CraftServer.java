@@ -2019,6 +2019,11 @@ public final class CraftServer implements Server {
 
         ServerLevel worldServer = ((CraftWorld) world).getHandle();
         Location structureLocation = world.locateNearestStructure(location, structureType, radius, findUnexplored);
+        // Paper start - don't throw NPE
+        if (structureLocation == null) {
+            throw new IllegalStateException("Could not find a structure for " + structureType);
+        }
+        // Paper end
         BlockPos structurePosition = CraftLocation.toBlockPosition(structureLocation);
 
         // Create map with trackPlayer = true, unlimitedTracking = true
@@ -2029,6 +2034,31 @@ public final class CraftServer implements Server {
 
         return CraftItemStack.asBukkitCopy(stack);
     }
+    // Paper start - copied from above (uses un-deprecated StructureType type)
+    @Override
+    public ItemStack createExplorerMap(World world, Location location, org.bukkit.generator.structure.StructureType structureType, org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored) {
+        Preconditions.checkArgument(world != null, "World cannot be null");
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(structureType != null, "StructureType cannot be null");
+        Preconditions.checkArgument(mapIcon != null, "mapIcon cannot be null");
+
+        ServerLevel worldServer = ((CraftWorld) world).getHandle();
+        final org.bukkit.util.StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structureType, radius, findUnexplored);
+        if (structureSearchResult == null) {
+            return null;
+        }
+        Location structureLocation = structureSearchResult.getLocation();
+        BlockPos structurePosition = new BlockPos(structureLocation.getBlockX(), structureLocation.getBlockY(), structureLocation.getBlockZ());
+
+        // Create map with showIcons = true, unlimitedTracking = true
+        net.minecraft.world.item.ItemStack stack = MapItem.create(worldServer, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
+        MapItem.renderBiomePreviewMap(worldServer, stack);
+        // "+" map ID taken from VillagerTrades$TreasureMapForEmeralds
+        MapItem.getSavedData(stack, worldServer).addTargetDecoration(stack, structurePosition, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(mapIcon));
+
+        return CraftItemStack.asBukkitCopy(stack);
+    }
+    // Paper end
 
     @Override
     public void shutdown() {
