@@ -13,7 +13,7 @@
  public class ShulkerBoxDispenseBehavior extends OptionalDispenseItemBehavior {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -26,6 +32,30 @@
+@@ -26,8 +32,37 @@
              BlockPos blockposition = pointer.pos().relative(enumdirection);
              Direction enumdirection1 = pointer.level().isEmptyBlock(blockposition.below()) ? enumdirection : Direction.UP;
  
@@ -42,5 +42,13 @@
 +            // CraftBukkit end
 +
              try {
-                 this.setSuccess(((BlockItem) item).place(new DirectionalPlaceContext(pointer.level(), blockposition, enumdirection, stack, enumdirection1)).consumesAction());
+-                this.setSuccess(((BlockItem) item).place(new DirectionalPlaceContext(pointer.level(), blockposition, enumdirection, stack, enumdirection1)).consumesAction());
++                // Paper start - track changed items in the dispense event
++                this.setSuccess(((BlockItem) item).place(new DirectionalPlaceContext(pointer.level(), blockposition, enumdirection, CraftItemStack.asNMSCopy(event.getItem()), enumdirection1)).consumesAction());
++                if (this.isSuccess()) {
++                    stack.shrink(1); // vanilla shrink is in the place function above, manually handle it here
++                }
++                // Paper end - track changed items in the dispense event
              } catch (Exception exception) {
+                 ShulkerBoxDispenseBehavior.LOGGER.error("Error trying to place shulker box at {}", blockposition, exception);
+             }
