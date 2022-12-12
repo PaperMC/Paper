@@ -1,0 +1,156 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 12 Dec 2022 10:02:26 -0800
+Subject: [PATCH] Fix BlockDispenseEvent being called when nothing actually
+ happens
+
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 1fdac66011e6d4d1e1213997bdbd72887dae8e6b..596c8607bec897106ca69848bf5801e7f015e629 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -749,29 +749,7 @@ public interface DispenseItemBehavior {
+             protected ItemStack execute(BlockSource pointer, ItemStack stack) {
+                 ServerLevel worldserver = pointer.level();
+ 
+-                // CraftBukkit start
+-                org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+-                CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack); // Paper - ignore stack size on damageable items
+-
+-                BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
+-                if (!DispenserBlock.eventFired) {
+-                    worldserver.getCraftServer().getPluginManager().callEvent(event);
+-                }
+-
+-                if (event.isCancelled()) {
+-                    return stack;
+-                }
+-
+-                if (!event.getItem().equals(craftItem)) {
+-                    // Chain to handler for new item
+-                    ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+-                    DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+-                    if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) {
+-                        idispensebehavior.dispense(pointer, eventStack);
+-                        return stack;
+-                    }
+-                }
+-                // CraftBukkit end
++                // Paper - move into specific cases
+ 
+                 this.setSuccess(true);
+                 Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
+@@ -779,6 +757,10 @@ public interface DispenseItemBehavior {
+                 BlockState iblockdata = worldserver.getBlockState(blockposition);
+ 
+                 if (BaseFireBlock.canBePlacedAt(worldserver, blockposition, enumdirection)) {
++                    // Paper start - call dispense event
++                    final net.minecraft.world.item.ItemStack result = this.handleFlintAndSteelEvent(pointer, stack, blockposition);
++                    if (result != null) return result;
++                    // Paper end - call dispense event
+                     // CraftBukkit start - Ignition by dispensing flint and steel
+                     if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(worldserver, blockposition, pointer.pos()).isCancelled()) {
+                         worldserver.setBlockAndUpdate(blockposition, BaseFireBlock.getState(worldserver, blockposition));
+@@ -786,6 +768,12 @@ public interface DispenseItemBehavior {
+                     }
+                     // CraftBukkit end
+                 } else if (!CampfireBlock.canLight(iblockdata) && !CandleBlock.canLight(iblockdata) && !CandleCakeBlock.canLight(iblockdata)) {
++                    // Paper start - call dispense event
++                    if (iblockdata.getBlock() instanceof TntBlock) {
++                        final net.minecraft.world.item.ItemStack result = this.handleFlintAndSteelEvent(pointer, stack, blockposition);
++                        if (result != null) return result;
++                    }
++                    // Paper end - call dispense event
+                     if (iblockdata.getBlock() instanceof TntBlock && org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(worldserver, blockposition, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, pointer.pos())) { // CraftBukkit - TNTPrimeEvent
+                         TntBlock.explode(worldserver, blockposition);
+                         worldserver.removeBlock(blockposition, false);
+@@ -793,6 +781,10 @@ public interface DispenseItemBehavior {
+                         this.setSuccess(false);
+                     }
+                 } else {
++                    // Paper start - call dispense event
++                    final net.minecraft.world.item.ItemStack result = this.handleFlintAndSteelEvent(pointer, stack, blockposition);
++                    if (result != null) return result;
++                    // Paper end - call dispense event
+                     worldserver.setBlockAndUpdate(blockposition, (BlockState) iblockdata.setValue(BlockStateProperties.LIT, true));
+                     worldserver.gameEvent((Entity) null, GameEvent.BLOCK_CHANGE, blockposition);
+                 }
+@@ -803,6 +795,18 @@ public interface DispenseItemBehavior {
+ 
+                 return stack;
+             }
++
++            @javax.annotation.Nullable
++            private net.minecraft.world.item.ItemStack handleFlintAndSteelEvent(final BlockSource pointer, final ItemStack stack, final BlockPos blockposition) {
++                final org.bukkit.craftbukkit.event.CraftEventFactory.DispenseResult result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition, stack, new org.bukkit.util.Vector(0, 0, 0), this);
++                if (result.result() != null) {
++                    this.setSuccess(false);
++                }
++                if (result.cancelled()) {
++                    return java.util.Objects.requireNonNull(result.result(), "if cancelled, must have a result stack set");
++                }
++                return null;
++            }
+         });
+         DispenserBlock.registerBehavior(Items.BONE_MEAL, new OptionalDispenseItemBehavior() {
+             @Override
+@@ -810,6 +814,9 @@ public interface DispenseItemBehavior {
+                 this.setSuccess(true);
+                 ServerLevel worldserver = pointer.level();
+                 BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
++                // Paper start
++                final BlockState blockState = worldserver.getBlockState(blockposition);
++                if (BoneMealItem.canGrowCrop(worldserver, blockposition, blockState) || BoneMealItem.canGrowWaterPlant(worldserver, blockposition, blockState)) { // Paper - check if it will succeed first
+                 // CraftBukkit start
+                 org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+@@ -832,6 +839,7 @@ public interface DispenseItemBehavior {
+                         return stack;
+                     }
+                 }
++                } // Paper
+ 
+                 worldserver.captureTreeGeneration = true;
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/item/BoneMealItem.java b/src/main/java/net/minecraft/world/item/BoneMealItem.java
+index 4bc5c7a68f5d2122864d30eee97d2550a73398f9..b6ed42a487034132e474e2bfb1b0bd72b4231b85 100644
+--- a/src/main/java/net/minecraft/world/item/BoneMealItem.java
++++ b/src/main/java/net/minecraft/world/item/BoneMealItem.java
+@@ -67,15 +67,17 @@ public class BoneMealItem extends Item {
+             }
+         }
+     }
++    // Paper start - separate out canGrowCrop check
++    public static boolean canGrowCrop(Level world, BlockPos pos, BlockState state) {
++        return state.getBlock() instanceof BonemealableBlock bonemealableBlock && bonemealableBlock.isValidBonemealTarget(world, pos, state);
++    }
++    // Paper end
+ 
+     public static boolean growCrop(ItemStack stack, Level world, BlockPos pos) {
+         BlockState iblockdata = world.getBlockState(pos);
+         Block block = iblockdata.getBlock();
+ 
+-        if (block instanceof BonemealableBlock) {
+-            BonemealableBlock iblockfragileplantelement = (BonemealableBlock) block;
+-
+-            if (iblockfragileplantelement.isValidBonemealTarget(world, pos, iblockdata)) {
++        if (canGrowCrop(world, pos, iblockdata) && block instanceof final BonemealableBlock iblockfragileplantelement) {{ // Paper - separate out check into separate method above
+                 if (world instanceof ServerLevel) {
+                     if (iblockfragileplantelement.isBonemealSuccess(world, world.random, pos, iblockdata)) {
+                         iblockfragileplantelement.performBonemeal((ServerLevel) world, world.random, pos, iblockdata);
+@@ -91,8 +93,14 @@ public class BoneMealItem extends Item {
+         return false;
+     }
+ 
++    // Paper start - separate out canGrowWaterPlant check
++    public static boolean canGrowWaterPlant(Level world, BlockPos blockPos, BlockState blockState) {
++        return blockState.is(Blocks.WATER) && world.getFluidState(blockPos).getAmount() == 8;
++    }
++    // Paper end
++
+     public static boolean growWaterPlant(ItemStack stack, Level world, BlockPos blockPos, @Nullable Direction facing) {
+-        if (world.getBlockState(blockPos).is(Blocks.WATER) && world.getFluidState(blockPos).getAmount() == 8) {
++        if (canGrowWaterPlant(world, blockPos, world.getBlockState(blockPos))) { // Paper - separate out check into separate method above
+             if (!(world instanceof ServerLevel)) {
+                 return true;
+             } else {
