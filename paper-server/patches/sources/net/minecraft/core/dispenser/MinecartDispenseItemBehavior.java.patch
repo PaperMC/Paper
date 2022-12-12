@@ -19,7 +19,7 @@
 -        AbstractMinecart entityminecartabstract = AbstractMinecart.createMinecart(worldserver, vec3d1.x, vec3d1.y, vec3d1.z, this.entityType, EntitySpawnReason.DISPENSER, stack, (Player) null);
 +        // CraftBukkit start
 +        // EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, vec3d1.x, vec3d1.y, vec3d1.z, this.entityType, EntitySpawnReason.DISPENSER, itemstack, (EntityHuman) null);
-+        ItemStack itemstack1 = stack.split(1);
++        ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
 +        org.bukkit.block.Block block2 = CraftBlock.at(worldserver, pointer.pos());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
  
@@ -29,12 +29,13 @@
 +        }
 +
 +        if (event.isCancelled()) {
-+            stack.grow(1);
++            // stack.grow(1); // Paper - shrink below
 +            return stack;
 +        }
 +
++        boolean shrink = true; // Paper
 +        if (!event.getItem().equals(craftItem)) {
-+            stack.grow(1);
++            shrink = false; // Paper - shrink below
 +            // Chain to handler for new item
 +            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +            DispenseItemBehavior idispensebehavior = DispenserBlock.getDispenseBehavior(pointer, eventStack); // Paper - Fix NPE with equippable and items without behavior
@@ -50,8 +51,7 @@
          if (entityminecartabstract != null) {
 -            worldserver.addFreshEntity(entityminecartabstract);
 -            stack.shrink(1);
-+            if (!worldserver.addFreshEntity(entityminecartabstract)) stack.grow(1);
-+            // itemstack.shrink(1); // CraftBukkit - handled during event processing
++            if (worldserver.addFreshEntity(entityminecartabstract) && shrink) stack.shrink(1); // Paper - if entity add was successful and supposed to shrink
 +            // CraftBukkit end
          }
  

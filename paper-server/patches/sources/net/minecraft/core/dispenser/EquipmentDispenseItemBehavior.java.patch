@@ -32,9 +32,12 @@
          BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
          List<LivingEntity> list = pointer.level().getEntitiesOfClass(LivingEntity.class, new AABB(blockposition), (entityliving) -> {
              return entityliving.canEquipWithDispenser(stack);
-@@ -34,7 +44,34 @@
+@@ -32,9 +42,37 @@
+         } else {
+             LivingEntity entityliving = (LivingEntity) list.getFirst();
              EquipmentSlot enumitemslot = entityliving.getEquipmentSlotForItem(stack);
-             ItemStack itemstack1 = stack.split(1);
+-            ItemStack itemstack1 = stack.split(1);
++            ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
  
 -            entityliving.setItemSlot(enumitemslot, itemstack1);
 +            // CraftBukkit start
@@ -48,12 +51,13 @@
 +            }
 +
 +            if (event.isCancelled()) {
-+                stack.grow(1);
++                // stack.grow(1); // Paper - shrink below
 +                return false;
 +            }
 +
++            boolean shrink = true; // Paper
 +            if (!event.getItem().equals(craftItem)) {
-+                stack.grow(1);
++                shrink = false; // Paper - shrink below
 +                // Chain to handler for new item
 +                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +                DispenseItemBehavior idispensebehavior = DispenserBlock.getDispenseBehavior(pointer, eventStack); // Paper - Fix NPE with equippable and items without behavior
@@ -68,3 +72,11 @@
              if (entityliving instanceof Mob) {
                  Mob entityinsentient = (Mob) entityliving;
  
+@@ -42,6 +80,7 @@
+                 entityinsentient.setPersistenceRequired();
+             }
+ 
++            if (shrink) stack.shrink(1); // Paper - shrink here
+             return true;
+         }
+     }

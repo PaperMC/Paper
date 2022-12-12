@@ -12,7 +12,7 @@
  
  public class ProjectileDispenseBehavior extends DefaultDispenseItemBehavior {
  
-@@ -31,8 +36,40 @@
+@@ -31,8 +36,41 @@
          Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
          Position iposition = this.dispenseConfig.positionFunction().getDispensePosition(pointer, enumdirection);
  
@@ -20,7 +20,7 @@
 -        stack.shrink(1);
 +        // CraftBukkit start
 +        // IProjectile.spawnProjectileUsingShoot(this.projectileItem.asProjectile(worldserver, iposition, itemstack, enumdirection), worldserver, itemstack, (double) enumdirection.getStepX(), (double) enumdirection.getStepY(), (double) enumdirection.getStepZ(), this.dispenseConfig.power(), this.dispenseConfig.uncertainty()); // CraftBukkit - call when finish the BlockDispenseEvent
-+        ItemStack itemstack1 = stack.split(1);
++        ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink below and single item in event
 +        org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 +
@@ -30,12 +30,13 @@
 +        }
 +
 +        if (event.isCancelled()) {
-+            stack.grow(1);
++            // stack.grow(1); // Paper - shrink below
 +            return stack;
 +        }
 +
++        boolean shrink = true; // Paper
 +        if (!event.getItem().equals(craftItem)) {
-+            stack.grow(1);
++            shrink = false; // Paper - shrink below
 +            // Chain to handler for new item
 +            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +            DispenseItemBehavior idispensebehavior = DispenserBlock.getDispenseBehavior(pointer, eventStack); // Paper - Fix NPE with equippable and items without behavior
@@ -50,7 +51,7 @@
 +            Projectile iprojectile = Projectile.spawnProjectileUsingShoot(this.projectileItem.asProjectile(worldserver, iposition, CraftItemStack.unwrap(event.getItem()), enumdirection), worldserver, itemstack1, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.dispenseConfig.power(), this.dispenseConfig.uncertainty()); // Paper - track changed items in the dispense event; unwrap is safe here because all uses of the stack make their own copies
 +            iprojectile.projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
 +        }
-+        // itemstack.shrink(1); // CraftBukkit - Handled during event processing
++        if (shrink) stack.shrink(1); // Paper - actually handle here
 +        // CraftBukkit end
          return stack;
      }

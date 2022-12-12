@@ -17,7 +17,7 @@
          }
  
 +        // CraftBukkit start
-+        ItemStack itemstack1 = stack.split(1);
++        ItemStack itemstack1 = stack.copyWithCount(1); // Paper - shrink at end and single item in event
 +        org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 +
@@ -27,12 +27,13 @@
 +        }
 +
 +        if (event.isCancelled()) {
-+            stack.grow(1);
++            // stack.grow(1); // Paper - shrink below
 +            return stack;
 +        }
 +
++        boolean shrink = true; // Paper
 +        if (!event.getItem().equals(craftItem)) {
-+            stack.grow(1);
++            shrink = false; // Paper - shrink below
 +            // Chain to handler for new item
 +            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +            DispenseItemBehavior idispensebehavior = DispenserBlock.getDispenseBehavior(pointer, eventStack); // Paper - Fix NPE with equippable and items without behavior
@@ -51,8 +52,7 @@
              abstractboat.setYRot(enumdirection.toYRot());
 -            worldserver.addFreshEntity(abstractboat);
 -            stack.shrink(1);
-+            if (!worldserver.addFreshEntity(abstractboat)) stack.grow(1); // CraftBukkit
-+            // itemstack.shrink(1); // CraftBukkit - handled during event processing
++            if (worldserver.addFreshEntity(abstractboat) && shrink) stack.shrink(1); // Paper - if entity add was successful and supposed to shrink
          }
  
          return stack;
