@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 13 Dec 2022 14:54:53 -0800
+Subject: [PATCH] Fix custom worlds
+
+
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java b/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
+index 42c569561afdce599b72cfa455435e87e250885f..e0fb7cbce04bb47971d546ae88cdcb11f4d6de09 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
+@@ -19,4 +19,9 @@ public record WorldGenSettings(WorldOptions options, WorldDimensions dimensions)
+     public static <T> DataResult<T> encode(DynamicOps<T> registryOps, WorldOptions generatorOptions, RegistryAccess dynamicRegistryManager) {
+         return encode(registryOps, generatorOptions, new WorldDimensions(dynamicRegistryManager.registryOrThrow(Registries.LEVEL_STEM)));
+     }
++    // Paper start
++    public static <T> DataResult<T> encode(DynamicOps<T> registryOps, WorldOptions generatorOptions, net.minecraft.core.Registry<net.minecraft.world.level.dimension.LevelStem> levelStemRegistry) {
++        return encode(registryOps, generatorOptions, new WorldDimensions(levelStemRegistry));
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+index 6eafa7969f463a6ee33b84b7e6a79f8088aa40a1..442bfaba55e95ebac1025503f19d20ce273f7580 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
++++ b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+@@ -90,6 +90,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+     private final Set<String> knownServerBrands;
+     private boolean wasModded;
+     private final TimerQueue<MinecraftServer> scheduledEvents;
++    public @Nullable net.minecraft.core.Registry<net.minecraft.world.level.dimension.LevelStem> levelStemRegistry;
+     // CraftBukkit start - Add world and pdc
+     private ServerLevel world;
+     protected Tag pdc;
+@@ -183,7 +184,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+         levelNbt.put("Version", nbttagcompound2);
+         levelNbt.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+         DynamicOps<Tag> dynamicops = RegistryOps.create(NbtOps.INSTANCE, (HolderLookup.Provider) registryManager);
+-        DataResult<Tag> dataresult = WorldGenSettings.encode(dynamicops, this.worldOptions, registryManager); // CraftBukkit - decompile error
++        DataResult<Tag> dataresult = WorldGenSettings.encode(dynamicops, this.worldOptions, this.levelStemRegistry != null ? this.levelStemRegistry : registryManager.registryOrThrow(net.minecraft.core.registries.Registries.LEVEL_STEM)); // CraftBukkit - decompile error // Paper
+         Logger logger = PrimaryLevelData.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 47df6f4268a63118da8187f4102c876bd37d1680..96cb9bad3b201cee8f7ffd3bc995b3254acd8602 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1220,6 +1220,7 @@ public final class CraftServer implements Server {
+ 
+         if (pair != null) {
+             worlddata = (PrimaryLevelData) pair.getFirst();
++            iregistry = pair.getSecond().dimensions(); // Paper
+         } else {
+             LevelSettings worldsettings;
+             WorldOptions worldoptions = new WorldOptions(creator.seed(), creator.generateStructures(), false);
+@@ -1231,17 +1232,19 @@ public final class CraftServer implements Server {
+             worlddimensions = properties.create(worldloader_a.datapackWorldgen());
+ 
+             WorldDimensions.Complete worlddimensions_b = worlddimensions.bake(iregistry);
++            iregistry = worlddimensions_b.dimensions(); // Paper
+             Lifecycle lifecycle = worlddimensions_b.lifecycle().add(worldloader_a.datapackWorldgen().allRegistriesLifecycle());
+ 
+             worlddata = new PrimaryLevelData(worldsettings, worldoptions, worlddimensions_b.specialWorldProperty(), lifecycle);
+         }
++        worlddata.levelStemRegistry = iregistry; // Paper - track on custom worlds for saving
+         worlddata.checkName(name);
+         worlddata.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
+         // Paper - move down
+ 
+         long j = BiomeManager.obfuscateSeed(creator.seed());
+         List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
+-        LevelStem worlddimension = this.getServer().registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM).get(actualDimension);
++        LevelStem worlddimension = iregistry.get(actualDimension); // Paper
+ 
+         WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.type().value(), worlddimension.generator(), this.getHandle().getServer().registryAccess()); // Paper
+         if (biomeProvider == null && generator != null) {
