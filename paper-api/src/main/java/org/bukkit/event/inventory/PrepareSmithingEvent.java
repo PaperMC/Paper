@@ -10,34 +10,18 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when an item is put in a slot for upgrade by a Smithing Table.
  */
-public class PrepareSmithingEvent extends InventoryEvent {
+public class PrepareSmithingEvent extends PrepareInventoryResultEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    private ItemStack result;
 
     public PrepareSmithingEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
-        super(inventory);
-        this.result = result;
+        super(inventory, result);
     }
 
     @NotNull
     @Override
     public SmithingInventory getInventory() {
         return (SmithingInventory) super.getInventory();
-    }
-
-    /**
-     * Get result item, may be null.
-     *
-     * @return result item
-     */
-    @Nullable
-    public ItemStack getResult() {
-        return result;
-    }
-
-    public void setResult(@Nullable ItemStack result) {
-        this.result = result;
     }
 
     @NotNull
