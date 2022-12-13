@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 13 Dec 2022 13:00:35 -0800
+Subject: [PATCH] Fix CreativeCategory api
+
+
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 03b47012447430a350e152920f754d993d4023db..b1aaf6408a2ff8909f6fe6366d5a569efb572dfa 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -10984,11 +10984,24 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+      * Get the {@link CreativeCategory} to which this material belongs.
+      *
+      * @return the creative category. null if does not belong to a category
++     * @deprecated use {@link #getCreativeCategories()}
+      */
+     @Nullable
++    @Deprecated(forRemoval = true) // Paper
+     public CreativeCategory getCreativeCategory() {
+-        return Bukkit.getUnsafe().getCreativeCategory(this);
++        return this.getCreativeCategories().stream().findAny().orElse(null); // Paper
+     }
++    // Paper start
++    /**
++     * Get all the {@link CreativeCategory} to which this material belongs.
++     *
++     * @return this set of creative categories
++     * @throws IllegalArgumentException if this material is not an item.
++     */
++    public @NotNull java.util.@org.jetbrains.annotations.Unmodifiable Set<CreativeCategory> getCreativeCategories() {
++        return Bukkit.getUnsafe().getCreativeCategories(this);
++    }
++    // Paper end
+ 
+     /**
+      * Get the translation key of the item or block associated with this
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index c661eab343ae76488de701630424e2d589f44fc0..05933e4571d17c140a943f8610d69572e4a51d9d 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -90,7 +90,7 @@ public interface UnsafeValues {
+ 
+     Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot);
+ 
+-    CreativeCategory getCreativeCategory(Material material);
++    java.util.Set<org.bukkit.inventory.CreativeCategory> getCreativeCategories(Material material); // Paper - update for 1.19.3
+ 
+     String getBlockTranslationKey(Material material);
+ 
+diff --git a/src/main/java/org/bukkit/inventory/CreativeCategory.java b/src/main/java/org/bukkit/inventory/CreativeCategory.java
+index 78587d9fabe6371a23a7963917b054dbe7603694..3ed22b5f04970d457a272c3e4bef4cc1c5b3bdf4 100644
+--- a/src/main/java/org/bukkit/inventory/CreativeCategory.java
++++ b/src/main/java/org/bukkit/inventory/CreativeCategory.java
+@@ -10,10 +10,38 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
+      * slabs, etc.
+      */
+     BUILDING_BLOCKS("buildingBlocks"), // Paper
++    // Paper start
++    /**
++     * An assortment of blocks which have multiple colors like wool and terracotta.
++     */
++    COLORED_BLOCKS("coloredBlocks"),
++    /**
++     * Blocks which appear naturally in worlds.
++     */
++    NATURAL_BLOCKS("natural"),
++    /**
++     * Blocks which have a function besides "look".
++     */
++    FUNCTIONAL_BLOCKS("functional"),
++    /**
++     * Items which are ingredients in recipes.
++     */
++    INGREDIENTS("ingredients"),
++    /**
++     * All mob spawn eggs.
++     */
++    SPAWN_EGGS("spawnEggs"),
++    /**
++     * Blocks which in vanilla, only operators are allowed to use.
++     */
++    OP_BLOCKS("op"),
++    // Paper end
+     /**
+      * Blocks and items typically used for decorative purposes including
+      * candles, saplings, flora, fauna, fences, walls, carpets, etc.
++     * @deprecated removed in 1.19.3
+      */
++    @Deprecated(forRemoval = true) // Paper
+     DECORATIONS("decorations"), // Paper
+     /**
+      * Blocks used and associated with redstone contraptions including buttons,
+@@ -23,18 +51,22 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
+     /**
+      * Items pertaining to transportation including minecarts, rails, boats,
+      * elytra, etc.
++     * @deprecated removed in 1.19.3
+      */
++    @Deprecated(forRemoval = true) // Paper
+     TRANSPORTATION("transportation"), // Paper
+     /**
+      * Miscellaneous items and blocks that do not fit into other categories
+      * including gems, dyes, spawn eggs, discs, banner patterns, etc.
++     * @deprecated removed in 1.19.3
+      */
++    @Deprecated(forRemoval = true) // Paper
+     MISC("misc"), // Paper
+     /**
+      * Food items consumable by the player including meats, berries, edible
+      * drops from creatures, etc.
+      */
+-    FOOD("food"), // Paper
++    FOOD("foodAndDrink"), // Paper
+     /**
+      * Equipment items meant for general utility including pickaxes, axes, hoes,
+      * flint and steel, and useful enchantment books for said tools.
+@@ -48,7 +80,9 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
+     /**
+      * All items related to brewing and potions including all types of potions,
+      * their variants, and ingredients to brew them.
++     * @deprecated removed in 1.19.3
+      */
++    @Deprecated(forRemoval = true) // Paper
+     BREWING("brewing"); // Paper
+     // Paper start
+     private final String translationKey;

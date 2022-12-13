@@ -1,0 +1,225 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 13 Dec 2022 12:58:27 -0800
+Subject: [PATCH] Fix CreativeCategory api
+
+
+diff --git a/src/main/java/io/papermc/paper/inventory/PaperCreativeCategory.java b/src/main/java/io/papermc/paper/inventory/PaperCreativeCategory.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7dd68ca04370e9402629caa138dc0f1d5d12483d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/PaperCreativeCategory.java
+@@ -0,0 +1,47 @@
++package io.papermc.paper.inventory;
++
++import com.google.common.base.Enums;
++import com.google.common.collect.ImmutableMap;
++import java.util.List;
++import java.util.Map;
++import net.minecraft.network.chat.contents.TranslatableContents;
++import net.minecraft.world.item.CreativeModeTab;
++import net.minecraft.world.item.CreativeModeTabs;
++import org.bukkit.inventory.CreativeCategory;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperCreativeCategory {
++
++    public static final List<CreativeModeTab> BLOCK_TABS = CreativeModeTabs.allTabs().stream().filter(tab -> tab.getType() == CreativeModeTab.Type.CATEGORY).toList();
++    static final Map<CreativeModeTab, CreativeCategory> MAP;
++
++
++    static {
++        final ImmutableMap.Builder<CreativeModeTab, CreativeCategory> builder = ImmutableMap.builder();
++        for (final CreativeModeTab tab : BLOCK_TABS) {
++            final String key = ((TranslatableContents) tab.getDisplayName().getContents()).getKey();
++            for (final CreativeCategory value : CreativeCategory.values()) {
++                if (!Enums.getField(value).isAnnotationPresent(Deprecated.class)) {
++                    if (value.translationKey().equals(key)) {
++                        builder.put(tab, value);
++                        break;
++                    }
++                }
++            }
++        }
++
++        MAP = builder.build();
++        if (MAP.size() != BLOCK_TABS.size()) {
++            throw new IllegalStateException("Expected to find map with the same number of visible creative mode tabs");
++        }
++    }
++
++    private PaperCreativeCategory() {
++    }
++
++    public static CreativeCategory fromNms(CreativeModeTab tab)  {
++        return MAP.get(tab);
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 83cef5ec27c31f133a23cd27349f722799c786ea..1dd016c7700961a9f65a6a56cceda0419968f7be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -71,6 +71,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
+ @SuppressWarnings("deprecation")
+ public final class CraftMagicNumbers implements UnsafeValues {
+     public static final UnsafeValues INSTANCE = new CraftMagicNumbers();
++    @org.jetbrains.annotations.VisibleForTesting
++    public static net.minecraft.core.RegistryAccess FOR_TESTING;
+ 
+     private CraftMagicNumbers() {}
+ 
+@@ -422,8 +424,22 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+ 
+     @Override
+-    public CreativeCategory getCreativeCategory(Material material) {
+-        return CreativeCategory.BUILDING_BLOCKS; // TODO: Figure out what to do with this
++    // Paper start - update for 1.19.3
++    public java.util.Set<CreativeCategory> getCreativeCategories(Material material) {
++        net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(MinecraftServer.getServer() != null ? MinecraftServer.getServer().getWorldData().enabledFeatures() : net.minecraft.world.flag.FeatureFlags.REGISTRY.allFlags(), true, MinecraftServer.getServer() != null ? MinecraftServer.getServer().registryAccess() : FOR_TESTING); // null check due to tests
++        final java.util.Set<CreativeCategory> set = new java.util.LinkedHashSet<>();
++        final Item item = getItem(material);
++        if (item == null) {
++            throw new IllegalArgumentException(material + " isn't an item");
++        }
++        final net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(item);
++        for (final net.minecraft.world.item.CreativeModeTab tab : io.papermc.paper.inventory.PaperCreativeCategory.BLOCK_TABS) {
++            if (tab.getDisplayItems().contains(stack) || tab.getSearchTabDisplayItems().contains(stack)) {
++                set.add(io.papermc.paper.inventory.PaperCreativeCategory.fromNms(tab));
++            }
++        }
++        return Collections.unmodifiableSet(set);
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/test/java/io/papermc/paper/inventory/CreativeCategoryTest.java b/src/test/java/io/papermc/paper/inventory/CreativeCategoryTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..056fc5c220550e765cf5cb31c1c5e3d80a332f8a
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/inventory/CreativeCategoryTest.java
+@@ -0,0 +1,61 @@
++package io.papermc.paper.inventory;
++
++import com.google.common.base.Enums;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.network.chat.contents.TranslatableContents;
++import net.minecraft.world.item.CreativeModeTab;
++import org.bukkit.Material;
++import org.bukkit.inventory.CreativeCategory;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.Test;
++
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertNotEquals;
++import static org.junit.Assert.assertNotNull;
++
++public class CreativeCategoryTest extends AbstractTestingBase {
++
++    @Test
++    public void checkAllEnumsExist() {
++        assertNotEquals(0, PaperCreativeCategory.BLOCK_TABS.size());
++        BuiltInRegistries.CREATIVE_MODE_TAB.entrySet().forEach(entry -> {
++            if (!PaperCreativeCategory.BLOCK_TABS.contains(entry.getValue())) return;
++            final CreativeCategory category = findByTranslationKey(entry.getValue());
++            assertNotNull("Missing API category for %s".formatted(entry.getKey().location()), category);
++        });
++
++        for (final CreativeCategory category : CreativeCategory.values()) {
++            if (Enums.getField(category).isAnnotationPresent(Deprecated.class)) continue;
++            final CreativeModeTab tab = findByApiKey(category);
++            assertNotNull("Extra api category named %s".formatted(category), tab);
++        }
++    }
++
++    @Test
++    public void testSeveralMaterials() {
++        assertEquals(2, Material.STONE.getCreativeCategories().size());
++        assertEquals(1, Material.ENCHANTING_TABLE.getCreativeCategories().size());
++    }
++
++    private static String getKey(CreativeModeTab tab) {
++        return ((TranslatableContents) tab.getDisplayName().getContents()).getKey();
++    }
++
++    private static CreativeModeTab findByApiKey(CreativeCategory category) {
++        for (final CreativeModeTab tab : PaperCreativeCategory.BLOCK_TABS) {
++            if (getKey(tab).equals(category.translationKey())) {
++                return tab;
++            }
++        }
++        return null;
++    }
++
++    private static CreativeCategory findByTranslationKey(CreativeModeTab tab) {
++        for (final CreativeCategory value : CreativeCategory.values()) {
++            if (value.translationKey().equals(getKey(tab))) {
++                return value;
++            }
++        }
++        return null;
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
+index f482cb4dc5394de3cf88b4c4e13c18f9c61caf45..21f02ca40ad989fbc7485a2ccbd9ff836d1641a9 100644
+--- a/src/test/java/io/papermc/paper/testing/DummyServer.java
++++ b/src/test/java/io/papermc/paper/testing/DummyServer.java
+@@ -42,7 +42,12 @@ public final class DummyServer {
+ 
+         when(dummyServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
+ 
+-        when(dummyServer.getUnsafe()).thenAnswer(ignored -> CraftMagicNumbers.INSTANCE); // lambda for lazy load
++        when(dummyServer.getUnsafe()).thenAnswer(ignored -> {
++            if (CraftMagicNumbers.FOR_TESTING == null) {
++                CraftMagicNumbers.FOR_TESTING = AbstractTestingBase.REGISTRY_CUSTOM;
++            }
++            return CraftMagicNumbers.INSTANCE;
++        }); // lambda for lazy load
+ 
+         when(dummyServer.createBlockData(any(Material.class))).thenAnswer(invocation -> {
+             return CraftBlockData.newData(invocation.getArgument(0, Material.class), null);
+diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
+index 4cc8ca5dd95e9cccd08ada057a9592a1421f434a..24ad50a5440b2515cd276a5e3331bfe3aaa833f3 100644
+--- a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
++++ b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
+@@ -1,10 +1,12 @@
+ package io.papermc.paper.world;
+ 
+ import com.destroystokyo.paper.ClientOption;
++import io.papermc.paper.inventory.PaperCreativeCategory;
+ import java.util.Map;
+ import net.minecraft.network.chat.contents.TranslatableContents;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.world.entity.player.ChatVisiblity;
++import net.minecraft.world.item.CreativeModeTab;
+ import net.minecraft.world.level.GameType;
+ import net.minecraft.world.level.biome.Biome;
+ import org.bukkit.Difficulty;
+@@ -12,6 +14,7 @@ import org.bukkit.FireworkEffect;
+ import org.bukkit.GameMode;
+ import org.bukkit.GameRule;
+ import org.bukkit.attribute.Attribute;
++import org.bukkit.inventory.CreativeCategory;
+ import org.bukkit.support.AbstractTestingBase;
+ import org.junit.Assert;
+ import org.junit.Ignore;
+@@ -56,12 +59,12 @@ public class TranslationKeyTest extends AbstractTestingBase {
+     }
+ 
+     @Test
+-    @Ignore // TODO fix
+     public void testCreativeCategory() {
+-        // for (CreativeModeTab tab : CreativeModeTabs.tabs()) {
+-        //     CreativeCategory category = Objects.requireNonNull(CraftCreativeCategory.fromNMS(tab));
+-        //     Assert.assertEquals("translation key mismatch for " + category, ((TranslatableContents) tab.getDisplayName().getContents()).getKey(), category.translationKey());
+-        // }
++        for (CreativeModeTab tab : PaperCreativeCategory.BLOCK_TABS) {
++            CreativeCategory category = PaperCreativeCategory.fromNms(tab);
++            Assert.assertNotNull("Missing api category for %s".formatted(tab.getDisplayName().getString()), category);
++            Assert.assertEquals("translation key mismatch for " + category, ((TranslatableContents) tab.getDisplayName().getContents()).getKey(), category.translationKey());
++        }
+     }
+ 
+     @Test
