@@ -36,6 +36,10 @@ https://bugs.mojang.com/browse/MC-121048
   clear the CombatTracker if the entity is dead. This fixes death messages
   such as the "doomed to fall" messages.
 
+https://bugs.mojang.com/browse/MC-257875
+  by: Jake Potrebic <jake.m.potrebic@gmail.com>
+  Fixes server not consuming fire charges when igniting a creeper
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 Co-authored-by: MelnCat <melncatuwu@gmail.com>
 
@@ -172,6 +176,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!player.getAbilities().instabuild) {
                  stack.shrink(1);
              }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -0,0 +0,0 @@ public class Creeper extends Monster implements PowerableMob {
+             this.level.playSound(player, this.getX(), this.getY(), this.getZ(), soundeffect, this.getSoundSource(), 1.0F, this.random.nextFloat() * 0.4F + 0.8F);
+             if (!this.level.isClientSide) {
+                 this.ignite();
++                if (itemstack.isDamageableItem()) { // Paper - only call hurtAndBreak for a damageable item - MC-257875
+                 itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
+                     entityhuman1.broadcastBreakEvent(hand);
+                 });
++                // Paper start - just consume the item - MC-257875
++                } else if (!player.getAbilities().instabuild) {
++                    itemstack.shrink(1);
++                }
++                // Paper end
+             }
+ 
+             return InteractionResult.sidedSuccess(this.level.isClientSide);
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
