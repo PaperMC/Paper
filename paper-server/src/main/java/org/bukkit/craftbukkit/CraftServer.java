@@ -49,6 +49,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import jline.console.ConsoleReader;
+import net.minecraft.SystemUtils;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.commands.CommandDispatcher;
 import net.minecraft.commands.CommandListenerWrapper;
@@ -56,6 +57,7 @@ import net.minecraft.commands.arguments.ArgumentEntity;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.DynamicOpsNBT;
@@ -66,6 +68,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerCommand;
 import net.minecraft.server.WorldLoader;
+import net.minecraft.server.WorldStem;
 import net.minecraft.server.bossevents.BossBattleCustom;
 import net.minecraft.server.commands.CommandReload;
 import net.minecraft.server.dedicated.DedicatedPlayerList;
@@ -1051,41 +1054,47 @@ public final class CraftServer implements Server {
 
         boolean hardcore = creator.hardcore();
 
-        WorldDataServer worlddata;
-        WorldLoader.a worldloader_a = console.worldLoader;
-        IRegistry<WorldDimension> iregistry = worldloader_a.datapackDimensions().registryOrThrow(Registries.LEVEL_STEM);
-        DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, (HolderLookup.b) worldloader_a.datapackWorldgen());
-        Pair<SaveData, WorldDimensions.b> pair = worldSession.getDataTag(dynamicops, worldloader_a.dataConfiguration(), iregistry, worldloader_a.datapackWorldgen().allRegistriesLifecycle());
+        WorldLoader.c worldloader_c = console.datapackconfiguration;
+        WorldStem worldstem = SystemUtils.blockUntilDone((executor) -> {
+            return WorldLoader.load(worldloader_c, (worldloader_a) -> {
+                IRegistry<WorldDimension> iregistry = worldloader_a.datapackDimensions().registryOrThrow(Registries.LEVEL_STEM);
+                DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, (HolderLookup.b) worldloader_a.datapackWorldgen());
+                Pair<SaveData, WorldDimensions.b> pair = worldSession.getDataTag(dynamicops, worldloader_a.dataConfiguration(), iregistry, worldloader_a.datapackWorldgen().allRegistriesLifecycle());
 
-        if (pair != null) {
-            worlddata = (WorldDataServer) pair.getFirst();
-        } else {
-            WorldSettings worldsettings;
-            WorldOptions worldoptions = new WorldOptions(creator.seed(), creator.generateStructures(), false);
-            WorldDimensions worlddimensions;
+                if (pair != null) {
+                    return new WorldLoader.b<>(pair.getFirst(), pair.getSecond().dimensionsRegistryAccess());
+                } else {
+                    WorldSettings worldsettings;
+                    WorldOptions worldoptions = new WorldOptions(creator.seed(), creator.generateStructures(), false);
+                    WorldDimensions worlddimensions;
 
-            DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(ChatDeserializer.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
+                    DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(ChatDeserializer.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
 
-            worldsettings = new WorldSettings(name, EnumGamemode.byId(getDefaultGameMode().getValue()), hardcore, EnumDifficulty.EASY, false, new GameRules(), worldloader_a.dataConfiguration());
-            worlddimensions = properties.create(worldloader_a.datapackWorldgen());
+                    worldsettings = new WorldSettings(name, EnumGamemode.byId(getDefaultGameMode().getValue()), hardcore, EnumDifficulty.EASY, false, new GameRules(), worldloader_a.dataConfiguration());
+                    worlddimensions = properties.create(worldloader_a.datapackWorldgen());
 
-            WorldDimensions.b worlddimensions_b = worlddimensions.bake(iregistry);
-            Lifecycle lifecycle = worlddimensions_b.lifecycle().add(worldloader_a.datapackWorldgen().allRegistriesLifecycle());
+                    WorldDimensions.b worlddimensions_b = worlddimensions.bake(iregistry);
+                    Lifecycle lifecycle = worlddimensions_b.lifecycle().add(worldloader_a.datapackWorldgen().allRegistriesLifecycle());
 
-            worlddata = new WorldDataServer(worldsettings, worldoptions, worlddimensions_b.specialWorldProperty(), lifecycle);
-        }
+                    return new WorldLoader.b<>(new WorldDataServer(worldsettings, worldoptions, worlddimensions_b.specialWorldProperty(), lifecycle), worlddimensions_b.dimensionsRegistryAccess());
+                }
+            }, WorldStem::new, SystemUtils.backgroundExecutor(), executor);
+        }).join();
+
+        IRegistryCustom registries = worldstem.registries().compositeAccess();
+        WorldDataServer worlddata = (WorldDataServer) worldstem.worldData();
         worlddata.checkName(name);
         worlddata.setModdedInfo(console.getServerModName(), console.getModdedStatus().shouldReportAsModified());
 
         if (console.options.has("forceUpgrade")) {
             net.minecraft.server.Main.forceUpgrade(worldSession, DataConverterRegistry.getDataFixer(), console.options.has("eraseCache"), () -> {
                 return true;
-            }, iregistry);
+            }, registries.registryOrThrow(Registries.LEVEL_STEM));
         }
 
         long j = BiomeManager.obfuscateSeed(creator.seed());
         List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(worlddata));
-        WorldDimension worlddimension = this.getServer().registries().compositeAccess().registryOrThrow(Registries.LEVEL_STEM).get(actualDimension);
+        WorldDimension worlddimension = registries.registryOrThrow(Registries.LEVEL_STEM).get(actualDimension);
 
         WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.type().value());
         if (biomeProvider == null && generator != null) {
@@ -1103,7 +1112,7 @@ public final class CraftServer implements Server {
         }
 
         WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, worlddimension, getServer().progressListenerFactory.create(11),
-                worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator, biomeProvider);
+                worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, registries, creator.environment(), generator, biomeProvider);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
             return null;

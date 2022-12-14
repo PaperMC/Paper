@@ -87,7 +87,7 @@
              WorldInfo worldinfo = convertable_conversionsession.getSummary();
  
              if (worldinfo != null) {
-@@ -137,13 +165,31 @@
+@@ -137,21 +165,41 @@
                  }
              }
  
@@ -116,11 +116,14 @@
 +                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
 +            }
 +            AtomicReference<WorldLoader.a> worldLoader = new AtomicReference<>();
++            WorldLoader.c datapackconfiguration;
 +            // CraftBukkit end
  
              WorldStem worldstem;
  
-@@ -152,6 +198,7 @@
+             try {
+-                WorldLoader.c worldloader_c = loadOrCreateConfig(dedicatedserversettings.getProperties(), convertable_conversionsession, flag, resourcepackrepository);
++                WorldLoader.c worldloader_c = datapackconfiguration = loadOrCreateConfig(dedicatedserversettings.getProperties(), convertable_conversionsession, flag, resourcepackrepository); // CraftBukkit
  
                  worldstem = (WorldStem) SystemUtils.blockUntilDone((executor) -> {
                      return WorldLoader.load(worldloader_c, (worldloader_a) -> {
@@ -128,7 +131,7 @@
                          IRegistry<WorldDimension> iregistry = worldloader_a.datapackDimensions().registryOrThrow(Registries.LEVEL_STEM);
                          DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, (HolderLookup.b) worldloader_a.datapackWorldgen());
                          Pair<SaveData, WorldDimensions.b> pair = convertable_conversionsession.getDataTag(dynamicops, worldloader_a.dataConfiguration(), iregistry, worldloader_a.datapackWorldgen().allRegistriesLifecycle());
-@@ -163,7 +210,7 @@
+@@ -163,7 +211,7 @@
                              WorldOptions worldoptions;
                              WorldDimensions worlddimensions;
  
@@ -137,7 +140,7 @@
                                  worldsettings = MinecraftServer.DEMO_SETTINGS;
                                  worldoptions = WorldOptions.DEMO_OPTIONS;
                                  worlddimensions = WorldPresets.createNormalWorldDimensions(worldloader_a.datapackWorldgen());
-@@ -171,7 +218,7 @@
+@@ -171,7 +219,7 @@
                                  DedicatedServerProperties dedicatedserverproperties = dedicatedserversettings.getProperties();
  
                                  worldsettings = new WorldSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), worldloader_a.dataConfiguration());
@@ -146,7 +149,7 @@
                                  worlddimensions = dedicatedserverproperties.createDimensions(worldloader_a.datapackWorldgen());
                              }
  
-@@ -187,6 +234,7 @@
+@@ -187,6 +235,7 @@
                  return;
              }
  
@@ -154,14 +157,14 @@
              IRegistryCustom.Dimension iregistrycustom_dimension = worldstem.registries().compositeAccess();
  
              if (optionset.has(optionspec4)) {
-@@ -198,21 +246,32 @@
+@@ -198,21 +247,32 @@
              SaveData savedata = worldstem.worldData();
  
              convertable_conversionsession.saveDataTag(iregistrycustom_dimension, savedata);
 +            */
              final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.spin((thread) -> {
 -                DedicatedServer dedicatedserver1 = new DedicatedServer(thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataConverterRegistry.getDataFixer(), services, WorldLoadListenerLogger::new);
-+                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, worldLoader.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataConverterRegistry.getDataFixer(), services, WorldLoadListenerLogger::new);
++                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, datapackconfiguration, worldLoader.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataConverterRegistry.getDataFixer(), services, WorldLoadListenerLogger::new);
  
 +                /*
                  dedicatedserver1.setSingleplayerProfile(optionset.has(optionspec8) ? new GameProfile((UUID) null, (String) optionset.valueOf(optionspec8)) : null);
@@ -189,7 +192,7 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
                      dedicatedserver.halt(true);
-@@ -221,6 +280,7 @@
+@@ -221,6 +281,7 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -197,7 +200,7 @@
          } catch (Exception exception1) {
              Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
          }
-@@ -246,7 +306,7 @@
+@@ -246,7 +307,7 @@
      }
  
      public static void forceUpgrade(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, IRegistry<WorldDimension> iregistry) {
