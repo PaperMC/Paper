@@ -44,6 +44,7 @@ import org.bukkit.material.MaterialData;
  */
 @Deprecated
 public final class CraftLegacy {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper - Improve logging and errors
 
     private static final Map<Byte, Material> SPAWN_EGGS = new HashMap<>();
     private static final Set<String> whitelistedStates = new HashSet<>(Arrays.asList("explode", "check_decay", "decayable", "facing"));
@@ -264,7 +265,7 @@ public final class CraftLegacy {
     }
 
     static {
-        System.err.println("Initializing Legacy Material Support. Unless you have legacy plugins and/or data this is a bug!");
+        LOGGER.warn("Initializing Legacy Material Support. Unless you have legacy plugins and/or data this is a bug!"); // Paper - Improve logging and errors; doesn't need to be an error
         if (MinecraftServer.getServer() != null && MinecraftServer.getServer().isDebugging()) {
             new Exception().printStackTrace();
         }
