@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ilhan <ilhantemel@outlook.com>
+Date: Wed, 14 Dec 2022 04:55:11 +0100
+Subject: [PATCH] Fix crop modifier issue
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/CactusBlock.java b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+index 1ec242205b82a5a1f10deb2312795cc5dc157a76..b2cd0603dcfc0bb0ac421fb8ef3cd1f6ff97e357 100644
+--- a/src/main/java/net/minecraft/world/level/block/CactusBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.level.block;
+ 
+ import java.util.Iterator;
++
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.server.level.ServerLevel;
+@@ -33,7 +34,7 @@ public class CactusBlock extends Block {
+ 
+     protected CactusBlock(BlockBehaviour.Properties settings) {
+         super(settings);
+-        this.registerDefaultState((BlockState) ((BlockState) this.stateDefinition.any()).setValue(CactusBlock.AGE, 0));
++        this.registerDefaultState(this.stateDefinition.any().setValue(CactusBlock.AGE, 0));
+     }
+ 
+     @Override
+@@ -51,22 +52,22 @@ public class CactusBlock extends Block {
+         if (world.isEmptyBlock(blockposition1)) {
+             int i;
+ 
+-            for (i = 1; world.getBlockState(pos.below(i)).is((Block) this); ++i) {
+-                ;
++            for (i = 1; world.getBlockState(pos.below(i)).is(this); ++i) {
+             }
+ 
+             if (i < world.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable growth height
+-                int j = (Integer) state.getValue(CactusBlock.AGE);
++                int j = state.getValue(CactusBlock.AGE);
+ 
+                 int modifier = world.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+-                if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
++                if (j >= 15) {
+                     CraftEventFactory.handleBlockGrowEvent(world, blockposition1, this.defaultBlockState()); // CraftBukkit
+-                    BlockState iblockdata1 = (BlockState) state.setValue(CactusBlock.AGE, 0);
++                    BlockState iblockdata1 = state.setValue(CactusBlock.AGE, 0);
+ 
+                     world.setBlock(pos, iblockdata1, 4);
+                     world.neighborChanged(iblockdata1, blockposition1, this, pos, false);
+                 } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    world.setBlock(pos, (BlockState) state.setValue(CactusBlock.AGE, j + 1), 4);
++                    world.setBlock(pos, state.setValue(CactusBlock.AGE, j + 1), 4);
+                 }
+ 
+             }
+@@ -86,7 +87,7 @@ public class CactusBlock extends Block {
+     @Override
+     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
+         if (!state.canSurvive(world, pos)) {
+-            world.scheduleTick(pos, (Block) this, 1);
++            world.scheduleTick(pos, this, 1);
+         }
+ 
+         return super.updateShape(state, direction, neighborState, world, pos, neighborPos);
+@@ -117,7 +118,9 @@ public class CactusBlock extends Block {
+ 
+     @Override
+     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
+-        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) {
++            return;
++        } // Paper
+         CraftEventFactory.blockDamage = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()); // CraftBukkit
+         entity.hurt(DamageSource.CACTUS, 1.0F);
+         CraftEventFactory.blockDamage = null; // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+index 6b400a4759c8c8612a3b5c96ca0d87ef9dc71435..eb799831453b6764b14a6dee2d1f5d43c17d8cbb 100644
+--- a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+@@ -56,7 +56,8 @@ public class SugarCaneBlock extends Block {
+                 int j = (Integer) state.getValue(SugarCaneBlock.AGE);
+ 
+                 int modifier = world.spigotConfig.caneModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+-                if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
++                if (j >= 15) {
+                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos.above(), this.defaultBlockState()); // CraftBukkit
+                     world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, 0), 4);
+                 } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
