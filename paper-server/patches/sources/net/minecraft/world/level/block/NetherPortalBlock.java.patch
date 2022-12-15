@@ -44,20 +44,21 @@
                      Entity entity1 = entity.getVehicle();
  
                      if (entity1 != null) {
-@@ -103,7 +115,12 @@
+@@ -103,7 +115,13 @@
  
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (entity.canUsePortal(false)) {
 +            // CraftBukkit start - Entity in portal
-+            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
++            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.NETHER); // Paper - add portal type
 +            world.getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) return; // Paper - make cancellable
 +            // CraftBukkit end
              entity.setAsInsidePortal(this, pos);
          }
  
-@@ -121,51 +138,80 @@
+@@ -121,51 +139,80 @@
      @Nullable
      @Override
      public TeleportTransition getPortalDestination(ServerLevel world, Entity entity, BlockPos pos) {
@@ -76,7 +77,7 @@
  
          if (worldserver1 == null) {
 -            return null;
-+            return new TeleportTransition(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // always fire event in case plugins wish to change it
++            return null; // Paper - keep previous behavior of not firing PlayerTeleportEvent if the target world doesn't exist
          } else {
 -            boolean flag = worldserver1.dimension() == Level.NETHER;
 +            boolean flag = worldserver1.getTypeKey() == LevelStem.NETHER;
@@ -151,7 +152,7 @@
      }
  
      private static TeleportTransition getDimensionTransitionFromExit(Entity entity, BlockPos pos, BlockUtil.FoundRectangle exitPortalRectangle, ServerLevel world, TeleportTransition.PostTeleportTransition postDimensionTransition) {
-@@ -203,7 +249,7 @@
+@@ -203,7 +250,7 @@
          Vec3 vec3d1 = new Vec3((double) blockposition.getX() + (flag ? d2 : d4), (double) blockposition.getY() + d3, (double) blockposition.getZ() + (flag ? d4 : d2));
          Vec3 vec3d2 = PortalShape.findCollisionFreePosition(vec3d1, world, entity, entitysize);
  

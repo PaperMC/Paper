@@ -24,15 +24,16 @@
  
  public class EndPortalBlock extends BaseEntityBlock implements Portal {
  
-@@ -57,10 +68,16 @@
+@@ -57,10 +68,17 @@
  
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (entity.canUsePortal(false)) {
 +            // CraftBukkit start - Entity in portal
-+            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
++            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.ENDER); // Paper - add portal type
 +            world.getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) return; // Paper - make cancellable
 +            // CraftBukkit end
              if (!world.isClientSide && world.dimension() == Level.END && entity instanceof ServerPlayer) {
                  ServerPlayer entityplayer = (ServerPlayer) entity;
@@ -41,7 +42,7 @@
                  if (!entityplayer.seenCredits) {
                      entityplayer.showEndCredits();
                      return;
-@@ -74,11 +91,11 @@
+@@ -74,11 +92,11 @@
  
      @Override
      public TeleportTransition getPortalDestination(ServerLevel world, Entity entity, BlockPos pos) {
@@ -51,11 +52,11 @@
  
          if (worldserver1 == null) {
 -            return null;
-+            return new TeleportTransition(PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit- always fire event in case plugins wish to change it
++            return null; // Paper - keep previous behavior of not firing PlayerTeleportEvent if the target world doesn't exist
          } else {
              boolean flag = resourcekey == Level.END;
              BlockPos blockposition1 = flag ? ServerLevel.END_SPAWN_POINT : worldserver1.getSharedSpawnPos();
-@@ -87,7 +104,7 @@
+@@ -87,7 +105,7 @@
              Set set;
  
              if (flag) {
@@ -64,7 +65,7 @@
                  f = Direction.WEST.toYRot();
                  set = Relative.union(Relative.DELTA, Set.of(Relative.X_ROT));
                  if (entity instanceof ServerPlayer) {
-@@ -99,13 +116,21 @@
+@@ -99,13 +117,21 @@
                  if (entity instanceof ServerPlayer) {
                      ServerPlayer entityplayer = (ServerPlayer) entity;
  
