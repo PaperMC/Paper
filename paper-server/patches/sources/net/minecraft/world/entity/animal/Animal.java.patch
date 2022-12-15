@@ -39,14 +39,34 @@
      }
  
      @Override
-@@ -188,10 +202,17 @@
+@@ -144,8 +158,9 @@
+             int i = this.getAge();
+ 
+             if (!this.level().isClientSide && i == 0 && this.canFallInLove()) {
++                final ItemStack breedCopy = itemstack.copy(); // Paper - Fix EntityBreedEvent copying
+                 this.usePlayerItem(player, hand, itemstack);
+-                this.setInLove(player);
++                this.setInLove(player, breedCopy); // Paper - Fix EntityBreedEvent copying
+                 this.playEatingSound();
+                 return InteractionResult.SUCCESS_SERVER;
+             }
+@@ -187,11 +202,26 @@
+         return this.inLove <= 0;
      }
  
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Fix EntityBreedEvent copying
      public void setInLove(@Nullable Player player) {
 -        this.inLove = 600;
++        // Paper start - Fix EntityBreedEvent copying
++        this.setInLove(player, null);
++    }
++    public void setInLove(@Nullable Player player, @Nullable ItemStack breedItemCopy) {
++        if (breedItemCopy != null) this.breedItem = breedItemCopy;
++        // Paper end - Fix EntityBreedEvent copying
 +        // CraftBukkit start
 +        EntityEnterLoveModeEvent entityEnterLoveModeEvent = CraftEventFactory.callEntityEnterLoveModeEvent(player, this, 600);
 +        if (entityEnterLoveModeEvent.isCancelled()) {
++            this.breedItem = null; // Paper - Fix EntityBreedEvent copying; clear if cancelled
 +            return;
 +        }
 +        this.inLove = entityEnterLoveModeEvent.getTicksInLove();
@@ -54,11 +74,11 @@
          if (player != null) {
              this.loveCause = player.getUUID();
          }
-+        this.breedItem = player.getInventory().getSelected(); // CraftBukkit
++        // Paper - Fix EntityBreedEvent copying; set breed item in better place
  
          this.level().broadcastEntityEvent(this, (byte) 18);
      }
-@@ -233,25 +254,48 @@
+@@ -233,25 +263,48 @@
          if (entityageable != null) {
              entityageable.setBaby(true);
              entityageable.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
