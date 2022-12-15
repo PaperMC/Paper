@@ -32,6 +32,53 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
         this.canCreatePortal = canCreatePortal;
         this.creationRadius = creationRadius;
     }
+    // Paper start
+    /**
+     * For {@link TeleportCause#NETHER_PORTAL}, this is initially just the starting point
+     * for the search for a portal to teleport to. It will initially just be the {@link #getFrom()}
+     * scaled for dimension scaling and clamped to be inside the world border.
+     * <p>
+     * For {@link TeleportCause#END_PORTAL}, this will initially be the exact destination
+     * either, the world spawn for <i>end->any world</i> or end spawn for <i>any world->end</i>.
+     *
+     * @return starting point for search or exact destination
+     */
+    @Override
+    public @NotNull Location getTo() {
+        return super.getTo();
+    }
+
+    /**
+     * See the description of {@link #getTo()}.
+     * @param to starting point for search or exact destination
+     */
+    @Override
+    public void setTo(@NotNull final Location to) {
+        super.setTo(to);
+    }
+
+    /**
+     * No effect
+     * @return no effect
+     * @deprecated No effect
+     */
+    @Deprecated
+    @Override
+    public boolean willDismountPlayer() {
+        return super.willDismountPlayer();
+    }
+
+    /**
+     * No effect
+     * @return no effect
+     * @deprecated No effect
+     */
+    @Deprecated
+    @Override
+    public @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
+        return super.getRelativeTeleportationFlags();
+    }
+    // Paper end
 
     /**
      * Set the Block radius to search in for available portals.
