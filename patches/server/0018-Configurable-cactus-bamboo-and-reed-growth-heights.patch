@@ -6,11 +6,11 @@ Subject: [PATCH] Configurable cactus bamboo and reed growth heights
 Bamboo - Both the minimum fully-grown heights and the maximum are configurable
 - Machine_Maker
 
-diff --git a/src/main/java/net/minecraft/world/level/block/BambooBlock.java b/src/main/java/net/minecraft/world/level/block/BambooBlock.java
-index 3a6894c3cdee0d55f0546cda50c824ea5e95bfe0..2db8fd4fb03642fce2c7eca9c6b189f38d5cbf4a 100644
---- a/src/main/java/net/minecraft/world/level/block/BambooBlock.java
-+++ b/src/main/java/net/minecraft/world/level/block/BambooBlock.java
-@@ -130,7 +130,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+diff --git a/src/main/java/net/minecraft/world/level/block/BambooStalkBlock.java b/src/main/java/net/minecraft/world/level/block/BambooStalkBlock.java
+index 0d05ad9c0b5043e58d639041cfe3fb7a27f373a3..a5d391af2c6b733d653188f4aeeec2afffd96adf 100644
+--- a/src/main/java/net/minecraft/world/level/block/BambooStalkBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BambooStalkBlock.java
+@@ -130,7 +130,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
              if (random.nextFloat() < (world.spigotConfig.bambooModifier / (100.0f * 3)) && world.isEmptyBlock(pos.above()) && world.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
                  int i = this.getHeightBelowUpToMax(world, pos) + 1;
  
@@ -19,34 +19,34 @@ index 3a6894c3cdee0d55f0546cda50c824ea5e95bfe0..2db8fd4fb03642fce2c7eca9c6b189f3
                      this.growBamboo(state, world, pos, random, i);
                  }
              }
-@@ -161,7 +161,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+@@ -161,7 +161,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
          int i = this.getHeightAboveUpToMax(world, pos);
          int j = this.getHeightBelowUpToMax(world, pos);
  
--        return i + j + 1 < 16 && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1;
-+        return i + j + 1 < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && (Integer) world.getBlockState(pos.above(i)).getValue(BambooBlock.STAGE) != 1; // Paper
+-        return i + j + 1 < 16 && (Integer) world.getBlockState(pos.above(i)).getValue(BambooStalkBlock.STAGE) != 1;
++        return i + j + 1 < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && (Integer) world.getBlockState(pos.above(i)).getValue(BambooStalkBlock.STAGE) != 1; // Paper
      }
  
      @Override
-@@ -180,7 +180,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+@@ -180,7 +180,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
              BlockPos blockposition1 = pos.above(i);
              BlockState iblockdata1 = world.getBlockState(blockposition1);
  
--            if (k >= 16 || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here
-+            if (k >= world.paperConfig().maxGrowthHeight.bamboo.max || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus bamboo and reed growth heights
+-            if (k >= 16 || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooStalkBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here
++            if (k >= world.paperConfig().maxGrowthHeight.bamboo.max || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooStalkBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus bamboo and reed growth heights
                  return;
              }
  
-@@ -221,7 +221,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+@@ -221,7 +221,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
          }
  
-         int j = (Integer) state.getValue(BambooBlock.AGE) != 1 && !iblockdata2.is(Blocks.BAMBOO) ? 0 : 1;
+         int j = (Integer) state.getValue(BambooStalkBlock.AGE) != 1 && !iblockdata2.is(Blocks.BAMBOO) ? 0 : 1;
 -        int k = (height < 11 || random.nextFloat() >= 0.25F) && height != 15 ? 0 : 1;
 +        int k = (height < world.paperConfig().maxGrowthHeight.bamboo.min || random.nextFloat() >= 0.25F) && height != (world.paperConfig().maxGrowthHeight.bamboo.max - 1) ? 0 : 1; // Paper
  
          // CraftBukkit start
-         if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) ((BlockState) ((BlockState) this.defaultBlockState().setValue(BambooBlock.AGE, j)).setValue(BambooBlock.LEAVES, blockpropertybamboosize)).setValue(BambooBlock.STAGE, k), 3)) {
-@@ -236,7 +236,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+         if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) ((BlockState) ((BlockState) this.defaultBlockState().setValue(BambooStalkBlock.AGE, j)).setValue(BambooStalkBlock.LEAVES, blockpropertybamboosize)).setValue(BambooStalkBlock.STAGE, k), 3)) {
+@@ -236,7 +236,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
      protected int getHeightAboveUpToMax(BlockGetter world, BlockPos pos) {
          int i;
  
@@ -55,7 +55,7 @@ index 3a6894c3cdee0d55f0546cda50c824ea5e95bfe0..2db8fd4fb03642fce2c7eca9c6b189f3
              ;
          }
  
-@@ -246,7 +246,7 @@ public class BambooBlock extends Block implements BonemealableBlock {
+@@ -246,7 +246,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
      protected int getHeightBelowUpToMax(BlockGetter world, BlockPos pos) {
          int i;
  

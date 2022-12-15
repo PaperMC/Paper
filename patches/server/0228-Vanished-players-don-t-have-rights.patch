@@ -5,10 +5,10 @@ Subject: [PATCH] Vanished players don't have rights
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index f550686d1ae45a9ecb406e999d02dba0cf022c58..273e1a6f4fd117e98732c66d9b168cab1d588127 100644
+index d8760dd282221fa10b486f1ec4634c1aafd9c26e..11cfe63c101f5d76d3481a3163dbaec22685ccce 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-@@ -211,7 +211,14 @@ public abstract class Projectile extends Entity {
+@@ -212,7 +212,14 @@ public abstract class Projectile extends Entity {
          if (!entity.isSpectator() && entity.isAlive() && entity.isPickable()) {
              Entity entity1 = this.getOwner();
  
@@ -24,10 +24,10 @@ index f550686d1ae45a9ecb406e999d02dba0cf022c58..273e1a6f4fd117e98732c66d9b168cab
              return false;
          }
 diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
-index 0d7c4be0c4abefecab367334408594afa7998b5e..78cac63e5bd7c84f59b8e00ee40899be78e8cdb1 100644
+index a6638e626600e4304a973497a39e3fac52203b16..e68b7a1b03783e4f9de24c5ae8773fc359bd2d37 100644
 --- a/src/main/java/net/minecraft/world/item/BlockItem.java
 +++ b/src/main/java/net/minecraft/world/item/BlockItem.java
-@@ -195,7 +195,8 @@ public class BlockItem extends Item {
+@@ -197,7 +197,8 @@ public class BlockItem extends Item {
          Player entityhuman = context.getPlayer();
          CollisionContext voxelshapecollision = entityhuman == null ? CollisionContext.empty() : CollisionContext.of(entityhuman);
          // CraftBukkit start - store default return
@@ -38,30 +38,19 @@ index 0d7c4be0c4abefecab367334408594afa7998b5e..78cac63e5bd7c84f59b8e00ee40899be
  
          BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(context.getLevel(), context.getClickedPos()), player, CraftBlockData.fromData(state), defaultReturn);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index f6ea7b5929f2affec914730c92d1bde48f218acf..f4249ee3259a95b9f079a75c78ccf96a14b99b0d 100644
+index d2e07f39097aee880e14c7b6c6df90e825a724d3..808a025548fd390ef4d657c53eb9bf73e73dbc93 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -74,6 +74,10 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
- import net.minecraft.world.level.storage.LevelData;
- import net.minecraft.world.level.storage.WritableLevelData;
- import net.minecraft.world.phys.AABB;
-+import net.minecraft.world.phys.shapes.BooleanOp;
-+import net.minecraft.world.phys.shapes.CollisionContext;
-+import net.minecraft.world.phys.shapes.Shapes;
-+import net.minecraft.world.phys.shapes.VoxelShape;
- import net.minecraft.world.scores.Scoreboard;
- 
- // CraftBukkit start
-@@ -265,6 +269,45 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -268,6 +268,45 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
      }
  
 +    // Paper start
 +    // ret true if no collision
-+    public final boolean checkEntityCollision(BlockState data, Entity source, CollisionContext voxelshapedcollision,
++    public final boolean checkEntityCollision(BlockState data, Entity source, net.minecraft.world.phys.shapes.CollisionContext voxelshapedcollision,
 +                                              BlockPos position, boolean checkCanSee) {
 +        // Copied from IWorldReader#a(IBlockData, BlockPosition, VoxelShapeCollision) & EntityAccess#a(Entity, VoxelShape)
-+        VoxelShape voxelshape = data.getCollisionShape(this, position, voxelshapedcollision);
++        net.minecraft.world.phys.shapes.VoxelShape voxelshape = data.getCollisionShape(this, position, voxelshapedcollision);
 +        if (voxelshape.isEmpty()) {
 +            return true;
 +        }
@@ -87,7 +76,7 @@ index f6ea7b5929f2affec914730c92d1bde48f218acf..f4249ee3259a95b9f079a75c78ccf96a
 +                continue;
 +            }
 +
-+            if (Shapes.joinIsNotEmpty(voxelshape, Shapes.create(entity.getBoundingBox()), BooleanOp.AND)) {
++            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(voxelshape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
 +                return false;
 +            }
 +        }
@@ -99,10 +88,10 @@ index f6ea7b5929f2affec914730c92d1bde48f218acf..f4249ee3259a95b9f079a75c78ccf96a
      public boolean isClientSide() {
          return this.isClientSide;
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 14e67b85e570e942c19f8fcafcb74c32f5f4fc37..f16ab4b673f79a8f2b50caa2eefd7e55474ef28b 100644
+index 21ca981fba9d93f83d12c38f12ed276cc3c3548f..b653121dc16ce4ab3f32456e0c8690e022aa263c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1265,6 +1265,14 @@ public class CraftEventFactory {
+@@ -1266,6 +1266,14 @@ public class CraftEventFactory {
          Projectile projectile = (Projectile) entity.getBukkitEntity();
          org.bukkit.entity.Entity collided = position.getEntity().getBukkitEntity();
          com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = new com.destroystokyo.paper.event.entity.ProjectileCollideEvent(projectile, collided);

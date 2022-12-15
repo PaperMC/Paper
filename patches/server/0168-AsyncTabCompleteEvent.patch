@@ -16,10 +16,10 @@ Also adds isCommand and getLocation to the sync TabCompleteEvent
 Co-authored-by: Aikar <aikar@aikar.co>
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index e40eeb5e04d96fb55283ded82cea0a5539a2fad5..90bd5c1a010a3a9d24328e5c719053603e206626 100644
+index 0e4691ab7ad4459282398e4c2160df4e442fdcb4..d30876c2a7f3871fb4c035d9cbe920f18ac7b05e 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -784,12 +784,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -776,12 +776,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      }
  
@@ -38,7 +38,7 @@ index e40eeb5e04d96fb55283ded82cea0a5539a2fad5..90bd5c1a010a3a9d24328e5c71905360
              return;
          }
          // Paper start
-@@ -800,18 +804,45 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -792,18 +796,45 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          }
          // Paper end
          // CraftBukkit end
@@ -49,6 +49,12 @@ index e40eeb5e04d96fb55283ded82cea0a5539a2fad5..90bd5c1a010a3a9d24328e5c71905360
          if (stringreader.canRead() && stringreader.peek() == '/') {
              stringreader.skip();
          }
+-
+-        ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
+-
+-        this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
+-            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
+-            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
 +            final String command = packet.getCommand();
 +            final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event = new com.destroystokyo.paper.event.server.AsyncTabCompleteEvent(this.getCraftPlayer(), command, true, null);
 +            event.callEvent();
@@ -56,14 +62,10 @@ index e40eeb5e04d96fb55283ded82cea0a5539a2fad5..90bd5c1a010a3a9d24328e5c71905360
 +            // If the event isn't handled, we can assume that we have no completions, and so we'll ask the server
 +            if (!event.isHandled()) {
 +                if (!event.isCancelled()) {
- 
--        ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
++
 +                    this.server.scheduleOnMain(() -> { // This needs to be on main
 +                        ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
- 
--        this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
--            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
--            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
++
 +                        this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
 +                            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
 +                            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
@@ -89,10 +91,10 @@ index e40eeb5e04d96fb55283ded82cea0a5539a2fad5..90bd5c1a010a3a9d24328e5c71905360
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 7013b11fc0cd5fbb5a7e62be45d84d54d3052237..bbf9550e7a7c78e961160ef09466e5f962172b6c 100644
+index 2e00f77ce6bbc84551cd74acfc77c113991e83a0..e424a7027e6e4ee981abeb8880e30b8b83a75e99 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2086,7 +2086,7 @@ public final class CraftServer implements Server {
+@@ -2110,7 +2110,7 @@ public final class CraftServer implements Server {
              offers = this.tabCompleteChat(player, message);
          }
  

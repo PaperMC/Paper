@@ -5,10 +5,10 @@ Subject: [PATCH] Remap fixes
 
 
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
-index 700fd7f0ef6ba5798389b41a52f887e76917893d..eabf34265470e68b56c0d8787a7acffcf9b49e83 100644
+index 954cf20fb9fbf331fe6314590a3edbe73118ceca..d4c46f44f7a998121482c2fc56d7986881d489d8 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
 +++ b/src/main/java/net/minecraft/core/BlockPos.java
-@@ -270,9 +270,11 @@ public class BlockPos extends Vec3i {
+@@ -274,9 +274,11 @@ public class BlockPos extends Vec3i {
  
      public static Iterable<BlockPos> withinManhattan(BlockPos center, int rangeX, int rangeY, int rangeZ) {
          int i = rangeX + rangeY + rangeZ;
@@ -23,7 +23,7 @@ index 700fd7f0ef6ba5798389b41a52f887e76917893d..eabf34265470e68b56c0d8787a7acffc
          return () -> {
              return new AbstractIterator<BlockPos>() {
                  private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-@@ -287,7 +289,7 @@ public class BlockPos extends Vec3i {
+@@ -291,7 +293,7 @@ public class BlockPos extends Vec3i {
                  protected BlockPos computeNext() {
                      if (this.zMirror) {
                          this.zMirror = false;
@@ -32,7 +32,7 @@ index 700fd7f0ef6ba5798389b41a52f887e76917893d..eabf34265470e68b56c0d8787a7acffc
                          return this.cursor;
                      } else {
                          BlockPos blockPos;
-@@ -313,7 +315,7 @@ public class BlockPos extends Vec3i {
+@@ -317,7 +319,7 @@ public class BlockPos extends Vec3i {
                              int k = this.currentDepth - Math.abs(i) - Math.abs(j);
                              if (k <= rangeZ) {
                                  this.zMirror = k != 0;
@@ -41,28 +41,26 @@ index 700fd7f0ef6ba5798389b41a52f887e76917893d..eabf34265470e68b56c0d8787a7acffc
                              }
                          }
  
-diff --git a/src/main/java/net/minecraft/server/commands/SummonCommand.java b/src/main/java/net/minecraft/server/commands/SummonCommand.java
-index da83a40a74b291879d236ffccf36ee7a626a811e..556c4fe8d0d044c2995533f4f20cbde7283a2711 100644
---- a/src/main/java/net/minecraft/server/commands/SummonCommand.java
-+++ b/src/main/java/net/minecraft/server/commands/SummonCommand.java
-@@ -53,9 +53,9 @@ public class SummonCommand {
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index b1ecaf47486eaa876e2286eae894b47ecf3a0849..01438ee9ad7a64ac4fd124d97029f87b49c25d5d 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1419,9 +1419,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         LevelChunk chunk1;
  
-             nbttagcompound1.putString("id", entity.toString());
-             ServerLevel worldserver = source.getLevel();
--            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (entity1) -> {
--                entity1.moveTo(pos.x, pos.y, pos.z, entity1.getYRot(), entity1.getXRot());
--                return entity1;
-+            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (loadedEntity) -> { // Paper - remap fix
-+                loadedEntity.moveTo(pos.x, pos.y, pos.z, loadedEntity.getYRot(), loadedEntity.getXRot()); // Paper - remap fix
-+                return loadedEntity; // Paper - remap fix
-             });
- 
-             if (entity1 == null) {
+         if (chunk instanceof LevelChunk) {
+-            LevelChunk chunk1 = (LevelChunk) chunk;
+-
+-            chunk1 = chunk1;
++            chunk1 = (LevelChunk) chunk; // Paper - remap fix
+         } else {
+             chunk1 = this.level.getChunk(chunkcoordintpair.x, chunkcoordintpair.z);
+         }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
-index b2e9418aaf2b2c87f396304287595e519e72e3ad..098253e92bd95159de93fbbdf95daee341fc5752 100644
+index 8f0a2f8d3a34c6b97bc7a933272ccf2689576c76..b9fcff8862e624644fdb73afcb3ef2106b0a76fc 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
-@@ -174,11 +174,11 @@ public class BehaviorUtils {
+@@ -173,11 +173,11 @@ public class BehaviorUtils {
  
          return optional.map((uuid) -> {
              return ((ServerLevel) entity.level).getEntity(uuid);
@@ -78,7 +76,7 @@ index b2e9418aaf2b2c87f396304287595e519e72e3ad..098253e92bd95159de93fbbdf95daee3
                  entityliving1 = entityliving2;
              } else {
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index 228e402a4efb6289fba58df3c0eac4cc608d4596..17c72a767e7b749ed78a9b54af19bae5381b296c 100644
+index 0b76584d85194f0b60ed51f577353bfead0489f5..d025df087e7b87fbc89a722226f2f2263c54ac47 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 @@ -192,7 +192,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
@@ -121,12 +119,12 @@ index ad52c3fc6210939a39ef77a382c640a24ee44838..6b7dd01778f0a5d3a96d2d04af4b525d
      }
  }
 diff --git a/src/test/java/org/bukkit/entity/EntityTypesTest.java b/src/test/java/org/bukkit/entity/EntityTypesTest.java
-index 8c4ad718e113f24a30fd11b345d34d6ca1ef73b0..1e84f541683ddb619c2a8dfcd2a141fba2bd851d 100644
+index f0333f01dddb2808eeaa796d9284d5cb3ad4934c..b2efb294822c53768bde38e7a78c7b8f093481e9 100644
 --- a/src/test/java/org/bukkit/entity/EntityTypesTest.java
 +++ b/src/test/java/org/bukkit/entity/EntityTypesTest.java
 @@ -5,7 +5,6 @@ import java.util.Set;
  import java.util.stream.Collectors;
- import net.minecraft.core.Registry;
+ import net.minecraft.core.registries.BuiltInRegistries;
  import net.minecraft.resources.ResourceLocation;
 -import net.minecraft.world.entity.EntityType;
  import org.bukkit.support.AbstractTestingBase;
@@ -136,9 +134,9 @@ index 8c4ad718e113f24a30fd11b345d34d6ca1ef73b0..1e84f541683ddb619c2a8dfcd2a141fb
      public void testMaps() {
          Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
  
--        for (EntityType<?> nms : Registry.ENTITY_TYPE) {
+-        for (EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) {
 -            ResourceLocation key = EntityType.getKey(nms);
-+        for (net.minecraft.world.entity.EntityType<?> nms : Registry.ENTITY_TYPE) { // Paper - remap fix
++        for (net.minecraft.world.entity.EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) { // Paper - remap fix
 +            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms); // Paper - remap fix
  
              org.bukkit.entity.EntityType bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());

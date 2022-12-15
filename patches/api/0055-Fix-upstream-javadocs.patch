@@ -1,0 +1,461 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 10 Jun 2017 16:59:40 -0500
+Subject: [PATCH] Fix upstream javadocs
+
+Upstream still refuses to use Java 8 with the API so they are likely unaware these are even issues.
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index d3d8c5ac59cee2ec24e91223e0c994016a4f9752..82757d3013e01a6bfbb685929955d3e7dad8508c 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1334,6 +1334,8 @@ public final class Bukkit {
+ 
+     /**
+      * Gets every player that has ever played on this server.
++     * <p>
++     * <b>This method can be expensive as it loads all the player data files from the disk.</b>
+      *
+      * @return an array containing all previous players
+      */
+diff --git a/src/main/java/org/bukkit/ChunkSnapshot.java b/src/main/java/org/bukkit/ChunkSnapshot.java
+index fb3e166ec48b8c0ebb7d541eaa1761b03a140610..cab63d678e56df0a090ee793d56def88b8c68079 100644
+--- a/src/main/java/org/bukkit/ChunkSnapshot.java
++++ b/src/main/java/org/bukkit/ChunkSnapshot.java
+@@ -136,7 +136,7 @@ public interface ChunkSnapshot {
+      * Get raw biome temperature at given coordinates
+      *
+      * @param x X-coordinate (0-15)
+-     * @param y Y-coordinate (0-15)
++     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
+      * @param z Z-coordinate (0-15)
+      * @return temperature at given coordinate
+      */
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index a8d3addae5b0ed261d6a27052ad4e54970de597c..3485db7548e93242f99977a236eb3bcebedfb964 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -510,13 +510,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * </ul>
+      * <p>
+      * <b>Note:</b> If set to 0, {@link SpawnCategory} mobs spawning will be disabled.
+-     * <p>
+-     * Minecraft default: 1.
+-     * <br>
+-     * <b>Note: </b> the {@link SpawnCategory#MISC} are not consider.
+      *
+      * @param spawnCategory the category of spawn
+      * @return the default ticks per {@link SpawnCategory} mobs spawn value
++     * @throws IllegalArgumentException if the category is {@link SpawnCategory#MISC}
+      */
+     public int getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
+ 
+@@ -1129,6 +1126,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Gets every player that has ever played on this server.
++     * <p>
++     * <b>This method can be expensive as it loads all the player data files from the disk.</b>
+      *
+      * @return an array containing all previous players
+      */
+diff --git a/src/main/java/org/bukkit/block/Bed.java b/src/main/java/org/bukkit/block/Bed.java
+index f9bd74f9ce6bd6650726e5a993f9b6e292cdc74d..f4c37ce1fe7aac3dde8485ee51fc8888ed56e79e 100644
+--- a/src/main/java/org/bukkit/block/Bed.java
++++ b/src/main/java/org/bukkit/block/Bed.java
+@@ -4,7 +4,22 @@ import org.bukkit.material.Colorable;
+ 
+ /**
+  * Represents a captured state of a bed.
+- * @deprecated does not provide useful information beyond the material itself
+  */
+-@Deprecated
+-public interface Bed extends TileState, Colorable { }
++// Paper start
++// @Deprecated
++public interface Bed extends TileState, Colorable {
++
++    @Override
++    @org.jetbrains.annotations.NotNull org.bukkit.DyeColor getColor();
++
++    /**
++     * <b>Unsupported</b>
++     *
++     * @throws UnsupportedOperationException not supported, set the block type
++     */
++    @Override
++    @org.jetbrains.annotations.Contract("_ -> fail")
++    @Deprecated(forRemoval = true)
++    void setColor(@org.bukkit.UndefinedNullability("not supported") org.bukkit.DyeColor color);
++// Paper end
++}
+diff --git a/src/main/java/org/bukkit/entity/ArmorStand.java b/src/main/java/org/bukkit/entity/ArmorStand.java
+index 91fc11dda99de506be83d40df8929bf7cd8e8d85..7dc631ebd009f5f5c3ac1699c3f3515c47609c05 100644
+--- a/src/main/java/org/bukkit/entity/ArmorStand.java
++++ b/src/main/java/org/bukkit/entity/ArmorStand.java
+@@ -360,5 +360,8 @@ public interface ArmorStand extends LivingEntity {
+      * @param move {@code true} if this armour stand can move, {@code false} otherwise
+      */
+     void setCanMove(boolean move);
++
++    @Override
++    org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/HumanEntity.java b/src/main/java/org/bukkit/entity/HumanEntity.java
+index 652238659e0a6e0df11f2798773aea4fe7712360..9c57eda3b7af7026639afda9959bc5e5a720861a 100644
+--- a/src/main/java/org/bukkit/entity/HumanEntity.java
++++ b/src/main/java/org/bukkit/entity/HumanEntity.java
+@@ -22,6 +22,11 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder {
+ 
++    // Paper start
++    @Override
++    org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
++    // Paper end
++
+     /**
+      * Returns the name of this player
+      *
+diff --git a/src/main/java/org/bukkit/entity/Mob.java b/src/main/java/org/bukkit/entity/Mob.java
+index 2926fa6071bc7640cc10280b5c3962b0ce7686f1..4f63988848443aff55619bc12ef12c925642a3f9 100644
+--- a/src/main/java/org/bukkit/entity/Mob.java
++++ b/src/main/java/org/bukkit/entity/Mob.java
+@@ -9,6 +9,10 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public interface Mob extends LivingEntity, Lootable {
+ 
++    // Paper start
++    @Override
++    org.bukkit.inventory.@org.jetbrains.annotations.NotNull EntityEquipment getEquipment();
++    // Paper end
+     /**
+      * Instructs this Mob to set the specified LivingEntity as its target.
+      * <p>
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 80910fcc46b62ee4974a659713a1a72b5b4c135b..50faa513411cdb611ae228f0c07a7dfe15807b85 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -312,15 +312,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+ 
+     /**
+      * Saves the players current location, health, inventory, motion, and
+-     * other information into the username.dat file, in the world/player
+-     * folder
++     * other information into the &lt;uuid&gt;.dat file, in the
++     * &lt;level-name&gt;/playerdata/ folder.
+      */
+     public void saveData();
+ 
+     /**
+      * Loads the players current location, health, inventory, motion, and
+-     * other information from the username.dat file, in the world/player
+-     * folder.
++     * other information from the &lt;uuid&gt;.dat file, in the
++     * &lt;level-name&gt;/playerdata/ folder.
+      * <p>
+      * Note: This will overwrite the players current inventory, health,
+      * motion, etc, with the state from the saved dat file.
+@@ -798,7 +798,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * Use supplied alternative character to the section symbol to represent legacy color codes.
+      *
+-     * @param alternateChar Alternate symbol such as '&'
++     * @param alternateChar Alternate symbol such as '&amp;'
+      * @param message The message to send
+      * @deprecated use {@link #sendActionBar(Component)}
+      */
+diff --git a/src/main/java/org/bukkit/entity/Slime.java b/src/main/java/org/bukkit/entity/Slime.java
+index 1119e26e270bb45f517955b19d95a9ec3d113634..4631647c64c89ffdde2d9b63bdab974acfe6cb3d 100644
+--- a/src/main/java/org/bukkit/entity/Slime.java
++++ b/src/main/java/org/bukkit/entity/Slime.java
+@@ -11,6 +11,16 @@ public interface Slime extends Mob {
+     public int getSize();
+ 
+     /**
++     * Setting the size of the slime (regardless of previous size)
++     * will set the following attributes:
++     * <ul>
++     *     <li>{@link org.bukkit.attribute.Attribute#GENERIC_MAX_HEALTH}</li>
++     *     <li>{@link org.bukkit.attribute.Attribute#GENERIC_MOVEMENT_SPEED}</li>
++     *     <li>{@link org.bukkit.attribute.Attribute#GENERIC_ATTACK_DAMAGE}</li>
++     * </ul>
++     * to their per-size defaults and heal the
++     * slime to its max health (assuming it's alive).
++     *
+      * @param sz The new size of the slime.
+      */
+     public void setSize(int sz);
+diff --git a/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java b/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
+index e9de00e9e434d36117a672fa9fbfc7c52f284b67..9a06487e0f76cd7765e6f900b7458a3cf0aa44e7 100644
+--- a/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
++++ b/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
+@@ -158,7 +158,8 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
+          */
+         SHEARED,
+         /**
+-         * When eg an effect cloud is spawned as a result of a creeper exploding
++         * When an entity is spawned as a result of an explosion. Like an area effect cloud from
++         * a creeper or a dragon fireball.
+          */
+         EXPLOSION,
+         /**
+diff --git a/src/main/java/org/bukkit/event/entity/EntityRegainHealthEvent.java b/src/main/java/org/bukkit/event/entity/EntityRegainHealthEvent.java
+index d51d2ec1d04d9ea8a25a70d0d856f2355ebfcb4a..7ecff9fcee19fc94be784474fea620e5dd434731 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityRegainHealthEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityRegainHealthEvent.java
+@@ -105,7 +105,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable
+          */
+         SATIATED,
+         /**
+-         * When a player regains health from eating consumables
++         * When an animal regains health from eating consumables
+          */
+         EATING,
+         /**
+diff --git a/src/main/java/org/bukkit/inventory/EntityEquipment.java b/src/main/java/org/bukkit/inventory/EntityEquipment.java
+index d5b50a4a954fed35d37f03f1a277cc173ca106df..a91fa5386afd7a1137adb921ad5adb798604772f 100644
+--- a/src/main/java/org/bukkit/inventory/EntityEquipment.java
++++ b/src/main/java/org/bukkit/inventory/EntityEquipment.java
+@@ -37,9 +37,23 @@ public interface EntityEquipment {
+     public ItemStack getItem(@NotNull EquipmentSlot slot);
+ 
+     /**
+-     * Gets a copy of the item the entity is currently holding
++     * Gets the item the entity is currently holding
+      * in their main hand.
+      *
++     * <p>
++     * This returns a copy if this equipment instance is from a non-player,
++     * or it's an empty stack (has AIR as its type).
++     * For non-empty stacks from players, this returns a live mirror. You can check if this
++     * will return a mirror with
++     * <pre>{@code
++     * EntityEquipment equipment = entity.getEquipment();
++     * if (equipment instanceof PlayerInventory) {
++     *     equipment.getItemInMainHand(); // will return a mirror
++     * } else {
++     *     equipment.getItemInMainHand(); // will return a copy
++     * }
++     * }</pre>
++     *
+      * @return the currently held item
+      */
+     @NotNull
+@@ -61,9 +75,23 @@ public interface EntityEquipment {
+     void setItemInMainHand(@Nullable ItemStack item, boolean silent);
+ 
+     /**
+-     * Gets a copy of the item the entity is currently holding
++     * Gets the item the entity is currently holding
+      * in their off hand.
+      *
++     * <p>
++     * This returns a copy if this equipment instance is from a non-player,
++     * or it's an empty stack (has AIR as its type).
++     * For non-empty stacks from players, this returns a live mirror. You can check if this
++     * will return a mirror with
++     * <pre>{@code
++     * EntityEquipment equipment = entity.getEquipment();
++     * if (equipment instanceof PlayerInventory) {
++     *     equipment.getItemInOffHand(); // will return a mirror
++     * } else {
++     *     equipment.getItemInOffHand(); // will return a copy
++     * }
++     * }</pre>
++     *
+      * @return the currently held item
+      */
+     @NotNull
+@@ -85,7 +113,21 @@ public interface EntityEquipment {
+     void setItemInOffHand(@Nullable ItemStack item, boolean silent);
+ 
+     /**
+-     * Gets a copy of the item the entity is currently holding
++     * Gets the item the entity is currently holding
++     *
++     * <p>
++     * This returns a copy if this equipment instance is from a non-player,
++     * or it's an empty stack (has AIR as its type).
++     * For non-empty stacks from players, this returns a live mirror. You can check if this
++     * will return a mirror with
++     * <pre>{@code
++     * EntityEquipment equipment = entity.getEquipment();
++     * if (equipment instanceof PlayerInventory) {
++     *     equipment.getItemInHand(); // will return a mirror
++     * } else {
++     *     equipment.getItemInHand(); // will return a copy
++     * }
++     * }</pre>
+      *
+      * @return the currently held item
+      * @see #getItemInMainHand()
+@@ -110,11 +152,24 @@ public interface EntityEquipment {
+     void setItemInHand(@Nullable ItemStack stack);
+ 
+     /**
+-     * Gets a copy of the helmet currently being worn by the entity
++     * Gets the helmet currently being worn by the entity
++     *
++     * <p>
++     * This returns a copy if this equipment instance is from a non-player.
++     * For stacks from players, this returns a live mirror (or null). You can check if this
++     * will return a mirror with
++     * <pre>{@code
++     * EntityEquipment equipment = entity.getEquipment();
++     * if (equipment instanceof PlayerInventory) {
++     *     equipment.getItemInHand(); // will return a mirror
++     * } else {
++     *     equipment.getItemInHand(); // will return a copy
++     * }
++     * }</pre>
+      *
+      * @return The helmet being worn
+      */
+-    @Nullable
++    @org.bukkit.UndefinedNullability("not null for entities, nullable for players") // Paper
+     ItemStack getHelmet();
+ 
+     /**
+@@ -133,11 +188,24 @@ public interface EntityEquipment {
+     void setHelmet(@Nullable ItemStack helmet, boolean silent);
+ 
+     /**
+-     * Gets a copy of the chest plate currently being worn by the entity
++     * Gets the chest plate currently being worn by the entity
++     *
++     * <p>
++     * This returns a copy if this equipment instance is from a non-player.
++     * For stacks from players, this returns a live mirror (or null). You can check if this
++     * will return a mirror with
++     * <pre>{@code
++     * EntityEquipment equipment = entity.getEquipment();
++     * if (equipment instanceof PlayerInventory) {
++     *     equipment.getChestplate(); // will return a mirror
++     * } else {
++     *     equipment.getChestplate(); // will return a copy
++     * }
++     * }</pre>
+      *
+      * @return The chest plate being worn
+      */
+-    @Nullable
++    @org.bukkit.UndefinedNullability("not null for entities, nullable for players") // Paper
+     ItemStack getChestplate();
+ 
+     /**
+@@ -156,11 +224,24 @@ public interface EntityEquipment {
+     void setChestplate(@Nullable ItemStack chestplate, boolean silent);
+ 
+     /**
+-     * Gets a copy of the leggings currently being worn by the entity
++     * Gets the leggings currently being worn by the entity
++     *
++     * <p>
++     * This returns a copy if this equipment instance is from a non-player.
++     * For stacks from players, this returns a live mirror (or null). You can check if this
++     * will return a mirror with
++     * <pre>{@code
++     * EntityEquipment equipment = entity.getEquipment();
++     * if (equipment instanceof PlayerInventory) {
++     *     equipment.getLeggings(); // will return a mirror
++     * } else {
++     *     equipment.getLeggings(); // will return a copy
++     * }
++     * }</pre>
+      *
+      * @return The leggings being worn
+      */
+-    @Nullable
++    @org.bukkit.UndefinedNullability("not null for entities, nullable for players") // Paper
+     ItemStack getLeggings();
+ 
+     /**
+@@ -179,11 +260,24 @@ public interface EntityEquipment {
+     void setLeggings(@Nullable ItemStack leggings, boolean silent);
+ 
+     /**
+-     * Gets a copy of the boots currently being worn by the entity
++     * Gets the boots currently being worn by the entity
++     *
++     * <p>
++     * This returns a copy if this equipment instance is from a non-player.
++     * For stacks from players, this returns a live mirror (or null). You can check if this
++     * will return a mirror with
++     * <pre>{@code
++     * EntityEquipment equipment = entity.getEquipment();
++     * if (equipment instanceof PlayerInventory) {
++     *     equipment.getBoots(); // will return a mirror
++     * } else {
++     *     equipment.getBoots(); // will return a copy
++     * }
++     * }</pre>
+      *
+      * @return The boots being worn
+      */
+-    @Nullable
++    @org.bukkit.UndefinedNullability("not null for entities, nullable for players") // Paper
+     ItemStack getBoots();
+ 
+     /**
+@@ -202,12 +296,25 @@ public interface EntityEquipment {
+     void setBoots(@Nullable ItemStack boots, boolean silent);
+ 
+     /**
+-     * Gets a copy of all worn armor
++     * Gets all worn armor
++     *
++     * <p>
++     * This returns a copy if this equipment instance is from a non-player,
++     * or it's an empty stack (has AIR as its type).
++     * For non-empty stacks from players, this returns a live mirror. You can check if this
++     * will return a mirror with
++     * <pre>{@code
++     * EntityEquipment equipment = entity.getEquipment();
++     * if (equipment instanceof PlayerInventory) {
++     *     equipment.getArmorContents(); // will return an array of mirror
++     * } else {
++     *     equipment.getArmorContents(); // will return an array of copies
++     * }
++     * }</pre>
+      *
+      * @return The array of worn armor. Individual items may be null.
+      */
+-    @NotNull
+-    ItemStack[] getArmorContents();
++    @org.bukkit.UndefinedNullability("not null elements for entities, nullable elements for players") ItemStack @NotNull [] getArmorContents(); // Paper
+ 
+     /**
+      * Sets the entities armor to the provided array of ItemStacks
+diff --git a/src/main/java/org/bukkit/inventory/PlayerInventory.java b/src/main/java/org/bukkit/inventory/PlayerInventory.java
+index 62fbd7f6d8195bebcab7f704a0a485a1bbeca26c..5461f7fa75f5a065bb333b4a113640b5fe1e3825 100644
+--- a/src/main/java/org/bukkit/inventory/PlayerInventory.java
++++ b/src/main/java/org/bukkit/inventory/PlayerInventory.java
+@@ -158,7 +158,7 @@ public interface PlayerInventory extends Inventory {
+     public void setBoots(@Nullable ItemStack boots);
+ 
+     /**
+-     * Gets a copy of the item the player is currently holding
++     * Gets the item the player is currently holding
+      * in their main hand.
+      *
+      * @return the currently held item
+@@ -174,7 +174,7 @@ public interface PlayerInventory extends Inventory {
+     void setItemInMainHand(@Nullable ItemStack item);
+ 
+     /**
+-     * Gets a copy of the item the player is currently holding
++     * Gets the item the player is currently holding
+      * in their off hand.
+      *
+      * @return the currently held item
+@@ -190,7 +190,7 @@ public interface PlayerInventory extends Inventory {
+     void setItemInOffHand(@Nullable ItemStack item);
+ 
+     /**
+-     * Gets a copy of the item the player is currently holding
++     * Gets the item the player is currently holding
+      *
+      * @return the currently held item
+      * @see #getItemInMainHand()

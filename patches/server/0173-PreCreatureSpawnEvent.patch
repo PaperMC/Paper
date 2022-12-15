@@ -15,10 +15,10 @@ instead and save a lot of server resources.
 See: https://github.com/PaperMC/Paper/issues/917
 
 diff --git a/src/main/java/net/minecraft/util/SpawnUtil.java b/src/main/java/net/minecraft/util/SpawnUtil.java
-index f4d1a3e861a8727d7f3efd75c0e83cc9418fa9bd..3fb910fadde4875c39523779ad24f381e45b6ab6 100644
+index 1b3c7b3fb869215badacdb604199d5b96f74e384..83ef8cb27db685cceb5c2b7c9674e17b93ba081c 100644
 --- a/src/main/java/net/minecraft/util/SpawnUtil.java
 +++ b/src/main/java/net/minecraft/util/SpawnUtil.java
-@@ -19,10 +19,10 @@ public class SpawnUtil {
+@@ -18,10 +18,10 @@ public class SpawnUtil {
  
      public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entityType, MobSpawnType reason, ServerLevel world, BlockPos pos, int tries, int horizontalRange, int verticalRange, SpawnUtil.Strategy requirements) {
          // CraftBukkit start
@@ -31,7 +31,7 @@ index f4d1a3e861a8727d7f3efd75c0e83cc9418fa9bd..3fb910fadde4875c39523779ad24f381
          // CraftBukkit end
          BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
  
-@@ -32,6 +32,26 @@ public class SpawnUtil {
+@@ -31,6 +31,26 @@ public class SpawnUtil {
  
              blockposition_mutableblockposition.setWithOffset(blockposition, i1, k, j1);
              if (worldserver.getWorldBorder().isWithinBounds((BlockPos) blockposition_mutableblockposition) && SpawnUtil.moveToPossibleSpawnPosition(worldserver, k, blockposition_mutableblockposition, spawnutil_a)) {
@@ -55,17 +55,17 @@ index f4d1a3e861a8727d7f3efd75c0e83cc9418fa9bd..3fb910fadde4875c39523779ad24f381
 +                    break;
 +                }
 +                // Paper end
-                 T t0 = entitytypes.create(worldserver, (CompoundTag) null, (Component) null, (Player) null, blockposition_mutableblockposition, enummobspawn, false, false); // CraftBukkit - decompile error
+                 T t0 = entitytypes.create(worldserver, (CompoundTag) null, null, blockposition_mutableblockposition, enummobspawn, false, false); // CraftBukkit - decompile error
  
                  if (t0 != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index 2db27f5e3e3c1bb0502c055f78c4a81eb00fcf1b..fdefccfa07227f315259f636076e36a120c72917 100644
+index 2e392630d3b4b08ff8ab82b7f8b32b7fbf21570d..cb1fe497477d6850260b09dcfbf290119ff6ab49 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -347,6 +347,20 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
- 
+@@ -405,6 +405,20 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
      @Nullable
-     public T spawn(ServerLevel worldserver, @Nullable CompoundTag nbttagcompound, @Nullable Component ichatbasecomponent, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
+     public T spawn(ServerLevel worldserver, @Nullable CompoundTag nbttagcompound, @Nullable Consumer<T> consumer, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
+         // CraftBukkit end
 +        // Paper start - Call PreCreatureSpawnEvent
 +        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityType.getKey(this).getPath());
 +        if (type != null) {
@@ -80,14 +80,14 @@ index 2db27f5e3e3c1bb0502c055f78c4a81eb00fcf1b..fdefccfa07227f315259f636076e36a1
 +            }
 +        }
 +        // Paper end
-         T t0 = this.create(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
+         T t0 = this.create(worldserver, nbttagcompound, consumer, blockposition, enummobspawn, flag, flag1);
  
          if (t0 != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index 25cd8a4101cf44955d95924c9794c238ddde2901..f957c0aca36b7228ac3a33ca04c948b1d10642d1 100644
+index bbbb26550b0c5b36d9c7204f075aa90b79b85ff0..bc778aadb2604756b783d4d024e3154576ab3236 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-@@ -947,7 +947,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+@@ -951,7 +951,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
              }).limit(5L).collect(Collectors.toList());
  
              if (list1.size() >= requiredCount) {
@@ -97,10 +97,10 @@ index 25cd8a4101cf44955d95924c9794c238ddde2901..f957c0aca36b7228ac3a33ca04c948b1
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index ac767d107ea0d856f3f8caccfe6f79b14e933005..c41c1fa8085f502363c8273cd9fce1cf1743fe71 100644
+index e9e0286083337ccd027e01ec80125fc69550ad07..23cecd12f064f70d314393971312d881cace043a 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-@@ -124,6 +124,27 @@ public abstract class BaseSpawner {
+@@ -128,6 +128,27 @@ public abstract class BaseSpawner {
                          } else if (!SpawnPlacements.checkSpawnRules((EntityType) optional.get(), world, MobSpawnType.SPAWNER, blockposition1, world.getRandom())) {
                              continue;
                          }
@@ -129,10 +129,10 @@ index ac767d107ea0d856f3f8caccfe6f79b14e933005..c41c1fa8085f502363c8273cd9fce1cf
                          Entity entity = EntityType.loadEntityRecursive(nbttagcompound, world, (entity1) -> {
                              entity1.moveTo(d0, d1, d2, entity1.getYRot(), entity1.getXRot());
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index c6ba7427b53398ddc8f0c942a810fad6e24561b4..c41390f5b9260bcfb843460904e1315695a1a972 100644
+index 5c58031279c0b74d2061c802e60b7bed50f27156..608be2b8bfff1b89855fc0bd181430d3a29a4cbb 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -212,7 +212,13 @@ public final class NaturalSpawner {
+@@ -213,7 +213,13 @@ public final class NaturalSpawner {
                                          j1 = biomesettingsmobs_c.minCount + world.random.nextInt(1 + biomesettingsmobs_c.maxCount - biomesettingsmobs_c.minCount);
                                      }
  
@@ -147,7 +147,7 @@ index c6ba7427b53398ddc8f0c942a810fad6e24561b4..c41390f5b9260bcfb843460904e13156
                                          Mob entityinsentient = NaturalSpawner.getMobForSpawn(world, biomesettingsmobs_c.type);
  
                                          if (entityinsentient == null) {
-@@ -260,9 +266,25 @@ public final class NaturalSpawner {
+@@ -261,9 +267,25 @@ public final class NaturalSpawner {
          return squaredDistance <= 576.0D ? false : (world.getSharedSpawnPos().closerToCenterThan(new Vec3((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D), 24.0D) ? false : Objects.equals(new ChunkPos(pos), chunk.getPos()) || world.isNaturalSpawningAllowed((BlockPos) pos));
      }
  

@@ -30,10 +30,10 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f1d4a7a9e74adc18e18b2df960794ec8c05ce340..37a3c1bd60dbd0e0069120d4f48a17cfbc82dca1 100644
+index 1ba7fe6b51b5e1555617bc65619c4ff82fd564cb..cdfbee9657c7a1664eb8e2f88bfa4f702fb46d4a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -221,6 +221,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -233,6 +233,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private Map<ResourceKey<Level>, ServerLevel> levels;
      private PlayerList playerList;
      private volatile boolean running;
@@ -41,7 +41,7 @@ index f1d4a7a9e74adc18e18b2df960794ec8c05ce340..37a3c1bd60dbd0e0069120d4f48a17cf
      private boolean stopped;
      private int tickCount;
      protected final Proxy proxy;
-@@ -894,7 +895,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -902,7 +903,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          if (this.playerList != null) {
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.saveAll();
@@ -50,24 +50,24 @@ index f1d4a7a9e74adc18e18b2df960794ec8c05ce340..37a3c1bd60dbd0e0069120d4f48a17cf
              try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
-@@ -945,6 +946,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -953,6 +954,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
-     public void halt(boolean flag) {
+     public void halt(boolean waitForShutdown) {
 +        // Paper start - allow passing of the intent to restart
-+        this.safeShutdown(flag, false);
++        this.safeShutdown(waitForShutdown, false);
 +    }
-+    public void safeShutdown(boolean flag, boolean isRestarting) {
++    public void safeShutdown(boolean waitForShutdown, boolean isRestarting) {
 +        this.isRestarting = isRestarting;
 +        // Paper end
          this.running = false;
-         if (flag) {
+         if (waitForShutdown) {
              try {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index acb3d75f0777eab5aa117679d2328c22f46cf823..5820dbb6d2129e2f99207e39c3ed9e661610f491 100644
+index 70b19aeba089f48cf53e259fce1339c7b31cd133..67e13b8510eeecf16caae9fbbbeb463b794c460d 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1153,8 +1153,15 @@ public abstract class PlayerList {
+@@ -1163,8 +1163,15 @@ public abstract class PlayerList {
      }
  
      public void removeAll() {

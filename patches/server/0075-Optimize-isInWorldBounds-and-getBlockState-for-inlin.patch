@@ -12,7 +12,7 @@ Replace all calls to the new place to the unnecessary forward.
 Optimize getType and getBlockData to manually inline and optimize the calls
 
 diff --git a/src/main/java/net/minecraft/core/Vec3i.java b/src/main/java/net/minecraft/core/Vec3i.java
-index 4587a3668b6be9222cdd74a38229f89f611d1af6..9f32861d791f7e4cb39d2ad01f48e1916fc2b4b1 100644
+index 3b254a89484ac8a9dba399c7eb081328ff69a7b2..a6a6aaf226655d0e44bc229288112882a9c04e3b 100644
 --- a/src/main/java/net/minecraft/core/Vec3i.java
 +++ b/src/main/java/net/minecraft/core/Vec3i.java
 @@ -33,6 +33,12 @@ public class Vec3i implements Comparable<Vec3i> {
@@ -29,10 +29,10 @@ index 4587a3668b6be9222cdd74a38229f89f611d1af6..9f32861d791f7e4cb39d2ad01f48e191
          this.x = x;
          this.y = y;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 62c54a0c789ca460ec29b0c653f5abd113736fb9..d612b59e04fcd01a8e2c4c7f43d8735fc208b520 100644
+index aeb37e84f5760a7435530123b53276920fb19749..3e4ebdb53b543c85c1179b591ce5569336fbb995 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -276,7 +276,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -279,7 +279,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      }
  
      public boolean isInWorldBounds(BlockPos pos) {
@@ -42,11 +42,11 @@ index 62c54a0c789ca460ec29b0c653f5abd113736fb9..d612b59e04fcd01a8e2c4c7f43d8735f
  
      public static boolean isInSpawnableBounds(BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-index 0e787d877901dfcea714b0e14e9fc4358ee30bbe..41e61e6c128f22224665af3f07cd11d69a43062b 100644
+index 1b7496cec0ba5a95615a069e3168bd46308d0b40..508c2fff8d8e0c6f37b6c4e3b72ba772c2ab2ee5 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 @@ -160,6 +160,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
-         return GameEventDispatcher.NOOP;
+         return GameEventListenerRegistry.NOOP;
      }
  
 +    public abstract BlockState getBlockState(final int x, final int y, final int z); // Paper
@@ -54,7 +54,7 @@ index 0e787d877901dfcea714b0e14e9fc4358ee30bbe..41e61e6c128f22224665af3f07cd11d6
      public abstract BlockState setBlockState(BlockPos pos, BlockState state, boolean moved);
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
-index a78bf00d4559dd99869d93ec78b3525d24331925..b7856c420f346ac4923afa66a9f8276490f27e82 100644
+index 2eb92dde607d7c8968cb07c6f3c24e1c45e9990f..908f71721daf4305692f424d7712cbfdddddae83 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 @@ -55,6 +55,12 @@ public class EmptyLevelChunk extends LevelChunk {
@@ -71,7 +71,7 @@ index a78bf00d4559dd99869d93ec78b3525d24331925..b7856c420f346ac4923afa66a9f82764
      public BlockState getBlockState(BlockPos pos) {
          return Blocks.VOID_AIR.defaultBlockState();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
-index ac5dff35e2df23b8790bbe65c40acc6a3c77e6ac..8ffc206a858864d277ff94de7c66ffdb07d8f491 100644
+index 8033c8741a0f73919a357893652592b317bfb417..9a1cffd51aaf97f759a9057aefbf50bd6f5ed028 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
 @@ -89,6 +89,12 @@ public class ImposterProtoChunk extends ProtoChunk {
@@ -88,7 +88,7 @@ index ac5dff35e2df23b8790bbe65c40acc6a3c77e6ac..8ffc206a858864d277ff94de7c66ffdb
      @Override
      public FluidState getFluidState(BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 20c9eada6f051ecdd5e45e625d7e6289d406a2f8..5244a0a85d80963493d9106dd2674b1701c1919c 100644
+index b78e89eed44a06bb8c7a8a62e561574d4dc4b2de..ac67a34bee88e502b88a7cb7413f4ab33c7458b4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -342,12 +342,29 @@ public class LevelChunk extends ChunkAccess {
@@ -138,7 +138,7 @@ index dddae1e226d8f58cdcfc597e25d4228cd3245cb4..ae37e97e52557b48f129cc02eeea3953
      private short tickingFluidCount;
      public final PalettedContainer<BlockState> states;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-index 040c6092ceed4c693a7a056c0d1a49d3d2242b19..13b62e8e6569c154547bc0d5626488c5b0839f20 100644
+index 0b67858f8d6689b34816f9556f3424af512a7401..c24b4c6a560aab2df07783b3481981deb8571a50 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 @@ -94,14 +94,18 @@ public class ProtoChunk extends ChunkAccess {

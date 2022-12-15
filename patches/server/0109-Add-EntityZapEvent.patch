@@ -5,10 +5,10 @@ Subject: [PATCH] Add EntityZapEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index 2a7c82be934a965ba26dc7bf1f60689360bda487..33d1a6b31afec4dbeb00dcabf50c5840852102d6 100644
+index 18ba4b9d9b68088afd48d1f12cec6b155ea84159..dfc67cd0ef52939be5e5a9952cfcdb4d87bf0d82 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-@@ -836,9 +836,17 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+@@ -837,10 +837,17 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
      @Override
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
          if (world.getDifficulty() != Difficulty.PEACEFUL) {
@@ -16,22 +16,22 @@ index 2a7c82be934a965ba26dc7bf1f60689360bda487..33d1a6b31afec4dbeb00dcabf50c5840
 +            // Paper - move log down, event can cancel
              Witch entitywitch = (Witch) EntityType.WITCH.create(world);
  
-+            // Paper start
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch).isCancelled()) {
-+                return;
-+            }
-+            // Paper end
+             if (entitywitch != null) {
++                // Paper start
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch).isCancelled()) {
++                    return;
++                }
++                if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Move down
++                // Paper end
 +
-+            if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Paper - move log down, event can cancel
-+
-             entitywitch.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
-             entitywitch.finalizeSpawn(world, world.getCurrentDifficultyAt(entitywitch.blockPosition()), MobSpawnType.CONVERSION, (SpawnGroupData) null, (CompoundTag) null);
-             entitywitch.setNoAi(this.isNoAi());
+                 entitywitch.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
+                 entitywitch.finalizeSpawn(world, world.getCurrentDifficultyAt(entitywitch.blockPosition()), MobSpawnType.CONVERSION, (SpawnGroupData) null, (CompoundTag) null);
+                 entitywitch.setNoAi(this.isNoAi());
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 2766f670f7bbe03c23552eb2ccf71d6397cfb150..5ccaa797f0f794c71c9402c3b440c681defd0952 100644
+index 3b520b1301eb0225cdcbb271c8032726c59d3990..d8ebe20844136f2a5b395669dcfdd7f6bbc6fff3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1157,6 +1157,14 @@ public class CraftEventFactory {
+@@ -1158,6 +1158,14 @@ public class CraftEventFactory {
          return event;
      }
  

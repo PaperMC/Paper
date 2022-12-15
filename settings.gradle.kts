@@ -1,6 +1,6 @@
 import java.util.Locale
 
-if (!file(".git").isDirectory) {
+if (!file(".git").exists()) {
     val errorText = """
         
         =====================[ ERROR ]=====================
