@@ -4,29 +4,6 @@ Date: Mon, 3 Sep 2018 18:20:03 -0500
 Subject: [PATCH] Add ray tracing methods to LivingEntity
 
 
-diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/io/papermc/paper/util/MCUtil.java
-+++ b/src/main/java/io/papermc/paper/util/MCUtil.java
-@@ -0,0 +0,0 @@ public final class MCUtil {
-         return getNMSWorld(entity.getWorld());
-     }
- 
-+    public static ClipContext.Fluid getNMSFluidCollisionOption(com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
-+        switch (fluidMode) {
-+            case NEVER:
-+                return ClipContext.Fluid.NONE;
-+            case SOURCE_ONLY:
-+                return ClipContext.Fluid.SOURCE_ONLY;
-+            case ALWAYS:
-+                return ClipContext.Fluid.ANY;
-+        }
-+        return null;
-+    }
-+
-     public static BlockFace toBukkitBlockFace(Direction enumDirection) {
-         switch (enumDirection) {
-             case DOWN:
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
@@ -35,9 +12,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      // Paper start
-+    public HitResult getRayTrace(int maxDistance) {
-+        return getRayTrace(maxDistance, ClipContext.Fluid.NONE);
-+    }
 +
 +    public HitResult getRayTrace(int maxDistance, ClipContext.Fluid fluidCollisionOption) {
 +        if (maxDistance < 1 || maxDistance > 120) {
@@ -66,22 +40,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
-+        net.minecraft.world.phys.HitResult rayTrace = getHandle().getRayTrace(maxDistance, io.papermc.paper.util.MCUtil.getNMSFluidCollisionOption(fluidMode));
-+        return !(rayTrace instanceof net.minecraft.world.phys.BlockHitResult) ? null : org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().level, ((net.minecraft.world.phys.BlockHitResult)rayTrace).getBlockPos());
++        return this.getTargetBlockExact(maxDistance, fluidMode.bukkit);
 +    }
 +
 +    @Override
 +    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
-+        net.minecraft.world.phys.HitResult rayTrace = getHandle().getRayTrace(maxDistance, io.papermc.paper.util.MCUtil.getNMSFluidCollisionOption(fluidMode));
-+        return !(rayTrace instanceof net.minecraft.world.phys.BlockHitResult) ? null : io.papermc.paper.util.MCUtil.toBukkitBlockFace(((net.minecraft.world.phys.BlockHitResult)rayTrace).getDirection());
++        return this.getTargetBlockFace(maxDistance, fluidMode.bukkit);
++    }
++
++    @Override
++    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, org.bukkit.FluidCollisionMode fluidMode) {
++        RayTraceResult result = this.rayTraceBlocks(maxDistance, fluidMode);
++        return result != null ? result.getHitBlockFace() : null;
 +    }
 +
 +    @Override
 +    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
-+        net.minecraft.world.phys.HitResult rayTrace = getHandle().getRayTrace(maxDistance, io.papermc.paper.util.MCUtil.getNMSFluidCollisionOption(fluidMode));
-+        return !(rayTrace instanceof net.minecraft.world.phys.BlockHitResult) ? null :
-+            new com.destroystokyo.paper.block.TargetBlockInfo(org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().level, ((net.minecraft.world.phys.BlockHitResult)rayTrace).getBlockPos()),
-+                io.papermc.paper.util.MCUtil.toBukkitBlockFace(((net.minecraft.world.phys.BlockHitResult)rayTrace).getDirection()));
++        RayTraceResult result = this.rayTraceBlocks(maxDistance, fluidMode.bukkit);
++        if (result != null && result.getHitBlock() != null && result.getHitBlockFace() != null) {
++            return new com.destroystokyo.paper.block.TargetBlockInfo(result.getHitBlock(), result.getHitBlockFace());
++        }
++        return null;
 +    }
 +    // Paper end
 +
