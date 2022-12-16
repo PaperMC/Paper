@@ -1,13 +1,17 @@
 --- a/net/minecraft/world/level/storage/WorldDataServer.java
 +++ b/net/minecraft/world/level/storage/WorldDataServer.java
-@@ -43,6 +43,15 @@
+@@ -43,6 +43,19 @@
  import net.minecraft.world.level.timers.CustomFunctionCallbackTimers;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
++import net.minecraft.core.IRegistry;
++import net.minecraft.core.registries.Registries;
 +import net.minecraft.network.protocol.game.PacketPlayOutServerDifficulty;
 +import net.minecraft.server.level.EntityPlayer;
 +import net.minecraft.server.level.WorldServer;
++import net.minecraft.world.level.dimension.WorldDimension;
++import net.minecraft.world.level.levelgen.WorldDimensions;
 +import org.bukkit.Bukkit;
 +import org.bukkit.event.weather.ThunderChangeEvent;
 +import org.bukkit.event.weather.WeatherChangeEvent;
@@ -16,11 +20,12 @@
  public class WorldDataServer implements IWorldDataServer, SaveData {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -83,6 +92,19 @@
+@@ -83,6 +96,20 @@
      private final Set<String> knownServerBrands;
      private boolean wasModded;
      private final CustomFunctionCallbackTimerQueue<MinecraftServer> scheduledEvents;
 +    // CraftBukkit start - Add world and pdc
++    public IRegistry<WorldDimension> customDimensions;
 +    private WorldServer world;
 +    protected NBTBase pdc;
 +
@@ -36,7 +41,7 @@
  
      private WorldDataServer(@Nullable DataFixer datafixer, int i, @Nullable NBTTagCompound nbttagcompound, boolean flag, int j, int k, int l, float f, long i1, long j1, int k1, int l1, int i2, boolean flag1, int j2, boolean flag2, boolean flag3, boolean flag4, WorldBorder.c worldborder_c, int k2, int l2, @Nullable UUID uuid, Set<String> set, CustomFunctionCallbackTimerQueue<MinecraftServer> customfunctioncallbacktimerqueue, @Nullable NBTTagCompound nbttagcompound1, NBTTagCompound nbttagcompound2, WorldSettings worldsettings, WorldOptions worldoptions, WorldDataServer.a worlddataserver_a, Lifecycle lifecycle) {
          this.fixerUpper = datafixer;
-@@ -127,7 +149,8 @@
+@@ -127,7 +154,8 @@
              return (NBTBase) dynamic.get("DimensionData").get("1").get("DragonFight").orElseEmptyMap().getValue();
          });
  
@@ -46,7 +51,7 @@
              return dynamic1.asString().result().stream();
          }).collect(Collectors.toCollection(Sets::newLinkedHashSet)), new CustomFunctionCallbackTimerQueue<>(CustomFunctionCallbackTimers.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream()), (NBTTagCompound) dynamic.get("CustomBossEvents").orElseEmptyMap().getValue(), nbttagcompound1, worldsettings, worldoptions, worlddataserver_a, lifecycle);
      }
-@@ -147,7 +170,7 @@
+@@ -147,7 +175,7 @@
  
      private void setTagData(IRegistryCustom iregistrycustom, NBTTagCompound nbttagcompound, @Nullable NBTTagCompound nbttagcompound1) {
          NBTTagList nbttaglist = new NBTTagList();
@@ -55,16 +60,16 @@
  
          Objects.requireNonNull(nbttaglist);
          stream.forEach(nbttaglist::add);
-@@ -162,7 +185,7 @@
+@@ -162,7 +190,7 @@
          nbttagcompound.put("Version", nbttagcompound2);
          nbttagcompound.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
          DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, (HolderLookup.b) iregistrycustom);
 -        DataResult dataresult = GeneratorSettings.encode(dynamicops, this.worldOptions, iregistrycustom);
-+        DataResult<NBTBase> dataresult = GeneratorSettings.encode(dynamicops, this.worldOptions, iregistrycustom); // CraftBukkit - decompile error
++        DataResult<NBTBase> dataresult = GeneratorSettings.encode(dynamicops, this.worldOptions, new WorldDimensions(this.customDimensions != null ? this.customDimensions : iregistrycustom.registryOrThrow(Registries.LEVEL_STEM))); // CraftBukkit
          Logger logger = WorldDataServer.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -214,6 +237,8 @@
+@@ -214,6 +242,8 @@
              nbttagcompound.putUUID("WanderingTraderId", this.wanderingTraderId);
          }
  
@@ -73,7 +78,7 @@
      }
  
      @Override
-@@ -331,6 +356,20 @@
+@@ -331,6 +361,20 @@
  
      @Override
      public void setThundering(boolean flag) {
@@ -94,7 +99,7 @@
          this.thundering = flag;
      }
  
-@@ -351,6 +390,20 @@
+@@ -351,6 +395,20 @@
  
      @Override
      public void setRaining(boolean flag) {
@@ -115,7 +120,7 @@
          this.raining = flag;
      }
  
-@@ -417,6 +470,12 @@
+@@ -417,6 +475,12 @@
      @Override
      public void setDifficulty(EnumDifficulty enumdifficulty) {
          this.settings = this.settings.withDifficulty(enumdifficulty);
@@ -128,7 +133,7 @@
      }
  
      @Override
-@@ -548,6 +607,14 @@
+@@ -548,6 +612,14 @@
          return this.settings.copy();
      }
  
