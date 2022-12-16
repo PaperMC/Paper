@@ -5,25 +5,25 @@ Subject: [PATCH] Call missing BlockDispenseEvent
 
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-index 58fa7b99dc7a9745afe6faf31c1804e95ed27dbe..6189fa2d271c774f17cc3d5957b24ae070e1d0d4 100644
+index 9598aa381978194fee859721731196f0e6ee08fc..dc8adbce8dd81e490fffdf6231978414ec98713e 100644
 --- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -1099,6 +1099,14 @@ public interface DispenseItemBehavior {
- 
+@@ -1106,6 +1106,14 @@ public interface DispenseItemBehavior {
                  this.setSuccess(true);
                  if (iblockdata.is(Blocks.RESPAWN_ANCHOR)) {
-+                    // Paper start
-+                    ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition, stack, this);
-+                    if (result != null) {
-+                        this.setSuccess(false);
-+                        return result;
-+                    }
-+                    // Paper end
-+
                      if ((Integer) iblockdata.getValue(RespawnAnchorBlock.CHARGE) != 4) {
-                         RespawnAnchorBlock.charge(worldserver, blockposition, iblockdata);
++                        // Paper start
++                        ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(pointer, blockposition, stack, this);
++                        if (result != null) {
++                            this.setSuccess(false);
++                            return result;
++                        }
++                        // Paper end
++
+                         RespawnAnchorBlock.charge((Entity) null, worldserver, blockposition, iblockdata);
                          stack.shrink(1);
-@@ -1122,6 +1130,14 @@ public interface DispenseItemBehavior {
+                     } else {
+@@ -1128,6 +1136,14 @@ public interface DispenseItemBehavior {
                  Optional<BlockState> optional = HoneycombItem.getWaxed(iblockdata);
  
                  if (optional.isPresent()) {
@@ -38,7 +38,7 @@ index 58fa7b99dc7a9745afe6faf31c1804e95ed27dbe..6189fa2d271c774f17cc3d5957b24ae0
                      worldserver.setBlockAndUpdate(blockposition, (BlockState) optional.get());
                      worldserver.levelEvent(3003, blockposition, 0);
                      stack.shrink(1);
-@@ -1147,6 +1163,13 @@ public interface DispenseItemBehavior {
+@@ -1153,6 +1169,13 @@ public interface DispenseItemBehavior {
                      if (!worldserver.getBlockState(blockposition1).is(BlockTags.CONVERTABLE_TO_MUD)) {
                          return this.defaultDispenseItemBehavior.dispense(pointer, stack);
                      } else {
@@ -53,10 +53,10 @@ index 58fa7b99dc7a9745afe6faf31c1804e95ed27dbe..6189fa2d271c774f17cc3d5957b24ae0
                              for (int k = 0; k < 5; ++k) {
                                  worldserver.sendParticles(ParticleTypes.SPLASH, (double) blockposition.getX() + worldserver.random.nextDouble(), (double) (blockposition.getY() + 1), (double) blockposition.getZ() + worldserver.random.nextDouble(), 1, 0.0D, 0.0D, 0.0D, 1.0D);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index dd063e8b0df7505a96cd25dc5c797c0c04dfdfd0..4c41bb01b991508f7c8196d0748799286be5a227 100644
+index cdb8ec04f4a19ec3dbedbd5b17a7d1f3afaa238e..9b2ae8f7a678e4fb4c7458073cec2087799329af 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1930,5 +1930,28 @@ public class CraftEventFactory {
+@@ -1944,5 +1944,28 @@ public class CraftEventFactory {
          io.papermc.paper.event.block.BlockPreDispenseEvent event = new io.papermc.paper.event.block.BlockPreDispenseEvent(block, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), slot);
          return event.callEvent();
      }
