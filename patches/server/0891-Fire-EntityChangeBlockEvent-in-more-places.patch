@@ -94,6 +94,22 @@ index 0bff617f422e7bfececcdc6837ad91db20177388..1c096338a90d740a3813274278056017
              if (player instanceof ServerPlayer) {
                  CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
              }
+diff --git a/src/main/java/net/minecraft/world/item/EnderEyeItem.java b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
+index e0c3aa1285709a40ff0ea8c1d74d43d2b341aecc..f4fc8ff3981555e4b560289248a9b02afc04b42f 100644
+--- a/src/main/java/net/minecraft/world/item/EnderEyeItem.java
++++ b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
+@@ -43,6 +43,11 @@ public class EnderEyeItem extends Item {
+                 return InteractionResult.SUCCESS;
+             } else {
+                 BlockState iblockdata1 = (BlockState) iblockdata.setValue(EndPortalFrameBlock.HAS_EYE, true);
++                // Paper start
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockposition, iblockdata1).isCancelled()) {
++                    return InteractionResult.PASS;
++                }
++                // Paper end
+ 
+                 Block.pushEntitiesUp(iblockdata, iblockdata1, world, blockposition);
+                 world.setBlock(blockposition, iblockdata1, 2);
 diff --git a/src/main/java/net/minecraft/world/item/HoneycombItem.java b/src/main/java/net/minecraft/world/item/HoneycombItem.java
 index 68a8d3b16d49c10fc9834f32009095d35c9c55a8..1f8b7b50c6aa24778d87821ae2ff4d019d176082 100644
 --- a/src/main/java/net/minecraft/world/item/HoneycombItem.java
@@ -110,6 +126,25 @@ index 68a8d3b16d49c10fc9834f32009095d35c9c55a8..1f8b7b50c6aa24778d87821ae2ff4d01
              if (player instanceof ServerPlayer) {
                  CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
              }
+diff --git a/src/main/java/net/minecraft/world/item/PotionItem.java b/src/main/java/net/minecraft/world/item/PotionItem.java
+index 0b344e20ad4093b135c58905fb82ffff05898bb2..356cbdd1f015507b9c307f18d0e97fb5e2228360 100644
+--- a/src/main/java/net/minecraft/world/item/PotionItem.java
++++ b/src/main/java/net/minecraft/world/item/PotionItem.java
+@@ -107,6 +107,14 @@ public class PotionItem extends Item {
+         BlockState iblockdata = world.getBlockState(blockposition);
+ 
+         if (context.getClickedFace() != Direction.DOWN && iblockdata.is(BlockTags.CONVERTABLE_TO_MUD) && PotionUtils.getPotion(itemstack) == Potions.WATER) {
++            // Paper start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState()).isCancelled()) {
++                if (!entityhuman.getAbilities().instabuild) {
++                    ((net.minecraft.server.level.ServerPlayer) entityhuman).getBukkitEntity().updateInventory();
++                }
++                return InteractionResult.PASS;
++            }
++            // Paper end
+             world.playSound((Player) null, blockposition, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 1.0F, 1.0F);
+             entityhuman.setItemInHand(context.getHand(), ItemUtils.createFilledResult(itemstack, entityhuman, new ItemStack(Items.GLASS_BOTTLE)));
+             entityhuman.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
 diff --git a/src/main/java/net/minecraft/world/item/ShovelItem.java b/src/main/java/net/minecraft/world/item/ShovelItem.java
 index 32995cb5efdad0bc34ecacacb78cccd21220ba8d..c7195f2e12bbd6545f7bffcc2b4ba5cc3d48df20 100644
 --- a/src/main/java/net/minecraft/world/item/ShovelItem.java
