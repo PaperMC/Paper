@@ -198,20 +198,22 @@ index 0000000000000000000000000000000000000000..9adeb880f7948f937891d83e256c808b
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c454f81da
+index 0000000000000000000000000000000000000000..e7e13011c76285681ad420e6f356f6b83045d31a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,128 @@
 +package io.papermc.paper.event.player;
 +
-+import java.util.Set;
 +import io.papermc.paper.chat.ChatRenderer;
 +import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.chat.SignedMessage;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.jetbrains.annotations.NotNull;
++
++import java.util.Set;
 +
 +import static java.util.Objects.requireNonNull;
 +
@@ -221,16 +223,18 @@ index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c
 +public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
 +    private final Set<Audience> viewers;
 +    private final Component originalMessage;
++    private final SignedMessage signedMessage;
 +    private ChatRenderer renderer;
 +    private Component message;
 +    private boolean cancelled = false;
 +
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
 +        super(player, async);
 +        this.viewers = viewers;
 +        this.renderer = renderer;
 +        this.message = message;
 +        this.originalMessage = originalMessage;
++        this.signedMessage = signedMessage;
 +    }
 +
 +    /**
@@ -302,6 +306,18 @@ index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c
 +    @NotNull
 +    public final Component originalMessage() {
 +        return this.originalMessage;
++    }
++
++    /**
++     * Gets the signed message.
++     * Changes made in this event will <b>not</b> update
++     * the signed message.
++     *
++     * @return the signed message
++     */
++    @NotNull
++    public final SignedMessage signedMessage() {
++        return this.signedMessage;
 +    }
 +
 +    @Override
@@ -472,15 +488,16 @@ index 0000000000000000000000000000000000000000..9a962337948810b00ceae1124962fcc7
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0d9e3c23027e3af90cb70e4bb6fb0ac1da35fc4d
+index 0000000000000000000000000000000000000000..975a767313247d3b1c2a6cfd42c7fa6cd1525c53
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.event.player;
 +
 +import java.util.Set;
 +import io.papermc.paper.chat.ChatRenderer;
 +import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.chat.SignedMessage;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
@@ -492,8 +509,8 @@ index 0000000000000000000000000000000000000000..0d9e3c23027e3af90cb70e4bb6fb0ac1
 +public final class AsyncChatEvent extends AbstractChatEvent {
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
-+    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
-+        super(async, player, viewers, renderer, message, originalMessage);
++    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
++        super(async, player, viewers, renderer, message, originalMessage, signedMessage);
 +    }
 +
 +    @NotNull
@@ -509,15 +526,16 @@ index 0000000000000000000000000000000000000000..0d9e3c23027e3af90cb70e4bb6fb0ac1
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb179aae1e1d2ce842442e49fe275827a430ccd0
+index 0000000000000000000000000000000000000000..46c209f61135c7d37ccfbbc7bb1d74e608fac9d3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.event.player;
 +
 +import java.util.Set;
 +import io.papermc.paper.chat.ChatRenderer;
 +import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.chat.SignedMessage;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.Warning;
 +import org.bukkit.entity.Player;
@@ -534,8 +552,8 @@ index 0000000000000000000000000000000000000000..eb179aae1e1d2ce842442e49fe275827
 +public final class ChatEvent extends AbstractChatEvent {
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
-+        super(false, player, viewers, renderer, message, originalMessage);
++    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
++        super(false, player, viewers, renderer, message, originalMessage, signedMessage);
 +    }
 +
 +    @NotNull
