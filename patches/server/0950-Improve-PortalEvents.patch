@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 15 Dec 2022 10:33:39 -0800
+Subject: [PATCH] Improve PortalEvents
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 7f94da8059147760cbdc2476d0e8beda4a105f40..be54a70b47433c2abaeb8632ffe55d0762f619d6 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3533,7 +3533,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         Location enter = bukkitEntity.getLocation();
+         Location exit = new Location(exitWorldServer.getWorld(), exitPosition.x(), exitPosition.y(), exitPosition.z());
+ 
+-        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, enter, exit, searchRadius);
++        // Paper start
++        final org.bukkit.PortalType portalType = switch (cause) {
++            case END_PORTAL -> org.bukkit.PortalType.ENDER;
++            case NETHER_PORTAL -> org.bukkit.PortalType.NETHER;
++            default -> org.bukkit.PortalType.CUSTOM;
++        };
++        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, enter, exit, searchRadius, portalType);
++        // Paper end
+         event.getEntity().getServer().getPluginManager().callEvent(event);
+         if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
+             return null;
