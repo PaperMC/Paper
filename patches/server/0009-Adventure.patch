@@ -251,19 +251,24 @@ index 0000000000000000000000000000000000000000..e7671b9e2fc5ed01461e4ae1557dfc14
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a1869f5e1f719732d2d3e0a62af4e40a46544e57
+index 0000000000000000000000000000000000000000..4dfeb712fffc28f79e8b6c13869f3d0e64fc9ccd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,392 @@
+@@ -0,0 +1,410 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatRenderer;
 +import io.papermc.paper.event.player.AbstractChatEvent;
 +import io.papermc.paper.event.player.AsyncChatEvent;
 +import io.papermc.paper.event.player.ChatEvent;
++import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
 +import java.util.BitSet;
 +import java.util.Collection;
++import java.util.HashMap;
 +import java.util.HashSet;
++import java.util.Map;
++import java.util.Objects;
 +import java.util.Set;
 +import java.util.concurrent.ExecutionException;
 +import java.util.function.Function;
@@ -528,7 +533,7 @@ index 0000000000000000000000000000000000000000..a1869f5e1f719732d2d3e0a62af4e40a
 +
 +        @Override
 +        public void sendMessageChanged(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType) {
-+            this.broadcastToViewers(viewers, chatType, new ConstantFunction(renderedMessage));
++            this.broadcastToViewers(viewers, chatType, $ -> renderedMessage);
 +        }
 +
 +        @Override
@@ -548,10 +553,30 @@ index 0000000000000000000000000000000000000000..a1869f5e1f719732d2d3e0a62af4e40a
 +            }
 +        }
 +
++        private static final Map<String, net.kyori.adventure.chat.ChatType> BUILT_IN_CHAT_TYPES = Util.make(() -> {
++            final Map<String, net.kyori.adventure.chat.ChatType> map = new HashMap<>();
++            for (final Field declaredField : net.kyori.adventure.chat.ChatType.class.getDeclaredFields()) {
++                if (Modifier.isStatic(declaredField.getModifiers()) && declaredField.getType().equals(ChatType.class)) {
++                    try {
++                        final net.kyori.adventure.chat.ChatType type = (net.kyori.adventure.chat.ChatType) declaredField.get(null);
++                        map.put(type.key().asString(), type);
++                    } catch (final ReflectiveOperationException ignore) {
++                    }
++                }
++            }
++            return map;
++        });
++
 +        private net.kyori.adventure.chat.ChatType.Bound adventure(ChatType.Bound chatType) {
-+            return net.kyori.adventure.chat.ChatType.chatType(
-+                Key.key(ChatProcessor.this.server.registryAccess().registryOrThrow(Registries.CHAT_TYPE).getKey(chatType.chatType()).toString())
-+            ).bind(
++            final String stringKey = Objects.requireNonNull(
++                ChatProcessor.this.server.registryAccess().registryOrThrow(Registries.CHAT_TYPE).getKey(chatType.chatType()),
++                () -> "No key for '%s' in CHAT_TYPE registry.".formatted(chatType)
++            ).toString();
++            net.kyori.adventure.chat.@Nullable ChatType adventure = BUILT_IN_CHAT_TYPES.get(stringKey);
++            if (adventure == null) {
++                adventure = net.kyori.adventure.chat.ChatType.chatType(Key.key(stringKey));
++            }
++            return adventure.bind(
 +                PaperAdventure.asAdventure(chatType.name()),
 +                PaperAdventure.asAdventure(chatType.targetName())
 +            );
@@ -582,13 +607,6 @@ index 0000000000000000000000000000000000000000..a1869f5e1f719732d2d3e0a62af4e40a
 +        private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
 +            final PlayerChatMessage toConsoleMessage = msgFunction == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(msgFunction.apply(ChatProcessor.this.server.console));
 +            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure");
-+        }
-+
-+        record ConstantFunction(net.minecraft.network.chat.Component component) implements Function<Audience, net.minecraft.network.chat.Component> {
-+            @Override
-+            public net.minecraft.network.chat.Component apply(Audience audience) {
-+                return this.component;
-+            }
 +        }
 +    }
 +
