@@ -1707,15 +1707,14 @@ index ed7e1a6fc745df745d5bc79623948bb1015c9252..9d0d5a44c5948bde037165147d18aaab
  
              for(Component component : text.getSiblings()) {
 diff --git a/src/main/java/net/minecraft/network/chat/MessageSignature.java b/src/main/java/net/minecraft/network/chat/MessageSignature.java
-index df9997873c4bbec184379ec14dca1bf4566eb89d..cc342518c26096aaaec0020a5d38cd63ff823019 100644
+index df9997873c4bbec184379ec14dca1bf4566eb89d..e2812cdce3b1170b7b7d0f52209e8b4fd2b64c61 100644
 --- a/src/main/java/net/minecraft/network/chat/MessageSignature.java
 +++ b/src/main/java/net/minecraft/network/chat/MessageSignature.java
-@@ -12,12 +12,12 @@ import net.minecraft.util.ExtraCodecs;
- import net.minecraft.util.SignatureUpdater;
+@@ -13,11 +13,12 @@ import net.minecraft.util.SignatureUpdater;
  import net.minecraft.util.SignatureValidator;
  
--public record MessageSignature(byte[] bytes) {
-+public record MessageSignature(byte[] bytes) implements net.kyori.adventure.chat.SignedMessage.Signature { // Paper
+ public record MessageSignature(byte[] bytes) {
++    public net.kyori.adventure.chat.SignedMessage.Signature adventure() { return () -> this.bytes; } // Paper
      public static final Codec<MessageSignature> CODEC = ExtraCodecs.BASE64_STRING.xmap(MessageSignature::new, MessageSignature::bytes);
      public static final int BYTES = 256;
  
@@ -1771,7 +1770,7 @@ index f8773f2982e6cd40661d138a7c32f219cda9225c..74cf1c043beef03cfd5adf481414a5ee
                  sender.connection.sendPlayerChatMessage(playerChatMessage, params);
              }
 diff --git a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
-index b3a44ed8f365daf1031d46d879c84d2ea15cd951..6a5fa03301c47ac3ea3637fd41de8a33702f18eb 100644
+index b3a44ed8f365daf1031d46d879c84d2ea15cd951..ed92592e4d9e3d88b7300ea7a315541bfb430231 100644
 --- a/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/src/main/java/net/minecraft/network/chat/PlayerChatMessage.java
 @@ -15,7 +15,53 @@ import net.minecraft.util.ExtraCodecs;
@@ -1804,7 +1803,7 @@ index b3a44ed8f365daf1031d46d879c84d2ea15cd951..6a5fa03301c47ac3ea3637fd41de8a33
 +        }
 +        @Override
 +        public @org.jetbrains.annotations.Nullable Signature signature() {
-+            return PlayerChatMessage.this.signature();
++            return PlayerChatMessage.this.signature == null ? null : PlayerChatMessage.this.signature.adventure();
 +        }
 +        @Override
 +        public net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component unsignedContent() {
