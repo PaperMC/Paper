@@ -3,6 +3,9 @@ From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
 Date: Sat, 17 Dec 2022 13:04:14 +0100
 Subject: [PATCH] Avoid respawn desync of player metadata
 
+== AT ==
+public net.minecraft.world.entity.player.Player DATA_PLAYER_ABSORPTION_ID
+public net.minecraft.world.entity.player.Player DATA_SCORE_ID
 
 diff --git a/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java b/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
 index 37e193f57938047c8b886ed7d2816411392f94b4..f7d1425d102959f7a2f1da5585e2d3d2032a5abb 100644
@@ -25,10 +28,10 @@ index 37e193f57938047c8b886ed7d2816411392f94b4..f7d1425d102959f7a2f1da5585e2d3d2
      public boolean isDirty() {
          return this.isDirty;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index c0b0a7fdb75266a7064d54bda6441953184ecc64..96f4be56db7d02e4d6c342b5c0dbea7958f9f564 100644
+index c0b0a7fdb75266a7064d54bda6441953184ecc64..14960c8e40f34047664ef7f2ddcb214bc65034f9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1776,31 +1776,35 @@ public class ServerPlayer extends Player {
+@@ -1776,11 +1776,14 @@ public class ServerPlayer extends Player {
          if (alive) {
              this.getInventory().replaceWith(oldPlayer.getInventory());
              this.setHealth(oldPlayer.getHealth());
@@ -38,15 +41,15 @@ index c0b0a7fdb75266a7064d54bda6441953184ecc64..96f4be56db7d02e4d6c342b5c0dbea79
              this.experienceLevel = oldPlayer.experienceLevel;
              this.totalExperience = oldPlayer.totalExperience;
              this.experienceProgress = oldPlayer.experienceProgress;
--            this.setScore(oldPlayer.getScore());
+             this.setScore(oldPlayer.getScore());
 +            this.getEntityData().markDirtyIfNotDefault(Player.DATA_SCORE_ID); // Paper
              this.portalEntrancePos = oldPlayer.portalEntrancePos;
          } else if (this.level.getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
              this.getInventory().replaceWith(oldPlayer.getInventory());
-             this.experienceLevel = oldPlayer.experienceLevel;
+@@ -1788,11 +1791,12 @@ public class ServerPlayer extends Player {
              this.totalExperience = oldPlayer.totalExperience;
              this.experienceProgress = oldPlayer.experienceProgress;
--            this.setScore(oldPlayer.getScore());
+             this.setScore(oldPlayer.getScore());
 +            this.getEntityData().markDirtyIfNotDefault(Player.DATA_SCORE_ID); // Paper
          }
  
@@ -57,30 +60,13 @@ index c0b0a7fdb75266a7064d54bda6441953184ecc64..96f4be56db7d02e4d6c342b5c0dbea79
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
-         // this.recipeBook.copyOverData(entityplayer.recipeBook); // CraftBukkit
+@@ -1800,7 +1804,9 @@ public class ServerPlayer extends Player {
          this.seenCredits = oldPlayer.seenCredits;
          this.enteredNetherPosition = oldPlayer.enteredNetherPosition;
--        this.setShoulderEntityLeft(oldPlayer.getShoulderEntityLeft());
--        this.setShoulderEntityRight(oldPlayer.getShoulderEntityRight());
-+        // Paper start
-+        this.getEntityData().markDirtyIfNotDefault(Player.DATA_SHOULDER_LEFT);
-+        this.getEntityData().markDirtyIfNotDefault(Player.DATA_SHOULDER_RIGHT);
-+        // Paper end
+         this.setShoulderEntityLeft(oldPlayer.getShoulderEntityLeft());
++        this.getEntityData().markDirtyIfNotDefault(Player.DATA_SHOULDER_LEFT); // Paper
+         this.setShoulderEntityRight(oldPlayer.getShoulderEntityRight());
++        this.getEntityData().markDirtyIfNotDefault(Player.DATA_SHOULDER_RIGHT); // Paper
          this.setLastDeathLocation(oldPlayer.getLastDeathLocation());
      }
  
-diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 2e6557a19523d18aecff709de30cb4466b46a9fa..8fbc359d19ae9310378c60905c2223f7075529d4 100644
---- a/src/main/java/net/minecraft/world/entity/player/Player.java
-+++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -141,8 +141,8 @@ public abstract class Player extends LivingEntity {
-     // CraftBukkit - decompile error
-     private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, Player.SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
-     private static final int FLY_ACHIEVEMENT_SPEED = 25;
--    private static final EntityDataAccessor<Float> DATA_PLAYER_ABSORPTION_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.FLOAT);
--    private static final EntityDataAccessor<Integer> DATA_SCORE_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.INT);
-+    public static final EntityDataAccessor<Float> DATA_PLAYER_ABSORPTION_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.FLOAT); // Paper
-+    public static final EntityDataAccessor<Integer> DATA_SCORE_ID = SynchedEntityData.defineId(Player.class, EntityDataSerializers.INT); // Paper
-     public static final EntityDataAccessor<Byte> DATA_PLAYER_MODE_CUSTOMISATION = SynchedEntityData.defineId(Player.class, EntityDataSerializers.BYTE);
-     protected static final EntityDataAccessor<Byte> DATA_PLAYER_MAIN_HAND = SynchedEntityData.defineId(Player.class, EntityDataSerializers.BYTE);
-     protected static final EntityDataAccessor<CompoundTag> DATA_SHOULDER_LEFT = SynchedEntityData.defineId(Player.class, EntityDataSerializers.COMPOUND_TAG);
