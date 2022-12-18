@@ -137,4 +137,46 @@ public class CraftDragonBattle implements DragonBattle {
     private DragonRespawnAnimation toNMSRespawnPhase(RespawnPhase phase) {
         return (phase != RespawnPhase.NONE) ? DragonRespawnAnimation.values()[phase.ordinal()] : null;
     }
+    // Paper start - More DragonBattle API
+    @Override
+    public int getGatewayCount() {
+        return EndDragonFight.GATEWAY_COUNT - this.handle.gateways.size();
+    }
+
+    @Override
+    public boolean spawnNewGateway() {
+        return this.handle.spawnNewGatewayIfPossible();
+    }
+
+    @Override
+    public void spawnNewGateway(final io.papermc.paper.math.Position position) {
+        this.handle.spawnNewGateway(io.papermc.paper.util.MCUtil.toBlockPos(position));
+    }
+
+    @Override
+    public java.util.List<org.bukkit.entity.EnderCrystal> getRespawnCrystals() {
+        if (this.handle.respawnCrystals == null) {
+            return java.util.Collections.emptyList();
+        }
+
+        final java.util.List<org.bukkit.entity.EnderCrystal> enderCrystals = new java.util.ArrayList<>();
+        for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.respawnCrystals) {
+            if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
+                enderCrystals.add(((org.bukkit.entity.EnderCrystal) endCrystal.getBukkitEntity()));
+            }
+        }
+        return java.util.Collections.unmodifiableList(enderCrystals);
+    }
+
+    @Override
+    public java.util.List<org.bukkit.entity.EnderCrystal> getHealingCrystals() {
+        final java.util.List<org.bukkit.entity.EnderCrystal> enderCrystals = new java.util.ArrayList<>();
+        for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.getSpikeCrystals()) {
+            if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
+                enderCrystals.add(((org.bukkit.entity.EnderCrystal) endCrystal.getBukkitEntity()));
+            }
+        }
+        return java.util.Collections.unmodifiableList(enderCrystals);
+    }
+    // Paper end - More DragonBattle API
 }

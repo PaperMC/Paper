@@ -52,7 +52,7 @@
                  this.dragonUUID = null;
              }
          }
-@@ -404,8 +411,22 @@
+@@ -404,9 +411,23 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
              this.spawnNewGateway();
@@ -70,14 +70,42 @@
 +                // this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
 +            } else {
 +                eggEvent.setCancelled(true);
-+            }
+             }
 +            if (eggEvent.callEvent()) {
 +                eggEvent.getNewState().update(true);
 +                // Paper end - Add DragonEggFormEvent
-             }
++            }
  
              this.previouslyKilled = true;
-@@ -449,6 +470,11 @@
+             this.dragonKilled = true;
+@@ -419,8 +440,26 @@
+     @VisibleForTesting
+     public void removeAllGateways() {
+         this.gateways.clear();
++    }
++
++    // Paper start - More DragonBattle API
++    public boolean spawnNewGatewayIfPossible() {
++        if (!this.gateways.isEmpty()) {
++            this.spawnNewGateway();
++            return true;
++        }
++        return false;
+     }
+ 
++    public List<EndCrystal> getSpikeCrystals() {
++        final List<EndCrystal> endCrystals = new java.util.ArrayList<>();
++        for (final SpikeFeature.EndSpike spike : SpikeFeature.getSpikesForLevel(this.level)) {
++            endCrystals.addAll(this.level.getEntitiesOfClass(EndCrystal.class, spike.getTopBoundingBox()));
++        }
++        return endCrystals;
++    }
++    // Paper end - More DragonBattle API
++
+     private void spawnNewGateway() {
+         if (!this.gateways.isEmpty()) {
+             int i = (Integer) this.gateways.remove(this.gateways.size() - 1);
+@@ -449,6 +488,11 @@
              }
          }
  
@@ -89,7 +117,7 @@
          if (worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation)) {
              int i = Mth.positiveCeilDiv(4, 16);
  
-@@ -469,6 +495,7 @@
+@@ -469,6 +513,7 @@
              entityenderdragon.moveTo((double) this.origin.getX(), (double) (128 + this.origin.getY()), (double) this.origin.getZ(), this.level.random.nextFloat() * 360.0F, 0.0F);
              this.level.addFreshEntity(entityenderdragon);
              this.dragonUUID = entityenderdragon.getUUID();
@@ -97,7 +125,7 @@
          }
  
          return entityenderdragon;
-@@ -480,6 +507,10 @@
+@@ -480,6 +525,10 @@
              this.ticksSinceDragonSeen = 0;
              if (dragon.hasCustomName()) {
                  this.dragonEvent.setName(dragon.getDisplayName());
@@ -108,7 +136,7 @@
              }
          }
  
-@@ -513,7 +544,7 @@
+@@ -513,7 +562,7 @@
          return this.previouslyKilled;
      }
  
@@ -117,7 +145,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              BlockPos blockposition = this.portalLocation;
  
-@@ -540,19 +571,19 @@
+@@ -540,19 +589,19 @@
                  List<EndCrystal> list1 = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockposition1.relative(enumdirection, 2)));
  
                  if (list1.isEmpty()) {
@@ -141,7 +169,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              for (BlockPattern.BlockPatternMatch shapedetector_shapedetectorcollection = this.findExitPortal(); shapedetector_shapedetectorcollection != null; shapedetector_shapedetectorcollection = this.findExitPortal()) {
                  for (int i = 0; i < this.exitPortalPattern.getWidth(); ++i) {
-@@ -571,9 +602,10 @@
+@@ -571,9 +620,10 @@
              this.respawnStage = DragonRespawnAnimation.START;
              this.respawnTime = 0;
              this.spawnExitPortal(false);
