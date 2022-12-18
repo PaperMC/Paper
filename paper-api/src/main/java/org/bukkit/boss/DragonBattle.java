@@ -145,4 +145,44 @@ public interface DragonBattle {
          */
         NONE;
     }
+    // Paper start
+    /**
+     * Gets the number of gateways tracked by this DragonBattle.
+     * This starts out at 0 and will increase to 20, once for each
+     * kill of the {@link EnderDragon}.
+     *
+     * @return the number of gateways around the end island tracked by this
+     */
+    int getGatewayCount();
+
+    /**
+     * Tries to spawn a new end gateway using default game mechanics.
+     *
+     * @return true if successful, false if there is already the maximum.
+     */
+    boolean spawnNewGateway();
+
+    /**
+     * Spawns a new end gateway at the specified position. This will
+     * spawn regardless of the number of gateways already present.
+     *
+     * @param position position for the new gateway
+     */
+    void spawnNewGateway(@NotNull io.papermc.paper.math.Position position);
+
+    /**
+     * Gets the {@link org.bukkit.entity.EnderCrystal}s being used to respawn the dragon. If no respawn
+     * is ongoing, the list will be empty.
+     *
+     * @return the respawn crystals
+     */
+    java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<org.bukkit.entity.EnderCrystal> getRespawnCrystals();
+
+    /**
+     * Gets the {@link org.bukkit.entity.EnderCrystal}s on top of the pillars that heal the dragon.
+     *
+     * @return the healing crystals
+     */
+    java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<org.bukkit.entity.EnderCrystal> getHealingCrystals();
+    // Paper end
 }
