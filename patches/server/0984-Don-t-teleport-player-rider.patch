@@ -5,19 +5,22 @@ Subject: [PATCH] Don't teleport player rider
 
 In the PlayerMoveEvent, the rider Y from the to location is wrong,
 but since mojang hasn't exposed a good way
-to get the rider offset there's no way to do it without emulating
+to get the rider offset at a given instant t,
+then there's no way to do it without emulating
 the positionRider which isn't long term viable (cc camel)
+and doesn't solve the stats issue.
 In this patch i have at least mitigated the rider Y offset but
 that will not always works for some action/entity like the horse jump
 etc...
 But this patch prevent the teleportation that upstream
-do to sync the rider with its vehicle
+do to sync the rider with its vehicle and
+prevent further desync when the final location is modified
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7c50b462b4c45dfcf92c6515ffdd023dba24d8e0 100644
+index aa287d7f37f38d938d195114408cb6dbda59063d..a4cfc91ebeb4b19f08ee384c3e01902f0fea9c88 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -681,7 +681,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -689,7 +689,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  Location curPos = this.getCraftPlayer().getLocation(); // Spigot
  
                  entity.absMoveTo(d3, d4, d5, f, f1);
@@ -26,7 +29,7 @@ index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7c50b462b4c45dfcf92c6515ffdd023d
  
                  // Paper start - optimise out extra getCubes
                  boolean teleportBack = flag2; // violating this is always a fail
-@@ -694,7 +694,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -702,7 +702,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  }
                  if (teleportBack) { // Paper end - optimise out extra getCubes
                      entity.absMoveTo(d0, d1, d2, f, f1);
@@ -35,7 +38,7 @@ index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7c50b462b4c45dfcf92c6515ffdd023d
                      this.connection.send(new ClientboundMoveVehiclePacket(entity));
                      return;
                  }
-@@ -702,7 +702,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -710,7 +710,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  // CraftBukkit start - fire PlayerMoveEvent
                  Player player = this.getCraftPlayer();
                  // Spigot Start
@@ -44,7 +47,7 @@ index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7c50b462b4c45dfcf92c6515ffdd023d
                  {
                      this.lastPosX = curPos.getX();
                      this.lastPosY = curPos.getY();
-@@ -717,7 +717,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -725,7 +725,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
                  // If the packet contains movement information then we update the To location with the correct XYZ.
                  to.setX(packet.getX());
@@ -53,7 +56,7 @@ index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7c50b462b4c45dfcf92c6515ffdd023d
                  to.setZ(packet.getZ());
  
  
-@@ -739,6 +739,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -747,12 +747,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                      // Skip the first time we do this
                      if (true) { // Spigot - don't skip any move events
                          Location oldTo = to.clone();
@@ -61,7 +64,30 @@ index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7c50b462b4c45dfcf92c6515ffdd023d
                          PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
                          this.cserver.getPluginManager().callEvent(event);
  
-@@ -758,7 +759,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                         // If the event is cancelled we move the player back to their old location.
+                         if (event.isCancelled()) {
+-                            this.teleport(from);
++                            // Paper start - handle correctly the cancellation
++                            this.awaitingPositionFromClient = null;
++                            entity.absMoveTo(d0, d1, d2, f, f1);
++                            this.connection.send(new ClientboundMoveVehiclePacket(entity));
++                            // Paper end
+                             return;
+                         }
+ 
+@@ -760,13 +765,18 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                         // there to avoid any 'Moved wrongly' or 'Moved too quickly' errors.
+                         // We only do this if the Event was not cancelled.
+                         if (!oldTo.equals(event.getTo()) && !event.isCancelled()) {
+-                            this.player.getBukkitEntity().teleport(event.getTo(), PlayerTeleportEvent.TeleportCause.PLUGIN);
++                            // Paper start
++                            this.awaitingPositionFromClient = null;
++                            Location finalLoc = event.getTo();
++                            entity.absMoveTo(finalLoc.getX(), finalLoc.getY(), finalLoc.getZ(), finalLoc.getYaw(), finalLoc.getPitch());
++                            this.connection.send(new ClientboundMoveVehiclePacket(entity));
++                            // Paper end
+                             return;
+                         }
  
                          // Check to see if the Players Location has some how changed during the call of the event.
                          // This can happen due to a plugin teleporting the player instead of using .setTo()
