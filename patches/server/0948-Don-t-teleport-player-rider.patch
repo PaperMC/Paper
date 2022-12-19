@@ -14,7 +14,7 @@ But this patch prevent the teleportation that upstream
 do to sync the rider with its vehicle
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..5d706b007ccca4d8f8cbaddc1daa7e3dbee66534 100644
+index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7c50b462b4c45dfcf92c6515ffdd023dba24d8e0 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -681,7 +681,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -35,6 +35,15 @@ index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..5d706b007ccca4d8f8cbaddc1daa7e3d
                      this.connection.send(new ClientboundMoveVehiclePacket(entity));
                      return;
                  }
+@@ -702,7 +702,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                 // CraftBukkit start - fire PlayerMoveEvent
+                 Player player = this.getCraftPlayer();
+                 // Spigot Start
+-                if ( !this.hasMoved )
++                if ( false && !this.hasMoved ) // Paper unneeded and will works only the first time
+                 {
+                     this.lastPosX = curPos.getX();
+                     this.lastPosY = curPos.getY();
 @@ -717,7 +717,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
                  // If the packet contains movement information then we update the To location with the correct XYZ.
@@ -44,3 +53,20 @@ index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..5d706b007ccca4d8f8cbaddc1daa7e3d
                  to.setZ(packet.getZ());
  
  
+@@ -739,6 +739,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                     // Skip the first time we do this
+                     if (true) { // Spigot - don't skip any move events
+                         Location oldTo = to.clone();
++                        Location currentPos = player.getLocation(); // Paper
+                         PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
+                         this.cserver.getPluginManager().callEvent(event);
+ 
+@@ -758,7 +759,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                         // Check to see if the Players Location has some how changed during the call of the event.
+                         // This can happen due to a plugin teleporting the player instead of using .setTo()
+-                        if (!from.equals(this.getCraftPlayer().getLocation()) && this.justTeleported) {
++                        if (!currentPos.equals(this.getCraftPlayer().getLocation()) && this.justTeleported) { // Paper - fix this being called one time on the first ride even if the event does nothing
+                             this.justTeleported = false;
+                             return;
+                         }
