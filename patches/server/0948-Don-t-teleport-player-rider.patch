@@ -7,11 +7,14 @@ In the PlayerMoveEvent, the rider Y from the to location is wrong,
 but since mojang hasn't exposed a good way
 to get the rider offset there's no way to do it without emulating
 the positionRider which isn't long term viable (cc camel)
+In this patch i have at least mitigated the rider Y offset but
+that will not always works for some action/entity like the horse jump
+etc...
 But this patch prevent the teleportation that upstream
 do to sync the rider with its vehicle
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7931c339e8e6b60e2809b446c7c61e8caf24f6e5 100644
+index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..5d706b007ccca4d8f8cbaddc1daa7e3dbee66534 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -681,7 +681,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -32,18 +35,12 @@ index 0c2255b6e2fb7752f85b0f83d4f84732758bd14d..7931c339e8e6b60e2809b446c7c61e8c
                      this.connection.send(new ClientboundMoveVehiclePacket(entity));
                      return;
                  }
-@@ -712,12 +712,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-                     this.hasMoved = true;
-                 }
-                 // Spigot End
--                Location from = new Location(player.getWorld(), this.lastPosX, this.lastPosY, this.lastPosZ, this.lastYaw, this.lastPitch); // Get the Players previous Event location.
-+                Location from = player.getLocation(); // Paper - Get the actual player location (since their position is updated in the next tick, this become the from loc)
-                 Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
+@@ -717,7 +717,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
                  // If the packet contains movement information then we update the To location with the correct XYZ.
                  to.setX(packet.getX());
 -                to.setY(packet.getY());
-+                to.setY(packet.getY()); // todo wrong rider Y pos
++                to.setY(packet.getY() + entity.getPassengersRidingOffset() + this.player.getMyRidingOffset()); // Paper - mitigate the rider Y offset
                  to.setZ(packet.getZ());
  
  
