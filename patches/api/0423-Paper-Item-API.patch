@@ -5,7 +5,7 @@ Subject: [PATCH] Paper Item API
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 9f5694204091e23c4771657127a06f98e27ad8f1..5fbedbdff32c43e9f2a89995eed6c406c3151890 100644
+index 3c4dd6ebc2289c44c2f5723e7920aadffdc51884..f455466089cd36853bdb6fa1366e80e33abdae4e 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -31,6 +31,7 @@ dependencies {
@@ -18,10 +18,10 @@ index 9f5694204091e23c4771657127a06f98e27ad8f1..5fbedbdff32c43e9f2a89995eed6c406
      apiAndDocs("net.kyori:adventure-api")
 diff --git a/src/main/java/io/papermc/paper/inventory/item/ItemStack.java b/src/main/java/io/papermc/paper/inventory/item/ItemStack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8bb931891b992242e59401816b2589e0434049c4
+index 0000000000000000000000000000000000000000..e4b704c389528eba6d90d6ead393c7be389bacdb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/ItemStack.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +package io.papermc.paper.inventory.item;
 +
 +import com.google.common.base.Preconditions;
@@ -38,6 +38,7 @@ index 0000000000000000000000000000000000000000..8bb931891b992242e59401816b2589e0
 +
 +import java.util.Map;
 +
++// Temporary, soon will move this to the bukkit itemstack class
 +public interface ItemStack extends HoverEventSource<HoverEvent.ShowItem>, Translatable, Cloneable {
 +
 +    @NotNull
@@ -71,30 +72,33 @@ index 0000000000000000000000000000000000000000..8bb931891b992242e59401816b2589e0
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5752f37ffd286907e8c4a77b44c19f12af78f600
+index 0000000000000000000000000000000000000000..853f8cb6f5aa268a64b0bdd7d6e1e9f38da23c0e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,101 @@
 +package io.papermc.paper.inventory.item.properties;
 +
++import io.papermc.paper.math.Position;
 +import io.papermc.paper.property.PropertyKey;
-+import io.papermc.paper.property.PropertyReader;
 +import io.papermc.paper.property.StoredPropertyHolder;
 +import io.papermc.paper.property.value.ListValue;
 +import io.papermc.paper.property.value.MapValue;
 +import io.papermc.paper.property.value.MultiMapValue;
 +import io.papermc.paper.property.value.SetValue;
 +import io.papermc.paper.property.value.Value;
++import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.Color;
++import org.bukkit.FireworkEffect;
++import org.bukkit.Location;
++import org.bukkit.NamespacedKey;
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeModifier;
 +import org.bukkit.enchantments.Enchantment;
-+import org.bukkit.entity.TropicalFish;
 +import org.bukkit.inventory.ItemFlag;
++import org.bukkit.inventory.ItemStack;
 +import org.bukkit.potion.PotionData;
 +import org.bukkit.potion.PotionEffect;
-+import org.bukkit.potion.PotionType;
 +
 +public interface ItemProperties {
 +
@@ -117,6 +121,7 @@ index 0000000000000000000000000000000000000000..5752f37ffd286907e8c4a77b44c19f12
 +    PropertyKey<Value<Component>> DISPLAY_NAME = PropertyKey.of("Name", Component.class);
 +    PropertyKey<ListValue<Component>> LORE = PropertyKey.ofList("Lore", Component.class);
 +    PropertyKey<Value<Color>> COLOR = PropertyKey.of("color", Color.class);
++    PropertyKey<Value<Color>> MAP_COLOR = PropertyKey.of("MapColor", Color.class);
 +
 +    // CUSTOM
 +    PropertyKey<StoredPropertyHolder> PUBLIC_BUKKIT_VALUES = PropertyKey.ofPropertyHolder("PublicBukkitValues");
@@ -125,7 +130,7 @@ index 0000000000000000000000000000000000000000..5752f37ffd286907e8c4a77b44c19f12
 +
 +
 +    // TropicalFishBucketMeta
-+    PropertyKey<Value<TropicalFish.Pattern>> BUCKET_VARIANT = PropertyKey.of("BucketVariantTag", TropicalFish.Pattern.class);
++    PropertyKey<Value<TropicalFishVariant>> TROPICAL_FISH_BUCKET_VARIANT = PropertyKey.of("BucketVariantTag", TropicalFishVariant.class);
 +
 +    // SuspiciousStewMeta
 +    PropertyKey<ListValue<StewEffect>> STEW_EFFECTS = PropertyKey.ofList("Effects", StewEffect.class);
@@ -133,11 +138,43 @@ index 0000000000000000000000000000000000000000..5752f37ffd286907e8c4a77b44c19f12
 +    // CraftMetaSkull
 +    // Can be a STRING or a skull profile
 +    PropertyKey<Value<PlayerHeadPartial>> SKULL_OWNER = PropertyKey.of("SkullOwner", PlayerHeadPartial.class);
++    @Deprecated(forRemoval = true)
++    PropertyKey<Value<org.bukkit.profile.PlayerProfile>> SKULL_OWNER_LEGACY_BUKKIT = PropertyKey.of("SkullOwner", org.bukkit.profile.PlayerProfile.class);
 +
 +    // PotionMeta
 +    PropertyKey<Value<PotionData>> DEFAULT_POTION_TYPE = PropertyKey.of("Potion", PotionData.class);
 +    PropertyKey<ListValue<PotionEffect>> CUSTOM_POTION_EFFECTS = PropertyKey.ofList("CustomPotionEffects", PotionEffect.class);
 +
++    // MapMeta
++    PropertyKey<Value<Integer>> MAP_ID = PropertyKey.of("map", Integer.class);
++    PropertyKey<Value<Byte>> MAP_SCALE_DIRECTION = PropertyKey.of("map_scale_direction", Byte.class);
++    // Unused, really. Marks the map to be locked when crafted
++    PropertyKey<Value<Boolean>> MAP_TO_LOCK = PropertyKey.of("map_to_lock", Boolean.class);
++
++    // KnowledgeBookMeta
++    PropertyKey<ListValue<NamespacedKey>> RECIPES = PropertyKey.ofList("Recipes", NamespacedKey.class);
++
++    // FireworkMeta
++    PropertyKey<Value<Byte>> FLIGHT = PropertyKey.of("Flight", Byte.class);
++    PropertyKey<ListValue<FireworkEffect>> EXPLOSIONS = PropertyKey.ofList("Explosions", FireworkEffect.class);
++
++    // FireworkEffectMeta
++    PropertyKey<Value<FireworkEffect>> EXPLOSION = PropertyKey.of("Explosion", FireworkEffect.class);
++
++    // EnchantmentStorageMeta
++    PropertyKey<MapValue<Enchantment, Integer>> STORED_ENCHANTMENTS = PropertyKey.ofMap("StoredEnchantments", Enchantment.class, Integer.class);
++
++    // CrossbowMeta
++    PropertyKey<Value<Boolean>> CHARGED = PropertyKey.of("Charged", Boolean.class);
++    PropertyKey<ListValue<ItemStack>> CHARGED_PROJECTILES = PropertyKey.ofList("ChargedProjectiles", ItemStack.class);
++
++    // CompassMeta
++    PropertyKey<Value<Position>> LODESTONE_POS = PropertyKey.of("LodestonePos", Position.class);
++    PropertyKey<Value<NamespacedKey>> LODESTONE_DIMENSION = PropertyKey.of("LodestoneDimension", NamespacedKey.class);
++    PropertyKey<Value<Boolean>> LODESTONE_TRACKED = PropertyKey.of("LodestoneTracked", Boolean.class);
++
++    // BundleMeta
++    PropertyKey<ListValue<ItemStack>> ITEMS = PropertyKey.ofList("Items", ItemStack.class);
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/PlayerHeadPartial.java b/src/main/java/io/papermc/paper/inventory/item/properties/PlayerHeadPartial.java
@@ -165,6 +202,19 @@ index 0000000000000000000000000000000000000000..38721f6ea05d9014c1ebaeb35ec0ffbe
 +import org.bukkit.potion.PotionEffectType;
 +
 +public record StewEffect(PotionEffectType effect, int duration) {
++}
+diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java b/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6198f1e633a28b3cc8b977216a98af607b2bedfc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java
+@@ -0,0 +1,7 @@
++package io.papermc.paper.inventory.item.properties;
++
++import org.bukkit.DyeColor;
++import org.bukkit.entity.TropicalFish;
++
++public record TropicalFishVariant(DyeColor patternColor, DyeColor bodyColor, TropicalFish.Pattern type) {
 +}
 diff --git a/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java b/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java
 new file mode 100644
@@ -218,10 +268,10 @@ index 0000000000000000000000000000000000000000..dab35bca819c4cb62ddb54535fe0a31c
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyHolder.java b/src/main/java/io/papermc/paper/property/PropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c754ea3933557b63569414495186e7e1c40aa740
+index 0000000000000000000000000000000000000000..50074c8e5f2d7d4f9982e9c1deb881d6fcf8b496
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyHolder.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.MapValue;
@@ -241,11 +291,14 @@ index 0000000000000000000000000000000000000000..c754ea3933557b63569414495186e7e1
 +
 +        void set(Value<?> value);
 +
++        <T> void unset(PropertyKey<? extends Value<T>> key);
++
 +        <T> void set(PropertyKey<? extends Value<T>> key, T value);
 +
 +        <V, T extends Value<V>> T getOrCreate(PropertyKey<T> key);
 +
 +        <V, T extends Value<V>> T getOrCreateAndSet(PropertyKey<T> key);
++
 +    }
 +
 +    interface Immutable extends PropertyHolder {
@@ -367,13 +420,14 @@ index 0000000000000000000000000000000000000000..15f34c333778c024554f9beb284981c4
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyReader.java b/src/main/java/io/papermc/paper/property/PropertyReader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cdf085de67223aea395f218251a920228431f413
+index 0000000000000000000000000000000000000000..e41de8d733e922df59d09f8b0bdba5ac191d64bb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyReader.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.Value;
++import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.Nullable;
 +
 +public interface PropertyReader {
@@ -381,15 +435,23 @@ index 0000000000000000000000000000000000000000..cdf085de67223aea395f218251a92022
 +    @Nullable
 +    <T> T get(PropertyKey<? extends Value<T>> property);
 +
++    @Contract("_,!null -> !null")
++    @Nullable
++    <T> T getOrDefault(PropertyKey<? extends Value<T>> property, T value);
++
 +    @Nullable
 +    <E, V extends Value<E>> V getValue(PropertyKey<V> property);
++
++    @Contract("_,!null -> !null")
++    @Nullable
++    <V, T extends Value<V>> T getValueOrDefault(PropertyKey<T> key, V value);
 +
 +    boolean hasProperty(PropertyKey<?> propertyKey);
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java b/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..da21d8f783e73299dfbe46c83c206d740d480fff
+index 0000000000000000000000000000000000000000..21a48a4b3fdc96664f08c1853159f24f44d79797
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java
 @@ -0,0 +1,8 @@
@@ -398,33 +460,47 @@ index 0000000000000000000000000000000000000000..da21d8f783e73299dfbe46c83c206d74
 +import io.papermc.paper.property.value.Value;
 +
 +// Represents a property reader during runtime
-+public interface StoredPropertyHolder extends PropertyHolder, Value<PropertyHolder> {
++public interface StoredPropertyHolder extends PropertyHolder.Mutable, Value<PropertyHolder> {
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/ListValue.java b/src/main/java/io/papermc/paper/property/value/ListValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..746203dffe67e4f68e86ba5e2b490dac3269ab7c
+index 0000000000000000000000000000000000000000..376608c6bdffdc71535eb683c4882af072a6806d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/ListValue.java
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,20 @@
 +package io.papermc.paper.property.value;
 +
 +import java.util.List;
-+import java.util.Set;
 +
-+public interface ListValue<V> extends Value<List<V>> {
++public interface ListValue<V> extends Value<List<V>>, Iterable<V> {
++
++    V get(int index);
++
++    default boolean isEmpty() {
++        return this.size() == 0;
++    }
++
++    int size();
++
++    void add(V value);
++
++    void insert(V value, int index);
++
++    V remove(int index);
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/MapValue.java b/src/main/java/io/papermc/paper/property/value/MapValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ddc87b26e77b33aad68b37881c321c0895f47fb6
+index 0000000000000000000000000000000000000000..58b4c3baf500a00794e81e1600499bee219fef40
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/MapValue.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,22 @@
 +package io.papermc.paper.property.value;
 +
++import java.util.Iterator;
 +import java.util.Map;
 +
-+public interface MapValue<K, V> extends Value<Map<K, V>> {
++public interface MapValue<K, V> extends Value<Map<K, V>>, Iterable<Map.Entry<K, V>> {
 +
 +    V getEntry(K key);
 +
@@ -499,35 +575,13 @@ index 0000000000000000000000000000000000000000..46fb5f54feeefc7cf954bec257bff0a6
 +
 +public interface PropertyValueHandler {
 +}
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 88acc4d2bd56748630840dc9f1c2cb253711eb38..e7e4e716036dfb1f962715902876ee6580a6061b 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -147,7 +147,7 @@ public interface UnsafeValues {
-      * locale when using a {@link net.kyori.adventure.text.TranslatableComponent}.<br>
-      * @return the translation key
-      */
--    String getTranslationKey(ItemStack itemStack);
-+    String getTranslationKey(io.papermc.paper.inventory.item.ItemStack itemStack);
- 
-     /**
-      * Creates and returns the next EntityId available.
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index b8a344fd900dcbd4b28085a54b85b16c742e9c6f..035458e01ba1de41fb52feda46159e59e68efabd 100644
+index 870c0ddd101094a3bce1ebf5ec4d42c51053db84..30fb90386455cf3a7271d6347e34046daf757774 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
-  * use this class to encapsulate Materials for which {@link Material#isItem()}
-  * returns false.</b>
-  */
--public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable { // Paper
-+public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.inventory.item.ItemStack { // Paper
-     private Material type = Material.AIR;
-     private int amount = 0;
-     private MaterialData data = null;
-@@ -977,5 +977,35 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
-     public boolean canRepair(@NotNull ItemStack toBeRepaired) {
-         return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
+@@ -991,5 +991,35 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+     public @NotNull ItemStack damage(int amount, @NotNull org.bukkit.entity.LivingEntity livingEntity) {
+         return livingEntity.damageItemStack(this, amount);
      }
 +
 +    @Override
@@ -561,3 +615,42 @@ index b8a344fd900dcbd4b28085a54b85b16c742e9c6f..035458e01ba1de41fb52feda46159e59
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index cb3c25ef46b279ffdde87f47f729eb8aa7549c1c..fa12a426b6c426f78e179e17368f6817af832043 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -2,6 +2,12 @@ package org.bukkit.plugin.java;
+ 
+ import com.google.common.base.Preconditions;
+ import com.google.common.io.ByteStreams;
++import org.bukkit.plugin.InvalidPluginException;
++import org.bukkit.plugin.PluginDescriptionFile;
++import org.bukkit.plugin.SimplePluginManager;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
+ import java.io.File;
+ import java.io.IOException;
+ import java.io.InputStream;
+@@ -20,11 +26,6 @@ import java.util.jar.JarEntry;
+ import java.util.jar.JarFile;
+ import java.util.jar.Manifest;
+ import java.util.logging.Level;
+-import org.bukkit.plugin.InvalidPluginException;
+-import org.bukkit.plugin.PluginDescriptionFile;
+-import org.bukkit.plugin.SimplePluginManager;
+-import org.jetbrains.annotations.NotNull;
+-import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * A ClassLoader for plugins, to allow shared classes across multiple plugins
+@@ -66,6 +67,9 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+         this.logger = com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(description); // Paper - Register logger early
+ 
+         try {
++
++
++
+             Class<?> jarClass;
+             try {
+                 jarClass = Class.forName(description.getMain(), true, this);
