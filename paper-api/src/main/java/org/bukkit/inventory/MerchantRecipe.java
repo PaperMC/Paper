@@ -91,6 +91,13 @@ public class MerchantRecipe implements Recipe {
         this.specialPrice = specialPrice;
     }
 
+    // Paper start - add copy ctor
+    public MerchantRecipe(@NotNull MerchantRecipe recipe) {
+        this(recipe.result.clone(), recipe.uses, recipe.maxUses, recipe.experienceReward, recipe.villagerExperience, recipe.priceMultiplier, recipe.demand, recipe.specialPrice, recipe.ignoreDiscounts);
+        this.setIngredients(recipe.ingredients);
+    }
+    // Paper end
+
     @NotNull
     @Override
     public ItemStack getResult() {
