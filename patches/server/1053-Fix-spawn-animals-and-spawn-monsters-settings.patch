@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 21 Dec 2022 10:38:41 -0800
+Subject: [PATCH] Fix spawn-animals and spawn-monsters settings
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index d9cd497bc1b654030ff1a597f038b6a881df9f6b..b8ad61d7a0fb4bda02a561b284fcbf19ee3b0e0c 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -649,18 +649,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         if (!nbt.isEmpty()) {
+             // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
+             world.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(nbt, world).filter((entity) -> {
+-                boolean needsRemoval = false;
+-                net.minecraft.server.dedicated.DedicatedServer server = world.getCraftServer().getServer();
+-                if (!server.areNpcsEnabled() && entity instanceof net.minecraft.world.entity.npc.Npc) {
++                if (world.shouldDiscardEntityInWorld(entity)) { // Paper - this needs to be per-world & simplified
+                     entity.discard();
+-                    needsRemoval = true;
+-                }
+-                if (!server.isSpawningAnimals() && (entity instanceof net.minecraft.world.entity.animal.Animal || entity instanceof net.minecraft.world.entity.animal.WaterAnimal)) {
+-                    entity.discard();
+-                    needsRemoval = true;
++                    return false; // Paper
+                 }
+                 checkDupeUUID(world, entity); // Paper
+-                return !needsRemoval;
++                return true; // Paper
+             }), position); // Paper - rewrite chunk system
+             // CraftBukkit end
+         }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index b78a9628a88f2a495ef6de74446a02a14d41a1f6..fd190f19f11ec9253b715abd7971d0e551013486 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -970,6 +970,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     private boolean shouldDiscardEntity(Entity entity) {
+         return !this.server.isSpawningAnimals() && (entity instanceof Animal || entity instanceof WaterAnimal) ? true : !this.server.areNpcsEnabled() && entity instanceof Npc;
+     }
++    // Paper start - per world version of above method
++    public boolean shouldDiscardEntityInWorld(Entity entity) {
++        return !this.getChunkSource().spawnFriendlies && (entity instanceof Animal || entity instanceof WaterAnimal) ? true : !this.server.areNpcsEnabled() && entity instanceof Npc; // TODO per-world npc setting in paper configs
++    }
++    // Paper end
+ 
+     private void wakeUpAllPlayers() {
+         this.sleepStatus.removeAllSleepers();
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index f67ec3f5f4b7e2f678609f2387cc8afa2adce161..7bbbedb718ebc9029029714de892bd838929c6f0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -673,17 +673,15 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static boolean doEntityAddEventCalling(Level world, Entity entity, SpawnReason spawnReason) {
++    public static boolean doEntityAddEventCalling(ServerLevel world, Entity entity, SpawnReason spawnReason) { // Paper
+         if (entity == null) return false;
+ 
+         org.bukkit.event.Cancellable event = null;
+         if (entity instanceof net.minecraft.world.entity.LivingEntity && !(entity instanceof ServerPlayer)) {
+-            boolean isAnimal = entity instanceof Animal || entity instanceof WaterAnimal || entity instanceof AbstractGolem;
+-            boolean isMonster = entity instanceof Monster || entity instanceof Ghast || entity instanceof Slime;
+-            boolean isNpc = entity instanceof Npc;
++            // Paper - this was wrong in several different ways
+ 
+             if (spawnReason != SpawnReason.CUSTOM) {
+-                if (isAnimal && !world.getWorld().getAllowAnimals() || isMonster && !world.getWorld().getAllowMonsters() || isNpc && !world.getCraftServer().getServer().areNpcsEnabled()) {
++                if (world.shouldDiscardEntityInWorld(entity)) { // Paper - this was wrong in several different ways
+                     entity.discard();
+                     return false;
+                 }
