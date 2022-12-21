@@ -7,25 +7,23 @@ Subject: [PATCH] Detail more information in watchdog dumps
 - Dump player name, player uuid, position, and world for packet handling
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index b996b5c6a8dccd122fbb5d04f446927ae788bad5..8ba85f8b36b06ce5047b2587018a49dc50207866 100644
+index 3355d0d75675e2f9a62c4681871ba0f403073286..46153b8e5823959e17621bbebd414d8998b77fb5 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -512,9 +512,15 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-         PacketListener packetlistener = this.packetListener;
- 
-         if (packetlistener instanceof TickablePacketListener) {
+@@ -512,7 +512,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
+                 || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT
+                 || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
 +            // Paper start - detailed watchdog information
 +            net.minecraft.network.protocol.PacketUtils.packetProcessing.push(this.packetListener);
 +            try { // Paper end - detailed watchdog information
-             TickablePacketListener tickablepacketlistener = (TickablePacketListener) packetlistener;
- 
              tickablepacketlistener.tick();
 +            } finally { // Paper start - detailed watchdog information
 +                net.minecraft.network.protocol.PacketUtils.packetProcessing.pop();
-+            } // Paper start - detailed watchdog information
++            } // Paper end - detailed watchdog information
+             }
+             // Paper end
          }
- 
-         if (!this.isConnected() && !this.disconnectionHandled) {
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 index acfa1907bfc9c29d261cfccc00d65bad9ad1a002..d6f3869f5725c7f081efb7f486f74dbb99d4d005 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
