@@ -11,21 +11,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-         PacketListener packetlistener = this.packetListener;
- 
-         if (packetlistener instanceof TickablePacketListener) {
+             if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
+                 || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT
+                 || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
 +            // Paper start - detailed watchdog information
 +            net.minecraft.network.protocol.PacketUtils.packetProcessing.push(this.packetListener);
 +            try { // Paper end - detailed watchdog information
-             TickablePacketListener tickablepacketlistener = (TickablePacketListener) packetlistener;
- 
              tickablepacketlistener.tick();
 +            } finally { // Paper start - detailed watchdog information
 +                net.minecraft.network.protocol.PacketUtils.packetProcessing.pop();
-+            } // Paper start - detailed watchdog information
++            } // Paper end - detailed watchdog information
+             }
+             // Paper end
          }
- 
-         if (!this.isConnected() && !this.disconnectionHandled) {
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
