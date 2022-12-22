@@ -18,10 +18,10 @@ index 3c4dd6ebc2289c44c2f5723e7920aadffdc51884..f455466089cd36853bdb6fa1366e80e3
      apiAndDocs("net.kyori:adventure-api")
 diff --git a/src/main/java/io/papermc/paper/inventory/item/ItemStack.java b/src/main/java/io/papermc/paper/inventory/item/ItemStack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4b704c389528eba6d90d6ead393c7be389bacdb
+index 0000000000000000000000000000000000000000..098a04271404faa15dcbb8a33cbcf826a6933517
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/ItemStack.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.inventory.item;
 +
 +import com.google.common.base.Preconditions;
@@ -57,25 +57,14 @@ index 0000000000000000000000000000000000000000..e4b704c389528eba6d90d6ead393c7be
 +
 +    void setMeta(@Nullable ItemMeta meta);
 +
-+    /**
-+     * {@inheritDoc}
-+     * <p>
-+     * This is not the same as getting the translation key
-+     * for the material of this itemstack.
-+     */
-+    @Override
-+    default @NotNull String translationKey() {
-+        return Bukkit.getUnsafe().getTranslationKey(this);
-+    }
-+
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..853f8cb6f5aa268a64b0bdd7d6e1e9f38da23c0e
+index 0000000000000000000000000000000000000000..897b797b3760170ffb740bf05d3e05975a839343
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,118 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import io.papermc.paper.math.Position;
@@ -86,15 +75,14 @@ index 0000000000000000000000000000000000000000..853f8cb6f5aa268a64b0bdd7d6e1e9f3
 +import io.papermc.paper.property.value.MultiMapValue;
 +import io.papermc.paper.property.value.SetValue;
 +import io.papermc.paper.property.value.Value;
-+import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.Color;
 +import org.bukkit.FireworkEffect;
-+import org.bukkit.Location;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeModifier;
 +import org.bukkit.enchantments.Enchantment;
++import org.bukkit.entity.Axolotl;
 +import org.bukkit.inventory.ItemFlag;
 +import org.bukkit.inventory.ItemStack;
 +import org.bukkit.potion.PotionData;
@@ -176,6 +164,24 @@ index 0000000000000000000000000000000000000000..853f8cb6f5aa268a64b0bdd7d6e1e9f3
 +    // BundleMeta
 +    PropertyKey<ListValue<ItemStack>> ITEMS = PropertyKey.ofList("Items", ItemStack.class);
 +
++    // BookMeta
++    PropertyKey<Value<String>> TITLE = PropertyKey.of("title", String.class);
++    PropertyKey<Value<String>> TITLE_FILTERED = PropertyKey.of("filtered_title", String.class);
++    PropertyKey<Value<String>> AUTHOR = PropertyKey.of("author", String.class);
++    PropertyKey<ListValue<Component>> PAGES = PropertyKey.ofList("pages", Component.class);
++    PropertyKey<ListValue<Component>> PAGES_FILTERED = PropertyKey.ofList("filtered_pages", Component.class);
++    PropertyKey<Value<Integer>> GENERATION = PropertyKey.of("generation", Integer.class);
++    PropertyKey<Value<Boolean>> RESOLVED = PropertyKey.of("resolved", Boolean.class);
++
++    // UnsignedBookMeta
++    PropertyKey<ListValue<String>> PAGES_WRITTEN = PropertyKey.ofList("pages", String.class);
++
++    // BlockStateMeta
++    PropertyKey<StoredPropertyHolder> BLOCK_ENTITY_TAG = PropertyKey.ofPropertyHolder("BlockEntityTag");
++
++    // AxolotlBucket
++    PropertyKey<Value<Axolotl.Variant>> VARIANT = PropertyKey.of("Variant", Axolotl.Variant.class);
++
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/PlayerHeadPartial.java b/src/main/java/io/papermc/paper/inventory/item/properties/PlayerHeadPartial.java
 new file mode 100644
@@ -218,10 +224,10 @@ index 0000000000000000000000000000000000000000..6198f1e633a28b3cc8b977216a98af60
 +}
 diff --git a/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java b/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dab35bca819c4cb62ddb54535fe0a31ca42bd5da
+index 0000000000000000000000000000000000000000..73dfdd74946b4b0eb3a6f5138e68ed56d8283e09
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,64 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.Value;
@@ -251,8 +257,28 @@ index 0000000000000000000000000000000000000000..dab35bca819c4cb62ddb54535fe0a31c
 +            }
 +
 +            @Override
++            public <T> @Nullable T getOrDefault(PropertyKey<? extends Value<T>> property, T value) {
++               T val = this.get(property);
++               if (val == null) {
++                   return value;
++               }
++
++               return val;
++            }
++
++            @Override
 +            public <E, V extends Value<E>> @Nullable V getValue(PropertyKey<V> property) {
 +                return (V) ImmutablePropertyBuilder.this.map.get(property);
++            }
++
++            @Override
++            public <V, T extends Value<V>> @Nullable T getValueOrDefault(PropertyKey<T> key, T value) {
++                T val = this.getValue(key);
++                if (val == null) {
++                    return value;
++                }
++
++                return val;
 +            }
 +
 +            @Override
@@ -268,10 +294,10 @@ index 0000000000000000000000000000000000000000..dab35bca819c4cb62ddb54535fe0a31c
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyHolder.java b/src/main/java/io/papermc/paper/property/PropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..50074c8e5f2d7d4f9982e9c1deb881d6fcf8b496
+index 0000000000000000000000000000000000000000..3d281c081d3a997455d19e9dd5e86d1806c830b6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyHolder.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.MapValue;
@@ -285,20 +311,15 @@ index 0000000000000000000000000000000000000000..50074c8e5f2d7d4f9982e9c1deb881d6
 +
 +    interface Mutable extends PropertyHolder, Cloneable {
 +
-+        static Mutable of() {
-+            return new MutablePropertyHolderImpl();
-+        }
-+
 +        void set(Value<?> value);
 +
 +        <T> void unset(PropertyKey<? extends Value<T>> key);
 +
 +        <T> void set(PropertyKey<? extends Value<T>> key, T value);
 +
++        <V, T extends Value<V>> T create(PropertyKey<T> key);
++
 +        <V, T extends Value<V>> T getOrCreate(PropertyKey<T> key);
-+
-+        <V, T extends Value<V>> T getOrCreateAndSet(PropertyKey<T> key);
-+
 +    }
 +
 +    interface Immutable extends PropertyHolder {
@@ -420,7 +441,7 @@ index 0000000000000000000000000000000000000000..15f34c333778c024554f9beb284981c4
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyReader.java b/src/main/java/io/papermc/paper/property/PropertyReader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e41de8d733e922df59d09f8b0bdba5ac191d64bb
+index 0000000000000000000000000000000000000000..1ccbb407279dedba855c0c804689176a8fdeba83
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyReader.java
 @@ -0,0 +1,25 @@
@@ -444,7 +465,7 @@ index 0000000000000000000000000000000000000000..e41de8d733e922df59d09f8b0bdba5ac
 +
 +    @Contract("_,!null -> !null")
 +    @Nullable
-+    <V, T extends Value<V>> T getValueOrDefault(PropertyKey<T> key, V value);
++    <V, T extends Value<V>> T getValueOrDefault(PropertyKey<T> key, T value);
 +
 +    boolean hasProperty(PropertyKey<?> propertyKey);
 +
@@ -491,13 +512,12 @@ index 0000000000000000000000000000000000000000..376608c6bdffdc71535eb683c4882af0
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/MapValue.java b/src/main/java/io/papermc/paper/property/value/MapValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..58b4c3baf500a00794e81e1600499bee219fef40
+index 0000000000000000000000000000000000000000..78f0434f15a9617c4bf244e9269e7bac7c270c7d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/MapValue.java
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,21 @@
 +package io.papermc.paper.property.value;
 +
-+import java.util.Iterator;
 +import java.util.Map;
 +
 +public interface MapValue<K, V> extends Value<Map<K, V>>, Iterable<Map.Entry<K, V>> {
@@ -508,7 +528,7 @@ index 0000000000000000000000000000000000000000..58b4c3baf500a00794e81e1600499bee
 +
 +    V put(K key, V value);
 +
-+    boolean removeEntry(K key);
++    void removeEntry(K key);
 +
 +    default boolean isEmpty() {
 +        return this.size() == 0;
@@ -533,35 +553,37 @@ index 0000000000000000000000000000000000000000..b52867e8c79fe65662d4ebe82cd19f36
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/SetValue.java b/src/main/java/io/papermc/paper/property/value/SetValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..51bde88f3be7d17f0a162f0affeba239aa5f7cc0
+index 0000000000000000000000000000000000000000..c4ccabf3ad96ed6e83c0ed2096cdd62d8940e449
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/SetValue.java
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,12 @@
 +package io.papermc.paper.property.value;
 +
 +import java.util.Set;
 +
 +public interface SetValue<V> extends Value<Set<V>> {
 +
-+    V add(V value);
++    boolean contains(V value);
 +
-+    V remove(V value);
++    void add(V value);
++
++    void remove(V value);
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/Value.java b/src/main/java/io/papermc/paper/property/value/Value.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ad485f933f922d18bedbd989210376d2b6cd4154
+index 0000000000000000000000000000000000000000..fab6096d1e0edece524f62bcf09990c3ab897b2d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/Value.java
 @@ -0,0 +1,12 @@
 +package io.papermc.paper.property.value;
 +
 +import io.papermc.paper.property.PropertyKey;
++import org.jetbrains.annotations.Nullable;
 +
 +public interface Value<T> {
 +
++    @Nullable
 +    T getValue();
-+
-+    T cloneValue();
 +
 +    PropertyKey<? extends Value<T>> getKey();
 +}
@@ -575,48 +597,8 @@ index 0000000000000000000000000000000000000000..46fb5f54feeefc7cf954bec257bff0a6
 +
 +public interface PropertyValueHandler {
 +}
-diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 870c0ddd101094a3bce1ebf5ec4d42c51053db84..30fb90386455cf3a7271d6347e34046daf757774 100644
---- a/src/main/java/org/bukkit/inventory/ItemStack.java
-+++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -991,5 +991,35 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
-     public @NotNull ItemStack damage(int amount, @NotNull org.bukkit.entity.LivingEntity livingEntity) {
-         return livingEntity.damageItemStack(this, amount);
-     }
-+
-+    @Override
-+    public @NotNull Material getMaterial() {
-+        return this.getType();
-+    }
-+
-+    @Override
-+    public void setMaterial(@NotNull Material material) {
-+        this.setType(material);
-+    }
-+
-+    @Override
-+    public int getSize() {
-+        return this.getAmount();
-+    }
-+
-+    @Override
-+    public void setSize(int size) {
-+        this.setAmount(size);
-+    }
-+
-+    @Override
-+    public @Nullable ItemMeta getMeta() {
-+        return this.getMeta();
-+    }
-+
-+    @Override
-+    public void setMeta(ItemMeta meta) {
-+        this.setMeta(meta);
-+    }
-     // Paper end
- }
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index cb3c25ef46b279ffdde87f47f729eb8aa7549c1c..fa12a426b6c426f78e179e17368f6817af832043 100644
+index cb3c25ef46b279ffdde87f47f729eb8aa7549c1c..5247daad3356d23c193f8fc93225c98ed6f201c4 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -2,6 +2,12 @@ package org.bukkit.plugin.java;
@@ -644,10 +626,25 @@ index cb3c25ef46b279ffdde87f47f729eb8aa7549c1c..fa12a426b6c426f78e179e17368f6817
  
  /**
   * A ClassLoader for plugins, to allow shared classes across multiple plugins
-@@ -66,6 +67,9 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -66,6 +67,24 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
          this.logger = com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(description); // Paper - Register logger early
  
          try {
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
 +
 +
 +

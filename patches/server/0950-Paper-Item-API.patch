@@ -151,6 +151,787 @@ index 0000000000000000000000000000000000000000..ed92fbdf46183ce5a84e2f57cef23e6d
 +
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java b/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c1898a01d79d300a6a2ff8b5e87051fdfdc86eb0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java
+@@ -0,0 +1,42 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.PropertyHolder;
++import org.bukkit.entity.Axolotl;
++import org.bukkit.entity.EntityType;
++import org.bukkit.inventory.meta.AxolotlBucketMeta;
++import org.bukkit.inventory.meta.SpawnEggMeta;
++import org.jetbrains.annotations.NotNull;
++
++public class MetaAxolotlBucket extends PaperMeta implements AxolotlBucketMeta {
++
++    public MetaAxolotlBucket(PropertyHolder.Mutable propertyHolder) {
++        super(propertyHolder);
++    }
++
++    @Override
++    public @NotNull Axolotl.Variant getVariant() {
++        return this.propertyHolder.get(ItemProperties.VARIANT);
++    }
++
++    @Override
++    public void setVariant(Axolotl.@NotNull Variant variant) {
++        this.propertyHolder.set(ItemProperties.VARIANT, variant);
++    }
++
++    @Override
++    public boolean hasVariant() {
++        return this.propertyHolder.hasProperty(ItemProperties.VARIANT);
++    }
++
++    @Override
++    public @NotNull MetaAxolotlBucket clone() {
++        return (MetaAxolotlBucket) super.clone();
++    }
++
++    @Override
++    void migrateFrom(PropertyHolder.Mutable mutable) {
++        this.propertyHolder.unset(ItemProperties.VARIANT);
++        this.propertyHolder.unset(ItemProperties.ENTITY_TAG);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBanner.java b/src/main/java/io/papermc/paper/item/meta/MetaBanner.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..202f6f4bd61e9817769c69d0b24e8e4b125f3526
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBanner.java
+@@ -0,0 +1,87 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.PropertyHolder;
++import io.papermc.paper.property.value.ListValue;
++import org.bukkit.DyeColor;
++import org.bukkit.block.banner.Pattern;
++import org.bukkit.inventory.meta.BannerMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.List;
++
++public class MetaBanner extends PaperMeta implements BannerMeta {
++
++    public MetaBanner(PropertyHolder.Mutable propertyHolder) {
++        super(propertyHolder);
++    }
++
++    @Override
++    public @NotNull MetaBanner clone() {
++        return (MetaBanner) super.clone();
++    }
++
++    @Override
++    void migrateFrom(PropertyHolder.Mutable mutable) {
++        this.propertyHolder.unset(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    @Override
++    public @Nullable DyeColor getBaseColor() {
++        return this.getFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.BASE);
++    }
++
++    @Override
++    public void setBaseColor(@Nullable DyeColor color) {
++        this.setFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.BASE, color);
++    }
++
++    @Override
++    public @NotNull List<Pattern> getPatterns() {
++        return this.getFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.PATTERNS);
++    }
++
++    @Override
++    public void setPatterns(@NotNull List<Pattern> patterns) {
++        this.setFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.PATTERNS, patterns);
++    }
++
++    @Override
++    public void addPattern(@NotNull Pattern pattern) {
++        PropertyHolder.Mutable holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        ListValue<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++        patterns.add(pattern);
++    }
++
++    @Override
++    public @NotNull Pattern getPattern(int i) {
++        PropertyHolder.Mutable holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        ListValue<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++        return patterns.get(i);
++    }
++
++    @Override
++    public @NotNull Pattern removePattern(int i) {
++        PropertyHolder.Mutable holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        ListValue<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++
++        return patterns.remove(i);
++    }
++
++    @Override
++    public void setPattern(int i, @NotNull Pattern pattern) {
++        PropertyHolder.Mutable holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        ListValue<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++
++        patterns.insert(pattern, i);
++    }
++
++    @Override
++    public int numberOfPatterns() {
++        PropertyHolder.Mutable holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        ListValue<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++
++        return patterns.size();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java b/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8f19575672b7c877e48c2392e7d4eb67a90bfef0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java
+@@ -0,0 +1,113 @@
++package io.papermc.paper.item.meta;
++
++import com.destroystokyo.paper.MaterialSetTag;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.PropertyHolder;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.StoredPropertyHolder;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.value.Value;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.tags.ItemTags;
++import org.apache.commons.lang.Validate;
++import org.bukkit.DyeColor;
++import org.bukkit.Material;
++import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.block.CraftBanner;
++import org.bukkit.craftbukkit.block.CraftBlockEntityState;
++import org.bukkit.craftbukkit.block.CraftBlockStates;
++import org.bukkit.craftbukkit.inventory.CraftMetaBanner;
++import org.bukkit.craftbukkit.inventory.CraftMetaBlockState;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.entity.EntityType;
++import org.bukkit.inventory.meta.BlockStateMeta;
++import org.jetbrains.annotations.NotNull;
++
++public class MetaBlockState extends PaperMeta implements BlockStateMeta {
++
++    private static final PropertyKey<Value<String>> IDENTIFIER = PropertyKey.of("id", String.class);
++
++    public MetaBlockState(PropertyHolder.Mutable propertyHolder) {
++        super(propertyHolder);
++    }
++
++    @Override
++    public boolean hasBlockState() {
++        return this.propertyHolder.hasProperty(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    @Override
++    public BlockState getBlockState() {
++        StoredPropertyHolder holder = this.propertyHolder.getValue(ItemProperties.BLOCK_ENTITY_TAG);
++
++        Material stateMaterial = (this.material != Material.SHIELD) ? this.material : shieldToBannerHack(holder); // Only actually used for jigsaws
++        if (holder != null) {
++            if (this.material == Material.SHIELD) {
++                holder.set(IDENTIFIER, "minecraft:banner");
++            } else if (this.material == Material.BEE_NEST || this.material == Material.BEEHIVE) {
++                holder.set(IDENTIFIER, "minecraft:beehive");
++            } else if (MaterialSetTag.SHULKER_BOXES.isTagged(this.material)) {
++                holder.set(IDENTIFIER, "minecraft:shulker_box");
++            }
++        }
++
++        // This is expected to always return a CraftBlockEntityState for the passed material:
++        return CraftBlockStates.getBlockState(stateMaterial, null); // TODO
++    }
++
++    @Override
++    public void setBlockState(BlockState blockState) {
++        Validate.notNull(blockState, "blockState must not be null");
++
++        Material stateMaterial = (this.material != Material.SHIELD) ? this.material : shieldToBannerHack(this.propertyHolder.getValue(ItemProperties.BLOCK_ENTITY_TAG));
++        Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
++        Validate.isTrue(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + this.material);
++
++        PropertyHolder.Mutable mutable = new NbtPropertyHolder(((CraftBlockEntityState) blockState).getSnapshotNBT());
++        this.propertyHolder.set(ItemProperties.BLOCK_ENTITY_TAG, mutable);
++        // Set shield base
++        if (this.material == Material.SHIELD) {
++            mutable.set(PaperMetaProperties.BASE, ((CraftBanner) blockState).getBaseColor());
++        }
++    }
++
++    private static Material shieldToBannerHack(StoredPropertyHolder tag) {
++        if (tag == null) {
++            return Material.WHITE_BANNER;
++        }
++
++        DyeColor colorValue = tag.get(PaperMetaProperties.BASE);
++        if (colorValue == null) {
++            return Material.WHITE_BANNER;
++        }
++
++        return switch (colorValue) {
++            case WHITE -> Material.WHITE_BANNER;
++            case ORANGE -> Material.ORANGE_BANNER;
++            case MAGENTA -> Material.MAGENTA_BANNER;
++            case LIGHT_BLUE -> Material.LIGHT_BLUE_BANNER;
++            case YELLOW -> Material.YELLOW_BANNER;
++            case LIME -> Material.LIME_BANNER;
++            case PINK -> Material.PINK_BANNER;
++            case GRAY -> Material.GRAY_BANNER;
++            case LIGHT_GRAY -> Material.LIGHT_GRAY_BANNER;
++            case CYAN -> Material.CYAN_BANNER;
++            case PURPLE -> Material.PURPLE_BANNER;
++            case BLUE -> Material.BLUE_BANNER;
++            case BROWN -> Material.BROWN_BANNER;
++            case GREEN -> Material.GREEN_BANNER;
++            case RED -> Material.RED_BANNER;
++            case BLACK -> Material.BLACK_BANNER;
++        };
++    }
++
++    @Override
++    public @NotNull MetaBlockState clone() {
++        return (MetaBlockState) super.clone();
++    }
++
++    @Override
++    void migrateFrom(PropertyHolder.Mutable mutable) {
++        this.propertyHolder.unset(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBook.java b/src/main/java/io/papermc/paper/item/meta/MetaBook.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1a9478b599fbaad898f05aafbcaba8610c2ce07a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBook.java
+@@ -0,0 +1,471 @@
++package io.papermc.paper.item.meta;
++
++import com.google.common.collect.ImmutableList;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyHolderImpl;
++import io.papermc.paper.property.PropertyHolder;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.value.ListValue;
++import io.papermc.paper.property.value.Value;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.chat.ComponentSerializer;
++import org.apache.commons.lang.Validate;
++import org.bukkit.FireworkEffect;
++import org.bukkit.craftbukkit.inventory.CraftMetaBook;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.inventory.meta.BookMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.spigotmc.ValidateUtils;
++
++import java.util.AbstractList;
++import java.util.Arrays;
++import java.util.List;
++
++// TODO: Cleanup, I hate all of this
++public class MetaBook extends PaperMeta implements BookMeta {
++
++    static final int MAX_PAGES = 100;
++    static final int MAX_PAGE_LENGTH = 320; // 256 limit + 64 characters to allow for psuedo colour codes
++    static final int MAX_TITLE_LENGTH = 32;
++
++    PropertyKey<ListValue<Component>> PAGES_WRITTEN_STRING_WRAPPER = PropertyKey.ofList("pages", Component.class);
++
++    public MetaBook(PropertyHolder.Mutable propertyHolder) {
++        super(propertyHolder);
++    }
++
++    @Override
++    public boolean hasAuthor() {
++        return MetaBook.this.propertyHolder.hasProperty(ItemProperties.AUTHOR);
++    }
++
++    @Override
++    public boolean hasTitle() {
++        return MetaBook.this.propertyHolder.hasProperty(ItemProperties.TITLE);
++    }
++
++    @Override
++    public boolean hasPages() {
++        ListValue<Component> pages = this.propertyHolder.getValue(ItemProperties.PAGES);
++        return pages != null && !pages.isEmpty();
++    }
++
++    @Override
++    public boolean hasGeneration() {
++        return this.propertyHolder.hasProperty(ItemProperties.GENERATION);
++    }
++
++    @Override
++    public String getTitle() {
++        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
++        if (author != null) {
++            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
++        }
++
++        return author;
++    }
++
++    @Override
++    public boolean setTitle(final String title) {
++        if (title == null) {
++            MetaBook.this.propertyHolder.unset(ItemProperties.AUTHOR);
++            return true;
++        } else if (title.length() > MAX_TITLE_LENGTH) {
++            return false;
++        }
++
++        MetaBook.this.propertyHolder.set(ItemProperties.AUTHOR, title);
++        return true;
++    }
++
++    @Override
++    public String getAuthor() {
++        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
++        if (author != null) {
++            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
++        }
++
++        return author;
++    }
++
++    @Override
++    public void setAuthor(String author) {
++        if (author != null) {
++            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
++        }
++
++        MetaBook.this.propertyHolder.set(ItemProperties.AUTHOR, author);
++    }
++
++    @Override
++    public Generation getGeneration() {
++        Value<Integer> generation = MetaBook.this.propertyHolder.getValue(ItemProperties.GENERATION);
++
++        return (generation == null) ? null : Generation.values()[generation.getValue()];
++    }
++
++    @Override
++    public void setGeneration(Generation generation) {
++        if (generation == null) {
++            MetaBook.this.propertyHolder.unset(ItemProperties.GENERATION);
++        } else {
++            MetaBook.this.propertyHolder.set(ItemProperties.GENERATION, generation.ordinal());
++        }
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component title() {
++        String title = MetaBook.this.propertyHolder.get(ItemProperties.TITLE);
++        return title == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title);
++    }
++
++    @Override
++    public org.bukkit.inventory.meta.BookMeta title(net.kyori.adventure.text.Component title) {
++        this.setTitle(title == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(title));
++        return this;
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component author() {
++        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
++        return author == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(author);
++    }
++
++    @Override
++    public org.bukkit.inventory.meta.BookMeta author(net.kyori.adventure.text.Component author) {
++        this.setAuthor(author == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(author));
++        return this;
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component page(final int page) {
++        Validate.isTrue(isValidPage(page), "Invalid page number");
++        return MetaBook.this.propertyHolder.getValue(this.getPageProperty()).get(page);
++    }
++
++    @Override
++    public void page(final int page, net.kyori.adventure.text.Component data) {
++        if (!isValidPage(page)) {
++            throw new IllegalArgumentException("Invalid page number " + page + "/" + this.getPageCount());
++        }
++        ListValue<Component> pages = MetaBook.this.propertyHolder.getValue(this.getPageProperty());
++
++        if (data == null) {
++            data = net.kyori.adventure.text.Component.empty();
++        }
++        pages.insert(data, page - 1);
++    }
++
++    @Override
++    public List<net.kyori.adventure.text.Component> pages() {
++        ListValue<Component> pages = MetaBook.this.propertyHolder.getValue(this.getPageProperty());
++        if (pages == null) {
++            return List.of();
++        }
++
++        return pages.getValue();
++    }
++
++    @Override
++    public BookMeta pages(List<net.kyori.adventure.text.Component> pages) {
++        MetaBook.this.propertyHolder.unset(this.getPageProperty());
++        for (net.kyori.adventure.text.Component page : pages) {
++            addPages(page);
++        }
++        return this;
++    }
++
++    @Override
++    public BookMeta pages(net.kyori.adventure.text.Component... pages) {
++        MetaBook.this.propertyHolder.unset(this.getPageProperty());
++        addPages(pages);
++        return this;
++    }
++
++    @Override
++    public void addPages(net.kyori.adventure.text.Component... pages) {
++        ListValue<Component> pageList = MetaBook.this.propertyHolder.getValue(this.getPageProperty());
++        for (net.kyori.adventure.text.Component page : pages) {
++            if (pageList.size() >= MAX_PAGES) {
++                return;
++            }
++
++            if (page == null) {
++                page = net.kyori.adventure.text.Component.empty();
++            }
++
++            pageList.add(page);
++        }
++    }
++
++    public PropertyKey<ListValue<Component>> getPageProperty() {
++        return PAGES_WRITTEN_STRING_WRAPPER;
++    }
++
++    static class CraftMetaBookBuilder implements BookMetaBuilder {
++        private net.kyori.adventure.text.Component title = null;
++        private net.kyori.adventure.text.Component author = null;
++        private final List<net.kyori.adventure.text.Component> pages = new java.util.ArrayList<>();
++
++        @Override
++        public BookMetaBuilder title(net.kyori.adventure.text.Component title) {
++            this.title = title;
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder author(net.kyori.adventure.text.Component author) {
++            this.author = author;
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder addPage(net.kyori.adventure.text.Component page) {
++            this.pages.add(page);
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder pages(net.kyori.adventure.text.Component... pages) {
++            java.util.Collections.addAll(this.pages, pages);
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder pages(java.util.Collection<net.kyori.adventure.text.Component> pages) {
++            this.pages.addAll(pages);
++            return this;
++        }
++
++        @Override
++        public BookMeta build() {
++            return this.build(title, author, pages);
++        }
++
++        protected BookMeta build(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
++            MetaBook metaBook = new MetaBook(new MutablePropertyHolderImpl());
++            metaBook.propertyHolder.set(ItemProperties.TITLE, LegacyComponentSerializer.legacySection().serialize(title));
++            metaBook.propertyHolder.set(ItemProperties.AUTHOR, LegacyComponentSerializer.legacySection().serialize(author));
++            metaBook.propertyHolder.set(ItemProperties.PAGES, pages);
++
++            return metaBook;
++        }
++    }
++
++    @Override
++    public BookMetaBuilder toBuilder() {
++        return new MetaBook.CraftMetaBookBuilder();
++    }
++
++    @Override
++    public String getPage(final int page) {
++        Validate.isTrue(this.isValidPage(page), "Invalid page number");
++        // assert: pages != null
++        return this.convertDataToPlainPage(MetaBook.this.propertyHolder.getValue(PAGES_LEGACY).get(page - 1));
++    }
++
++    @Override
++    public void setPage(final int page, final String text) {
++        if (!this.isValidPage(page)) {
++            throw new IllegalArgumentException("Invalid page number " + page + "/" + this.getPageCount());
++        }
++        // assert: pages != null
++
++        String newText = this.validatePage(text);
++        MetaBook.this.propertyHolder.getValue(PAGES_LEGACY).insert(this.convertPlainPageToData(newText), page - 1);
++    }
++
++    @Override
++    public void setPages(final String... pages) {
++        this.setPages(Arrays.asList(pages));
++    }
++
++    @Override
++    public void addPage(final String... pages) {
++        for (String page : pages) {
++            page = this.validatePage(page);
++            this.internalAddPage(this.convertPlainPageToData(page));
++        }
++    }
++
++    String validatePage(String page) {
++        if (page == null) {
++            page = "";
++        } else if (page.length() > MAX_PAGE_LENGTH) {
++            page = page.substring(0, MAX_PAGE_LENGTH);
++        }
++        return page;
++    }
++
++    @Override
++    public int getPageCount() {
++        ListValue<String> pages = MetaBook.this.propertyHolder.getValue(PAGES_LEGACY);
++        return (pages == null) ? 0 : pages.size();
++    }
++
++    @Override
++    public List<String> getPages() {
++        List<String> pages = MetaBook.this.propertyHolder.getOrDefault(PAGES_LEGACY, List.of());
++
++        return pages.stream().map(this::convertDataToPlainPage).collect(ImmutableList.toImmutableList());
++    }
++
++    @Override
++    public void setPages(List<String> pages) {
++        MetaBook.this.propertyHolder.unset(PAGES_LEGACY);
++        if (pages.isEmpty()) {
++            return;
++        }
++
++        for (String page : pages) {
++            this.addPage(page);
++        }
++    }
++
++    protected String convertPlainPageToData(String page) {
++        // Writable books store their data as plain Strings, so we don't need to convert anything.
++        return page;
++    }
++
++    protected String convertDataToPlainPage(String pageData) {
++        // pageData is expected to already be a plain String.
++        return pageData;
++    }
++
++
++    // Legacy Spigot IMPL
++    private static final PropertyKey<ListValue<String>> PAGES_LEGACY = PropertyKey.ofList("pages", String.class);
++
++    private final BookMeta.Spigot spigot = new SpigotMeta();
++
++    private class SpigotMeta extends BookMeta.Spigot {
++
++        private String pageToJSON(String page) {
++            if (MetaBook.this instanceof MetaBookSigned) {
++                // Page data is already in JSON format:
++                return page;
++            } else {
++                // Convert from plain String to JSON (similar to conversion between writable books and written books):
++                net.minecraft.network.chat.Component component = CraftChatMessage.fromString(page, true, true)[0];
++                return CraftChatMessage.toJSON(component);
++            }
++        }
++
++        private String componentsToPage(BaseComponent[] components) {
++            // asserted: components != null
++            if (MetaBook.this instanceof MetaBookSigned) {
++                // Pages are in JSON format:
++                return ComponentSerializer.toString(components);
++            } else {
++                // Convert component to plain String:
++                return CraftChatMessage.fromJSONComponent(ComponentSerializer.toString(components));
++            }
++        }
++
++        @Override
++        public BaseComponent[] getPage(final int page) {
++            Validate.isTrue(MetaBook.this.isValidPage(page), "Invalid page number");
++            return ComponentSerializer.parse(this.pageToJSON(MetaBook.this.propertyHolder.get(PAGES_LEGACY).get(page - 1)));
++        }
++
++        @Override
++        public void setPage(final int page, final BaseComponent... text) {
++            if (!MetaBook.this.isValidPage(page)) {
++                throw new IllegalArgumentException("Invalid page number " + page + "/" + MetaBook.this.getPageCount());
++            }
++
++            BaseComponent[] newText = text == null ? new BaseComponent[0] : text;
++            MetaBook.this.propertyHolder.get(PAGES_LEGACY).set(page - 1, this.componentsToPage(newText));
++        }
++
++        @Override
++        public void setPages(final BaseComponent[]... pages) {
++            this.setPages(Arrays.asList(pages));
++        }
++
++        @Override
++        public void addPage(final BaseComponent[]... pages) {
++            for (BaseComponent[] page : pages) {
++                if (page == null) {
++                    page = new BaseComponent[0];
++                }
++
++                MetaBook.this.internalAddPage(this.componentsToPage(page));
++            }
++        }
++
++        @Override
++        public List<BaseComponent[]> getPages() {
++            ListValue<String> pages = MetaBook.this.propertyHolder.getValue(PAGES_LEGACY);
++            if (pages == null || pages.isEmpty()) {
++                return List.of();
++            }
++
++            return new AbstractList<BaseComponent[]>() {
++
++                @Override
++                public BaseComponent[] get(int index) {
++                    return ComponentSerializer.parse(MetaBook.SpigotMeta.this.pageToJSON(pages.get(index)));
++                }
++
++                @Override
++                public int size() {
++                    return pages.size();
++                }
++            };
++        }
++
++        @Override
++        public void setPages(List<BaseComponent[]> pages) {
++            MetaBook.this.propertyHolder.unset(PAGES_LEGACY);
++            if (pages.isEmpty()) {
++                return;
++            }
++
++            for (BaseComponent[] page : pages) {
++                this.addPage(page);
++            }
++        }
++    }
++
++    // Utilities
++    private boolean isValidPage(int page) {
++        return page > 0 && page <= this.getPageCount();
++    }
++
++    private void internalAddPage(String page) {
++        // asserted: page != null
++        ListValue<String> pages = MetaBook.this.propertyHolder.getValue(PAGES_LEGACY);
++        if (pages != null && pages.size() >= MAX_PAGES) {
++            return;
++        } else if (pages == null) {
++            pages = MetaBook.this.propertyHolder.create(PAGES_LEGACY);
++        }
++
++        pages.add(page);
++    }
++
++    @Override
++    public BookMeta.Spigot spigot() {
++        return this.spigot;
++    }
++
++    @Override
++    public @NotNull MetaBook clone() {
++        return (MetaBook) super.clone();
++    }
++
++    @Override
++    void migrateFrom(PropertyHolder.Mutable mutable) {
++        this.propertyHolder.unset(ItemProperties.TITLE);
++        this.propertyHolder.unset(ItemProperties.TITLE_FILTERED);
++        this.propertyHolder.unset(ItemProperties.AUTHOR);
++        this.propertyHolder.unset(ItemProperties.PAGES);
++        this.propertyHolder.unset(ItemProperties.PAGES_FILTERED);
++        this.propertyHolder.unset(ItemProperties.GENERATION);
++        this.propertyHolder.unset(ItemProperties.RESOLVED);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java b/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb89d87a07b329967966c3096c37d5ee1629acb6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.PropertyHolder;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.value.ListValue;
++import net.kyori.adventure.text.Component;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.inventory.meta.BookMeta;
++import org.jetbrains.annotations.NotNull;
++
++public class MetaBookSigned extends MetaBook implements BookMeta {
++
++    public MetaBookSigned(PropertyHolder.Mutable propertyHolder) {
++        super(propertyHolder);
++    }
++
++    @Override
++    protected String convertPlainPageToData(String page) {
++        return CraftChatMessage.fromStringToJSON(page, true);
++    }
++
++    @Override
++    protected String convertDataToPlainPage(String pageData) {
++        return CraftChatMessage.fromJSONComponent(pageData);
++    }
++
++    @Override
++    public PropertyKey<ListValue<Component>> getPageProperty() {
++        return ItemProperties.PAGES;
++    }
++
++    @Override
++    public @NotNull MetaBookSigned clone() {
++        return (MetaBookSigned) super.clone();
++    }
++
++}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBundle.java b/src/main/java/io/papermc/paper/item/meta/MetaBundle.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2508939e41169e44333eed30fb3acc0c9b8c8a4f
@@ -1354,7 +2135,7 @@ index 0000000000000000000000000000000000000000..f2690239962382ae6448eff9ef95ae0c
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java b/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b19aed60cb2024a2b5e90bd161f18b9f8b717155
+index 0000000000000000000000000000000000000000..4b6727d2b427dae762af65d8bd84cee1bfa45050
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java
 @@ -0,0 +1,117 @@
@@ -1397,7 +2178,7 @@ index 0000000000000000000000000000000000000000..b19aed60cb2024a2b5e90bd161f18b9f
 +    @Override
 +    public @NotNull List<PotionEffect> getCustomEffects() {
 +        List<PotionEffect> effects = new ArrayList<>();
-+        for (StewEffect effect : this.propertyHolder.getValueOrDefault(ItemProperties.STEW_EFFECTS, List.of())) {
++        for (StewEffect effect : this.propertyHolder.getOrDefault(ItemProperties.STEW_EFFECTS, List.of())) {
 +            effects.add(new PotionEffect(effect.effect(), effect.duration(), 0));
 +        }
 +
@@ -1557,10 +2338,10 @@ index 0000000000000000000000000000000000000000..0a98e71ecd4151ed15485d641ed7c040
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3988a5124418eda8620ca210bbeed3f1e4df7edb
+index 0000000000000000000000000000000000000000..50adf32d1876add8b9c0b7120c0f1ad603b1a628
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
-@@ -0,0 +1,492 @@
+@@ -0,0 +1,488 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -1611,6 +2392,7 @@ index 0000000000000000000000000000000000000000..3988a5124418eda8620ca210bbeed3f1
 +public class PaperMeta implements ItemMeta {
 +
 +    protected final PropertyHolder.Mutable propertyHolder;
++    protected final Material material;
 +
 +    public PaperMeta(PropertyHolder.Mutable propertyHolder) {
 +        this.propertyHolder = propertyHolder;
@@ -1647,13 +2429,8 @@ index 0000000000000000000000000000000000000000..3988a5124418eda8620ca210bbeed3f1
 +    }
 +
 +    protected <T, V extends Value<T>> void setFromPropertyPath(PropertyKey<StoredPropertyHolder> outer, PropertyKey<V> inner, T value) {
-+        PropertyHolder.Mutable holder = this.propertyHolder.get(outer);
-+        if (holder != null) {
-+            holder = PropertyHolder.Mutable.of(); // TODO nbt backed
-+            this.propertyHolder.set(outer, holder);
-+        }
-+
-+        holder.
++        PropertyHolder.Mutable holder = this.propertyHolder.getOrCreate(outer);
++        holder.set(inner, value);
 +    }
 +
 +    @Override
@@ -2053,55 +2830,130 @@ index 0000000000000000000000000000000000000000..3988a5124418eda8620ca210bbeed3f1
 +            '}';
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMetaProperties.java b/src/main/java/io/papermc/paper/item/meta/PaperMetaProperties.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b0d9ea37351ef74bdc467e45e36f537360dcb850
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/PaperMetaProperties.java
+@@ -0,0 +1,16 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.value.ListValue;
++import io.papermc.paper.property.value.Value;
++import org.bukkit.DyeColor;
++import org.bukkit.block.banner.Pattern;
++
++class PaperMetaProperties {
++
++    // Banner Block Entity
++    static final PropertyKey<Value<DyeColor>> BASE = PropertyKey.of("Base", DyeColor.class);
++    static final PropertyKey<ListValue<Pattern>> PATTERNS = PropertyKey.ofList("Patterns", Pattern.class);
++
++
++}
 diff --git a/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e651a794a41cccd56a73a35448919838347b6333
+index 0000000000000000000000000000000000000000..20de451af851fb32550b2cd22835cb366c2fddee
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,90 @@
 +package io.papermc.paper.item.property;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
-+import io.papermc.paper.property.SimpleValuePlatformAdapter;
 +import io.papermc.paper.property.nbt.NbtPropertyHolder;
-+import io.papermc.paper.property.value.Value;
-+import net.minecraft.nbt.IntTag;
-+import net.minecraft.nbt.Tag;
++import io.papermc.paper.property.nbt.primitives.BlockPositionNbtPrimitive;
++import io.papermc.paper.property.nbt.primitives.BooleanPrimitive;
++import io.papermc.paper.property.nbt.primitives.BytePrimitive;
++import io.papermc.paper.property.nbt.primitives.ColorNbtPrimitive;
++import io.papermc.paper.property.nbt.primitives.ComponentNbtPrimitive;
++import io.papermc.paper.property.nbt.primitives.IntegerPrimitive;
++import io.papermc.paper.property.nbt.primitives.ItemStackNbtPrimitive;
++import io.papermc.paper.property.nbt.primitives.NamespaceKeyNbtPrimitive;
++import io.papermc.paper.property.nbt.primitives.StringPrimitive;
++import io.papermc.paper.property.nbt.types.AttributeMap;
++import io.papermc.paper.property.nbt.types.AxolotlVariantNbt;
++import io.papermc.paper.property.nbt.types.CompoundTagNbt;
++import io.papermc.paper.property.nbt.types.EnchantmentsMap;
++import io.papermc.paper.property.nbt.types.ItemFlagBitset;
++import io.papermc.paper.property.nbt.types.StewEffectsListNbt;
++import io.papermc.paper.property.nbt.types.TropicalFishVariantNbt;
++import io.papermc.paper.property.nbt.types.WrappedListNbt;
 +import net.minecraft.world.item.ItemStack;
-+import org.bukkit.Color;
 +
 +public class ItemPropertyRegistration {
 +
 +    public NbtPropertyHolder newHolder(ItemStack itemStack) {
 +        NbtPropertyHolder tag = new NbtPropertyHolder(itemStack.getOrCreateTag());
 +
-+        tag.register(
-+                ItemProperties.COLOR, new SimpleValuePlatformAdapter<>() {
-+                    @Override
-+                    public Tag fromValue(Color data) {
-+                        return IntTag.valueOf(data.asRGB());
-+                    }
++        tag.register(ItemProperties.ENCHANTMENTS, new EnchantmentsMap());
++        tag.register(ItemProperties.UNBREAKABLE, new BooleanPrimitive());
++        tag.register(ItemProperties.HIDE_FLAGS, new ItemFlagBitset());
++        tag.register(ItemProperties.REPAIR_COST, new IntegerPrimitive());
++        tag.register(ItemProperties.CUSTOM_MODEL_DATA, new IntegerPrimitive());
++        tag.register(ItemProperties.DAMAGE, new IntegerPrimitive());
++        tag.register(ItemProperties.ATTRIBUTES, new AttributeMap());
++        tag.register(ItemProperties.BLOCK_STATE, new CompoundTagNbt());
++        tag.register(ItemProperties.ENTITY_TAG, new CompoundTagNbt());
 +
-+                    @Override
-+                    public Value<Color> toValue(Tag to) {
-+                        return null;
-+                    }
-+                })
-+            .register(
++        tag.register(ItemProperties.DISPLAY, new CompoundTagNbt());
++        tag.register(ItemProperties.DISPLAY_NAME, new ComponentNbtPrimitive());
++        tag.register(ItemProperties.COLOR, new ColorNbtPrimitive());
++        tag.register(ItemProperties.MAP_COLOR, new ColorNbtPrimitive());
 +
++        tag.register(ItemProperties.PUBLIC_BUKKIT_VALUES, new CompoundTagNbt());
++        tag.register(ItemProperties.LOC_NAME, new StringPrimitive());
 +
-+            )
++        tag.register(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, new TropicalFishVariantNbt());
 +
-+        ;
++        tag.register(ItemProperties.STEW_EFFECTS, new StewEffectsListNbt());
 +
++        // TODO: Skull
++
++        // TODO: Potion
++
++        tag.register(ItemProperties.MAP_ID, new IntegerPrimitive());
++        tag.register(ItemProperties.MAP_SCALE_DIRECTION, new BytePrimitive());
++        tag.register(ItemProperties.MAP_TO_LOCK, new BooleanPrimitive());
++
++        tag.register(ItemProperties.RECIPES, new WrappedListNbt<>(new NamespaceKeyNbtPrimitive()));
++
++        tag.register(ItemProperties.FLIGHT, new BytePrimitive());
++
++        // TODO: Firework effect
++
++        tag.register(ItemProperties.STORED_ENCHANTMENTS, new EnchantmentsMap());
++
++        tag.register(ItemProperties.CHARGED, new BooleanPrimitive());
++        tag.register(ItemProperties.CHARGED_PROJECTILES, new WrappedListNbt<>(new ItemStackNbtPrimitive()));
++
++        tag.register(ItemProperties.LODESTONE_POS, new BlockPositionNbtPrimitive());
++        tag.register(ItemProperties.LODESTONE_DIMENSION, new NamespaceKeyNbtPrimitive());
++        tag.register(ItemProperties.LODESTONE_TRACKED, new BooleanPrimitive());
++
++        tag.register(ItemProperties.ITEMS, new WrappedListNbt<>(new ItemStackNbtPrimitive()));
++
++        tag.register(ItemProperties.TITLE, new StringPrimitive());
++        tag.register(ItemProperties.TITLE_FILTERED, new StringPrimitive());
++        tag.register(ItemProperties.AUTHOR, new StringPrimitive());
++        tag.register(ItemProperties.PAGES, new WrappedListNbt<>(new ComponentNbtPrimitive()));
++        tag.register(ItemProperties.PAGES_FILTERED, new WrappedListNbt<>(new ComponentNbtPrimitive()));
++        tag.register(ItemProperties.GENERATION, new IntegerPrimitive());
++        tag.register(ItemProperties.RESOLVED, new BooleanPrimitive());
++
++        tag.register(ItemProperties.PAGES_WRITTEN, new WrappedListNbt<>(new StringPrimitive()));
++        tag.register(ItemProperties.BLOCK_ENTITY_TAG, new CompoundTagNbt());
++        tag.register(ItemProperties.VARIANT, new AxolotlVariantNbt());
 +    }
++
++
 +}
 diff --git a/src/main/java/io/papermc/paper/property/AbstractMutablePropertyHolder.java b/src/main/java/io/papermc/paper/property/AbstractMutablePropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..566b9aeeb4113b6f3ac93a2fbda897f95275f729
+index 0000000000000000000000000000000000000000..4463883d296ab049b65d4bf433b29af64114dd85
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/AbstractMutablePropertyHolder.java
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,68 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.Value;
@@ -2156,17 +3008,6 @@ index 0000000000000000000000000000000000000000..566b9aeeb4113b6f3ac93a2fbda897f9
 +    @SuppressWarnings("unchecked")
 +    @Override
 +    public <V, T extends Value<V>> T getOrCreate(PropertyKey<T> key) {
-+        Value<?> value = this.values.get(key);
-+        if (value == null) {
-+            return (T) this.valueProviders.get(key).createNew();
-+        }
-+
-+        return (T) value;
-+    }
-+
-+    @SuppressWarnings("unchecked")
-+    @Override
-+    public <V, T extends Value<V>> T getOrCreateAndSet(PropertyKey<T> key) {
 +        Value<?> provider = this.values.get(key);
 +        if (provider == null) {
 +            T value = (T) this.valueProviders.get(key).createNew();
@@ -2220,64 +3061,18 @@ index 0000000000000000000000000000000000000000..137bd355459bd8185413aca30fc7796b
 +        return false;
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/property/NbtPropertyHolder.java b/src/main/java/io/papermc/paper/property/NbtPropertyHolder.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..92aff68063b604b84b8ed6fdfdef3c714614c20b
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/NbtPropertyHolder.java
-@@ -0,0 +1,41 @@
-+package io.papermc.paper.property;
-+
-+import io.papermc.paper.property.value.Value;
-+import org.jetbrains.annotations.Nullable;
-+
-+public class NbtPropertyHolder implements PropertyHolder.Mutable {
-+    @Override
-+    public void set(Value<?> value) {
-+
-+    }
-+
-+    @Override
-+    public <T> void set(PropertyKey<? extends Value<T>> key, T value) {
-+
-+    }
-+
-+    @Override
-+    public <V, T extends Value<V>> T getOrCreate(PropertyKey<T> key) {
-+        return null;
-+    }
-+
-+    @Override
-+    public <V, T extends Value<V>> T getOrCreateAndSet(PropertyKey<T> key) {
-+        return null;
-+    }
-+
-+    @Override
-+    public <T> @Nullable T get(PropertyKey<? extends Value<T>> property) {
-+        return null;
-+    }
-+
-+    @Override
-+    public <E, V extends Value<E>> @Nullable V getValue(PropertyKey<V> property) {
-+        return null;
-+    }
-+
-+    @Override
-+    public boolean hasProperty(PropertyKey<?> propertyKey) {
-+        return false;
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/property/SimpleValuePlatformAdapter.java b/src/main/java/io/papermc/paper/property/SimpleValuePlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..177af60f918ec1208ed72cd365b6d9f48ee59f12
+index 0000000000000000000000000000000000000000..aa114599515c1a702a4e6e4db55d7af60697a117
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/SimpleValuePlatformAdapter.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,17 @@
 +package io.papermc.paper.property;
 +
++import io.papermc.paper.property.adapter.TypeAdapter;
 +import io.papermc.paper.property.value.Value;
 +
-+public interface SimpleValuePlatformAdapter<T, PLATFORMTYPE> extends ValuePlatformAdapter<Value<T>, PLATFORMTYPE> {
++public interface SimpleValuePlatformAdapter<T, PLATFORMTYPE> extends TypeAdapter<Value<T>, PLATFORMTYPE> {
 +
 +
 +    PLATFORMTYPE fromValue(T data);
@@ -2289,138 +3084,154 @@ index 0000000000000000000000000000000000000000..177af60f918ec1208ed72cd365b6d9f4
 +    }
 +
 +}
-diff --git a/src/main/java/io/papermc/paper/property/ValuePlatformAdapter.java b/src/main/java/io/papermc/paper/property/ValuePlatformAdapter.java
+diff --git a/src/main/java/io/papermc/paper/property/adapter/TypeAdapter.java b/src/main/java/io/papermc/paper/property/adapter/TypeAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c98dd791591e40ad9f7ec8b4e76aa164f554c956
+index 0000000000000000000000000000000000000000..6f19ef7ac64677b08769c35cd805acb5edff69a7
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/ValuePlatformAdapter.java
-@@ -0,0 +1,12 @@
-+package io.papermc.paper.property;
++++ b/src/main/java/io/papermc/paper/property/adapter/TypeAdapter.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.property.adapter;
 +
++public interface TypeAdapter<PLATFORM_TYPE, RUNTIME_TYPE> {
++
++    PLATFORM_TYPE toPlatform(RUNTIME_TYPE runtimeType);
++
++    RUNTIME_TYPE toRuntime(PLATFORM_TYPE platformType);
++
++
++}
+diff --git a/src/main/java/io/papermc/paper/property/adapter/ValueTypeAdapter.java b/src/main/java/io/papermc/paper/property/adapter/ValueTypeAdapter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f2997ecc251fb88960c08455c79048bd27065c7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/adapter/ValueTypeAdapter.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.property.adapter;
++
++import io.papermc.paper.property.PropertyHolder;
++import io.papermc.paper.property.PropertyKey;
 +import io.papermc.paper.property.value.Value;
 +
-+public interface ValuePlatformAdapter<VALUE extends Value<?>, PLATFORMTYPE> {
++public interface ValueTypeAdapter<RUNTIME_TYPE, RUNTIME extends Value<RUNTIME_TYPE>, HOLDER extends PropertyHolder> {
 +
++    RUNTIME getValue(HOLDER holder, PropertyKey<RUNTIME> propertyKey);
 +
-+    PLATFORMTYPE fromValue(VALUE from);
++    void writeDirect(HOLDER holder, PropertyKey<?> propertyKey, RUNTIME_TYPE direct);
 +
-+    VALUE toValue(PLATFORMTYPE to);
-+
++    RUNTIME getNewValue(HOLDER holder, PropertyKey<RUNTIME> propertyKey);
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aba9ede569f8cfa45c36224be8dd83d89261c3a4
+index 0000000000000000000000000000000000000000..2ea63c535ec899c05bc4ed9c759486354df83b4f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,11 @@
 +package io.papermc.paper.property.nbt;
 +
-+import io.leangen.geantyref.GenericTypeReflector;
-+import io.papermc.paper.property.ValuePlatformAdapter;
++import io.papermc.paper.property.adapter.TypeAdapter;
++import io.papermc.paper.property.adapter.ValueTypeAdapter;
 +import io.papermc.paper.property.value.Value;
-+import net.minecraft.nbt.ByteTag;
-+import net.minecraft.nbt.DoubleTag;
-+import net.minecraft.nbt.FloatTag;
-+import net.minecraft.nbt.IntTag;
-+import net.minecraft.nbt.LongTag;
-+import net.minecraft.nbt.ShortTag;
-+import net.minecraft.nbt.StringTag;
 +import net.minecraft.nbt.Tag;
-+import net.minecraft.nbt.TagTypes;
 +
-+public interface NbtPlatformAdapter<RUNTIME, SERIALIZED> extends ValuePlatformAdapter<Value<RUNTIME>, Tag> {
++public interface NbtPlatformAdapter<TYPE, RUNTIME extends Value<TYPE>> extends ValueTypeAdapter<TYPE, RUNTIME, NbtPropertyHolder> {
++    int getTagType();
 +
-+    SERIALIZED toNbtValue(RUNTIME runtime);
-+
-+    RUNTIME fromNbtValue(SERIALIZED serialized);
-+
-+    @Override
-+    default Tag fromValue(Value<RUNTIME> from) {
-+        RUNTIME value = from.getValue();
-+
-+        SERIALIZED serialized = toNbtValue(value);
-+        if (serialized instanceof Byte nbt) {
-+            return ByteTag.valueOf(nbt);
-+        } else if (serialized instanceof Double nbt) {
-+            return DoubleTag.valueOf(nbt);
-+        } else if (serialized instanceof Float nbt) {
-+            return FloatTag.valueOf(nbt);
-+        } else if (serialized instanceof Integer nbt) {
-+            return IntTag.valueOf(nbt);
-+        } else if (serialized instanceof Long nbt) {
-+            return LongTag.valueOf(nbt);
-+        } else if (serialized instanceof Short nbt) {
-+            return ShortTag.valueOf(nbt);
-+        } else if (serialized instanceof String nbt) {
-+            return StringTag.valueOf(nbt);
-+        }
-+
-+    }
-+
-+    @Override
-+    default Value<RUNTIME> toValue(Tag to) {
-+        return null;
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d6b16d49923c81cd9c3b2b005aa0e9f73e18cde5
+index 0000000000000000000000000000000000000000..7ab9055b8c73df9df89e8b4a694086f4f913a077
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,101 @@
 +package io.papermc.paper.property.nbt;
 +
 +import io.papermc.paper.property.PropertyHolder;
 +import io.papermc.paper.property.PropertyKey;
-+import io.papermc.paper.property.ValuePlatformAdapter;
 +import io.papermc.paper.property.value.Value;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.Tag;
 +import org.jetbrains.annotations.Nullable;
 +
-+import java.util.function.Function;
++import java.util.HashMap;
++import java.util.Map;
 +
 +public class NbtPropertyHolder implements PropertyHolder.Mutable {
 +
++    private final Map<PropertyKey<?>, NbtPlatformAdapter<?, ?>> adapters = new HashMap<>();
 +    private final CompoundTag compoundTag;
 +
 +    public NbtPropertyHolder(CompoundTag compoundTag) {
 +        this.compoundTag = compoundTag;
 +    }
 +
-+    public <V, T extends Value<V>> NbtPropertyHolder register(PropertyKey<T> key, ValuePlatformAdapter<T, Tag> adapter) {
-+
++    public <V, T extends Value<V>> NbtPropertyHolder register(PropertyKey<T> key, NbtPlatformAdapter<V, T> adapter) {
++        this.adapters.put(key, adapter);
 +        return this;
 +    }
 +
++    @SuppressWarnings("unchecked")
 +    @Override
-+    public void set(Value<?> value) {
++    public void set(Value value) {
++        this.set(value.getKey(), value.getValue());
++    }
 +
++    @Override
++    public <T> void unset(PropertyKey<? extends Value<T>> key) {
++        this.compoundTag.remove(key.getKey());
 +    }
 +
 +    @Override
 +    public <T> void set(PropertyKey<? extends Value<T>> key, T value) {
-+
++        NbtPlatformAdapter adapter = this.adapters.get(key);
++        adapter.writeDirect(this, key, value);
 +    }
 +
++    @SuppressWarnings("unchecked")
++    @Override
++    public <V, T extends Value<V>> T create(PropertyKey<T> key) {
++        NbtPlatformAdapter adapter = this.adapters.get(key);
++        return (T) adapter.getNewValue(this, key);
++    }
++
++    @SuppressWarnings("unchecked")
 +    @Override
 +    public <V, T extends Value<V>> T getOrCreate(PropertyKey<T> key) {
-+        return null;
-+    }
++        NbtPlatformAdapter adapter = this.adapters.get(key);
 +
-+    @Override
-+    public <V, T extends Value<V>> T getOrCreateAndSet(PropertyKey<T> key) {
-+        return null;
++        if (!this.compoundTag.contains(key.getKey(), adapter.getTagType())) {
++            return (T) adapter.getNewValue(this, key);
++        }
++
++        return (T) adapter.getValue(this, key);
 +    }
 +
 +    @Override
 +    public <T> @Nullable T get(PropertyKey<? extends Value<T>> property) {
-+        return null;
++        Value<T> value = this.getValue(property);
++        return value == null ? null : value.getValue();
 +    }
 +
 +    @Override
++    public <T> @Nullable T getOrDefault(PropertyKey<? extends Value<T>> property, T def) {
++        Value<T> value = this.getValue(property);
++        return value == null ? def : value.getValue();
++    }
++
++    @SuppressWarnings("unchecked")
++    @Override
 +    public <E, V extends Value<E>> @Nullable V getValue(PropertyKey<V> property) {
-+        return this.compoundTag.get(propertyKey.getKey());
++        NbtPlatformAdapter adapter = this.adapters.get(property);
++        if (adapter == null) {
++            throw new UnsupportedOperationException("No adapter for: " + property);
++        }
++
++        return (V) adapter.getValue(this, property);
++    }
++
++    @Override
++    public <V, T extends Value<V>> @Nullable T getValueOrDefault(PropertyKey<T> key, T value) {
++        T val = this.getValue(key);
++        return val == null ? value : val;
 +    }
 +
 +    @Override
@@ -2429,59 +3240,1039 @@ index 0000000000000000000000000000000000000000..d6b16d49923c81cd9c3b2b005aa0e9f7
 +    }
 +
 +
-+
++    public CompoundTag getCompoundTag() {
++        return compoundTag;
++    }
 +}
-diff --git a/src/main/java/io/papermc/paper/property/value/MutableMapValueImpl.java b/src/main/java/io/papermc/paper/property/value/MutableMapValueImpl.java
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/AbstractListNbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/primitives/AbstractListNbtPlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ae2e98022fed151809f49f97e4e09816f948412c
+index 0000000000000000000000000000000000000000..e17d4745eb5daf5eaa28b4dfd0db4364ef27ece0
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/value/MutableMapValueImpl.java
-@@ -0,0 +1,26 @@
-+package io.papermc.paper.property.value;
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/AbstractListNbtPlatformAdapter.java
+@@ -0,0 +1,108 @@
++package io.papermc.paper.property.nbt.primitives;
 +
 +import io.papermc.paper.property.PropertyKey;
-+import io.papermc.paper.property.PropertyKeyImpl;
-+import io.papermc.paper.property.value.MapValue;
++import io.papermc.paper.property.nbt.NbtPlatformAdapter;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.value.ListValue;
 +import io.papermc.paper.property.value.Value;
-+import io.papermc.paper.property.value.ValueImpl;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.ListTag;
++import net.minecraft.nbt.Tag;
++import org.jetbrains.annotations.NotNull;
 +
-+import java.util.Map;
++import java.util.ArrayList;
++import java.util.Iterator;
++import java.util.List;
 +
-+public class MutableMapValueImpl<T, K> extends ValueImpl<Map<T, K>, MapValue<T, K>> implements MapValue<T, K> {
++public abstract class AbstractListNbtPlatformAdapter<T> implements NbtPlatformAdapter<List<T>, ListValue<T>> {
 +
-+    protected MutableMapValueImpl(PropertyKeyImpl<Map<T, K>, MapValue<T, K>> key, Map<T, K> value) {
-+        super(key, value);
++    @Override
++    public ListValue<T> getValue(NbtPropertyHolder holder, PropertyKey<ListValue<T>> propertyKey) {
++        ListTag tag = holder.getCompoundTag().getList(propertyKey.getKey(), Tag.TAG_COMPOUND);
++
++        return new ListValue<>() {
++
++            @NotNull
++            @Override
++            public Iterator<T> iterator() {
++                Iterator<Tag> iterator = tag.iterator();
++                return new Iterator<>() {
++                    @Override
++                    public boolean hasNext() {
++                        return iterator.hasNext();
++                    }
++
++                    @Override
++                    public T next() {
++                        CompoundTag compoundTag = (CompoundTag) iterator.next();
++
++                        return AbstractListNbtPlatformAdapter.this.getType(new NbtPropertyHolder(compoundTag), propertyKey);;
++                    }
++                };
++            }
++
++            @Override
++            public List<T> getValue() {
++                List<T> list = new ArrayList<>();
++                for (Tag compound : tag) {
++                    CompoundTag compoundTag = (CompoundTag) compound;
++                    list.add(AbstractListNbtPlatformAdapter.this.getType(new NbtPropertyHolder(compoundTag), propertyKey));
++                }
++
++                return list;
++            }
++
++            @Override
++            public PropertyKey<? extends Value<List<T>>> getKey() {
++                return propertyKey;
++            }
++
++            @Override
++            public T get(int index) {
++                return AbstractListNbtPlatformAdapter.this.getType(new NbtPropertyHolder((CompoundTag) tag.get(index)), propertyKey);;
++            }
++
++            @Override
++            public int size() {
++                return tag.size();
++            }
++
++            @Override
++            public void add(T value) {
++                this.insert(value, this.size());
++            }
++
++            @Override
++            public void insert(T value, int index) {
++                NbtPropertyHolder propertyHolder = new NbtPropertyHolder(new CompoundTag());
++                AbstractListNbtPlatformAdapter.this.write(value, propertyHolder, propertyKey);
++                tag.add(index, propertyHolder.getCompoundTag());
++            }
++
++            @Override
++            public T remove(int index) {
++                return AbstractListNbtPlatformAdapter.this.getType(new NbtPropertyHolder((CompoundTag) tag.remove(index)), propertyKey);
++            }
++        };
 +    }
 +
 +    @Override
-+    public Map<T, K> getValue() {
-+        return this.;
++    public ListValue<T> getNewValue(NbtPropertyHolder holder, PropertyKey<ListValue<T>> propertyKey) {
++        holder.getCompoundTag().put(propertyKey.getKey(), new ListTag());
++        return this.getValue(holder, propertyKey);
 +    }
 +
 +    @Override
-+    public PropertyKey<? extends Value<Map<T, K>>> getKey() {
++    public void writeDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey, List<T> direct) {
++        for (T value : direct) {
++            NbtPropertyHolder propertyHolder = new NbtPropertyHolder(new CompoundTag());
++            AbstractListNbtPlatformAdapter.this.write(value, propertyHolder, propertyKey);
++
++            holder.getCompoundTag().put(propertyKey.getKey(), propertyHolder.getCompoundTag());
++        }
++    }
++
++    public abstract T getType(NbtPropertyHolder propertyHolder, PropertyKey<?> propertyKey);
++
++    public abstract void write(T type, NbtPropertyHolder propertyHolder, PropertyKey<?> propertyKey);
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BlockPositionNbtPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BlockPositionNbtPrimitive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7eed7ce505090bb1f455976aec256c0f051612f4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/BlockPositionNbtPrimitive.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import io.papermc.paper.math.Position;
++import net.minecraft.core.BlockPos;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtUtils;
++import net.minecraft.nbt.Tag;
++
++public class BlockPositionNbtPrimitive extends SinglePrimitiveNbtPlatformAdapter<Position> {
++
++    @Override
++    public int getTagType() {
++        return Tag.TAG_COMPOUND;
++    }
++
++    @Override
++    public Position getType(Tag tag) {
++        BlockPos pos = NbtUtils.readBlockPos((CompoundTag) tag);
++        return Position.block(pos.getX(), pos.getY(), pos.getZ());
++    }
++
++    @Override
++    public Tag write(Position type) {
++        return NbtUtils.writeBlockPos(new BlockPos(type.blockZ(), type.blockY(), type.blockZ()));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1b192a7cb4196ad94c8ebbe4590280c103b8de84
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import net.minecraft.nbt.ByteTag;
++import net.minecraft.nbt.IntTag;
++import net.minecraft.nbt.Tag;
++
++public class BooleanPrimitive extends SinglePrimitiveNbtPlatformAdapter<Boolean> {
++
++    @Override
++    public int getTagType() {
++        return IntTag.TAG_BYTE;
++    }
++
++    @Override
++    public Boolean getType(Tag tag) {
++        return ((ByteTag) tag).getAsByte() != 0;
++    }
++
++    @Override
++    public Tag write(Boolean type) {
++        return ByteTag.valueOf(type);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BytePrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BytePrimitive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..70d6603f2d28d93e4b7ae87079199e3160c1d849
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/BytePrimitive.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import net.minecraft.nbt.ByteTag;
++import net.minecraft.nbt.IntTag;
++import net.minecraft.nbt.Tag;
++
++public class BytePrimitive extends SinglePrimitiveNbtPlatformAdapter<Byte> {
++
++    @Override
++    public int getTagType() {
++        return IntTag.TAG_BYTE;
++    }
++
++    @Override
++    public Byte getType(Tag tag) {
++        return ((ByteTag) tag).getAsByte();
++    }
++
++    @Override
++    public Tag write(Byte type) {
++        return ByteTag.valueOf(type);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/ColorNbtPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/ColorNbtPrimitive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..65a9fb79a91ade533128d36ef8ac88bbbba27415
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/ColorNbtPrimitive.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import org.bukkit.Color;
++
++public class ColorNbtPrimitive extends NbtPrimitiveWrapper<Color, Integer> {
++
++    public ColorNbtPrimitive() {
++        super(new IntegerPrimitive());
++    }
++
++    @Override
++    public Color fromPrimitive(Integer primitive) {
++        return Color.fromRGB(primitive);
++    }
++
++    @Override
++    public Integer toPrimitive(Color type) {
++        return type.asRGB();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/ComponentNbtPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/ComponentNbtPrimitive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fd501ae1b53eacfd1a83d5c8268709333f247b47
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/ComponentNbtPrimitive.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++
++public class ComponentNbtPrimitive extends NbtPrimitiveWrapper<Component, String> {
++
++    public ComponentNbtPrimitive() {
++        super(new StringPrimitive());
++    }
++
++    @Override
++    public Component fromPrimitive(String primitive) {
++        return GsonComponentSerializer.gson().deserialize(primitive);
++    }
++
++    @Override
++    public String toPrimitive(Component type) {
++        return GsonComponentSerializer.gson().serialize(type);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/IntegerPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/IntegerPrimitive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ca3d8e62c6cf7d16fa6af95a2e37a04550e2f0f2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/IntegerPrimitive.java
+@@ -0,0 +1,23 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import net.minecraft.nbt.IntTag;
++import net.minecraft.nbt.Tag;
++
++public class IntegerPrimitive extends SinglePrimitiveNbtPlatformAdapter<Integer> {
++
++    @Override
++    public int getTagType() {
++        return IntTag.TAG_INT;
++    }
++
++    @Override
++    public Integer getType(Tag tag) {
++        return ((IntTag) tag).getAsInt();
++    }
++
++    @Override
++    public Tag write(Integer type) {
++        return IntTag.valueOf(type);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/ItemStackNbtPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/ItemStackNbtPrimitive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a2f422db63ca15889d66c70072dd7da87a4a2f83
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/ItemStackNbtPrimitive.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.Tag;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.inventory.ItemStack;
++
++public class ItemStackNbtPrimitive extends SinglePrimitiveNbtPlatformAdapter<ItemStack> {
++
++    @Override
++    public int getTagType() {
++        return Tag.TAG_COMPOUND;
++    }
++
++    @Override
++    public ItemStack getType(Tag tag) {
++        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of((CompoundTag) tag));
++    }
++
++    @Override
++    public Tag write(ItemStack type) {
++        return (type instanceof CraftItemStack ? ((CraftItemStack) type).handle : CraftItemStack.asNMSCopy(type)).save(new CompoundTag());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/NamespaceKeyNbtPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/NamespaceKeyNbtPrimitive.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c1fe17fd099b09655c36ee1d42385764cfd38816
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/NamespaceKeyNbtPrimitive.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import org.bukkit.NamespacedKey;
++
++public class NamespaceKeyNbtPrimitive extends NbtPrimitiveWrapper<NamespacedKey, String> {
++
++    public NamespaceKeyNbtPrimitive() {
++        super(new StringPrimitive());
++    }
++
++    @Override
++    public NamespacedKey fromPrimitive(String primitive) {
++        return NamespacedKey.fromString(primitive);
++    }
++
++    @Override
++    public String toPrimitive(NamespacedKey type) {
++        return type.toString();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/NbtPrimitiveWrapper.java b/src/main/java/io/papermc/paper/property/nbt/primitives/NbtPrimitiveWrapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a5303d8b0de8bd18422e56b60facbd32f7a35319
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/NbtPrimitiveWrapper.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import net.minecraft.nbt.Tag;
++
++public abstract class NbtPrimitiveWrapper<T, P> extends SinglePrimitiveNbtPlatformAdapter<T> {
++
++    private final SinglePrimitiveNbtPlatformAdapter<P> primitive;
++
++    public NbtPrimitiveWrapper(SinglePrimitiveNbtPlatformAdapter<P> primitive) {
++        this.primitive = primitive;
++    }
++
++    @Override
++    public int getTagType() {
++        return this.primitive.getTagType();
++    }
++
++    @Override
++    public T getType(Tag tag) {
++        return this.fromPrimitive(this.primitive.getType(tag));
++    }
++
++    @Override
++    public Tag write(T type) {
++        return this.primitive.write(this.toPrimitive(type));
++    }
++
++    public abstract T fromPrimitive(P primitive);
++
++    public abstract P toPrimitive(T type);
++
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..135f5947a422d5ea28b967f6398c347288bab149
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPlatformAdapter;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.value.Value;
++import net.minecraft.nbt.Tag;
++import org.jetbrains.annotations.Nullable;
++
++public abstract class SinglePrimitiveNbtPlatformAdapter<T> implements NbtPlatformAdapter<T, Value<T>> {
++
++    @Override
++    public Value<T> getValue(NbtPropertyHolder holder, PropertyKey<Value<T>> propertyKey) {
++        return new Value<>() {
++            @Override
++            public T getValue() {
++                return SinglePrimitiveNbtPlatformAdapter.this.getDirect(holder, propertyKey);
++            }
++
++            @Override
++            public PropertyKey<? extends Value<T>> getKey() {
++                return propertyKey;
++            }
++        };
++    }
++
++    @Override
++    public Value<T> getNewValue(NbtPropertyHolder holder, PropertyKey<Value<T>> propertyKey) {
++        return new Value<>() {
++            @Override
++            public @Nullable T getValue() {
++                return null;
++            }
++
++            @Override
++            public PropertyKey<? extends Value<T>> getKey() {
++                return propertyKey;
++            }
++        };
++    }
++
++    public T getDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey) {
++        Tag tag = holder.getCompoundTag().get(propertyKey.getKey());
++        if (tag != null && tag.getId() == SinglePrimitiveNbtPlatformAdapter.this.getTagType()) {
++            return SinglePrimitiveNbtPlatformAdapter.this.getType(tag);
++        }
++
 +        return null;
 +    }
++
++    @Override
++    public void writeDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey, T direct) {
++        holder.getCompoundTag().put(propertyKey.getKey(), this.write(direct));
++    }
++
++    public abstract T getType(Tag tag);
++
++    public abstract Tag write(T type);
 +}
-diff --git a/src/main/java/io/papermc/paper/property/value/SimpleValueImpl.java b/src/main/java/io/papermc/paper/property/value/SimpleValueImpl.java
+diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/StringPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/StringPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1eee2b7b0ac43fbd99a17cbb6929d92ff17b95bc
+index 0000000000000000000000000000000000000000..9e4dfed6ac406391ac3205b0e9028ff1607a7f54
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/value/SimpleValueImpl.java
-@@ -0,0 +1,14 @@
-+package io.papermc.paper.property.value;
++++ b/src/main/java/io/papermc/paper/property/nbt/primitives/StringPrimitive.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.property.nbt.primitives;
++
++import net.minecraft.nbt.IntTag;
++import net.minecraft.nbt.StringTag;
++import net.minecraft.nbt.Tag;
++
++public class StringPrimitive extends SinglePrimitiveNbtPlatformAdapter<String> {
++
++    @Override
++    public int getTagType() {
++        return IntTag.TAG_STRING;
++    }
++
++    @Override
++    public String getType(Tag tag) {
++        return ((StringTag) tag).getAsString();
++    }
++
++    @Override
++    public Tag write(String type) {
++        return StringTag.valueOf(type);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/AttributeMap.java b/src/main/java/io/papermc/paper/property/nbt/types/AttributeMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fbc3745355be6cb87af0c15032a5c3b55c4a67cc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/types/AttributeMap.java
+@@ -0,0 +1,88 @@
++package io.papermc.paper.property.nbt.types;
++
++import com.google.common.collect.HashMultimap;
++import com.google.common.collect.Multimap;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPlatformAdapter;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.nbt.primitives.StringPrimitive;
++import io.papermc.paper.property.value.MultiMapValue;
++import io.papermc.paper.property.value.Value;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.ListTag;
++import net.minecraft.nbt.Tag;
++import net.minecraft.resources.ResourceLocation;
++import org.bukkit.Registry;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeModifier;
++import org.bukkit.craftbukkit.CraftEquipmentSlot;
++import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++
++import java.util.Optional;
++
++public class AttributeMap implements NbtPlatformAdapter<Multimap<Attribute, AttributeModifier>, MultiMapValue<Attribute, AttributeModifier>> {
++
++    private static final PropertyKey<Value<String>> ATTRIBUTE_SLOT = PropertyKey.of("Slot", String.class);
++    private static final PropertyKey<Value<String>> ATTRIBUTE_NAME = PropertyKey.of("AttributeName", String.class);
++    private static final StringPrimitive PRIMITIVE = new StringPrimitive();
++
++    @Override
++    public MultiMapValue<Attribute, AttributeModifier> getValue(NbtPropertyHolder holder, PropertyKey<MultiMapValue<Attribute, AttributeModifier>> propertyKey) {
++        ListTag attributes = holder.getCompoundTag().getList(propertyKey.getKey(), Tag.TAG_COMPOUND);
++
++        Multimap<Attribute, AttributeModifier> attributeMap = HashMultimap.create();
++        for (Tag tag : attributes) {
++            CompoundTag compoundTag = (CompoundTag) tag;
++            ResourceLocation attributeName = ResourceLocation.tryParse(PRIMITIVE.getValue(holder, ATTRIBUTE_NAME).getValue());
++
++            Optional<net.minecraft.world.entity.ai.attributes.Attribute> optional = BuiltInRegistries.ATTRIBUTE.getOptional(attributeName);
++            if (optional.isPresent()) {
++                net.minecraft.world.entity.ai.attributes.AttributeModifier modifier = net.minecraft.world.entity.ai.attributes.AttributeModifier.load(compoundTag);
++                attributeMap.put(Registry.ATTRIBUTE.get(CraftNamespacedKey.fromMinecraft(attributeName)), CraftAttributeInstance.convert(modifier));
++            }
++        }
++
++        return new MultiMapValue<>() {
++            @Override
++            public Multimap<Attribute, AttributeModifier> getValue() {
++                return attributeMap;
++            }
++
++            @Override
++            public PropertyKey<? extends Value<Multimap<Attribute, AttributeModifier>>> getKey() {
++                return propertyKey;
++            }
++        };
++    }
++
++    @Override
++    public void writeDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey, Multimap<Attribute, AttributeModifier> direct) {
++        ListTag attributes = new ListTag();
++        for (AttributeModifier attributeModifier : direct.values()) {
++            net.minecraft.world.entity.ai.attributes.AttributeModifier nmsModifier = CraftAttributeInstance.convert(attributeModifier);
++
++            NbtPropertyHolder attributeHolder = new NbtPropertyHolder(nmsModifier.save());
++            PRIMITIVE.writeDirect(attributeHolder, ATTRIBUTE_NAME, attributeModifier.getName());
++            if (attributeModifier.getSlot() != null) {
++                PRIMITIVE.writeDirect(attributeHolder, ATTRIBUTE_SLOT, CraftEquipmentSlot.getNMS(attributeModifier.getSlot()).name());
++            }
++
++            attributes.add(attributeHolder.getCompoundTag());
++        }
++
++        holder.getCompoundTag().put(propertyKey.getKey(), attributes);
++    }
++
++    @Override
++    public MultiMapValue<Attribute, AttributeModifier> getNewValue(NbtPropertyHolder holder, PropertyKey<MultiMapValue<Attribute, AttributeModifier>> propertyKey) {
++        holder.getCompoundTag().put(propertyKey.getKey(), new ListTag());
++        return this.getValue(holder, propertyKey);
++    }
++
++    @Override
++    public int getTagType() {
++        return Tag.TAG_COMPOUND;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/AxolotlVariantNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/AxolotlVariantNbt.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..97bedb86cfaeb5cd1f0ea655b04c91a8ec4c0656
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/types/AxolotlVariantNbt.java
+@@ -0,0 +1,22 @@
++package io.papermc.paper.property.nbt.types;
++
++import io.papermc.paper.property.nbt.primitives.IntegerPrimitive;
++import io.papermc.paper.property.nbt.primitives.NbtPrimitiveWrapper;
++import org.bukkit.entity.Axolotl;
++
++public class AxolotlVariantNbt extends NbtPrimitiveWrapper<Axolotl.Variant, Integer> {
++
++    public AxolotlVariantNbt() {
++        super(new IntegerPrimitive());
++    }
++
++    @Override
++    public Axolotl.Variant fromPrimitive(Integer primitive) {
++        return Axolotl.Variant.values()[primitive];
++    }
++
++    @Override
++    public Integer toPrimitive(Axolotl.Variant type) {
++        return type.ordinal();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/CompoundTagNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/CompoundTagNbt.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..35b3f857df86002046b49a68dd78c4272b47fb89
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/types/CompoundTagNbt.java
+@@ -0,0 +1,93 @@
++package io.papermc.paper.property.nbt.types;
++
++import io.papermc.paper.property.PropertyHolder;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.StoredPropertyHolder;
++import io.papermc.paper.property.nbt.NbtPlatformAdapter;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.value.Value;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.Tag;
++import org.jetbrains.annotations.Nullable;
++
++public class CompoundTagNbt implements NbtPlatformAdapter<PropertyHolder, StoredPropertyHolder> {
++    @Override
++    public StoredPropertyHolder getValue(NbtPropertyHolder holder, PropertyKey<StoredPropertyHolder> propertyKey) {
++        if (!holder.getCompoundTag().contains(propertyKey.getKey(), Tag.TAG_COMPOUND)) {
++            return null;
++        }
++
++        CompoundTag compoundTag = holder.getCompoundTag().getCompound(propertyKey.getKey());
++        NbtPropertyHolder wrappedholder = new NbtPropertyHolder(compoundTag);
++        return new StoredPropertyHolder() {
++            @Override
++            public void set(Value<?> value) {
++                wrappedholder.set(value);
++            }
++
++            @Override
++            public <T> void unset(PropertyKey<? extends Value<T>> key) {
++                wrappedholder.unset(key);
++            }
++
++            @Override
++            public <T> void set(PropertyKey<? extends Value<T>> key, T value) {
++                wrappedholder.set(key, value);
++            }
++
++            @Override
++            public <V, T extends Value<V>> T create(PropertyKey<T> key) {
++                return wrappedholder.create(key);
++            }
++
++            @Override
++            public <V, T extends Value<V>> T getOrCreate(PropertyKey<T> key) {
++                return wrappedholder.getOrCreate(key);
++            }
++
++            @Override
++            public <T> @Nullable T get(PropertyKey<? extends Value<T>> property) {
++                return wrappedholder.get(property);
++            }
++
++            @Override
++            public <T> @Nullable T getOrDefault(PropertyKey<? extends Value<T>> property, T value) {
++                return wrappedholder.getOrDefault(property, value);
++            }
++
++            @Override
++            public <E, V extends Value<E>> @Nullable V getValue(PropertyKey<V> property) {
++                return wrappedholder.getValue(property);
++            }
++
++            @Override
++            public <V, T extends Value<V>> @Nullable T getValueOrDefault(PropertyKey<T> key, V value) {
++                return wrappedholder.getValueOrDefault(key, value);
++            }
++
++            @Override
++            public boolean hasProperty(PropertyKey<?> propertyKey) {
++                return wrappedholder.hasProperty(propertyKey);
++            }
++
++            @Override
++            public PropertyHolder getValue() {
++                return wrappedholder;
++            }
++
++            @Override
++            public PropertyKey<? extends Value<PropertyHolder>> getKey() {
++                return propertyKey;
++            }
++        };
++    }
++
++    @Override
++    public void writeDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey, PropertyHolder direct) {
++        if (direct instanceof NbtPropertyHolder nbtPropertyHolder) {
++            holder.getCompoundTag().put(propertyKey.getKey(), nbtPropertyHolder.getCompoundTag().copy());
++        } else {
++            throw new UnsupportedOperationException(); // TODO ?
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/EnchantmentsMap.java b/src/main/java/io/papermc/paper/property/nbt/types/EnchantmentsMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6518cc3f2b6c2a097e41bd4c4f6bf58fa48a464c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/types/EnchantmentsMap.java
+@@ -0,0 +1,133 @@
++package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPlatformAdapter;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.value.ListValue;
++import io.papermc.paper.property.value.MapValue;
++import io.papermc.paper.property.value.Value;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.ListTag;
++import net.minecraft.nbt.Tag;
++import net.minecraft.world.item.enchantment.EnchantmentHelper;
++import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.enchantments.Enchantment;
++import org.jetbrains.annotations.NotNull;
 +
-+public class SimpleValueImpl<T> extends ValueImpl<T, Value<T>> {
++import java.util.Iterator;
++import java.util.LinkedHashMap;
++import java.util.Map;
 +
-+    SimpleValueImpl(PropertyKey<Value<T>> key, T value) {
-+        super(key, value);
++public class EnchantmentsMap implements NbtPlatformAdapter<Map<Enchantment, Integer>, MapValue<Enchantment, Integer>> {
++
++    @Override
++    public MapValue<Enchantment, Integer> getValue(NbtPropertyHolder holder, PropertyKey<MapValue<Enchantment, Integer>> propertyKey) {
++        ListTag tag = holder.getCompoundTag().getList(propertyKey.getKey(), Tag.TAG_COMPOUND);
++
++        Map<net.minecraft.world.item.enchantment.Enchantment, Integer> enchantments = EnchantmentHelper.deserializeEnchantments(tag);
++
++        return new MapValue<>() {
++            @Override
++            public Integer getEntry(Enchantment key) {
++                return enchantments.get(CraftEnchantment.getRaw(key));
++            }
++
++            @Override
++            public boolean has(Enchantment key) {
++                return enchantments.containsKey(CraftEnchantment.getRaw(key));
++            }
++
++            @Override
++            public Integer put(Enchantment key, Integer value) {
++                Integer result = enchantments.put(CraftEnchantment.getRaw(key), value);
++                EnchantmentsMap.this.setEnchantments(enchantments, propertyKey, holder);
++                return result;
++            }
++
++            @Override
++            public void removeEntry(Enchantment key) {
++                enchantments.remove(CraftEnchantment.getRaw(key));
++                EnchantmentsMap.this.setEnchantments(enchantments, propertyKey, holder);
++            }
++
++            @Override
++            public int size() {
++                return enchantments.size();
++            }
++
++            @Override
++            public Map<Enchantment, Integer> getValue() {
++                Map<Enchantment, Integer> bukkitEnchantmentMap = new LinkedHashMap<>();
++                for (Map.Entry<net.minecraft.world.item.enchantment.Enchantment, Integer> nmsEnchantment : EnchantmentHelper.deserializeEnchantments(tag).entrySet()) {
++                    bukkitEnchantmentMap.put(Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(nmsEnchantment.getKey()))), nmsEnchantment.getValue());
++                }
++
++                return bukkitEnchantmentMap;
++            }
++
++            @Override
++            public PropertyKey<? extends Value<Map<Enchantment, Integer>>> getKey() {
++                return propertyKey;
++            }
++
++            @NotNull
++            @Override
++            public Iterator<Map.Entry<Enchantment, Integer>> iterator() {
++                Iterator<Tag> iterator = tag.iterator();
++                return new Iterator<>() {
++                    @Override
++                    public boolean hasNext() {
++                        return iterator.hasNext();
++                    }
++
++                    @Override
++                    public Map.Entry<Enchantment, Integer> next() {
++                        CompoundTag compoundTag = (CompoundTag) iterator.next();
++                        Enchantment enchantment = Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(EnchantmentHelper.getEnchantmentId(compoundTag)));
++                        int level = EnchantmentHelper.getEnchantmentLevel(compoundTag);
++
++                        return Map.entry(enchantment, level);
++                    }
++                };
++            }
++        };
 +    }
 +
-+    static <T> Value<T> of(PropertyKey<Value<T>> key, T value) {
-+        return new SimpleValueImpl<>(key, value);
++    @Override
++    public void writeDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey, Map<Enchantment, Integer> direct) {
++        Map<net.minecraft.world.item.enchantment.Enchantment, Integer> nmsEnchantmentMap = new LinkedHashMap<>();
++        for (Map.Entry<Enchantment, Integer> bukkit : direct.entrySet()) {
++            nmsEnchantmentMap.put(CraftEnchantment.getRaw(bukkit.getKey()), bukkit.getValue());
++        }
++
++        this.setEnchantments(nmsEnchantmentMap, propertyKey, holder);
 +    }
++
++    @Override
++    public MapValue<Enchantment, Integer> getNewValue(NbtPropertyHolder holder, PropertyKey<MapValue<Enchantment, Integer>> propertyKey) {
++        holder.getCompoundTag().put(propertyKey.getKey(), new ListTag());
++        return this.getValue(holder, propertyKey);
++    }
++
++    @Override
++    public int getTagType() {
++        return Tag.TAG_LIST;
++    }
++
++    // See EnchantmentHelper
++    private void setEnchantments(Map<net.minecraft.world.item.enchantment.Enchantment, Integer> enchantments, PropertyKey<?> key, NbtPropertyHolder nbtPropertyHolder) {
++        ListTag listTag = new ListTag();
++
++        for (Map.Entry<net.minecraft.world.item.enchantment.Enchantment, Integer> entry : enchantments.entrySet()) {
++            net.minecraft.world.item.enchantment.Enchantment enchantment = entry.getKey();
++            if (enchantment != null) {
++                int i = entry.getValue();
++                listTag.add(EnchantmentHelper.storeEnchantment(EnchantmentHelper.getEnchantmentId(enchantment), i));
++            }
++        }
++
++        nbtPropertyHolder.getCompoundTag().put(key.getKey(), listTag);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java b/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9484a87b1684a8bab91da85faec2a5753e189d73
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java
+@@ -0,0 +1,80 @@
++package io.papermc.paper.property.nbt.types;
++
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPlatformAdapter;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.nbt.primitives.IntegerPrimitive;
++import io.papermc.paper.property.value.SetValue;
++import io.papermc.paper.property.value.Value;
++import org.bukkit.inventory.ItemFlag;
++
++import java.util.EnumSet;
++import java.util.Objects;
++import java.util.Set;
++
++public class ItemFlagBitset implements NbtPlatformAdapter<Set<ItemFlag>, SetValue<ItemFlag>> {
++
++    private static final IntegerPrimitive PRIMITIVE = new IntegerPrimitive();
++
++    @Override
++    public SetValue<ItemFlag> getValue(NbtPropertyHolder holder, PropertyKey<SetValue<ItemFlag>> propertyKey) {
++        return new SetValue<>() {
++            @Override
++            public boolean contains(ItemFlag value) {
++                int flags = Objects.requireNonNullElse(PRIMITIVE.getDirect(holder, propertyKey), 0);
++                return this.contains(value, flags);
++            }
++
++            @Override
++            public void add(ItemFlag value) {
++                int flags = Objects.requireNonNullElse(PRIMITIVE.getDirect(holder, propertyKey), 0);
++                flags |= ItemFlagBitset.this.getBitModifier(value);
++                PRIMITIVE.writeDirect(holder, propertyKey, flags);
++            }
++
++            @Override
++            public void remove(ItemFlag value) {
++                int flags = Objects.requireNonNullElse(PRIMITIVE.getDirect(holder, propertyKey), 0);
++                flags &= ~ItemFlagBitset.this.getBitModifier(value);
++                PRIMITIVE.writeDirect(holder, propertyKey, flags);
++            }
++
++            @Override
++            public Set<ItemFlag> getValue() {
++                int flags = Objects.requireNonNullElse(PRIMITIVE.getDirect(holder, propertyKey), 0);
++                Set<ItemFlag> currentFlags = EnumSet.noneOf(ItemFlag.class);
++
++                for (ItemFlag f : ItemFlag.values()) {
++                    if (this.contains(f, flags)) {
++                        currentFlags.add(f);
++                    }
++                }
++
++                return currentFlags;
++            }
++
++            @Override
++            public PropertyKey<? extends Value<Set<ItemFlag>>> getKey() {
++                return propertyKey;
++            }
++
++            private boolean contains(ItemFlag itemFlag, int flags) {
++                int bitModifier = ItemFlagBitset.this.getBitModifier(itemFlag);
++                return (flags & bitModifier) == bitModifier;
++            }
++        };
++    }
++
++    @Override
++    public void writeDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey, Set<ItemFlag> direct) {
++        int flags = 0;
++        for (ItemFlag itemFlag : direct) {
++            flags |= this.getBitModifier(itemFlag);
++        }
++        PRIMITIVE.writeDirect(holder, propertyKey, flags);
++    }
++
++    private byte getBitModifier(ItemFlag hideFlag) {
++        return (byte) (1 << hideFlag.ordinal());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0c28d3ef6905a878bf42f15f65eb601465e8c9bd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.property.nbt.types;
++
++import io.papermc.paper.inventory.item.properties.StewEffect;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.nbt.primitives.AbstractListNbtPlatformAdapter;
++import io.papermc.paper.property.nbt.primitives.IntegerPrimitive;
++import io.papermc.paper.property.value.Value;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.world.effect.MobEffect;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.potion.PotionEffectType;
++
++public class StewEffectsListNbt extends AbstractListNbtPlatformAdapter<StewEffect> {
++
++    private static final PropertyKey<Value<Integer>> EFFECT = PropertyKey.of("EffectId", Integer.class);
++    private static final PropertyKey<Value<Integer>> EFFECT_DURATION = PropertyKey.of("EffectDuration", Integer.class);
++
++    private static final IntegerPrimitive PRIMITIVE = new IntegerPrimitive();
++
++    @Override
++    public StewEffect getType(NbtPropertyHolder propertyHolder, PropertyKey<?> propertyKey) {
++        int duration = PRIMITIVE.getDirect(propertyHolder, EFFECT_DURATION);
++        MobEffect mobEffect = MobEffect.byId(PRIMITIVE.getDirect(propertyHolder, EFFECT));
++        PotionEffectType type = PotionEffectType.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.MOB_EFFECT.getKey(mobEffect)));
++
++        return new StewEffect(type, duration);
++    }
++
++    @Override
++    public void write(StewEffect type, NbtPropertyHolder propertyHolder, PropertyKey<?> propertyKey) {
++        PRIMITIVE.writeDirect(propertyHolder, EFFECT, BuiltInRegistries.MOB_EFFECT.getId(BuiltInRegistries.MOB_EFFECT.get(CraftNamespacedKey.toMinecraft(type.effect().getKey()))));
++        PRIMITIVE.writeDirect(propertyHolder, EFFECT_DURATION, type.duration());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/TropicalFishVariantNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/TropicalFishVariantNbt.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..afb1d3dfa407195900708489aab4b5bf5b1c2c96
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/types/TropicalFishVariantNbt.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.property.nbt.types;
++
++import io.papermc.paper.inventory.item.properties.TropicalFishVariant;
++import io.papermc.paper.property.nbt.primitives.IntegerPrimitive;
++import io.papermc.paper.property.nbt.primitives.NbtPrimitiveWrapper;
++import org.bukkit.Color;
++import org.bukkit.craftbukkit.entity.CraftTropicalFish;
++
++public class TropicalFishVariantNbt extends NbtPrimitiveWrapper<TropicalFishVariant, Integer> {
++
++    public TropicalFishVariantNbt() {
++        super(new IntegerPrimitive());
++    }
++
++    @Override
++    public TropicalFishVariant fromPrimitive(Integer primitive) {
++        return new TropicalFishVariant(CraftTropicalFish.getPatternColor(primitive), CraftTropicalFish.getBodyColor(primitive), CraftTropicalFish.getPattern(primitive));
++    }
++
++    @Override
++    public Integer toPrimitive(TropicalFishVariant type) {
++        return CraftTropicalFish.getData(type.patternColor(), type.bodyColor(), type.type());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/types/WrappedListNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/WrappedListNbt.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ebf484a80433eb603e80d353fad8c19d44d6ef49
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/types/WrappedListNbt.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.property.nbt.types;
++
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPlatformAdapter;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.nbt.primitives.AbstractListNbtPlatformAdapter;
++import io.papermc.paper.property.nbt.primitives.NbtPrimitiveWrapper;
++import io.papermc.paper.property.nbt.primitives.SinglePrimitiveNbtPlatformAdapter;
++import io.papermc.paper.property.value.Value;
++
++public class WrappedListNbt<T> extends AbstractListNbtPlatformAdapter<T> {
++
++    private final SinglePrimitiveNbtPlatformAdapter<T> wrapper;
++
++    public WrappedListNbt(SinglePrimitiveNbtPlatformAdapter<T> wrapper) {
++        this.wrapper = wrapper;
++    }
++
++    @Override
++    public T getType(NbtPropertyHolder propertyHolder, PropertyKey<?> propertyKey) {
++        return wrapper.getDirect(propertyHolder, propertyKey);
++    }
++
++    @Override
++    public void write(T type, NbtPropertyHolder propertyHolder, PropertyKey<?> propertyKey) {
++        wrapper.writeDirect(propertyHolder, propertyKey, type);
++    }
++
++
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/ValueImpl.java b/src/main/java/io/papermc/paper/property/value/ValueImpl.java
 new file mode 100644
@@ -2540,16 +4331,3 @@ index 0000000000000000000000000000000000000000..d3a511b306bf29c3dd6afa73fedbf480
 +
 +
 +}
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 90d7e8415f158c3176a705749f0aa36a729d3b38..e07b5aa2bfaa0c5a9f68789b2f87e33854ea0e38 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -1592,7 +1592,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-     }
- 
-     public static Set<String> getHandledTags() {
--        synchronized (CraftMetaItem.HANDLED_TAGS) {
-+        synchronized (CraftMetaItem.HANDLED_\TAGS) {
-             if (CraftMetaItem.HANDLED_TAGS.isEmpty()) {
-                 CraftMetaItem.HANDLED_TAGS.addAll(Arrays.asList(
-                         DISPLAY.NBT,
