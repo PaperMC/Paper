@@ -53,7 +53,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
     static final ItemMetaKey EXPLOSION_FADE = new ItemMetaKey("FadeColors");
 
     private List<FireworkEffect> effects;
-    private int power;
+    private Integer power;
 
     CraftMetaFirework(CraftMetaItem meta) {
         super(meta);
@@ -80,7 +80,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
 
         NBTTagCompound fireworks = tag.getCompound(FIREWORKS.NBT);
 
-        power = 0xff & fireworks.getByte(FLIGHT.NBT);
+        power = (int) fireworks.getByte(FLIGHT.NBT);
 
         if (!fireworks.contains(EXPLOSIONS.NBT)) {
             return;
@@ -181,7 +181,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
 
         Integer power = SerializableMeta.getObject(Integer.class, map, FLIGHT.BUKKIT, true);
         if (power != null) {
-            setPower(power);
+            this.power = power;
         }
 
         Iterable<?> effects = SerializableMeta.getObject(Iterable.class, map, EXPLOSIONS.BUKKIT, true);
@@ -234,7 +234,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         }
 
         if (hasPower()) {
-            fireworks.putByte(FLIGHT.NBT, (byte) power);
+            fireworks.putByte(FLIGHT.NBT, power.byteValue());
         }
     }
 
@@ -267,7 +267,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
     }
 
     boolean hasPower() {
-        return power != 0;
+        return power != null && power != 0;
     }
 
     @Override
