@@ -135,6 +135,66 @@ index 3d06d69d170634f5c643cfa717fdc5ee348d01f0..5cb23a6b85bccb6e873be24a5be39224
          this.setFlag(2, nearTarget);
      }
  
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
+index e8574bd4b412c1db82aaec9dced47b63de9dbf28..9058f9f2e561cda9f475f33218bf7a78297de4bc 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
+@@ -44,6 +44,7 @@ public class Tadpole extends AbstractFish {
+     public int age;
+     protected static final ImmutableList<SensorType<? extends Sensor<? super Tadpole>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS, SensorType.HURT_BY, SensorType.FROG_TEMPTATIONS);
+     protected static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.LOOK_TARGET, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.PATH, MemoryModuleType.NEAREST_VISIBLE_ADULT, MemoryModuleType.TEMPTATION_COOLDOWN_TICKS, MemoryModuleType.IS_TEMPTED, MemoryModuleType.TEMPTING_PLAYER, MemoryModuleType.BREED_TARGET, MemoryModuleType.IS_PANICKING);
++    public boolean ageLocked; // Paper
+ 
+     public Tadpole(EntityType<? extends AbstractFish> type, Level world) {
+         super(type, world);
+@@ -94,7 +95,7 @@ public class Tadpole extends AbstractFish {
+     @Override
+     public void aiStep() {
+         super.aiStep();
+-        if (!this.level.isClientSide) {
++        if (!this.level.isClientSide && !this.ageLocked) { // Paper
+             this.setAge(this.age + 1);
+         }
+ 
+@@ -104,12 +105,14 @@ public class Tadpole extends AbstractFish {
+     public void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
+         nbt.putInt("Age", this.age);
++        nbt.putBoolean("AgeLocked", this.ageLocked); // Paper
+     }
+ 
+     @Override
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
+         this.setAge(nbt.getInt("Age"));
++        this.ageLocked = nbt.getBoolean("AgeLocked"); // Paper
+     }
+ 
+     @Nullable
+@@ -162,6 +165,7 @@ public class Tadpole extends AbstractFish {
+         CompoundTag nbttagcompound = stack.getOrCreateTag();
+ 
+         nbttagcompound.putInt("Age", this.getAge());
++        nbttagcompound.putBoolean("AgeLocked", this.ageLocked); // Paper
+     }
+ 
+     @Override
+@@ -171,6 +175,7 @@ public class Tadpole extends AbstractFish {
+             this.setAge(nbt.getInt("Age"));
+         }
+ 
++        this.ageLocked = nbt.getBoolean("AgeLocked"); // Paper
+     }
+ 
+     @Override
+@@ -205,6 +210,7 @@ public class Tadpole extends AbstractFish {
+     }
+ 
+     private void ageUp(int seconds) {
++        if (this.ageLocked) return; // Paper
+         this.setAge(this.age + seconds * 20);
+     }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 index 3a06f48e9aed59d429ef4142785b393898b96f60..821b88d0c32f946af9af1c2e211b38446fab4ecb 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
@@ -1005,6 +1065,26 @@ index f27a451f2e2343ab66c8cae24053fd1b6a0ea086..c888415f9b4f19db69667525e37279ab
  
      public CraftSalmon(CraftServer server, net.minecraft.world.entity.animal.Salmon entity) {
          super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
+index 1dfd4d92dfcb55d26fc5e9adfd1df3fbc9f02ca0..43c2d820d164d36a28c4920d70aea2fe5096763a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
+@@ -34,4 +34,15 @@ public class CraftTadpole extends CraftFish implements org.bukkit.entity.Tadpole
+     public void setAge(int age) {
+         this.getHandle().age = age;
+     }
++    // Paper start
++    @Override
++    public void setAgeLock(boolean lock) {
++        this.getHandle().ageLocked = lock;
++    }
++
++    @Override
++    public boolean getAgeLock() {
++        return this.getHandle().ageLocked;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
 index bf5b2fd6676c4430578db4cc6c603c501cc5e349..832981b07ef5c633ef00a382f56798ee87eec0df 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
