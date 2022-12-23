@@ -512,7 +512,7 @@ index 0000000000000000000000000000000000000000..376608c6bdffdc71535eb683c4882af0
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/MapValue.java b/src/main/java/io/papermc/paper/property/value/MapValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..78f0434f15a9617c4bf244e9269e7bac7c270c7d
+index 0000000000000000000000000000000000000000..b8d71c04868c127264f30c53ec74d2f2819f8079
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/MapValue.java
 @@ -0,0 +1,21 @@
@@ -528,7 +528,7 @@ index 0000000000000000000000000000000000000000..78f0434f15a9617c4bf244e9269e7bac
 +
 +    V put(K key, V value);
 +
-+    void removeEntry(K key);
++    boolean removeEntry(K key);
 +
 +    default boolean isEmpty() {
 +        return this.size() == 0;
@@ -597,6 +597,35 @@ index 0000000000000000000000000000000000000000..46fb5f54feeefc7cf954bec257bff0a6
 +
 +public interface PropertyValueHandler {
 +}
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 854be548e5a645e7312e6e9390d5255f8b1d61e6..6c98a9c0f7dee0c737b66f7c4d6919ef6a6ac126 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -270,5 +270,9 @@ public interface UnsafeValues {
+      * @throws IllegalStateException if no biome by the given key is registered.
+      */
+     void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey);
++
++    io.papermc.paper.property.PropertyHolder.Mutable getPropertyHolder(ItemStack itemStack);
++
++    ItemStack newItem(org.bukkit.Material material, int count);
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 870c0ddd101094a3bce1ebf5ec4d42c51053db84..31dea7f23c635ddfd716903595189e30190d31f6 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -991,5 +991,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+     public @NotNull ItemStack damage(int amount, @NotNull org.bukkit.entity.LivingEntity livingEntity) {
+         return livingEntity.damageItemStack(this, amount);
+     }
++
++
++    public io.papermc.paper.property.PropertyHolder.Mutable getPropertyHolder() {
++        return Bukkit.getUnsafe().getPropertyHolder(this);
++    }
+     // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 index cb3c25ef46b279ffdde87f47f729eb8aa7549c1c..5247daad3356d23c193f8fc93225c98ed6f201c4 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
