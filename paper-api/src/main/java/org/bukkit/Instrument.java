@@ -74,10 +74,42 @@ public enum Instrument {
     /**
      * Pling is normally played when a note block is on top of a glowstone block.
      */
-    PLING(0xF);
+    PLING(0xF),
+    /**
+     * Zombie is normally played when a Zombie Head is on top of the note block.
+     */
+    ZOMBIE,
+    /**
+     * Skeleton is normally played when a Skeleton Head is on top of the note block.
+     */
+    SKELETON,
+    /**
+     * Creeper is normally played when a Creeper Head is on top of the note block.
+     */
+    CREEPER,
+    /**
+     * Dragon is normally played when a Dragon Head is on top of the note block.
+     */
+    DRAGON,
+    /**
+     * Wither Skeleton is normally played when a Wither Skeleton Head is on top of the note block.
+     */
+    WITHER_SKELETON,
+    /**
+     * Piglin is normally played when a Piglin Head is on top of the note block.
+     */
+    PIGLIN,
+    /**
+     * Custom Sound is normally played when a Player Head with the required data is on top of the note block.
+     */
+    CUSTOM_HEAD;
 
     private final byte type;
     private static final Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
+
+    private Instrument() {
+        this(-1);
+    }
 
     private Instrument(final int type) {
         this.type = (byte) type;
