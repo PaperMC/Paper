@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistryCustom;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.level.GeneratorAccess;
 import net.minecraft.world.level.block.ITileEntity;
@@ -127,7 +128,17 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     @Override
+    public boolean isFluidAtPosition(BlockPosition bp, Predicate<Fluid> prdct) {
+        return world.isFluidAtPosition(bp, prdct);
+    }
+
+    @Override
     public DimensionManager dimensionType() {
         return world.dimensionType();
+    }
+
+    @Override
+    public IRegistryCustom registryAccess() {
+        return world.registryAccess();
     }
 }
