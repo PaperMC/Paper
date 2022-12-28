@@ -947,10 +947,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 +import io.papermc.paper.configuration.serializer.ComponentSerializer;
 +import io.papermc.paper.configuration.serializer.EnumValueSerializer;
-+import io.papermc.paper.configuration.serializer.FastutilMapSerializer;
++import io.papermc.paper.configuration.serializer.collections.FastutilMapSerializer;
++import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 +import io.papermc.paper.configuration.serializer.PacketClassSerializer;
 +import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
-+import io.papermc.paper.configuration.serializer.TableSerializer;
++import io.papermc.paper.configuration.serializer.collections.TableSerializer;
 +import io.papermc.paper.configuration.serializer.collections.MapSerializer;
 +import io.papermc.paper.configuration.serializer.registry.RegistryHolderSerializer;
 +import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
@@ -958,7 +959,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
-+import io.papermc.paper.configuration.transformation.world.ZeroWorldHeight;
++import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
++import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
@@ -1150,6 +1152,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    .register(BooleanOrDefault.SERIALIZER)
 +                    .register(Duration.SERIALIZER)
 +                    .register(EngineMode.SERIALIZER)
++                    .register(NbtPathSerializer.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
 +                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registries.ENTITY_TYPE, true))
 +                    .register(new RegistryValueSerializer<>(Item.class, Registries.ITEM, true))
@@ -1174,7 +1177,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        builder.build().apply(node);
 +
 +        final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
-+        ZeroWorldHeight.apply(versionedBuilder);
++        V29_ZeroWorldHeight.apply(versionedBuilder);
++        V30_RenameFilterNbtFromSpawnEgg.apply(versionedBuilder);
 +        // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
 +        versionedBuilder.build().apply(node);
 +    }
@@ -1458,6 +1462,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 +import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 +import io.papermc.paper.configuration.legacy.SpawnLoadedRangeInitializer;
++import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
@@ -1476,6 +1481,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.function.Function;
 +import java.util.stream.Collectors;
 +import net.minecraft.Util;
++import net.minecraft.commands.arguments.NbtPathArgument;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.resources.ResourceLocation;
@@ -1497,7 +1503,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class WorldConfiguration extends ConfigurationPart {
 +    private static final Logger LOGGER = LogUtils.getLogger();
-+    static final int CURRENT_VERSION = 29; // (when you change the version, change the comment, so it conflicts on rebases): zero height fixes
++    static final int CURRENT_VERSION = 30; // (when you change the version, change the comment, so it conflicts on rebases): rename filter bad nbt from spawn eggs
 +
 +    private transient final SpigotWorldConfig spigotConfig;
 +    private transient final ResourceLocation worldKey;
@@ -1573,7 +1579,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public class Spawning extends ConfigurationPart {
 +            public ArrowDespawnRate nonPlayerArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
 +            public ArrowDespawnRate creativeArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
-+            public boolean filterNbtDataFromSpawnEggsAndRelated = true;
++            public boolean filterBadTileEntityNbtFromFallingBlocks = true;
++            public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer.fromString(List.of("Pos", "Motion", "SleepingX", "SleepingY", "SleepingZ"));
 +            public boolean disableMobSpawnerSpawnEggTransformation = false;
 +            public boolean perPlayerMobSpawns = true;
 +            public boolean scanForLegacyEnderDragon = true;
@@ -2300,78 +2307,61 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return item.name();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/configuration/serializer/FastutilMapSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/FastutilMapSerializer.java
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/NbtPathSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/NbtPathSerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/configuration/serializer/FastutilMapSerializer.java
++++ b/src/main/java/io/papermc/paper/configuration/serializer/NbtPathSerializer.java
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.serializer;
 +
-+import io.leangen.geantyref.GenericTypeReflector;
-+import io.leangen.geantyref.TypeFactory;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.ConfigurationNode;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+import org.spongepowered.configurate.serialize.TypeSerializer;
-+
-+import java.lang.reflect.ParameterizedType;
++import com.destroystokyo.paper.util.SneakyThrow;
++import com.mojang.brigadier.StringReader;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import java.lang.reflect.Type;
-+import java.util.Collections;
-+import java.util.Map;
-+import java.util.function.Function;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Predicate;
++import net.minecraft.commands.arguments.NbtPathArgument;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
-+@SuppressWarnings("rawtypes")
-+public abstract class FastutilMapSerializer<M extends Map<?, ?>> implements TypeSerializer<M> {
-+    private final Function<Map, ? extends M> factory;
++public class NbtPathSerializer extends ScalarSerializer<NbtPathArgument.NbtPath> {
 +
-+    protected FastutilMapSerializer(final Function<Map, ? extends M> factory) {
-+        this.factory = factory;
++    public static final NbtPathSerializer SERIALIZER = new NbtPathSerializer();
++    private static final NbtPathArgument DUMMY_ARGUMENT = new NbtPathArgument();
++
++    private NbtPathSerializer() {
++        super(NbtPathArgument.NbtPath.class);
 +    }
 +
 +    @Override
-+    public M deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
-+        @Nullable final Map map = (Map) node.get(this.createBaseMapType((ParameterizedType) type));
-+        return this.factory.apply(map == null ? Collections.emptyMap() : map);
++    public NbtPathArgument.NbtPath deserialize(final Type type, final Object obj) throws SerializationException {
++        return fromString(obj.toString());
 +    }
 +
 +    @Override
-+    public void serialize(final Type type, @Nullable final M obj, final ConfigurationNode node) throws SerializationException {
-+        if (obj == null || obj.isEmpty()) {
-+            node.raw(null);
-+        } else {
-+            final Type baseMapType = this.createBaseMapType((ParameterizedType) type);
-+            node.set(baseMapType, obj);
-+        }
++    protected Object serialize(final NbtPathArgument.NbtPath item, final Predicate<Class<?>> typeSupported) {
++        return item.toString();
 +    }
 +
-+    protected abstract Type createBaseMapType(final ParameterizedType type);
-+
-+    public static final class SomethingToPrimitive<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
-+        private final Type primitiveType;
-+
-+        public SomethingToPrimitive(final Function<Map, ? extends M> factory, final Type primitiveType) {
-+            super(factory);
-+            this.primitiveType = primitiveType;
++    public static List<NbtPathArgument.NbtPath> fromString(final List<String> tags) {
++        List<NbtPathArgument.NbtPath> paths = new ArrayList<>();
++        try {
++            for (final String tag : tags) {
++                paths.add(fromString(tag));
++            }
++        } catch (SerializationException ex) {
++            SneakyThrow.sneaky(ex);
 +        }
-+
-+        @Override
-+        protected Type createBaseMapType(final ParameterizedType type) {
-+            return TypeFactory.parameterizedClass(Map.class, type.getActualTypeArguments()[0], GenericTypeReflector.box(this.primitiveType));
-+        }
++        return List.copyOf(paths);
 +    }
 +
-+    public static final class PrimitiveToSomething<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
-+        private final Type primitiveType;
-+
-+        public PrimitiveToSomething(final Function<Map, ? extends M> factory, final Type primitiveType) {
-+            super(factory);
-+            this.primitiveType = primitiveType;
-+        }
-+
-+        @Override
-+        protected Type createBaseMapType(final ParameterizedType type) {
-+            return TypeFactory.parameterizedClass(Map.class, GenericTypeReflector.box(this.primitiveType), type.getActualTypeArguments()[0]);
++    private static NbtPathArgument.NbtPath fromString(final String tag) throws SerializationException {
++        try {
++            return DUMMY_ARGUMENT.parse(new StringReader(tag));
++        } catch (CommandSyntaxException e) {
++            throw new SerializationException(NbtPathArgument.NbtPath.class, e);
 +        }
 +    }
 +}
@@ -2525,99 +2515,79 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return item.getSerializedName();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/configuration/serializer/TableSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/TableSerializer.java
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/collections/FastutilMapSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/collections/FastutilMapSerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/configuration/serializer/TableSerializer.java
++++ b/src/main/java/io/papermc/paper/configuration/serializer/collections/FastutilMapSerializer.java
 @@ -0,0 +0,0 @@
-+package io.papermc.paper.configuration.serializer;
++package io.papermc.paper.configuration.serializer.collections;
 +
-+import com.google.common.collect.HashBasedTable;
-+import com.google.common.collect.ImmutableTable;
-+import com.google.common.collect.Table;
++import io.leangen.geantyref.GenericTypeReflector;
 +import io.leangen.geantyref.TypeFactory;
 +import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.BasicConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationNode;
-+import org.spongepowered.configurate.ConfigurationOptions;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.serialize.TypeSerializer;
 +
 +import java.lang.reflect.ParameterizedType;
 +import java.lang.reflect.Type;
++import java.util.Collections;
 +import java.util.Map;
-+import java.util.Objects;
++import java.util.function.Function;
 +
-+public class TableSerializer implements TypeSerializer<Table<?, ?, ?>> {
-+    private static final int ROW_TYPE_ARGUMENT_INDEX = 0;
-+    private static final int COLUMN_TYPE_ARGUMENT_INDEX = 1;
-+    private static final int VALUE_TYPE_ARGUMENT_INDEX = 2;
++@SuppressWarnings("rawtypes")
++public abstract class FastutilMapSerializer<M extends Map<?, ?>> implements TypeSerializer<M> {
++    private final Function<Map, ? extends M> factory;
 +
-+    @Override
-+    public Table<?, ?, ?> deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
-+        final Table<?, ?, ?> table = HashBasedTable.create();
-+        if (!node.empty() && node.isMap()) {
-+            this.deserialize0(table, (ParameterizedType) type, node);
-+        }
-+        return table;
-+    }
-+
-+    @SuppressWarnings("unchecked")
-+    private <R, C, V> void deserialize0(final Table<R, C, V> table, final ParameterizedType type, final ConfigurationNode node) throws SerializationException {
-+        final Type rowType = type.getActualTypeArguments()[ROW_TYPE_ARGUMENT_INDEX];
-+        final Type columnType = type.getActualTypeArguments()[COLUMN_TYPE_ARGUMENT_INDEX];
-+        final Type valueType = type.getActualTypeArguments()[VALUE_TYPE_ARGUMENT_INDEX];
-+
-+        final @Nullable TypeSerializer<R> rowKeySerializer = (TypeSerializer<R>) node.options().serializers().get(rowType);
-+        if (rowKeySerializer == null) {
-+            throw new SerializationException("Could not find serializer for table row type " + rowType);
-+        }
-+
-+        final Type mapType = TypeFactory.parameterizedClass(Map.class, columnType, valueType);
-+        final @Nullable TypeSerializer<Map<C, V>> columnValueSerializer = (TypeSerializer<Map<C, V>>) node.options().serializers().get(mapType);
-+        if (columnValueSerializer == null) {
-+            throw new SerializationException("Could not find serializer for table column-value map " + type);
-+        }
-+
-+        final BasicConfigurationNode rowKeyNode = BasicConfigurationNode.root(node.options());
-+
-+        for (final Object key : node.childrenMap().keySet()) {
-+            final R rowKey = rowKeySerializer.deserialize(rowType, rowKeyNode.set(key));
-+            final Map<C, V> map = columnValueSerializer.deserialize(mapType, node.node(rowKeyNode.raw()));
-+            map.forEach((column, value) -> table.put(rowKey, column, value));
-+        }
++    protected FastutilMapSerializer(final Function<Map, ? extends M> factory) {
++        this.factory = factory;
 +    }
 +
 +    @Override
-+    public void serialize(final Type type, @Nullable final Table<?, ?, ?> table, final ConfigurationNode node) throws SerializationException {
-+        if (table != null) {
-+            this.serialize0(table, (ParameterizedType) type, node);
-+        }
-+    }
-+
-+    @SuppressWarnings({"rawtypes", "unchecked"})
-+    private <R, C, V> void serialize0(final Table<R, C, V> table, final ParameterizedType type, final ConfigurationNode node) throws SerializationException {
-+        final Type rowType = type.getActualTypeArguments()[ROW_TYPE_ARGUMENT_INDEX];
-+        final Type columnType = type.getActualTypeArguments()[COLUMN_TYPE_ARGUMENT_INDEX];
-+        final Type valueType = type.getActualTypeArguments()[VALUE_TYPE_ARGUMENT_INDEX];
-+
-+        final @Nullable TypeSerializer rowKeySerializer = node.options().serializers().get(rowType);
-+        if (rowKeySerializer == null) {
-+            throw new SerializationException("Could not find a serializer for table row type " + rowType);
-+        }
-+
-+        final BasicConfigurationNode rowKeyNode = BasicConfigurationNode.root(node.options());
-+        for (final R key : table.rowKeySet()) {
-+            rowKeySerializer.serialize(rowType, key, rowKeyNode.set(key));
-+            final Object keyObj = Objects.requireNonNull(rowKeyNode.raw());
-+            node.node(keyObj).set(TypeFactory.parameterizedClass(Map.class, columnType, valueType), table.row(key));
-+        }
++    public M deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
++        @Nullable final Map map = (Map) node.get(this.createBaseMapType((ParameterizedType) type));
++        return this.factory.apply(map == null ? Collections.emptyMap() : map);
 +    }
 +
 +    @Override
-+    public @Nullable Table<?, ?, ?> emptyValue(Type specificType, ConfigurationOptions options) {
-+        return ImmutableTable.of();
++    public void serialize(final Type type, @Nullable final M obj, final ConfigurationNode node) throws SerializationException {
++        if (obj == null || obj.isEmpty()) {
++            node.raw(null);
++        } else {
++            final Type baseMapType = this.createBaseMapType((ParameterizedType) type);
++            node.set(baseMapType, obj);
++        }
++    }
++
++    protected abstract Type createBaseMapType(final ParameterizedType type);
++
++    public static final class SomethingToPrimitive<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
++        private final Type primitiveType;
++
++        public SomethingToPrimitive(final Function<Map, ? extends M> factory, final Type primitiveType) {
++            super(factory);
++            this.primitiveType = primitiveType;
++        }
++
++        @Override
++        protected Type createBaseMapType(final ParameterizedType type) {
++            return TypeFactory.parameterizedClass(Map.class, type.getActualTypeArguments()[0], GenericTypeReflector.box(this.primitiveType));
++        }
++    }
++
++    public static final class PrimitiveToSomething<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
++        private final Type primitiveType;
++
++        public PrimitiveToSomething(final Function<Map, ? extends M> factory, final Type primitiveType) {
++            super(factory);
++            this.primitiveType = primitiveType;
++        }
++
++        @Override
++        protected Type createBaseMapType(final ParameterizedType type) {
++            return TypeFactory.parameterizedClass(Map.class, GenericTypeReflector.box(this.primitiveType), type.getActualTypeArguments()[0]);
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/collections/MapSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/collections/MapSerializer.java
@@ -2788,6 +2758,101 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public interface WriteBack { // marker interface
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/collections/TableSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/collections/TableSerializer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/serializer/collections/TableSerializer.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.serializer.collections;
++
++import com.google.common.collect.HashBasedTable;
++import com.google.common.collect.ImmutableTable;
++import com.google.common.collect.Table;
++import io.leangen.geantyref.TypeFactory;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.BasicConfigurationNode;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.ConfigurationOptions;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
++
++import java.lang.reflect.ParameterizedType;
++import java.lang.reflect.Type;
++import java.util.Map;
++import java.util.Objects;
++
++public class TableSerializer implements TypeSerializer<Table<?, ?, ?>> {
++    private static final int ROW_TYPE_ARGUMENT_INDEX = 0;
++    private static final int COLUMN_TYPE_ARGUMENT_INDEX = 1;
++    private static final int VALUE_TYPE_ARGUMENT_INDEX = 2;
++
++    @Override
++    public Table<?, ?, ?> deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
++        final Table<?, ?, ?> table = HashBasedTable.create();
++        if (!node.empty() && node.isMap()) {
++            this.deserialize0(table, (ParameterizedType) type, node);
++        }
++        return table;
++    }
++
++    @SuppressWarnings("unchecked")
++    private <R, C, V> void deserialize0(final Table<R, C, V> table, final ParameterizedType type, final ConfigurationNode node) throws SerializationException {
++        final Type rowType = type.getActualTypeArguments()[ROW_TYPE_ARGUMENT_INDEX];
++        final Type columnType = type.getActualTypeArguments()[COLUMN_TYPE_ARGUMENT_INDEX];
++        final Type valueType = type.getActualTypeArguments()[VALUE_TYPE_ARGUMENT_INDEX];
++
++        final @Nullable TypeSerializer<R> rowKeySerializer = (TypeSerializer<R>) node.options().serializers().get(rowType);
++        if (rowKeySerializer == null) {
++            throw new SerializationException("Could not find serializer for table row type " + rowType);
++        }
++
++        final Type mapType = TypeFactory.parameterizedClass(Map.class, columnType, valueType);
++        final @Nullable TypeSerializer<Map<C, V>> columnValueSerializer = (TypeSerializer<Map<C, V>>) node.options().serializers().get(mapType);
++        if (columnValueSerializer == null) {
++            throw new SerializationException("Could not find serializer for table column-value map " + type);
++        }
++
++        final BasicConfigurationNode rowKeyNode = BasicConfigurationNode.root(node.options());
++
++        for (final Object key : node.childrenMap().keySet()) {
++            final R rowKey = rowKeySerializer.deserialize(rowType, rowKeyNode.set(key));
++            final Map<C, V> map = columnValueSerializer.deserialize(mapType, node.node(rowKeyNode.raw()));
++            map.forEach((column, value) -> table.put(rowKey, column, value));
++        }
++    }
++
++    @Override
++    public void serialize(final Type type, @Nullable final Table<?, ?, ?> table, final ConfigurationNode node) throws SerializationException {
++        if (table != null) {
++            this.serialize0(table, (ParameterizedType) type, node);
++        }
++    }
++
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    private <R, C, V> void serialize0(final Table<R, C, V> table, final ParameterizedType type, final ConfigurationNode node) throws SerializationException {
++        final Type rowType = type.getActualTypeArguments()[ROW_TYPE_ARGUMENT_INDEX];
++        final Type columnType = type.getActualTypeArguments()[COLUMN_TYPE_ARGUMENT_INDEX];
++        final Type valueType = type.getActualTypeArguments()[VALUE_TYPE_ARGUMENT_INDEX];
++
++        final @Nullable TypeSerializer rowKeySerializer = node.options().serializers().get(rowType);
++        if (rowKeySerializer == null) {
++            throw new SerializationException("Could not find a serializer for table row type " + rowType);
++        }
++
++        final BasicConfigurationNode rowKeyNode = BasicConfigurationNode.root(node.options());
++        for (final R key : table.rowKeySet()) {
++            rowKeySerializer.serialize(rowType, key, rowKeyNode.set(key));
++            final Object keyObj = Objects.requireNonNull(rowKeyNode.raw());
++            node.node(keyObj).set(TypeFactory.parameterizedClass(Map.class, columnType, valueType), table.row(key));
++        }
++    }
++
++    @Override
++    public @Nullable Table<?, ?, ?> emptyValue(Type specificType, ConfigurationOptions options) {
++        return ImmutableTable.of();
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -2826,7 +2891,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    protected final Registry<R> registry() {
-+        return MinecraftServer.getServer().registryAccess().registryOrThrow(this.registryKey);
++        return MinecraftServer.getServer().registryAccess().registryOrThrow(this.registryKey); // TODO don't depend on MinecraftServer#getServer
 +    }
 +
 +    protected abstract T convertFromResourceKey(ResourceKey<R> key) throws SerializationException;
@@ -3616,13 +3681,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        moveFromRootAndRename(builder, path("game-mechanics", oldKey), newKey, parents);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/ZeroWorldHeight.java b/src/main/java/io/papermc/paper/configuration/transformation/world/ZeroWorldHeight.java
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/configuration/transformation/world/ZeroWorldHeight.java
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java
 @@ -0,0 +0,0 @@
-+package io.papermc.paper.configuration.transformation.world;
++package io.papermc.paper.configuration.transformation.world.versioned;
 +
 +import io.papermc.paper.configuration.type.IntOr;
 +import org.checkerframework.checker.nullness.qual.Nullable;
@@ -3638,7 +3703,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * Several configurations that set a y-level used '0' as the "disabled" value.
 + * Since 0 is now a valid value, they need to be updated.
 + */
-+public class ZeroWorldHeight implements TransformAction {
++public final class V29_ZeroWorldHeight implements TransformAction {
 +
 +    private static final int VERSION = 29;
 +
@@ -3649,7 +3714,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final String ENVIRONMENT_KEY = "environment";
 +    private static final String NETHER_CEILING_VOID_DAMAGE_HEIGHT_KEY = "nether-ceiling-void-damage-height";
 +
-+    private static final ZeroWorldHeight INSTANCE = new ZeroWorldHeight();
++    private static final V29_ZeroWorldHeight INSTANCE = new V29_ZeroWorldHeight();
++
++    private V29_ZeroWorldHeight() {
++    }
 +
 +    public static void apply(ConfigurationTransformation.VersionedBuilder builder) {
 +        final ConfigurationTransformation transformation = ConfigurationTransformation.builder()
@@ -3666,6 +3734,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            value.set(IntOr.Disabled.DISABLED);
 +        }
 +        return null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V30_RenameFilterNbtFromSpawnEgg.java b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V30_RenameFilterNbtFromSpawnEgg.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V30_RenameFilterNbtFromSpawnEgg.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.transformation.world.versioned;
++
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++
++import static org.spongepowered.configurate.NodePath.path;
++import static org.spongepowered.configurate.transformation.TransformAction.rename;
++
++/**
++ * The {@code filter-nbt-data-from-spawn-eggs-and-related} setting had nothing
++ * to do with spawn eggs, and was just filtering bad falling blocks.
++ */
++public final class V30_RenameFilterNbtFromSpawnEgg {
++
++    private static final int VERSION = 30;
++    private static final NodePath OLD_PATH = path("entities", "spawning", "filter-nbt-data-from-spawn-eggs-and-related");
++    private static final String NEW_PATH = "filter-bad-tile-entity-nbt-from-falling-blocks";
++
++    private V30_RenameFilterNbtFromSpawnEgg() {
++    }
++
++    public static void apply(ConfigurationTransformation.VersionedBuilder builder) {
++        builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(OLD_PATH, rename(NEW_PATH)).build());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
