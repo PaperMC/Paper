@@ -6,7 +6,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Hoglin;
 
-public class CraftHoglin extends CraftAnimals implements Hoglin {
+public class CraftHoglin extends CraftAnimals implements Hoglin, CraftEnemy {
 
     public CraftHoglin(CraftServer server, EntityHoglin entity) {
         super(server, entity);
