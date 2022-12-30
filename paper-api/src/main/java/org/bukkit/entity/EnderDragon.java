@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents an Ender Dragon
  */
-public interface EnderDragon extends ComplexLivingEntity, Boss, Mob {
+public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
 
     /**
      * Represents a phase or action that an Ender Dragon can perform.

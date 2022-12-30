@@ -4,7 +4,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.material.Colorable;
 import org.jetbrains.annotations.NotNull;
 
-public interface Shulker extends Golem, Colorable {
+public interface Shulker extends Golem, Colorable, Enemy {
 
     /**
      * Gets the peek state of the shulker between 0.0 and 1.0.

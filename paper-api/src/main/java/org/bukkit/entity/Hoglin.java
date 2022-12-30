@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a Hoglin.
  */
-public interface Hoglin extends Animals {
+public interface Hoglin extends Animals, Enemy {
 
     /**
      * Gets whether the hoglin is immune to zombification.

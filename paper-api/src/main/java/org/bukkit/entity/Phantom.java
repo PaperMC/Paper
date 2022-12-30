@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a phantom.
  */
-public interface Phantom extends Flying {
+public interface Phantom extends Flying, Enemy {
 
     /**
      * @return The size of the phantom
