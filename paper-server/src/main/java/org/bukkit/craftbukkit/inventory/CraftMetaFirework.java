@@ -389,7 +389,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
 
     @Override
     public int getPower() {
-        return this.power;
+        return hasPower() ? this.power : 0;
     }
 
     @Override
