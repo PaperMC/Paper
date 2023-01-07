@@ -40,6 +40,10 @@ https://bugs.mojang.com/browse/MC-257875
   by: Jake Potrebic <jake.m.potrebic@gmail.com>
   Fixes server not consuming fire charges when igniting a creeper
 
+https://bugs.mojang.com/browse/MC-258535
+  by: Jake Potrebic <jake.m.potrebic@gmail.com>
+  Fixes certain explosion damage not scaling with difficulty
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 Co-authored-by: MelnCat <melncatuwu@gmail.com>
 
@@ -82,8 +86,21 @@ index 43e77cef0fce75f59aeb05e161668bebb8fca229..ef50fbf8cb3f008827850b5ed3342200
              }
          }
  
+diff --git a/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java b/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
+index 11829c65f459c94db31319352d4650278353f0c0..b53e04854f960682fae94bb2ef5a12e4274fcebf 100644
+--- a/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
++++ b/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
+@@ -48,7 +48,7 @@ public class EntityDamageSource extends DamageSource {
+ 
+     @Override
+     public boolean scalesWithDifficulty() {
+-        return this.entity instanceof LivingEntity && !(this.entity instanceof Player);
++        return super.scalesWithDifficulty() || this.entity instanceof LivingEntity && !(this.entity instanceof Player); // Paper - fix MC-258535 - respect the scalesWithDifficulty override
+     }
+ 
+     @Nullable
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index a3cd6e3d0d1fc01d47d08fead7990af1dce66c85..e3567f8526e289d306cfa8196e60a97a7c1e1266 100644
+index c9c16dfffa782b82c1697f3819591077995760d3..cb8fa79db4b06bebc0cfab45d745c055475ca788 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -2207,8 +2207,10 @@ public abstract class LivingEntity extends Entity {
