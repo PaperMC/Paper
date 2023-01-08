@@ -585,6 +585,8 @@ public final class CraftItemStack extends ItemStack {
                 return new CraftMetaCompass(item.getTag());
             case BUNDLE:
                 return new CraftMetaBundle(item.getTag());
+            case GOAT_HORN:
+                return new CraftMetaMusicInstrument(item.getTag());
             default:
                 return new CraftMetaItem(item.getTag());
         }
