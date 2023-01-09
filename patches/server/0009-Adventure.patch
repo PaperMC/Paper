@@ -2349,7 +2349,7 @@ index be097f13dba5d408f58d6fada893bed2638d4219..3d7d1ba148dbc3591d8c76b99a2ee7d9
  
                  @Override
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 25227822aa0e1dd7fbbe98a0925ccd023af8d0dc..7cd2af9a08bfca0c7de1ecac21ee7f8a790e8b64 100644
+index 25227822aa0e1dd7fbbe98a0925ccd023af8d0dc..d197341a29b2ad4a9ed698f575297872f983c67b 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -8,6 +8,7 @@ import com.mojang.logging.LogUtils;
@@ -2464,7 +2464,7 @@ index 25227822aa0e1dd7fbbe98a0925ccd023af8d0dc..7cd2af9a08bfca0c7de1ecac21ee7f8a
          }
          // CraftBukkit end
  
-@@ -1181,14 +1181,24 @@ public abstract class PlayerList {
+@@ -1181,24 +1181,41 @@ public abstract class PlayerList {
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
@@ -2491,16 +2491,25 @@ index 25227822aa0e1dd7fbbe98a0925ccd023af8d0dc..7cd2af9a08bfca0c7de1ecac21ee7f8a
          OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(message);
          boolean flag1 = false;
  
-@@ -1198,7 +1208,7 @@ public abstract class PlayerList {
+         boolean flag2;
++        Packet<?> disguised = sender == null ? null : new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(outgoingchatmessage.content(), params.toNetwork(sender.level.registryAccess())); // Paper - don't send player chat packets from vanished players
+ 
+         for (Iterator iterator = this.players.iterator(); iterator.hasNext(); flag1 |= flag2 && message.isFullyFiltered()) {
              ServerPlayer entityplayer1 = (ServerPlayer) iterator.next();
  
              flag2 = shouldSendFiltered.test(entityplayer1);
 -            entityplayer1.sendChatMessage(outgoingchatmessage, flag2, params);
++            // Paper start - don't send player chat packets from vanished players
++            if (sender != null && !entityplayer1.getBukkitEntity().canSee(sender.getBukkitEntity())) {
++                entityplayer1.connection.send(disguised);
++                continue;
++            }
++            // Paper end
 +            entityplayer1.sendChatMessage(outgoingchatmessage, flag2, params, unsignedFunction == null ? null : unsignedFunction.apply(entityplayer1.getBukkitEntity())); // Paper
          }
  
          if (flag1 && sender != null) {
-@@ -1207,7 +1217,7 @@ public abstract class PlayerList {
+@@ -1207,7 +1224,7 @@ public abstract class PlayerList {
  
      }
  
