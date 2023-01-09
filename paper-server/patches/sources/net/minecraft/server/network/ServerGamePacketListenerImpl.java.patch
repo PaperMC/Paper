@@ -48,7 +48,7 @@
  import net.minecraft.world.level.GameRules;
  import net.minecraft.world.level.GameType;
  import net.minecraft.world.level.Level;
-@@ -192,12 +196,73 @@
+@@ -192,11 +196,72 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.BlockHitResult;
@@ -59,7 +59,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
 +import org.bukkit.NamespacedKey;
  import org.slf4j.Logger;
- 
++
 +// CraftBukkit start
 +import io.papermc.paper.adventure.ChatProcessor; // Paper
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
@@ -118,10 +118,9 @@
 +import org.bukkit.inventory.InventoryView;
 +import org.bukkit.inventory.SmithingInventory;
 +// CraftBukkit end
-+
+ 
  public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerGamePacketListener, ServerPlayerConnection, TickablePacketListener {
  
-     static final Logger LOGGER = LogUtils.getLogger();
 @@ -212,7 +277,9 @@
      private int tickCount;
      private int ackBlockChangesUpTo = -1;
@@ -324,7 +323,7 @@
                  boolean flag1 = entity.verticalCollisionBelow;
  
                  if (entity instanceof LivingEntity) {
-@@ -449,20 +599,73 @@
+@@ -449,19 +599,72 @@
                  d10 = d6 * d6 + d7 * d7 + d8 * d8;
                  boolean flag2 = false;
  
@@ -343,8 +342,8 @@
 +                    this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-                 }
- 
++                }
++
 +                // CraftBukkit start - fire PlayerMoveEvent
 +                Player player = this.getCraftPlayer();
 +                if (!this.hasMoved) {
@@ -393,12 +392,11 @@
 +                        this.justTeleported = false;
 +                        return;
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
-+
+ 
                  this.player.serverLevel().getChunkSource().move(this.player);
                  entity.recordMovementThroughBlocks(new Vec3(d0, d1, d2), entity.position());
-                 Vec3 vec3d = new Vec3(entity.getX() - d0, entity.getY() - d1, entity.getZ() - d2);
 @@ -489,16 +692,17 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (packet.getId() == this.awaitingTeleport) {
@@ -1155,12 +1153,10 @@
          if (this.player.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel worldserver = this.player.serverLevel();
-@@ -1294,8 +1924,49 @@
- 
-                 if (f1 != this.player.getXRot() || f != this.player.getYRot()) {
+@@ -1296,6 +1926,47 @@
                      this.player.absRotateTo(f, f1);
-+                }
-+
+                 }
+ 
 +                // CraftBukkit start
 +                // Raytrace to look for 'rogue armswings'
 +                double d0 = this.player.getX();
@@ -1191,8 +1187,8 @@
 +                        cancelled = event.useItemInHand() == Event.Result.DENY;
 +                    }
 +                    this.player.gameMode.firedInteract = false;
-                 }
- 
++                }
++
 +                if (cancelled) {
 +                    this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
 +                    return;
@@ -1448,12 +1444,10 @@
              }
  
              return optional;
-@@ -1564,8 +2326,129 @@
-         }
- 
+@@ -1566,6 +2328,127 @@
          return false;
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - add method
 +    public void chat(String s, PlayerChatMessage original, boolean async) {
 +        if (s.isEmpty() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
@@ -1546,8 +1540,8 @@
 +                this.server.console.sendMessage(s);
 +            }
 +        }
-     }
- 
++    }
++
 +    private void handleCommand(String s) {
 +        org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + s); // Paper - Add async catcher
 +        if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
@@ -2318,7 +2312,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packet.containerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -1945,6 +3338,43 @@
+@@ -1945,7 +3338,44 @@
  
              boolean flag1 = packet.slotNum() >= 1 && packet.slotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getCount() <= itemstack.getMaxStackSize();
@@ -2326,7 +2320,7 @@
 +                // CraftBukkit start - Call click event
 +                InventoryView inventory = this.player.inventoryMenu.getBukkitView();
 +                org.bukkit.inventory.ItemStack item = CraftItemStack.asBukkitCopy(packet.itemStack());
-+
+ 
 +                SlotType type = SlotType.QUICKBAR;
 +                if (flag) {
 +                    type = SlotType.OUTSIDE;
@@ -2359,9 +2353,10 @@
 +                }
 +            }
 +            // CraftBukkit end
- 
++
              if (flag1 && flag2) {
                  this.player.inventoryMenu.getSlot(packet.slotNum()).setByPlayer(itemstack);
+                 this.player.inventoryMenu.setRemoteSlot(packet.slotNum(), itemstack);
 @@ -1964,7 +3394,19 @@
  
      @Override
@@ -2464,7 +2459,12 @@
          }
      }
  
-@@ -2083,8 +3544,10 @@
+@@ -2079,12 +3540,14 @@
+         this.signedMessageDecoder = session.createMessageDecoder(this.player.getUUID());
+         this.chatMessageChain.append(() -> {
+             this.player.setChatSession(session);
+-            this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT), List.of(this.player)));
++            this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT), List.of(this.player)), this.player); // Paper - Use single player info update packet on join
          });
      }
  
