@@ -2487,15 +2487,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          boolean flag = this.verifyChatTrusted(message);
  
 -        this.server.logChatMessage(message.decoratedContent(), params, flag ? null : "Not Secure");
-+        this.server.logChatMessage((unsignedFunction == null ? message : message.withUnsignedContent(unsignedFunction.apply(this.server.console))).decoratedContent(), params, flag ? null : "Not Secure"); // Paper
++        this.server.logChatMessage((unsignedFunction == null ? Component.literal(message.signedContent()) : unsignedFunction.apply(this.server.console)), params, flag ? null : "Not Secure"); // Paper
          OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(message);
          boolean flag1 = false;
  
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         boolean flag2;
++        Packet<?> disguised = sender != null && unsignedFunction == null ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(outgoingchatmessage.content(), params.toNetwork(sender.level.registryAccess())) : null; // Paper - don't send player chat packets from vanished players
+ 
+         for (Iterator iterator = this.players.iterator(); iterator.hasNext(); flag1 |= flag2 && message.isFullyFiltered()) {
              ServerPlayer entityplayer1 = (ServerPlayer) iterator.next();
  
              flag2 = shouldSendFiltered.test(entityplayer1);
 -            entityplayer1.sendChatMessage(outgoingchatmessage, flag2, params);
++            // Paper start - don't send player chat packets from vanished players
++            if (sender != null && !entityplayer1.getBukkitEntity().canSee(sender.getBukkitEntity())) {
++                entityplayer1.connection.send(unsignedFunction != null
++                    ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(unsignedFunction.apply(entityplayer1.getBukkitEntity()), params.toNetwork(sender.level.registryAccess()))
++                    : disguised);
++                continue;
++            }
++            // Paper end
 +            entityplayer1.sendChatMessage(outgoingchatmessage, flag2, params, unsignedFunction == null ? null : unsignedFunction.apply(entityplayer1.getBukkitEntity())); // Paper
          }
  
