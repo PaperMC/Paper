@@ -2078,6 +2078,32 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public boolean canSee(@NotNull Entity entity);
 
+    // Paper start
+    /**
+     * Returns whether the {@code other} player is listed for {@code this}.
+     *
+     * @param other The other {@link Player} to check for listing.
+     * @return True if the {@code other} player is listed for {@code this}.
+     */
+    boolean isListed(@NotNull Player other);
+
+    /**
+     * Unlists the {@code other} player from the tablist.
+     *
+     * @param other The other {@link Player} to de-list.
+     * @return True if the {@code other} player was listed.
+     */
+    boolean unlistPlayer(@NotNull Player other);
+
+    /**
+     * Lists the {@code other} player.
+     *
+     * @param other The other {@link Player} to list.
+     * @return True if the {@code other} player was not listed.
+     */
+    boolean listPlayer(@NotNull Player other);
+    // Paper end
+
     /**
      * Checks to see if this player is currently flying or not.
      *
