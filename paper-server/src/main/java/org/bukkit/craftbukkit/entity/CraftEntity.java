@@ -895,6 +895,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public boolean isSneaking() {
         return this.getHandle().isShiftKeyDown();
     }
+
+    @Override
+    public void setPose(Pose pose, boolean fixed) {
+        Preconditions.checkNotNull(pose, "Pose cannot be null");
+        final Entity handle = this.getHandle();
+        handle.fixedPose = false;
+        handle.setPose(net.minecraft.world.entity.Pose.values()[pose.ordinal()]);
+        handle.fixedPose = fixed;
+    }
+
+    @Override
+    public boolean hasFixedPose() {
+        return this.getHandle().fixedPose;
+    }
     // Paper end
 
     @Override
