@@ -840,6 +840,42 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param sneak true if the entity should be sneaking
      */
     void setSneaking(boolean sneak);
+
+    /**
+     * Sets the entity's current {@link Pose}.
+     *
+     * <p>Note: While poses affect some things like hitboxes, they do not change the entity's state
+     * (e.g. having {@link Pose#SNEAKING} does not guarantee {@link #isSneaking()} being {@code true}).
+     *
+     * <p>If applied to the {@link Player}, they might see a different pose client-side.
+     *
+     * @param pose a new {@link Pose}
+     * @see #setPose(Pose, boolean)
+     */
+    default void setPose(@NotNull Pose pose) {
+        setPose(pose, false);
+    }
+
+    /**
+     * Sets the entity's current {@link Pose}.
+     *
+     * <p>Note: While poses affect some things like hitboxes, they do not change the entity's state
+     * (e.g. having {@link Pose#SNEAKING} does not guarantee {@link #isSneaking()} being {@code true}).
+     *
+     * <p>If applied to the {@link Player}, they might see a different pose client-side.
+     *
+     * @param pose a new {@link Pose}
+     * @param fixed whether the new {@link Pose} should stay until manually changed
+     */
+    void setPose(@NotNull Pose pose, boolean fixed);
+
+    /**
+     * Checks whether the entity has a fixed {@link Pose}
+     *
+     * @see #setPose(Pose, boolean)
+     * @return whether the entity has a fixed {@link Pose}
+     */
+    boolean hasFixedPose();
     // Paper end
 
     /**
