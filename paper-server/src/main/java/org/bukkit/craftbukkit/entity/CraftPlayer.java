@@ -206,6 +206,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private final ConversationTracker conversationTracker = new ConversationTracker();
     private final Set<String> channels = new HashSet<String>();
     private final Map<UUID, Set<WeakReference<Plugin>>> invertedVisibilityEntities = new HashMap<>();
+    private final Set<UUID> unlistedEntities = new HashSet<>(); // Paper - Add Listing API for Player
     private static final WeakHashMap<Plugin, WeakReference<Plugin>> pluginWeakReferences = new WeakHashMap<>();
     private int hash = 0;
     private double health = 20;
@@ -2104,7 +2105,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 otherPlayer.setUUID(uuidOverride);
             }
             // Paper end
-            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer)));
+            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer), this.getHandle())); // Paper - Add Listing API for Player
             if (original != null) otherPlayer.setUUID(original); // Paper - uuid override
         }
 
@@ -2207,6 +2208,41 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         return (entity != null) ? this.canSee(entity) : false; // If we can't find it, we can't see it
     }
+
+    // Paper start - Add Listing API for Player
+    @Override
+    public boolean isListed(Player other) {
+        return !this.unlistedEntities.contains(other.getUniqueId());
+    }
+
+    @Override
+    public boolean unlistPlayer(@NotNull Player other) {
+        Preconditions.checkNotNull(other, "hidden entity cannot be null");
+        if (this.getHandle().connection == null) return false;
+        if (!this.canSee(other)) return false;
+
+        if (unlistedEntities.add(other.getUniqueId())) {
+            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateListed(other.getUniqueId(), false));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean listPlayer(@NotNull Player other) {
+        Preconditions.checkNotNull(other, "hidden entity cannot be null");
+        if (this.getHandle().connection == null) return false;
+        if (!this.canSee(other)) throw new IllegalStateException("Player cannot see other player");
+
+        if (this.unlistedEntities.remove(other.getUniqueId())) {
+            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateListed(other.getUniqueId(), true));
+            return true;
+        } else {
+            return false;
+        }
+    }
+    // Paper end - Add Listing API for Player
 
     @Override
     public Map<String, Object> serialize() {
