@@ -53,12 +53,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
 
     @Override
     boolean applicableTo(Material type) {
-        switch (type) {
-            case GOAT_HORN:
-                return true;
-            default:
-                return false;
-        }
+        return type == Material.GOAT_HORN;
     }
 
     @Override
