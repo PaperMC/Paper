@@ -5,59 +5,209 @@ Subject: [PATCH] Cache user authenticator threads
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index a6e90e70730e106d1cac01abf7a41df8df787d89..453a9dd794c39be5e7221b05fabb71b802691003 100644
+index a6e90e70730e106d1cac01abf7a41df8df787d89..b6103cfe2a5cce6feba51a2771cd0fa2dea97e43 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -112,6 +112,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
      }
  
-+    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
++    private static final java.util.concurrent.ExecutorService authenticatorPool = new java.util.concurrent.ThreadPoolExecutor(16, 16, 60L, java.util.concurrent.TimeUnit.SECONDS, new java.util.concurrent.ArrayBlockingQueue<>(1024), new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
 +
      // Spigot start
      public void initUUID()
      {
-@@ -208,8 +210,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -208,19 +210,25 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
              } else {
                  // Spigot start
 -                new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
 -
+-                    @Override
+-                    public void run() {
+-                        try {
+-                            ServerLoginPacketListenerImpl.this.initUUID();
+-                            new LoginHandler().fireEvents();
+-                        } catch (Exception ex) {
+-                            ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
+-                            server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.gameProfile.getName(), ex);
 +            // Paper start - Cache authenticator threads
-+            authenticatorPool.execute(new Runnable() {
-                     @Override
-                     public void run() {
-                         try {
-@@ -220,7 +222,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
-                             server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.gameProfile.getName(), ex);
++            try {
++                authenticatorPool.execute(new Runnable() {
++                        @Override
++                        public void run() {
++                            try {
++                                ServerLoginPacketListenerImpl.this.initUUID();
++                                new LoginHandler().fireEvents();
++                            } catch (Exception ex) {
++                                ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
++                                server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.gameProfile.getName(), ex);
++                            }
                          }
-                     }
+-                    }
 -                }.start();
-+            });
++                });
++            } catch (java.util.concurrent.RejectedExecutionException rejected) {
++                ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!"); // Don't give attackers confirmation of a successful attack - don't change the message
++                server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.gameProfile.getName() + " - auth queue full", rejected);
++            }
 +            // Paper end
                  // Spigot end
              }
  
-@@ -257,7 +260,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -257,55 +265,59 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
              throw new IllegalStateException("Protocol error", cryptographyexception);
          }
  
 -        Thread thread = new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
+-            public void run() {
+-                GameProfile gameprofile = ServerLoginPacketListenerImpl.this.gameProfile;
 +        // Paper start - Cache authenticator threads
-+        authenticatorPool.execute(new Runnable() {
-             public void run() {
-                 GameProfile gameprofile = ServerLoginPacketListenerImpl.this.gameProfile;
++        try {
++            authenticatorPool.execute(new Runnable() {
++                public void run() {
++                    GameProfile gameprofile = ServerLoginPacketListenerImpl.this.gameProfile;
++
++                    try {
++                        ServerLoginPacketListenerImpl.this.gameProfile = ServerLoginPacketListenerImpl.this.server.getSessionService().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.getAddress());
++                        if (ServerLoginPacketListenerImpl.this.gameProfile != null) {
++                            // CraftBukkit start - fire PlayerPreLoginEvent
++                            if (!ServerLoginPacketListenerImpl.this.connection.isConnected()) {
++                                return;
++                            }
  
-@@ -302,10 +306,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
- 
-                 return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
-             }
--        };
+-                try {
+-                    ServerLoginPacketListenerImpl.this.gameProfile = ServerLoginPacketListenerImpl.this.server.getSessionService().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.getAddress());
+-                    if (ServerLoginPacketListenerImpl.this.gameProfile != null) {
+-                        // CraftBukkit start - fire PlayerPreLoginEvent
+-                        if (!ServerLoginPacketListenerImpl.this.connection.isConnected()) {
+-                            return;
++                            new LoginHandler().fireEvents();
++                        } else if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
++                            ServerLoginPacketListenerImpl.LOGGER.warn("Failed to verify username but will let them in anyway!");
++                            ServerLoginPacketListenerImpl.this.gameProfile = gameprofile;
++                            ServerLoginPacketListenerImpl.this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
++                        } else {
++                            ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.unverified_username"));
++                            ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", gameprofile.getName());
+                         }
 -
+-                        new LoginHandler().fireEvents();
+-                    } else if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
+-                        ServerLoginPacketListenerImpl.LOGGER.warn("Failed to verify username but will let them in anyway!");
+-                        ServerLoginPacketListenerImpl.this.gameProfile = gameprofile;
+-                        ServerLoginPacketListenerImpl.this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
+-                    } else {
+-                        ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.unverified_username"));
+-                        ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", gameprofile.getName());
+-                    }
+-                } catch (AuthenticationUnavailableException authenticationunavailableexception) {
+-                    if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
+-                        ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
+-                        ServerLoginPacketListenerImpl.this.gameProfile = gameprofile;
+-                        ServerLoginPacketListenerImpl.this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
+-                    } else {
+-                        ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.authservers_down"));
+-                        ServerLoginPacketListenerImpl.LOGGER.error("Couldn't verify username because servers are unavailable");
++                    } catch (AuthenticationUnavailableException authenticationunavailableexception) {
++                        if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
++                            ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
++                            ServerLoginPacketListenerImpl.this.gameProfile = gameprofile;
++                            ServerLoginPacketListenerImpl.this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
++                        } else {
++                            ServerLoginPacketListenerImpl.this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.authenticationServersDown)); // Paper
++                            ServerLoginPacketListenerImpl.LOGGER.error("Couldn't verify username because servers are unavailable");
++                        }
++                        // CraftBukkit start - catch all exceptions
++                    } catch (Exception exception) {
++                        ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
++                        server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameprofile.getName(), exception);
++                        // CraftBukkit end
+                     }
+-                    // CraftBukkit start - catch all exceptions
+-                } catch (Exception exception) {
+-                    ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
+-                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameprofile.getName(), exception);
+-                    // CraftBukkit end
+-                }
+ 
+-            }
+-
+-            @Nullable
+-            private InetAddress getAddress() {
+-                SocketAddress socketaddress = ServerLoginPacketListenerImpl.this.connection.getRemoteAddress();
++                }
+ 
+-                return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
+-            }
+-        };
++                @Nullable
++                private InetAddress getAddress() {
++                    SocketAddress socketaddress = ServerLoginPacketListenerImpl.this.connection.getRemoteAddress();
+ 
 -        thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ServerLoginPacketListenerImpl.LOGGER));
 -        thread.start();
-+        });
++                    return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
++                }
++            });
++        } catch (java.util.concurrent.RejectedExecutionException rejected) {
++            ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!"); // Don't give attackers confirmation of a successful attack - don't change the message
++            server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + (ServerLoginPacketListenerImpl.this.gameProfile != null ? ServerLoginPacketListenerImpl.this.gameProfile.getName() : "(address) " + ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()) + " - auth queue full", rejected);
++        }
 +        // Paper end
      }
  
      // Spigot start
+@@ -351,6 +363,52 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     // Spigot end
+ 
+     public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
++        // Paper start - Velocity support
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && packet.getTransactionId() == this.velocityLoginMessageId) {
++            net.minecraft.network.FriendlyByteBuf buf = packet.getData();
++            if (buf == null) {
++                this.disconnect("This server requires you to connect with Velocity.");
++                return;
++            }
++
++            if (!com.destroystokyo.paper.proxy.VelocityProxy.checkIntegrity(buf)) {
++                this.disconnect("Unable to verify player details");
++                return;
++            }
++
++            int version = buf.readVarInt();
++            if (version > com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION) {
++                throw new IllegalStateException("Unsupported forwarding version " + version + ", wanted upto " + com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
++            }
++
++            java.net.SocketAddress listening = this.connection.getRemoteAddress();
++            int port = 0;
++            if (listening instanceof java.net.InetSocketAddress) {
++                port = ((java.net.InetSocketAddress) listening).getPort();
++            }
++            this.connection.address = new java.net.InetSocketAddress(com.destroystokyo.paper.proxy.VelocityProxy.readAddress(buf), port);
++
++            this.gameProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
++
++            //TODO Update handling for lazy sessions, might not even have to do anything?
++
++            // Proceed with login
++            try {
++                authenticatorPool.execute(() -> {
++                    try {
++                        new LoginHandler().fireEvents();
++                    } catch (Exception ex) {
++                        disconnect("Failed to verify username!");
++                        server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameProfile.getName(), ex);
++                    }
++                });
++            } catch (java.util.concurrent.RejectedExecutionException rejected) {
++                disconnect("Failed to verify username!"); // Don't give attackers confirmation of a successful attack - don't change the message
++                server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameProfile.getName() + " - auth queue full", rejected);
++            }
++            return;
++        }
++        // Paper end
+         this.disconnect(Component.translatable("multiplayer.disconnect.unexpected_query_response"));
+     }
+ 
