@@ -102,108 +102,130 @@ index e8f888b9e37454d9863fbaf0f0c3dc982d582f1e..95b01ddddb1ba90da495927099147e77
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
-index cc55a78d899c2b1e740e6364eb4c1d08b7bdf737..3b537f87d41c7ebd1c0d303ffc61fd96c83df61e 100644
+index cc55a78d899c2b1e740e6364eb4c1d08b7bdf737..617a4d896bfbbadc727a1ef6d7e666eb045a2a5b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
-@@ -19,4 +19,101 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
+@@ -19,4 +19,123 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
      public EntityType getType() {
          return EntityType.MINECART_MOB_SPAWNER;
      }
 +
 +    // Paper start
 +    @Override
-+    public EntityType getSpawnedType() {
-+        return null;
++    public MinecartSpawner getHandle() {
++        return (MinecartSpawner) super.getHandle();
 +    }
 +
 +    @Override
-+    public void setSpawnedType(EntityType creatureType) {
++    public EntityType getSpawnedType() {
++        var spawnData = getHandle().getSpawner().nextSpawnData;
++        if (spawnData == null) {
++            return EntityType.PIG;
++        }
 +
++        var type = net.minecraft.world.entity.EntityType.by(spawnData.getEntityToSpawn());
++        return type.isEmpty() ? EntityType.PIG : EntityType.fromName(net.minecraft.world.entity.EntityType.getKey(type.get()).getPath());
++    }
++
++    @Override
++    public void setSpawnedType(EntityType entityType) {
++        if (entityType == null || entityType.getName() == null) {
++            throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
++        }
++
++        getHandle().getSpawner().setEntityId(net.minecraft.world.entity.EntityType.byString(entityType.getName()).get(),
++            getHandle().getLevel(), getHandle().getLevel().getRandom(), getHandle().blockPosition());
 +    }
 +
 +    @Override
 +    public int getDelay() {
-+        return 0;
++        return getHandle().getSpawner().spawnDelay;
 +    }
 +
 +    @Override
 +    public void setDelay(int delay) {
-+
++        getHandle().getSpawner().spawnDelay = delay;
 +    }
 +
 +    @Override
 +    public int getMinSpawnDelay() {
-+        return 0;
++        return getHandle().getSpawner().minSpawnDelay;
 +    }
 +
 +    @Override
 +    public void setMinSpawnDelay(int delay) {
-+
++        getHandle().getSpawner().minSpawnDelay = delay;
 +    }
 +
 +    @Override
 +    public int getMaxSpawnDelay() {
-+        return 0;
++        return getHandle().getSpawner().maxSpawnDelay;
 +    }
 +
 +    @Override
 +    public void setMaxSpawnDelay(int delay) {
-+
++        getHandle().getSpawner().maxSpawnDelay = delay;
 +    }
 +
 +    @Override
 +    public int getSpawnCount() {
-+        return 0;
++        return getHandle().getSpawner().spawnCount;
 +    }
 +
 +    @Override
 +    public void setSpawnCount(int spawnCount) {
-+
++        getHandle().getSpawner().spawnCount = spawnCount;
 +    }
 +
 +    @Override
 +    public int getMaxNearbyEntities() {
-+        return 0;
++        return getHandle().getSpawner().maxNearbyEntities;
 +    }
 +
 +    @Override
 +    public void setMaxNearbyEntities(int maxNearbyEntities) {
-+
++        getHandle().getSpawner().maxNearbyEntities = maxNearbyEntities;
 +    }
 +
 +    @Override
 +    public int getRequiredPlayerRange() {
-+        return 0;
++        return getHandle().getSpawner().requiredPlayerRange;
 +    }
 +
 +    @Override
 +    public void setRequiredPlayerRange(int requiredPlayerRange) {
-+
++        getHandle().getSpawner().requiredPlayerRange = requiredPlayerRange;
 +    }
 +
 +    @Override
 +    public int getSpawnRange() {
-+        return 0;
++        return getHandle().getSpawner().spawnRange;
 +    }
 +
 +    @Override
 +    public void setSpawnRange(int spawnRange) {
-+
++        getHandle().getSpawner().spawnRange = spawnRange;
 +    }
 +
 +    @Override
 +    public boolean isActivated() {
-+        return false;
++        return getHandle().getSpawner().isNearPlayer(getHandle().getLevel(), getHandle().blockPosition());
 +    }
 +
 +    @Override
 +    public void resetTimer() {
-+
++        getHandle().getSpawner().delay(getHandle().getLevel(), getHandle().blockPosition());
 +    }
 +
 +    @Override
 +    public void setSpawnedItem(org.bukkit.inventory.ItemStack itemStack) {
-+
++        com.google.common.base.Preconditions.checkArgument(itemStack != null && !itemStack.getType().isAir(),
++            "spawners cannot spawn air");
++        net.minecraft.world.item.ItemStack item = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack);
++        net.minecraft.nbt.CompoundTag entity = new net.minecraft.nbt.CompoundTag();
++        entity.putString("id", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(net.minecraft.world.entity.EntityType.ITEM).toString());
++        entity.put("Item", item.save(new net.minecraft.nbt.CompoundTag()));
++        getHandle().getSpawner().setNextSpawnData(getHandle().getLevel(), getHandle().blockPosition(),
++            new net.minecraft.world.level.SpawnData(entity, java.util.Optional.empty()));
 +    }
-+    // Paper end
  }
