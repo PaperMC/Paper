@@ -199,10 +199,10 @@ index 0000000000000000000000000000000000000000..bd86dc2ad2f87969da4add06de2a629f
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b70024bfa2828fb12ecadf11b4d93291da28509
+index 0000000000000000000000000000000000000000..e6d5504e9eae41b8326d823affc520be2e928e7b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,479 @@
+@@ -0,0 +1,671 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import io.papermc.paper.configuration.WorldConfiguration;
@@ -428,7 +428,31 @@ index 0000000000000000000000000000000000000000..1b70024bfa2828fb12ecadf11b4d9329
 +        bitStorageWriter.setBuffer(chunkPacketInfoAntiXray.getBuffer());
 +        int numberOfBlocks = presetBlockStateBits.length;
 +        // Keep the lambda expressions as simple as possible. They are used very frequently.
-+        IntSupplier random = numberOfBlocks == 1 ? (() -> 0) : new IntSupplier() {
++        LayeredIntSupplier random = numberOfBlocks == 1 ? (() -> 0) : engineMode == EngineMode.OBFUSCATE_LAYER ? new LayeredIntSupplier() {
++            // engine-mode: 3
++            private int state;
++            private int next;
++
++            {
++                while ((state = ThreadLocalRandom.current().nextInt()) == 0) ;
++            }
++
++            @Override
++            public void nextLayer() {
++                // https://en.wikipedia.org/wiki/Xorshift
++                state ^= state << 13;
++                state ^= state >>> 17;
++                state ^= state << 5;
++                // https://www.pcg-random.org/posts/bounded-rands.html
++                next = (int) ((Integer.toUnsignedLong(state) * numberOfBlocks) >>> 32);
++            }
++
++            @Override
++            public int getAsInt() {
++                return next;
++            }
++        } : new LayeredIntSupplier() {
++            // engine-mode: 2
 +            private int state;
 +
 +            {
@@ -494,6 +518,7 @@ index 0000000000000000000000000000000000000000..1b70024bfa2828fb12ecadf11b4d9329
 +
 +                    // Abuse the obfuscateLayer method to read the blocks of the first layer of the current chunk section
 +                    bitStorageWriter.setBits(0);
++                    random.nextLayer();
 +                    obfuscateLayer(-1, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, emptyNearbyChunkSections, random);
 +                }
 +
@@ -509,6 +534,7 @@ index 0000000000000000000000000000000000000000..1b70024bfa2828fb12ecadf11b4d9329
 +                    current = next;
 +                    next = nextNext;
 +                    nextNext = temp;
++                    random.nextLayer();
 +                    obfuscateLayer(y, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                }
 +
@@ -534,6 +560,7 @@ index 0000000000000000000000000000000000000000..1b70024bfa2828fb12ecadf11b4d9329
 +                        // There is nothing to read anymore
 +                        bitStorageReader.setBits(0);
 +                        solid[0] = true;
++                        random.nextLayer();
 +                        obfuscateLayer(15, bitStorageReader, bitStorageWriter, solid, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                    }
 +                } else {
@@ -546,6 +573,7 @@ index 0000000000000000000000000000000000000000..1b70024bfa2828fb12ecadf11b4d9329
 +                    current = next;
 +                    next = nextNext;
 +                    nextNext = temp;
++                    random.nextLayer();
 +                    obfuscateLayer(15, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                }
 +
@@ -557,33 +585,190 @@ index 0000000000000000000000000000000000000000..1b70024bfa2828fb12ecadf11b4d9329
 +    }
 +
 +    private void obfuscateLayer(int y, BitStorageReader bitStorageReader, BitStorageWriter bitStorageWriter, boolean[] solid, boolean[] obfuscate, int[] presetBlockStateBits, boolean[][] current, boolean[][] next, boolean[][] nextNext, LevelChunkSection[] nearbyChunkSections, IntSupplier random) {
-+        int presetBlockState = random.getAsInt();
-+        int bits;
-+        for (int z = 0; z <= 15; z++) {
-+            for (int x = 0; x <= 15; x++) {
++        // First block of first line
++        int bits = bitStorageReader.read();
++
++        if (nextNext[0][0] = !solid[bits]) {
++            bitStorageWriter.skip();
++            next[0][1] = true;
++            next[1][0] = true;
++        } else {
++            if (current[0][0] || isTransparent(nearbyChunkSections[2], 0, y, 15) || isTransparent(nearbyChunkSections[0], 15, y, 0)) {
++                bitStorageWriter.skip();
++            } else {
++                bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
++            }
++        }
++
++        if (!obfuscate[bits]) {
++            next[0][0] = true;
++        }
++
++        // First line
++        for (int x = 1; x < 15; x++) {
++            bits = bitStorageReader.read();
++
++            if (nextNext[0][x] = !solid[bits]) {
++                bitStorageWriter.skip();
++                next[0][x - 1] = true;
++                next[0][x + 1] = true;
++                next[1][x] = true;
++            } else {
++                if (current[0][x] || isTransparent(nearbyChunkSections[2], x, y, 15)) {
++                    bitStorageWriter.skip();
++                } else {
++                    bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
++                }
++            }
++
++            if (!obfuscate[bits]) {
++                next[0][x] = true;
++            }
++        }
++
++        // Last block of first line
++        bits = bitStorageReader.read();
++
++        if (nextNext[0][15] = !solid[bits]) {
++            bitStorageWriter.skip();
++            next[0][14] = true;
++            next[1][15] = true;
++        } else {
++            if (current[0][15] || isTransparent(nearbyChunkSections[2], 15, y, 15) || isTransparent(nearbyChunkSections[1], 0, y, 0)) {
++                bitStorageWriter.skip();
++            } else {
++                bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
++            }
++        }
++
++        if (!obfuscate[bits]) {
++            next[0][15] = true;
++        }
++
++        // All inner lines
++        for (int z = 1; z < 15; z++) {
++            // First block
++            bits = bitStorageReader.read();
++
++            if (nextNext[z][0] = !solid[bits]) {
++                bitStorageWriter.skip();
++                next[z][1] = true;
++                next[z - 1][0] = true;
++                next[z + 1][0] = true;
++            } else {
++                if (current[z][0] || isTransparent(nearbyChunkSections[0], 15, y, z)) {
++                    bitStorageWriter.skip();
++                } else {
++                    bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
++                }
++            }
++
++            if (!obfuscate[bits]) {
++                next[z][0] = true;
++            }
++
++            // All inner blocks
++            for (int x = 1; x < 15; x++) {
 +                bits = bitStorageReader.read();
++
 +                if (nextNext[z][x] = !solid[bits]) {
 +                    bitStorageWriter.skip();
-+                    if (x > 0) next[z][x - 1] = true;
-+                    if (x < 15) next[z][x + 1] = true;
-+                    if (z > 0) next[z - 1][x] = true;
-+                    if (z < 15) next[z + 1][x] = true;
++                    next[z][x - 1] = true;
++                    next[z][x + 1] = true;
++                    next[z - 1][x] = true;
++                    next[z + 1][x] = true;
 +                } else {
-+                    // Check neighbouring chunks
-+                    boolean negX = x == 0 && isTransparent(nearbyChunkSections[0], 15, y, z);
-+                    boolean posX = x == 15 && isTransparent(nearbyChunkSections[1], 0, y, z);
-+                    boolean negZ = z == 0 && isTransparent(nearbyChunkSections[2], x, y, 15);
-+                    boolean posZ = z == 15 && isTransparent(nearbyChunkSections[3], x, y, 0);
-+                    if (current[z][x] || negX || posX || negZ || posZ) {
++                    if (current[z][x]) {
 +                        bitStorageWriter.skip();
 +                    } else {
-+                        bitStorageWriter.write(presetBlockStateBits[engineMode == EngineMode.OBFUSCATE_LAYER ? presetBlockState : random.getAsInt()]);
++                        bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
 +                    }
 +                }
++
 +                if (!obfuscate[bits]) {
 +                    next[z][x] = true;
 +                }
 +            }
++
++            // Last block
++            bits = bitStorageReader.read();
++
++            if (nextNext[z][15] = !solid[bits]) {
++                bitStorageWriter.skip();
++                next[z][14] = true;
++                next[z - 1][15] = true;
++                next[z + 1][15] = true;
++            } else {
++                if (current[z][15] || isTransparent(nearbyChunkSections[1], 0, y, z)) {
++                    bitStorageWriter.skip();
++                } else {
++                    bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
++                }
++            }
++
++            if (!obfuscate[bits]) {
++                next[z][15] = true;
++            }
++        }
++
++        // First block of last line
++        bits = bitStorageReader.read();
++
++        if (nextNext[15][0] = !solid[bits]) {
++            bitStorageWriter.skip();
++            next[15][1] = true;
++            next[14][0] = true;
++        } else {
++            if (current[15][0] || isTransparent(nearbyChunkSections[3], 0, y, 0) || isTransparent(nearbyChunkSections[0], 15, y, 15)) {
++                bitStorageWriter.skip();
++            } else {
++                bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
++            }
++        }
++
++        if (!obfuscate[bits]) {
++            next[15][0] = true;
++        }
++
++        // Last line
++        for (int x = 1; x < 15; x++) {
++            bits = bitStorageReader.read();
++
++            if (nextNext[15][x] = !solid[bits]) {
++                bitStorageWriter.skip();
++                next[15][x - 1] = true;
++                next[15][x + 1] = true;
++                next[14][x] = true;
++            } else {
++                if (current[15][x] || isTransparent(nearbyChunkSections[3], x, y, 0)) {
++                    bitStorageWriter.skip();
++                } else {
++                    bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
++                }
++            }
++
++            if (!obfuscate[bits]) {
++                next[15][x] = true;
++            }
++        }
++
++        // Last block of last line
++        bits = bitStorageReader.read();
++
++        if (nextNext[15][15] = !solid[bits]) {
++            bitStorageWriter.skip();
++            next[15][14] = true;
++            next[14][15] = true;
++        } else {
++            if (current[15][15] || isTransparent(nearbyChunkSections[3], 15, y, 0) || isTransparent(nearbyChunkSections[1], 0, y, 15)) {
++                bitStorageWriter.skip();
++            } else {
++                bitStorageWriter.write(presetBlockStateBits[random.getAsInt()]);
++            }
++        }
++
++        if (!obfuscate[bits]) {
++            next[15][15] = true;
 +        }
 +    }
 +
@@ -679,6 +864,13 @@ index 0000000000000000000000000000000000000000..1b70024bfa2828fb12ecadf11b4d9329
 +
 +        if (blockState != null && obfuscateGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(blockState)]) {
 +            ((ServerLevel) level).getChunkSource().blockChanged(blockPos);
++        }
++    }
++
++    @FunctionalInterface
++    private interface LayeredIntSupplier extends IntSupplier {
++        default void nextLayer() {
++
 +        }
 +    }
 +}
