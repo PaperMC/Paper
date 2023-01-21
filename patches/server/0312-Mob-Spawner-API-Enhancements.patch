@@ -10,22 +10,20 @@ public net.minecraft.world.level.BaseSpawner setNextSpawnData(Lnet/minecraft/wor
 
 diff --git a/src/main/java/io/papermc/paper/spawner/PaperSpawnerHolder.java b/src/main/java/io/papermc/paper/spawner/PaperSpawnerHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f242f804353f95c6b85f5be92877a5c1aa943051
+index 0000000000000000000000000000000000000000..20b4a01e071d042f9557f2b79246c2da211f15a2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/spawner/PaperSpawnerHolder.java
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,41 @@
 +package io.papermc.paper.spawner;
 +
 +import com.google.common.base.Preconditions;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.util.RandomSource;
 +import net.minecraft.world.level.BaseSpawner;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.SpawnData;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.entity.EntityType;
 +import org.bukkit.inventory.ItemStack;
 +
 +import java.util.Optional;
@@ -36,104 +34,6 @@ index 0000000000000000000000000000000000000000..f242f804353f95c6b85f5be92877a5c1
 +    Level getLevel(); // May return null for non placed block states
 +
 +    BlockPos getBlockPosition();
-+
-+    RandomSource getRandom();
-+
-+    @Override
-+    default EntityType getSpawnedType() {
-+        var spawnData = getSpawnerHandle().nextSpawnData;
-+        if (spawnData == null) {
-+            return EntityType.PIG;
-+        }
-+
-+        var type = net.minecraft.world.entity.EntityType.by(spawnData.getEntityToSpawn());
-+        return type.isEmpty() ? EntityType.PIG : EntityType.fromName(net.minecraft.world.entity.EntityType.getKey(type.get()).getPath());
-+    }
-+
-+    @Override
-+    default void setSpawnedType(EntityType creatureType) {
-+        if (creatureType == null || creatureType.getName() == null) {
-+            throw new IllegalArgumentException("Can't spawn EntityType " + creatureType + " from mobspawners!");
-+        }
-+
-+        getSpawnerHandle().setEntityId(
-+            net.minecraft.world.entity.EntityType.byString(creatureType.getName()).get(),
-+            getLevel(),
-+            getRandom(),
-+            // We cant use getLevel().getRandom() here because the getLevel() may return null
-+            getBlockPosition()
-+        );
-+    }
-+
-+    @Override
-+    default int getDelay() {
-+        return getSpawnerHandle().spawnDelay;
-+    }
-+
-+    @Override
-+    default void setDelay(int delay) {
-+        getSpawnerHandle().spawnDelay = delay;
-+    }
-+
-+    @Override
-+    default int getMinSpawnDelay() {
-+        return getSpawnerHandle().minSpawnDelay;
-+    }
-+
-+    @Override
-+    default void setMinSpawnDelay(int delay) {
-+        getSpawnerHandle().minSpawnDelay = delay;
-+    }
-+
-+    @Override
-+    default int getMaxSpawnDelay() {
-+        return getSpawnerHandle().maxSpawnDelay;
-+    }
-+
-+    @Override
-+    default void setMaxSpawnDelay(int delay) {
-+        getSpawnerHandle().maxSpawnDelay = delay;
-+    }
-+
-+    @Override
-+    default int getSpawnCount() {
-+        return getSpawnerHandle().spawnCount;
-+    }
-+
-+    @Override
-+    default void setSpawnCount(int spawnCount) {
-+        getSpawnerHandle().spawnCount = spawnCount;
-+    }
-+
-+    @Override
-+    default int getMaxNearbyEntities() {
-+        return getSpawnerHandle().maxNearbyEntities;
-+    }
-+
-+    @Override
-+    default void setMaxNearbyEntities(int maxNearbyEntities) {
-+        getSpawnerHandle().maxNearbyEntities = maxNearbyEntities;
-+    }
-+
-+    @Override
-+    default int getRequiredPlayerRange() {
-+        return getSpawnerHandle().requiredPlayerRange;
-+    }
-+
-+    @Override
-+    default void setRequiredPlayerRange(int requiredPlayerRange) {
-+        getSpawnerHandle().requiredPlayerRange = requiredPlayerRange;
-+    }
-+
-+    @Override
-+    default int getSpawnRange() {
-+        return getSpawnerHandle().spawnRange;
-+    }
-+
-+    @Override
-+    default void setSpawnRange(int spawnRange) {
-+        getSpawnerHandle().spawnRange = spawnRange;
-+    }
 +
 +    @Override
 +    default boolean isActivated() {
@@ -216,10 +116,10 @@ index 6ba97a0b4f2cb15d5435657c8e8f5c71c6fee3db..c5a117308f051c20b81818ad91e0ca40
          nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
          nbt.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-index e8f888b9e37454d9863fbaf0f0c3dc982d582f1e..fc66e0a79b3ef4dc31f8b6e7134124b8a2eaf547 100644
+index e8f888b9e37454d9863fbaf0f0c3dc982d582f1e..59326cd0850691299b3cfd8c8e7fd32212eae260 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-@@ -9,33 +9,12 @@ import org.bukkit.World;
+@@ -9,7 +9,7 @@ import org.bukkit.World;
  import org.bukkit.block.CreatureSpawner;
  import org.bukkit.entity.EntityType;
  
@@ -228,132 +128,47 @@ index e8f888b9e37454d9863fbaf0f0c3dc982d582f1e..fc66e0a79b3ef4dc31f8b6e7134124b8
  
      public CraftCreatureSpawner(World world, SpawnerBlockEntity tileEntity) {
          super(world, tileEntity);
+@@ -129,4 +129,38 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+     public void setSpawnRange(int spawnRange) {
+         this.getSnapshot().getSpawner().spawnRange = spawnRange;
      }
- 
--    @Override
--    public EntityType getSpawnedType() {
--        SpawnData spawnData = this.getSnapshot().getSpawner().nextSpawnData;
--        if (spawnData == null) {
--            return EntityType.PIG; // TODO: Change API contract to nullable?
--        }
--
--        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(spawnData.getEntityToSpawn());
--        return (type.isEmpty()) ? EntityType.PIG : EntityType.fromName(net.minecraft.world.entity.EntityType.getKey(type.get()).getPath());
--    }
--
--    @Override
--    public void setSpawnedType(EntityType entityType) {
--        if (entityType == null || entityType.getName() == null) {
--            throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
--        }
--
--        RandomSource rand = (this.isPlaced()) ? this.getWorldHandle().getRandom() : RandomSource.create();
--        this.getSnapshot().setEntityId(net.minecraft.world.entity.EntityType.byString(entityType.getName()).get(), rand);
--    }
--
-     @Override
-     public String getCreatureTypeName() {
-         SpawnData spawnData = this.getSnapshot().getSpawner().nextSpawnData;
-@@ -57,76 +36,43 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
-         this.setSpawnedType(type);
-     }
- 
++
 +    // Paper start
-     @Override
--    public int getDelay() {
--        return this.getSnapshot().getSpawner().spawnDelay;
--    }
--
--    @Override
--    public void setDelay(int delay) {
--        this.getSnapshot().getSpawner().spawnDelay = delay;
--    }
--
--    @Override
--    public int getMinSpawnDelay() {
--        return this.getSnapshot().getSpawner().minSpawnDelay;
--    }
--
--    @Override
--    public void setMinSpawnDelay(int spawnDelay) {
--        Preconditions.checkArgument(spawnDelay <= this.getMaxSpawnDelay(), "Minimum Spawn Delay must be less than or equal to Maximum Spawn Delay");
--        this.getSnapshot().getSpawner().minSpawnDelay = spawnDelay;
--    }
--
--    @Override
--    public int getMaxSpawnDelay() {
--        return this.getSnapshot().getSpawner().maxSpawnDelay;
--    }
--
--    @Override
--    public void setMaxSpawnDelay(int spawnDelay) {
--        Preconditions.checkArgument(spawnDelay > 0, "Maximum Spawn Delay must be greater than 0.");
--        Preconditions.checkArgument(spawnDelay >= this.getMinSpawnDelay(), "Maximum Spawn Delay must be greater than or equal to Minimum Spawn Delay");
--        this.getSnapshot().getSpawner().maxSpawnDelay = spawnDelay;
++    @Override
 +    public net.minecraft.world.level.BaseSpawner getSpawnerHandle() {
 +        return getSnapshot().getSpawner();
-     }
- 
-     @Override
--    public int getMaxNearbyEntities() {
--        return this.getSnapshot().getSpawner().maxNearbyEntities;
--    }
--
--    @Override
--    public void setMaxNearbyEntities(int maxNearbyEntities) {
--        this.getSnapshot().getSpawner().maxNearbyEntities = maxNearbyEntities;
--    }
++    }
++
++    @Override
 +    public net.minecraft.world.level.Level getLevel() {
-+        // We cant use requirePlaced here because setSpawnedType and setSpawnedItem should also work on non placed spawners.
- 
--    @Override
--    public int getSpawnCount() {
--        return this.getSnapshot().getSpawner().spawnCount;
--    }
--
--    @Override
--    public void setSpawnCount(int count) {
--        this.getSnapshot().getSpawner().spawnCount = count;
-+        // It's fine to return null here because getLevel is only called on a non placed block state by setSpawnedType and setSpawnedItem,
-+        // these methods use its result only to call BaseSpawner#setEntityId,
-+        // BaseSpawner#setEntityId only passes it down to BaseSpawner#setNextSpawnData,
++        // We cant use requirePlaced here because setSpawnedItem should also work on non placed spawners.
++
++        // It's fine to return null here because getLevel is only called on a non placed block state by setSpawnedItem,
++        // this method only uses its result to call BaseSpawner#setNextSpawnData,
 +        // BaseSpawner#setNextSpawnData is only overwritten in SpawnerBlockEntity and this implementation allows null values.
 +        return isPlaced() ? world.getHandle() : null;
-     }
- 
-     @Override
--    public int getRequiredPlayerRange() {
--        return this.getSnapshot().getSpawner().requiredPlayerRange;
++    }
++
++    @Override
 +    public net.minecraft.core.BlockPos getBlockPosition() {
 +        return getPosition();
-     }
- 
-     @Override
--    public void setRequiredPlayerRange(int requiredPlayerRange) {
--        this.getSnapshot().getSpawner().requiredPlayerRange = requiredPlayerRange;
-+    public RandomSource getRandom() {
-+        return isPlaced() ? world.getHandle().getRandom() : RandomSource.create();
-     }
- 
-     @Override
--    public int getSpawnRange() {
--        return this.getSnapshot().getSpawner().spawnRange;
++    }
++
++    @Override
 +    public boolean isActivated() {
 +        requirePlaced();
 +        return io.papermc.paper.spawner.PaperSpawnerHolder.super.isActivated();
-     }
- 
-     @Override
--    public void setSpawnRange(int spawnRange) {
--        this.getSnapshot().getSpawner().spawnRange = spawnRange;
++    }
++
++    @Override
 +    public void resetTimer() {
 +        requirePlaced();
 +        io.papermc.paper.spawner.PaperSpawnerHolder.super.resetTimer();
-     }
++    }
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
-index cc55a78d899c2b1e740e6364eb4c1d08b7bdf737..4a93e12a9195f9294d5b255538097eda08e4e185 100644
+index cc55a78d899c2b1e740e6364eb4c1d08b7bdf737..0ed6c989bc2b22be233b73e9ee5642a7c8deac3f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
 @@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -365,7 +180,7 @@ index cc55a78d899c2b1e740e6364eb4c1d08b7bdf737..4a93e12a9195f9294d5b255538097eda
      CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
          super(server, entity);
      }
-@@ -19,4 +19,31 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
+@@ -19,4 +19,121 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
      public EntityType getType() {
          return EntityType.MINECART_MOB_SPAWNER;
      }
@@ -374,6 +189,101 @@ index cc55a78d899c2b1e740e6364eb4c1d08b7bdf737..4a93e12a9195f9294d5b255538097eda
 +    @Override
 +    public MinecartSpawner getHandle() {
 +        return (MinecartSpawner) super.getHandle();
++    }
++
++    @Override
++    public EntityType getSpawnedType() {
++        var spawnData = getHandle().getSpawner().nextSpawnData;
++        if (spawnData == null) {
++            return EntityType.PIG;
++        }
++
++        var type = net.minecraft.world.entity.EntityType.by(spawnData.getEntityToSpawn());
++        return type.isEmpty() ? EntityType.PIG : EntityType.fromName(net.minecraft.world.entity.EntityType.getKey(type.get()).getPath());
++    }
++
++    @Override
++    public void setSpawnedType(EntityType creatureType) {
++        if (creatureType == null || creatureType.getName() == null) {
++            throw new IllegalArgumentException("Can't spawn EntityType " + creatureType + " from mobspawners!");
++        }
++
++        getHandle().getSpawner().setEntityId(
++            net.minecraft.world.entity.EntityType.byString(creatureType.getName()).get(),
++            getHandle().getLevel(),
++            getHandle().getLevel().getRandom(),
++            getHandle().blockPosition()
++        );
++    }
++
++    @Override
++    public int getDelay() {
++        return getHandle().getSpawner().spawnDelay;
++    }
++
++    @Override
++    public void setDelay(int delay) {
++        getHandle().getSpawner().spawnDelay = delay;
++    }
++
++    @Override
++    public int getMinSpawnDelay() {
++        return getHandle().getSpawner().minSpawnDelay;
++    }
++
++    @Override
++    public void setMinSpawnDelay(int delay) {
++        getHandle().getSpawner().minSpawnDelay = delay;
++    }
++
++    @Override
++    public int getMaxSpawnDelay() {
++        return getHandle().getSpawner().maxSpawnDelay;
++    }
++
++    @Override
++    public void setMaxSpawnDelay(int delay) {
++        getHandle().getSpawner().maxSpawnDelay = delay;
++    }
++
++    @Override
++    public int getSpawnCount() {
++        return getHandle().getSpawner().spawnCount;
++    }
++
++    @Override
++    public void setSpawnCount(int spawnCount) {
++        getHandle().getSpawner().spawnCount = spawnCount;
++    }
++
++    @Override
++    public int getMaxNearbyEntities() {
++        return getHandle().getSpawner().maxNearbyEntities;
++    }
++
++    @Override
++    public void setMaxNearbyEntities(int maxNearbyEntities) {
++        getHandle().getSpawner().maxNearbyEntities = maxNearbyEntities;
++    }
++
++    @Override
++    public int getRequiredPlayerRange() {
++        return getHandle().getSpawner().requiredPlayerRange;
++    }
++
++    @Override
++    public void setRequiredPlayerRange(int requiredPlayerRange) {
++        getHandle().getSpawner().requiredPlayerRange = requiredPlayerRange;
++    }
++
++    @Override
++    public int getSpawnRange() {
++        return getHandle().getSpawner().spawnRange;
++    }
++
++    @Override
++    public void setSpawnRange(int spawnRange) {
++        getHandle().getSpawner().spawnRange = spawnRange;
 +    }
 +
 +    @Override
@@ -389,11 +299,6 @@ index cc55a78d899c2b1e740e6364eb4c1d08b7bdf737..4a93e12a9195f9294d5b255538097eda
 +    @Override
 +    public net.minecraft.core.BlockPos getBlockPosition() {
 +        return getHandle().blockPosition();
-+    }
-+
-+    @Override
-+    public net.minecraft.util.RandomSource getRandom() {
-+        return getLevel().getRandom();
 +    }
 +    // Paper end
  }
