@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Auxilor <william.favierparsons1@gmail.com>
+Date: Tue, 24 Jan 2023 12:24:09 +0000
+Subject: [PATCH] Fix CraftItemStack/CraftMetaItem inconsistency
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 3e5abea2f814a0a364cf87ff4ce1b1718ba2ddac..3b14b5d2daa9a9f556e7e2e48fa0e417a73a37f0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -8,9 +8,7 @@ import net.minecraft.nbt.ListTag;
+ import net.minecraft.world.item.Item;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Material;
+-import org.bukkit.NamespacedKey;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+-import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+ import org.bukkit.craftbukkit.util.CraftLegacy;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+@@ -214,7 +212,24 @@ public final class CraftItemStack extends ItemStack {
+         if (this.handle == null) {
+             return 0;
+         }
+-        return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle); // Paper
++
++        // Paper start
++        ListTag enchantments = this.handle.getEnchantmentTags();
++
++        for (int i = 0; i < enchantments.size(); i++) {
++            CompoundTag tag = enchantments.getCompound(i);
++
++            String id = tag.getString(CraftMetaItem.ENCHANTMENTS_ID.NBT);
++
++            Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
++            if (ench.equals(enchant)) {
++                return 0xffff & tag.getShort(CraftMetaItem.ENCHANTMENTS_LVL.NBT);
++            }
++        }
++
++        return 0;
++
++        // Paper end
+     }
+ 
+     @Override
