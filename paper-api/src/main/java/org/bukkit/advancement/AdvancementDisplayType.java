@@ -25,7 +25,7 @@ public enum AdvancementDisplayType {
     GOAL(ChatColor.GREEN);
     private final ChatColor color;
 
-    private AdvancementDisplayType(@NotNull ChatColor color) {
+    private AdvancementDisplayType(ChatColor color) {
         this.color = color;
     }
 
