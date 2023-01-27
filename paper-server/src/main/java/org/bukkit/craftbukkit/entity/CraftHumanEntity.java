@@ -411,7 +411,18 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // If there isn't an enchant table we can force create one, won't be very useful though.
         BlockPos pos = CraftLocation.toBlockPosition(location);
-        this.getHandle().openMenu(Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos));
+        // Paper start
+        MenuProvider menuProvider = Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos);
+        if (menuProvider == null) {
+            if (!force) {
+                return null;
+            }
+            menuProvider = new net.minecraft.world.SimpleMenuProvider((syncId, inventory, player) -> {
+                return new net.minecraft.world.inventory.EnchantmentMenu(syncId, inventory, net.minecraft.world.inventory.ContainerLevelAccess.create(this.getHandle().level(), pos));
+            }, Component.translatable("container.enchant"));
+        }
+        this.getHandle().openMenu(menuProvider);
+        // Paper end
 
         if (force) {
             this.getHandle().containerMenu.checkReachable = false;
