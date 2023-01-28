@@ -533,10 +533,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void playSound(org.bukkit.entity.Entity entity, String sound, float volume, float pitch) {
+        playSound(entity, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
+    }
+
+    @Override
     public void playSound(org.bukkit.entity.Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
         if (!(entity instanceof CraftEntity craftEntity) || sound == null || category == null || getHandle().connection == null) return;
 
         PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(CraftSound.getSoundEffect(sound)), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, getHandle().getRandom().nextLong());
+        getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void playSound(org.bukkit.entity.Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
+        if (!(entity instanceof CraftEntity craftEntity) || sound == null || category == null || getHandle().connection == null) return;
+
+        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, getHandle().getRandom().nextLong());
         getHandle().connection.send(packet);
     }
 
