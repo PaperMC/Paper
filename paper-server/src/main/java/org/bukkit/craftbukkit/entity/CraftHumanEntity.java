@@ -466,6 +466,16 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
+    public int getEnchantmentSeed() {
+        return getHandle().enchantmentSeed;
+    }
+
+    @Override
+    public void setEnchantmentSeed(int i) {
+        getHandle().enchantmentSeed = i;
+    }
+
+    @Override
     public int getExpToLevel() {
         return getHandle().getXpNeededForNextLevel();
     }
