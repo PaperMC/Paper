@@ -68,6 +68,26 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public boolean setWindowProperty(@NotNull InventoryView.Property prop, int value);
 
     /**
+     * Gets the player's current enchantment seed.
+     *
+     * The Seed is used to generate enchantment options in the enchanting table
+     * for the player.
+     *
+     * @return the player's enchantment seed
+     */
+    public int getEnchantmentSeed();
+
+    /**
+     * Sets the player's enchantment seed.
+     *
+     * The Seed is used to generate enchantment options in the enchanting table
+     * for the player.
+     *
+     * @param seed the player's new enchantment seed
+     */
+    public void setEnchantmentSeed(int seed);
+
+    /**
      * Gets the inventory view the player is currently viewing. If they do not
      * have an inventory window open, it returns their internal crafting view.
      *
@@ -603,4 +623,5 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Nullable
     public Firework fireworkBoost(@NotNull ItemStack fireworkItemStack);
+
 }
