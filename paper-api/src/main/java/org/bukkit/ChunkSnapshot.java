@@ -164,4 +164,12 @@ public interface ChunkSnapshot {
      * @return if the block is contained within
      */
     boolean contains(@NotNull BlockData block);
+
+    /**
+     * Tests if this chunk contains the specified biome.
+     *
+     * @param biome biome to test
+     * @return if the biome is contained within
+     */
+    boolean contains(@NotNull Biome biome);
 }

@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import java.util.Collection;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -233,4 +234,12 @@ public interface Chunk extends PersistentDataHolder {
      * @return if the block is contained within
      */
     boolean contains(@NotNull BlockData block);
+
+    /**
+     * Tests if this chunk contains the specified biome.
+     *
+     * @param biome biome to test
+     * @return if the biome is contained within
+     */
+    boolean contains(@NotNull Biome biome);
 }
