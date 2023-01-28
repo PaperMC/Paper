@@ -40,6 +40,7 @@ import net.minecraft.world.level.lighting.LightEngine;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.World;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -274,6 +275,20 @@ public class CraftChunk implements Chunk {
         Predicate<IBlockData> nms = Predicates.equalTo(((CraftBlockData) block).getState());
         for (ChunkSection section : getHandle().getSections()) {
             if (section != null && section.getStates().maybeHas(nms)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean contains(Biome biome) {
+        Preconditions.checkArgument(biome != null, "Biome cannot be null");
+
+        Predicate<Holder<BiomeBase>> nms = Predicates.equalTo(CraftBlock.biomeToBiomeBase(getHandle().biomeRegistry, biome));
+        for (ChunkSection section : getHandle().getSections()) {
+            if (section != null && section.getBiomes().maybeHas(nms)) {
                 return true;
             }
         }

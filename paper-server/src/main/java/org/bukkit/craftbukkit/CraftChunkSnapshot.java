@@ -82,6 +82,20 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     }
 
     @Override
+    public boolean contains(Biome biome) {
+        Preconditions.checkArgument(biome != null, "Biome cannot be null");
+
+        Predicate<Holder<BiomeBase>> nms = Predicates.equalTo(CraftBlock.biomeToBiomeBase(this.biomeRegistry, biome));
+        for (PalettedContainerRO<Holder<BiomeBase>> palette : this.biome) {
+            if (palette.maybeHas(nms)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public Material getBlockType(int x, int y, int z) {
         validateChunkCoordinates(x, y, z);
 
