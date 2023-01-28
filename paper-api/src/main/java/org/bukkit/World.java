@@ -2157,10 +2157,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * sound will be heard by the players if their clients do not have the
      * respective sound for the value passed.
      *
-     * @param location the location to play the sound
-     * @param sound the internal sound name to play
-     * @param volume the volume of the sound
-     * @param pitch the pitch of the sound
+     * @param location The location to play the sound
+     * @param sound The internal sound name to play
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
      */
     void playSound(@NotNull Location location, @NotNull String sound, float volume, float pitch);
 
@@ -2184,11 +2184,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * will be heard by the players if their clients do not have the respective
      * sound for the value passed.
      *
-     * @param location the location to play the sound
-     * @param sound the internal sound name to play
-     * @param category the category of the sound
-     * @param volume the volume of the sound
-     * @param pitch the pitch of the sound
+     * @param location The location to play the sound
+     * @param sound The internal sound name to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
      */
     void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
 
@@ -2211,11 +2211,36 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param entity The entity to play the sound
      * @param sound The sound to play
-     * @param category the category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    void playSound(@NotNull Entity entity, @NotNull String sound, float volume, float pitch);
+
+    /**
+     * Play a Sound at the location of the provided entity in the World.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
     void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a Sound at the location of the provided entity in the World.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
 
     /**
      * Get an array containing the names of all the {@link GameRule}s.

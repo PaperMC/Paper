@@ -325,10 +325,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * sound will be heard by the player if their client does not have the
      * respective sound for the value passed.
      *
-     * @param location the location to play the sound
-     * @param sound the internal sound name to play
-     * @param volume the volume of the sound
-     * @param pitch the pitch of the sound
+     * @param location The location to play the sound
+     * @param sound The internal sound name to play
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
      */
     public void playSound(@NotNull Location location, @NotNull String sound, float volume, float pitch);
 
@@ -352,11 +352,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * will be heard by the player if their client does not have the respective
      * sound for the value passed.
      *
-     * @param location the location to play the sound
-     * @param sound the internal sound name to play
+     * @param location The location to play the sound
+     * @param sound The internal sound name to play
      * @param category The category of the sound
-     * @param volume the volume of the sound
-     * @param pitch the pitch of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
      */
     public void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
 
@@ -379,11 +379,36 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param entity The entity to play the sound
      * @param sound The sound to play
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    public void playSound(@NotNull Entity entity, @NotNull String sound, float volume, float pitch);
+
+    /**
+     * Play a sound for a player at the location of the entity.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
      * @param category The category of the sound
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
     public void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a sound for a player at the location of the entity.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    public void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
 
     /**
      * Stop the specified sound from playing.
