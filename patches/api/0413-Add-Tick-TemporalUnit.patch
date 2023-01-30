@@ -6,16 +6,17 @@ Subject: [PATCH] Add Tick TemporalUnit
 
 diff --git a/src/main/java/io/papermc/paper/util/Tick.java b/src/main/java/io/papermc/paper/util/Tick.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..900f39c0c5c6f4f2c89e0b4dade0d26b367c4f57
+index 0000000000000000000000000000000000000000..8e05103f29380527b2ab3076fe6f42a16199e70d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/Tick.java
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,95 @@
 +package io.papermc.paper.util;
 +
 +import net.kyori.adventure.util.Ticks;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.time.Duration;
++import java.time.temporal.ChronoUnit;
 +import java.time.temporal.Temporal;
 +import java.time.temporal.TemporalUnit;
 +import java.util.Objects;
@@ -68,7 +69,7 @@ index 0000000000000000000000000000000000000000..900f39c0c5c6f4f2c89e0b4dade0d26b
 +     */
 +    public int fromDuration(@NotNull Duration duration) {
 +        Objects.requireNonNull(duration, "duration cannot be null");
-+        return Math.toIntExact(Math.floorDiv(duration.toMillis(), INSTANCE.milliseconds));
++        return Math.toIntExact(Math.floorDiv(duration.toMillis(), this.milliseconds));
 +    }
 +
 +    @Override
@@ -96,23 +97,26 @@ index 0000000000000000000000000000000000000000..900f39c0c5c6f4f2c89e0b4dade0d26b
 +    @SuppressWarnings("unchecked") // following ChronoUnit#addTo
 +    @Override
 +    public <R extends Temporal> @NotNull R addTo(@NotNull R temporal, long amount) {
-+        return (R) temporal.plus(amount, this);
++        return (R) temporal.plus(getDuration().multipliedBy(amount));
 +    }
 +
 +    @Override
 +    public long between(@NotNull Temporal start, @NotNull Temporal end) {
-+        return start.until(end, this);
++        return start.until(end, ChronoUnit.MILLIS) / Ticks.SINGLE_TICK_DURATION_MS;
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/util/TickTest.java b/src/test/java/io/papermc/paper/util/TickTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9a48f7a82636d4047a3f5fefe69bb88c2f5aaaef
+index 0000000000000000000000000000000000000000..6d6d0564e07c0886648000490337272e1740ea21
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/util/TickTest.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,44 @@
 +package io.papermc.paper.util;
 +
 +import java.time.Duration;
++import java.time.Instant;
++import java.time.temporal.ChronoUnit;
++
 +import org.junit.Test;
 +
 +import static org.junit.Assert.assertEquals;
@@ -131,5 +135,23 @@ index 0000000000000000000000000000000000000000..9a48f7a82636d4047a3f5fefe69bb88c
 +        assertEquals(0, Tick.tick().fromDuration(Duration.ofMillis(10)));
 +        assertEquals(1, Tick.tick().fromDuration(Duration.ofMillis(60)));
 +        assertEquals(2, Tick.tick().fromDuration(Duration.ofMillis(100)));
++    }
++
++    @Test
++    public void testAddTickToInstant() {
++        Instant now = Instant.now();
++        assertEquals(now, now.plus(0, Tick.tick()));
++        assertEquals(now.plus(50, ChronoUnit.MILLIS), now.plus(1, Tick.tick()));
++        assertEquals(now.plus(100, ChronoUnit.MILLIS), now.plus(2, Tick.tick()));
++        assertEquals(now.plus(150, ChronoUnit.MILLIS), now.plus(3, Tick.tick()));
++    }
++
++    @Test
++    public void testTicksBetweenInstants() {
++        Instant now = Instant.now();
++        assertEquals(0, now.until(now.plus(20, ChronoUnit.MILLIS), Tick.tick()));
++        assertEquals(1, now.until(now.plus(50, ChronoUnit.MILLIS), Tick.tick()));
++        assertEquals(1, now.until(now.plus(60, ChronoUnit.MILLIS), Tick.tick()));
++        assertEquals(2, now.until(now.plus(100, ChronoUnit.MILLIS), Tick.tick()));
 +    }
 +}
