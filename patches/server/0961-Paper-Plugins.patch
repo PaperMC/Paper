@@ -271,24 +271,33 @@ index 0000000000000000000000000000000000000000..6c6c9ec4c2809373309874855c752a8d
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..51225f5d5ee901ae4c8f500f687c3e376268ce5e
+index 0000000000000000000000000000000000000000..c2e2a55d4cdb602ecdda2227fd182ee26ba51be4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
-@@ -0,0 +1,154 @@
+@@ -0,0 +1,202 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.google.gson.JsonArray;
++import com.google.gson.JsonElement;
 +import com.google.gson.JsonObject;
++import com.google.gson.JsonPrimitive;
 +import com.google.gson.internal.Streams;
 +import com.google.gson.stream.JsonWriter;
 +import io.papermc.paper.command.PaperSubcommand;
 +import io.papermc.paper.plugin.entrypoint.Entrypoint;
 +import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
++import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
++import io.papermc.paper.plugin.entrypoint.classloader.group.LockingClassLoaderGroup;
++import io.papermc.paper.plugin.entrypoint.classloader.group.PaperPluginClassLoaderStorage;
++import io.papermc.paper.plugin.entrypoint.classloader.group.SimpleListPluginClassLoaderGroup;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
++import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
++import io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup;
 +import io.papermc.paper.plugin.storage.ConfiguredProviderStorage;
 +import io.papermc.paper.plugin.storage.ProviderStorage;
 +import net.minecraft.server.MinecraftServer;
@@ -357,6 +366,7 @@ index 0000000000000000000000000000000000000000..51225f5d5ee901ae4c8f500f687c3e37
 +
 +        this.writeProviders(root);
 +        this.writePlugins(root);
++        this.writeClassloaders(root);
 +
 +        return root;
 +    }
@@ -427,6 +437,44 @@ index 0000000000000000000000000000000000000000..51225f5d5ee901ae4c8f500f687c3e37
 +        for (Plugin plugin : PaperPluginManagerImpl.getInstance().getPlugins()) {
 +            rootPlugins.add(plugin.toString());
 +        }
++    }
++
++    private void writeClassloaders(JsonObject root) {
++        JsonObject classLoadersRoot = new JsonObject();
++        root.add("classloaders", classLoadersRoot);
++
++        PaperPluginClassLoaderStorage storage = (PaperPluginClassLoaderStorage) PaperClassLoaderStorage.instance();
++        classLoadersRoot.addProperty("global", storage.getGlobalGroup().toString());
++
++        JsonArray array = new JsonArray();
++        classLoadersRoot.add("children", array);
++        for (PluginClassLoaderGroup group : storage.getGroups()) {
++            array.add(this.writeClassloader(group));
++        }
++    }
++
++    private JsonObject writeClassloader(PluginClassLoaderGroup group) {
++        JsonObject classLoadersRoot = new JsonObject();
++        if (group instanceof SimpleListPluginClassLoaderGroup listGroup) {
++            JsonArray array = new JsonArray();
++            classLoadersRoot.addProperty("main", listGroup.toString());
++            classLoadersRoot.add("children", array);
++            for (ConfiguredPluginClassLoader innerGroup : listGroup.getClassLoaders()) {
++                array.add(this.writeClassloader(innerGroup));
++            }
++
++        } else if (group instanceof LockingClassLoaderGroup locking) {
++            // Unwrap
++            return this.writeClassloader(locking.getParent());
++        } else {
++            classLoadersRoot.addProperty("raw", group.toString());
++        }
++
++        return classLoadersRoot;
++    }
++
++    private JsonElement writeClassloader(ConfiguredPluginClassLoader innerGroup) {
++        return new JsonPrimitive(innerGroup.toString());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
@@ -1009,10 +1057,10 @@ index 0000000000000000000000000000000000000000..6688f2af4a32c2f79785f162e2eac033
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/DependencyBasedPluginClassLoaderGroup.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/DependencyBasedPluginClassLoaderGroup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..76a47299cda48c6dc8261cd1d46b5374029607b4
+index 0000000000000000000000000000000000000000..eaf5c794cbe8d6138c9d60eaae20f5fc7711f541
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/DependencyBasedPluginClassLoaderGroup.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,47 @@
 +package io.papermc.paper.plugin.entrypoint.classloader.group;
 +
 +import io.papermc.paper.plugin.provider.classloader.ClassLoaderAccess;
@@ -1050,13 +1098,22 @@ index 0000000000000000000000000000000000000000..76a47299cda48c6dc8261cd1d46b5374
 +    public ClassLoaderAccess getAccess() {
 +        return this.access;
 +    }
++
++    @Override
++    public String toString() {
++        return "DependencyBasedPluginClassLoaderGroup{" +
++            "globalPluginClassLoaderGroup=" + this.globalPluginClassLoaderGroup +
++            ", access=" + this.access +
++            ", classloaders=" + this.classloaders +
++            '}';
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/GlobalPluginClassLoaderGroup.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/GlobalPluginClassLoaderGroup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..31ee6bc1aa391a64d0fa5fdfce1625df86aa944c
+index 0000000000000000000000000000000000000000..2b7eef787f83e5a32896cb30c215406b6f652786
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/GlobalPluginClassLoaderGroup.java
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,18 @@
 +package io.papermc.paper.plugin.entrypoint.classloader.group;
 +
 +import io.papermc.paper.plugin.provider.classloader.ClassLoaderAccess;
@@ -1069,13 +1126,18 @@ index 0000000000000000000000000000000000000000..31ee6bc1aa391a64d0fa5fdfce1625df
 +    public ClassLoaderAccess getAccess() {
 +        return (v) -> true;
 +    }
++
++    @Override
++    public String toString() {
++        return super.toString();
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/LockingClassLoaderGroup.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/LockingClassLoaderGroup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff08f5b3a5dffa0bc0bcb322d799958cdd93b786
+index 0000000000000000000000000000000000000000..aae50ebba6ba1579b75af5370c8b020d2a927b2c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/LockingClassLoaderGroup.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,76 @@
 +package io.papermc.paper.plugin.entrypoint.classloader.group;
 +
 +import io.papermc.paper.plugin.provider.classloader.ClassLoaderAccess;
@@ -1143,13 +1205,21 @@ index 0000000000000000000000000000000000000000..ff08f5b3a5dffa0bc0bcb322d799958c
 +
 +    record ClassLockEntry(AtomicInteger count, ReentrantReadWriteLock reentrantReadWriteLock) {
 +    }
++
++    @Override
++    public String toString() {
++        return "LockingClassLoaderGroup{" +
++            "parent=" + this.parent +
++            ", classLoadLock=" + this.classLoadLock +
++            '}';
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/PaperPluginClassLoaderStorage.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/PaperPluginClassLoaderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e225b2ad14e18b5807e6dd488b647c39ce3dc827
+index 0000000000000000000000000000000000000000..2c906e2c7d972b221a41acd614e00d0fbc1227c6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/PaperPluginClassLoaderStorage.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,93 @@
 +package io.papermc.paper.plugin.entrypoint.classloader.group;
 +
 +import io.papermc.paper.plugin.provider.classloader.ClassLoaderAccess;
@@ -1158,6 +1228,7 @@ index 0000000000000000000000000000000000000000..e225b2ad14e18b5807e6dd488b647c39
 +import io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup;
 +import org.bukkit.Bukkit;
 +import org.bukkit.plugin.java.PluginClassLoader;
++import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.ArrayList;
 +import java.util.List;
@@ -1230,11 +1301,21 @@ index 0000000000000000000000000000000000000000..e225b2ad14e18b5807e6dd488b647c39
 +        }
 +    }
 +
++    // Debug only
++    @ApiStatus.Internal
++    public GlobalPluginClassLoaderGroup getGlobalGroup() {
++        return this.globalGroup;
++    }
 +
++    // Debug only
++    @ApiStatus.Internal
++    public List<PluginClassLoaderGroup> getGroups() {
++        return this.groups;
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SimpleListPluginClassLoaderGroup.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SimpleListPluginClassLoaderGroup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..85af1e74161ac9d508388fc245ad8801fe78f4d4
+index 0000000000000000000000000000000000000000..23b6cb297f46c9c2b2944a3ab4031c31414620ad
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SimpleListPluginClassLoaderGroup.java
 @@ -0,0 +1,69 @@
@@ -1267,7 +1348,7 @@ index 0000000000000000000000000000000000000000..85af1e74161ac9d508388fc245ad8801
 +    public @Nullable Class<?> getClassByName(String name, boolean resolve, ConfiguredPluginClassLoader requester) {
 +        if (!DISABLE_CLASS_PRIORITIZATION) {
 +            try {
-+                return requester.loadClass(name, false, false, true); // First check the requester
++                return this.lookupClass(name, false, requester); // First check the requester
 +            } catch (ClassNotFoundException ignored) {
 +            }
 +        }
@@ -1309,10 +1390,10 @@ index 0000000000000000000000000000000000000000..85af1e74161ac9d508388fc245ad8801
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SingletonPluginClassLoaderGroup.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SingletonPluginClassLoaderGroup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4de8873efe22e4d29e961cf4dfb46668f1959307
+index 0000000000000000000000000000000000000000..3b670bd6b35ae7f56488a9b50df54709a0b28901
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SingletonPluginClassLoaderGroup.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,60 @@
 +package io.papermc.paper.plugin.entrypoint.classloader.group;
 +
 +import io.papermc.paper.plugin.provider.classloader.ClassLoaderAccess;
@@ -1364,13 +1445,21 @@ index 0000000000000000000000000000000000000000..4de8873efe22e4d29e961cf4dfb46668
 +        }
 +
 +    }
++
++    @Override
++    public String toString() {
++        return "SingletonPluginClassLoaderGroup{" +
++            "configuredPluginClassLoader=" + this.configuredPluginClassLoader +
++            ", access=" + this.access +
++            '}';
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SpigotPluginClassLoaderGroup.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SpigotPluginClassLoaderGroup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bd42cf44f7396fd24a5ba65e140ec6c9090f7198
+index 0000000000000000000000000000000000000000..5d26367524389388be163ae3120c1d2bf55cfef7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/SpigotPluginClassLoaderGroup.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,49 @@
 +package io.papermc.paper.plugin.entrypoint.classloader.group;
 +
 +import io.papermc.paper.plugin.provider.classloader.ClassLoaderAccess;
@@ -1411,13 +1500,21 @@ index 0000000000000000000000000000000000000000..bd42cf44f7396fd24a5ba65e140ec6c9
 +    public ClassLoaderAccess getAccess() {
 +        return v -> true;
 +    }
++
++    @Override
++    public String toString() {
++        return "SpigotPluginClassLoaderGroup{" +
++            "libraryClassloaderPredicate=" + this.libraryClassloaderPredicate +
++            ", classloaders=" + this.classloaders +
++            '}';
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/StaticPluginClassLoaderGroup.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/StaticPluginClassLoaderGroup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..213875b5c4180b56ed87a8d58bf2c73f673a2a69
+index 0000000000000000000000000000000000000000..7f7085b06271adf8a37485f4c9c9b8af605dd27d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/StaticPluginClassLoaderGroup.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,31 @@
 +package io.papermc.paper.plugin.entrypoint.classloader.group;
 +
 +import io.papermc.paper.plugin.provider.classloader.ClassLoaderAccess;
@@ -1441,6 +1538,13 @@ index 0000000000000000000000000000000000000000..213875b5c4180b56ed87a8d58bf2c73f
 +        return this.access;
 +    }
 +
++    @Override
++    public String toString() {
++        return "StaticPluginClassLoaderGroup{" +
++            "access=" + this.access +
++            ", classloaders=" + this.classloaders +
++            '}';
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyContext.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyContext.java
 new file mode 100644
@@ -1481,10 +1585,10 @@ index 0000000000000000000000000000000000000000..98e614cb01163e448ae6d22d4377ddad
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3d68942c7b66e75fc6a62c46b699367d3157efb8
+index 0000000000000000000000000000000000000000..1af3c3434eb1f3b00857b17a07f42e51086c1e2b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
 +import com.google.common.graph.MutableGraph;
@@ -1497,6 +1601,7 @@ index 0000000000000000000000000000000000000000..3d68942c7b66e75fc6a62c46b699367d
 +@SuppressWarnings("UnstableApiUsage")
 +public class DependencyUtil {
 +
++    @NotNull
 +    public static MutableGraph<String> buildDependencyGraph(@NotNull MutableGraph<String> dependencyGraph, @NotNull PluginMeta configuration) {
 +        List<String> dependencies = new ArrayList<>();
 +        dependencies.addAll(configuration.getPluginDependencies());
@@ -2187,10 +2292,10 @@ index 0000000000000000000000000000000000000000..0d691f66e6c60e0ead36bb8900918559
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..14b2c998071d12aaaa29f96edbff88fd4a6fbfcb
+index 0000000000000000000000000000000000000000..d2e1e4c865b1ce029f551f46af3ee49d361899d9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,143 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import com.google.common.collect.Lists;
@@ -2222,32 +2327,33 @@ index 0000000000000000000000000000000000000000..14b2c998071d12aaaa29f96edbff88fd
 +    @Override
 +    public List<T> loadProviders(List<PluginProvider<T>> pluginProviders) {
 +        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
-+        Map<String, PluginProvider<T>> providerMap = new HashMap<>();
++        Map<String, PluginProviderEntry<T>> providerMap = new HashMap<>();
 +        List<PluginProvider<T>> validatedProviders = new ArrayList<>();
 +
 +        // Populate provider map
 +        for (PluginProvider<T> provider : pluginProviders) {
 +            PluginMeta providerConfig = provider.getMeta();
++            PluginProviderEntry<T> entry = new PluginProviderEntry<>(provider);
 +
-+            PluginProvider<T> replacedProvider = providerMap.put(providerConfig.getName(), provider);
++            PluginProviderEntry<T> replacedProvider = providerMap.put(providerConfig.getName(), entry);
 +            if (replacedProvider != null) {
 +                LOGGER.error(String.format(
 +                    "Ambiguous plugin name '%s' for files '%s' and '%s' in '%s'",
 +                    providerConfig.getName(),
 +                    provider.getSource(),
-+                    replacedProvider.getSource(),
-+                    replacedProvider.getParentSource()
++                    replacedProvider.provider.getSource(),
++                    replacedProvider.provider.getParentSource()
 +                ));
 +            }
 +
 +            for (String extra : providerConfig.getProvidedPlugins()) {
-+                PluginProvider<T> replacedExtraProvider = providerMap.putIfAbsent(extra, provider);
++                PluginProviderEntry<T> replacedExtraProvider = providerMap.putIfAbsent(extra, entry);
 +                if (replacedExtraProvider != null) {
 +                    LOGGER.warn(String.format(
 +                        "`%s' is provided by both `%s' and `%s'",
 +                        extra,
 +                        providerConfig.getName(),
-+                        replacedExtraProvider.getMeta().getName()
++                        replacedExtraProvider.provider.getMeta().getName()
 +                    ));
 +                }
 +            }
@@ -2282,14 +2388,7 @@ index 0000000000000000000000000000000000000000..14b2c998071d12aaaa29f96edbff88fd
 +
 +            // Add the provided plugins to the graph as well
 +            for (String provides : configuration.getProvidedPlugins()) {
-+                PluginProvider<T> fetchedProvider = providerMap.get(provides);
-+                if (fetchedProvider != null) {
-+                    LOGGER.warn(
-+                        "Ambiguous plugin name '%s'. It is also provided by '%s'".formatted(configuration.getName(), fetchedProvider)
-+                    );
-+                } else {
-+                    DependencyUtil.addProvidedPlugin(dependencyGraph, configuration.getName(), provides);
-+                }
++                DependencyUtil.addProvidedPlugin(dependencyGraph, configuration.getName(), provides);
 +            }
 +        }
 +
@@ -2307,11 +2406,15 @@ index 0000000000000000000000000000000000000000..14b2c998071d12aaaa29f96edbff88fd
 +            // It's possible that this will be null because the above dependencies for soft/load before aren't validated if they exist.
 +            // The graph could be MutableGraph<PluginProvider<T>>, but we would have to check if each dependency exists there... just
 +            // nicer to do it here TBH.
-+            PluginProvider<T> retrievedProvider = providerMap.get(providerIdentifier);
-+            if (retrievedProvider == null) {
++            PluginProviderEntry<T> retrievedProviderEntry = providerMap.get(providerIdentifier);
++            if (retrievedProviderEntry == null || retrievedProviderEntry.provided) {
++                // OR if this was already provided (most likely from a plugin that already "provides" that dependency)
++                // This won't matter since the provided plugin is loaded as a dependency, meaning it should have been loaded correctly anyways
 +                continue; // Skip provider that doesn't exist....
 +            }
-+            
++            retrievedProviderEntry.provided = true;
++            PluginProvider<T> retrievedProvider = retrievedProviderEntry.provider;
++
 +            this.configuration.applyContext(retrievedProvider, graphDependencyContext);
 +            try {
 +                T instance = retrievedProvider.createInstance();
@@ -2324,6 +2427,16 @@ index 0000000000000000000000000000000000000000..14b2c998071d12aaaa29f96edbff88fd
 +        }
 +
 +        return loadedPlugins;
++    }
++
++    private static class PluginProviderEntry<T> {
++
++        private final PluginProvider<T> provider;
++        private boolean provided;
++
++        private PluginProviderEntry(PluginProvider<T> provider) {
++            this.provider = provider;
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/PluginGraphCycleException.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/PluginGraphCycleException.java
@@ -6352,79 +6465,7 @@ index 0000000000000000000000000000000000000000..58715b72bd656c4089a2b4bb4237aecd
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginLoadingTest.java b/src/test/java/io/papermc/paper/plugin/PluginLoadingTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c8045d5d229fbc108d8ae2a939f5f1ae46501f9f
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/plugin/PluginLoadingTest.java
-@@ -0,0 +1,69 @@
-+package io.papermc.paper.plugin;
-+
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
-+import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
-+import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
-+import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
-+import io.papermc.paper.plugin.provider.PluginProvider;
-+import org.junit.Test;
-+
-+import java.util.List;
-+
-+public class PluginLoadingTest {
-+
-+
-+    private static TestJavaPluginProvider setup(String identifier, String[] hard, String[] soft, String[] before) {
-+        TestPluginMeta configuration = new TestPluginMeta(identifier);
-+        configuration.setHardDependencies(List.of(hard));
-+        configuration.setSoftDependencies(List.of(soft));
-+        configuration.setLoadBefore(List.of(before));
-+
-+        return new TestJavaPluginProvider(configuration);
-+    }
-+
-+
-+    private static DependencyContext capturedContext;
-+    private static final ModernPluginLoadingStrategy<PaperTestPlugin> modernPluginLoadingStrategy = new ModernPluginLoadingStrategy<>(new ProviderConfiguration<>() {
-+        @Override
-+        public void applyContext(PluginProvider<PaperTestPlugin> provider, DependencyContext dependencyContext) {
-+            capturedContext = dependencyContext;
-+        }
-+
-+        @Override
-+        public boolean load(PluginProvider<PaperTestPlugin> provider, PaperTestPlugin provided) {
-+            return true;
-+        }
-+
-+        @Override
-+        public List<String> requiredDependencies(PluginProvider<PaperTestPlugin> provider) {
-+            return provider.getMeta().getPluginDependencies();
-+        }
-+
-+        @Override
-+        public List<String> optionalDependencies(PluginProvider<PaperTestPlugin> provider) {
-+            return provider.getMeta().getPluginSoftDependencies();
-+        }
-+
-+        @Override
-+        public List<String> loadBeforeDependencies(PluginProvider<PaperTestPlugin> provider) {
-+            return provider.getMeta().getLoadBeforePlugins();
-+        }
-+    });
-+
-+
-+    @Test
-+    public void testCycleDependencies() {
-+        try {
-+            modernPluginLoadingStrategy.loadProviders(List.of(
-+                setup("plugin1", new String[]{"plugin2"}, new String[0], new String[0]),
-+                setup("plugin2", new String[]{"plugin1"}, new String[0], new String[0])
-+            ));
-+        } catch (PluginGraphCycleException exception) {
-+            return;
-+        }
-+
-+        throw new AssertionError("Cyclic loading of dependencies should not be allowed.");
-+    }
-+
-+
-+}
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginManagerTest.java b/src/test/java/io/papermc/paper/plugin/PluginManagerTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..726eba26470e62b0e94a91418512e242464800ae
