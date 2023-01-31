@@ -2292,7 +2292,7 @@ index 0000000000000000000000000000000000000000..0d691f66e6c60e0ead36bb8900918559
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d2e1e4c865b1ce029f551f46af3ee49d361899d9
+index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3d3c543de
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 @@ -0,0 +1,143 @@
@@ -2414,9 +2414,9 @@ index 0000000000000000000000000000000000000000..d2e1e4c865b1ce029f551f46af3ee49d
 +            }
 +            retrievedProviderEntry.provided = true;
 +            PluginProvider<T> retrievedProvider = retrievedProviderEntry.provider;
-+
-+            this.configuration.applyContext(retrievedProvider, graphDependencyContext);
 +            try {
++                this.configuration.applyContext(retrievedProvider, graphDependencyContext);
++
 +                T instance = retrievedProvider.createInstance();
 +                if (this.configuration.load(retrievedProvider, instance)) {
 +                    loadedPlugins.add(instance);
@@ -5738,10 +5738,10 @@ index 0000000000000000000000000000000000000000..374e7d3d69fc8603ecf54999f173123d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5286b385a599162de7d4281bb99ce288a6b5cc6b
+index 0000000000000000000000000000000000000000..d3d3368df3e8c04be7c756bef489ea087dfe00b9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,84 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -5754,6 +5754,7 @@ index 0000000000000000000000000000000000000000..5286b385a599162de7d4281bb99ce288
 +import io.papermc.paper.plugin.provider.ProviderStatus;
 +import io.papermc.paper.plugin.provider.ProviderStatusHolder;
 +import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
++import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.java.JavaPlugin;
 +import org.slf4j.Logger;
 +
@@ -5768,6 +5769,11 @@ index 0000000000000000000000000000000000000000..5286b385a599162de7d4281bb99ce288
 +        super(new ProviderConfiguration<>() {
 +            @Override
 +            public void applyContext(PluginProvider<JavaPlugin> provider, DependencyContext dependencyContext) {
++                Plugin alreadyLoadedPlugin = PaperPluginManagerImpl.getInstance().getPlugin(provider.getMeta().getName());
++                if (alreadyLoadedPlugin != null) {
++                    throw new IllegalStateException("Provider " + provider + " attempted to add duplicate plugin identifier " + alreadyLoadedPlugin + " THIS WILL CREATE BUGS!!!");
++                }
++
 +                if (provider instanceof DependencyContextHolder contextHolder) {
 +                    contextHolder.setContext(dependencyContext);
 +                }
