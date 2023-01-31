@@ -271,10 +271,10 @@ index 0000000000000000000000000000000000000000..6c6c9ec4c2809373309874855c752a8d
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..66120106863c9f71b6414ed44bc81721ad97f461
+index 0000000000000000000000000000000000000000..254854646b748e5bb47657625315ced51b22887f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,201 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.google.gson.JsonArray;
@@ -286,11 +286,10 @@ index 0000000000000000000000000000000000000000..66120106863c9f71b6414ed44bc81721
 +import io.papermc.paper.command.PaperSubcommand;
 +import io.papermc.paper.plugin.entrypoint.Entrypoint;
 +import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
-+import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
 +import io.papermc.paper.plugin.entrypoint.classloader.group.LockingClassLoaderGroup;
 +import io.papermc.paper.plugin.entrypoint.classloader.group.PaperPluginClassLoaderStorage;
 +import io.papermc.paper.plugin.entrypoint.classloader.group.SimpleListPluginClassLoaderGroup;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
@@ -301,10 +300,8 @@ index 0000000000000000000000000000000000000000..66120106863c9f71b6414ed44bc81721
 +import io.papermc.paper.plugin.storage.ConfiguredProviderStorage;
 +import io.papermc.paper.plugin.storage.ProviderStorage;
 +import net.minecraft.server.MinecraftServer;
-+import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.plugin.Plugin;
-+import org.bukkit.plugin.java.JavaPlugin;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
@@ -738,14 +735,14 @@ index 0000000000000000000000000000000000000000..f9a2c55a354c877749db3f92956de802
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9fc0d202fef33f711cfded3f05e72de67a109f12
+index 0000000000000000000000000000000000000000..f1a2d25079c841daff19f41f2b24fb8e97d2c7d3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 @@ -0,0 +1,193 @@
 +package io.papermc.paper.plugin.entrypoint.classloader;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
 +import io.papermc.paper.plugin.entrypoint.classloader.group.PaperPluginClassLoaderStorage;
 +import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
@@ -1548,37 +1545,15 @@ index 0000000000000000000000000000000000000000..7f7085b06271adf8a37485f4c9c9b8af
 +            '}';
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyContext.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyContext.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..b326fd7ea7d0974222aa8c20db99b18e409d75ba
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyContext.java
-@@ -0,0 +1,18 @@
-+package io.papermc.paper.plugin.entrypoint.dependency;
-+
-+import io.papermc.paper.plugin.configuration.PluginMeta;
-+
-+/*
-+We need to be able to expose the dependency tree of when certain providers are being loaded.
-+The issue is that we don't know where this context might be, as it might be in the actual storage that
-+this will be needed or just in the plugin manager.
-+
-+We need this to be able to allow resolving other classes in the BootstrapProviderStorage, PluginProviderStorage, and then the PaperPluginManagerImpl.
-+ */
-+public interface DependencyContext {
-+
-+    boolean isTransitiveDependency(PluginMeta plugin, PluginMeta depend);
-+
-+    boolean hasDependency(String pluginIdentifier);
-+
-+}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyContextHolder.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyContextHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..98e614cb01163e448ae6d22d4377ddad390aed85
+index 0000000000000000000000000000000000000000..f43295fdeaa587cf30c35a1d545167071d58ce4b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyContextHolder.java
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,9 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
++
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +
 +public interface DependencyContextHolder {
 +
@@ -1638,15 +1613,16 @@ index 0000000000000000000000000000000000000000..1af3c3434eb1f3b00857b17a07f42e51
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e044f7a6aae3c6f796f024a54c5dd26b160c21b5
+index 0000000000000000000000000000000000000000..6f201a8131ca9631ac4af62c75e6f2e889cb5eae
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,43 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
 +import com.google.common.graph.Graph;
 +import com.google.common.graph.Graphs;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +
 +import java.util.Set;
 +
@@ -2468,13 +2444,13 @@ index 0000000000000000000000000000000000000000..2ea978ac957849260e7ca69c9ff56588
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1424f41691af8be08309c7d9f361bf0c2becbf70
+index 0000000000000000000000000000000000000000..39e284cfb1b9269f3398b60cf7528d3b734cf0cb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java
 @@ -0,0 +1,26 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +
 +import java.util.List;
@@ -3159,19 +3135,20 @@ index 0000000000000000000000000000000000000000..1cd7b52b22285c49d98d4d1e482d944d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5dd268a21882920721c1ff6a8e9dae1869133f79
+index 0000000000000000000000000000000000000000..a15e44366aa2fa1ec143e3e5fe0e1f0956aa8936
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -0,0 +1,347 @@
+@@ -0,0 +1,334 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.graph.GraphBuilder;
-+import com.google.common.graph.Graphs;
 +import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.entrypoint.Entrypoint;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
++import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
 +import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
 +import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
 +import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
@@ -3210,7 +3187,6 @@ index 0000000000000000000000000000000000000000..5dd268a21882920721c1ff6a8e9dae18
 +import java.util.HashMap;
 +import java.util.List;
 +import java.util.Map;
-+import java.util.Set;
 +import java.util.logging.Level;
 +
 +@SuppressWarnings("UnstableApiUsage")
@@ -3227,6 +3203,7 @@ index 0000000000000000000000000000000000000000..5dd268a21882920721c1ff6a8e9dae18
 +    private final Server server;
 +
 +    private final MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
++    private final DependencyContext context = new GraphDependencyContext(this.dependencyGraph);
 +
 +    public PaperPluginInstanceManager(PluginManager pluginManager, CommandMap commandMap, Server server) {
 +        this.commandMap = commandMap;
@@ -3483,21 +3460,7 @@ index 0000000000000000000000000000000000000000..5dd268a21882920721c1ff6a8e9dae18
 +    }
 +
 +    public boolean isTransitiveDepend(@NotNull PluginMeta plugin, @NotNull PluginMeta depend) {
-+        String pluginIdentifier = plugin.getName();
-+
-+        if (this.dependencyGraph.nodes().contains(pluginIdentifier)) {
-+            Set<String> reachableNodes = Graphs.reachableNodes(this.dependencyGraph, pluginIdentifier);
-+            if (reachableNodes.contains(depend.getName())) {
-+                return true;
-+            }
-+            for (String provided : depend.getProvidedPlugins()) {
-+                if (reachableNodes.contains(provided)) {
-+                    return true;
-+                }
-+            }
-+        }
-+
-+        return false;
++        return this.context.isTransitiveDependency(plugin, depend);
 +    }
 +
 +    public boolean hasDependency(String pluginIdentifier) {
@@ -3512,14 +3475,14 @@ index 0000000000000000000000000000000000000000..5dd268a21882920721c1ff6a8e9dae18
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8ed0f78ed534c8ffa10638bac070fc3b8a7342b6
+index 0000000000000000000000000000000000000000..7ebd0a682e51308d3b8fefae1789bfcbe385fc00
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 @@ -0,0 +1,234 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.google.common.graph.MutableGraph;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.PermissionManager;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import org.bukkit.Bukkit;
@@ -5046,14 +5009,14 @@ index 0000000000000000000000000000000000000000..32f230d66f6953520b59ccbf3079c5a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b0794ae4f971026f01be06e2e1a02e58775aca08
+index 0000000000000000000000000000000000000000..148d0b175cf77be1bbbdb7b1191c12ed9de91b7a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 @@ -0,0 +1,223 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrapContextImpl;
@@ -5333,15 +5296,16 @@ index 0000000000000000000000000000000000000000..c140058b7e161121804296e3a5081df5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8767af5ae0871efbbb47e6c783f8882bec2d662b
+index 0000000000000000000000000000000000000000..309c3dc492cbf469768d6a712485a0e42e73f947
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
-@@ -0,0 +1,167 @@
+@@ -0,0 +1,172 @@
 +package io.papermc.paper.plugin.provider.type.spigot;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.ProviderStatus;
@@ -5451,12 +5415,16 @@ index 0000000000000000000000000000000000000000..8767af5ae0871efbbb47e6c783f8882b
 +
 +            final PluginClassLoader loader;
 +            try {
-+                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description)); // Paper
++                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.dependencyContext); // Paper
 +            } catch (InvalidPluginException ex) {
 +                throw ex;
 +            } catch (Throwable ex) {
 +                throw new InvalidPluginException(ex);
 +            }
++
++            // Override dependency context.
++            // We must provide a temporary context in order to properly handle dependencies on the plugin classloader constructor.
++            loader.dependencyContext = PaperPluginManagerImpl.getInstance();
 +
 +            this.status = ProviderStatus.INITIALIZED;
 +            return loader.plugin;
@@ -5557,7 +5525,7 @@ index 0000000000000000000000000000000000000000..14ed05945ba5bfeb2b539d4786278b0e
 +
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..821df8ab3e541dacd39a9942d9b06b94368826c0
+index 0000000000000000000000000000000000000000..d3caebefcfe4f2f0d45b59759d7dadb4fc001e57
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 @@ -0,0 +1,113 @@
@@ -5568,7 +5536,7 @@ index 0000000000000000000000000000000000000000..821df8ab3e541dacd39a9942d9b06b94
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrapContext;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrapContextImpl;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
 +import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
@@ -5752,16 +5720,15 @@ index 0000000000000000000000000000000000000000..374e7d3d69fc8603ecf54999f173123d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d3d3368df3e8c04be7c756bef489ea087dfe00b9
+index 0000000000000000000000000000000000000000..b049691292fb9d53ac598cb333fa408b043e7bc5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,82 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
-+import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.PluginProvider;
@@ -5772,7 +5739,6 @@ index 0000000000000000000000000000000000000000..d3d3368df3e8c04be7c756bef489ea08
 +import org.bukkit.plugin.java.JavaPlugin;
 +import org.slf4j.Logger;
 +
-+import java.util.ArrayList;
 +import java.util.List;
 +
 +public class ServerPluginProviderStorage extends ConfiguredProviderStorage<JavaPlugin> {
@@ -6319,17 +6285,16 @@ index 0000000000000000000000000000000000000000..1d14f530ef888102e47eeeaf0d1a6076
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginDependencyLoadingTest.java b/src/test/java/io/papermc/paper/plugin/PluginDependencyLoadingTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..58715b72bd656c4089a2b4bb4237aecd7ce8ab0b
+index 0000000000000000000000000000000000000000..7665967dc1849dde750c6d24298e76c2c74f8443
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/PluginDependencyLoadingTest.java
-@@ -0,0 +1,160 @@
+@@ -0,0 +1,159 @@
 +package io.papermc.paper.plugin;
 +
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.provider.PluginProvider;
-+import org.bukkit.plugin.UnknownDependencyException;
 +import org.junit.Assert;
 +import org.junit.Before;
 +import org.junit.Test;
