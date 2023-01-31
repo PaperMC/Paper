@@ -271,10 +271,10 @@ index 0000000000000000000000000000000000000000..6c6c9ec4c2809373309874855c752a8d
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c2e2a55d4cdb602ecdda2227fd182ee26ba51be4
+index 0000000000000000000000000000000000000000..66120106863c9f71b6414ed44bc81721ad97f461
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,204 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.google.gson.JsonArray;
@@ -301,6 +301,7 @@ index 0000000000000000000000000000000000000000..c2e2a55d4cdb602ecdda2227fd182ee2
 +import io.papermc.paper.plugin.storage.ConfiguredProviderStorage;
 +import io.papermc.paper.plugin.storage.ProviderStorage;
 +import net.minecraft.server.MinecraftServer;
++import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.java.JavaPlugin;
@@ -445,6 +446,7 @@ index 0000000000000000000000000000000000000000..c2e2a55d4cdb602ecdda2227fd182ee2
 +
 +        PaperPluginClassLoaderStorage storage = (PaperPluginClassLoaderStorage) PaperClassLoaderStorage.instance();
 +        classLoadersRoot.addProperty("global", storage.getGlobalGroup().toString());
++        classLoadersRoot.addProperty("dependency_graph", PaperPluginManagerImpl.getInstance().getInstanceManagerGraph().toString());
 +
 +        JsonArray array = new JsonArray();
 +        classLoadersRoot.add("children", array);
@@ -2767,7 +2769,7 @@ index 0000000000000000000000000000000000000000..29f8845bbad88e88e11e6365a867e372
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8dea6de81eada25591e6194776366ff77c057b30
+index 0000000000000000000000000000000000000000..8be9abfd2142b3ea06a3fc3810b01d1bfe12e94b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 @@ -0,0 +1,182 @@
@@ -2933,7 +2935,7 @@ index 0000000000000000000000000000000000000000..8dea6de81eada25591e6194776366ff7
 +                        Level.WARNING,
 +                        String.format(
 +                            "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated. \"%s\"; please notify the authors %s.",
-+                            plugin.getPluginMeta().getDescription(),
++                            plugin.getPluginMeta().getDisplayName(),
 +                            clazz.getName(),
 +                            method.toGenericString(),
 +                            (warning != null && warning.reason().length() != 0) ? warning.reason() : "Server performance will be affected",
@@ -3157,10 +3159,10 @@ index 0000000000000000000000000000000000000000..1cd7b52b22285c49d98d4d1e482d944d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8a830b74e928bd70aca7fc30207bdf5eae1cf132
+index 0000000000000000000000000000000000000000..5dd268a21882920721c1ff6a8e9dae1869133f79
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -0,0 +1,340 @@
+@@ -0,0 +1,347 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.google.common.base.Preconditions;
@@ -3196,6 +3198,7 @@ index 0000000000000000000000000000000000000000..8a830b74e928bd70aca7fc30207bdf5e
 +import org.bukkit.plugin.PluginManager;
 +import org.bukkit.plugin.UnknownDependencyException;
 +import org.bukkit.plugin.java.JavaPlugin;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +import org.spongepowered.configurate.serialize.SerializationException;
@@ -3500,15 +3503,22 @@ index 0000000000000000000000000000000000000000..8a830b74e928bd70aca7fc30207bdf5e
 +    public boolean hasDependency(String pluginIdentifier) {
 +        return this.getPlugin(pluginIdentifier) != null;
 +    }
++
++    // Debug only
++    @ApiStatus.Internal
++    public MutableGraph<String> getDependencyGraph() {
++        return this.dependencyGraph;
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..793b81bc354f4a001c0d5814b1ad63b00f059bb6
+index 0000000000000000000000000000000000000000..8ed0f78ed534c8ffa10638bac070fc3b8a7342b6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,234 @@
 +package io.papermc.paper.plugin.manager;
 +
++import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContext;
 +import io.papermc.paper.plugin.PermissionManager;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -3734,6 +3744,10 @@ index 0000000000000000000000000000000000000000..793b81bc354f4a001c0d5814b1ad63b0
 +    @Override
 +    public void registerInterface(@NotNull Class<? extends PluginLoader> loader) throws IllegalArgumentException {
 +        throw new UnsupportedOperationException();
++    }
++
++    public MutableGraph<String> getInstanceManagerGraph() {
++        return instanceManager.getDependencyGraph();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/RuntimePluginEntrypointHandler.java b/src/main/java/io/papermc/paper/plugin/manager/RuntimePluginEntrypointHandler.java
