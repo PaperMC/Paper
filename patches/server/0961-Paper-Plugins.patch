@@ -271,7 +271,7 @@ index 0000000000000000000000000000000000000000..6c6c9ec4c2809373309874855c752a8d
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bd8d70bb07ed62d8f250bb7c95ac066ea6fe3272
+index 0000000000000000000000000000000000000000..51225f5d5ee901ae4c8f500f687c3e376268ce5e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
 @@ -0,0 +1,154 @@
@@ -327,8 +327,8 @@ index 0000000000000000000000000000000000000000..bd8d70bb07ed62d8f250bb7c95ac066e
 +        Path parent = Path.of("debug");
 +        Path path = parent.resolve("plugin-info" + FORMATTER.format(LocalDateTime.now()) + ".txt");
 +        try {
-+            Files.createFile(path);
 +            Files.createDirectories(parent);
++            Files.createFile(path);
 +            sender.sendMessage(text("Writing plugin information to " + path, GREEN));
 +
 +            final JsonObject data = this.writeDebug();
@@ -342,7 +342,7 @@ index 0000000000000000000000000000000000000000..bd8d70bb07ed62d8f250bb7c95ac066e
 +            try (PrintStream out = new PrintStream(Files.newOutputStream(path), false, StandardCharsets.UTF_8)) {
 +                out.print(stringWriter);
 +            }
-+            sender.sendMessage(text("Successfully written sync load information!", GREEN));
++            sender.sendMessage(text("Successfully written plugin debug information!", GREEN));
 +        } catch (Throwable e) {
 +            sender.sendMessage(text("Failed to write plugin information! See the console for more info.", RED));
 +            MinecraftServer.LOGGER.warn("Error occurred while dumping plugin info", e);
@@ -3390,7 +3390,7 @@ index 0000000000000000000000000000000000000000..8a830b74e928bd70aca7fc30207bdf5e
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dd6936e06c015b3ea887c6946c9ac10439304581
+index 0000000000000000000000000000000000000000..793b81bc354f4a001c0d5814b1ad63b00f059bb6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 @@ -0,0 +1,229 @@
@@ -3607,7 +3607,7 @@ index 0000000000000000000000000000000000000000..dd6936e06c015b3ea887c6946c9ac104
 +    }
 +
 +    @Override
-+    public void overridePermissionManager(@Nullable Plugin plugin, @Nullable PermissionManager permissionManager) {
++    public void overridePermissionManager(@NotNull Plugin plugin, @Nullable PermissionManager permissionManager) {
 +        this.permissionManager = permissionManager;
 +    }
 +
@@ -3935,10 +3935,10 @@ index 0000000000000000000000000000000000000000..6ba3bcc468c0a60c76d6d0f0243bda66
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e98165cfa519d84c5c74cca03cb38c0447990f25
+index 0000000000000000000000000000000000000000..122dc3aaaf86bc64278a4c4f91b40d90d4658162
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
-@@ -0,0 +1,223 @@
+@@ -0,0 +1,222 @@
 +package io.papermc.paper.plugin.provider.configuration;
 +
 +import com.google.common.collect.ImmutableList;
@@ -4044,11 +4044,10 @@ index 0000000000000000000000000000000000000000..e98165cfa519d84c5c74cca03cb38c04
 +        CommentedConfigurationNode node = loader.load();
 +        PaperPluginMeta pluginConfiguration = node.require(PaperPluginMeta.class);
 +
-+        // TODO: a better way to do this?
-+        if (node.getString("author") != null) {
++        if (!node.node("author").virtual()) {
 +            pluginConfiguration.authors = ImmutableList.<String>builder()
 +                .addAll(pluginConfiguration.authors)
-+                .add(node.getString("author"))
++                .add(node.node("author").getString())
 +                .build();
 +        }
 +
@@ -4810,10 +4809,10 @@ index 0000000000000000000000000000000000000000..6d247819ee842eb054a74711a0e5805a
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/PluginFileType.java b/src/main/java/io/papermc/paper/plugin/provider/type/PluginFileType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4de1633160e03e3160aea2057648ef182eaa2959
+index 0000000000000000000000000000000000000000..22c25dc6fdfd336f5074fa52c3a4e8128d433ccc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/PluginFileType.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,77 @@
 +package io.papermc.paper.plugin.provider.type;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -4840,14 +4839,13 @@ index 0000000000000000000000000000000000000000..4de1633160e03e3160aea2057648ef18
 +    public static final PluginFileType<PaperPluginParent, PaperPluginMeta> PAPER = new PluginFileType<>("paper-plugin.yml", PaperPluginParent.FACTORY) {
 +        @Override
 +        protected void register(EntrypointHandler entrypointHandler, PaperPluginParent parent) {
++            PaperPluginParent.PaperBootstrapProvider bootstrapPluginProvider = null;
 +            if (parent.shouldCreateBootstrap()) {
-+                PaperPluginParent.PaperBootstrapProvider bootstrapPluginProvider = parent.createBootstrapProvider();
-+
++                bootstrapPluginProvider = parent.createBootstrapProvider();
 +                entrypointHandler.register(Entrypoint.BOOTSTRAPPER, bootstrapPluginProvider);
-+                entrypointHandler.register(Entrypoint.PLUGIN, parent.createPluginProvider(bootstrapPluginProvider));
-+            } else {
-+                entrypointHandler.register(Entrypoint.PLUGIN, parent.createPluginProvider());
 +            }
++
++            entrypointHandler.register(Entrypoint.PLUGIN, parent.createPluginProvider(bootstrapPluginProvider));
 +        }
 +    };
 +    public static final PluginFileType<SpigotPluginProvider, PluginDescriptionFile> SPIGOT = new PluginFileType<>("plugin.yml", SpigotPluginProvider.FACTORY) {
@@ -4921,10 +4919,10 @@ index 0000000000000000000000000000000000000000..32f230d66f6953520b59ccbf3079c5a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2baae124edae65821c887a1d6823af1e660491c0
+index 0000000000000000000000000000000000000000..b0794ae4f971026f01be06e2e1a02e58775aca08
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-@@ -0,0 +1,227 @@
+@@ -0,0 +1,223 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
@@ -4970,10 +4968,6 @@ index 0000000000000000000000000000000000000000..2baae124edae65821c887a1d6823af1e
 +
 +    public PaperBootstrapProvider createBootstrapProvider() {
 +        return new PaperBootstrapProvider();
-+    }
-+
-+    public PaperServerPluginProvider createPluginProvider() {
-+        return new PaperServerPluginProvider(null);
 +    }
 +
 +    public PaperServerPluginProvider createPluginProvider(PaperBootstrapProvider provider) {
@@ -5930,18 +5924,10 @@ index 31faf2d6492696f7d0c99a48edbc0d6f15db1209..a821cb33fbc29109aec68f9d6a0eb2ef
              Bootstrap.validate();
              Util.startTimerHackThread();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..f76972e6c2a45f47bb0c9f7af26074be65d3a0a9 100644
+index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..4b5505b835d81b74311eef62993e9c70789a1bff 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
- import java.nio.ByteBuffer;
- import java.nio.charset.StandardCharsets;
- import java.util.ArrayList;
-+import java.util.Arrays;
- import java.util.Base64;
- import java.util.Collections;
- import java.util.HashMap;
-@@ -270,7 +271,8 @@ public final class CraftServer implements Server {
+@@ -270,7 +270,8 @@ public final class CraftServer implements Server {
      private final CraftCommandMap commandMap = new CraftCommandMap(this);
      private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
      private final StandardMessenger messenger = new StandardMessenger();
@@ -5951,7 +5937,7 @@ index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..f76972e6c2a45f47bb0c9f7af26074be
      private final StructureManager structureManager;
      protected final DedicatedServer console;
      protected final DedicatedPlayerList playerList;
-@@ -372,7 +374,7 @@ public final class CraftServer implements Server {
+@@ -372,7 +373,7 @@ public final class CraftServer implements Server {
          this.saveCommandsConfig();
          this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
          this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
@@ -5960,7 +5946,7 @@ index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..f76972e6c2a45f47bb0c9f7af26074be
          this.overrideSpawnLimits();
          console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
          this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-@@ -424,29 +426,7 @@ public final class CraftServer implements Server {
+@@ -424,29 +425,7 @@ public final class CraftServer implements Server {
      }
  
      public void loadPlugins() {
@@ -5991,7 +5977,7 @@ index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..f76972e6c2a45f47bb0c9f7af26074be
      }
  
      // Paper start
-@@ -565,15 +545,17 @@ public final class CraftServer implements Server {
+@@ -565,15 +544,17 @@ public final class CraftServer implements Server {
      private void enablePlugin(Plugin plugin) {
          try {
              List<Permission> perms = plugin.getDescription().getPermissions();
@@ -6015,15 +6001,6 @@ index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..f76972e6c2a45f47bb0c9f7af26074be
  
              this.pluginManager.enablePlugin(plugin);
          } catch (Throwable ex) {
-@@ -2829,7 +2811,7 @@ public final class CraftServer implements Server {
- 
-     @Override
-     public void reloadPermissions() {
--        pluginManager.clearPermissions();
-+        this.pluginManager.clearPermissions();
-         if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions();
-         for (Plugin plugin : pluginManager.getPlugins()) {
-             for (Permission perm : plugin.getDescription().getPermissions()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
 index 909b2c98e7a9117d2f737245e4661792ffafb744..d96399e9bf1a58db5a4a22e58abb99e7660e0694 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
