@@ -3,7 +3,6 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,11 +30,46 @@ public final class NamespacedKey {
      */
     public static final String BUKKIT = "bukkit";
     //
-    private static final Pattern VALID_NAMESPACE = Pattern.compile("[a-z0-9._-]+");
-    private static final Pattern VALID_KEY = Pattern.compile("[a-z0-9/._-]+");
-    //
     private final String namespace;
     private final String key;
+
+    private static boolean isValidNamespaceChar(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
+    }
+
+    private static boolean isValidKeyChar(char c) {
+        return isValidNamespaceChar(c) || c == '/';
+    }
+
+    private static boolean isValidNamespace(String namespace) {
+        int len = namespace.length();
+        if (len == 0) {
+            return false;
+        }
+
+        for (int i = 0; i < len; i++) {
+            if (!isValidNamespaceChar(namespace.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean isValidKey(String key) {
+        int len = key.length();
+        if (len == 0) {
+            return false;
+        }
+
+        for (int i = 0; i < len; i++) {
+            if (!isValidKeyChar(key.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /**
      * Create a key in a specific namespace.
@@ -46,8 +80,8 @@ public final class NamespacedKey {
      */
     @Deprecated
     public NamespacedKey(@NotNull String namespace, @NotNull String key) {
-        Preconditions.checkArgument(namespace != null && VALID_NAMESPACE.matcher(namespace).matches(), "Invalid namespace. Must be [a-z0-9._-]: %s", namespace);
-        Preconditions.checkArgument(key != null && VALID_KEY.matcher(key).matches(), "Invalid key. Must be [a-z0-9/._-]: %s", key);
+        Preconditions.checkArgument(namespace != null && isValidNamespace(namespace), "Invalid namespace. Must be [a-z0-9._-]: %s", namespace);
+        Preconditions.checkArgument(key != null && isValidKey(key), "Invalid key. Must be [a-z0-9/._-]: %s", key);
 
         this.namespace = namespace;
         this.key = key;
@@ -76,8 +110,8 @@ public final class NamespacedKey {
         this.key = key.toLowerCase(Locale.ROOT);
 
         // Check validity after normalization
-        Preconditions.checkArgument(VALID_NAMESPACE.matcher(this.namespace).matches(), "Invalid namespace. Must be [a-z0-9._-]: %s", this.namespace);
-        Preconditions.checkArgument(VALID_KEY.matcher(this.key).matches(), "Invalid key. Must be [a-z0-9/._-]: %s", this.key);
+        Preconditions.checkArgument(isValidNamespace(this.namespace), "Invalid namespace. Must be [a-z0-9._-]: %s", this.namespace);
+        Preconditions.checkArgument(isValidKey(this.key), "Invalid key. Must be [a-z0-9/._-]: %s", this.key);
 
         String string = toString();
         Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters (%s)", string);
@@ -177,12 +211,12 @@ public final class NamespacedKey {
         String key = (components.length == 2) ? components[1] : "";
         if (components.length == 1) {
             String value = components[0];
-            if (value.isEmpty() || !VALID_KEY.matcher(value).matches()) {
+            if (value.isEmpty() || !isValidKey(value)) {
                 return null;
             }
 
             return (defaultNamespace != null) ? new NamespacedKey(defaultNamespace, value) : minecraft(value);
-        } else if (components.length == 2 && !VALID_KEY.matcher(key).matches()) {
+        } else if (components.length == 2 && !isValidKey(key)) {
             return null;
         }
 
@@ -191,7 +225,7 @@ public final class NamespacedKey {
             return (defaultNamespace != null) ? new NamespacedKey(defaultNamespace, key) : minecraft(key);
         }
 
-        if (!VALID_KEY.matcher(namespace).matches()) {
+        if (!isValidNamespace(namespace)) {
             return null;
         }
 
