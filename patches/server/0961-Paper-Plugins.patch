@@ -527,14 +527,15 @@ index 0000000000000000000000000000000000000000..39e503f52684e928c61c6d27bf61727a
 +    }
 +
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java
+diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..659156403911a50f12f948fcdfa943c479939472
+index 0000000000000000000000000000000000000000..8249a7024537fccd99735b92abb1368e6647b5ae
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java
-@@ -0,0 +1,37 @@
++++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.plugin.bootstrap;
 +
++import io.papermc.paper.plugin.PluginInitializerManager;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import org.jetbrains.annotations.NotNull;
@@ -542,17 +543,24 @@ index 0000000000000000000000000000000000000000..659156403911a50f12f948fcdfa943c4
 +import java.nio.file.Path;
 +import java.util.logging.Logger;
 +
-+public record PluginBootstrapContextImpl(PluginProvider<?> provider, Path dataFolder) implements PluginBootstrapContext {
++public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
++                                        Logger logger) implements PluginProviderContext {
 +
-+    public static PluginBootstrapContextImpl of(PluginProvider<?> provider, Path pluginFolder) {
++    public static PluginProviderContextImpl of(PluginMeta config, Logger logger) {
++        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getDisplayName());
++
++        return new PluginProviderContextImpl(config, dataFolder, logger);
++    }
++
++    public static PluginProviderContextImpl of(PluginProvider<?> provider, Path pluginFolder) {
 +        Path dataFolder = pluginFolder.resolve(provider.getMeta().getDisplayName());
 +
-+        return new PluginBootstrapContextImpl(provider, dataFolder);
++        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger());
 +    }
 +
 +    @Override
 +    public @NotNull PluginMeta getConfiguration() {
-+        return this.provider.getMeta();
++        return this.config;
 +    }
 +
 +    @Override
@@ -561,13 +569,8 @@ index 0000000000000000000000000000000000000000..659156403911a50f12f948fcdfa943c4
 +    }
 +
 +    @Override
-+    public @NotNull Path getConfigurationFile() {
-+        return this.dataFolder.resolve("config.yml");
-+    }
-+
-+    @Override
 +    public @NotNull Logger getLogger() {
-+        return this.provider.getLogger();
++        return this.logger;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/Entrypoint.java b/src/main/java/io/papermc/paper/plugin/entrypoint/Entrypoint.java
@@ -2560,12 +2563,13 @@ index 0000000000000000000000000000000000000000..7e7cffb5b28dc4f4a10590c77752998e
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..88046c8f2561228d0a8476409f8304bbee019873
+index 0000000000000000000000000000000000000000..d49dd7d17ce7ac17efb19b33de163015787213f7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,64 @@
 +package io.papermc.paper.plugin.loader;
 +
++import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 +import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
 +import io.papermc.paper.plugin.loader.library.PaperLibraryStore;
 +import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
@@ -2585,6 +2589,17 @@ index 0000000000000000000000000000000000000000..88046c8f2561228d0a8476409f8304bb
 +public class PaperClasspathBuilder implements PluginClasspathBuilder {
 +
 +    private final List<ClassPathLibrary> libraries = new ArrayList<>();
++
++    private final PluginProviderContext context;
++
++    public PaperClasspathBuilder(PluginProviderContext context) {
++        this.context = context;
++    }
++
++    @Override
++    public @NotNull PluginProviderContext getContext() {
++        return this.context;
++    }
 +
 +    @Override
 +    public @NotNull PluginClasspathBuilder addLibrary(@NotNull ClassPathLibrary classPathLibrary) {
@@ -3135,10 +3150,10 @@ index 0000000000000000000000000000000000000000..1cd7b52b22285c49d98d4d1e482d944d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e274f5d44
+index 0000000000000000000000000000000000000000..4e2f202596623ac7e508a2d8546de434138f3dbe
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -0,0 +1,304 @@
+@@ -0,0 +1,302 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.google.common.base.Preconditions;
@@ -3441,8 +3456,6 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +    @ApiStatus.Internal
 +    public MutableGraph<String> getDependencyGraph() {
 +        return this.dependencyGraph;
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..7ebd0a682e51308d3b8fefae1789bfcbe385fc00
@@ -4918,17 +4931,18 @@ index 0000000000000000000000000000000000000000..32f230d66f6953520b59ccbf3079c5a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..148d0b175cf77be1bbbdb7b1191c12ed9de91b7a
+index 0000000000000000000000000000000000000000..46ee1b7f4b4c509932c68a4152e1d8445811d3b8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-@@ -0,0 +1,223 @@
+@@ -0,0 +1,226 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
-+import io.papermc.paper.plugin.bootstrap.PluginBootstrapContextImpl;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
 +import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.ProviderStatus;
@@ -4951,14 +4965,16 @@ index 0000000000000000000000000000000000000000..148d0b175cf77be1bbbdb7b1191c12ed
 +    private final JarFile jarFile;
 +    private final PaperPluginMeta description;
 +    private final PaperPluginClassLoader classLoader;
++    private final PluginProviderContext context;
 +    private final Logger logger;
 +
-+    public PaperPluginParent(Path path, JarFile jarFile, PaperPluginMeta description, PaperPluginClassLoader classLoader, Logger logger) {
++    public PaperPluginParent(Path path, JarFile jarFile, PaperPluginMeta description, PaperPluginClassLoader classLoader, PluginProviderContext context) {
 +        this.path = path;
 +        this.jarFile = jarFile;
 +        this.description = description;
 +        this.classLoader = classLoader;
-+        this.logger = logger;
++        this.context = context;
++        this.logger = context.getLogger();
 +    }
 +
 +    public boolean shouldCreateBootstrap() {
@@ -5068,7 +5084,7 @@ index 0000000000000000000000000000000000000000..148d0b175cf77be1bbbdb7b1191c12ed
 +                if (bootstrap == null) {
 +                    plugin = ProviderUtil.loadClass(PaperPluginParent.this.description.getMainClass(), JavaPlugin.class, PaperPluginParent.this.classLoader);
 +                } else {
-+                    plugin = bootstrap.createPlugin(PluginBootstrapContextImpl.of(this, Bukkit.getPluginsFolder().toPath()));
++                    plugin = bootstrap.createPlugin(PaperPluginParent.this.context);
 +                }
 +
 +                // Don't allow plugins to load plugins other than the one defined in main. This restriction might not be necessary.
@@ -5147,13 +5163,15 @@ index 0000000000000000000000000000000000000000..148d0b175cf77be1bbbdb7b1191c12ed
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c140058b7e161121804296e3a5081df56c057e89
+index 0000000000000000000000000000000000000000..db343a2f482ac375078610f0875692861f412ee2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,54 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
 +import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
 +import io.papermc.paper.plugin.entrypoint.classloader.PaperSimplePluginClassLoader;
 +import io.papermc.paper.plugin.loader.PaperClasspathBuilder;
@@ -5174,7 +5192,10 @@ index 0000000000000000000000000000000000000000..c140058b7e161121804296e3a5081df5
 +
 +    @Override
 +    public PaperPluginParent build(JarFile file, PaperPluginMeta configuration, Path source) throws Exception {
-+        PaperClasspathBuilder builder = new PaperClasspathBuilder();
++        Logger logger = PaperPluginLogger.getLogger(configuration);
++        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger);
++
++        PaperClasspathBuilder builder = new PaperClasspathBuilder(context);
 +
 +        if (configuration.getLoader() != null) {
 +            try (
@@ -5187,11 +5208,8 @@ index 0000000000000000000000000000000000000000..c140058b7e161121804296e3a5081df5
 +            }
 +        }
 +
-+
-+        Logger logger = PaperPluginLogger.getLogger(configuration);
 +        PaperPluginClassLoader classLoader = builder.buildClassLoader(logger, source, file, configuration);
-+
-+        return new PaperPluginParent(source, file, configuration, classLoader, logger);
++        return new PaperPluginParent(source, file, configuration, classLoader, context);
 +    }
 +
 +    @Override
@@ -5434,7 +5452,7 @@ index 0000000000000000000000000000000000000000..14ed05945ba5bfeb2b539d4786278b0e
 +
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d3caebefcfe4f2f0d45b59759d7dadb4fc001e57
+index 0000000000000000000000000000000000000000..3a1ee641f4e9bdf0c82ea543218752e17ef0afbe
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 @@ -0,0 +1,113 @@
@@ -5443,8 +5461,8 @@ index 0000000000000000000000000000000000000000..d3caebefcfe4f2f0d45b59759d7dadb4
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.PluginInitializerManager;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
-+import io.papermc.paper.plugin.bootstrap.PluginBootstrapContext;
-+import io.papermc.paper.plugin.bootstrap.PluginBootstrapContextImpl;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
 +import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
@@ -5476,7 +5494,7 @@ index 0000000000000000000000000000000000000000..d3caebefcfe4f2f0d45b59759d7dadb4
 +            @Override
 +            public boolean load(PluginProvider<PluginBootstrap> provider, PluginBootstrap provided) {
 +                try {
-+                    PluginBootstrapContext context = PluginBootstrapContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
++                    PluginProviderContext context = PluginProviderContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
 +                    provided.bootstrap(context);
 +                    return true;
 +                } catch (Exception e) {

@@ -1,7 +1,7 @@
 package io.papermc.testplugin;
 
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
-import io.papermc.paper.plugin.bootstrap.PluginBootstrapContext;
+import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 import io.papermc.paper.registry.RegistryAccess;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +12,7 @@ public class TestPluginBootstrap implements PluginBootstrap {
     public String secret;
 
     @Override
-    public void bootstrap(@NotNull PluginBootstrapContext context) {
+    public void bootstrap(@NotNull PluginProviderContext context) {
         Logger logger = context.getSLF4JLogger();
 
         logger.info("Hello from Initializer! :) This runs before the server start, that's cool!");
@@ -25,7 +25,7 @@ public class TestPluginBootstrap implements PluginBootstrap {
     }
 
     @Override
-    public @NotNull JavaPlugin createPlugin(@NotNull PluginBootstrapContext context) {
+    public @NotNull JavaPlugin createPlugin(@NotNull PluginProviderContext context) {
         return new TestPlugin(this.secret);
     }
 }
