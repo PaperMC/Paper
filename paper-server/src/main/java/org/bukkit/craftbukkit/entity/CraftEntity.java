@@ -1179,6 +1179,33 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
     // Paper end - entity powdered snow API
 
+    // Paper start - entity body yaw API
+    @Override
+    public double getX() {
+        return this.entity.getX();
+    }
+
+    @Override
+    public double getY() {
+        return this.entity.getY();
+    }
+
+    @Override
+    public double getZ() {
+        return this.entity.getZ();
+    }
+
+    @Override
+    public float getPitch() {
+        return this.entity.getXRot();
+    }
+
+    @Override
+    public float getYaw() {
+        return this.entity.getBukkitYaw();
+    }
+    // Paper end - entity body yaw API
+
     // Paper start - missing entity api
     @Override
     public boolean isInvisible() {  // Paper - moved up from LivingEntity
