@@ -1424,4 +1424,22 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     void damageItemStack(org.bukkit.inventory.@NotNull EquipmentSlot slot, int amount);
     // Paper end - ItemStack damage API
+
+    // Paper start - body yaw API
+    /**
+     * Gets entity body yaw
+     *
+     * @return entity body yaw
+     * @see Location#getYaw()
+     */
+    float getBodyYaw();
+
+    /**
+     * Sets entity body yaw
+     *
+     * @param bodyYaw new entity body yaw
+     * @see Location#setYaw(float)
+     */
+    void setBodyYaw(float bodyYaw);
+    // Paper end - body yaw API
 }

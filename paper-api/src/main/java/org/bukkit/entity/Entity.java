@@ -1041,6 +1041,43 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return true if in powdered snow.
      */
     boolean isInPowderedSnow();
+
+    /**
+     * Gets the x-coordinate of this entity
+     *
+     * @return x-coordinate
+     */
+    double getX();
+
+    /**
+     * Gets the y-coordinate of this entity
+     *
+     * @return y-coordinate
+     */
+    double getY();
+
+    /**
+     * Gets the z-coordinate of this entity
+     *
+     * @return z-coordinate
+     */
+    double getZ();
+
+    /**
+     * Gets this entity's pitch
+     *
+     * @see Location#getPitch()
+     * @return the entity's pitch
+     */
+    float getPitch();
+
+    /**
+     * Gets this entity's yaw
+     *
+     * @see Location#getYaw()
+     * @return the entity's yaw
+     */
+    float getYaw();
     // Paper end
 
     // Paper start - Collision API
