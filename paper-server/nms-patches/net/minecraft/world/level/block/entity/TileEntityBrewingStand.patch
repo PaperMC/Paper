@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityBrewingStand.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityBrewingStand.java
-@@ -24,6 +24,19 @@
+@@ -24,6 +24,20 @@
  import net.minecraft.world.level.block.BlockBrewingStand;
  import net.minecraft.world.level.block.state.IBlockData;
  
@@ -12,6 +12,7 @@
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.block.BrewingStartEvent;
 +import org.bukkit.event.inventory.BrewEvent;
 +import org.bukkit.event.inventory.BrewingStandFuelEvent;
 +import org.bukkit.inventory.InventoryHolder;
@@ -20,7 +21,7 @@
  public class TileEntityBrewingStand extends TileEntityContainer implements IWorldInventory {
  
      private static final int INGREDIENT_SLOT = 3;
-@@ -41,6 +54,36 @@
+@@ -41,6 +55,36 @@
      private Item ingredient;
      public int fuel;
      protected final IContainerProperties dataAccess;
@@ -57,7 +58,7 @@
  
      public TileEntityBrewingStand(BlockPosition blockposition, IBlockData iblockdata) {
          super(TileEntityTypes.BREWING_STAND, blockposition, iblockdata);
-@@ -108,8 +151,19 @@
+@@ -108,8 +152,19 @@
          ItemStack itemstack = (ItemStack) tileentitybrewingstand.items.get(4);
  
          if (tileentitybrewingstand.fuel <= 0 && itemstack.is(Items.BLAZE_POWDER)) {
@@ -79,7 +80,7 @@
              setChanged(world, blockposition, iblockdata);
          }
  
-@@ -117,12 +171,17 @@
+@@ -117,12 +172,17 @@
          boolean flag1 = tileentitybrewingstand.brewTime > 0;
          ItemStack itemstack1 = (ItemStack) tileentitybrewingstand.items.get(3);
  
@@ -100,7 +101,20 @@
                  setChanged(world, blockposition, iblockdata);
              } else if (!flag || !itemstack1.is(tileentitybrewingstand.ingredient)) {
                  tileentitybrewingstand.brewTime = 0;
-@@ -186,11 +245,33 @@
+@@ -130,7 +190,11 @@
+             }
+         } else if (flag && tileentitybrewingstand.fuel > 0) {
+             --tileentitybrewingstand.fuel;
+-            tileentitybrewingstand.brewTime = 400;
++            // CraftBukkit start
++            BrewingStartEvent event = new BrewingStartEvent(CraftBlock.at(world, blockposition), CraftItemStack.asCraftMirror(itemstack1), 400);
++            world.getCraftServer().getPluginManager().callEvent(event);
++            tileentitybrewingstand.brewTime = event.getTotalBrewTime(); // 400 -> event.getTotalBrewTime()
++            // CraftBukkit end
+             tileentitybrewingstand.ingredient = itemstack1.getItem();
+             setChanged(world, blockposition, iblockdata);
+         }
+@@ -186,11 +250,33 @@
          }
      }
  

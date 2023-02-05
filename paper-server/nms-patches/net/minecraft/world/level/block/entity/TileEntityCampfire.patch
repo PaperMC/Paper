@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityCampfire.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityCampfire.java
-@@ -25,6 +25,12 @@
+@@ -25,6 +25,14 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.level.gameevent.GameEvent;
  
@@ -8,12 +8,14 @@
 +import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.event.block.BlockCookEvent;
++import org.bukkit.event.block.CampfireStartEvent;
++import org.bukkit.inventory.CampfireRecipe;
 +// CraftBukkit end
 +
  public class TileEntityCampfire extends TileEntity implements Clearable {
  
      private static final int BURN_COOL_SPEED = 2;
-@@ -59,6 +65,20 @@
+@@ -59,6 +67,20 @@
                      }).orElse(itemstack);
  
                      if (itemstack1.isItemEnabled(world.enabledFeatures())) {
@@ -34,3 +36,16 @@
                          InventoryUtils.dropItemStack(world, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), itemstack1);
                          tileentitycampfire.items.set(i, ItemStack.EMPTY);
                          world.sendBlockUpdated(blockposition, iblockdata, iblockdata, 3);
+@@ -171,7 +193,11 @@
+             ItemStack itemstack1 = (ItemStack) this.items.get(j);
+ 
+             if (itemstack1.isEmpty()) {
+-                this.cookingTime[j] = i;
++                // CraftBukkit start
++                CampfireStartEvent event = new CampfireStartEvent(CraftBlock.at(this.level,this.worldPosition), CraftItemStack.asCraftMirror(itemstack), (CampfireRecipe) getCookableRecipe(itemstack).get().toBukkitRecipe());
++                this.level.getCraftServer().getPluginManager().callEvent(event);
++                this.cookingTime[j] = event.getTotalCookTime(); // i -> event.getTotalCookTime()
++                // CraftBukkit end
+                 this.cookingProgress[j] = 0;
+                 this.items.set(j, itemstack.split(1));
+                 this.level.gameEvent(GameEvent.BLOCK_CHANGE, this.getBlockPos(), GameEvent.a.of(entity, this.getBlockState()));
