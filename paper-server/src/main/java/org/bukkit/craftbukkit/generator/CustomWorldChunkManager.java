@@ -46,7 +46,7 @@ public class CustomWorldChunkManager extends WorldChunkManager {
 
     @Override
     public Holder<BiomeBase> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
-        Biome biome = biomeProvider.getBiome(worldInfo, x << 2, y << 2, z << 2);
+        Biome biome = biomeProvider.getBiome(worldInfo, x << 2, y << 2, z << 2, CraftBiomeParameterPoint.createBiomeParameterPoint(sampler, sampler.sample(x, y, z)));
         Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
 
         return CraftBlock.biomeToBiomeBase(registry, biome);
