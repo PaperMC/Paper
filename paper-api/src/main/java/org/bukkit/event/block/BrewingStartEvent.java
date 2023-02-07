@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 @org.jetbrains.annotations.ApiStatus.Experimental // Paper
 public class BrewingStartEvent extends InventoryBlockStartEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    // Paper - remove HandlerList
     private int brewingTime;
 
     public BrewingStartEvent(@NotNull final Block furnace, @NotNull ItemStack source, int brewingTime) {
@@ -37,14 +37,5 @@ public class BrewingStartEvent extends InventoryBlockStartEvent {
         this.brewingTime = brewTime;
     }
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
+    // Paper - remove HandlerList
 }

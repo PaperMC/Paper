@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * {@link org.bukkit.block.Smoker}, and {@link org.bukkit.block.BlastFurnace}.
  */
 public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
-    private static final HandlerList handlers = new HandlerList();
+    // Paper - remove HandlerList
     private final CookingRecipe<?> recipe;
     private int totalCookTime;
 
@@ -59,14 +59,5 @@ public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
         this.totalCookTime = cookTime;
     }
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
+    // Paper - remove HandlerList
 }
