@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Tue, 1 Nov 2022 14:59:40 +0100
+Subject: [PATCH] Implement properly the custom bukkit damage cause
+
+
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffect.java b/src/main/java/net/minecraft/world/effect/MobEffect.java
+index e708b2c987fac150c22b3367cec2e3e2bcb9914c..75d8dd109705697608460ffb3c581be56f65192c 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffect.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffect.java
+@@ -65,7 +65,11 @@ public class MobEffect {
+             }
+         } else if (this == MobEffects.POISON) {
+             if (entity.getHealth() > 1.0F) {
+-                entity.hurt(CraftEventFactory.POISON, 1.0F);  // CraftBukkit - DamageSource.MAGIC -> CraftEventFactory.POISON
++                // Paper start
++                entity.customDamageSource = CraftEventFactory.POISON;
++                entity.hurt(DamageSource.MAGIC, 1.0F);  // CraftBukkit - DamageSource.MAGIC -> CraftEventFactory.POISON // Paper revert
++                entity.customDamageSource = null;
++                // Paper end
+             }
+         } else if (this == MobEffects.WITHER) {
+             entity.hurt(DamageSource.WITHER, 1.0F);
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 1eaab1f6923e6aa34b643293347348e5cc19af3c..7580699136eb12a2dd69fb3b24806088fa3a7794 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -398,6 +398,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     private UUID originWorld;
+     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+     public boolean collidingWithWorldBorder; // Paper
++    @org.jetbrains.annotations.Nullable
++    public DamageSource customDamageSource; // Paper
+ 
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+diff --git a/src/main/java/net/minecraft/world/entity/animal/SnowGolem.java b/src/main/java/net/minecraft/world/entity/animal/SnowGolem.java
+index 35e53663e4a6c4d56ec4577d08e7b040cc0c720f..f8076e747312316b94492db4bd1164fe437da64c 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/SnowGolem.java
++++ b/src/main/java/net/minecraft/world/entity/animal/SnowGolem.java
+@@ -106,7 +106,11 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
+             Biome biomebase = (Biome) this.level.getBiome(blockposition).value();
+ 
+             if (biomebase.shouldSnowGolemBurn(blockposition)) {
+-                this.hurt(CraftEventFactory.MELTING, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
++                // Paper start
++                this.customDamageSource = CraftEventFactory.MELTING;
++                this.hurt(DamageSource.ON_FIRE, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING // Paper revert
++                this.customDamageSource = null;
++                // Paper end
+             }
+ 
+             if (!this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 6a52ae70b5f7fd9953b6b2605cae722f606e7fec..b276a4e676c3f445732ddeed46781988c92b7f73 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1092,6 +1092,11 @@ public class CraftEventFactory {
+         }
+ 
+         DamageCause cause = null;
++        // Paper start - more future proof bukkit custom damage cause
++        if (entity.customDamageSource != null) {
++            source = entity.customDamageSource;
++        }
++        // Paper end
+         if (source == DamageSource.IN_FIRE) {
+             cause = DamageCause.FIRE;
+         } else if (source == DamageSource.STARVE) {
