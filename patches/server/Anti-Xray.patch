@@ -428,7 +428,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        bitStorageWriter.setBuffer(chunkPacketInfoAntiXray.getBuffer());
 +        int numberOfBlocks = presetBlockStateBits.length;
 +        // Keep the lambda expressions as simple as possible. They are used very frequently.
-+        IntSupplier random = numberOfBlocks == 1 ? (() -> 0) : new IntSupplier() {
++        LayeredIntSupplier random = numberOfBlocks == 1 ? (() -> 0) : engineMode == EngineMode.OBFUSCATE_LAYER ? new LayeredIntSupplier() {
++            // engine-mode: 3
++            private int state;
++            private int next;
++
++            {
++                while ((state = ThreadLocalRandom.current().nextInt()) == 0) ;
++            }
++
++            @Override
++            public void nextLayer() {
++                // https://en.wikipedia.org/wiki/Xorshift
++                state ^= state << 13;
++                state ^= state >>> 17;
++                state ^= state << 5;
++                // https://www.pcg-random.org/posts/bounded-rands.html
++                next = (int) ((Integer.toUnsignedLong(state) * numberOfBlocks) >>> 32);
++            }
++
++            @Override
++            public int getAsInt() {
++                return next;
++            }
++        } : new LayeredIntSupplier() {
++            // engine-mode: 2
 +            private int state;
 +
 +            {
@@ -509,6 +533,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    current = next;
 +                    next = nextNext;
 +                    nextNext = temp;
++                    random.nextLayer();
 +                    obfuscateLayer(y, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                }
 +
@@ -534,6 +559,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        // There is nothing to read anymore
 +                        bitStorageReader.setBits(0);
 +                        solid[0] = true;
++                        random.nextLayer();
 +                        obfuscateLayer(15, bitStorageReader, bitStorageWriter, solid, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                    }
 +                } else {
@@ -546,6 +572,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    current = next;
 +                    next = nextNext;
 +                    nextNext = temp;
++                    random.nextLayer();
 +                    obfuscateLayer(15, bitStorageReader, bitStorageWriter, solidTemp, obfuscateTemp, presetBlockStateBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                }
 +
@@ -836,6 +863,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        if (blockState != null && obfuscateGlobal[GLOBAL_BLOCKSTATE_PALETTE.idFor(blockState)]) {
 +            ((ServerLevel) level).getChunkSource().blockChanged(blockPos);
++        }
++    }
++
++    @FunctionalInterface
++    private interface LayeredIntSupplier extends IntSupplier {
++        default void nextLayer() {
++
 +        }
 +    }
 +}
