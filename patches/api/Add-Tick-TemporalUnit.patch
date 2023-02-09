@@ -16,6 +16,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.time.Duration;
++import java.time.temporal.ChronoUnit;
 +import java.time.temporal.Temporal;
 +import java.time.temporal.TemporalUnit;
 +import java.util.Objects;
@@ -68,7 +69,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    public int fromDuration(@NotNull Duration duration) {
 +        Objects.requireNonNull(duration, "duration cannot be null");
-+        return Math.toIntExact(Math.floorDiv(duration.toMillis(), INSTANCE.milliseconds));
++        return Math.toIntExact(Math.floorDiv(duration.toMillis(), this.milliseconds));
 +    }
 +
 +    @Override
@@ -96,12 +97,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @SuppressWarnings("unchecked") // following ChronoUnit#addTo
 +    @Override
 +    public <R extends Temporal> @NotNull R addTo(@NotNull R temporal, long amount) {
-+        return (R) temporal.plus(amount, this);
++        return (R) temporal.plus(getDuration().multipliedBy(amount));
 +    }
 +
 +    @Override
 +    public long between(@NotNull Temporal start, @NotNull Temporal end) {
-+        return start.until(end, this);
++        return start.until(end, ChronoUnit.MILLIS) / this.milliseconds;
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/util/TickTest.java b/src/test/java/io/papermc/paper/util/TickTest.java
@@ -113,6 +114,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.util;
 +
 +import java.time.Duration;
++import java.time.Instant;
++import java.time.temporal.ChronoUnit;
++
 +import org.junit.Test;
 +
 +import static org.junit.Assert.assertEquals;
@@ -131,5 +135,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        assertEquals(0, Tick.tick().fromDuration(Duration.ofMillis(10)));
 +        assertEquals(1, Tick.tick().fromDuration(Duration.ofMillis(60)));
 +        assertEquals(2, Tick.tick().fromDuration(Duration.ofMillis(100)));
++    }
++
++    @Test
++    public void testAddTickToInstant() {
++        Instant now = Instant.now();
++        assertEquals(now, now.plus(0, Tick.tick()));
++        assertEquals(now.plus(50, ChronoUnit.MILLIS), now.plus(1, Tick.tick()));
++        assertEquals(now.plus(100, ChronoUnit.MILLIS), now.plus(2, Tick.tick()));
++        assertEquals(now.plus(150, ChronoUnit.MILLIS), now.plus(3, Tick.tick()));
++    }
++
++    @Test
++    public void testTicksBetweenInstants() {
++        Instant now = Instant.now();
++        assertEquals(0, now.until(now.plus(20, ChronoUnit.MILLIS), Tick.tick()));
++        assertEquals(1, now.until(now.plus(50, ChronoUnit.MILLIS), Tick.tick()));
++        assertEquals(1, now.until(now.plus(60, ChronoUnit.MILLIS), Tick.tick()));
++        assertEquals(2, now.until(now.plus(100, ChronoUnit.MILLIS), Tick.tick()));
 +    }
 +}
