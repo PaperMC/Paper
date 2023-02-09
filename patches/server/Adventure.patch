@@ -2270,6 +2270,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     }
+ 
+     public void sendPlayerChatMessage(PlayerChatMessage message, ChatType.Bound params) {
++        // Paper start
++        if (!this.getCraftPlayer().canSee(message.link().sender())) {
++            this.sendDisguisedChatMessage(message.decoratedContent(), params);
++            return;
++        }
++        // Paper end
+         this.send(new ClientboundPlayerChatPacket(message.link().sender(), message.link().index(), message.signature(), message.signedBody().pack(this.messageSignatureCache), message.unsignedContent(), message.filterMask(), params.toNetwork(this.player.level.registryAccess())));
+         this.addPendingMessage(message);
+     }
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  return;
              }
  
@@ -3458,6 +3471,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return !this.hiddenEntities.containsKey(entity.getUniqueId());
+     }
+ 
++    // Paper start
++    public boolean canSee(UUID entityUUID) {
++        return !this.hiddenEntities.containsKey(entityUUID);
++    }
++    // Paper end
++
+     @Override
+     public Map<String, Object> serialize() {
+         Map<String, Object> result = new LinkedHashMap<String, Object>();
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
