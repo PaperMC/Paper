@@ -366,6 +366,15 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
+     * Check whether or not each component of this vector is equal to 0.
+     *
+     * @return true if equal to zero, false if at least one component is non-zero
+     */
+    public boolean isZero() {
+        return x == 0 && y == 0 && z == 0;
+    }
+
+    /**
      * Converts each component of value <code>-0.0</code> to <code>0.0</code>.
      *
      * @return This vector.

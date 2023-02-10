@@ -122,4 +122,14 @@ public class VectorTest {
 
         assertTrue(Double.isFinite(a.angle(b)));
     }
+
+    @Test
+    public void testIsZero() {
+        assertTrue(new Vector().isZero());
+        assertTrue(new Vector(0, 0, 0).isZero());
+
+        Vector vector = new Vector(1, 2, 3);
+        vector.zero();
+        assertTrue(vector.isZero());
+    }
 }
