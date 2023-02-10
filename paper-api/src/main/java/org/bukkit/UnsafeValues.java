@@ -5,6 +5,7 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -78,4 +79,12 @@ public interface UnsafeValues {
     Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot);
 
     CreativeCategory getCreativeCategory(Material material);
+
+    String getBlockTranslationKey(Material material);
+
+    String getItemTranslationKey(Material material);
+
+    String getTranslationKey(EntityType entityType);
+
+    String getTranslationKey(ItemStack itemStack);
 }

@@ -112,7 +112,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * An enum of all material IDs accepted by the official server and client
  */
-public enum Material implements Keyed {
+public enum Material implements Keyed, Translatable {
     //<editor-fold desc="Materials" defaultstate="collapsed">
     AIR(9648, 0),
     STONE(22948),
@@ -10566,4 +10566,49 @@ public enum Material implements Keyed {
         return Bukkit.getUnsafe().getCreativeCategory(this);
     }
 
+    /**
+     * Get the translation key of the item or block associated with this
+     * material.
+     *
+     * If this material has both an item and a block form, the item form is
+     * used.
+     *
+     * @return the translation key of the item or block associated with this
+     * material
+     * @see #getBlockTranslationKey()
+     * @see #getItemTranslationKey()
+     */
+    @Override
+    @NotNull
+    public String getTranslationKey() {
+        if (this.isItem()) {
+            return Bukkit.getUnsafe().getItemTranslationKey(this);
+        } else {
+            return Bukkit.getUnsafe().getBlockTranslationKey(this);
+        }
+    }
+
+    /**
+     * Get the translation key of the block associated with this material, or
+     * null if this material does not have an associated block.
+     *
+     * @return the translation key of the block associated with this material,
+     * or null if this material does not have an associated block
+     */
+    @Nullable
+    public String getBlockTranslationKey() {
+        return Bukkit.getUnsafe().getBlockTranslationKey(this);
+    }
+
+    /**
+     * Get the translation key of the item associated with this material, or
+     * null if this material does not have an associated item.
+     *
+     * @return the translation key of the item associated with this material, or
+     * null if this material does not have an associated item.
+     */
+    @Nullable
+    public String getItemTranslationKey() {
+        return Bukkit.getUnsafe().getItemTranslationKey(this);
+    }
 }
