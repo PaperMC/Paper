@@ -38,6 +38,8 @@ subprojects {
             exceptionFormat = TestExceptionFormat.FULL
             events(TestLogEvent.STANDARD_OUT)
         }
+        minHeapSize = "2g"
+        maxHeapSize = "2g"
     }
 
     repositories {
