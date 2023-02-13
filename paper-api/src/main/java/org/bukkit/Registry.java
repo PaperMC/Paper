@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -219,6 +220,24 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     @Nullable
     T get(@NotNull NamespacedKey key);
+
+    /**
+     * Attempts to match the registered object with the given key.
+     * <p>
+     * This will attempt to find a reasonable match based on the provided input
+     * and may do so through unspecified means.
+     *
+     * @param input non-null input
+     * @return registered object or null if does not exist
+     */
+    @Nullable
+    default T match(@NotNull String input) {
+        Preconditions.checkArgument(input != null, "input must not be null");
+
+        String filtered = input.toLowerCase().replaceAll("\\s+", "_").replaceAll("\\W", "");
+        NamespacedKey namespacedKey = NamespacedKey.fromString(filtered);
+        return (namespacedKey != null) ? get(namespacedKey) : null;
+    }
 
     static final class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> {
 
