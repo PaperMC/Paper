@@ -5,6 +5,7 @@ import net.minecraft.world.level.Explosion;
 import org.bukkit.craftbukkit.CraftExplosionResult;
 import org.junit.jupiter.api.Test;
 
+@org.bukkit.support.environment.Normal // Paper - test changes - missing test suite annotation
 public class ExplosionResultTest {
 
     @Test

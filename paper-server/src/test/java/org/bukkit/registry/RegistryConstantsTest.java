@@ -26,7 +26,7 @@ public class RegistryConstantsTest {
     @Test
     public void testDamageType() {
         this.testExcessConstants(DamageType.class, Registry.DAMAGE_TYPE);
-        // this.testMissingConstants(DamageType.class, Registries.DAMAGE_TYPE); // WIND_CHARGE not registered
+        this.testMissingConstants(DamageType.class, Registries.DAMAGE_TYPE); // Paper - re-enable this one
     }
 
     @Test

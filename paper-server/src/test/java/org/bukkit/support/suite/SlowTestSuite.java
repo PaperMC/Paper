@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite(failIfNoTests = false)
 @SuiteDisplayName("Test suite for slow tests, which don't need to run every time")
 @IncludeTags("Slow")
-@SelectPackages("org.bukkit")
+@SelectPackages({"org.bukkit", "io.papermc"})
 @ConfigurationParameter(key = "TestSuite", value = "Slow")
 public class SlowTestSuite {
 }

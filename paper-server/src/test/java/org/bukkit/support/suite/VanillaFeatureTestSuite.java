@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite(failIfNoTests = false)
 @SuiteDisplayName("Test suite for test which need vanilla registry values present")
 @IncludeTags("VanillaFeature")
-@SelectPackages("org.bukkit")
+@SelectPackages({"org.bukkit", "io.papermc"})
 @ConfigurationParameter(key = "TestSuite", value = "VanillaFeature")
 public class VanillaFeatureTestSuite {
 }

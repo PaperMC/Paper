@@ -57,6 +57,7 @@ import org.objectweb.asm.Type;
  * Note: This test class assumes that feature flags only enable more features and do not disable vanilla ones.
  */
 @AllFeatures
+@org.junit.jupiter.api.Disabled // Paper - disabled for now as it constructs a second root registry, which is not supported on paper
 public class RegistryClassTest {
 
     private static final Map<Class<? extends Keyed>, Data> INIT_DATA = new HashMap<>();

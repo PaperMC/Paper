@@ -14,7 +14,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @Suite(failIfNoTests = false)
 @SuiteDisplayName("Test suite for test which need registry values present, with all feature flags set")
 @IncludeTags("AllFeatures")
-@SelectPackages("org.bukkit")
+@SelectPackages({"org.bukkit", "io.papermc"})
 @SelectClasses({RegistryClassTest.class, PerRegistryTest.class, RegistryConversionTest.class}) // Make sure general registry tests are run first
 @ExcludeClassNamePatterns("org.bukkit.craftbukkit.inventory.ItemStack.*Test")
 @ConfigurationParameter(key = "TestSuite", value = "AllFeatures")

@@ -5,6 +5,18 @@ plugins {
     `maven-publish`
 }
 
+// Paper start - configure mockito agent that is needed in newer java versions
+val mockitoAgent = configurations.register("mockitoAgent")
+abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+    @get:CompileClasspath
+    abstract val fileCollection: ConfigurableFileCollection
+
+    override fun asArguments(): Iterable<String> {
+        return listOf("-javaagent:" + fileCollection.files.single().absolutePath)
+    }
+}
+// Paper end - configure mockito agent that is needed in newer java versions
+
 dependencies {
     implementation(project(":paper-api"))
     implementation("jline:jline:2.12.1")
@@ -22,7 +34,9 @@ dependencies {
     testImplementation("org.junit.platform:junit-platform-suite-engine:1.10.0")
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation("org.mockito:mockito-core:5.14.1")
+    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
     testImplementation("org.ow2.asm:asm-tree:9.7.1")
+    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
 }
 
 paperweight {
@@ -56,6 +70,12 @@ tasks.jar {
     }
 }
 
+// Paper start - compile tests with -parameters for better junit parameterized test names
+tasks.compileTestJava {
+    options.compilerArgs.add("-parameters")
+}
+// Paper end
+
 publishing {
     publications.create<MavenPublication>("maven") {
     }
@@ -79,6 +99,11 @@ tasks.test {
         forkEvery = 1
         excludeTags("Slow")
     }
+    // Paper start - configure mockito agent that is needed in newer java versions
+    val provider = objects.newInstance<MockitoAgentProvider>()
+    provider.fileCollection.from(mockitoAgent)
+    jvmArgumentProviders.add(provider)
+    // Paper end - configure mockito agent that is needed in newer java versions
 }
 
 fun TaskContainer.registerRunTask(

@@ -47,7 +47,7 @@ public final class DummyServerHelper {
         when(instance.getTag(any(), any(), any())).then(mock -> {
             String registry = mock.getArgument(0);
             Class<?> clazz = mock.getArgument(2);
-            MinecraftKey key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
+            net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
 
             switch (registry) {
                 case org.bukkit.Tag.REGISTRY_BLOCKS -> {
@@ -66,23 +66,30 @@ public final class DummyServerHelper {
                 }
                 case org.bukkit.Tag.REGISTRY_FLUIDS -> {
                     Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
-                    TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
+                    TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = TagKey.create(Registries.FLUID, key); // Paper - address remapping issues
                     if (BuiltInRegistries.FLUID.get(fluidTagKey).isPresent()) {
                         return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
                     }
                 }
                 case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
                     Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
-                    TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
+                    TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - address remapping issues
                     if (BuiltInRegistries.ENTITY_TYPE.get(entityTagKey).isPresent()) {
                         return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
                     }
                 }
-                default -> throw new IllegalArgumentException();
+                default -> new io.papermc.paper.util.EmptyTag(); // Paper - testing additions
             }
 
             return null;
         });
+
+        // Paper start - testing additions
+        final Thread currentThread = Thread.currentThread();
+        when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
+        final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
+        when(instance.getPluginManager()).thenReturn(pluginManager);
+        // Paper end - testing additions
 
         return instance;
     }

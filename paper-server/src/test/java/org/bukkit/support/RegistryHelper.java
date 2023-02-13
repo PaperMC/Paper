@@ -65,6 +65,11 @@ public final class RegistryHelper {
         List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
         RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
         LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
+        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
+        try {
+            Class.forName("org.bukkit.Registry");
+        } catch (final ClassNotFoundException ignored) {}
+        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
 
         return layers.compositeAccess().freeze();
     }
@@ -82,6 +87,11 @@ public final class RegistryHelper {
         List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
         RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
         LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
+        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
+        try {
+            Class.forName("org.bukkit.Registry");
+        } catch (final ClassNotFoundException ignored) {}
+        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
         RegistryHelper.registry = layers.compositeAccess().freeze();
         // Register vanilla pack
         RegistryHelper.dataPack = ReloadableServerResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
