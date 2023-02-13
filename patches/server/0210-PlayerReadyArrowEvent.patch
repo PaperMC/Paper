@@ -7,10 +7,10 @@ Called when a player is firing a bow and the server is choosing an arrow to use.
 Plugins can skip selection of certain arrows and control which is used.
 
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index e088e5174a4666130cd1f66c751e7ab83d9f7a65..8aa5f8bacb868a3b04af6e696f9eed89463ecaf3 100644
+index 3bdd77d2e91be5182c32761f736e7cccccb08978..2010e93da4e56a6a22a8e6f8c42a799eeba62acc 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -2226,6 +2226,17 @@ public abstract class Player extends LivingEntity {
+@@ -2226,18 +2226,29 @@ public abstract class Player extends LivingEntity {
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
@@ -28,12 +28,17 @@ index e088e5174a4666130cd1f66c751e7ab83d9f7a65..8aa5f8bacb868a3b04af6e696f9eed89
      @Override
      public ItemStack getProjectile(ItemStack stack) {
          if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
-@@ -2242,7 +2253,7 @@ public abstract class Player extends LivingEntity {
+             return ItemStack.EMPTY;
+         } else {
+-            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles();
++            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper
+             ItemStack itemstack1 = ProjectileWeaponItem.getHeldProjectile(this, predicate);
+ 
+             if (!itemstack1.isEmpty()) {
+                 return itemstack1;
+             } else {
+-                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles();
++                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper
+ 
                  for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
                      ItemStack itemstack2 = this.inventory.getItem(i);
- 
--                    if (predicate.test(itemstack2)) {
-+                    if (predicate.test(itemstack2) && tryReadyArrow(stack, itemstack2)) { // Paper
-                         return itemstack2;
-                     }
-                 }
