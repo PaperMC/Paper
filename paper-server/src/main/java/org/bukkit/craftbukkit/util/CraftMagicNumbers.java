@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -100,10 +102,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
     // ========================================================================
     private static final Map<Block, Material> BLOCK_MATERIAL = new HashMap<>();
     private static final Map<Item, Material> ITEM_MATERIAL = new HashMap<>();
-    private static final Map<FluidType, Fluid> FLUID_MATERIAL = new HashMap<>();
+    private static final BiMap<FluidType, Fluid> FLUIDTYPE_FLUID = HashBiMap.create();
     private static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
     private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
-    private static final Map<Material, FluidType> MATERIAL_FLUID = new HashMap<>();
 
     static {
         for (Block block : BuiltInRegistries.BLOCK) {
@@ -114,8 +115,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
             ITEM_MATERIAL.put(item, Material.getMaterial(BuiltInRegistries.ITEM.getKey(item).getPath().toUpperCase(Locale.ROOT)));
         }
 
-        for (FluidType fluid : BuiltInRegistries.FLUID) {
-            FLUID_MATERIAL.put(fluid, Registry.FLUID.get(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.FLUID.getKey(fluid))));
+        for (FluidType fluidType : BuiltInRegistries.FLUID) {
+            Fluid fluid = Registry.FLUID.get(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.FLUID.getKey(fluidType)));
+            FLUIDTYPE_FLUID.put(fluidType, fluid);
         }
 
         for (Material material : Material.values()) {
@@ -130,9 +132,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
             BuiltInRegistries.BLOCK.getOptional(key).ifPresent((block) -> {
                 MATERIAL_BLOCK.put(material, block);
             });
-            BuiltInRegistries.FLUID.getOptional(key).ifPresent((fluid) -> {
-                MATERIAL_FLUID.put(material, fluid);
-            });
         }
     }
 
@@ -145,7 +144,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     public static Fluid getFluid(FluidType fluid) {
-        return FLUID_MATERIAL.get(fluid);
+        return FLUIDTYPE_FLUID.get(fluid);
     }
 
     public static Item getItem(Material material) {
@@ -165,7 +164,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     public static FluidType getFluid(Fluid fluid) {
-        return MATERIAL_FLUID.get(fluid);
+        return FLUIDTYPE_FLUID.inverse().get(fluid);
     }
 
     public static MinecraftKey key(Material mat) {

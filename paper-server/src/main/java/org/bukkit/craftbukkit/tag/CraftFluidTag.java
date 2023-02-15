@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.tag;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.core.IRegistry;
