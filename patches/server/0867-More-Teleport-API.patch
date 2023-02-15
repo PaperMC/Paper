@@ -7,7 +7,7 @@ Subject: [PATCH] More Teleport API
 public net.minecraft.server.network.ServerGamePacketListenerImpl internalTeleport(DDDFFLjava/util/Set;Z)V
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 5f2ca04a299b61f2cce8a4dfd060485e05153650..c1041c3832c73728cbb146815ca3c03b3ba41dc4 100644
+index 5f2ca04a299b61f2cce8a4dfd060485e05153650..886f10337fbae020f75c58fb0bb82f8f262b4db6 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1718,11 +1718,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -16,7 +16,7 @@ index 5f2ca04a299b61f2cce8a4dfd060485e05153650..c1041c3832c73728cbb146815ca3c03b
  
 -        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause);
 +        // Paper start - Teleport API
-+        Set<io.papermc.paper.entity.RelativeTeleportFlag> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.RelativeTeleportFlag.class);
++        Set<io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag.class);
 +        for (net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument relativeArgument : set) {
 +            relativeFlags.add(org.bukkit.craftbukkit.entity.CraftPlayer.toApiRelativeFlag(relativeArgument));
 +        }
@@ -31,25 +31,28 @@ index 5f2ca04a299b61f2cce8a4dfd060485e05153650..c1041c3832c73728cbb146815ca3c03b
              d0 = to.getX();
              d1 = to.getY();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 32b9816283c8c1de929d5664733553277cf6bf3c..32c724060a532e551f0ab4e7277831bb6bf61de3 100644
+index 32b9816283c8c1de929d5664733553277cf6bf3c..4ad29426a638d16aa76b2d2239f09d46a72bf2c8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -550,15 +550,33 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -550,15 +550,36 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
  
      @Override
      public boolean teleport(Location location, TeleportCause cause) {
 +        // Paper start - Teleport passenger API
-+        return teleport(location, cause, false);
++        return teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
 +    }
 +
 +    @Override
-+    public boolean teleport(Location location, TeleportCause cause, boolean ignorePassengers, boolean dismount) {
++    public boolean teleport(Location location, TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
 +        // Paper end
          Preconditions.checkArgument(location != null, "location cannot be null");
          location.checkFinite();
 +        // Paper start - Teleport passenger API
++        Set<io.papermc.paper.entity.TeleportFlag> flagSet = Set.of(flags);
++        boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityStateFlag.IGNORE_DISMOUNT);
++        boolean ignorePassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityStateFlag.IGNORE_PASSENGERS);
 +        // Don't allow teleporting between worlds while keeping passengers
-+        if (ignorePassengers && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
++        if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityStateFlag.IGNORE_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
 +            return false;
 +        }
 +
@@ -71,10 +74,10 @@ index 32b9816283c8c1de929d5664733553277cf6bf3c..32c724060a532e551f0ab4e7277831bb
          // Let the server handle cross world teleports
          if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 118a671cdeee8c5fd051192b7b72ad63f79e7eca..ddafba3daa668281134ec348c6fda48cfab1a007 100644
+index 118a671cdeee8c5fd051192b7b72ad63f79e7eca..eadfac2e099ed28ce2a8f84ecd83d07f235934d3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1198,13 +1198,92 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1198,13 +1198,100 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setRotation(float yaw, float pitch) {
@@ -93,12 +96,7 @@ index 118a671cdeee8c5fd051192b7b72ad63f79e7eca..ddafba3daa668281134ec348c6fda48c
      @Override
      public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
 +        // Paper start - Teleport API
-+        return this.teleport(location, cause, false);
-+    }
-+
-+    @Override
-+    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount) {
-+        return this.teleport(location, cause, ignorePassengers, dismount, new io.papermc.paper.entity.RelativeTeleportFlag[0]);
++        return this.teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
 +    }
 +
 +    @Override
@@ -125,7 +123,7 @@ index 118a671cdeee8c5fd051192b7b72ad63f79e7eca..ddafba3daa668281134ec348c6fda48c
 +        };
 +    }
 +
-+    public static net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument toNmsRelativeFlag(io.papermc.paper.entity.RelativeTeleportFlag apiFlag) {
++    public static net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument toNmsRelativeFlag(io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag apiFlag) {
 +        return switch (apiFlag) {
 +            case X -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.X;
 +            case Y -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Y;
@@ -135,22 +133,35 @@ index 118a671cdeee8c5fd051192b7b72ad63f79e7eca..ddafba3daa668281134ec348c6fda48c
 +        };
 +    }
 +
-+    public static io.papermc.paper.entity.RelativeTeleportFlag toApiRelativeFlag(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument nmsFlag) {
++    public static io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag toApiRelativeFlag(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument nmsFlag) {
 +        return switch (nmsFlag) {
-+            case X -> io.papermc.paper.entity.RelativeTeleportFlag.X;
-+            case Y -> io.papermc.paper.entity.RelativeTeleportFlag.Y;
-+            case Z -> io.papermc.paper.entity.RelativeTeleportFlag.Z;
-+            case X_ROT -> io.papermc.paper.entity.RelativeTeleportFlag.PITCH;
-+            case Y_ROT -> io.papermc.paper.entity.RelativeTeleportFlag.YAW;
++            case X -> io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag.X;
++            case Y -> io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag.Y;
++            case Z -> io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag.Z;
++            case X_ROT -> io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag.PITCH;
++            case Y_ROT -> io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag.YAW;
 +        };
 +    }
 +
 +    @Override
-+    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount, io.papermc.paper.entity.RelativeTeleportFlag... flags) {
-+        var relativeArguments = java.util.EnumSet.noneOf(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.class);
-+        for (io.papermc.paper.entity.RelativeTeleportFlag flag : flags) {
-+            relativeArguments.add(toNmsRelativeFlag(flag));
++    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
++        java.util.Set<net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument> relativeArguments;
++        java.util.Set<io.papermc.paper.entity.TeleportFlag> allFlags;
++        if (flags.length == 0) {
++            relativeArguments = Set.of();
++            allFlags = Set.of();
++        } else {
++            relativeArguments = java.util.EnumSet.noneOf(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.class);
++            allFlags = new HashSet<>();
++            for (io.papermc.paper.entity.TeleportFlag flag : flags) {
++                if (flag instanceof io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag relativeTeleportFlag) {
++                    relativeArguments.add(toNmsRelativeFlag(relativeTeleportFlag));
++                }
++                allFlags.add(flag);
++            }
 +        }
++        boolean dismount = !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityStateFlag.IGNORE_DISMOUNT);
++        boolean ignorePassengers = allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityStateFlag.IGNORE_PASSENGERS);
 +        // Paper end - Teleport API
          Preconditions.checkArgument(location != null, "location");
          Preconditions.checkArgument(location.getWorld() != null, "location.world");
@@ -168,7 +179,7 @@ index 118a671cdeee8c5fd051192b7b72ad63f79e7eca..ddafba3daa668281134ec348c6fda48c
          location.checkFinite();
  
          ServerPlayer entity = this.getHandle();
-@@ -1217,7 +1296,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1217,7 +1304,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
          }
  
@@ -177,7 +188,7 @@ index 118a671cdeee8c5fd051192b7b72ad63f79e7eca..ddafba3daa668281134ec348c6fda48c
              return false;
          }
  
-@@ -1235,7 +1314,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1235,7 +1322,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          // If this player is riding another entity, we must dismount before teleporting.
@@ -186,7 +197,14 @@ index 118a671cdeee8c5fd051192b7b72ad63f79e7eca..ddafba3daa668281134ec348c6fda48c
  
          // SPIGOT-5509: Wakeup, similar to riding
          if (this.isSleeping()) {
-@@ -1257,7 +1336,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1251,13 +1338,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         ServerLevel toWorld = ((CraftWorld) to.getWorld()).getHandle();
+ 
+         // Close any foreign inventory
+-        if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
++        if (this.getHandle().containerMenu != this.getHandle().inventoryMenu && !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityStateFlag.IGNORE_OPEN_INVENTORY)) { // Paper
+             this.getHandle().closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.TELEPORT); // Paper
+         }
  
          // Check if the fromWorld and toWorld are the same.
          if (fromWorld == toWorld) {
