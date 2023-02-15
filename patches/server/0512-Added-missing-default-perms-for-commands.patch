@@ -170,38 +170,3 @@ index 0000000000000000000000000000000000000000..8665e2740aedcc2895b0e2c44ebaba53
 +        }
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
-index 946497353a64421592d2bae012c9a3cb874dd5b8..2ddceb709291d3bd713621ffa4020c02ec26bb21 100644
---- a/src/test/java/org/bukkit/support/DummyServer.java
-+++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -106,7 +106,21 @@ public final class DummyServer implements InvocationHandler {
-                         }
-                     }
-             );
--            Bukkit.setServer(Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(new DummyServer()));
-+            // Paper start - modeled off of TestServer in the API tests module
-+            methods.put(
-+                Server.class.getMethod("getPluginManager"),
-+                new MethodHandler() {
-+                    @Override
-+                    public Object handle(DummyServer server, Object[] args) {
-+                        return server.pluginManager;
-+                    }
-+                }
-+            );
-+            DummyServer server = new DummyServer();
-+            Server instance = Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(server);
-+            Bukkit.setServer(instance);
-+            server.pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
-+            // Paper end
-         } catch (Throwable t) {
-             throw new Error(t);
-         }
-@@ -116,6 +130,7 @@ public final class DummyServer implements InvocationHandler {
- 
-     private DummyServer() {};
- 
-+    private org.bukkit.plugin.PluginManager pluginManager; // Paper
-     @Override
-     public Object invoke(Object proxy, Method method, Object[] args) {
-         MethodHandler handler = DummyServer.methods.get(method);

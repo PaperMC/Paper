@@ -1134,7 +1134,7 @@ index bceaa1a97b2c5cc15c8f54ae8f6f18029708627a..15699ee58e06880a508689f761ecfdb7
  public interface Tag<T extends Keyed> extends Keyed {
 diff --git a/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java b/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f849d8b12a7e3d1606698408ab4bb140a3b370e4
+index 0000000000000000000000000000000000000000..e541f29e983d8dcaca91de9ee1459d587226b4c3
 --- /dev/null
 +++ b/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java
 @@ -0,0 +1,65 @@
@@ -1146,8 +1146,8 @@ index 0000000000000000000000000000000000000000..f849d8b12a7e3d1606698408ab4bb140
 +
 +import io.papermc.paper.tag.BaseTag;
 +import io.papermc.paper.tag.EntityTags;
++import io.papermc.paper.testing.TestServer;
 +import org.bukkit.Bukkit;
-+import org.bukkit.TestServer;
 +import org.junit.Before;
 +import org.junit.Test;
 +
@@ -1163,7 +1163,7 @@ index 0000000000000000000000000000000000000000..f849d8b12a7e3d1606698408ab4bb140
 +
 +    @Before
 +    public void before() {
-+        TestServer.getInstance();
++        TestServer.setup();
 +    }
 +
 +    @Test
@@ -1205,26 +1205,24 @@ index 0000000000000000000000000000000000000000..f849d8b12a7e3d1606698408ab4bb140
 +}
 diff --git a/src/test/java/io/papermc/paper/EntityTagsTest.java b/src/test/java/io/papermc/paper/EntityTagsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..06bb9d1180361d3d00c699796bbacbce5bef2177
+index 0000000000000000000000000000000000000000..3caf03d8e50cd2180e9aac2dddeaa3afd0bf7438
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/EntityTagsTest.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,22 @@
 +package io.papermc.paper;
 +
-+import com.destroystokyo.paper.MaterialTags;
 +import io.papermc.paper.tag.EntityTags;
-+import org.bukkit.Bukkit;
-+import org.bukkit.TestServer;
-+import org.junit.Test;
-+
++import io.papermc.paper.testing.TestServer;
 +import java.util.logging.Level;
++import org.bukkit.Bukkit;
++import org.junit.Test;
 +
 +public class EntityTagsTest {
 +
 +    @Test
 +    public void testInitialize() {
 +        try {
-+            TestServer.getInstance();
++            TestServer.setup();
 +            EntityTags.HORSES.getValues();
 +            assert true;
 +        } catch (Throwable e) {
@@ -1233,24 +1231,3 @@ index 0000000000000000000000000000000000000000..06bb9d1180361d3d00c699796bbacbce
 +        }
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/TestServer.java b/src/test/java/org/bukkit/TestServer.java
-index 701a17c10f31cd345238a3c568264178ce372faa..bfb39f48bea14ad616c53e2a8a6901e93f728768 100644
---- a/src/test/java/org/bukkit/TestServer.java
-+++ b/src/test/java/org/bukkit/TestServer.java
-@@ -32,6 +32,16 @@ public final class TestServer implements InvocationHandler {
-                         }
-                     }
-                 );
-+            // Paper start
-+            methodMap.put(
-+                Server.class.getMethod("getTag", String.class, NamespacedKey.class, Class.class),
-+                new MethodHandler() {
-+                    public Object handle(TestServer server, Object[] args) {
-+                        return new com.destroystokyo.paper.MaterialSetTag();
-+                    }
-+                }
-+            );
-+            // Paper end
-             methodMap.put(
-                     Server.class.getMethod("getPluginManager"),
-                     new MethodHandler() {
