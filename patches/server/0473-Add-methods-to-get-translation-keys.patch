@@ -10,22 +10,17 @@ public org.bukkit.craftbukkit.inventory.CraftMetaFirework getNBT(Lorg/bukkit/Fir
 Co-authored-by: MeFisto94 <MeFisto94@users.noreply.github.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index 3123a8d52236757c3e7ca3b099cc664485cb3c72..eba015c33dcf63ff85569eb7ee7e6b3def2b05ac 100644
+index ac543a4c6bc21435de3c6721af37fd5f554e403e..1f780a326f4982d4be1855516fb1461b4d90bcc6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-@@ -693,5 +693,15 @@ public class CraftBlock implements Block {
+@@ -694,5 +694,10 @@ public class CraftBlock implements Block {
      public org.bukkit.SoundGroup getBlockSoundGroup() {
          return org.bukkit.craftbukkit.CraftSoundGroup.getSoundGroup(this.getNMS().getSoundType());
      }
 +
 +    @Override
-+    public String getTranslationKey() {
-+        return this.translationKey();
-+    }
-+
-+    @Override
 +    public String translationKey() {
-+        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
++        return this.getNMS().getBlock().getDescriptionId();
 +    }
      // Paper end
  }
@@ -45,41 +40,6 @@ index e8334e2264510f5101e80b4f130e7ae1442560d7..57decf4156f176ebcc988478c17856cb
      // Paper end
  
      public net.minecraft.world.item.enchantment.Enchantment getHandle() {
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 7a017d69bec0fb1e17c47d7edcfce4b1c6836693..d85526b8ddd26b2113dd8df7bf2d58ff432d86bc 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -480,6 +480,30 @@ public final class CraftMagicNumbers implements UnsafeValues {
-         Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
-         return compound;
-     }
-+
-+    @Override
-+    public String getTranslationKey(Material mat) {
-+        if (mat.isBlock()) {
-+            return getBlock(mat).getDescriptionId();
-+        }
-+        return getItem(mat).getDescriptionId();
-+    }
-+
-+    @Override
-+    public String getTranslationKey(org.bukkit.block.Block block) {
-+        return ((org.bukkit.craftbukkit.block.CraftBlock)block).getNMS().getBlock().getDescriptionId();
-+    }
-+
-+    @Override
-+    public String getTranslationKey(org.bukkit.entity.EntityType type) {
-+        return net.minecraft.world.entity.EntityType.byString(type.getName()).map(net.minecraft.world.entity.EntityType::getDescriptionId).orElse(null);
-+    }
-+
-+    @Override
-+    public String getTranslationKey(org.bukkit.inventory.ItemStack itemStack) {
-+        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
-+        return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
-+    }
-     // Paper end
- 
-     /**
 diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 index fab3063fffa959ac7f0eb5937f2fae94d11b6591..4cc8ca5dd95e9cccd08ada057a9592a1421f434a 100644
 --- a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java

@@ -144,80 +144,68 @@ index 0a66077d152a3c89fa7a277663969767798eb100..b02490737409eb80a2d2fb275c9a60b6
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index a7d36ef22724f0ce3add61ab314e09e6465077d4..4d496c7c088a75b79a25e7397b47600a8c104cf4 100644
+index e883bb46461eb40b018ebe8c07caff96046fd11d..89af89e5fb49e202e80ea7688c62f8e119f4ddfe 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
 @@ -113,7 +113,7 @@ import org.jetbrains.annotations.Nullable;
   * An enum of all material IDs accepted by the official server and client
   */
  @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
--public enum Material implements Keyed {
-+public enum Material implements Keyed, net.kyori.adventure.translation.Translatable { // Paper
+-public enum Material implements Keyed, Translatable {
++public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
      //<editor-fold desc="Materials" defaultstate="collapsed">
      AIR(9648, 0),
      STONE(22948),
-@@ -4288,6 +4288,23 @@ public enum Material implements Keyed {
+@@ -4288,6 +4288,15 @@ public enum Material implements Keyed, Translatable {
          }
          return false;
      }
 +
-+    /**
-+     * Return the translation key for the Material, so the client can translate it into the active
-+     * locale when using a TranslatableComponent.
-+     * @return the translation key
-+     * @deprecated use {@link #translationKey()}
-+     */
-+    @NotNull
-+    @Deprecated
-+    public String getTranslationKey() {
-+        return this.translationKey();
-+    }
-+
 +    @Override
 +    public @NotNull String translationKey() {
-+        return Bukkit.getUnsafe().getTranslationKey(this);
++        if (this.isItem()) {
++            return Bukkit.getUnsafe().getItemTranslationKey(this);
++        } else {
++            return Bukkit.getUnsafe().getBlockTranslationKey(this);
++        }
 +    }
      // Paper end
  
      /**
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 5453b2ae459b2d5171ef7129c29891b721ee8e0b..b518720355d8a8dcd55cb755e4e1fa9fc3dfc52b 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -112,5 +112,34 @@ public interface UnsafeValues {
-     byte[] serializeItem(ItemStack item);
+@@ -10596,9 +10605,11 @@ public enum Material implements Keyed, Translatable {
+      * material
+      * @see #getBlockTranslationKey()
+      * @see #getItemTranslationKey()
++     * @deprecated use {@link #translationKey()}
+      */
+     @Override
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public String getTranslationKey() {
+         if (this.isItem()) {
+             return Bukkit.getUnsafe().getItemTranslationKey(this);
+diff --git a/src/main/java/org/bukkit/Translatable.java b/src/main/java/org/bukkit/Translatable.java
+index e3faa2c675c85a9cbdbbb1debec0ff81c58a1bbd..fd1629c2d2028a88fb3d56b0aeb833d17235080a 100644
+--- a/src/main/java/org/bukkit/Translatable.java
++++ b/src/main/java/org/bukkit/Translatable.java
+@@ -5,14 +5,18 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents an object with a text representation that can be translated by the
+  * Minecraft client.
++ * @deprecated use {@link net.kyori.adventure.translation.Translatable}
+  */
++@Deprecated(forRemoval = true) // Paper
+ public interface Translatable {
  
-     ItemStack deserializeItem(byte[] data);
-+
-+    /**
-+     * Return the translation key for the Material, so the client can translate it into the active
-+     * locale when using a {@link net.kyori.adventure.text.TranslatableComponent}.
-+     * @return the translation key
-+     */
-+    String getTranslationKey(Material mat);
-+
-+    /**
-+     * Return the translation key for the Block, so the client can translate it into the active
-+     * locale when using a {@link net.kyori.adventure.text.TranslatableComponent}.
-+     * @return the translation key
-+     */
-+    String getTranslationKey(org.bukkit.block.Block block);
-+
-+    /**
-+     * Return the translation key for the EntityType, so the client can translate it into the active
-+     * locale when using a {@link net.kyori.adventure.text.TranslatableComponent}.<br>
-+     * This is <code>null</code>, when the EntityType isn't known to NMS (custom entities)
-+     * @return the translation key
-+     */
-+    String getTranslationKey(org.bukkit.entity.EntityType type);
-+
-+    /**
-+     * Return the translation key for the ItemStack, so the client can translate it into the active
-+     * locale when using a {@link net.kyori.adventure.text.TranslatableComponent}.<br>
-+     * @return the translation key
-+     */
-+    String getTranslationKey(ItemStack itemStack);
-     // Paper end
+     /**
+      * Get the translation key, suitable for use in a translation component.
+      *
+      * @return the translation key
++     * @deprecated look for a {@code translationKey()} method instead
+      */
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     String getTranslationKey();
  }
 diff --git a/src/main/java/org/bukkit/attribute/Attribute.java b/src/main/java/org/bukkit/attribute/Attribute.java
 index 13eac9ad2c1672051635d1c35cc49239252e7a61..107e36ef02a9481954bd770ce9a55a0b1e84be7a 100644
@@ -269,31 +257,28 @@ index 02c5fcbc76b2db6bf4eb7580456b5658c08272b4..d56e1b50dd7da18f40278cec4bfdc941
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
-index af705e45204975a342e1454156ba143ed52cecdc..ce3b81c5d83c9747ea0e3410c932460d11bf5c55 100644
+index 06ef9e133125d80127e1dbd6ae0eda89fa08a1d7..35ed58bce2589bb097dd0f6bf2a6ebd76dc31fcd 100644
 --- a/src/main/java/org/bukkit/block/Block.java
 +++ b/src/main/java/org/bukkit/block/Block.java
-@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
   * (i.e. lighting and power) may not be able to be safely accessed during world
   * generation when used in cases like BlockPhysicsEvent!!!!
   */
--public interface Block extends Metadatable {
-+public interface Block extends Metadatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
+-public interface Block extends Metadatable, Translatable {
++public interface Block extends Metadatable, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
  
      /**
       * Gets the metadata for this block
-@@ -672,5 +672,15 @@ public interface Block extends Metadatable {
+@@ -673,5 +673,12 @@ public interface Block extends Metadatable, Translatable {
       * @return the sound group for this block
       */
      @NotNull org.bukkit.SoundGroup getBlockSoundGroup();
 +
 +    /**
-+     * Return the translation key for the Block, so the client can translate it into the active
-+     * locale when using a TranslatableComponent.
-+     * @return the translation key
 +     * @deprecated use {@link #translationKey()}
 +     */
 +    @NotNull
-+    @Deprecated
++    @Deprecated(forRemoval = true)
 +    String getTranslationKey();
      // Paper end
  }
@@ -326,36 +311,28 @@ index 4d5f0837bd0e02a30c943d8969fb6b13452322e0..a39f9c078f42451bd122f3e3729d10ca
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/EntityType.java b/src/main/java/org/bukkit/entity/EntityType.java
-index df9d315cfaf968527fc8bc26dadd88f64a408cde..50d9442ffafdfabd4904dafae7daaeadcedee75b 100644
+index 2caa5f82e206b231fd9e9f5508c3713816e5a0e4..80897ed8641a2bdc4e3557e20f3a8ae4b8c5da69 100644
 --- a/src/main/java/org/bukkit/entity/EntityType.java
 +++ b/src/main/java/org/bukkit/entity/EntityType.java
-@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Contract;
+@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Contract;
  import org.jetbrains.annotations.NotNull;
  import org.jetbrains.annotations.Nullable;
  
--public enum EntityType implements Keyed {
-+public enum EntityType implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - translatable
+-public enum EntityType implements Keyed, Translatable {
++public enum EntityType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
  
      // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
      /**
-@@ -425,4 +425,27 @@ public enum EntityType implements Keyed {
-     public boolean isAlive() {
-         return living;
+@@ -430,7 +430,19 @@ public enum EntityType implements Keyed, Translatable {
+ 
+     @Override
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public String getTranslationKey() {
+         return Bukkit.getUnsafe().getTranslationKey(this);
      }
-+    // Paper start
-+    /**
-+     * Return the translation key for the EntityType, so the client can translate it into the active
-+     * locale when using a TranslatableComponent.<br>
-+     * This is <code>null</code>, when the EntityType isn't known to NMS (custom entities)
-+     * @return the translation key
-+     * @deprecated use {@link #translationKey()}
-+     */
-+    @Deprecated
-+    @Nullable
-+    public String getTranslationKey() {
-+        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
-+    }
 +
++    // Paper start
 +    /**
 +     * @throws IllegalArgumentException if the entity does not have a translation key (is probably a custom entity)
 +     */
@@ -473,36 +450,30 @@ index 5bd252c0ae3b09fe141d131360c67bb9bfbf5422..78587d9fabe6371a23a7963917b054db
 +
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index d3334c62bf39abf17ee7f3e68e106fd637ffdf00..d6eafaa58b19ab44dfdef1baa58fa89c5b761b65 100644
+index 7c280d7beeb42dca52e36e77bbd41742b2572710..03a15727c85a08c0c79965be249373a11f31ce6e 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
   * use this class to encapsulate Materials for which {@link Material#isItem()}
   * returns false.</b>
   */
--public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem> { // Paper
-+public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable { // Paper
+-public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem> { // Paper
++public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable { // Paper
      private Material type = Material.AIR;
      private int amount = 0;
      private MaterialData data = null;
-@@ -858,5 +858,30 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+@@ -606,6 +606,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+ 
+     @Override
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public String getTranslationKey() {
+         return Bukkit.getUnsafe().getTranslationKey(this);
+     }
+@@ -865,5 +866,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          ItemMeta itemMeta = getItemMeta();
          return itemMeta != null && itemMeta.hasItemFlag(flag);
      }
-+
-+    /**
-+     * Gets the translation key for this itemstack.
-+     * This is not the same as getting the translation key
-+     * for the material of this itemstack.
-+     *
-+     * @return the translation key
-+     * @deprecated use {@link #translationKey()}
-+     */
-+    @NotNull
-+    @Deprecated
-+    public String getTranslationKey() {
-+        return this.translationKey();
-+    }
 +
 +    /**
 +     * {@inheritDoc}
