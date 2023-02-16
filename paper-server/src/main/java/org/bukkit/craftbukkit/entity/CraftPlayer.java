@@ -1350,7 +1350,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean canSee(org.bukkit.entity.Entity entity) {
-        return !hiddenEntities.containsKey(entity.getUniqueId());
+        return canSee(entity.getUniqueId());
+    }
+
+    public boolean canSee(UUID uuid) {
+        return !hiddenEntities.containsKey(uuid);
     }
 
     @Override
