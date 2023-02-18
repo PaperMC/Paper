@@ -5,7 +5,7 @@ Subject: [PATCH] Paper Plugins
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 3c4dd6ebc2289c44c2f5723e7920aadffdc51884..9f7bcb0ee2cfdfcefc23cd8624b2cfbd2975a41c 100644
+index c16ebc233bce9fd2020d3dde6253c3b90000c0f3..56333098150995cd36793de75a998b628e82881d 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -46,7 +46,7 @@ dependencies {
@@ -1863,45 +1863,28 @@ index cb3c25ef46b279ffdde87f47f729eb8aa7549c1c..dbcae6704b0f3fb48e57fecd958e63eb
 +    }
      // Paper end
  }
-diff --git a/src/test/java/org/bukkit/TestServer.java b/src/test/java/org/bukkit/TestServer.java
-index bfb39f48bea14ad616c53e2a8a6901e93f728768..643a267d6925208f9465a4441e1bdec4ca7b08c2 100644
---- a/src/test/java/org/bukkit/TestServer.java
-+++ b/src/test/java/org/bukkit/TestServer.java
-@@ -42,15 +42,7 @@ public final class TestServer implements InvocationHandler {
-                 }
-             );
-             // Paper end
--            methodMap.put(
--                    Server.class.getMethod("getPluginManager"),
--                    new MethodHandler() {
--                        @Override
--                        public Object handle(TestServer server, Object[] args) {
--                            return server.pluginManager;
--                        }
--                    }
--                );
-+            // Paper - Remove plugin manager tests
-             methodMap.put(
-                     Server.class.getMethod("getLogger"),
-                     new MethodHandler() {
-@@ -124,7 +116,7 @@ public final class TestServer implements InvocationHandler {
-             TestServer server = new TestServer();
-             Server instance = Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(server);
-             Bukkit.setServer(instance);
--            server.pluginManager = new SimplePluginManager(instance, new SimpleCommandMap(instance));
-+            // Paper - Remove plugin manager tests
-         } catch (Throwable t) {
-             throw new Error(t);
-         }
+diff --git a/src/test/java/io/papermc/paper/testing/TestServer.java b/src/test/java/io/papermc/paper/testing/TestServer.java
+index 756acf231b1b076b08046d86992ba7ce7f62a94f..52d27d977b9df0bdf02b33ed0aaa3b4db0a04cb4 100644
+--- a/src/test/java/io/papermc/paper/testing/TestServer.java
++++ b/src/test/java/io/papermc/paper/testing/TestServer.java
+@@ -36,9 +36,6 @@ public final class TestServer {
+ 
+         when(dummyServer.getTag(anyString(), any(NamespacedKey.class), any())).thenAnswer(ignored -> new EmptyTag());
+ 
+-        final PluginManager pluginManager = new SimplePluginManager(dummyServer, new SimpleCommandMap(dummyServer));
+-        when(dummyServer.getPluginManager()).thenReturn(pluginManager);
+-
+         when(dummyServer.getRegistry(any())).thenAnswer(ignored -> new EmptyRegistry());
+         when(dummyServer.getScoreboardCriteria(anyString())).thenReturn(null);
+ 
 diff --git a/src/test/java/org/bukkit/event/SyntheticEventTest.java b/src/test/java/org/bukkit/event/SyntheticEventTest.java
 deleted file mode 100644
-index d402cb59f508205ebe9ee450594826b04cecb90b..0000000000000000000000000000000000000000
+index 09886568ae6167141b463b6262565fa212af3385..0000000000000000000000000000000000000000
 --- a/src/test/java/org/bukkit/event/SyntheticEventTest.java
 +++ /dev/null
 @@ -1,48 +0,0 @@
 -package org.bukkit.event;
 -
--import org.bukkit.TestServer;
 -import org.bukkit.plugin.PluginLoader;
 -import org.bukkit.plugin.SimplePluginManager;
 -import org.bukkit.plugin.TestPlugin;
@@ -1913,14 +1896,15 @@ index d402cb59f508205ebe9ee450594826b04cecb90b..00000000000000000000000000000000
 -    @SuppressWarnings("deprecation")
 -    @Test
 -    public void test() {
--        final JavaPluginLoader loader = new JavaPluginLoader(TestServer.getInstance());
+-        io.papermc.paper.testing.TestServer.setup(); // Paper
+-        final JavaPluginLoader loader = new JavaPluginLoader(org.bukkit.Bukkit.getServer()); // Paper
 -        TestPlugin plugin = new TestPlugin(getClass().getName()) {
 -            @Override
 -            public PluginLoader getPluginLoader() {
 -                return loader;
 -            }
 -        };
--        SimplePluginManager pluginManager = new SimplePluginManager(TestServer.getInstance(), null);
+-        SimplePluginManager pluginManager = new SimplePluginManager(org.bukkit.Bukkit.getServer(), null); // Paper
 -
 -        TestEvent event = new TestEvent(false);
 -        Impl impl = new Impl();
@@ -1949,15 +1933,14 @@ index d402cb59f508205ebe9ee450594826b04cecb90b..00000000000000000000000000000000
 -}
 diff --git a/src/test/java/org/bukkit/plugin/PluginManagerTest.java b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 deleted file mode 100644
-index 1941c9f49e9514c1236c5f4ea9f7af47f7be85c5..0000000000000000000000000000000000000000
+index 24dc87898e0fc40dfaf52f17a1bd26eccfbc7abc..0000000000000000000000000000000000000000
 --- a/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 +++ /dev/null
-@@ -1,184 +0,0 @@
+@@ -1,183 +0,0 @@
 -package org.bukkit.plugin;
 -
 -import static org.hamcrest.Matchers.*;
 -import static org.junit.Assert.*;
--import org.bukkit.TestServer;
 -import org.bukkit.event.Event;
 -import org.bukkit.event.TestEvent;
 -import org.bukkit.permissions.Permission;
@@ -1969,7 +1952,7 @@ index 1941c9f49e9514c1236c5f4ea9f7af47f7be85c5..00000000000000000000000000000000
 -        volatile Object value = null;
 -    }
 -
--    private static final PluginManager pm = TestServer.getInstance().getPluginManager();
+-    private static final PluginManager pm = org.bukkit.Bukkit.getServer().getPluginManager(); // Paper
 -
 -    private final MutableObject store = new MutableObject();
 -/* // Paper start - remove unneeded test

@@ -5952,7 +5952,7 @@ index 31faf2d6492696f7d0c99a48edbc0d6f15db1209..a821cb33fbc29109aec68f9d6a0eb2ef
              Bootstrap.validate();
              Util.startTimerHackThread();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..4b5505b835d81b74311eef62993e9c70789a1bff 100644
+index f1a3d8dae2a61b875e423aebfdfcad2f77d498ff..576c45b3abc432fbe5c60f0e73c3ca7f208436a7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -270,7 +270,8 @@ public final class CraftServer implements Server {
@@ -5965,7 +5965,7 @@ index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..4b5505b835d81b74311eef62993e9c70
      private final StructureManager structureManager;
      protected final DedicatedServer console;
      protected final DedicatedPlayerList playerList;
-@@ -372,7 +373,7 @@ public final class CraftServer implements Server {
+@@ -373,7 +374,7 @@ public final class CraftServer implements Server {
          this.saveCommandsConfig();
          this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
          this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
@@ -5974,7 +5974,7 @@ index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..4b5505b835d81b74311eef62993e9c70
          this.overrideSpawnLimits();
          console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
          this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-@@ -424,29 +425,7 @@ public final class CraftServer implements Server {
+@@ -425,29 +426,7 @@ public final class CraftServer implements Server {
      }
  
      public void loadPlugins() {
@@ -6005,7 +6005,7 @@ index bfc4ee36befb925ab4eb6b96f5c1aa6c76bf711f..4b5505b835d81b74311eef62993e9c70
      }
  
      // Paper start
-@@ -565,15 +544,17 @@ public final class CraftServer implements Server {
+@@ -567,15 +546,17 @@ public final class CraftServer implements Server {
      private void enablePlugin(Plugin plugin) {
          try {
              List<Permission> perms = plugin.getDescription().getPermissions();
@@ -6705,42 +6705,16 @@ index 0000000000000000000000000000000000000000..ba271c35eb2804f94cfc893bf94affb9
 +        return "null";
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
-index 2ddceb709291d3bd713621ffa4020c02ec26bb21..53bf98c512cc39270be70ca579ecbf5da744ddf4 100644
---- a/src/test/java/org/bukkit/support/DummyServer.java
-+++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -106,6 +106,17 @@ public final class DummyServer implements InvocationHandler {
-                         }
-                     }
-             );
-+            // Paper start
-+            methods.put(
-+                Server.class.getMethod("isPrimaryThread"),
-+                new MethodHandler() {
-+                    @Override
-+                    public Object handle(DummyServer server, Object[] args) {
-+                        return Thread.currentThread().equals(server.creatingThread);
-+                    }
-+                }
-+            );
-+            // Paper end
-             // Paper start - modeled off of TestServer in the API tests module
-             methods.put(
-                 Server.class.getMethod("getPluginManager"),
-@@ -119,7 +130,7 @@ public final class DummyServer implements InvocationHandler {
-             DummyServer server = new DummyServer();
-             Server instance = Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(server);
-             Bukkit.setServer(instance);
--            server.pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
-+            server.pluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance), null);
-             // Paper end
-         } catch (Throwable t) {
-             throw new Error(t);
-@@ -131,6 +142,7 @@ public final class DummyServer implements InvocationHandler {
-     private DummyServer() {};
+diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
+index 286790061c9d81c872108ef63e1a1aba2fbec809..53ac8df47a2c9a84c751955fd4fbb352a3ded16b 100644
+--- a/src/test/java/io/papermc/paper/testing/DummyServer.java
++++ b/src/test/java/io/papermc/paper/testing/DummyServer.java
+@@ -57,7 +57,7 @@ public final class DummyServer {
+             return new LazyRegistry(() -> CraftRegistry.createRegistry(invocation.getArgument(0, Class.class), AbstractTestingBase.REGISTRY_CUSTOM));
+         });
  
-     private org.bukkit.plugin.PluginManager pluginManager; // Paper
-+    private Thread creatingThread = Thread.currentThread(); // Paper
-     @Override
-     public Object invoke(Object proxy, Method method, Object[] args) {
-         MethodHandler handler = DummyServer.methods.get(method);
+-        final PluginManager pluginManager = new SimplePluginManager(dummyServer, new SimpleCommandMap(dummyServer));
++        final PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(dummyServer, new SimpleCommandMap(dummyServer), null);
+         when(dummyServer.getPluginManager()).thenReturn(pluginManager);
+ 
+         Bukkit.setServer(dummyServer);
