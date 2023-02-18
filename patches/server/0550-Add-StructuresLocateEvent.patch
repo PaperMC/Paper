@@ -1,0 +1,220 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: dfsek <dfsek@protonmail.com>
+Date: Wed, 16 Sep 2020 01:12:29 -0700
+Subject: [PATCH] Add StructuresLocateEvent
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+index 6f39e343147803e15e7681c993b8797a629702e7..3a643d57b646c83974b5157b9cbb2a9f42e9bd59 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -1,8 +1,14 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.world.structure.ConfiguredStructure;
+ import net.minecraft.core.Registry;
++import net.minecraft.core.registries.Registries;
+ import net.minecraft.resources.ResourceKey;
++import net.minecraft.world.level.levelgen.structure.Structure;
+ import org.bukkit.Keyed;
+ 
+ public record RegistryKey<API extends Keyed, MINECRAFT>(Class<API> apiClass, ResourceKey<? extends Registry<MINECRAFT>> resourceKey) {
++
++    public static final RegistryKey<ConfiguredStructure, Structure> CONFIGURED_STRUCTURE_REGISTRY = new RegistryKey<>(ConfiguredStructure.class, Registries.STRUCTURE);
++
+ }
+diff --git a/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..16996c743b169e625ec810523c1d59a305e1d159
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
+@@ -0,0 +1,44 @@
++package io.papermc.paper.world.structure;
++
++import io.papermc.paper.registry.PaperRegistry;
++import io.papermc.paper.registry.RegistryKey;
++import net.minecraft.core.Registry;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.level.levelgen.structure.Structure;
++import org.bukkit.NamespacedKey;
++import org.bukkit.StructureType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import java.util.Objects;
++import java.util.function.Supplier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperConfiguredStructure {
++
++    private PaperConfiguredStructure() {
++    }
++
++    public static void init() {
++        new ConfiguredStructureRegistry().register();
++    }
++
++    static final class ConfiguredStructureRegistry extends PaperRegistry<ConfiguredStructure, Structure> {
++
++        private static final Supplier<Registry<Structure>> STRUCTURE_FEATURE_REGISTRY = registryFor(Registries.STRUCTURE);
++
++        public ConfiguredStructureRegistry() {
++            super(RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
++        }
++
++        @Override
++        public @Nullable ConfiguredStructure convertToApi(NamespacedKey key, Structure nms) {
++            final ResourceLocation structureTypeLoc = Objects.requireNonNull(BuiltInRegistries.STRUCTURE_TYPE.getKey(nms.type()), "unexpected structure type " + nms.type());
++            final @Nullable StructureType structureType = StructureType.getStructureTypes().get(structureTypeLoc.getPath());
++            return structureType == null ? null : new ConfiguredStructure(key, structureType);
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index b6df6077107759963ee8205dddb90501d5ccb4d6..29032374f0e71a41a2de260d402b6fbff68288cc 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -121,6 +121,26 @@ public abstract class ChunkGenerator {
+ 
+     @Nullable
+     public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(ServerLevel world, HolderSet<Structure> structures, BlockPos center, int radius, boolean skipReferencedStructures) {
++        // Paper start - StructureLocateEvent
++        final org.bukkit.World bukkitWorld = world.getWorld();
++        final org.bukkit.Location origin = io.papermc.paper.util.MCUtil.toLocation(world, center);
++        final var paperRegistry = io.papermc.paper.registry.PaperRegistry.getRegistry(io.papermc.paper.registry.RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
++        final List<io.papermc.paper.world.structure.ConfiguredStructure> configuredStructures = new ArrayList<>();
++        paperRegistry.convertToApi(structures, configuredStructures::add, false); // gracefully handle missing api, use tests to check (or exclude)
++        if (!configuredStructures.isEmpty()) {
++            final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, configuredStructures, radius, skipReferencedStructures);
++            if (!event.callEvent()) {
++                return null;
++            }
++            if (event.getResult() != null) {
++                return Pair.of(io.papermc.paper.util.MCUtil.toBlockPosition(event.getResult().position()), paperRegistry.getMinecraftHolder(event.getResult().configuredStructure()));
++            }
++            center = io.papermc.paper.util.MCUtil.toBlockPosition(event.getOrigin());
++            radius = event.getRadius();
++            skipReferencedStructures = event.shouldFindUnexplored();
++            structures = HolderSet.direct(paperRegistry::getMinecraftHolder, event.getConfiguredStructures());
++        }
++        // Paper end
+         ChunkGeneratorStructureState chunkgeneratorstructurestate = world.getChunkSource().getGeneratorState();
+         Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap();
+         Iterator iterator = structures.iterator();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index fed01c7ed32a0207216fd902976902b223cc3518..5b48102ad1c9940a5f41ba8084be0804b7536d30 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -318,6 +318,7 @@ public final class CraftServer implements Server {
+         this.structureManager = new CraftStructureManager(console.getStructureManager());
+ 
+         Bukkit.setServer(this);
++        io.papermc.paper.world.structure.PaperConfiguredStructure.init(); // Paper
+ 
+         // Register all the Enchantments and PotionTypes now so we can stop new registration immediately after
+         Enchantments.SHARPNESS.getClass();
+diff --git a/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cb077ac5e24d6632c46927fef8ecd20f150d3596
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
+@@ -0,0 +1,95 @@
++package io.papermc.paper.world.structure;
++
++import io.papermc.paper.registry.Reference;
++import net.minecraft.core.Registry;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.Bootstrap;
++import net.minecraft.world.level.levelgen.structure.Structure;
++import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.AfterClass;
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import java.io.PrintStream;
++import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
++import java.util.LinkedHashMap;
++import java.util.Map;
++import java.util.StringJoiner;
++
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertNotNull;
++import static org.junit.Assert.assertTrue;
++
++public class ConfiguredStructureTest extends AbstractTestingBase {
++
++    private static final Map<ResourceLocation, String> BUILT_IN_STRUCTURES = new LinkedHashMap<>();
++    private static final Map<NamespacedKey, Reference<?>> DEFAULT_CONFIGURED_STRUCTURES = new LinkedHashMap<>();
++
++    private static PrintStream out;
++
++    @BeforeClass
++    public static void collectStructures() throws ReflectiveOperationException {
++        out = System.out;
++        System.setOut(Bootstrap.STDOUT);
++        for (Field field : BuiltinStructures.class.getDeclaredFields()) {
++            if (field.getType().equals(ResourceKey.class) && Modifier.isStatic(field.getModifiers())) {
++                BUILT_IN_STRUCTURES.put(((ResourceKey<?>) field.get(null)).location(), field.getName());
++            }
++        }
++        for (Field field : ConfiguredStructure.class.getDeclaredFields()) {
++            if (field.getType().equals(Reference.class) && Modifier.isStatic(field.getModifiers())) {
++                final Reference<?> ref = (Reference<?>) field.get(null);
++                DEFAULT_CONFIGURED_STRUCTURES.put(ref.getKey(), ref);
++            }
++        }
++    }
++
++    @Test
++    public void testMinecraftToApi() {
++        Registry<Structure> structureRegistry = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(Registries.STRUCTURE);
++        assertEquals("configured structure maps should be the same size", BUILT_IN_STRUCTURES.size(), structureRegistry.size());
++
++        Map<ResourceLocation, Structure> missing = new LinkedHashMap<>();
++        for (Structure feature : structureRegistry) {
++            final ResourceLocation key = structureRegistry.getKey(feature);
++            assertNotNull("Missing built-in registry key", key);
++            if (key.equals(BuiltinStructures.ANCIENT_CITY.location())) {
++                continue; // TODO remove when upstream adds "jigsaw" StructureType
++            }
++            if (DEFAULT_CONFIGURED_STRUCTURES.get(CraftNamespacedKey.fromMinecraft(key)) == null) {
++                missing.put(key, feature);
++            }
++        }
++
++        assertTrue(printMissing(missing), missing.isEmpty());
++    }
++
++    @Test
++    public void testApiToMinecraft() {
++        Registry<Structure> structureRegistry = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(Registries.STRUCTURE);
++        for (NamespacedKey apiKey : DEFAULT_CONFIGURED_STRUCTURES.keySet()) {
++            assertTrue(apiKey + " does not have a minecraft counterpart", structureRegistry.containsKey(CraftNamespacedKey.toMinecraft(apiKey)));
++        }
++    }
++
++    private static String printMissing(Map<ResourceLocation, Structure> missing) {
++        final StringJoiner joiner = new StringJoiner("\n", "Missing: \n", "");
++
++        missing.forEach((key, configuredFeature) -> {
++            joiner.add("public static final Reference<ConfiguredStructure> " + BUILT_IN_STRUCTURES.get(key) + " = create(\"" + key.getPath() + "\");");
++        });
++
++        return joiner.toString();
++    }
++
++    @AfterClass
++    public static void after() {
++        System.setOut(out);
++    }
++}
