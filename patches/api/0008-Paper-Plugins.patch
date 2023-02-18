@@ -5,11 +5,11 @@ Subject: [PATCH] Paper Plugins
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 558fa62d87af1103efa703ef9114481cb928cf8d..e84aedeb98861803ecdd3736c4a0cfaba15b0269 100644
+index 359e7bd7e3c76cec89d638f940006dc9c944f98b..f5f217a3a786bf4c95bea74c135289d12205cf7b 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -41,7 +41,7 @@ dependencies {
-     apiAndDocs("net.kyori:adventure-text-logger-slf4j")
+@@ -44,7 +44,7 @@ dependencies {
+     implementation("org.ow2.asm:asm-commons:9.2")
      // Paper end
  
 -    compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
@@ -1411,7 +1411,7 @@ index e195e74c48c69047aa825b75fad95419c505b41f..53f28c9e6843991486a576d41b6641c1
      }
  
 diff --git a/src/main/java/org/bukkit/plugin/Plugin.java b/src/main/java/org/bukkit/plugin/Plugin.java
-index b37938745f916b5f0111b07b1a1c97527f026e9d..e63152c86db329b40536c54f3a4cb3d244947fce 100644
+index b37938745f916b5f0111b07b1a1c97527f026e9d..8c76716249e44ed8bf6be94c1f5c7b6d9bb35be2 100644
 --- a/src/main/java/org/bukkit/plugin/Plugin.java
 +++ b/src/main/java/org/bukkit/plugin/Plugin.java
 @@ -30,10 +30,21 @@ public interface Plugin extends TabExecutor {
@@ -1436,6 +1436,14 @@ index b37938745f916b5f0111b07b1a1c97527f026e9d..e63152c86db329b40536c54f3a4cb3d2
      /**
       * Gets a {@link FileConfiguration} for this plugin, read through
       * "config.yml"
+@@ -94,6 +105,7 @@ public interface Plugin extends TabExecutor {
+      *
+      * @return PluginLoader that controls this plugin
+      */
++    @Deprecated(forRemoval = true) // Paper - The PluginLoader system will not function in the near future
+     @NotNull
+     public PluginLoader getPluginLoader();
+ 
 diff --git a/src/main/java/org/bukkit/plugin/PluginBase.java b/src/main/java/org/bukkit/plugin/PluginBase.java
 index 94f8ceb965cecb5669a84a0ec61c0f706c2a2673..e773db6da357ad210eb24d4c389af2dc84ce450a 100644
 --- a/src/main/java/org/bukkit/plugin/PluginBase.java
@@ -1532,8 +1540,20 @@ index 0c9f4d1e9104fa6951114c1f9ec954dfcc749196..ffe8a59c28501cd45048b8b2fba1a008
  
      public PluginDescriptionFile(@NotNull final InputStream stream) throws InvalidDescriptionException {
          loadMap(asMap(YAML.get().load(stream)));
+diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
+index a88733f1cd1ddb5d85ab1b0e6af4fd5b80bbc1c6..cb530369e667c426c842da356c31304bb5c3ecfa 100644
+--- a/src/main/java/org/bukkit/plugin/PluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/PluginLoader.java
+@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
+  * Represents a plugin loader, which handles direct access to specific types
+  * of plugins
+  */
++@Deprecated(forRemoval = true) // Paper - The PluginLoader system will not function in the near future
+ public interface PluginLoader {
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
-index 41e26451fe12d8e6e0ef73c85731b24b4e3f200c..6fb092dd4b0cc715d455f07fab1ca36d87ae269d 100644
+index 41e26451fe12d8e6e0ef73c85731b24b4e3f200c..03213fde8315384ec56c16031cfc606ade2e8091 100644
 --- a/src/main/java/org/bukkit/plugin/PluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/PluginManager.java
 @@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
@@ -1545,7 +1565,15 @@ index 41e26451fe12d8e6e0ef73c85731b24b4e3f200c..6fb092dd4b0cc715d455f07fab1ca36d
  
      /**
       * Registers the specified plugin loader
-@@ -303,4 +303,17 @@ public interface PluginManager {
+@@ -23,6 +23,7 @@ public interface PluginManager {
+      * @throws IllegalArgumentException Thrown when the given Class is not a
+      *     valid PluginLoader
+      */
++    @Deprecated(forRemoval = true) // Paper - The PluginLoader system will not function in the near future
+     public void registerInterface(@NotNull Class<? extends PluginLoader> loader) throws IllegalArgumentException;
+ 
+     /**
+@@ -303,4 +304,17 @@ public interface PluginManager {
       * @return True if event timings are to be used
       */
      public boolean useTimings();
@@ -1973,10 +2001,18 @@ index 669a70faa95d0d6525a731d73499ed6fb0b48320..a5636b1f223dd37420a4acbccf28f719
  
      /**
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 047c0304fd617cec990f80815b43916c6ef5a94c..40d08114a7ce2d2a6bcfd8d231dbabe1b3b6e4eb 100644
+index 047c0304fd617cec990f80815b43916c6ef5a94c..d0ad072c832b8fc8a1cfdcafdd42c724531a2e29 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-@@ -79,6 +79,7 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -49,6 +49,7 @@ import org.yaml.snakeyaml.error.YAMLException;
+ /**
+  * Represents a Java plugin loader, allowing plugins in the form of .jar
+  */
++@Deprecated(forRemoval = true) // Paper - The PluginLoader system will not function in the near future. This implementation will be moved.
+ public final class JavaPluginLoader implements PluginLoader {
+     final Server server;
+     private final Pattern[] fileFilters = new Pattern[]{Pattern.compile("\\.jar$")};
+@@ -79,6 +80,7 @@ public final class JavaPluginLoader implements PluginLoader {
      @Override
      @NotNull
      public Plugin loadPlugin(@NotNull final File file) throws InvalidPluginException {
@@ -1984,7 +2020,7 @@ index 047c0304fd617cec990f80815b43916c6ef5a94c..40d08114a7ce2d2a6bcfd8d231dbabe1
          Preconditions.checkArgument(file != null, "File cannot be null");
  
          if (!file.exists()) {
-@@ -142,7 +143,7 @@ public final class JavaPluginLoader implements PluginLoader {
+@@ -142,7 +144,7 @@ public final class JavaPluginLoader implements PluginLoader {
  
          final PluginClassLoader loader;
          try {
