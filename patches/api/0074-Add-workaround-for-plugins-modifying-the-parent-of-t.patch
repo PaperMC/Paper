@@ -14,12 +14,13 @@ parent of the plugin logger to avoid this.
 
 diff --git a/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..76f2cb9cd99cad2a9484eab2becd8c36f1dd91b3
+index 0000000000000000000000000000000000000000..087ee57fe5485bc760fadd45a176d4d90a18f9f8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,48 @@
 +package com.destroystokyo.paper.utils;
 +
++import io.papermc.paper.plugin.configuration.PluginMeta;
 +import org.bukkit.plugin.PluginDescriptionFile;
 +
 +import java.util.logging.Level;
@@ -32,20 +33,26 @@ index 0000000000000000000000000000000000000000..76f2cb9cd99cad2a9484eab2becd8c36
 + */
 +public class PaperPluginLogger extends Logger {
 +
++    @Deprecated(forRemoval = true)
 +    @NotNull
 +    public static Logger getLogger(@NotNull PluginDescriptionFile description) {
-+        Logger logger = new PaperPluginLogger(description);
++        return getLogger((PluginMeta) description);
++    }
++
++    @NotNull
++    public static Logger getLogger(@NotNull PluginMeta meta) {
++        Logger logger = new PaperPluginLogger(meta);
 +        if (!LogManager.getLogManager().addLogger(logger)) {
 +            // Disable this if it's going to happen across reloads anyways...
 +            //logger.log(Level.WARNING, "Could not insert plugin logger - one was already found: {}", LogManager.getLogManager().getLogger(this.getName()));
-+            logger = LogManager.getLogManager().getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName());
++            logger = LogManager.getLogManager().getLogger(meta.getLoggerPrefix() != null ? meta.getLoggerPrefix() : meta.getName());
 +        }
 +
 +        return logger;
 +    }
 +
-+    private PaperPluginLogger(@NotNull PluginDescriptionFile description) {
-+        super(description.getPrefix() != null ? description.getPrefix() : description.getName(), null);
++    private PaperPluginLogger(@NotNull PluginMeta meta) {
++        super(meta.getLoggerPrefix() != null ? meta.getLoggerPrefix() : meta.getName(), null);
 +    }
 +
 +    @Override
@@ -60,7 +67,7 @@ index 0000000000000000000000000000000000000000..76f2cb9cd99cad2a9484eab2becd8c36
 +
 +}
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index accac9527b1c267b75774532b85f28c868b06c28..3103cfef8b5e111b32fe882eee938f1272ebde67 100644
+index accac9527b1c267b75774532b85f28c868b06c28..a536c47fb5f05cad046c2f3374c69f4f83f7f32c 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 @@ -44,7 +44,7 @@ public abstract class JavaPlugin extends PluginBase {
@@ -68,7 +75,7 @@ index accac9527b1c267b75774532b85f28c868b06c28..3103cfef8b5e111b32fe882eee938f12
      private FileConfiguration newConfig = null;
      private File configFile = null;
 -    private Logger logger = null; // Paper - PluginLogger -> Logger
-+    Logger logger = null; // Paper - PluginLogger -> Logger, package-private
++    public Logger logger = null; // Paper - PluginLogger -> Logger, public
  
      public JavaPlugin() {
          // Paper start
