@@ -13,7 +13,7 @@ tasks.processResources {
         "apiversion" to apiVersion,
     )
     inputs.properties(props)
-    filesMatching("plugin.yml") {
+    filesMatching("paper-plugin.yml") {
         expand(props)
     }
 }

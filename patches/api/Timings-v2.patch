@@ -2846,9 +2846,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      Material fromLegacy(Material material);
 @@ -0,0 +0,0 @@ public interface UnsafeValues {
-     String getTranslationKey(EntityType entityType);
- 
-     String getTranslationKey(ItemStack itemStack);
+         return !Bukkit.getUnsafe().isSupportedApiVersion(plugin.getDescription().getAPIVersion());
+     }
+     // Paper end
 +
 +    // Paper start
 +    /**
@@ -2893,6 +2893,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected String usageMessage;
      private String permission;
      private net.kyori.adventure.text.Component permissionMessage; // Paper
+-    public org.spigotmc.CustomTimingsHandler timings; // Spigot
 +    public co.aikar.timings.Timing timings; // Paper
 +    @NotNull public String getTimingName() {return getName();} // Paper
  
@@ -3093,7 +3094,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class SimpleCommandMap implements CommandMap {
          register("bukkit", new VersionCommand("version"));
          register("bukkit", new ReloadCommand("reload"));
-         register("bukkit", new PluginsCommand("plugins"));
+         //register("bukkit", new PluginsCommand("plugins")); // Paper
 -        register("bukkit", new TimingsCommand("timings"));
 +        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Paper
      }
@@ -3434,9 +3435,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-     @Override
      @Nullable
      public synchronized Plugin getPlugin(@NotNull String name) {
+         if (true) {return this.paperPluginManager.getPlugin(name);} // Paper
 -        return lookupNames.get(name.replace(' ', '_'));
 +        return lookupNames.get(name.replace(' ', '_').toLowerCase(java.util.Locale.ENGLISH)); // Paper
      }
@@ -3453,9 +3454,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
              getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
- 
      @Override
      public boolean useTimings() {
+         if (true) {return this.paperPluginManager.useTimings();} // Paper
 -        return useTimings;
 +        return co.aikar.timings.Timings.isTimingsEnabled(); // Spigot
      }
@@ -3468,7 +3469,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        useTimings = use;
 +        co.aikar.timings.Timings.setTimingsEnabled(use); // Paper
      }
- }
+ 
+     // Paper start
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
@@ -3517,11 +3519,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
- /**
-  * A ClassLoader for plugins, to allow shared classes across multiple plugins
   */
--final class PluginClassLoader extends URLClassLoader {
-+public final class PluginClassLoader extends URLClassLoader { // Spigot
+ @org.jetbrains.annotations.ApiStatus.Internal // Paper
+ public final class PluginClassLoader extends URLClassLoader implements io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader { // Paper
 +    public JavaPlugin getPlugin() { return plugin; } // Spigot
      private final JavaPluginLoader loader;
      private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
