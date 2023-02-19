@@ -457,19 +457,22 @@ index 0000000000000000000000000000000000000000..254854646b748e5bb47657625315ced5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..39e503f52684e928c61c6d27bf61727a4721739c
+index 0000000000000000000000000000000000000000..85fa762d7d3476510886a7cc7b3bc79acfce4425
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,78 @@
 +package io.papermc.paper.plugin;
 +
 +import com.mojang.logging.LogUtils;
 +import joptsimple.OptionSet;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +import org.slf4j.Logger;
 +
 +import java.io.File;
++import java.io.IOException;
++import java.nio.file.Files;
 +import java.nio.file.Path;
 +
 +public class PluginInitializerManager {
@@ -483,7 +486,37 @@ index 0000000000000000000000000000000000000000..39e503f52684e928c61c6d27bf61727a
 +        // We have to load the bukkit configuration inorder to get the update folder location.
 +        File configFileLocationBukkit = (File) minecraftOptionSet.valueOf("bukkit-settings");
 +        this.pluginDirectory = ((File) minecraftOptionSet.valueOf("plugins")).toPath();
-+        this.updateDirectory = this.pluginDirectory.resolve(YamlConfiguration.loadConfiguration(configFileLocationBukkit).getString("settings.update-folder", "update"));
++
++        String updateDirectory = YamlConfiguration.loadConfiguration(configFileLocationBukkit).getString("settings.update-folder", "update");
++        if (updateDirectory.isBlank()) {
++            this.updateDirectory = null;
++        } else {
++            Path resolvedUpdateDirectory = this.pluginDirectory.resolve(updateDirectory);
++            if (!Files.isDirectory(resolvedUpdateDirectory)) {
++                this.updateDirectory = null;
++                return;
++            }
++
++            boolean isSameFile = true;
++            try {
++                isSameFile = Files.isSameFile(resolvedUpdateDirectory, this.pluginDirectory);
++            } catch (IOException e) {
++                LOGGER.error("Misconfigured update directory!");
++                LOGGER.error("Failed to compare update/plugin directory", e);
++            }
++
++            if (isSameFile) {
++                LOGGER.error("Misconfigured update directory!");
++                LOGGER.error(("Your configured update directory (%s) in bukkit.yml is pointing to the same location as the plugin directory (%s). " +
++                    "Disabling auto updating functionality.").formatted(resolvedUpdateDirectory, this.pluginDirectory));
++
++                this.updateDirectory = null;
++            } else {
++                this.updateDirectory = resolvedUpdateDirectory;
++            }
++
++        }
++
 +    }
 +
 +    public static PluginInitializerManager init(OptionSet optionSet) {
@@ -500,7 +533,7 @@ index 0000000000000000000000000000000000000000..39e503f52684e928c61c6d27bf61727a
 +        return pluginDirectory;
 +    }
 +
-+    @NotNull
++    @Nullable
 +    public Path pluginUpdatePath() {
 +        return updateDirectory;
 +    }
@@ -4639,10 +4672,10 @@ index 0000000000000000000000000000000000000000..1822e076601db51c8a7954036853bee1
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cfc34bbb32d5cf19dbb100003a4aae620696d446
+index 0000000000000000000000000000000000000000..e6a99f422038fad519215abf239135b11edc2bce
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
-@@ -0,0 +1,154 @@
+@@ -0,0 +1,156 @@
 +package io.papermc.paper.plugin.provider.source;
 +
 +import io.papermc.paper.plugin.PluginInitializerManager;
@@ -4691,10 +4724,10 @@ index 0000000000000000000000000000000000000000..cfc34bbb32d5cf19dbb100003a4aae62
 +        }
 +
 +        try {
-+            this.checkUpdate(context);
++            context = this.checkUpdate(context);
 +
 +            JarFile file = new JarFile(context.toFile());
-+            PluginFileType<?,?> type = PluginFileType.guessType(file);
++            PluginFileType<?, ?> type = PluginFileType.guessType(file);
 +            if (type == null) {
 +                throw new IllegalArgumentException(source + " is not a valid plugin file, cannot load a plugin from it!");
 +            }
@@ -4712,14 +4745,15 @@ index 0000000000000000000000000000000000000000..cfc34bbb32d5cf19dbb100003a4aae62
 +     */
 +    private Path checkUpdate(Path file) throws Exception {
 +        PluginInitializerManager pluginSystem = PluginInitializerManager.instance();
-+        if (!Files.isDirectory(pluginSystem.pluginUpdatePath())) {
++        Path updateDirectory = pluginSystem.pluginUpdatePath();
++        if (updateDirectory == null || !Files.isDirectory(updateDirectory)) {
 +            return file;
 +        }
 +
 +        try {
 +            String pluginName = this.getPluginName(file);
 +            UpdateFileVisitor visitor = new UpdateFileVisitor(pluginName);
-+            Files.walkFileTree(pluginSystem.pluginUpdatePath(), Set.of(), 1, visitor);
++            Files.walkFileTree(updateDirectory, Set.of(), 1, visitor);
 +            if (visitor.getValidPlugin() != null) {
 +                Path updateLocation = visitor.getValidPlugin();
 +
@@ -4733,6 +4767,7 @@ index 0000000000000000000000000000000000000000..cfc34bbb32d5cf19dbb100003a4aae62
 +                File newName = new File(file.toFile().getParentFile(), updateLocation.toFile().getName());
 +                file.toFile().renameTo(newName);
 +                updateLocation.toFile().delete();
++                return newName.toPath();
 +            }
 +        } catch (Exception e) {
 +            throw new InvalidPluginException(e);
