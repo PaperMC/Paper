@@ -143,7 +143,7 @@ index 0000000000000000000000000000000000000000..756acf231b1b076b08046d86992ba7ce
 +
 +}
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index 4ac3dd977e75cd8464163351d306e037ee32cb48..1a71bb8861150c1add6446aa2fad0f7035dd6873 100644
+index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c84891b8b0fd 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -40,7 +40,17 @@ public class AnnotationTest {
@@ -229,7 +229,19 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..1a71bb8861150c1add6446aa2fad0f70
      }
  
      private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
-@@ -152,7 +193,7 @@ public class AnnotationTest {
+@@ -140,6 +181,11 @@ public class AnnotationTest {
+             // Exceptions are excluded
+             return false;
+         }
++        // Paper start
++        if (isInternal(clazz.invisibleAnnotations)) {
++            return false;
++        }
++        // Paper end
+ 
+         for (String excludedClass : EXCLUDED_CLASSES) {
+             if (excludedClass.equals(clazz.name)) {
+@@ -152,7 +198,7 @@ public class AnnotationTest {
  
      private static boolean isMethodIncluded(@NotNull ClassNode clazz, @NotNull MethodNode method, @NotNull Map<String, ClassNode> allClasses) {
          // Exclude private, synthetic and deprecated methods
@@ -238,9 +250,32 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..1a71bb8861150c1add6446aa2fad0f70
              return false;
          }
  
-@@ -174,7 +215,7 @@ public class AnnotationTest {
+@@ -170,11 +216,30 @@ public class AnnotationTest {
+         if ("<init>".equals(method.name) && isAnonymous(clazz)) {
+             return false;
+         }
++        // Paper start
++        if (isInternal(method.invisibleAnnotations)) {
++            return false;
++        }
++        // Paper end
+ 
          return true;
      }
++    // Paper start
++    private static boolean isInternal(List<? extends AnnotationNode> annotations) {
++        if (annotations == null) {
++            return false;
++        }
++        for (AnnotationNode node : annotations) {
++            if (node.desc.equals("Lorg/jetbrains/annotations/ApiStatus$Internal;")) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++    // Paper end
  
 -    private static boolean isWellAnnotated(@Nullable List<AnnotationNode> annotations) {
 +    private static boolean isWellAnnotated(@Nullable List<? extends AnnotationNode> annotations) { // Paper

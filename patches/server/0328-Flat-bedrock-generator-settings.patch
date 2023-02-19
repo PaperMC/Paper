@@ -19,24 +19,6 @@ public net.minecraft.world.level.levelgen.SurfaceSystem getOrCreateRandomFactory
 
 Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
-diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-index 5b8ecf5b0165ed2cd4397cdee958e97c2e8f18d5..ad802eb211f05f646159d7fc53f8a9427b46cb89 100644
---- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-+++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -310,7 +310,13 @@ public class BuiltInRegistries {
-     }
- 
-     public static void bootStrap() {
-+        // Paper start
-+        bootStrap(() -> {});
-+    }
-+    public static void bootStrap(Runnable runnable) {
-+        // Paper end
-         createContents();
-+        runnable.run(); // Paper
-         freeze();
-         validate(REGISTRY);
-     }
 diff --git a/src/main/java/net/minecraft/data/worldgen/SurfaceRuleData.java b/src/main/java/net/minecraft/data/worldgen/SurfaceRuleData.java
 index 06e1774dfbb667aca69bc30c9675ed472cb5728c..1d5bc86516df3781aea894c3afd340421ba51a17 100644
 --- a/src/main/java/net/minecraft/data/worldgen/SurfaceRuleData.java
@@ -132,22 +114,17 @@ index 06e1774dfbb667aca69bc30c9675ed472cb5728c..1d5bc86516df3781aea894c3afd34042
  
      public static SurfaceRules.RuleSource end() {
 diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
-index 0d3a8f576c037886ccdd6068ce953c4ce010ae2f..d0ee6523477309bc984869774533ee1941ed0cb0 100644
+index ac2b7b5161eaaca3620268ae865d6f2a80227fde..a1192d1f6b99669f843e8d9a8928ff0e8c030559 100644
 --- a/src/main/java/net/minecraft/server/Bootstrap.java
 +++ b/src/main/java/net/minecraft/server/Bootstrap.java
-@@ -69,7 +69,11 @@ public class Bootstrap {
-                     EntitySelectorOptions.bootStrap();
-                     DispenseItemBehavior.bootStrap();
+@@ -71,6 +71,7 @@ public class Bootstrap {
                      CauldronInteraction.bootStrap();
--                    BuiltInRegistries.bootStrap();
-+                    // Paper start - register custom flat bedrock
-+                    BuiltInRegistries.bootStrap(() -> {
+                     // Paper start
+                     BuiltInRegistries.bootStrap(() -> {
 +                        net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.MATERIAL_CONDITION, new net.minecraft.resources.ResourceLocation("paper", "bedrock_condition_source"), net.minecraft.data.worldgen.SurfaceRuleData.PaperBedrockConditionSource.CODEC.codec());
-+                    });
-+                    // Paper end
-                     Bootstrap.wrapStreams();
-                 }
-                 // CraftBukkit start - easier than fixing the decompile
+                         io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
+                     });
+                     // Paper end
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 index cdc87f14e5d6336856c74d5089e50ae5ebad9923..6b84633bf6956406d2e2c5dd32fa358f41ccc890 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
