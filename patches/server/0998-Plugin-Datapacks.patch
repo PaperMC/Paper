@@ -1,0 +1,297 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 19 Feb 2023 11:23:57 -0800
+Subject: [PATCH] Plugin Datapacks
+
+
+diff --git a/src/main/java/io/papermc/paper/datapack/PluginDataPackRepositorySource.java b/src/main/java/io/papermc/paper/datapack/PluginDataPackRepositorySource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..19733a4e0a020b323d7d52100050714ace2aaa90
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PluginDataPackRepositorySource.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.datapack;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import java.util.List;
++import java.util.Objects;
++import java.util.function.Consumer;
++import net.minecraft.network.chat.Component;
++import net.minecraft.server.packs.PackType;
++import net.minecraft.server.packs.repository.Pack;
++import net.minecraft.server.packs.repository.PackSource;
++import net.minecraft.server.packs.repository.RepositorySource;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class PluginDataPackRepositorySource implements RepositorySource {
++
++    private final List<PluginDataPackResources.Loader> pluginDataPacks;
++
++    public PluginDataPackRepositorySource(final List<PluginDataPackResources.Loader> pluginDataPacks) {
++        this.pluginDataPacks = List.copyOf(pluginDataPacks);
++    }
++
++    @Override
++    public void loadPacks(final Consumer<Pack> profileAdder) {
++        for (final PluginDataPackResources.Loader pluginDataPack : this.pluginDataPacks) {
++            final PluginMeta pluginMeta = pluginDataPack.pluginProvider().getMeta();
++            final String name = "plugin/" + pluginMeta.getName();
++            final @Nullable Component displayName = PaperAdventure.asVanilla(Objects.requireNonNull(pluginMeta.getDatapackConfiguration()).name());
++            final @Nullable Pack pack = Pack.readMetaAndCreate(name, displayName != null ? displayName : Component.literal(pluginMeta.getName()), false, pluginDataPack::create, PackType.SERVER_DATA, Pack.Position.BOTTOM, PackSource.SERVER);
++            if (pack != null) {
++                profileAdder.accept(pack);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/PluginDataPackResources.java b/src/main/java/io/papermc/paper/datapack/PluginDataPackResources.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2de9a2de1504218d1e7e83fa88e188a640ada0b1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PluginDataPackResources.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.datapack;
++
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import java.io.IOException;
++import java.nio.file.FileSystem;
++import java.nio.file.FileSystems;
++import java.nio.file.Path;
++import java.util.Objects;
++import net.minecraft.server.packs.PackResources;
++import net.minecraft.server.packs.PathPackResources;
++import org.apache.commons.io.IOUtils;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.slf4j.Logger;
++
++@DefaultQualifier(NonNull.class)
++public final class PluginDataPackResources extends PathPackResources {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
++
++    private final FileSystem fileSystem;
++
++    private PluginDataPackResources(final String name, final Path rootPath, final FileSystem fileSystem) {
++        super(name, rootPath, false);
++        this.fileSystem = fileSystem;
++    }
++
++    @Override
++    public void close() {
++        super.close();
++        IOUtils.closeQuietly(this.fileSystem);
++    }
++
++    public record Loader(PluginProvider<?> pluginProvider) {
++
++        public PackResources create(final String name) {
++            try {
++                final FileSystem fileSystem = FileSystems.newFileSystem(this.pluginProvider().getSource());
++                final Path rootPath = fileSystem.getPath(Objects.requireNonNull(this.pluginProvider().getMeta().getDatapackConfiguration()).directory());
++                return new PluginDataPackResources(name, rootPath, fileSystem);
++            } catch (final IOException e) {
++                LOGGER.error("Could not load datapack from {}.", this.pluginProvider().getMeta().getName());
++                throw new RuntimeException(e);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java b/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java
+index 6c0f2c315387734f8dd4a7eca633aa0a9856dd17..0ff1a16400c44dafaeb6e11d2cf56d4cf75c4953 100644
+--- a/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java
+@@ -1,9 +1,11 @@
+ package io.papermc.paper.plugin.entrypoint;
+ 
++import io.papermc.paper.datapack.PluginDataPackResources;
+ import io.papermc.paper.plugin.provider.PluginProvider;
+ import io.papermc.paper.plugin.storage.BootstrapProviderStorage;
+ import io.papermc.paper.plugin.storage.ProviderStorage;
+ import io.papermc.paper.plugin.storage.ServerPluginProviderStorage;
++import java.util.List;
+ import org.jetbrains.annotations.ApiStatus;
+ 
+ import java.util.HashMap;
+@@ -26,6 +28,10 @@ public class LaunchEntryPointHandler implements EntrypointHandler {
+         LaunchEntryPointHandler.INSTANCE.enter(Entrypoint.BOOTSTRAPPER);
+     }
+ 
++    public static List<PluginDataPackResources.Loader> getDatapackLoaders() {
++        return ((BootstrapProviderStorage) LaunchEntryPointHandler.INSTANCE.get(Entrypoint.BOOTSTRAPPER)).datapackLoaders;
++    }
++
+     @Override
+     public void enter(Entrypoint<?> entrypoint) {
+         ProviderStorage<?> storage = this.storage.get(entrypoint);
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperDatapackConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperDatapackConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5d0c1f2307f2d1f5a96cd1ca1df1a5a70d08e151
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperDatapackConfiguration.java
+@@ -0,0 +1,9 @@
++package io.papermc.paper.plugin.provider.configuration;
++
++import io.papermc.paper.plugin.DatapackConfiguration;
++import net.kyori.adventure.text.Component;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++
++public record PaperDatapackConfiguration(@NonNull String directory, @Nullable Component name) implements DatapackConfiguration {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
+index 45bd29b70782e29eb11c36eaca0f940aee49799b..e7c22f06db47a7fc3164f28719380024038e5467 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
+@@ -5,7 +5,9 @@ import com.google.common.collect.ImmutableList;
+ import io.papermc.paper.configuration.constraint.Constraint;
+ import io.papermc.paper.configuration.serializer.ComponentSerializer;
+ import io.papermc.paper.configuration.serializer.EnumValueSerializer;
++import io.papermc.paper.plugin.DatapackConfiguration;
+ import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.configuration.serializer.NullObjectSerializer;
+ import io.papermc.paper.plugin.provider.configuration.serializer.PermissionConfigurationSerializer;
+ import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
+ import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
+@@ -60,6 +62,7 @@ public class PaperPluginMeta implements PluginMeta {
+     @Required
+     @PluginConfigConstraints.PluginVersion
+     private String apiVersion;
++    private PaperDatapackConfiguration datapack;
+ 
+     private Map<PluginDependencyLifeCycle, Map<String, DependencyConfiguration>> dependencies = new EnumMap<>(PluginDependencyLifeCycle.class);
+ 
+@@ -79,6 +82,7 @@ public class PaperPluginMeta implements PluginMeta {
+                         .register(new EnumValueSerializer())
+                         .register(PermissionConfiguration.class, PermissionConfigurationSerializer.SERIALIZER)
+                         .register(new ComponentSerializer())
++                        .register(PaperDatapackConfiguration.class, NullObjectSerializer.INSTANCE)
+                         .registerAnnotatedObjects(
+                             ObjectMapper.factoryBuilder()
+                                 .addConstraint(Constraint.class, new Constraint.Factory())
+@@ -245,4 +249,9 @@ public class PaperPluginMeta implements PluginMeta {
+         return this.hasOpenClassloader;
+     }
+ 
++    @Override
++    public @Nullable DatapackConfiguration getDatapackConfiguration() {
++        return this.datapack;
++    }
++
+ }
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/serializer/NullObjectSerializer.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/serializer/NullObjectSerializer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5226a67cf50d613ffd466db0178fa2fc48988bd3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/serializer/NullObjectSerializer.java
+@@ -0,0 +1,34 @@
++package io.papermc.paper.plugin.provider.configuration.serializer;
++
++import io.papermc.paper.plugin.DatapackConfiguration;
++import java.lang.reflect.Type;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.ConfigurationOptions;
++import org.spongepowered.configurate.objectmapping.ObjectMapper;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
++
++public final class NullObjectSerializer implements TypeSerializer<Object> {
++
++    public static final TypeSerializer<Object> INSTANCE = new NullObjectSerializer();
++    private static final TypeSerializer<Object> DELEGATE = ObjectMapper.factory().asTypeSerializer();
++
++    private NullObjectSerializer() {
++    }
++
++    @Override
++    public Object deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
++        return DELEGATE.deserialize(type, node);
++    }
++
++    @Override
++    public void serialize(final Type type, final @Nullable Object obj, final ConfigurationNode node) throws SerializationException {
++        DELEGATE.serialize(type, obj, node);
++    }
++
++    @Override
++    public @Nullable DatapackConfiguration emptyValue(final Type specificType, final ConfigurationOptions options) {
++        return null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
+index 31ec730e63adf82bf9ac02331bc7f186b98c35cf..af0fd3ded32b738636cee553113b0ea329821726 100644
+--- a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
++++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
+@@ -1,6 +1,7 @@
+ package io.papermc.paper.plugin.storage;
+ 
+ import com.mojang.logging.LogUtils;
++import io.papermc.paper.datapack.PluginDataPackResources;
+ import io.papermc.paper.plugin.PluginInitializerManager;
+ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
+ import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
+@@ -12,12 +13,16 @@ import io.papermc.paper.plugin.provider.PluginProvider;
+ import io.papermc.paper.plugin.provider.ProviderStatus;
+ import io.papermc.paper.plugin.provider.ProviderStatusHolder;
+ import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
++import java.util.ArrayList;
++import java.util.List;
+ import org.slf4j.Logger;
+ 
+ public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootstrap> {
+ 
+     private static final Logger LOGGER = LogUtils.getClassLogger();
+ 
++    public final List<PluginDataPackResources.Loader> datapackLoaders = new ArrayList<>();
++
+     public BootstrapProviderStorage() {
+         super(new ModernPluginLoadingStrategy<>(new ProviderConfiguration<>() {
+             @Override
+@@ -51,6 +56,13 @@ public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootst
+         }));
+     }
+ 
++    @Override
++    public void processProvided(final PluginProvider<PluginBootstrap> provider, final PluginBootstrap provided) {
++        if (provider.getMeta().getDatapackConfiguration() != null) {
++            this.datapackLoaders.add(new PluginDataPackResources.Loader(provider));
++        }
++    }
++
+     @Override
+     public String toString() {
+         return "BOOTSTRAP:" + super.toString();
+diff --git a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+index 03bf7dfc289c6a02f19678d3c7041c027154b99d..10aaa9f8ff8237445876e6c7895e3e0b23b2d628 100644
+--- a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
++++ b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+@@ -51,7 +51,8 @@ public class ServerPacksSource extends BuiltInPackSource {
+     }
+ 
+     public static PackRepository createPackRepository(Path dataPacksPath) {
+-        return new PackRepository(new ServerPacksSource(), new FolderRepositorySource(dataPacksPath, PackType.SERVER_DATA, PackSource.WORLD));
++        final RepositorySource pluginSource = new io.papermc.paper.datapack.PluginDataPackRepositorySource(io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.getDatapackLoaders()); // Paper - plugin datapacks
++        return new PackRepository(new ServerPacksSource(), new FolderRepositorySource(dataPacksPath, PackType.SERVER_DATA, PackSource.WORLD), pluginSource); // Paper - plugin datapacks
+     }
+ 
+     public static PackRepository createPackRepository(LevelStorageSource.LevelStorageAccess session) {
+diff --git a/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java b/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java
+index ba271c35eb2804f94cfc893bf94affb9ae13d3ba..6ff8e7503885e7e8f4ba88f0753e20f7dd50758f 100644
+--- a/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java
++++ b/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java
+@@ -111,4 +111,9 @@ public class TestPluginMeta implements PluginMeta {
+     public @NotNull String getAPIVersion() {
+         return "null";
+     }
++
++    @Override
++    public @Nullable DatapackConfiguration getDatapackConfiguration() {
++        return null;
++    }
+ }
