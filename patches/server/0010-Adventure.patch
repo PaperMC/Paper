@@ -1911,16 +1911,17 @@ index 1fb62779527a228f748b49a4d2ddfc57ccb80cf8..bd808eb312ade7122973a47f4b965058
      }
  
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
-index fd5cdc33c4cc8f24265b450621a13d3ab03644c2..b0052398d7ff954c2a7943ea4618d26f45d701da 100644
+index fd5cdc33c4cc8f24265b450621a13d3ab03644c2..55e21c7b13826f60e3c656f76e1507e0242e0af3 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
-@@ -6,16 +6,25 @@ import net.minecraft.network.chat.Component;
+@@ -6,24 +6,42 @@ import net.minecraft.network.chat.Component;
  import net.minecraft.network.protocol.Packet;
  
  // Spigot start
 -public record ClientboundSystemChatPacket(String content, boolean overlay) implements Packet<ClientGamePacketListener> {
 +public record ClientboundSystemChatPacket(@javax.annotation.Nullable net.kyori.adventure.text.Component adventure$content, @javax.annotation.Nullable String content, boolean overlay) implements Packet<ClientGamePacketListener> { // Paper - Adventure
  
++    @io.papermc.paper.annotation.DoNotUse // Paper - No locale context
      public ClientboundSystemChatPacket(Component content, boolean overlay) {
 -        this(Component.Serializer.toJson(content), overlay);
 +        this(null, Component.Serializer.toJson(content), overlay); // Paper - Adventure
@@ -1942,8 +1943,9 @@ index fd5cdc33c4cc8f24265b450621a13d3ab03644c2..b0052398d7ff954c2a7943ea4618d26f
 +    // Paper end
  
      public ClientboundSystemChatPacket(FriendlyByteBuf buf) {
-         this(buf.readComponent(), buf.readBoolean());
-@@ -23,7 +32,15 @@ public record ClientboundSystemChatPacket(String content, boolean overlay) imple
+-        this(buf.readComponent(), buf.readBoolean());
++        this(null, io.papermc.paper.adventure.PaperAdventure.asJsonString(buf.readComponent(), buf.adventure$locale), buf.readBoolean()); // Paper - Adventure
+     }
  
      @Override
      public void write(FriendlyByteBuf buf) {
@@ -2071,7 +2073,7 @@ index 0f7dd33d51281b383be0fb47d4e6b133f123ce1f..011c3d2dbd34dd0c2afba477202c937c
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 56016d59d66d90de2ac4326c16b09f86e4ac390b..e06b2a8eece6f179e4a3f38754fd8d9e7b69bdc4 100644
+index 56016d59d66d90de2ac4326c16b09f86e4ac390b..722422c214ae346b5b6d29b5b99553eae5c64b5b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -156,6 +156,7 @@ import net.minecraft.world.scores.Score;
@@ -2125,6 +2127,22 @@ index 56016d59d66d90de2ac4326c16b09f86e4ac390b..e06b2a8eece6f179e4a3f38754fd8d9e
  
              this.connection.send(new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
                  boolean flag1 = true;
+@@ -1754,13 +1752,13 @@ public class ServerPlayer extends Player {
+ 
+     public void sendSystemMessage(Component message, boolean overlay) {
+         if (this.acceptsSystemMessages(overlay)) {
+-            this.connection.send(new ClientboundSystemChatPacket(message, overlay), PacketSendListener.exceptionallySend(() -> {
++            this.connection.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(message), overlay), PacketSendListener.exceptionallySend(() -> { // Paper - Adventure
+                 if (this.acceptsSystemMessages(false)) {
+                     boolean flag1 = true;
+                     String s = message.getString(256);
+                     MutableComponent ichatmutablecomponent = Component.literal(s).withStyle(ChatFormatting.YELLOW);
+ 
+-                    return new ClientboundSystemChatPacket(Component.translatable("multiplayer.message_not_delivered", ichatmutablecomponent).withStyle(ChatFormatting.RED), false);
++                    return new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("multiplayer.message_not_delivered", ichatmutablecomponent).withStyle(ChatFormatting.RED)), false); // Paper - Adventure
+                 } else {
+                     return null;
+                 }
 @@ -1769,8 +1767,13 @@ public class ServerPlayer extends Player {
      }
  
@@ -2160,7 +2178,7 @@ index 56016d59d66d90de2ac4326c16b09f86e4ac390b..e06b2a8eece6f179e4a3f38754fd8d9e
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 478d40c7cc0374cddb76486b6bd148a846a16813..032a21ffd22630c0d4d0456ac651b05105449350 100644
+index 478d40c7cc0374cddb76486b6bd148a846a16813..6878af0ad58c40f54a216c12b28b990424ecd414 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -185,6 +185,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
@@ -2255,6 +2273,15 @@ index 478d40c7cc0374cddb76486b6bd148a846a16813..032a21ffd22630c0d4d0456ac651b051
  
                              this.broadcastChatMessage(playerchatmessage1);
                          }, this.server.chatExecutor); // CraftBukkit - async chat
+@@ -1990,7 +1997,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
+             return Optional.empty();
+         } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
+-            this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
++            this.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED)), false)); // Paper - Adventure
+             return Optional.empty();
+         } else {
+             Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(acknowledgment);
 @@ -2049,7 +2056,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              this.handleCommand(s);
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
@@ -2269,6 +2296,15 @@ index 478d40c7cc0374cddb76486b6bd148a846a16813..032a21ffd22630c0d4d0456ac651b051
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
+@@ -2179,7 +2191,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                 }
+             });
+         } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) { // Re-add "Command Only" flag check
+-            this.send(new ClientboundSystemChatPacket(Component.translatable("chat.cannotSend").withStyle(ChatFormatting.RED), false));
++            this.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("chat.cannotSend").withStyle(ChatFormatting.RED)), false)); // Paper - Adventure
+         } else {
+             this.chat(s, message, true);
+         }
 @@ -2357,6 +2369,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      }
  
