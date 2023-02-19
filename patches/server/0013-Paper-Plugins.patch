@@ -750,10 +750,10 @@ index 0000000000000000000000000000000000000000..f9a2c55a354c877749db3f92956de802
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f1a2d25079c841daff19f41f2b24fb8e97d2c7d3
+index 0000000000000000000000000000000000000000..fbe05ec72310ef6485f132866f9e6deb51888065
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,203 @@
 +package io.papermc.paper.plugin.entrypoint.classloader;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -772,6 +772,7 @@ index 0000000000000000000000000000000000000000..f1a2d25079c841daff19f41f2b24fb8e
 +import java.io.File;
 +import java.io.IOException;
 +import java.net.URL;
++import java.net.URLClassLoader;
 +import java.nio.file.Path;
 +import java.util.ArrayList;
 +import java.util.Collections;
@@ -795,7 +796,7 @@ index 0000000000000000000000000000000000000000..f1a2d25079c841daff19f41f2b24fb8e
 +        registerAsParallelCapable();
 +    }
 +
-+    private final ClassLoader libraryLoader;
++    private final URLClassLoader libraryLoader;
 +    private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
 +    private final Logger logger;
 +    @Nullable
@@ -803,7 +804,7 @@ index 0000000000000000000000000000000000000000..f1a2d25079c841daff19f41f2b24fb8e
 +    @Nullable
 +    private PluginClassLoaderGroup group;
 +
-+    public PaperPluginClassLoader(Logger logger, Path source, JarFile file, PaperPluginMeta configuration, ClassLoader parentLoader, ClassLoader libraryLoader) throws IOException {
++    public PaperPluginClassLoader(Logger logger, Path source, JarFile file, PaperPluginMeta configuration, ClassLoader parentLoader, URLClassLoader libraryLoader) throws IOException {
 +        super(source, file, configuration, parentLoader);
 +        this.libraryLoader = libraryLoader;
 +
@@ -945,6 +946,15 @@ index 0000000000000000000000000000000000000000..f1a2d25079c841daff19f41f2b24fb8e
 +            ", loadedJavaPlugin=" + this.loadedJavaPlugin +
 +            ", group=" + this.group +
 +            '}';
++    }
++
++    @Override
++    public void close() throws IOException {
++        try {
++            super.close();
++        } finally {
++            this.libraryLoader.close();
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
