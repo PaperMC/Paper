@@ -1220,16 +1220,22 @@ index 0000000000000000000000000000000000000000..44d630c3eb2670c36134b9907519dc98
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/util/DummyBukkitPluginLoader.java b/src/main/java/io/papermc/paper/plugin/provider/util/DummyBukkitPluginLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..552781c77cd61d8d102d5d2f16c2ec20ffc835a8
+index 0000000000000000000000000000000000000000..c912ee020937f1ce16481c108e332e45acba5ff9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/util/DummyBukkitPluginLoader.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,60 @@
 +package io.papermc.paper.plugin.provider.util;
 +
 +import org.bukkit.Bukkit;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.Listener;
-+import org.bukkit.plugin.*;
++import org.bukkit.plugin.InvalidDescriptionException;
++import org.bukkit.plugin.InvalidPluginException;
++import org.bukkit.plugin.Plugin;
++import org.bukkit.plugin.PluginDescriptionFile;
++import org.bukkit.plugin.PluginLoader;
++import org.bukkit.plugin.RegisteredListener;
++import org.bukkit.plugin.UnknownDependencyException;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -1363,7 +1369,7 @@ index 0000000000000000000000000000000000000000..6bf3d212a6156ad9ab0e82d1ca0a04f8
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/PluginCommand.java b/src/main/java/org/bukkit/command/PluginCommand.java
-index 1dbbc244309043b18c1d71707c4fb066c0d0e02d..08d3ff24d5318b0c77d6467bcb705bffac202842 100644
+index 1dbbc244309043b18c1d71707c4fb066c0d0e02d..551c5af6a7bfa2268cbc63be8e70d129bccaa912 100644
 --- a/src/main/java/org/bukkit/command/PluginCommand.java
 +++ b/src/main/java/org/bukkit/command/PluginCommand.java
 @@ -14,7 +14,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
@@ -1371,7 +1377,7 @@ index 1dbbc244309043b18c1d71707c4fb066c0d0e02d..08d3ff24d5318b0c77d6467bcb705bff
      private TabCompleter completer;
  
 -    protected PluginCommand(@NotNull String name, @NotNull Plugin owner) {
-+    public PluginCommand(@NotNull String name, @NotNull Plugin owner) { // Paper
++    PluginCommand(@NotNull String name, @NotNull Plugin owner) {
          super(name);
          this.executor = owner;
          this.owningPlugin = owner;
@@ -1435,7 +1441,7 @@ index 94f8ceb965cecb5669a84a0ec61c0f706c2a2673..e773db6da357ad210eb24d4c389af2dc
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
-index 0c9f4d1e9104fa6951114c1f9ec954dfcc749196..ffe8a59c28501cd45048b8b2fba1a0081c5c9a72 100644
+index 0c9f4d1e9104fa6951114c1f9ec954dfcc749196..f1ae66989afaa433bf2896e0bfe2cea472f774d8 100644
 --- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
 +++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
 @@ -194,7 +194,7 @@ import org.yaml.snakeyaml.nodes.Tag;
@@ -1443,7 +1449,7 @@ index 0c9f4d1e9104fa6951114c1f9ec954dfcc749196..ffe8a59c28501cd45048b8b2fba1a008
   *</pre></blockquote>
   */
 -public final class PluginDescriptionFile {
-+public class PluginDescriptionFile implements io.papermc.paper.plugin.configuration.PluginMeta { // Paper
++public final class PluginDescriptionFile implements io.papermc.paper.plugin.configuration.PluginMeta { // Paper
      private static final Pattern VALID_NAME = Pattern.compile("^[A-Za-z0-9 _.-]+$");
      private static final ThreadLocal<Yaml> YAML = new ThreadLocal<Yaml>() {
          @Override
@@ -2008,15 +2014,18 @@ index 047c0304fd617cec990f80815b43916c6ef5a94c..d0ad072c832b8fc8a1cfdcafdd42c724
              throw ex;
          } catch (Throwable ex) {
 diff --git a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
-index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..4eec9316e4447701732c944fa84c64a009a5c394 100644
+index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..f9e67e20133d349e43d126dbb48b34d4d9aceb4c 100644
 --- a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
-@@ -36,7 +36,7 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
+@@ -36,7 +36,10 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
  import org.jetbrains.annotations.NotNull;
  import org.jetbrains.annotations.Nullable;
  
 -class LibraryLoader
++// Paper start
++@org.jetbrains.annotations.ApiStatus.Internal
 +public class LibraryLoader
++// Paper end
  {
  
      private final Logger logger;
