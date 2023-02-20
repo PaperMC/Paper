@@ -457,13 +457,14 @@ index 0000000000000000000000000000000000000000..254854646b748e5bb47657625315ced5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..85fa762d7d3476510886a7cc7b3bc79acfce4425
+index 0000000000000000000000000000000000000000..9926eb59b83abffffb578356f148f045edc027cb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,88 @@
 +package io.papermc.paper.plugin;
 +
 +import com.mojang.logging.LogUtils;
++import io.papermc.paper.configuration.PaperConfigurations;
 +import joptsimple.OptionSet;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.jetbrains.annotations.NotNull;
@@ -482,45 +483,54 @@ index 0000000000000000000000000000000000000000..85fa762d7d3476510886a7cc7b3bc79a
 +    private final Path pluginDirectory;
 +    private final Path updateDirectory;
 +
-+    PluginInitializerManager(@NotNull OptionSet minecraftOptionSet) {
-+        // We have to load the bukkit configuration inorder to get the update folder location.
-+        File configFileLocationBukkit = (File) minecraftOptionSet.valueOf("bukkit-settings");
-+        this.pluginDirectory = ((File) minecraftOptionSet.valueOf("plugins")).toPath();
-+
-+        String updateDirectory = YamlConfiguration.loadConfiguration(configFileLocationBukkit).getString("settings.update-folder", "update");
-+        if (updateDirectory.isBlank()) {
-+            this.updateDirectory = null;
-+        } else {
-+            Path resolvedUpdateDirectory = this.pluginDirectory.resolve(updateDirectory);
-+            if (!Files.isDirectory(resolvedUpdateDirectory)) {
-+                this.updateDirectory = null;
-+                return;
-+            }
-+
-+            boolean isSameFile = true;
-+            try {
-+                isSameFile = Files.isSameFile(resolvedUpdateDirectory, this.pluginDirectory);
-+            } catch (IOException e) {
-+                LOGGER.error("Misconfigured update directory!");
-+                LOGGER.error("Failed to compare update/plugin directory", e);
-+            }
-+
-+            if (isSameFile) {
-+                LOGGER.error("Misconfigured update directory!");
-+                LOGGER.error(("Your configured update directory (%s) in bukkit.yml is pointing to the same location as the plugin directory (%s). " +
-+                    "Disabling auto updating functionality.").formatted(resolvedUpdateDirectory, this.pluginDirectory));
-+
-+                this.updateDirectory = null;
-+            } else {
-+                this.updateDirectory = resolvedUpdateDirectory;
-+            }
-+
-+        }
-+
++    PluginInitializerManager(final Path pluginDirectory, final Path updateDirectory) {
++        this.pluginDirectory = pluginDirectory;
++        this.updateDirectory = updateDirectory;
 +    }
 +
-+    public static PluginInitializerManager init(OptionSet optionSet) {
-+        impl = new PluginInitializerManager(optionSet);
++    private static PluginInitializerManager parse(@NotNull final OptionSet minecraftOptionSet) throws Exception {
++        // We have to load the bukkit configuration inorder to get the update folder location.
++        final File configFileLocationBukkit = (File) minecraftOptionSet.valueOf("bukkit-settings");
++
++        final Path pluginDirectory = ((File) minecraftOptionSet.valueOf("plugins")).toPath();
++
++        final YamlConfiguration configuration = PaperConfigurations.loadLegacyConfigFile(configFileLocationBukkit);
++
++        final String updateDirectoryName = configuration.getString("settings.update-folder", "update");
++        if (updateDirectoryName.isBlank()) {
++            return new PluginInitializerManager(pluginDirectory, null);
++        }
++
++        final Path resolvedUpdateDirectory = pluginDirectory.resolve(updateDirectoryName);
++        if (!Files.isDirectory(resolvedUpdateDirectory)) {
++            LOGGER.error("Misconfigured update directory!");
++            LOGGER.error(("Your configured update directory (%s) in bukkit.yml is pointing to a non-directory path. " +
++                "Disabling auto updating functionality.").formatted(resolvedUpdateDirectory));
++            return new PluginInitializerManager(pluginDirectory, null);
++        }
++
++        boolean isSameFile;
++        try {
++            isSameFile = Files.isSameFile(resolvedUpdateDirectory, pluginDirectory);
++        } catch (final IOException e) {
++            LOGGER.error("Misconfigured update directory!");
++            LOGGER.error("Failed to compare update/plugin directory", e);
++            return new PluginInitializerManager(pluginDirectory, null);
++        }
++
++        if (isSameFile) {
++            LOGGER.error("Misconfigured update directory!");
++            LOGGER.error(("Your configured update directory (%s) in bukkit.yml is pointing to the same location as the plugin directory (%s). " +
++                "Disabling auto updating functionality.").formatted(resolvedUpdateDirectory, pluginDirectory));
++
++            return new PluginInitializerManager(pluginDirectory, null);
++        }
++
++        return new PluginInitializerManager(pluginDirectory, resolvedUpdateDirectory);
++    }
++
++    public static PluginInitializerManager init(final OptionSet optionSet) throws Exception {
++        impl = parse(optionSet);
 +        return impl;
 +    }
 +
@@ -2033,7 +2043,7 @@ index 0000000000000000000000000000000000000000..22189a1c42459c00d3e8bdeb980d15a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5fd3203ea
+index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b047701d9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 @@ -0,0 +1,260 @@
@@ -2069,8 +2079,8 @@ index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5
 +    }
 +
 +    @Override
-+    public List<T> loadProviders(List<PluginProvider<T>> providers) {
-+        List<T> javapluginsLoaded = new ArrayList<>();
++    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> providers) {
++        List<ProviderPair<T>> javapluginsLoaded = new ArrayList<>();
 +        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        GraphDependencyContext dependencyContext = new GraphDependencyContext(dependencyGraph);
 +
@@ -2240,7 +2250,7 @@ index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5
 +                        if (this.configuration.load(file, loadedPlugin)) {
 +                            loadedPlugins.add(file.getMeta().getName());
 +                            loadedPlugins.addAll(file.getMeta().getProvidedPlugins());
-+                            javapluginsLoaded.add(loadedPlugin);
++                            javapluginsLoaded.add(new ProviderPair<>(file, loadedPlugin));
 +                        }
 +
 +                    } catch (Exception ex) {
@@ -2271,7 +2281,7 @@ index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5
 +                            if (this.configuration.load(file, loadedPlugin)) {
 +                                loadedPlugins.add(file.getMeta().getName());
 +                                loadedPlugins.addAll(file.getMeta().getProvidedPlugins());
-+                                javapluginsLoaded.add(loadedPlugin);
++                                javapluginsLoaded.add(new ProviderPair<>(file, loadedPlugin));
 +                            }
 +                            break;
 +                        } catch (Exception ex) {
@@ -2299,7 +2309,7 @@ index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3d3c543de
+index 0000000000000000000000000000000000000000..30e56289cccc09456b3421f7960d8647b6610639
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 @@ -0,0 +1,143 @@
@@ -2332,7 +2342,7 @@ index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3
 +    }
 +
 +    @Override
-+    public List<T> loadProviders(List<PluginProvider<T>> pluginProviders) {
++    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> pluginProviders) {
 +        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        Map<String, PluginProviderEntry<T>> providerMap = new HashMap<>();
 +        List<PluginProvider<T>> validatedProviders = new ArrayList<>();
@@ -2408,7 +2418,7 @@ index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3
 +        }
 +
 +        GraphDependencyContext graphDependencyContext = new GraphDependencyContext(dependencyGraph);
-+        List<T> loadedPlugins = new ArrayList<>();
++        List<ProviderPair<T>> loadedPlugins = new ArrayList<>();
 +        for (String providerIdentifier : reversedTopographicSort) {
 +            // It's possible that this will be null because the above dependencies for soft/load before aren't validated if they exist.
 +            // The graph could be MutableGraph<PluginProvider<T>>, but we would have to check if each dependency exists there... just
@@ -2426,7 +2436,7 @@ index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3
 +
 +                T instance = retrievedProvider.createInstance();
 +                if (this.configuration.load(retrievedProvider, instance)) {
-+                    loadedPlugins.add(instance);
++                    loadedPlugins.add(new ProviderPair<>(retrievedProvider, instance));
 +                }
 +            } catch (Exception ex) {
 +                LOGGER.error("Could not load plugin '%s' in folder '%s'".formatted(retrievedProvider.getFileName(), retrievedProvider.getParentSource()), ex); // Paper
@@ -2505,10 +2515,10 @@ index 0000000000000000000000000000000000000000..5e18616160014d70df2b539d7e65bb00
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e8d5ce5f137a960e353c6722e1f20f9b342d4ba5
+index 0000000000000000000000000000000000000000..dee83e821dcc9baf3a3e5ca8325b03ed2d5eb81c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,20 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import io.papermc.paper.plugin.provider.PluginProvider;
@@ -2523,7 +2533,11 @@ index 0000000000000000000000000000000000000000..e8d5ce5f137a960e353c6722e1f20f9b
 + */
 +public interface ProviderLoadingStrategy<P> {
 +
-+    List<P> loadProviders(List<PluginProvider<P>> providers);
++    List<ProviderPair<P>> loadProviders(List<PluginProvider<P>> providers);
++
++    record ProviderPair<P>(PluginProvider<P> provider, P provided) {
++
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/TopographicGraphSorter.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/TopographicGraphSorter.java
 new file mode 100644
@@ -2594,7 +2608,7 @@ index 0000000000000000000000000000000000000000..0720af0d48b39ca46e7d3aba08d7b359
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d49dd7d17ce7ac17efb19b33de163015787213f7
+index 0000000000000000000000000000000000000000..f38ecd7f65dc24e4a3f0bc675e3730287ac353f1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
 @@ -0,0 +1,64 @@
@@ -2656,7 +2670,7 @@ index 0000000000000000000000000000000000000000..d49dd7d17ce7ac17efb19b33de163015
 +        }
 +
 +        try {
-+            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), new URLClassLoader(urls));
++            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), new URLClassLoader(urls, getClass().getClassLoader()));
 +        } catch (IOException exception) {
 +            throw new RuntimeException(exception);
 +        }
@@ -2689,9 +2703,72 @@ index 0000000000000000000000000000000000000000..5fcce65009f715d46dd3013f1f92ec83
 +        return this.paths;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java b/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd64351370f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java
+@@ -0,0 +1,57 @@
++package io.papermc.paper.plugin.manager;
++
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import org.bukkit.event.Listener;
++import org.bukkit.plugin.InvalidDescriptionException;
++import org.bukkit.plugin.InvalidPluginException;
++import org.bukkit.plugin.Plugin;
++import org.bukkit.plugin.PluginDescriptionFile;
++import org.bukkit.plugin.PluginLoader;
++import org.bukkit.plugin.RegisteredListener;
++import org.bukkit.plugin.UnknownDependencyException;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++import java.io.File;
++import java.util.Map;
++import java.util.Set;
++import java.util.regex.Pattern;
++
++/**
++ * A purely internal type that implements the now deprecated {@link PluginLoader} after the implementation
++ * of papers new plugin system.
++ */
++@ApiStatus.Internal
++public class DummyBukkitPluginLoader implements PluginLoader {
++
++    @Override
++    public @NotNull Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Pattern[] getPluginFileFilters() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(@NotNull Listener listener, @NotNull Plugin plugin) {
++        return PaperPluginManagerImpl.getInstance().paperEventManager.createRegisteredListeners(listener, plugin);
++    }
++
++    @Override
++    public void enablePlugin(@NotNull Plugin plugin) {
++        Bukkit.getPluginManager().enablePlugin(plugin);
++    }
++
++    @Override
++    public void disablePlugin(@NotNull Plugin plugin) {
++        Bukkit.getPluginManager().disablePlugin(plugin);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a47c0c1dedf5f8cd7006b170639676429c17d74d
+index 0000000000000000000000000000000000000000..b532e35505d5fffd4c525109f273012e2652f777
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 @@ -0,0 +1,49 @@
@@ -2729,8 +2806,8 @@ index 0000000000000000000000000000000000000000..a47c0c1dedf5f8cd7006b17063967642
 +    }
 +
 +    @Override
-+    public void processProvided(JavaPlugin provided) {
-+        super.processProvided(provided);
++    public void processProvided(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
++        super.processProvided(provider, provided);
 +        this.provided.add(provided);
 +    }
 +
@@ -3512,7 +3589,7 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cdc3f6c5c845fe00478c41a22d39d7b348673559
+index 0000000000000000000000000000000000000000..dab211c458311869c61779305580a1c7da830f71
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
 @@ -0,0 +1,241 @@
@@ -3548,9 +3625,9 @@ index 0000000000000000000000000000000000000000..cdc3f6c5c845fe00478c41a22d39d7b3
 +
 +public class PaperPluginManagerImpl implements PluginManager, DependencyContext {
 +
-+    private final PaperPluginInstanceManager instanceManager;
-+    private final PaperEventManager paperEventManager;
-+    private PermissionManager permissionManager;
++    final PaperPluginInstanceManager instanceManager;
++    final PaperEventManager paperEventManager;
++    PermissionManager permissionManager;
 +
 +    public PaperPluginManagerImpl(Server server, CommandMap commandMap, @Nullable SimplePluginManager permissionManager) {
 +        this.instanceManager = new PaperPluginInstanceManager(this, commandMap, server);
@@ -3812,7 +3889,7 @@ index 0000000000000000000000000000000000000000..5d50d1d312388e979c0e1cd53a6bf597
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ebc01cbffdc55ca9664897ff10ef14ad6c5ab726
+index 0000000000000000000000000000000000000000..194f1439e322cb6b3433a72f80a8a4c7624b20d5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 @@ -0,0 +1,80 @@
@@ -3882,8 +3959,8 @@ index 0000000000000000000000000000000000000000..ebc01cbffdc55ca9664897ff10ef14ad
 +    }
 +
 +    @Override
-+    public void processProvided(JavaPlugin provided) {
-+        super.processProvided(provided);
++    public void processProvided(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
++        super.processProvided(provider, provided);
 +        this.singleLoaded = provided;
 +    }
 +
@@ -5720,10 +5797,10 @@ index 0000000000000000000000000000000000000000..374e7d3d69fc8603ecf54999f173123d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b049691292fb9d53ac598cb333fa408b043e7bc5
+index 0000000000000000000000000000000000000000..8b47e585c85e54a71e34aa57d61c1b2b8c9edfdf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -5761,18 +5838,9 @@ index 0000000000000000000000000000000000000000..b049691292fb9d53ac598cb333fa408b
 +
 +            @Override
 +            public boolean load(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
-+                try {
-+                    provided.getLogger().info(String.format("Loading server plugin %s", provided.getPluginMeta().getDisplayName()));
-+                    PaperPluginManagerImpl.getInstance().loadPlugin(provided); // We have to add it to the map before the plugin is loaded
-+                    provided.onLoad();
-+                    return true;
-+                } catch (Throwable ex) {
-+                    if (provider instanceof ProviderStatusHolder statusHolder) {
-+                        statusHolder.setStatus(ProviderStatus.ERRORED);
-+                    }
-+                    LOGGER.error("Could not load server plugin '%s' in folder '%s' (Is it up to date?)".formatted(provider.getFileName(), provider.getParentSource()), ex);
-+                    return false;
-+                }
++                // Add it to the map here, we have to run the actual loading logic later.
++                PaperPluginManagerImpl.getInstance().loadPlugin(provided);
++                return true;
 +            }
 +
 +            @Override
@@ -5801,6 +5869,18 @@ index 0000000000000000000000000000000000000000..b049691292fb9d53ac598cb333fa408b
 +        pluginProviders.removeIf((provider) -> (provider instanceof PaperPluginParent.PaperServerPluginProvider pluginProvider && pluginProvider.shouldSkipCreation()));
 +    }
 +
++    // We need to call the load methods AFTER all plugins are constructed
++    @Override
++    public void processProvided(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
++        try {
++            provided.getLogger().info(String.format("Loading server plugin %s", provided.getPluginMeta().getDisplayName()));
++            provided.onLoad();
++        } catch (Throwable ex) {
++            // Don't mark that provider as ERRORED, as this apparently still needs to run the onEnable logic.
++            provided.getSLF4JLogger().error("Error initializing plugin '%s' in folder '%s' (Is it up to date?)".formatted(provider.getFileName(), provider.getParentSource()), ex);
++        }
++    }
++
 +    @Override
 +    public String toString() {
 +        return "PLUGIN:" + super.toString();
@@ -5808,7 +5888,7 @@ index 0000000000000000000000000000000000000000..b049691292fb9d53ac598cb333fa408b
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ac263f02a9a79fb3db24c4daa16c405f9b0f7459
+index 0000000000000000000000000000000000000000..1c4c344eb65dd90e1d3698908b0d9b46262c9540
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 @@ -0,0 +1,57 @@
@@ -5841,8 +5921,8 @@ index 0000000000000000000000000000000000000000..ac263f02a9a79fb3db24c4daa16c405f
 +        this.filterLoadingProviders(providerList);
 +
 +        try {
-+            for (T plugin : this.strategy.loadProviders(providerList)) {
-+                this.processProvided(plugin);
++            for (ProviderLoadingStrategy.ProviderPair<T> providerPair : this.strategy.loadProviders(providerList)) {
++                this.processProvided(providerPair.provider(), providerPair.provided());
 +            }
 +        } catch (PluginGraphCycleException exception) {
 +            this.handleCycle(exception);
@@ -5854,7 +5934,7 @@ index 0000000000000000000000000000000000000000..ac263f02a9a79fb3db24c4daa16c405f
 +        return this.providers;
 +    }
 +
-+    public void processProvided(T provided) {}
++    public void processProvided(PluginProvider<T> provider, T provided) {}
 +
 +    // Mutable enter
 +    protected void filterLoadingProviders(List<PluginProvider<T>> providers) {}
@@ -6157,6 +6237,13 @@ index 0000000000000000000000000000000000000000..a22647244037cd92262b3b5a6582f0a1
 +++ b/src/main/resources/META-INF/services/io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage
 @@ -0,0 +1 @@
 +io.papermc.paper.plugin.entrypoint.classloader.group.PaperPluginClassLoaderStorage
+diff --git a/src/main/resources/META-INF/services/org.bukkit.plugin.PluginLoader b/src/main/resources/META-INF/services/org.bukkit.plugin.PluginLoader
+new file mode 100644
+index 0000000000000000000000000000000000000000..4f78bc62d03460463b9694de933e5b73da8df6e3
+--- /dev/null
++++ b/src/main/resources/META-INF/services/org.bukkit.plugin.PluginLoader
+@@ -0,0 +1 @@
++io.papermc.paper.plugin.manager.DummyBukkitPluginLoader
 diff --git a/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java b/src/test/java/io/papermc/paper/plugin/PaperTestPlugin.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..1d14f530ef888102e47eeeaf0d1a6076e51871c4
