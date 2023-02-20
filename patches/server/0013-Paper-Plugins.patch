@@ -250,10 +250,10 @@ index 0000000000000000000000000000000000000000..72096a66a4046633de73a12f5a043ac6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..254854646b748e5bb47657625315ced51b22887f
+index 0000000000000000000000000000000000000000..4ecd00b32c7abc15d655dd3c999b6feca332c3a1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
-@@ -0,0 +1,201 @@
+@@ -0,0 +1,187 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.google.gson.JsonArray;
@@ -386,20 +386,6 @@ index 0000000000000000000000000000000000000000..254854646b748e5bb47657625315ced5
 +                    return false;
 +                }
 +
-+                @Override
-+                public List<String> requiredDependencies(PluginProvider<Object> provider) {
-+                    return provider.getMeta().getPluginDependencies();
-+                }
-+
-+                @Override
-+                public List<String> optionalDependencies(PluginProvider<Object> provider) {
-+                    return provider.getMeta().getPluginSoftDependencies();
-+                }
-+
-+                @Override
-+                public List<String> loadBeforeDependencies(PluginProvider<Object> provider) {
-+                    return provider.getMeta().getLoadBeforePlugins();
-+                }
 +            });
 +            modernPluginLoadingStrategy.loadProviders(pluginProviders);
 +
@@ -1587,19 +1573,22 @@ index 0000000000000000000000000000000000000000..f43295fdeaa587cf30c35a1d54516707
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5fb1ebebc809e12db00fc149a03fb2341e405528
+index 0000000000000000000000000000000000000000..b963fae0285d2d87a6f6a4eddf98996a27dabac2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,70 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
 +import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import org.bukkit.plugin.PluginDescriptionFile;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.Map;
 +
 +@SuppressWarnings("UnstableApiUsage")
 +public class DependencyUtil {
@@ -1647,6 +1636,16 @@ index 0000000000000000000000000000000000000000..5fb1ebebc809e12db00fc149a03fb234
 +        return dependencyGraph;
 +    }
 +
++    public static List<String> validateSimple(PluginMeta meta, Map<String, PluginProvider<?>> toLoad) {
++        List<String> missingDependencies = new ArrayList<>();
++        for (String hardDependency : meta.getPluginDependencies()) {
++            if (!toLoad.containsKey(hardDependency)) {
++                missingDependencies.add(hardDependency);
++            }
++        }
++
++        return missingDependencies;
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java
 new file mode 100644
@@ -2055,10 +2054,10 @@ index 0000000000000000000000000000000000000000..22189a1c42459c00d3e8bdeb980d15a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b047701d9
+index 0000000000000000000000000000000000000000..d116134db072ecea7caeb90310fab9d83534ef48
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
-@@ -0,0 +1,260 @@
+@@ -0,0 +1,269 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import com.google.common.graph.GraphBuilder;
@@ -2066,6 +2065,7 @@ index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
 +import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
 +import org.bukkit.plugin.UnknownDependencyException;
 +
 +import java.util.ArrayList;
@@ -2149,7 +2149,7 @@ index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b
 +                }
 +            }
 +
-+            Collection<String> softDependencySet = this.configuration.optionalDependencies(provider);
++            Collection<String> softDependencySet = provider.getMeta().getPluginSoftDependencies();
 +            if (softDependencySet != null && !softDependencySet.isEmpty()) {
 +                if (softDependencies.containsKey(configuration.getName())) {
 +                    // Duplicates do not matter, they will be removed together if applicable
@@ -2163,7 +2163,7 @@ index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b
 +                }
 +            }
 +
-+            Collection<String> dependencySet = this.configuration.requiredDependencies(provider);
++            Collection<String> dependencySet = provider.getMeta().getPluginDependencies();
 +            if (dependencySet != null && !dependencySet.isEmpty()) {
 +                dependencies.put(configuration.getName(), new LinkedList<String>(dependencySet));
 +
@@ -2172,7 +2172,7 @@ index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b
 +                }
 +            }
 +
-+            Collection<String> loadBeforeSet = this.configuration.loadBeforeDependencies(provider);
++            Collection<String> loadBeforeSet = provider.getMeta().getPluginSoftDependencies();
 +            if (loadBeforeSet != null && !loadBeforeSet.isEmpty()) {
 +                for (String loadBeforeTarget : loadBeforeSet) {
 +                    if (softDependencies.containsKey(loadBeforeTarget)) {
@@ -2258,6 +2258,7 @@ index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b
 +                    try {
 +                        this.configuration.applyContext(file, dependencyContext);
 +                        T loadedPlugin = file.createInstance();
++                        this.warnIfPaperPlugin(file);
 +
 +                        if (this.configuration.load(file, loadedPlugin)) {
 +                            loadedPlugins.add(file.getMeta().getName());
@@ -2289,6 +2290,7 @@ index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b
 +                        try {
 +                            this.configuration.applyContext(file, dependencyContext);
 +                            T loadedPlugin = file.createInstance();
++                            this.warnIfPaperPlugin(file);
 +
 +                            if (this.configuration.load(file, loadedPlugin)) {
 +                                loadedPlugins.add(file.getMeta().getName());
@@ -2318,13 +2320,19 @@ index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b
 +
 +        return javapluginsLoaded;
 +    }
++
++    private void warnIfPaperPlugin(PluginProvider<T> provider) {
++        if (provider instanceof PaperPluginParent.PaperServerPluginProvider) {
++            provider.getLogger().warning("Loading Paper plugin in the legacy plugin loading logic. This is not recommended and may introduce some differences into load order. It's highly recommended you move away from this if you are wanting to use Paper plugins.");
++        }
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dcc118ba49661045a2944e09614f5238c5f369cf
+index 0000000000000000000000000000000000000000..f2ef0ac8b498013d232ee56fdafba331c7dcbe27
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,148 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import com.google.common.collect.Lists;
@@ -2358,6 +2366,7 @@ index 0000000000000000000000000000000000000000..dcc118ba49661045a2944e09614f5238
 +    @Override
 +    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> pluginProviders) {
 +        Map<String, PluginProviderEntry<T>> providerMap = new HashMap<>();
++        Map<String, PluginProvider<?>> providerMapMirror = Maps.transformValues(providerMap, (entry) -> entry.provider);
 +        List<PluginProvider<T>> validatedProviders = new ArrayList<>();
 +
 +        // Populate provider map
@@ -2394,12 +2403,7 @@ index 0000000000000000000000000000000000000000..dcc118ba49661045a2944e09614f5238
 +            PluginMeta configuration = provider.getMeta();
 +
 +            // Populate missing dependencies to capture if there are multiple missing ones.
-+            List<String> missingDependencies = new ArrayList<>();
-+            for (String hardDependency : this.configuration.requiredDependencies(provider)) {
-+                if (!providerMap.containsKey(hardDependency)) {
-+                    missingDependencies.add(hardDependency);
-+                }
-+            }
++            List<String> missingDependencies = provider.validateDependencies(providerMapMirror);
 +
 +            if (missingDependencies.isEmpty()) {
 +                validatedProviders.add(provider);
@@ -2414,7 +2418,7 @@ index 0000000000000000000000000000000000000000..dcc118ba49661045a2944e09614f5238
 +        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        for (PluginProvider<?> validated : validatedProviders) {
 +            PluginMeta configuration = validated.getMeta();
-+            LoadOrderConfiguration loadOrderConfiguration = validated.createConfiguration(Maps.transformValues(providerMap, (entry) -> entry.provider));
++            LoadOrderConfiguration loadOrderConfiguration = validated.createConfiguration(providerMapMirror);
 +
 +            // Build a validated provider's load order changes
 +            DependencyUtil.buildLoadGraph(loadOrderGraph, loadOrderConfiguration);
@@ -2504,10 +2508,10 @@ index 0000000000000000000000000000000000000000..2ea978ac957849260e7ca69c9ff56588
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5e18616160014d70df2b539d7e65bb003ac7a4b7
+index 0000000000000000000000000000000000000000..71536981075095ee06234c638c0dfa054e737fb8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,19 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import io.papermc.paper.plugin.provider.PluginProvider;
@@ -2525,13 +2529,6 @@ index 0000000000000000000000000000000000000000..5e18616160014d70df2b539d7e65bb00
 +    void applyContext(PluginProvider<T> provider, DependencyContext dependencyContext);
 +
 +    boolean load(PluginProvider<T> provider, T provided);
-+
-+    List<String> requiredDependencies(PluginProvider<T> provider);
-+
-+    List<String> optionalDependencies(PluginProvider<T> provider);
-+
-+    List<String> loadBeforeDependencies(PluginProvider<T> provider);
-+
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
@@ -4044,10 +4041,10 @@ index 0000000000000000000000000000000000000000..ea8cf22c35242eb9f3914b95df00e205
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b7dcefcfe116258cfef1c17515db68ff765233d5
+index 0000000000000000000000000000000000000000..a97ec947bc6cecf9d9183b236263fd4407e5fd7e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,55 @@
 +package io.papermc.paper.plugin.provider;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -4056,6 +4053,7 @@ index 0000000000000000000000000000000000000000..b7dcefcfe116258cfef1c17515db68ff
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.nio.file.Path;
++import java.util.List;
 +import java.util.Map;
 +import java.util.jar.JarFile;
 +import java.util.logging.Logger;
@@ -4097,6 +4095,9 @@ index 0000000000000000000000000000000000000000..b7dcefcfe116258cfef1c17515db68ff
 +    Logger getLogger();
 +
 +    LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad);
++
++    // Returns a list of missing dependencies
++    List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad);
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/ProviderStatus.java b/src/main/java/io/papermc/paper/plugin/provider/ProviderStatus.java
@@ -4216,10 +4217,10 @@ index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..206c549338869842949a69b28e21831b532611aa
+index 0000000000000000000000000000000000000000..3808f5a9abc9f084cbabfc4cb95394cc37aaf4bb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,227 @@
 +package io.papermc.paper.plugin.provider.configuration;
 +
 +import com.google.common.collect.ImmutableList;
@@ -4233,6 +4234,7 @@ index 0000000000000000000000000000000000000000..206c549338869842949a69b28e21831b
 +import io.papermc.paper.plugin.provider.configuration.serializer.PermissionConfigurationSerializer;
 +import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
 +import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
++import io.papermc.paper.plugin.provider.configuration.type.LoadConfiguration;
 +import io.papermc.paper.plugin.provider.configuration.type.PermissionConfiguration;
 +import org.bukkit.permissions.Permission;
 +import org.bukkit.permissions.PermissionDefault;
@@ -4266,8 +4268,8 @@ index 0000000000000000000000000000000000000000..206c549338869842949a69b28e21831b
 +    @PluginConfigConstraints.PluginNameSpace
 +    private String loader;
 +    private List<DependencyConfiguration> dependencies = List.of();
-+    private List<String> loadBefore = List.of();
-+    private List<String> loadAfter = List.of();
++    private List<LoadConfiguration> loadBefore = List.of();
++    private List<LoadConfiguration> loadAfter = List.of();
 +    private List<String> provides = List.of();
 +    private boolean hasOpenClassloader = false;
 +    @Required
@@ -4370,11 +4372,19 @@ index 0000000000000000000000000000000000000000..206c549338869842949a69b28e21831b
 +
 +    @Override
 +    public @NotNull List<String> getLoadBeforePlugins() {
-+        return this.loadBefore;
++        return this.loadBefore.stream().filter((dependency) -> !dependency.bootstrap()).map(LoadConfiguration::name).toList();
 +    }
 +
 +    public @NotNull List<String> getLoadAfterPlugins() {
++        return this.loadAfter.stream().filter((dependency) -> !dependency.bootstrap()).map(LoadConfiguration::name).toList();
++    }
++
++    public List<LoadConfiguration> getLoadAfter() {
 +        return this.loadAfter;
++    }
++
++    public List<LoadConfiguration> getLoadBefore() {
++        return this.loadBefore;
 +    }
 +
 +    @Override
@@ -4752,6 +4762,23 @@ index 0000000000000000000000000000000000000000..071bff3f988a4391be424bdf7e98a6c3
 +public record DependencyConfiguration(
 +    @Required String name,
 +    boolean required,
++    boolean bootstrap
++) {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/type/LoadConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/LoadConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4184e4232c59f15ef8bbc98f82f501fc524f37c7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/LoadConfiguration.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.plugin.provider.configuration.type;
++
++import org.spongepowered.configurate.objectmapping.ConfigSerializable;
++import org.spongepowered.configurate.objectmapping.meta.Required;
++
++@ConfigSerializable
++public record LoadConfiguration(
++    @Required String name,
 +    boolean bootstrap
 +) {
 +}
@@ -5148,6 +5175,59 @@ index 0000000000000000000000000000000000000000..32f230d66f6953520b59ccbf3079c5a6
 +
 +    C create(JarFile file, JarEntry config) throws Exception;
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..362feffd88e117c0fb93ffeddafe8334275f0d95
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java
+@@ -0,0 +1,47 @@
++package io.papermc.paper.plugin.provider.type.paper;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
++import io.papermc.paper.plugin.provider.configuration.type.LoadConfiguration;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class PaperBootstrapOrderConfiguration implements LoadOrderConfiguration {
++
++    private final PaperPluginMeta paperPluginMeta;
++    private final List<String> loadBefore = new ArrayList<>();
++    private final List<String> loadAfter = new ArrayList<>();
++
++    public PaperBootstrapOrderConfiguration(PaperPluginMeta paperPluginMeta) {
++        this.paperPluginMeta = paperPluginMeta;
++
++        for (LoadConfiguration configuration : paperPluginMeta.getLoadAfter()) {
++            if (configuration.bootstrap()) {
++                this.loadAfter.add(configuration.name());
++            }
++        }
++        for (LoadConfiguration configuration : paperPluginMeta.getLoadBefore()) {
++            if (configuration.bootstrap()) {
++                this.loadBefore.add(configuration.name());
++            }
++        }
++    }
++
++    @Override
++    public @NotNull List<String> getLoadBefore() {
++        return this.loadBefore;
++    }
++
++    @Override
++    public @NotNull List<String> getLoadAfter() {
++        return this.loadAfter;
++    }
++
++    @Override
++    public @NotNull PluginMeta getMeta() {
++        return this.paperPluginMeta;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperLoadOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperLoadOrderConfiguration.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..b7e8a5ba375a558e0442aa9facf96954a9bb135f
@@ -5200,15 +5280,17 @@ index 0000000000000000000000000000000000000000..b7e8a5ba375a558e0442aa9facf96954
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..97836336242dff94178347bc828230640c84889e
+index 0000000000000000000000000000000000000000..a0773c6d24de1f2ce1f0d949cba26b9997b696e6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,258 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
++import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
@@ -5223,6 +5305,8 @@ index 0000000000000000000000000000000000000000..97836336242dff94178347bc82823064
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.nio.file.Path;
++import java.util.ArrayList;
++import java.util.List;
 +import java.util.Map;
 +import java.util.jar.JarFile;
 +import java.util.logging.Logger;
@@ -5294,7 +5378,20 @@ index 0000000000000000000000000000000000000000..97836336242dff94178347bc82823064
 +
 +        @Override
 +        public LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad) {
-+            return new PaperLoadOrderConfiguration(PaperPluginParent.this.description);
++            return new PaperBootstrapOrderConfiguration(PaperPluginParent.this.description);
++        }
++
++        @Override
++        public List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad) {
++            List<String> missingDependencies = new ArrayList<>();
++            for (DependencyConfiguration configuration : this.getMeta().getDependencies()) {
++                String dependency = configuration.name();
++                if (configuration.required() && configuration.bootstrap() && !toLoad.containsKey(dependency)) {
++                    missingDependencies.add(dependency);
++                }
++            }
++
++            return missingDependencies;
 +        }
 +
 +        @Override
@@ -5389,6 +5486,11 @@ index 0000000000000000000000000000000000000000..97836336242dff94178347bc82823064
 +        @Override
 +        public LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad) {
 +            return new PaperLoadOrderConfiguration(PaperPluginParent.this.description);
++        }
++
++        @Override
++        public List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad) {
++            return DependencyUtil.validateSimple(this.getMeta(), toLoad);
 +        }
 +
 +        @Override
@@ -5575,14 +5677,15 @@ index 0000000000000000000000000000000000000000..d865b3fae6fe9fea1d397e2b57da8a15
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a101ef4e697701e6a7294f481d87d7a26033d93e
+index 0000000000000000000000000000000000000000..0da361611bd93bc3299b8559d5c7c2127a8a6f0f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,188 @@
 +package io.papermc.paper.plugin.provider.type.spigot;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
++import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
@@ -5604,6 +5707,7 @@ index 0000000000000000000000000000000000000000..a101ef4e697701e6a7294f481d87d7a2
 +import java.io.File;
 +import java.nio.file.Path;
 +import java.util.HashSet;
++import java.util.List;
 +import java.util.Map;
 +import java.util.Set;
 +import java.util.jar.JarFile;
@@ -5735,6 +5839,11 @@ index 0000000000000000000000000000000000000000..a101ef4e697701e6a7294f481d87d7a2
 +    }
 +
 +    @Override
++    public List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad) {
++        return DependencyUtil.validateSimple(this.getMeta(), toLoad);
++    }
++
++    @Override
 +    public ProviderStatus getLastProvidedStatus() {
 +        return this.status;
 +    }
@@ -5813,10 +5922,10 @@ index 0000000000000000000000000000000000000000..14ed05945ba5bfeb2b539d4786278b0e
 +
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7af995b941ce83265a93cdc6b5a2de8ad27e4db6
+index 0000000000000000000000000000000000000000..dace0bd8ddbb8625fe9d576fabdeff35b9b0c2ec
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,76 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -5865,43 +5974,6 @@ index 0000000000000000000000000000000000000000..7af995b941ce83265a93cdc6b5a2de8a
 +                    }
 +                    return false;
 +                }
-+            }
-+
-+            @Override
-+            public List<String> requiredDependencies(PluginProvider<PluginBootstrap> provider) {
-+                List<String> dependencies = new ArrayList<>();
-+                if (provider.getMeta() instanceof PaperPluginMeta paperPluginMeta) {
-+                    for (DependencyConfiguration configuration : paperPluginMeta.getDependencies()) {
-+                        if (configuration.required() && configuration.bootstrap()) {
-+                            dependencies.add(configuration.name());
-+                        }
-+                    }
-+
-+                    return dependencies;
-+                }
-+
-+                throw new IllegalStateException();
-+            }
-+
-+            @Override
-+            public List<String> optionalDependencies(PluginProvider<PluginBootstrap> provider) {
-+                List<String> dependencies = new ArrayList<>();
-+                if (provider.getMeta() instanceof PaperPluginMeta paperPluginMeta) {
-+                    for (DependencyConfiguration configuration : paperPluginMeta.getDependencies()) {
-+                        if (!configuration.required() && configuration.bootstrap()) {
-+                            dependencies.add(configuration.name());
-+                        }
-+                    }
-+
-+                    return dependencies;
-+                }
-+
-+                throw new IllegalStateException();
-+            }
-+
-+            @Override
-+            public List<String> loadBeforeDependencies(PluginProvider<PluginBootstrap> provider) {
-+                return provider.getMeta().getLoadBeforePlugins();
 +            }
 +        }));
 +    }
@@ -5979,10 +6051,10 @@ index 0000000000000000000000000000000000000000..374e7d3d69fc8603ecf54999f173123d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8b47e585c85e54a71e34aa57d61c1b2b8c9edfdf
+index 0000000000000000000000000000000000000000..fbe76a678f45bd3c55f25f2b6a4366efc0521cb8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,70 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -6023,21 +6095,6 @@ index 0000000000000000000000000000000000000000..8b47e585c85e54a71e34aa57d61c1b2b
 +                // Add it to the map here, we have to run the actual loading logic later.
 +                PaperPluginManagerImpl.getInstance().loadPlugin(provided);
 +                return true;
-+            }
-+
-+            @Override
-+            public List<String> requiredDependencies(PluginProvider<JavaPlugin> provider) {
-+                return provider.getMeta().getPluginDependencies();
-+            }
-+
-+            @Override
-+            public List<String> optionalDependencies(PluginProvider<JavaPlugin> provider) {
-+                return provider.getMeta().getPluginSoftDependencies();
-+            }
-+
-+            @Override
-+            public List<String> loadBeforeDependencies(PluginProvider<JavaPlugin> provider) {
-+                return provider.getMeta().getLoadBeforePlugins();
 +            }
 +        });
 +    }
@@ -6604,12 +6661,12 @@ index 0000000000000000000000000000000000000000..1d14f530ef888102e47eeeaf0d1a6076
 +        throw new UnsupportedOperationException("Not supported.");
 +    }
 +}
-diff --git a/src/test/java/io/papermc/paper/plugin/PluginDependencyLoadingTest.java b/src/test/java/io/papermc/paper/plugin/PluginDependencyLoadingTest.java
+diff --git a/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7665967dc1849dde750c6d24298e76c2c74f8443
+index 0000000000000000000000000000000000000000..d137461a3a1896a367c5245a99a9b30afd9f6ad5
 --- /dev/null
-+++ b/src/test/java/io/papermc/paper/plugin/PluginDependencyLoadingTest.java
-@@ -0,0 +1,159 @@
++++ b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
+@@ -0,0 +1,146 @@
 +package io.papermc.paper.plugin;
 +
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
@@ -6626,19 +6683,20 @@ index 0000000000000000000000000000000000000000..7665967dc1849dde750c6d24298e76c2
 +import java.util.Map;
 +import java.util.concurrent.atomic.AtomicInteger;
 +
-+public class PluginDependencyLoadingTest {
++public class PluginLoadOrderTest {
 +
 +    private static List<PluginProvider<PaperTestPlugin>> REGISTERED_PROVIDERS = new ArrayList<>();
 +    private static Map<String, Integer> LOAD_ORDER = new HashMap<>();
++    private static final String[] EMPTY = {};
 +
 +    static {
 +        setup();
 +    }
 +
-+    private static TestJavaPluginProvider setup(String identifier, String[] hard, String[] soft, String[] before) {
++    private static TestJavaPluginProvider setup(String identifier, String[] loadAfter, String[] loadAfterSoft, String[] before) {
 +        TestPluginMeta configuration = new TestPluginMeta(identifier);
-+        configuration.setHardDependencies(List.of(hard));
-+        configuration.setSoftDependencies(List.of(soft));
++        configuration.setHardDependencies(List.of(loadAfter));
++        configuration.setSoftDependencies(List.of(loadAfterSoft));
 +        configuration.setLoadBefore(List.of(before));
 +
 +        TestJavaPluginProvider provider = new TestJavaPluginProvider(configuration);
@@ -6650,52 +6708,52 @@ index 0000000000000000000000000000000000000000..7665967dc1849dde750c6d24298e76c2
 +     * Obfuscated plugin names, this uses a real dependency tree...
 +     */
 +    private static void setup() {
-+        setup("RedAir", new String[]{}, new String[]{"NightShovel", "EmeraldFire"}, new String[]{"GreenShovel", "IronSpork", "BrightBlueShovel", "WireDoor"});
-+        setup("BigGrass", new String[]{}, new String[]{"IronEarth", "RedAir"}, new String[]{"BlueFire"});
-+        setup("BlueFire", new String[]{}, new String[]{}, new String[]{});
-+        setup("BigPaper", new String[]{}, new String[]{"BlueFire"}, new String[]{});
-+        setup("EmeraldSpork", new String[]{}, new String[]{}, new String[]{"GoldPaper", "YellowSnow"});
-+        setup("GreenShovel", new String[]{}, new String[]{}, new String[]{});
-+        setup("BrightBlueGrass", new String[]{"BigPaper"}, new String[]{"DarkSpork"}, new String[]{});
-+        setup("GoldPaper", new String[]{}, new String[]{"BlueFire"}, new String[]{});
-+        setup("GreenGlass", new String[]{}, new String[]{}, new String[]{});
-+        setup("GoldNeptune", new String[]{}, new String[]{"GreenShovel", "GoldNeptuneVersioning"}, new String[]{});
-+        setup("RedPaper", new String[]{}, new String[]{"GoldPaper", "GoldFire", "EmeraldGrass", "BlueFire", "CopperSpork", "YellowDoor", "OrangeClam", "BlueSponge", "GoldNeptune", "BrightBlueGrass", "DarkSpoon", "BigShovel", "GreenGlass", "IronGlass"}, new String[]{"IronPaper", "YellowFire"});
-+        setup("YellowGrass", new String[]{}, new String[]{"RedAir"}, new String[]{});
-+        setup("WireFire", new String[]{}, new String[]{"RedPaper", "WireGrass", "YellowSpork", "NightAir"}, new String[]{});
-+        setup("OrangeNeptune", new String[]{}, new String[]{}, new String[]{});
-+        setup("BigSpoon", new String[]{"YellowGrass", "GreenShovel"}, new String[]{"RedAir", "GoldNeptune", "BrightBlueGrass", "LightDoor", "LightSpork", "LightEarth", "NightDoor", "OrangeSpoon", "GoldSponge", "GoldDoor", "DarkPaper", "RedPaper", "GreenGlass", "IronGlass", "NightGlass", "BigGrass", "BlueFire", "YellowSpoon", "DiamondGrass", "DiamondShovel", "DarkSnow", "EmeraldGlass", "EmeraldSpoon", "LightFire", "WireGrass", "RedEarth", "WireFire"}, new String[]{});
-+        setup("CopperSnow", new String[]{}, new String[]{"RedSnow", "OrangeFire", "WireAir", "GreenGlass", "NightSpork", "EmeraldPaper"}, new String[]{"BlueGrass"});
-+        setup("BrightBluePaper", new String[]{}, new String[]{"GoldEarth", "BrightBlueSpoon", "CopperGlass", "LightSporkChat", "DarkAir", "LightEarth", "DiamondDoor", "YellowShovel", "BlueAir", "DarkShovel", "GoldPaper", "BlueFire", "GreenGlass", "YellowSpork", "BigGrass", "OrangePaper", "DarkPaper"}, new String[]{"WireShovel"});
-+        setup("LightSponge", new String[]{}, new String[]{}, new String[]{});
-+        setup("OrangeShovel", new String[]{}, new String[]{}, new String[]{});
-+        setup("GoldGrass", new String[]{}, new String[]{"GreenGlass", "BlueFire"}, new String[]{});
-+        setup("IronSponge", new String[]{}, new String[]{"DiamondEarth"}, new String[]{});
-+        setup("EmeraldSnow", new String[]{}, new String[]{}, new String[]{});
-+        setup("BlueSpoon", new String[]{"BigGrass"}, new String[]{"GreenGlass", "GoldPaper", "GreenShovel", "YellowClam"}, new String[]{});
-+        setup("BigSpork", new String[]{}, new String[]{"BigPaper"}, new String[]{});
-+        setup("BluePaper", new String[]{}, new String[]{"BigClam", "RedSpoon", "GreenFire", "WireSnow", "OrangeSnow", "BlueFire", "BrightBlueGrass", "YellowSpork", "GreenGlass"}, new String[]{});
-+        setup("OrangeSpork", new String[]{}, new String[]{}, new String[]{});
-+        setup("DiamondNeptune", new String[]{}, new String[]{"GreenGlass", "GreenShovel", "YellowNeptune"}, new String[]{});
-+        setup("BigFire", new String[]{}, new String[]{"BlueFire", "BrightBlueDoor", "GreenGlass"}, new String[]{});
-+        setup("NightNeptune", new String[]{}, new String[]{"BlueFire", "DarkGlass", "GoldPaper", "YellowNeptune", "BlueShovel"}, new String[]{});
-+        setup("YellowEarth", new String[]{"RedAir"}, new String[]{}, new String[]{});
-+        setup("DiamondClam", new String[]{}, new String[]{}, new String[]{});
-+        setup("CopperAir", new String[]{}, new String[]{"BigPaper"}, new String[]{});
-+        setup("NightSpoon", new String[]{"OrangeNeptune"}, new String[]{"BlueFire", "GreenGlass", "RedSpork", "GoldPaper", "BigShovel", "YellowSponge", "EmeraldSpork"}, new String[]{});
-+        setup("GreenClam", new String[]{}, new String[]{"GreenShovel", "BrightBlueEarth", "BigSpoon", "RedPaper", "BlueFire", "GreenGlass", "WireFire", "GreenSnow"}, new String[]{});
-+        setup("YellowPaper", new String[]{}, new String[]{}, new String[]{});
-+        setup("WireGlass", new String[]{"YellowGrass"}, new String[]{"YellowGlass", "BigSpoon", "CopperSnow", "GreenGlass", "BlueEarth"}, new String[]{});
-+        setup("BlueSpork", new String[]{}, new String[]{"BrightBlueGrass"}, new String[]{});
-+        setup("CopperShovel", new String[]{}, new String[]{"GreenGlass"}, new String[]{});
-+        setup("RedClam", new String[]{}, new String[]{}, new String[]{});
-+        setup("EmeraldClam", new String[]{}, new String[]{"BlueFire"}, new String[]{});
-+        setup("DarkClam", new String[]{}, new String[]{"GoldAir", "LightGlass"}, new String[]{});
-+        setup("WireSpoon", new String[]{}, new String[]{"GoldPaper", "LightSnow"}, new String[]{});
-+        setup("CopperNeptune", new String[]{}, new String[]{"GreenGlass", "BigGrass"}, new String[]{});
-+        setup("RedNeptune", new String[]{}, new String[]{}, new String[]{});
-+        setup("GreenAir", new String[]{}, new String[]{}, new String[]{});
-+        setup("RedFire", new String[]{"BrightBlueGrass", "BigPaper"}, new String[]{"BlueFire", "GreenGlass", "BigGrass"}, new String[]{});
++        setup("RedAir", EMPTY, new String[]{"NightShovel", "EmeraldFire"}, new String[]{"GreenShovel", "IronSpork", "BrightBlueShovel", "WireDoor"});
++        setup("BigGrass", EMPTY, new String[]{"IronEarth", "RedAir"}, new String[]{"BlueFire"});
++        setup("BlueFire", EMPTY, EMPTY, EMPTY);
++        setup("BigPaper", EMPTY, new String[]{"BlueFire"}, EMPTY);
++        setup("EmeraldSpork", EMPTY, EMPTY, new String[]{"GoldPaper", "YellowSnow"});
++        setup("GreenShovel", EMPTY, EMPTY, EMPTY);
++        setup("BrightBlueGrass", new String[]{"BigPaper"}, new String[]{"DarkSpork"}, EMPTY);
++        setup("GoldPaper", EMPTY, new String[]{"BlueFire"}, EMPTY);
++        setup("GreenGlass", EMPTY, EMPTY, EMPTY);
++        setup("GoldNeptune", EMPTY, new String[]{"GreenShovel", "GoldNeptuneVersioning"}, EMPTY);
++        setup("RedPaper", EMPTY, new String[]{"GoldPaper", "GoldFire", "EmeraldGrass", "BlueFire", "CopperSpork", "YellowDoor", "OrangeClam", "BlueSponge", "GoldNeptune", "BrightBlueGrass", "DarkSpoon", "BigShovel", "GreenGlass", "IronGlass"}, new String[]{"IronPaper", "YellowFire"});
++        setup("YellowGrass", EMPTY, new String[]{"RedAir"}, EMPTY);
++        setup("WireFire", EMPTY, new String[]{"RedPaper", "WireGrass", "YellowSpork", "NightAir"}, EMPTY);
++        setup("OrangeNeptune", EMPTY, EMPTY, EMPTY);
++        setup("BigSpoon", new String[]{"YellowGrass", "GreenShovel"}, new String[]{"RedAir", "GoldNeptune", "BrightBlueGrass", "LightDoor", "LightSpork", "LightEarth", "NightDoor", "OrangeSpoon", "GoldSponge", "GoldDoor", "DarkPaper", "RedPaper", "GreenGlass", "IronGlass", "NightGlass", "BigGrass", "BlueFire", "YellowSpoon", "DiamondGrass", "DiamondShovel", "DarkSnow", "EmeraldGlass", "EmeraldSpoon", "LightFire", "WireGrass", "RedEarth", "WireFire"}, EMPTY);
++        setup("CopperSnow", EMPTY, new String[]{"RedSnow", "OrangeFire", "WireAir", "GreenGlass", "NightSpork", "EmeraldPaper"}, new String[]{"BlueGrass"});
++        setup("BrightBluePaper", EMPTY, new String[]{"GoldEarth", "BrightBlueSpoon", "CopperGlass", "LightSporkChat", "DarkAir", "LightEarth", "DiamondDoor", "YellowShovel", "BlueAir", "DarkShovel", "GoldPaper", "BlueFire", "GreenGlass", "YellowSpork", "BigGrass", "OrangePaper", "DarkPaper"}, new String[]{"WireShovel"});
++        setup("LightSponge", EMPTY, EMPTY, EMPTY);
++        setup("OrangeShovel", EMPTY, EMPTY, EMPTY);
++        setup("GoldGrass", EMPTY, new String[]{"GreenGlass", "BlueFire"}, EMPTY);
++        setup("IronSponge", EMPTY, new String[]{"DiamondEarth"}, EMPTY);
++        setup("EmeraldSnow", EMPTY, EMPTY, EMPTY);
++        setup("BlueSpoon", new String[]{"BigGrass"}, new String[]{"GreenGlass", "GoldPaper", "GreenShovel", "YellowClam"}, EMPTY);
++        setup("BigSpork", EMPTY, new String[]{"BigPaper"}, EMPTY);
++        setup("BluePaper", EMPTY, new String[]{"BigClam", "RedSpoon", "GreenFire", "WireSnow", "OrangeSnow", "BlueFire", "BrightBlueGrass", "YellowSpork", "GreenGlass"}, EMPTY);
++        setup("OrangeSpork", EMPTY, EMPTY, EMPTY);
++        setup("DiamondNeptune", EMPTY, new String[]{"GreenGlass", "GreenShovel", "YellowNeptune"}, EMPTY);
++        setup("BigFire", EMPTY, new String[]{"BlueFire", "BrightBlueDoor", "GreenGlass"}, EMPTY);
++        setup("NightNeptune", EMPTY, new String[]{"BlueFire", "DarkGlass", "GoldPaper", "YellowNeptune", "BlueShovel"}, EMPTY);
++        setup("YellowEarth", new String[]{"RedAir"}, EMPTY, EMPTY);
++        setup("DiamondClam", EMPTY, EMPTY, EMPTY);
++        setup("CopperAir", EMPTY, new String[]{"BigPaper"}, EMPTY);
++        setup("NightSpoon", new String[]{"OrangeNeptune"}, new String[]{"BlueFire", "GreenGlass", "RedSpork", "GoldPaper", "BigShovel", "YellowSponge", "EmeraldSpork"}, EMPTY);
++        setup("GreenClam", EMPTY, new String[]{"GreenShovel", "BrightBlueEarth", "BigSpoon", "RedPaper", "BlueFire", "GreenGlass", "WireFire", "GreenSnow"}, EMPTY);
++        setup("YellowPaper", EMPTY, EMPTY, EMPTY);
++        setup("WireGlass", new String[]{"YellowGrass"}, new String[]{"YellowGlass", "BigSpoon", "CopperSnow", "GreenGlass", "BlueEarth"}, EMPTY);
++        setup("BlueSpork", EMPTY, new String[]{"BrightBlueGrass"}, EMPTY);
++        setup("CopperShovel", EMPTY, new String[]{"GreenGlass"}, EMPTY);
++        setup("RedClam", EMPTY, EMPTY, EMPTY);
++        setup("EmeraldClam", EMPTY, new String[]{"BlueFire"}, EMPTY);
++        setup("DarkClam", EMPTY, new String[]{"GoldAir", "LightGlass"}, EMPTY);
++        setup("WireSpoon", EMPTY, new String[]{"GoldPaper", "LightSnow"}, EMPTY);
++        setup("CopperNeptune", EMPTY, new String[]{"GreenGlass", "BigGrass"}, EMPTY);
++        setup("RedNeptune", EMPTY, EMPTY, EMPTY);
++        setup("GreenAir", EMPTY, EMPTY, EMPTY);
++        setup("RedFire", new String[]{"BrightBlueGrass", "BigPaper"}, new String[]{"BlueFire", "GreenGlass", "BigGrass"}, EMPTY);
 +    }
 +
 +    @Before
@@ -6712,20 +6770,6 @@ index 0000000000000000000000000000000000000000..7665967dc1849dde750c6d24298e76c2
 +                return false;
 +            }
 +
-+            @Override
-+            public List<String> requiredDependencies(PluginProvider<PaperTestPlugin> provider) {
-+                return provider.getMeta().getPluginDependencies();
-+            }
-+
-+            @Override
-+            public List<String> optionalDependencies(PluginProvider<PaperTestPlugin> provider) {
-+                return provider.getMeta().getPluginSoftDependencies();
-+            }
-+
-+            @Override
-+            public List<String> loadBeforeDependencies(PluginProvider<PaperTestPlugin> provider) {
-+                return provider.getMeta().getLoadBeforePlugins();
-+            }
 +        });
 +
 +        modernPluginLoadingStrategy.loadProviders(REGISTERED_PROVIDERS);
@@ -6769,9 +6813,6 @@ index 0000000000000000000000000000000000000000..7665967dc1849dde750c6d24298e76c2
 +        }
 +    }
 +}
-diff --git a/src/test/java/io/papermc/paper/plugin/PluginLoadingTest.java b/src/test/java/io/papermc/paper/plugin/PluginLoadingTest.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginManagerTest.java b/src/test/java/io/papermc/paper/plugin/PluginManagerTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..726eba26470e62b0e94a91418512e242464800ae
@@ -6931,13 +6972,14 @@ index 0000000000000000000000000000000000000000..04903794a8ee4dd73162ae240862ff6d
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java b/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..67db836a20c7520bc4ef4deeb90598a6a9dba3e3
+index 0000000000000000000000000000000000000000..ea2854172968abea40c39eb05faf76ed1191c353
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,76 @@
 +package io.papermc.paper.plugin;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import org.jetbrains.annotations.NotNull;
@@ -7003,6 +7045,11 @@ index 0000000000000000000000000000000000000000..67db836a20c7520bc4ef4deeb90598a6
 +                return TestJavaPluginProvider.this.testPluginConfiguration;
 +            }
 +        };
++    }
++
++    @Override
++    public List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad) {
++        return DependencyUtil.validateSimple(this.getMeta(), toLoad);
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java b/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java
