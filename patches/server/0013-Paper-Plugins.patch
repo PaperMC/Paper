@@ -5604,10 +5604,10 @@ index 0000000000000000000000000000000000000000..db343a2f482ac375078610f087569286
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotLoadOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotLoadOrderConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d865b3fae6fe9fea1d397e2b57da8a15c92a2a69
+index 0000000000000000000000000000000000000000..b2a6544e321fa61c58bdf5684231de1020884fcc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotLoadOrderConfiguration.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,72 @@
 +package io.papermc.paper.plugin.provider.type.spigot;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -5618,9 +5618,11 @@ index 0000000000000000000000000000000000000000..d865b3fae6fe9fea1d397e2b57da8a15
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.ArrayList;
++import java.util.HashSet;
 +import java.util.Iterator;
 +import java.util.List;
 +import java.util.Map;
++import java.util.Set;
 +
 +public class SpigotLoadOrderConfiguration implements LoadOrderConfiguration {
 +
@@ -5646,13 +5648,16 @@ index 0000000000000000000000000000000000000000..d865b3fae6fe9fea1d397e2b57da8a15
 +        // Second: Do a basic check to see if any other dependencies refer back to this plugin.
 +        Iterator<String> iterators = this.loadAfter.iterator();
 +        while (iterators.hasNext()) {
-+            String hasPermission = iterators.next();
-+            PluginProvider<?> provider = toLoad.get(hasPermission);
++            String loadAfter = iterators.next();
++            PluginProvider<?> provider = toLoad.get(loadAfter);
 +            if (provider != null) {
-+                // (Recreate the config, oh well)
-+                LoadOrderConfiguration configuration = provider.createConfiguration(toLoad);
++                PluginMeta configuration = provider.getMeta();
 +                // Does a configuration refer back to this plugin?
-+                if (configuration.getLoadAfter().contains(this.meta.getName())) {
++                Set<String> dependencies = new HashSet<>();
++                dependencies.addAll(configuration.getPluginDependencies());
++                dependencies.addAll(configuration.getPluginSoftDependencies());
++
++                if (configuration.getName().equals(this.meta.getName()) || dependencies.contains(this.meta.getName())) {
 +                    iterators.remove(); // Let the other config deal with it
 +                }
 +            }
