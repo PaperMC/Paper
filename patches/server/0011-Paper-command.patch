@@ -287,10 +287,10 @@ index 0000000000000000000000000000000000000000..6ff5d42a866d2752c73a766815aa190b
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9e51b3d1217ad6dc5c0c11d2febac7144e5721af
+index 0000000000000000000000000000000000000000..94366dbc8d1fb67285314c41cc5650e3f0802df7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,152 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.google.common.collect.Maps;
@@ -411,7 +411,14 @@ index 0000000000000000000000000000000000000000..9e51b3d1217ad6dc5c0c11d2febac714
 +                sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
 +                info.getRight().entrySet().stream()
 +                    .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
-+                    .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)")));
++                    .limit(10).forEach(e -> {
++                        final int x = e.getKey().x << 4;
++                        final int z = e.getKey().z << 4;
++                        final net.kyori.adventure.text.Component message = text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)"))
++                            .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(text("Click to teleport to chunk", net.kyori.adventure.text.format.NamedTextColor.GREEN)))
++                            .clickEvent(net.kyori.adventure.text.event.ClickEvent.clickEvent(net.kyori.adventure.text.event.ClickEvent.Action.RUN_COMMAND, "/minecraft:execute as @s in " + world.getWorld().getKey().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING) + 1) + " " + z));
++                        sender.sendMessage(message);
++                    });
 +            } else {
 +                List<Pair<ResourceLocation, Integer>> info = list.entrySet().stream()
 +                    .filter(e -> names.contains(e.getKey()))
