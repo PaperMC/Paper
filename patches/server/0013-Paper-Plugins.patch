@@ -2043,7 +2043,7 @@ index 0000000000000000000000000000000000000000..22189a1c42459c00d3e8bdeb980d15a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..883a9568e4f314632f965d18c15fa113ddf3d9c0
+index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b047701d9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 @@ -0,0 +1,260 @@
@@ -2079,8 +2079,8 @@ index 0000000000000000000000000000000000000000..883a9568e4f314632f965d18c15fa113
 +    }
 +
 +    @Override
-+    public List<Pair<T>> loadProviders(List<PluginProvider<T>> providers) {
-+        List<Pair<T>> javapluginsLoaded = new ArrayList<>();
++    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> providers) {
++        List<ProviderPair<T>> javapluginsLoaded = new ArrayList<>();
 +        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        GraphDependencyContext dependencyContext = new GraphDependencyContext(dependencyGraph);
 +
@@ -2250,7 +2250,7 @@ index 0000000000000000000000000000000000000000..883a9568e4f314632f965d18c15fa113
 +                        if (this.configuration.load(file, loadedPlugin)) {
 +                            loadedPlugins.add(file.getMeta().getName());
 +                            loadedPlugins.addAll(file.getMeta().getProvidedPlugins());
-+                            javapluginsLoaded.add(new Pair<>(file, loadedPlugin));
++                            javapluginsLoaded.add(new ProviderPair<>(file, loadedPlugin));
 +                        }
 +
 +                    } catch (Exception ex) {
@@ -2281,7 +2281,7 @@ index 0000000000000000000000000000000000000000..883a9568e4f314632f965d18c15fa113
 +                            if (this.configuration.load(file, loadedPlugin)) {
 +                                loadedPlugins.add(file.getMeta().getName());
 +                                loadedPlugins.addAll(file.getMeta().getProvidedPlugins());
-+                                javapluginsLoaded.add(new Pair<>(file, loadedPlugin));
++                                javapluginsLoaded.add(new ProviderPair<>(file, loadedPlugin));
 +                            }
 +                            break;
 +                        } catch (Exception ex) {
@@ -2309,7 +2309,7 @@ index 0000000000000000000000000000000000000000..883a9568e4f314632f965d18c15fa113
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b0f059e278c31cc79eccfd2511b6a2bd75efeb96
+index 0000000000000000000000000000000000000000..30e56289cccc09456b3421f7960d8647b6610639
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 @@ -0,0 +1,143 @@
@@ -2342,7 +2342,7 @@ index 0000000000000000000000000000000000000000..b0f059e278c31cc79eccfd2511b6a2bd
 +    }
 +
 +    @Override
-+    public List<Pair<T>> loadProviders(List<PluginProvider<T>> pluginProviders) {
++    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> pluginProviders) {
 +        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        Map<String, PluginProviderEntry<T>> providerMap = new HashMap<>();
 +        List<PluginProvider<T>> validatedProviders = new ArrayList<>();
@@ -2418,7 +2418,7 @@ index 0000000000000000000000000000000000000000..b0f059e278c31cc79eccfd2511b6a2bd
 +        }
 +
 +        GraphDependencyContext graphDependencyContext = new GraphDependencyContext(dependencyGraph);
-+        List<Pair<T>> loadedPlugins = new ArrayList<>();
++        List<ProviderPair<T>> loadedPlugins = new ArrayList<>();
 +        for (String providerIdentifier : reversedTopographicSort) {
 +            // It's possible that this will be null because the above dependencies for soft/load before aren't validated if they exist.
 +            // The graph could be MutableGraph<PluginProvider<T>>, but we would have to check if each dependency exists there... just
@@ -2436,7 +2436,7 @@ index 0000000000000000000000000000000000000000..b0f059e278c31cc79eccfd2511b6a2bd
 +
 +                T instance = retrievedProvider.createInstance();
 +                if (this.configuration.load(retrievedProvider, instance)) {
-+                    loadedPlugins.add(new Pair<>(retrievedProvider, instance));
++                    loadedPlugins.add(new ProviderPair<>(retrievedProvider, instance));
 +                }
 +            } catch (Exception ex) {
 +                LOGGER.error("Could not load plugin '%s' in folder '%s'".formatted(retrievedProvider.getFileName(), retrievedProvider.getParentSource()), ex); // Paper
@@ -2515,7 +2515,7 @@ index 0000000000000000000000000000000000000000..5e18616160014d70df2b539d7e65bb00
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fa31a741bc22ccc1e7205154c0f24ba6ae9da1cb
+index 0000000000000000000000000000000000000000..dee83e821dcc9baf3a3e5ca8325b03ed2d5eb81c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
 @@ -0,0 +1,20 @@
@@ -2533,9 +2533,9 @@ index 0000000000000000000000000000000000000000..fa31a741bc22ccc1e7205154c0f24ba6
 + */
 +public interface ProviderLoadingStrategy<P> {
 +
-+    List<Pair<P>> loadProviders(List<PluginProvider<P>> providers);
++    List<ProviderPair<P>> loadProviders(List<PluginProvider<P>> providers);
 +
-+    record Pair<P>(PluginProvider<P> provider, P provided) {
++    record ProviderPair<P>(PluginProvider<P> provider, P provided) {
 +
 +    }
 +}
@@ -5825,7 +5825,7 @@ index 0000000000000000000000000000000000000000..8b47e585c85e54a71e34aa57d61c1b2b
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fa14e3dfb0439c2cfe23c375bc85ddf29c3e2668
+index 0000000000000000000000000000000000000000..1c4c344eb65dd90e1d3698908b0d9b46262c9540
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 @@ -0,0 +1,57 @@
@@ -5858,8 +5858,8 @@ index 0000000000000000000000000000000000000000..fa14e3dfb0439c2cfe23c375bc85ddf2
 +        this.filterLoadingProviders(providerList);
 +
 +        try {
-+            for (ProviderLoadingStrategy.Pair<T> pair : this.strategy.loadProviders(providerList)) {
-+                this.processProvided(pair.provider(), pair.provided());
++            for (ProviderLoadingStrategy.ProviderPair<T> providerPair : this.strategy.loadProviders(providerList)) {
++                this.processProvided(providerPair.provider(), providerPair.provided());
 +            }
 +        } catch (PluginGraphCycleException exception) {
 +            this.handleCycle(exception);
