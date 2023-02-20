@@ -377,7 +377,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public String getTranslationKey(EntityType entityType) {
-        return EntityTypes.byString(entityType.name()).map(EntityTypes::getDescriptionId).orElseThrow();
+        Preconditions.checkArgument(entityType.getName() != null, "Invalid name of EntityType %s for translation key", entityType);
+        return EntityTypes.byString(entityType.getName()).map(EntityTypes::getDescriptionId).orElseThrow();
     }
 
     @Override
