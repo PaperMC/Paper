@@ -5654,6 +5654,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.List;
 +import java.util.logging.Level;
 +import java.util.logging.Logger;
++import java.util.stream.Collectors;
 +
 +public abstract class ConfiguredProviderStorage<T> extends SimpleProviderStorage<T> {
 +
@@ -5670,20 +5671,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    protected void handleCycle(PluginGraphCycleException exception) {
 +        List<String> logMessages = new ArrayList<>();
 +        for (List<String> list : exception.getCycles()) {
-+            // CoolPlugin depends on Dependency depends on CoolPlugin...
-+            logMessages.add(String.join(" depends on ", list) + " depends on " + list.get(0) + "...");
++            logMessages.add(String.join(" -> ", list) + " -> " + list.get(0));
 +        }
 +
-+        LOGGER.log(Level.SEVERE, "Circular dependencies detected!");
-+        LOGGER.log(Level.SEVERE, "You have a plugin that is depending on a plugin which refers back to that plugin. Your server will shut down until these are resolved, or the strategy is changed.");
++        LOGGER.log(Level.SEVERE, "Circular dependencies detected! This happens when");
++        LOGGER.log(Level.SEVERE, "  i) plugin A has a plugin B in its (soft)depend list, and plugin B has plugin A in its (soft)depend list, or");
++        LOGGER.log(Level.SEVERE, "  ii) plugin A has plugin B both in its (soft)depend list and its loadbefore list.");
 +        LOGGER.log(Level.SEVERE, "Circular dependencies:");
-+        for (String message : logMessages) {
-+            LOGGER.log(Level.SEVERE, message);
++        for (String logMessage : logMessages) {
++            LOGGER.log(Level.SEVERE, "  " + logMessage);
 +        }
++        LOGGER.log(Level.SEVERE, "Please report this to the plugin authors of the first plugin of each loop or join the PaperMC Discord server for further help.");
 +        LOGGER.log(Level.SEVERE, "If you would like to still load these plugins, acknowledging that there may be unexpected plugin loading issues, run the server with -Dpaper.useLegacyPluginLoading=true");
 +
 +        if (this.exitOnCycleDependencies()) {
-+            System.exit(-1);
++            throw new IllegalStateException("Circular plugin dependencies from plugins " + exception.getCycles().stream().map(cycle -> cycle.get(0)).collect(Collectors.joining(", ")));
 +        }
 +    }
 +
