@@ -90,8 +90,8 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
                 int amp = effect.getByte(AMPLIFIER.NBT);
                 int duration = effect.getInt(DURATION.NBT);
                 boolean ambient = effect.getBoolean(AMBIENT.NBT);
-                boolean particles = tag.contains(SHOW_PARTICLES.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_PARTICLES.NBT) : true;
-                boolean icon = tag.contains(SHOW_ICON.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_ICON.NBT) : particles;
+                boolean particles = effect.contains(SHOW_PARTICLES.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_PARTICLES.NBT) : true;
+                boolean icon = effect.contains(SHOW_ICON.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_ICON.NBT) : particles;
                 customEffects.add(new PotionEffect(type, duration, amp, ambient, particles, icon));
             }
         }
