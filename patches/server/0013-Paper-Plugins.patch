@@ -1587,14 +1587,15 @@ index 0000000000000000000000000000000000000000..f43295fdeaa587cf30c35a1d54516707
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1af3c3434eb1f3b00857b17a07f42e51086c1e2b
+index 0000000000000000000000000000000000000000..5fb1ebebc809e12db00fc149a03fb2341e405528
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,57 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
 +import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.ArrayList;
@@ -1609,16 +1610,27 @@ index 0000000000000000000000000000000000000000..1af3c3434eb1f3b00857b17a07f42e51
 +        dependencies.addAll(configuration.getPluginDependencies());
 +        dependencies.addAll(configuration.getPluginSoftDependencies());
 +
-+        return buildDependencyGraph(dependencyGraph, configuration.getName(), dependencies, configuration.getLoadBeforePlugins());
++        return buildDependencyGraph(dependencyGraph, configuration.getName(), dependencies);
 +    }
 +
 +    @NotNull
-+    public static MutableGraph<String> buildDependencyGraph(@NotNull MutableGraph<String> dependencyGraph, String identifier, @NotNull Iterable<String> depends, @NotNull Iterable<String> loadBefore) {
++    public static MutableGraph<String> buildDependencyGraph(@NotNull MutableGraph<String> dependencyGraph, String identifier, @NotNull Iterable<String> depends) {
 +        for (String dependency : depends) {
 +            dependencyGraph.putEdge(identifier, dependency);
 +        }
 +
-+        for (String loadBeforeTarget : loadBefore) {
++        dependencyGraph.addNode(identifier); // Make sure dependencies at least have a node
++        return dependencyGraph;
++    }
++
++    @NotNull
++    public static MutableGraph<String> buildLoadGraph(@NotNull MutableGraph<String> dependencyGraph, @NotNull LoadOrderConfiguration configuration) {
++        String identifier = configuration.getMeta().getName();
++        for (String dependency : configuration.getLoadAfter()) {
++            dependencyGraph.putEdge(identifier, dependency);
++        }
++
++        for (String loadBeforeTarget : configuration.getLoadBefore()) {
 +            dependencyGraph.putEdge(loadBeforeTarget, identifier);
 +        }
 +
@@ -2309,13 +2321,14 @@ index 0000000000000000000000000000000000000000..c337852883f38f6c2d8d5afbed0c848b
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..30e56289cccc09456b3421f7960d8647b6610639
+index 0000000000000000000000000000000000000000..dcc118ba49661045a2944e09614f5238c5f369cf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,152 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import com.google.common.collect.Lists;
++import com.google.common.collect.Maps;
 +import com.google.common.graph.GraphBuilder;
 +import com.google.common.graph.MutableGraph;
 +import com.mojang.logging.LogUtils;
@@ -2323,6 +2336,7 @@ index 0000000000000000000000000000000000000000..30e56289cccc09456b3421f7960d8647
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
 +import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import org.bukkit.plugin.UnknownDependencyException;
 +import org.slf4j.Logger;
 +
@@ -2343,7 +2357,6 @@ index 0000000000000000000000000000000000000000..30e56289cccc09456b3421f7960d8647
 +
 +    @Override
 +    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> pluginProviders) {
-+        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        Map<String, PluginProviderEntry<T>> providerMap = new HashMap<>();
 +        List<PluginProvider<T>> validatedProviders = new ArrayList<>();
 +
@@ -2397,24 +2410,32 @@ index 0000000000000000000000000000000000000000..30e56289cccc09456b3421f7960d8647
 +            }
 +        }
 +
++        MutableGraph<String> loadOrderGraph = GraphBuilder.directed().build();
++        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        for (PluginProvider<?> validated : validatedProviders) {
 +            PluginMeta configuration = validated.getMeta();
++            LoadOrderConfiguration loadOrderConfiguration = validated.createConfiguration(Maps.transformValues(providerMap, (entry) -> entry.provider));
++
++            // Build a validated provider's load order changes
++            DependencyUtil.buildLoadGraph(loadOrderGraph, loadOrderConfiguration);
 +
 +            // Build a validated provider's dependencies into the graph
 +            DependencyUtil.buildDependencyGraph(dependencyGraph, configuration);
 +
 +            // Add the provided plugins to the graph as well
 +            for (String provides : configuration.getProvidedPlugins()) {
-+                DependencyUtil.addProvidedPlugin(dependencyGraph, configuration.getName(), provides);
++                String name = configuration.getName();
++                DependencyUtil.addProvidedPlugin(loadOrderGraph, name, provides);
++                DependencyUtil.addProvidedPlugin(dependencyGraph, name, provides);
 +            }
 +        }
 +
 +        // Reverse the topographic search to let us see which providers we can load first.
 +        List<String> reversedTopographicSort;
 +        try {
-+            reversedTopographicSort = Lists.reverse(TopographicGraphSorter.sortGraph(dependencyGraph));
++            reversedTopographicSort = Lists.reverse(TopographicGraphSorter.sortGraph(loadOrderGraph));
 +        } catch (TopographicGraphSorter.GraphCycleException exception) {
-+            throw new PluginGraphCycleException(new JohnsonSimpleCycles<>(dependencyGraph).findSimpleCycles());
++            throw new PluginGraphCycleException(new JohnsonSimpleCycles<>(loadOrderGraph).findSimpleCycles());
 +        }
 +
 +        GraphDependencyContext graphDependencyContext = new GraphDependencyContext(dependencyGraph);
@@ -4023,17 +4044,19 @@ index 0000000000000000000000000000000000000000..ea8cf22c35242eb9f3914b95df00e205
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..11b6cb377c9b04b63b6359918eef214ba3032d96
+index 0000000000000000000000000000000000000000..b7dcefcfe116258cfef1c17515db68ff765233d5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.plugin.provider;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.nio.file.Path;
++import java.util.Map;
 +import java.util.jar.JarFile;
 +import java.util.logging.Logger;
 +
@@ -4072,6 +4095,8 @@ index 0000000000000000000000000000000000000000..11b6cb377c9b04b63b6359918eef214b
 +    PluginMeta getMeta();
 +
 +    Logger getLogger();
++
++    LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad);
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/ProviderStatus.java b/src/main/java/io/papermc/paper/plugin/provider/ProviderStatus.java
@@ -4145,12 +4170,56 @@ index 0000000000000000000000000000000000000000..6ba3bcc468c0a60c76d6d0f0243bda66
 +
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/LoadOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/LoadOrderConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47e8b14db7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/LoadOrderConfiguration.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.plugin.provider.configuration;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.List;
++
++/**
++ * This is used for plugins to configure the load order of strategies.
++ */
++public interface LoadOrderConfiguration {
++
++    /**
++     * Provides a list of plugins that THIS configuration should load
++     * before.
++     *
++     * @return list of plugins
++     */
++    @NotNull
++    List<String> getLoadBefore();
++
++    /**
++     * Provides a list of plugins that THIS configuration should load
++     * before.
++     *
++     * @return list of plugins
++     */
++    @NotNull
++    List<String> getLoadAfter();
++
++    /**
++     * Gets the responsible plugin provider's meta.
++     *
++     * @return meta
++     */
++    @NotNull
++    PluginMeta getMeta();
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..622a6c5fdfcb6d8cc12054f3de81c73c9af2389f
+index 0000000000000000000000000000000000000000..206c549338869842949a69b28e21831b532611aa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,218 @@
 +package io.papermc.paper.plugin.provider.configuration;
 +
 +import com.google.common.collect.ImmutableList;
@@ -4198,6 +4267,7 @@ index 0000000000000000000000000000000000000000..622a6c5fdfcb6d8cc12054f3de81c73c
 +    private String loader;
 +    private List<DependencyConfiguration> dependencies = List.of();
 +    private List<String> loadBefore = List.of();
++    private List<String> loadAfter = List.of();
 +    private List<String> provides = List.of();
 +    private boolean hasOpenClassloader = false;
 +    @Required
@@ -4301,6 +4371,10 @@ index 0000000000000000000000000000000000000000..622a6c5fdfcb6d8cc12054f3de81c73c
 +    @Override
 +    public @NotNull List<String> getLoadBeforePlugins() {
 +        return this.loadBefore;
++    }
++
++    public @NotNull List<String> getLoadAfterPlugins() {
++        return this.loadAfter;
 +    }
 +
 +    @Override
@@ -5074,20 +5148,70 @@ index 0000000000000000000000000000000000000000..32f230d66f6953520b59ccbf3079c5a6
 +
 +    C create(JarFile file, JarEntry config) throws Exception;
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperLoadOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperLoadOrderConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b7e8a5ba375a558e0442aa9facf96954a9bb135f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperLoadOrderConfiguration.java
+@@ -0,0 +1,44 @@
++package io.papermc.paper.plugin.provider.type.paper;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
++import io.papermc.paper.plugin.provider.type.spigot.SpigotPluginProvider;
++import org.bukkit.plugin.PluginDescriptionFile;
++import org.bukkit.plugin.java.JavaPlugin;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.ArrayList;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++public class PaperLoadOrderConfiguration implements LoadOrderConfiguration {
++
++    private final PaperPluginMeta meta;
++    private final List<String> loadBefore;
++    private final List<String> loadAfter;
++
++    public PaperLoadOrderConfiguration(PaperPluginMeta meta) {
++        this.meta = meta;
++
++        this.loadBefore = this.meta.getLoadBeforePlugins();
++        this.loadAfter = this.meta.getLoadAfterPlugins();
++    }
++
++    @Override
++    public @NotNull List<String> getLoadBefore() {
++        return this.loadBefore;
++    }
++
++    @Override
++    public @NotNull List<String> getLoadAfter() {
++        return this.loadAfter;
++    }
++
++    @Override
++    public @NotNull PluginMeta getMeta() {
++        return this.meta;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..46ee1b7f4b4c509932c68a4152e1d8445811d3b8
+index 0000000000000000000000000000000000000000..97836336242dff94178347bc828230640c84889e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,236 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
-+import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
 +import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.ProviderStatus;
@@ -5095,11 +5219,11 @@ index 0000000000000000000000000000000000000000..46ee1b7f4b4c509932c68a4152e1d844
 +import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
 +import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
 +import io.papermc.paper.plugin.provider.util.ProviderUtil;
-+import org.bukkit.Bukkit;
 +import org.bukkit.plugin.java.JavaPlugin;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.nio.file.Path;
++import java.util.Map;
 +import java.util.jar.JarFile;
 +import java.util.logging.Logger;
 +
@@ -5166,6 +5290,11 @@ index 0000000000000000000000000000000000000000..46ee1b7f4b4c509932c68a4152e1d844
 +        @Override
 +        public Logger getLogger() {
 +            return PaperPluginParent.this.logger;
++        }
++
++        @Override
++        public LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad) {
++            return new PaperLoadOrderConfiguration(PaperPluginParent.this.description);
 +        }
 +
 +        @Override
@@ -5255,6 +5384,11 @@ index 0000000000000000000000000000000000000000..46ee1b7f4b4c509932c68a4152e1d844
 +        @Override
 +        public Logger getLogger() {
 +            return PaperPluginParent.this.logger;
++        }
++
++        @Override
++        public LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad) {
++            return new PaperLoadOrderConfiguration(PaperPluginParent.this.description);
 +        }
 +
 +        @Override
@@ -5366,17 +5500,91 @@ index 0000000000000000000000000000000000000000..db343a2f482ac375078610f087569286
 +        return configuration;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotLoadOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotLoadOrderConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d865b3fae6fe9fea1d397e2b57da8a15c92a2a69
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotLoadOrderConfiguration.java
+@@ -0,0 +1,67 @@
++package io.papermc.paper.plugin.provider.type.spigot;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import org.bukkit.plugin.PluginDescriptionFile;
++import org.bukkit.plugin.java.JavaPlugin;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.ArrayList;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++public class SpigotLoadOrderConfiguration implements LoadOrderConfiguration {
++
++    private final PluginDescriptionFile meta;
++    private final List<String> loadBefore;
++    private final List<String> loadAfter;
++
++    public SpigotLoadOrderConfiguration(SpigotPluginProvider spigotPluginProvider, Map<String, PluginProvider<?>> toLoad) {
++        this.meta = spigotPluginProvider.getMeta();
++
++        this.loadBefore = meta.getLoadBeforePlugins();
++        this.loadAfter = new ArrayList<>();
++        this.loadAfter.addAll(meta.getDepend());
++        this.loadAfter.addAll(meta.getSoftDepend());
++
++        // First: Remove as load after IF already in loadbefore
++        // Some plugins would put a plugin both in depends and in loadbefore,
++        // so in this case, we just ignore the effects of depend.
++        for (String loadBefore : this.loadBefore) {
++            this.loadAfter.remove(loadBefore);
++        }
++
++        // Second: Do a basic check to see if any other dependencies refer back to this plugin.
++        Iterator<String> iterators = this.loadAfter.iterator();
++        while (iterators.hasNext()) {
++            String hasPermission = iterators.next();
++            PluginProvider<?> provider = toLoad.get(hasPermission);
++            if (provider != null) {
++                // (Recreate the config, oh well)
++                LoadOrderConfiguration configuration = provider.createConfiguration(toLoad);
++                // Does a configuration refer back to this plugin?
++                if (configuration.getLoadAfter().contains(this.meta.getName())) {
++                    iterators.remove(); // Let the other config deal with it
++                }
++            }
++        }
++
++    }
++
++    @Override
++    public @NotNull List<String> getLoadBefore() {
++        return this.loadBefore;
++    }
++
++    @Override
++    public @NotNull List<String> getLoadAfter() {
++        return this.loadAfter;
++    }
++
++    @Override
++    public @NotNull PluginMeta getMeta() {
++        return this.meta;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..309c3dc492cbf469768d6a712485a0e42e73f947
+index 0000000000000000000000000000000000000000..3ebfa147ce81600797047a1b127b4708b223dd08
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,179 @@
 +package io.papermc.paper.plugin.provider.type.spigot;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
 +import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
 +import io.papermc.paper.plugin.provider.PluginProvider;
@@ -5396,6 +5604,7 @@ index 0000000000000000000000000000000000000000..309c3dc492cbf469768d6a712485a0e4
 +import java.io.File;
 +import java.nio.file.Path;
 +import java.util.HashSet;
++import java.util.Map;
 +import java.util.Set;
 +import java.util.jar.JarFile;
 +import java.util.logging.Level;
@@ -5516,6 +5725,11 @@ index 0000000000000000000000000000000000000000..309c3dc492cbf469768d6a712485a0e4
 +    @Override
 +    public Logger getLogger() {
 +        return this.logger;
++    }
++
++    @Override
++    public LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad) {
++        return new SpigotLoadOrderConfiguration(this, toLoad);
 +    }
 +
 +    @Override
