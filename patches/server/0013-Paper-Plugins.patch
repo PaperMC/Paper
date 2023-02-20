@@ -2789,7 +2789,7 @@ index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b532e35505d5fffd4c525109f273012e2652f777
+index 0000000000000000000000000000000000000000..365aa894c77b095bfe23bdaab354591df32bcda2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 @@ -0,0 +1,49 @@
@@ -2833,7 +2833,7 @@ index 0000000000000000000000000000000000000000..b532e35505d5fffd4c525109f273012e
 +    }
 +
 +    @Override
-+    public boolean exitOnCycleDependencies() {
++    public boolean throwOnCycle() {
 +        return false;
 +    }
 +
@@ -3910,7 +3910,7 @@ index 0000000000000000000000000000000000000000..5d50d1d312388e979c0e1cd53a6bf597
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..194f1439e322cb6b3433a72f80a8a4c7624b20d5
+index 0000000000000000000000000000000000000000..3d1b60e0427b1da1965fe81fe02176a70a8d56a2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 @@ -0,0 +1,80 @@
@@ -3986,7 +3986,7 @@ index 0000000000000000000000000000000000000000..194f1439e322cb6b3433a72f80a8a4c7
 +    }
 +
 +    @Override
-+    public boolean exitOnCycleDependencies() {
++    public boolean throwOnCycle() {
 +        return false;
 +    }
 +
@@ -5932,58 +5932,24 @@ index 0000000000000000000000000000000000000000..7af995b941ce83265a93cdc6b5a2de8a
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ConfiguredProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ConfiguredProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb4a7e1fbd9f0e853ebf965c6b4f9e0e6061ad74
+index 0000000000000000000000000000000000000000..c49fd0d21f5c591fb2076ac87f158bca1a8e12b1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ConfiguredProviderStorage.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,17 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import io.papermc.paper.plugin.entrypoint.strategy.LegacyPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
-+import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
-+
-+import java.util.ArrayList;
-+import java.util.List;
-+import java.util.logging.Level;
-+import java.util.logging.Logger;
-+import java.util.stream.Collectors;
 +
 +public abstract class ConfiguredProviderStorage<T> extends SimpleProviderStorage<T> {
 +
-+    private static final Logger LOGGER = Logger.getLogger("ConfiguredOrderedProviderStorage");
 +    public static final boolean LEGACY_PLUGIN_LOADING = Boolean.getBoolean("paper.useLegacyPluginLoading");
 +
 +    protected ConfiguredProviderStorage(ProviderConfiguration<T> onLoad) {
 +        // This doesn't work with reloading.
 +        // Should we care?
 +        super(LEGACY_PLUGIN_LOADING ? new LegacyPluginLoadingStrategy<>(onLoad) : new ModernPluginLoadingStrategy<>(onLoad));
-+    }
-+
-+    @Override
-+    protected void handleCycle(PluginGraphCycleException exception) {
-+        List<String> logMessages = new ArrayList<>();
-+        for (List<String> list : exception.getCycles()) {
-+            logMessages.add(String.join(" -> ", list) + " -> " + list.get(0));
-+        }
-+
-+        LOGGER.log(Level.SEVERE, "Circular dependencies detected! This happens when");
-+        LOGGER.log(Level.SEVERE, "  i) plugin A has a plugin B in its (soft)depend list, and plugin B has plugin A in its (soft)depend list, or");
-+        LOGGER.log(Level.SEVERE, "  ii) plugin A has plugin B both in its (soft)depend list and its loadbefore list.");
-+        LOGGER.log(Level.SEVERE, "Circular dependencies:");
-+        for (String logMessage : logMessages) {
-+            LOGGER.log(Level.SEVERE, "  " + logMessage);
-+        }
-+        LOGGER.log(Level.SEVERE, "Please report this to the plugin authors of the first plugin of each loop or join the PaperMC Discord server for further help.");
-+        LOGGER.log(Level.SEVERE, "If you would like to still load these plugins, acknowledging that there may be unexpected plugin loading issues, run the server with -Dpaper.useLegacyPluginLoading=true");
-+
-+        if (this.exitOnCycleDependencies()) {
-+            throw new IllegalStateException("Circular plugin dependencies from plugins " + exception.getCycles().stream().map(cycle -> cycle.get(0)).collect(Collectors.joining(", ")));
-+        }
-+    }
-+
-+    public boolean exitOnCycleDependencies() {
-+        return true;
 +    }
 +
 +}
@@ -6104,10 +6070,10 @@ index 0000000000000000000000000000000000000000..8b47e585c85e54a71e34aa57d61c1b2b
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1c4c344eb65dd90e1d3698908b0d9b46262c9540
+index 0000000000000000000000000000000000000000..1a1770d5d152b4b71023a1711125db0f2c161cea
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,83 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
@@ -6116,8 +6082,13 @@ index 0000000000000000000000000000000000000000..1c4c344eb65dd90e1d3698908b0d9b46
 +
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++import java.util.stream.Collectors;
 +
 +public abstract class SimpleProviderStorage<T> implements ProviderStorage<T> {
++
++    private static final Logger LOGGER = Logger.getLogger("SimpleProviderStorage");
 +
 +    protected final List<PluginProvider<T>> providers = new ArrayList<>();
 +    protected ProviderLoadingStrategy<T> strategy;
@@ -6155,7 +6126,28 @@ index 0000000000000000000000000000000000000000..1c4c344eb65dd90e1d3698908b0d9b46
 +    // Mutable enter
 +    protected void filterLoadingProviders(List<PluginProvider<T>> providers) {}
 +
-+    protected abstract void handleCycle(PluginGraphCycleException exception);
++    protected void handleCycle(PluginGraphCycleException exception) {
++        List<String> logMessages = new ArrayList<>();
++        for (List<String> list : exception.getCycles()) {
++            logMessages.add(String.join(" -> ", list) + " -> " + list.get(0));
++        }
++
++        LOGGER.log(Level.SEVERE, "Circular plugin loading detected!");
++        LOGGER.log(Level.SEVERE, "Circular load order:");
++        for (String logMessage : logMessages) {
++            LOGGER.log(Level.SEVERE, "  " + logMessage);
++        }
++        LOGGER.log(Level.SEVERE, "Please report this to the plugin authors of the first plugin of each loop or join the PaperMC Discord server for further help.");
++        LOGGER.log(Level.SEVERE, "If you would like to still load these plugins, acknowledging that there may be unexpected plugin loading issues, run the server with -Dpaper.useLegacyPluginLoading=true");
++
++        if (this.throwOnCycle()) {
++            throw new IllegalStateException("Circular plugin loading from plugins " + exception.getCycles().stream().map(cycle -> cycle.get(0)).collect(Collectors.joining(", ")));
++        }
++    }
++
++    public boolean throwOnCycle() {
++        return true;
++    }
 +
 +    @Override
 +    public String toString() {
