@@ -5922,10 +5922,10 @@ index 0000000000000000000000000000000000000000..14ed05945ba5bfeb2b539d4786278b0e
 +
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dace0bd8ddbb8625fe9d576fabdeff35b9b0c2ec
+index 0000000000000000000000000000000000000000..e5b70ff297febd936e64055b79f48712d65dbed9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,57 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -5976,25 +5976,6 @@ index 0000000000000000000000000000000000000000..dace0bd8ddbb8625fe9d576fabdeff35
 +                }
 +            }
 +        }));
-+    }
-+
-+    @Override
-+    protected void handleCycle(PluginGraphCycleException exception) {
-+        List<String> logMessages = new ArrayList<>();
-+        for (List<String> list : exception.getCycles()) {
-+            // CoolPlugin depends on Dependency depends on CoolPlugin...
-+            logMessages.add(String.join(" depends on ", list) + " depends on " + list.get(0) + "...");
-+        }
-+
-+        LOGGER.error("Circular dependencies detected!");
-+        LOGGER.error("You have a plugin that is depending on a plugin which refers back to that plugin. Your server will shut down until these are resolved, or the strategy is changed.");
-+        LOGGER.error("Circular dependencies:");
-+        for (String message : logMessages) {
-+            LOGGER.error(message);
-+        }
-+        LOGGER.error("If you would like to still load these plugins, acknowledging that there may be unexpected plugin loading issues, run the server with -Dpaper.useLegacyPluginLoading=true");
-+
-+        System.exit(-1);
 +    }
 +
 +    @Override
@@ -6127,25 +6108,25 @@ index 0000000000000000000000000000000000000000..fbe76a678f45bd3c55f25f2b6a4366ef
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a1770d5d152b4b71023a1711125db0f2c161cea
+index 0000000000000000000000000000000000000000..272b1d13a4925c92f39e02fc8360521a6b284727
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.plugin.storage;
 +
++import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderLoadingStrategy;
 +import io.papermc.paper.plugin.provider.PluginProvider;
++import org.slf4j.Logger;
 +
 +import java.util.ArrayList;
 +import java.util.List;
-+import java.util.logging.Level;
-+import java.util.logging.Logger;
 +import java.util.stream.Collectors;
 +
 +public abstract class SimpleProviderStorage<T> implements ProviderStorage<T> {
 +
-+    private static final Logger LOGGER = Logger.getLogger("SimpleProviderStorage");
++    private static final Logger LOGGER = LogUtils.getLogger();
 +
 +    protected final List<PluginProvider<T>> providers = new ArrayList<>();
 +    protected ProviderLoadingStrategy<T> strategy;
@@ -6178,10 +6159,12 @@ index 0000000000000000000000000000000000000000..1a1770d5d152b4b71023a1711125db0f
 +        return this.providers;
 +    }
 +
-+    public void processProvided(PluginProvider<T> provider, T provided) {}
++    public void processProvided(PluginProvider<T> provider, T provided) {
++    }
 +
 +    // Mutable enter
-+    protected void filterLoadingProviders(List<PluginProvider<T>> providers) {}
++    protected void filterLoadingProviders(List<PluginProvider<T>> providers) {
++    }
 +
 +    protected void handleCycle(PluginGraphCycleException exception) {
 +        List<String> logMessages = new ArrayList<>();
@@ -6189,13 +6172,13 @@ index 0000000000000000000000000000000000000000..1a1770d5d152b4b71023a1711125db0f
 +            logMessages.add(String.join(" -> ", list) + " -> " + list.get(0));
 +        }
 +
-+        LOGGER.log(Level.SEVERE, "Circular plugin loading detected!");
-+        LOGGER.log(Level.SEVERE, "Circular load order:");
++        LOGGER.error("Circular plugin loading detected!");
++        LOGGER.error("Circular load order:");
 +        for (String logMessage : logMessages) {
-+            LOGGER.log(Level.SEVERE, "  " + logMessage);
++            LOGGER.error("  " + logMessage);
 +        }
-+        LOGGER.log(Level.SEVERE, "Please report this to the plugin authors of the first plugin of each loop or join the PaperMC Discord server for further help.");
-+        LOGGER.log(Level.SEVERE, "If you would like to still load these plugins, acknowledging that there may be unexpected plugin loading issues, run the server with -Dpaper.useLegacyPluginLoading=true");
++        LOGGER.error("Please report this to the plugin authors of the first plugin of each loop or join the PaperMC Discord server for further help.");
++        LOGGER.error("If you would like to still load these plugins, acknowledging that there may be unexpected plugin loading issues, run the server with -Dpaper.useLegacyPluginLoading=true");
 +
 +        if (this.throwOnCycle()) {
 +            throw new IllegalStateException("Circular plugin loading from plugins " + exception.getCycles().stream().map(cycle -> cycle.get(0)).collect(Collectors.joining(", ")));
