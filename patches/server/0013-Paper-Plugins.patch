@@ -2043,7 +2043,7 @@ index 0000000000000000000000000000000000000000..22189a1c42459c00d3e8bdeb980d15a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5fd3203ea
+index 0000000000000000000000000000000000000000..883a9568e4f314632f965d18c15fa113ddf3d9c0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 @@ -0,0 +1,260 @@
@@ -2079,8 +2079,8 @@ index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5
 +    }
 +
 +    @Override
-+    public List<T> loadProviders(List<PluginProvider<T>> providers) {
-+        List<T> javapluginsLoaded = new ArrayList<>();
++    public List<Pair<T>> loadProviders(List<PluginProvider<T>> providers) {
++        List<Pair<T>> javapluginsLoaded = new ArrayList<>();
 +        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        GraphDependencyContext dependencyContext = new GraphDependencyContext(dependencyGraph);
 +
@@ -2250,7 +2250,7 @@ index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5
 +                        if (this.configuration.load(file, loadedPlugin)) {
 +                            loadedPlugins.add(file.getMeta().getName());
 +                            loadedPlugins.addAll(file.getMeta().getProvidedPlugins());
-+                            javapluginsLoaded.add(loadedPlugin);
++                            javapluginsLoaded.add(new Pair<>(file, loadedPlugin));
 +                        }
 +
 +                    } catch (Exception ex) {
@@ -2281,7 +2281,7 @@ index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5
 +                            if (this.configuration.load(file, loadedPlugin)) {
 +                                loadedPlugins.add(file.getMeta().getName());
 +                                loadedPlugins.addAll(file.getMeta().getProvidedPlugins());
-+                                javapluginsLoaded.add(loadedPlugin);
++                                javapluginsLoaded.add(new Pair<>(file, loadedPlugin));
 +                            }
 +                            break;
 +                        } catch (Exception ex) {
@@ -2309,7 +2309,7 @@ index 0000000000000000000000000000000000000000..8bc11d7e9341a31382c1b055565cc8d5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3d3c543de
+index 0000000000000000000000000000000000000000..b0f059e278c31cc79eccfd2511b6a2bd75efeb96
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
 @@ -0,0 +1,143 @@
@@ -2342,7 +2342,7 @@ index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3
 +    }
 +
 +    @Override
-+    public List<T> loadProviders(List<PluginProvider<T>> pluginProviders) {
++    public List<Pair<T>> loadProviders(List<PluginProvider<T>> pluginProviders) {
 +        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
 +        Map<String, PluginProviderEntry<T>> providerMap = new HashMap<>();
 +        List<PluginProvider<T>> validatedProviders = new ArrayList<>();
@@ -2418,7 +2418,7 @@ index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3
 +        }
 +
 +        GraphDependencyContext graphDependencyContext = new GraphDependencyContext(dependencyGraph);
-+        List<T> loadedPlugins = new ArrayList<>();
++        List<Pair<T>> loadedPlugins = new ArrayList<>();
 +        for (String providerIdentifier : reversedTopographicSort) {
 +            // It's possible that this will be null because the above dependencies for soft/load before aren't validated if they exist.
 +            // The graph could be MutableGraph<PluginProvider<T>>, but we would have to check if each dependency exists there... just
@@ -2436,7 +2436,7 @@ index 0000000000000000000000000000000000000000..a0363af157131a2b42c00028a260e9c3
 +
 +                T instance = retrievedProvider.createInstance();
 +                if (this.configuration.load(retrievedProvider, instance)) {
-+                    loadedPlugins.add(instance);
++                    loadedPlugins.add(new Pair<>(retrievedProvider, instance));
 +                }
 +            } catch (Exception ex) {
 +                LOGGER.error("Could not load plugin '%s' in folder '%s'".formatted(retrievedProvider.getFileName(), retrievedProvider.getParentSource()), ex); // Paper
@@ -2515,10 +2515,10 @@ index 0000000000000000000000000000000000000000..5e18616160014d70df2b539d7e65bb00
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e8d5ce5f137a960e353c6722e1f20f9b342d4ba5
+index 0000000000000000000000000000000000000000..fa31a741bc22ccc1e7205154c0f24ba6ae9da1cb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,20 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import io.papermc.paper.plugin.provider.PluginProvider;
@@ -2533,7 +2533,11 @@ index 0000000000000000000000000000000000000000..e8d5ce5f137a960e353c6722e1f20f9b
 + */
 +public interface ProviderLoadingStrategy<P> {
 +
-+    List<P> loadProviders(List<PluginProvider<P>> providers);
++    List<Pair<P>> loadProviders(List<PluginProvider<P>> providers);
++
++    record Pair<P>(PluginProvider<P> provider, P provided) {
++
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/TopographicGraphSorter.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/TopographicGraphSorter.java
 new file mode 100644
@@ -2701,7 +2705,7 @@ index 0000000000000000000000000000000000000000..5fcce65009f715d46dd3013f1f92ec83
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a47c0c1dedf5f8cd7006b170639676429c17d74d
+index 0000000000000000000000000000000000000000..b532e35505d5fffd4c525109f273012e2652f777
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 @@ -0,0 +1,49 @@
@@ -2739,8 +2743,8 @@ index 0000000000000000000000000000000000000000..a47c0c1dedf5f8cd7006b17063967642
 +    }
 +
 +    @Override
-+    public void processProvided(JavaPlugin provided) {
-+        super.processProvided(provided);
++    public void processProvided(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
++        super.processProvided(provider, provided);
 +        this.provided.add(provided);
 +    }
 +
@@ -3822,7 +3826,7 @@ index 0000000000000000000000000000000000000000..5d50d1d312388e979c0e1cd53a6bf597
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ebc01cbffdc55ca9664897ff10ef14ad6c5ab726
+index 0000000000000000000000000000000000000000..194f1439e322cb6b3433a72f80a8a4c7624b20d5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 @@ -0,0 +1,80 @@
@@ -3892,8 +3896,8 @@ index 0000000000000000000000000000000000000000..ebc01cbffdc55ca9664897ff10ef14ad
 +    }
 +
 +    @Override
-+    public void processProvided(JavaPlugin provided) {
-+        super.processProvided(provided);
++    public void processProvided(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
++        super.processProvided(provider, provided);
 +        this.singleLoaded = provided;
 +    }
 +
@@ -5730,10 +5734,10 @@ index 0000000000000000000000000000000000000000..374e7d3d69fc8603ecf54999f173123d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..054d2af0170d3c7f503d0a397af4856ff65deb62
+index 0000000000000000000000000000000000000000..8b47e585c85e54a71e34aa57d61c1b2b8c9edfdf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -5771,18 +5775,9 @@ index 0000000000000000000000000000000000000000..054d2af0170d3c7f503d0a397af4856f
 +
 +            @Override
 +            public boolean load(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
-+                try {
-+                    PaperPluginManagerImpl.getInstance().loadPlugin(provided); // We have to add it to the map before the plugin is loaded
-+                    provided.getLogger().info(String.format("Loading server plugin %s", provided.getPluginMeta().getDisplayName()));
-+                    provided.onLoad();
-+                    return true;
-+                } catch (Throwable ex) {
-+                    if (provider instanceof ProviderStatusHolder statusHolder) {
-+                        statusHolder.setStatus(ProviderStatus.ERRORED);
-+                    }
-+                    LOGGER.error("Could not load server plugin '%s' in folder '%s' (Is it up to date?)".formatted(provider.getFileName(), provider.getParentSource()), ex);
-+                    return false;
-+                }
++                // Add it to the map here, we have to run the actual loading logic later.
++                PaperPluginManagerImpl.getInstance().loadPlugin(provided);
++                return true;
 +            }
 +
 +            @Override
@@ -5811,6 +5806,18 @@ index 0000000000000000000000000000000000000000..054d2af0170d3c7f503d0a397af4856f
 +        pluginProviders.removeIf((provider) -> (provider instanceof PaperPluginParent.PaperServerPluginProvider pluginProvider && pluginProvider.shouldSkipCreation()));
 +    }
 +
++    // We need to call the load methods AFTER all plugins are constructed
++    @Override
++    public void processProvided(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
++        try {
++            provided.getLogger().info(String.format("Loading server plugin %s", provided.getPluginMeta().getDisplayName()));
++            provided.onLoad();
++        } catch (Throwable ex) {
++            // Don't mark that provider as ERRORED, as this apparently still needs to run the onEnable logic.
++            provided.getSLF4JLogger().error("Error initializing plugin '%s' in folder '%s' (Is it up to date?)".formatted(provider.getFileName(), provider.getParentSource()), ex);
++        }
++    }
++
 +    @Override
 +    public String toString() {
 +        return "PLUGIN:" + super.toString();
@@ -5818,7 +5825,7 @@ index 0000000000000000000000000000000000000000..054d2af0170d3c7f503d0a397af4856f
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ac263f02a9a79fb3db24c4daa16c405f9b0f7459
+index 0000000000000000000000000000000000000000..fa14e3dfb0439c2cfe23c375bc85ddf29c3e2668
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 @@ -0,0 +1,57 @@
@@ -5851,8 +5858,8 @@ index 0000000000000000000000000000000000000000..ac263f02a9a79fb3db24c4daa16c405f
 +        this.filterLoadingProviders(providerList);
 +
 +        try {
-+            for (T plugin : this.strategy.loadProviders(providerList)) {
-+                this.processProvided(plugin);
++            for (ProviderLoadingStrategy.Pair<T> pair : this.strategy.loadProviders(providerList)) {
++                this.processProvided(pair.provider(), pair.provided());
 +            }
 +        } catch (PluginGraphCycleException exception) {
 +            this.handleCycle(exception);
@@ -5864,7 +5871,7 @@ index 0000000000000000000000000000000000000000..ac263f02a9a79fb3db24c4daa16c405f
 +        return this.providers;
 +    }
 +
-+    public void processProvided(T provided) {}
++    public void processProvided(PluginProvider<T> provider, T provided) {}
 +
 +    // Mutable enter
 +    protected void filterLoadingProviders(List<PluginProvider<T>> providers) {}
