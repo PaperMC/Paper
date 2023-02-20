@@ -5575,7 +5575,7 @@ index 0000000000000000000000000000000000000000..d865b3fae6fe9fea1d397e2b57da8a15
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5c85272d077d402d4eda5f909912410845a7cffb
+index 0000000000000000000000000000000000000000..a101ef4e697701e6a7294f481d87d7a26033d93e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 @@ -0,0 +1,181 @@
@@ -5696,7 +5696,7 @@ index 0000000000000000000000000000000000000000..5c85272d077d402d4eda5f9099124108
 +
 +            final PluginClassLoader loader;
 +            try {
-+                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.dependencyContext); // Paper
++                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description)); // Paper
 +            } catch (InvalidPluginException ex) {
 +                throw ex;
 +            } catch (Throwable ex) {
@@ -6931,16 +6931,21 @@ index 0000000000000000000000000000000000000000..04903794a8ee4dd73162ae240862ff6d
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java b/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8837b131dedc41e7d0d58ccf3d1e251168c5b9b8
+index 0000000000000000000000000000000000000000..67db836a20c7520bc4ef4deeb90598a6a9dba3e3
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,70 @@
 +package io.papermc.paper.plugin;
 +
++import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.nio.file.Path;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Map;
 +import java.util.jar.JarFile;
 +import java.util.logging.Logger;
 +
@@ -6975,6 +6980,29 @@ index 0000000000000000000000000000000000000000..8837b131dedc41e7d0d58ccf3d1e2511
 +    @Override
 +    public Logger getLogger() {
 +        return Logger.getLogger("TestPlugin");
++    }
++
++    @Override
++    public LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad) {
++        return new LoadOrderConfiguration() {
++            @Override
++            public @NotNull List<String> getLoadBefore() {
++                return TestJavaPluginProvider.this.testPluginConfiguration.getLoadBeforePlugins();
++            }
++
++            @Override
++            public @NotNull List<String> getLoadAfter() {
++                List<String> loadAfter = new ArrayList<>();
++                loadAfter.addAll(TestJavaPluginProvider.this.testPluginConfiguration.getPluginDependencies());
++                loadAfter.addAll(TestJavaPluginProvider.this.testPluginConfiguration.getPluginSoftDependencies());
++                return loadAfter;
++            }
++
++            @Override
++            public @NotNull PluginMeta getMeta() {
++                return TestJavaPluginProvider.this.testPluginConfiguration;
++            }
++        };
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java b/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java
