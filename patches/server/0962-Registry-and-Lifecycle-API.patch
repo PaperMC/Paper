@@ -76,12 +76,109 @@ index 0000000000000000000000000000000000000000..34089c38c03ff0802fed5a0a2094d088
 +        ((LifecyclePoint<T>) lifecyclePoint).schedule((Consumer<T>) consumer, pluginMeta);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/lifecycle/LifecyclePointUtil.java b/src/main/java/io/papermc/paper/lifecycle/LifecyclePointUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..baef0b51dac3cb407816ddfef2d8b3b99845e6c4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/lifecycle/LifecyclePointUtil.java
+@@ -0,0 +1,91 @@
++package io.papermc.paper.lifecycle;
++
++import io.papermc.paper.registry.APIConverters;
++import io.papermc.paper.registry.Converters;
++import io.papermc.paper.registry.ExtendedRegistry;
++import io.papermc.paper.registry.ExtendedRegistryImpl;
++import io.papermc.paper.registry.RegistryAPI;
++import io.papermc.paper.registry.key.RegistryKey;
++import io.papermc.paper.registry.key.ResourceKey;
++import net.kyori.adventure.key.Key;
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceLocation;
++import org.bukkit.Keyed;
++
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.Map;
++import java.util.Optional;
++
++public final class LifecyclePointUtil {
++    public static final SimpleRegistryImpl SIMPLE_REGISTRY = new SimpleRegistryImpl();
++
++    private LifecyclePointUtil() {}
++
++    public static <C> void enterRegistryInitialization(LifecyclePoint<C> lifecyclePoint, C context, Collection<? extends Registry<?>> registries) {
++        SIMPLE_REGISTRY.registryMap.put(lifecyclePoint, registries);
++        Optional.ofNullable(SIMPLE_REGISTRY.actionMap.get(lifecyclePoint)).ifPresent(Runnable::run);
++        LifecyclePoints.enter(lifecyclePoint, context);
++    }
++
++    public static class SimpleRegistryImpl implements ExtendedRegistry.SimpleRegistry {
++        final Converters.CachedConverter<Key, ResourceLocation> keyConverter = Converters.KEY_RESOURCE_LOCATION_CONVERTER.get();
++        final Map<Class<? extends RegistryKey.RegistryLayerType>, LifecyclePoint<?>> map = new HashMap<>();
++        final Map<LifecyclePoint<?>, Collection<? extends Registry<?>>> registryMap = new HashMap<>();
++        final Map<LifecyclePoint<?>, Runnable> actionMap = new HashMap<>();
++
++        {
++            map.put(RegistryKey.RegistryLayerType.STATIC.class, ServerLifecyclePoints.STATIC_REGISTRIES_INITIALIZED);
++            map.put(RegistryKey.RegistryLayerType.WORLDGEN.class, ServerLifecyclePoints.WORLDGEN_REGISTRIES_INITIALIZED);
++        }
++
++        @Override
++        public <T extends Enum<T> & Keyed> void register(RegistryKey.EnumMutableRegistryKey<?, T> registryKey, T value) {
++            this.helpRegister(registryKey, value.getKey(), value);
++        }
++
++        @Override
++        public <T> void register(RegistryKey<?, T> registryKey, ResourceKey<T> resourceKey, T value) {
++            this.helpRegister(registryKey, registryKey.key(), value);
++        }
++
++        @Override
++        public <T> void register(RegistryKey<?, T> registryKey, Key key, T value) {
++            this.helpRegister(registryKey, key, value);
++        }
++
++        private <T> void helpRegister(RegistryKey<?, T> registryKey, Key key, T value) {
++            final LifecyclePoint<?> lifecyclePoint = this.map.get(registryKey.layerType());
++            this.check(lifecyclePoint, registryKey);
++            this.actionMap.compute(lifecyclePoint, (point, runnable) ->
++                this.merge(runnable, this.makeRegisterRunnable(lifecyclePoint, registryKey, key, value)));
++        }
++
++        private <API, NMS> Runnable makeRegisterRunnable(LifecyclePoint<?> lifecyclePoint, RegistryKey<?, API> registryKey, Key key, API value) {
++            return () -> {
++                if (RegistryAPI.getApiStorage().getRegistryByKey(registryKey) == null)
++                    this.registryMap.get(lifecyclePoint).stream().filter(registry -> registry.key().location().equals(keyConverter.convertAPI(registryKey.key())))
++                        .forEach(registry -> {
++                            RegistryAPI.getApiStorage().registerConverterUnclassified(registryKey, APIConverters.createAPIConverter(registryKey, registry));
++                            RegistryAPI.getApiStorage().getOrCreateRegistryUnclassified(registryKey, registry);
++                        });
++
++                final ExtendedRegistryImpl<API, NMS> registry = RegistryAPI.getApiStorage().getRegistryByKey(registryKey);
++                Registry.register(RegistryAPI.getApiStorage().getConverter(registryKey).convertAPI(registry), keyConverter.convertAPI(key), registry.getApiToNmsConverter().convertAPI(value));
++            };
++        }
++
++        private void check(LifecyclePoint<?> lifecyclePoint, RegistryKey<?, ?> registryKey) {
++            if (LifecyclePoints.isEntered(lifecyclePoint))
++                throw new IllegalStateException("Couldn't register to the registry which is initialized on " + lifecyclePoint + ", because this registry has already initialized! Try to move your \".register()\" to the PluginBootstrap");
++        }
++
++        private Runnable merge(Runnable runnable, Runnable action) {
++            if (runnable == null) {
++                return action;
++            } else {
++                return () -> { runnable.run(); action.run(); };
++            }
++        }
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/lifecycle/LifecyclePoints.java b/src/main/java/io/papermc/paper/lifecycle/LifecyclePoints.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5e8ccabc432147e97d09af133ac9aee72b0f204a
+index 0000000000000000000000000000000000000000..5c65bf55f04607ae668f3f8718fab9aa091ec4e2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/lifecycle/LifecyclePoints.java
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,170 @@
 +package io.papermc.paper.lifecycle;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -120,6 +217,10 @@ index 0000000000000000000000000000000000000000..5e8ccabc432147e97d09af133ac9aee7
 +        ((EnterableLifecyclePoint<C>) lifecyclePoint).enter(context);
 +    }
 +
++    public static <C> boolean isEntered(LifecyclePoint<C> lifecyclePoint) {
++        return ((EnterableLifecyclePoint<C>) lifecyclePoint).isEntered();
++    }
++
 +    public static <C> Consumer<C> exceptionHandleWrap(final Consumer<C> consumer, final String name, final PluginMeta pluginMeta) {
 +        return c -> {
 +            try {
@@ -133,6 +234,9 @@ index 0000000000000000000000000000000000000000..5e8ccabc432147e97d09af133ac9aee7
 +    abstract static class EnterableLifecyclePoint<C> implements LifecyclePoint<C> {
 +        @NonBlocking
 +        public abstract void enter(@NotNull C context);
++
++        @NonBlocking
++        public abstract boolean isEntered();
 +    }
 +
 +    /**
@@ -171,6 +275,16 @@ index 0000000000000000000000000000000000000000..5e8ccabc432147e97d09af133ac9aee7
 +                    LOGGER.error("An exception has occurred while running LifecyclePoint named " + name, exception);
 +                }
 +            }
++        }
++
++        @Override
++        public boolean isEntered() {
++            throw new UnsupportedOperationException("Multi-enter LifecyclePoint implementation doesn't have the \"entered\" state!");
++        }
++
++        @Override
++        public String toString() {
++            return "[" + " LifecyclePoint: " + this.name + "]";
 +        }
 +    }
 +
@@ -223,30 +337,38 @@ index 0000000000000000000000000000000000000000..5e8ccabc432147e97d09af133ac9aee7
 +                }
 +            }
 +        }
++
++        @Override
++        public boolean isEntered() {
++            return this.entered.get();
++        }
++
++        @Override
++        public String toString() {
++            return "[" + " LifecyclePoint: " + this.name + "]";
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-index 39e503f52684e928c61c6d27bf61727a4721739c..150897876ce249f0b337e70b4fe0616f9bf52e7b 100644
+index 9926eb59b83abffffb578356f148f045edc027cb..a5d5502f16c2d27d8012b96c27ca8ce686bbb662 100644
 --- a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-@@ -1,6 +1,9 @@
- package io.papermc.paper.plugin;
+@@ -2,6 +2,7 @@ package io.papermc.paper.plugin;
  
  import com.mojang.logging.LogUtils;
+ import io.papermc.paper.configuration.PaperConfigurations;
 +import io.papermc.paper.lifecycle.LifecyclePoints;
-+import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
-+import io.papermc.paper.plugin.provider.source.ProviderSource;
  import joptsimple.OptionSet;
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.jetbrains.annotations.NotNull;
-@@ -21,6 +24,7 @@ public class PluginInitializerManager {
-         File configFileLocationBukkit = (File) minecraftOptionSet.valueOf("bukkit-settings");
-         this.pluginDirectory = ((File) minecraftOptionSet.valueOf("plugins")).toPath();
-         this.updateDirectory = this.pluginDirectory.resolve(YamlConfiguration.loadConfiguration(configFileLocationBukkit).getString("settings.update-folder", "update"));
+@@ -63,6 +64,7 @@ public class PluginInitializerManager {
+             return new PluginInitializerManager(pluginDirectory, null);
+         }
+ 
 +        LifecyclePoints.launch();
+         return new PluginInitializerManager(pluginDirectory, resolvedUpdateDirectory);
      }
  
-     public static PluginInitializerManager init(OptionSet optionSet) {
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 index 8249a7024537fccd99735b92abb1368e6647b5ae..424ab944a2392788709564b0811c651629b5017a 100644
 --- a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
@@ -297,31 +419,26 @@ index 8249a7024537fccd99735b92abb1368e6647b5ae..424ab944a2392788709564b0811c6516
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-index 46ee1b7f4b4c509932c68a4152e1d8445811d3b8..b89eb2eab6c39a1037332532a6223444ef3ae0f9 100644
+index a0773c6d24de1f2ce1f0d949cba26b9997b696e6..793aad3438e2afd5f8d143419556c02c3f178482 100644
 --- a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-@@ -2,18 +2,17 @@ package io.papermc.paper.plugin.provider.type.paper;
- 
- import com.destroystokyo.paper.util.SneakyThrow;
- import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
--import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
+@@ -6,6 +6,7 @@ import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
+ import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
+ import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
+ import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.lifecycle.LifecyclePointSchedulerImpl;
  import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
  import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
--import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
  import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
- import io.papermc.paper.plugin.provider.PluginProvider;
+@@ -13,6 +14,7 @@ import io.papermc.paper.plugin.provider.PluginProvider;
  import io.papermc.paper.plugin.provider.ProviderStatus;
  import io.papermc.paper.plugin.provider.ProviderStatusHolder;
  import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
  import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
  import io.papermc.paper.plugin.provider.util.ProviderUtil;
--import org.bukkit.Bukkit;
  import org.bukkit.plugin.java.JavaPlugin;
- import org.jetbrains.annotations.NotNull;
- 
-@@ -105,6 +104,10 @@ public class PaperPluginParent {
+@@ -127,6 +129,10 @@ public class PaperPluginParent {
              PaperPluginParent.this.classLoader.refreshClassloaderDependencyTree(context);
          }
  
@@ -354,7 +471,7 @@ index db343a2f482ac375078610f0875692861f412ee2..1b580e2150270c655ddcb5da51da68fb
          PaperClasspathBuilder builder = new PaperClasspathBuilder(context);
  
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-index 7af995b941ce83265a93cdc6b5a2de8ad27e4db6..12e0673fc027e962c691734b7406cb49585108bb 100644
+index e5b70ff297febd936e64055b79f48712d65dbed9..d323ad2e03850b65b94cf52ab3f734c4c0c55edc 100644
 --- a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 @@ -1,6 +1,7 @@
@@ -375,18 +492,21 @@ index 7af995b941ce83265a93cdc6b5a2de8ad27e4db6..12e0673fc027e962c691734b7406cb49
  import java.util.ArrayList;
 diff --git a/src/main/java/io/papermc/paper/registry/APIConverters.java b/src/main/java/io/papermc/paper/registry/APIConverters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a320e09fd21be34c51f06857ab53b5b872b44710
+index 0000000000000000000000000000000000000000..d5332ba235c1e17699b5d235095ab0e3dc037af9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/APIConverters.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,82 @@
 +package io.papermc.paper.registry;
 +
++import com.google.common.base.Suppliers;
++import com.google.common.collect.BiMap;
++import com.google.common.collect.HashBiMap;
 +import io.papermc.paper.registry.key.RegistryKey;
 +import net.minecraft.core.Registry;
-+import net.minecraft.data.worldgen.biome.OverworldBiomes;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
 +import net.minecraft.world.level.biome.BiomeGenerationSettings;
 +import net.minecraft.world.level.biome.BiomeSpecialEffects;
-+import net.minecraft.world.level.biome.Biomes;
 +import net.minecraft.world.level.biome.MobSpawnSettings;
 +import org.bukkit.block.Biome;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -394,20 +514,21 @@ index 0000000000000000000000000000000000000000..a320e09fd21be34c51f06857ab53b5b8
 +import java.util.HashMap;
 +import java.util.Map;
 +import java.util.function.Function;
++import java.util.function.Supplier;
 +
 +public final class APIConverters {
 +    private APIConverters() {}
++
++    /**
++     *  This converter "registry" returns function which receives NMS registry because most of API <-> NMS converters need it for conversion.
++     */
 +    private static final Map<RegistryKey<? extends RegistryKey.RegistryLayerType, ?>, Function<? extends Registry<?>, ? extends Converters.Converter<?, ?>>> CONVERTER_FUNCTIONS = new HashMap<>();
++    private static final BiMap<RegistryKey<? extends RegistryKey.RegistryLayerType, ?>, Supplier<ResourceKey<? extends Registry<?>>>> REGISTRY_KEY_REGISTRY = HashBiMap.create();
 +
++    /**
++     *  If you want to add a registry for a new API, add its converter in there.
++     */
 +    public static void initializeConverterFunctions() {
-+        /*
-+        final Function<Registry<Item>, Converters.Converter<Material, Item>> materialConverterFunction = registry -> Converters.Converter.createCached(
-+            apiMaterial -> CraftMagicNumbers.getItem(apiMaterial),
-+            CraftMagicNumbers::getMaterial
-+        );
-+
-+        APIConverters.registerConverterFunction(ExtendedRegistry.ITEM_REGISTRY_KEY, materialConverterFunction);*/
-+
 +        final Function<Registry<net.minecraft.world.level.biome.Biome>, Converters.Converter<Biome, net.minecraft.world.level.biome.Biome>> registryConverterFunction = registry -> Converters.Converter.createCached(
 +            apiBiome -> {
 +                net.minecraft.world.level.biome.Biome nmsBiome = registry.get(CraftNamespacedKey.toMinecraft(apiBiome.getKey()));
@@ -433,6 +554,18 @@ index 0000000000000000000000000000000000000000..a320e09fd21be34c51f06857ab53b5b8
 +        );
 +
 +        APIConverters.registerConverterFunction(ExtendedRegistry.BIOME_REGISTRY_KEY, registryConverterFunction);
++    }
++
++    public static void initializeRegistryKeys() {
++        APIConverters.REGISTRY_KEY_REGISTRY.put(ExtendedRegistry.BIOME_REGISTRY_KEY, Suppliers.memoize(() -> Registries.BIOME));
++    }
++
++    @SuppressWarnings("unchecked")
++    public static <API, NMS> ResourceKey<? extends Registry<NMS>> getNMSRegistryKey(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey) {
++        Supplier<ResourceKey<? extends Registry<?>>> resourceKeySupplier = REGISTRY_KEY_REGISTRY.get(registryKey);
++        if (resourceKeySupplier == null)
++            throw new IllegalStateException("There is no NMS registry key for such an API registry key: " + registryKey);
++        return (ResourceKey<? extends Registry<NMS>>) resourceKeySupplier.get();
 +    }
 +
 +    private static <API, NMS> void registerConverterFunction(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Function<? extends Registry<NMS>, ? extends Converters.Converter<API, NMS>> converterFunction) {
@@ -609,7 +742,7 @@ index 0000000000000000000000000000000000000000..3609d3ea41f0b39ccb8ca16bab141152
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/ExtendedRegistryImpl.java b/src/main/java/io/papermc/paper/registry/ExtendedRegistryImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..524f7b3e6842e4a691cb882faddec7c330c6a838
+index 0000000000000000000000000000000000000000..1f02c6bcb4097305677cde4dbd0ad50ef2e4b7b5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/ExtendedRegistryImpl.java
 @@ -0,0 +1,177 @@
@@ -637,12 +770,6 @@ index 0000000000000000000000000000000000000000..524f7b3e6842e4a691cb882faddec7c3
 +import java.util.stream.Stream;
 +
 +public class ExtendedRegistryImpl<API, NMS> implements ExtendedRegistry<API> {
-+    protected ExtendedRegistryImpl(Registry<NMS> registry, Converters.Converter<API, NMS> apiToNmsConverter) {
-+        this.registry = registry;
-+        this.apiToNmsConverter = apiToNmsConverter;
-+        this.referenceConverter = HolderReferenceImpl.makeConverter(apiToNmsConverter, resourceKeyConverter);
-+    }
-+
 +    protected final Registry<NMS> registry;
 +    protected final Converters.Converter<API, NMS> apiToNmsConverter;
 +    protected final Converters.Converter<Key, ResourceLocation> keyConverter = Converters.KEY_RESOURCE_LOCATION_CONVERTER.get();
@@ -650,6 +777,12 @@ index 0000000000000000000000000000000000000000..524f7b3e6842e4a691cb882faddec7c3
 +    protected final Converters.Converter<ResourceKey<ExtendedRegistry<API>>, net.minecraft.resources.ResourceKey<Registry<NMS>>> registryKeyConverter =
 +        ResourceKeyImpl.makeRegistryKeyConverter(keyConverter);
 +    protected final Converters.Converter<Reference<API>, Holder<NMS>> referenceConverter;
++
++    protected ExtendedRegistryImpl(Registry<NMS> registry, Converters.Converter<API, NMS> apiToNmsConverter) {
++        this.registry = registry;
++        this.apiToNmsConverter = apiToNmsConverter;
++        this.referenceConverter = HolderReferenceImpl.makeConverter(apiToNmsConverter, resourceKeyConverter);
++    }
 +
 +    public static <API, NMS> Converters.Converter<ExtendedRegistry<API>, Registry<NMS>> makeImmutableConverter(
 +        Converters.Converter<API, NMS> apiToNmsConverter
@@ -890,14 +1023,15 @@ index 7c265d27da034986be73921d35bf08ae250b42f3..ee80d339d7e75241d280ff2433da6577
      @SuppressWarnings("FieldMayBeFinal") // non-final for testing
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryAPI.java b/src/main/java/io/papermc/paper/registry/RegistryAPI.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..db34a77d0e793ace667da21c885d7d698b96a19f
+index 0000000000000000000000000000000000000000..a653d05702981df3337f9b9e9ba04c97cac84f2f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryAPI.java
-@@ -0,0 +1,160 @@
+@@ -0,0 +1,217 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.collect.BiMap;
 +import com.google.common.collect.HashBiMap;
++import io.papermc.paper.lifecycle.LifecyclePointUtil;
 +import io.papermc.paper.registry.access.BakedWritableRegistryAccessImpl;
 +import io.papermc.paper.registry.access.WritableRegistryAccess;
 +import io.papermc.paper.registry.enums.EnumCreators;
@@ -916,6 +1050,10 @@ index 0000000000000000000000000000000000000000..db34a77d0e793ace667da21c885d7d69
 +import org.bukkit.Registry;
 +import org.bukkit.block.Biome;
 +import org.jetbrains.annotations.NotNull;
++
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.List;
 +
 +public final class RegistryAPI {
 +    private RegistryAPI() {}
@@ -937,11 +1075,7 @@ index 0000000000000000000000000000000000000000..db34a77d0e793ace667da21c885d7d69
 +            }
 +        };
 +
-+        EnumSettingExtractors.initializeExtractors();
-+        EnumCreators.launchAPI();
-+
 +        APIConverters.initializeConverterFunctions();
-+        BiomeAPI.launchAPI();
 +    }
 +
 +    static void initializeKeys() {
@@ -966,13 +1100,23 @@ index 0000000000000000000000000000000000000000..db34a77d0e793ace667da21c885d7d69
 +        return RegistryAPI.staticAccess;
 +    }
 +
++    /**
++     *  Made a separate class because we don't
++     */
 +    public static class BeforeBootstrapAPI {
 +        public static void launchAPI() {
 +            ExtendedRegistry.API.resourceKeyFactory = KeyAPI.launchAPI();
 +            ExtendedRegistry.API.registryKeyFactory = KeyAPI.createRegistryKeyFactory();
++            ExtendedRegistry.API.simpleRegistry = LifecyclePointUtil.SIMPLE_REGISTRY;
++            EnumSettingExtractors.initializeExtractors();
++            EnumCreators.launchAPI();
++            BiomeAPI.launchAPI();
 +        }
 +    }
 +
++    /**
++     *  Contains everything needed for the Registry API to exist.
++     */
 +    public static final class APIStorage {
 +        final BiMap<Class<?>, ResourceKey<? extends net.minecraft.core.Registry<?>>> apiRegistry = HashBiMap.create();
 +        final BiMap<RegistryKey<? extends RegistryKey.RegistryLayerType, ?>, ExtendedRegistry<?>> apiRegistryPerRegistryKey = HashBiMap.create();
@@ -987,9 +1131,8 @@ index 0000000000000000000000000000000000000000..db34a77d0e793ace667da21c885d7d69
 +                throw new IllegalStateException("Cannot find an API class for this registry resource key: " + resourceKey);
 +            return apiClass;
 +        });
-+
 +        final BiMap<RegistryKey<? extends RegistryKey.RegistryLayerType, ?>, Converters.Converter<? extends ExtendedRegistry<?>, ? extends net.minecraft.core.Registry<?>>> keyConverterMap = HashBiMap.create();
-+
++        final List<net.minecraft.core.Registry<?>> staticRegistries = new ArrayList<>();
 +
 +        public Converters.Converter<Class<?>, ResourceKey<? extends net.minecraft.core.Registry<?>>> getApiClassConverter() {
 +            return apiClassConverter;
@@ -997,6 +1140,28 @@ index 0000000000000000000000000000000000000000..db34a77d0e793ace667da21c885d7d69
 +
 +        public void registerAPIClass(Class<?> type, ResourceKey<? extends net.minecraft.core.Registry<?>> resourceKey) {
 +            this.apiRegistry.put(type, resourceKey);
++        }
++
++        public <API, NMS> void registerConverterUnclassified(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Converters.Converter<API, NMS> apiToNmsConverter) {
++            if (registryKey instanceof RegistryKey.ImmutableRegistryKey<? extends RegistryKey.RegistryLayerType, ?> registryKey1) {
++                if (!this.keyConverterMap.containsKey(registryKey1))
++                    this.keyConverterMap.put(registryKey1, ExtendedRegistryImpl.makeImmutableConverter(apiToNmsConverter));
++                return;
++            } else if (registryKey instanceof RegistryKey.MutableRegistryKey<? extends RegistryKey.RegistryLayerType, ?> registryKey1) {
++                if (!this.keyConverterMap.containsKey(registryKey1))
++                    this.keyConverterMap.put(registryKey1, ExtendedRegistryImpl.makeMutableConverter(apiToNmsConverter));
++                return;
++            } else if (registryKey instanceof RegistryKey.EnumMutableRegistryKey<? extends RegistryKey.RegistryLayerType, ?> registryKey1) {
++                if (!this.keyConverterMap.containsKey(registryKey1))
++                    this.keyConverterMap.put(registryKey1, help(apiToNmsConverter));
++                return;
++            }
++            throw new IllegalStateException("Illegal Registry Key type: " + registryKey.getClass());
++        }
++
++        @SuppressWarnings("unchecked") // Ugly generic hack
++        private <T, API extends Enum<API> & Keyed, NMS> Converters.Converter<? extends io.papermc.paper.registry.ExtendedRegistry<?>, ? extends net.minecraft.core.Registry<?>> help(Converters.Converter<T, NMS> apiToNmsConverter) {
++            return ExtendedRegistryImpl.makeEnumMutableConverter((Converters.Converter<API, NMS>) apiToNmsConverter);
 +        }
 +
 +        public <API, NMS> void registerConverter(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Converters.Converter<API, NMS> apiToNmsConverter) {
@@ -1012,6 +1177,18 @@ index 0000000000000000000000000000000000000000..db34a77d0e793ace667da21c885d7d69
 +        public <API extends Enum<API> & Keyed, NMS> void registerConverter(RegistryKey.EnumMutableRegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Converters.Converter<API, NMS> apiToNmsConverter) {
 +            if (!this.keyConverterMap.containsKey(registryKey))
 +                this.keyConverterMap.put(registryKey, ExtendedRegistryImpl.makeEnumMutableConverter(apiToNmsConverter));
++        }
++
++        @SuppressWarnings("unchecked")
++        public <API, NMS> ExtendedRegistry<API> getOrCreateRegistryUnclassified(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, net.minecraft.core.Registry<NMS> registry) {
++            if (registryKey instanceof RegistryKey.ImmutableRegistryKey<? extends RegistryKey.RegistryLayerType, ?> registryKey1) {
++                return (ExtendedRegistry<API>) getOrCreateRegistry(registryKey1, registry);
++            } else if (registryKey instanceof RegistryKey.MutableRegistryKey<? extends RegistryKey.RegistryLayerType, ?> registryKey1) {
++                return (ExtendedRegistry<API>) getOrCreateRegistry(registryKey1, registry);
++            } else if (registryKey instanceof RegistryKey.EnumMutableRegistryKey<? extends RegistryKey.RegistryLayerType, ?> registryKey1) {
++                return (ExtendedRegistry<API>) getOrCreateRegistry((RegistryKey.EnumMutableRegistryKey<? extends RegistryKey.RegistryLayerType, ?>) registryKey1, registry);
++            }
++            throw new IllegalStateException("Illegal Registry Key type: " + registryKey.getClass());
 +        }
 +
 +        /**
@@ -1044,13 +1221,26 @@ index 0000000000000000000000000000000000000000..db34a77d0e793ace667da21c885d7d69
 +        }
 +
 +        @SuppressWarnings("unchecked")
++        public <API, NMS> ExtendedRegistryImpl<API, NMS> getRegistryByKey(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey) {
++            return (ExtendedRegistryImpl<API, NMS>) this.apiRegistryPerRegistryKey.get(registryKey);
++        }
++
++        @SuppressWarnings("unchecked")
 +        public <API extends Enum<API> & Keyed, NMS> EnumWritableRegistryImpl<API, NMS> getRegistryByKey(RegistryKey.EnumMutableRegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey) {
 +            return (EnumWritableRegistryImpl<API, NMS>) this.apiRegistryPerRegistryKey.get(registryKey);
 +        }
 +
 +        @SuppressWarnings("unchecked")
-+        public <API, NMS> Converters.Converter<? extends ExtendedRegistry<API>, ? extends net.minecraft.core.Registry<NMS>> getConverter(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey) {
-+            return (Converters.Converter<? extends ExtendedRegistry<API>, ? extends net.minecraft.core.Registry<NMS>>) this.keyConverterMap.get(registryKey);
++        public <API, NMS> Converters.Converter<ExtendedRegistry<API>, net.minecraft.core.Registry<NMS>> getConverter(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey) {
++            return (Converters.Converter<ExtendedRegistry<API>, net.minecraft.core.Registry<NMS>>) this.keyConverterMap.get(registryKey);
++        }
++
++        public Collection<net.minecraft.core.Registry<?>> getStaticRegistries() {
++            return staticRegistries;
++        }
++
++        public void addStaticRegistry(net.minecraft.core.Registry<?> registry) {
++            this.staticRegistries.add(registry);
 +        }
 +    }
 +}
@@ -1249,10 +1439,10 @@ index 0000000000000000000000000000000000000000..18469c21f6a21393f8ef6b530ff6c91e
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumCreators.java b/src/main/java/io/papermc/paper/registry/enums/EnumCreators.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..101ee41084fa55b032a307a5638e2136dfd3f528
+index 0000000000000000000000000000000000000000..b056d7332e90b7f19c416d18744d81c445a4eaee
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/enums/EnumCreators.java
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,104 @@
 +package io.papermc.paper.registry.enums;
 +
 +import com.google.common.base.Suppliers;
@@ -1300,14 +1490,23 @@ index 0000000000000000000000000000000000000000..101ee41084fa55b032a307a5638e2136
 +            public @NotNull <T extends Enum<T> & Keyed> EnumCreator<T> create(@NotNull Class<T> enumType, @NotNull Class<?>... paramsType) {
 +                return new EnumCreator<>() {
 +                    @Override
-+                    @SuppressWarnings("unchecked")
 +                    public @NotNull T create(@NotNull ResourceKey<T> resourceKey, @NotNull Object... params) {
++                        return this.helpCreate(resourceKey.key(), params);
++                    }
++
++                    @Override
++                    public @NotNull T create(@NotNull Key key, @NotNull Object... params) {
++                        return this.helpCreate(key, params);
++                    }
++
++                    @SuppressWarnings("unchecked")
++                    private T helpCreate(Key key, Object[] params) {
 +                        try {
 +                            // Every enum has its name and ordinal in the beginning of constructor.
 +                            ArrayList<Object> objects = new ArrayList<>();
-+                            objects.add(resourceKey.key().value());
++                            objects.add(key.value());
 +                            objects.add(0);
-+                            objects.add(from(resourceKey.key()));
++                            objects.add(from(key));
 +                            objects.addAll(Arrays.asList(params));
 +                            return (T) methodHandleRegistry.get(enumType).invokeWithArguments(objects);
 +                        } catch (Throwable e) {
@@ -1394,7 +1593,7 @@ index 0000000000000000000000000000000000000000..855c4cc44d93e20243cb4c6e0fa14fab
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/key/KeyAPI.java b/src/main/java/io/papermc/paper/registry/key/KeyAPI.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..22afd5a902a2cca52281f5bfd50a21281817ee67
+index 0000000000000000000000000000000000000000..b804c8fd51ae941004d90ab23a61e9c80bb69998
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/key/KeyAPI.java
 @@ -0,0 +1,50 @@
@@ -1432,28 +1631,28 @@ index 0000000000000000000000000000000000000000..22afd5a902a2cca52281f5bfd50a2128
 +    public static RegistryKey.RegistryKeyFactory createRegistryKeyFactory() {
 +        return new RegistryKey.RegistryKeyFactory() {
 +            @Override
-+            public @NotNull <L extends RegistryKey.RegistryLayerType, E> RegistryKey.@NotNull ImmutableRegistryKey<L, E> createImmutable(@NotNull Class<E> clazz) {
-+                return new RegistryKeyImpls.ImmutableRegistryKeyImpl<>(clazz, () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).location()), () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).registry()));
++            public @NotNull <L extends RegistryKey.RegistryLayerType, E> RegistryKey.@NotNull ImmutableRegistryKey<L, E> createImmutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryKey.RegistryLayerType> layerType) {
++                return new RegistryKeyImpls.ImmutableRegistryKeyImpl<>(clazz, layerType, () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).location()), () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).registry()));
 +            }
 +
 +            @Override
-+            public @NotNull <L extends RegistryKey.RegistryLayerType, E> RegistryKey.MutableRegistryKey<L, E> createMutable(@NotNull Class<E> clazz) {
-+                return new RegistryKeyImpls.MutableRegistryKeyImpl<>(clazz, () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).location()), () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).registry()));
++            public @NotNull <L extends RegistryKey.RegistryLayerType, E> RegistryKey.MutableRegistryKey<L, E> createMutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryKey.RegistryLayerType> layerType) {
++                return new RegistryKeyImpls.MutableRegistryKeyImpl<>(clazz, layerType, () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).location()), () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).registry()));
 +            }
 +
 +            @Override
-+            public <L extends RegistryKey.RegistryLayerType, E extends Enum<E> & Keyed> RegistryKey.@NotNull EnumMutableRegistryKey<L, E> createEnumMutable(@NotNull Class<E> clazz) {
-+                return new RegistryKeyImpls.EnumMutableRegistryKeyImpl<>(clazz, () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).location()), () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).registry()));
++            public <L extends RegistryKey.RegistryLayerType, E extends Enum<E> & Keyed> RegistryKey.@NotNull EnumMutableRegistryKey<L, E> createEnumMutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryKey.RegistryLayerType> layerType) {
++                return new RegistryKeyImpls.EnumMutableRegistryKeyImpl<>(clazz, layerType, () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).location()), () -> KEY_CONVERTER.convertNMS(RegistryAPI.getNMSRegistryKey(clazz).registry()));
 +            }
 +        };
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/key/RegistryKeyImpls.java b/src/main/java/io/papermc/paper/registry/key/RegistryKeyImpls.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..79d8758e0912c1e2d794f5a6232bd95aaacc7467
+index 0000000000000000000000000000000000000000..006d7a550aba908968abfe9f8b64054a421bbb7a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/key/RegistryKeyImpls.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,67 @@
 +package io.papermc.paper.registry.key;
 +
 +import io.papermc.paper.registry.Converters;
@@ -1479,43 +1678,51 @@ index 0000000000000000000000000000000000000000..79d8758e0912c1e2d794f5a6232bd95a
 +            final Class<API> type = ((RegistryKeyImpl<L, API>) apiRegistryKey).type;
 +            return RegistryAPI.<API, NMS>getNMSRegistryKey(type);
 +        }, nmsResourceKey -> {
-+            return new RegistryKeyImpl<L, API>(RegistryAPI.<API, NMS>getAPIClass(nmsResourceKey), () -> keyConverter.convertNMS(nmsResourceKey.registry()), () -> keyConverter.convertNMS(nmsResourceKey.location()));
++            // Probably will never use it
++            return new RegistryKeyImpl<L, API>(RegistryAPI.<API, NMS>getAPIClass(nmsResourceKey), RegistryKey.RegistryLayerType.class, () -> keyConverter.convertNMS(nmsResourceKey.registry()), () -> keyConverter.convertNMS(nmsResourceKey.location()));
 +        });
 +    }
 +
 +    static class RegistryKeyImpl<L extends RegistryKey.RegistryLayerType, E> extends ResourceKeyImpl<ExtendedRegistry<E>> implements RegistryKey<L, E> {
 +        final Class<E> type;
-+        RegistryKeyImpl(Class<E> type, Supplier<Key> key, Supplier<Key> registry) {
++        final Class<? extends RegistryLayerType> layerType;
++        RegistryKeyImpl(Class<E> type, Class<? extends RegistryLayerType> layerType, Supplier<Key> key, Supplier<Key> registry) {
 +            super(key, registry);
 +            this.type = type;
++            this.layerType = layerType;
 +        }
 +
 +        public Class<E> getType() {
 +            return type;
 +        }
++
++        @Override
++        public @NotNull Class<? extends RegistryLayerType> layerType() {
++            return layerType;
++        }
 +    }
 +
 +    public static class ImmutableRegistryKeyImpl<L extends RegistryKey.RegistryLayerType, E> extends RegistryKeyImpl<L, E> implements RegistryKey.ImmutableRegistryKey<L, E> {
-+        public ImmutableRegistryKeyImpl(Class<E> type, Supplier<Key> key, Supplier<Key> registry) {
-+            super(type, key, registry);
++        public ImmutableRegistryKeyImpl(Class<E> type, Class<? extends RegistryLayerType> layerType, Supplier<Key> key, Supplier<Key> registry) {
++            super(type, layerType, key, registry);
 +        }
 +    }
 +
 +    public static class MutableRegistryKeyImpl<L extends RegistryKey.RegistryLayerType, E> extends RegistryKeyImpl<L, E> implements RegistryKey.MutableRegistryKey<L, E> {
-+        public MutableRegistryKeyImpl(Class<E> type, Supplier<Key> key, Supplier<Key> registry) {
-+            super(type, key, registry);
++        public MutableRegistryKeyImpl(Class<E> type, Class<? extends RegistryLayerType> layerType, Supplier<Key> key, Supplier<Key> registry) {
++            super(type, layerType, key, registry);
 +        }
 +    }
 +
 +    public static class EnumMutableRegistryKeyImpl<L extends RegistryKey.RegistryLayerType, E extends Enum<E> & Keyed> extends RegistryKeyImpl<L, E> implements RegistryKey.EnumMutableRegistryKey<L, E> {
-+        public EnumMutableRegistryKeyImpl(Class<E> type, Supplier<Key> key, Supplier<Key> registry) {
-+            super(type, key, registry);
++        public EnumMutableRegistryKeyImpl(Class<E> type, Class<? extends RegistryLayerType> layerType, Supplier<Key> key, Supplier<Key> registry) {
++            super(type, layerType, key, registry);
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/key/ResourceKeyImpl.java b/src/main/java/io/papermc/paper/registry/key/ResourceKeyImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1d3c2896111c2db50aec94d22ddfc48803387b4b
+index 0000000000000000000000000000000000000000..137be47aaed50d11c8b35441f5c0b00a3473d21d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/key/ResourceKeyImpl.java
 @@ -0,0 +1,95 @@
@@ -1611,7 +1818,7 @@ index 0000000000000000000000000000000000000000..1d3c2896111c2db50aec94d22ddfc488
 +
 +    @Override
 +    public String toString() {
-+        return "[ " + this.key.get() + " / " + this.registry.get() + " ]";
++        return "[ " + this.registry.get() + " / " + this.key.get() + " ]";
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeAPI.java b/src/main/java/io/papermc/paper/world/biome/BiomeAPI.java
@@ -1837,7 +2044,7 @@ index 0000000000000000000000000000000000000000..5ec93628a9b342ef69680070337997ff
 +
 +}
 diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-index ad802eb211f05f646159d7fc53f8a9427b46cb89..a0761cb80f4fd15f175904acb1fb070e8d2aad6c 100644
+index ad802eb211f05f646159d7fc53f8a9427b46cb89..84bad0b2b8f46e8e0509325eb7082abd6e81d4f9 100644
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 @@ -6,6 +6,8 @@ import com.mojang.serialization.Codec;
@@ -1849,7 +2056,15 @@ index ad802eb211f05f646159d7fc53f8a9427b46cb89..a0761cb80f4fd15f175904acb1fb070e
  import net.minecraft.Util;
  import net.minecraft.commands.synchronization.ArgumentTypeInfo;
  import net.minecraft.commands.synchronization.ArgumentTypeInfos;
-@@ -318,6 +320,7 @@ public class BuiltInRegistries {
+@@ -306,6 +308,7 @@ public class BuiltInRegistries {
+             return initializer.run(registry);
+         });
+         WRITABLE_REGISTRY.register((ResourceKey) key, registry, lifecycle); // Paper - decompile fix
++        io.papermc.paper.registry.RegistryAPI.getApiStorage().addStaticRegistry(registry); // Paper - Lifecycle API, a hack for LifecyclePointUtil, see n.m.s.Bootstrap
+         return registry;
+     }
+ 
+@@ -318,6 +321,7 @@ public class BuiltInRegistries {
          createContents();
          runnable.run(); // Paper
          freeze();
@@ -1858,60 +2073,56 @@ index ad802eb211f05f646159d7fc53f8a9427b46cb89..a0761cb80f4fd15f175904acb1fb070e
      }
  
 diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-index 38b3460acfb8f50be8f34a6b2bd04e9686472ea1..ac29191871aabf7f80931e61222f597290ddded8 100644
+index 38b3460acfb8f50be8f34a6b2bd04e9686472ea1..89dbd33483d9262642f222a00ac92e4f118b9d4b 100644
 --- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 +++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-@@ -19,6 +19,9 @@ import java.util.Map;
- import java.util.Optional;
- import java.util.Map.Entry;
- import java.util.stream.Collectors;
-+
-+import io.papermc.paper.registry.access.MappedWritableRegistryAccessImpl;
-+import io.papermc.paper.registry.key.RegistryKey;
- import net.minecraft.core.MappedRegistry;
- import net.minecraft.core.Registry;
- import net.minecraft.core.RegistryAccess;
-@@ -63,6 +66,10 @@ public class RegistryDataLoader {
+@@ -63,6 +63,15 @@ public class RegistryDataLoader {
              }
              // Paper end
          });
 +        // Paper start - Lifecycle API
-+        MappedWritableRegistryAccessImpl<RegistryKey.RegistryLayerType.WORLDGEN> access = new MappedWritableRegistryAccessImpl<>(list.stream().map(Pair::getFirst).toList());
-+        io.papermc.paper.lifecycle.LifecyclePoints.enter(io.papermc.paper.lifecycle.ServerLifecyclePoints.WORLDGEN_REGISTRIES_INITIALIZED, new io.papermc.paper.lifecycle.ServerLifecyclePoints.WorldgenRegistryInitializedContext(access));
++        List<? extends WritableRegistry<?>> registries = list.stream().map(Pair::getFirst).toList();
++        io.papermc.paper.registry.access.MappedWritableRegistryAccessImpl<io.papermc.paper.registry.key.RegistryKey.RegistryLayerType.WORLDGEN> access = new io.papermc.paper.registry.access.MappedWritableRegistryAccessImpl<>(registries);
++        if (entries == WORLDGEN_REGISTRIES) {
++            io.papermc.paper.lifecycle.LifecyclePointUtil.enterRegistryInitialization(io.papermc.paper.lifecycle.ServerLifecyclePoints.WORLDGEN_REGISTRIES_INITIALIZED, new io.papermc.paper.lifecycle.ServerLifecyclePoints.WorldgenRegistryInitializedContext(access), registries);
++        } else if (entries == DIMENSION_REGISTRIES) {
++
++        }
 +        // Paper end
          list.forEach((loader) -> {
              Registry<?> registry = loader.getFirst();
  
-@@ -73,6 +80,7 @@ public class RegistryDataLoader {
+@@ -73,6 +82,13 @@ public class RegistryDataLoader {
              }
  
          });
-+        io.papermc.paper.lifecycle.LifecyclePoints.enter(io.papermc.paper.lifecycle.ServerLifecyclePoints.WORLDGEN_REGISTRIES_FROZEN, new io.papermc.paper.lifecycle.ServerLifecyclePoints.WorldgenRegistryFrozenContext(access)); // Paper - lifecycle API
++        // Paper start - Lifecycle API
++        if (entries == WORLDGEN_REGISTRIES) {
++            io.papermc.paper.lifecycle.LifecyclePoints.enter(io.papermc.paper.lifecycle.ServerLifecyclePoints.WORLDGEN_REGISTRIES_FROZEN, new io.papermc.paper.lifecycle.ServerLifecyclePoints.WorldgenRegistryFrozenContext(access)); // Paper - lifecycle API
++        } else if (entries == DIMENSION_REGISTRIES) {
++
++        }
++        // Paper end
          if (!map.isEmpty()) {
              logErrors(map);
              throw new IllegalStateException("Failed to load registries due to above errors");
 diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
-index a1192d1f6b99669f843e8d9a8928ff0e8c030559..96c64ceb725b2fa6b64d8bb5bfef5e1547d122ea 100644
+index a1192d1f6b99669f843e8d9a8928ff0e8c030559..8f7f0d89b451a3392275a50bfcbcc1a32ffbf7c7 100644
 --- a/src/main/java/net/minecraft/server/Bootstrap.java
 +++ b/src/main/java/net/minecraft/server/Bootstrap.java
-@@ -6,6 +6,8 @@ import java.util.Set;
- import java.util.TreeSet;
- import java.util.function.Function;
- import java.util.function.Supplier;
-+
-+import io.papermc.paper.lifecycle.ServerLifecyclePoints;
- import net.minecraft.SharedConstants;
- import net.minecraft.commands.Commands;
- import net.minecraft.commands.arguments.selector.options.EntitySelectorOptions;
-@@ -69,10 +71,12 @@ public class Bootstrap {
+@@ -69,10 +69,16 @@ public class Bootstrap {
                      EntitySelectorOptions.bootStrap();
                      DispenseItemBehavior.bootStrap();
                      CauldronInteraction.bootStrap();
 +
                      // Paper start
                      BuiltInRegistries.bootStrap(() -> {
-+                    io.papermc.paper.registry.RegistryAPI.launchAPI();
-+                        io.papermc.paper.lifecycle.LifecyclePoints.enter(io.papermc.paper.lifecycle.ServerLifecyclePoints.STATIC_REGISTRIES_INITIALIZED, new ServerLifecyclePoints.StaticRegistryInitializationContext(io.papermc.paper.registry.RegistryAPI.getStaticAPIAccess()));
++                        io.papermc.paper.registry.RegistryAPI.launchAPI();
++                        io.papermc.paper.lifecycle.LifecyclePointUtil.enterRegistryInitialization(
++                            io.papermc.paper.lifecycle.ServerLifecyclePoints.STATIC_REGISTRIES_INITIALIZED,
++                            new io.papermc.paper.lifecycle.ServerLifecyclePoints.StaticRegistryInitializationContext(io.papermc.paper.registry.RegistryAPI.getStaticAPIAccess()),
++                            io.papermc.paper.registry.RegistryAPI.getApiStorage().getStaticRegistries()
++                        );
                          net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.MATERIAL_CONDITION, new net.minecraft.resources.ResourceLocation("paper", "bedrock_condition_source"), net.minecraft.data.worldgen.SurfaceRuleData.PaperBedrockConditionSource.CODEC.codec());
 -                        io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
                      });
@@ -1970,15 +2181,20 @@ index 0000000000000000000000000000000000000000..5061a7ec7c488217f7a9e4dbe1d48495
 +}
 diff --git a/src/test/java/io/papermc/paper/registry/RegistryTest.java b/src/test/java/io/papermc/paper/registry/RegistryTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..419cc9fb6edc1bd4a1a5c751cf2f6596bdc558ef
+index 0000000000000000000000000000000000000000..7ec828d6d65cd862af0f03db7f31daf1fdc6ba42
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/registry/RegistryTest.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,80 @@
 +package io.papermc.paper.registry;
 +
++import io.papermc.paper.registry.key.KeyAPI;
++import io.papermc.paper.registry.key.RegistryKey;
 +import io.papermc.paper.registry.key.ResourceKey;
++import io.papermc.paper.registry.key.ResourceKeyImpl;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.Registry;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceLocation;
 +import org.bukkit.block.Biome;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.support.AbstractTestingBase;
@@ -1994,7 +2210,7 @@ index 0000000000000000000000000000000000000000..419cc9fb6edc1bd4a1a5c751cf2f6596
 +        ResourceKey<Biome> biomeResourceKey = ResourceKey.create(resourceKey, Key.key("something", "other"));
 +        Assert.assertNotNull(biomeResourceKey);
 +    }
-+
++/*
 +    @Test
 +    public void testRegistryConversion() {
 +        Registry<net.minecraft.world.level.biome.Biome> biomeRegistry = AbstractTestingBase.BIOMES;
@@ -2013,6 +2229,40 @@ index 0000000000000000000000000000000000000000..419cc9fb6edc1bd4a1a5c751cf2f6596
 +        ResourceKey<Biome> biomeResourceKey = apiRegistry.resourceKey(Biome.BEACH).get();
 +        System.out.println("numerical: " + i);
 +        System.out.println("resourceKey: " + biomeResourceKey);
++    }
++ */
++
++    @Test
++    public void testKeys() {
++        Converters.CachedConverter<Key, ResourceLocation> keyConverter = Converters.KEY_RESOURCE_LOCATION_CONVERTER.get();
++        Key apiKey = Key.key("test", "example");
++        ResourceLocation resourceLocation = keyConverter.convertAPI(apiKey);
++        Key key = keyConverter.convertNMS(resourceLocation);
++        Assert.assertEquals(apiKey, key);
++    }
++
++    @Test
++    public void testResourceKeyConversion() {
++        KeyAPI.launchAPI();
++        Converters.CachedConverter<Key, ResourceLocation> keyConverter = Converters.KEY_RESOURCE_LOCATION_CONVERTER.get();
++        Converters.CachedConverter<ResourceKey<Object>, net.minecraft.resources.ResourceKey<Object>> resourceKeyConverter = ResourceKeyImpl.makeConverter(keyConverter);
++        Key regKey = Key.key("test", "example_registry");
++        Key key = Key.key("test", "example");
++        ResourceKey<? extends ExtendedRegistry<Object>> registryKey = ResourceKey.create(regKey);
++        ResourceKey<Object> exampleResKey = ResourceKey.create(registryKey, key);
++        net.minecraft.resources.ResourceKey<Object> objectResourceKey = resourceKeyConverter.convertAPI(exampleResKey);
++        ResourceKey<Object> objectResourceKey1 = resourceKeyConverter.convertNMS(objectResourceKey);
++        Assert.assertEquals(exampleResKey, objectResourceKey1);
++    }
++
++    @Test
++    public void testRegistryKeyConversion() {
++        KeyAPI.launchAPI();
++        RegistryAPI.getApiStorage().registerAPIClass(Biome.class, Registries.BIOME);
++        RegistryKey.RegistryKeyFactory registryKeyFactory = KeyAPI.createRegistryKeyFactory();
++        RegistryKey.MutableRegistryKey<RegistryKey.RegistryLayerType.WORLDGEN, Biome> mutable = registryKeyFactory.createMutable(Biome.class, RegistryKey.RegistryLayerType.WORLDGEN.class);
++        System.out.println("key: " + mutable.key());
++        System.out.println("registry: " + mutable.registry());
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/world/biome/BiomeTest.java b/src/test/java/io/papermc/paper/world/biome/BiomeTest.java

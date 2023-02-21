@@ -121,10 +121,10 @@ index 0000000000000000000000000000000000000000..4fc96e21a4dc690163a1266d443c3acd
 +}
 diff --git a/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java b/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..96f5646c49405ecfe70b205ff5f7d40277af99d6
+index 0000000000000000000000000000000000000000..99393474cebd666eb1c2cb381bbd64163d7da85e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.lifecycle;
 +
 +import io.papermc.paper.registry.access.RegistryAccess;
@@ -142,6 +142,7 @@ index 0000000000000000000000000000000000000000..96f5646c49405ecfe70b205ff5f7d402
 +    public static final LifecyclePoint<StaticRegistryFrozenContext> STATIC_REGISTRIES_FROZEN = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("STATIC_REGISTRIES_FROZEN");
 +    public static final LifecyclePoint<WorldgenRegistryInitializedContext> WORLDGEN_REGISTRIES_INITIALIZED = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("WORLDGEN_REGISTRIES_INITIALIZED");
 +    public static final LifecyclePoint<WorldgenRegistryFrozenContext> WORLDGEN_REGISTRIES_FROZEN = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("WORLDGEN_REGISTRIES_FROZEN");
++    // public static final LifecyclePoint<ReloadableRegistryInitializedContext> RELOADABLE_REGISTRY_INITIALIZED_ = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("");
 +
 +    public record StaticRegistryInitializationContext(@NotNull WritableRegistryAccess<RegistryKey.RegistryLayerType.STATIC> writableRegistryAccess) {
 +    }
@@ -154,6 +155,8 @@ index 0000000000000000000000000000000000000000..96f5646c49405ecfe70b205ff5f7d402
 +
 +    public record WorldgenRegistryFrozenContext(@NotNull RegistryAccess registryAccess) {
 +    }
++
++    // public record ReloadableRegistryInitializedContext() {}
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java
 index a4467fe1ba0dc348eab681900dbcac1770963591..ef90a6da9cbb913d2e4a5d62faa50f4bd1c17c48 100644
@@ -181,16 +184,17 @@ index a4467fe1ba0dc348eab681900dbcac1770963591..ef90a6da9cbb913d2e4a5d62faa50f4b
  }
 diff --git a/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java b/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1e25b3e553837654225e29559aee072f94cc2512
+index 0000000000000000000000000000000000000000..04c47697c1b3fd813d54cb2e3e63eb01716c1e45
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,128 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.registry.key.RegistryKey;
 +import io.papermc.paper.registry.key.ResourceKey;
 +import io.papermc.paper.registry.key.ResourceKeyed;
 +import net.kyori.adventure.key.Key;
++import org.bukkit.Keyed;
 +import org.bukkit.block.Biome;
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
@@ -209,8 +213,19 @@ index 0000000000000000000000000000000000000000..1e25b3e553837654225e29559aee072f
 +public interface ExtendedRegistry<T> extends ResourceKeyed<ExtendedRegistry<T>>, Iterable<T> {
 +    Key ROOT_REGISTRY_KEY = Key.key("root");
 +
-+    // RegistryKey.ImmutableRegistryKey<RegistryKey.RegistryLayerType.STATIC, Material> ITEM_REGISTRY_KEY = API.registryKeyFactory.createImmutable(Material.class); // Is it even worth doing?
-+    RegistryKey.EnumMutableRegistryKey<RegistryKey.RegistryLayerType.WORLDGEN, Biome> BIOME_REGISTRY_KEY = API.registryKeyFactory.createEnumMutable(Biome.class);
++    RegistryKey.EnumMutableRegistryKey<RegistryKey.RegistryLayerType.WORLDGEN, Biome> BIOME_REGISTRY_KEY = API.registryKeyFactory.createEnumMutable(Biome.class, RegistryKey.RegistryLayerType.WORLDGEN.class);
++
++    static <T extends Enum<T> & Keyed> void register(RegistryKey.EnumMutableRegistryKey<?, T> registryKey, T value) {
++        API.simpleRegistry.register(registryKey, value);
++    }
++
++    static <T> void register(RegistryKey<?, T> registryKey, ResourceKey<T> resourceKey, T value) {
++        API.simpleRegistry.register(registryKey, resourceKey, value);
++    }
++
++    static <T> void register(RegistryKey<?, T> registryKey, Key key, T value) {
++        API.simpleRegistry.register(registryKey, key, value);
++    }
 +
 +    @NotNull
 +    Optional<Reference<T>> getReference(@Nullable ResourceKey<T> resourceKey);
@@ -286,10 +301,19 @@ index 0000000000000000000000000000000000000000..1e25b3e553837654225e29559aee072f
 +        return StreamSupport.stream(this.spliterator(), false);
 +    }
 +
++    interface SimpleRegistry {
++        <T extends Enum<T> & Keyed> void register(RegistryKey.EnumMutableRegistryKey<?, T> registryKey, T value);
++
++        <T> void register(RegistryKey<?, T> registryKey, ResourceKey<T> resourceKey, T value);
++
++        <T> void register(RegistryKey<?, T> registryKey, Key key, T value);
++    }
++
 +    final class API {
 +        static ResourceKey.ResourceKeyFactory resourceKeyFactory;
 +        static Reference.ReferenceFactory referenceFactory;
 +        static RegistryKey.RegistryKeyFactory registryKeyFactory;
++        static SimpleRegistry simpleRegistry;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/Reference.java b/src/main/java/io/papermc/paper/registry/Reference.java
@@ -408,21 +432,6 @@ index 0000000000000000000000000000000000000000..8607507da91083c99cf918559ffd3b29
 +        return this.register(ResourceKey.create(this.resourceKey(), key), value);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/registry/access/LayeredRegistryAccess.java b/src/main/java/io/papermc/paper/registry/access/LayeredRegistryAccess.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..e4970741a98442d71afd28b6cd7b74685305b763
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/registry/access/LayeredRegistryAccess.java
-@@ -0,0 +1,9 @@
-+package io.papermc.paper.registry.access;
-+
-+import io.papermc.paper.registry.key.RegistryKey;
-+import org.jetbrains.annotations.NotNull;
-+
-+public interface LayeredRegistryAccess {
-+    @NotNull
-+    RegistryAccess getLayer(@NotNull Class<? extends RegistryKey.RegistryLayerType> layer);
-+}
 diff --git a/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java b/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..a542291581b8fe75f4bd17f27b8f9c436e2a677d
@@ -478,10 +487,10 @@ index 0000000000000000000000000000000000000000..1a1cce78c6680ee6b1c02226c574072e
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java b/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9a5d30491479e9bcf364daf4a64dd73277c5414b
+index 0000000000000000000000000000000000000000..80023548606e2a555c43a1e803c10b73489f3045
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,22 @@
 +package io.papermc.paper.registry.enums;
 +
 +import io.papermc.paper.registry.key.RegistryKey;
@@ -497,6 +506,9 @@ index 0000000000000000000000000000000000000000..9a5d30491479e9bcf364daf4a64dd732
 +public interface EnumCreator<T extends Enum<T> & Keyed> {
 +    @NotNull
 +    T create(@NotNull ResourceKey<T> resourceKey, @NotNull Object... params);
++
++    @NotNull
++    T create(@NotNull Key key, @NotNull Object... params);
 +
 +    @NotNull
 +    <P, API extends Enum<API> & Keyed> Supplier<P> param(@NotNull RegistryKey.EnumMutableRegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, @NotNull Class<P> type, @NotNull Key key);
@@ -523,10 +535,10 @@ index 0000000000000000000000000000000000000000..d703aeac3185bf36aa5a6739f5a84f34
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/key/RegistryKey.java b/src/main/java/io/papermc/paper/registry/key/RegistryKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1290d0d2b330b3db1c282795fe9d29402d4be23c
+index 0000000000000000000000000000000000000000..73090cc3ab0b773f7e31820c20275038b8033b3e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/key/RegistryKey.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,34 @@
 +package io.papermc.paper.registry.key;
 +
 +import io.papermc.paper.registry.ExtendedRegistry;
@@ -540,15 +552,18 @@ index 0000000000000000000000000000000000000000..1290d0d2b330b3db1c282795fe9d2940
 +
 +    interface EnumMutableRegistryKey<L extends RegistryKey.RegistryLayerType, E extends Enum<E> & Keyed> extends RegistryKey<L, E> {}
 +
++    @NotNull
++    Class<? extends RegistryLayerType> layerType();
++
 +    interface RegistryKeyFactory {
 +        @NotNull
-+        <L extends RegistryLayerType, E> ImmutableRegistryKey<L, E> createImmutable(@NotNull Class<E> clazz);
++        <L extends RegistryLayerType, E> ImmutableRegistryKey<L, E> createImmutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryLayerType> layerType);
 +
 +        @NotNull
-+        <L extends RegistryLayerType, E> MutableRegistryKey<L, E> createMutable(@NotNull Class<E> clazz);
++        <L extends RegistryLayerType, E> MutableRegistryKey<L, E> createMutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryLayerType> layerType);
 +
 +        @NotNull
-+        <L extends RegistryLayerType, E extends Enum<E> & Keyed> EnumMutableRegistryKey<L, E> createEnumMutable(@NotNull Class<E> clazz);
++        <L extends RegistryLayerType, E extends Enum<E> & Keyed> EnumMutableRegistryKey<L, E> createEnumMutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryLayerType> layerType);
 +    }
 +
 +    interface RegistryLayerType {
@@ -768,7 +783,7 @@ index 0000000000000000000000000000000000000000..b331d56f3780618fdde5ef083b616b93
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/block/Biome.java b/src/main/java/org/bukkit/block/Biome.java
-index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..d0f7ddd937b5a0411e442dfc59cce8eb6f0aaa9b 100644
+index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..7290cb19070671db71c03bba6eab6331af3e7197 100644
 --- a/src/main/java/org/bukkit/block/Biome.java
 +++ b/src/main/java/org/bukkit/block/Biome.java
 @@ -1,6 +1,8 @@
@@ -798,7 +813,7 @@ index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..d0f7ddd937b5a0411e442dfc59cce8eb
      }
  
      @NotNull
-@@ -94,5 +104,29 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
+@@ -94,5 +104,34 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
      public @NotNull String translationKey() {
          return "biome.minecraft." + this.key.getKey();
      }
@@ -818,8 +833,13 @@ index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..d0f7ddd937b5a0411e442dfc59cce8eb
 +    }
 +
 +    @NotNull
-+    public static Biome create(@NotNull io.papermc.paper.registry.key.ResourceKey<Biome> resourceKey, @NotNull io.papermc.paper.world.biome.ClimateSettings biomeConfiguration, @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects biomeSpecialEffects) {
-+        return API.enumCreator.create(resourceKey, biomeConfiguration, biomeSpecialEffects);
++    public static Biome create(@NotNull io.papermc.paper.registry.key.ResourceKey<Biome> resourceKey, @NotNull io.papermc.paper.world.biome.ClimateSettings climateSettings, @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects biomeSpecialEffects) {
++        return API.enumCreator.create(resourceKey, climateSettings, biomeSpecialEffects);
++    }
++
++    @NotNull
++    public static Biome create(@NotNull net.kyori.adventure.key.Key key, @NotNull io.papermc.paper.world.biome.ClimateSettings biomeConfiguration, @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects biomeSpecialEffects) {
++        return API.enumCreator.create(key, biomeConfiguration, biomeSpecialEffects);
 +    }
 +
 +    @org.jetbrains.annotations.ApiStatus.Internal
