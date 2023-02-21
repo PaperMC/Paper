@@ -913,10 +913,10 @@ index 0000000000000000000000000000000000000000..64e46fdfa4d404cb08c67a456e5990b7
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/classloader/ConfiguredPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/provider/classloader/ConfiguredPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a15e7474eb8eb1196f69070b7cf7fd5af6100f68
+index 0000000000000000000000000000000000000000..ab1fb50912e411e708ba1e40303b1c08dabb086d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/classloader/ConfiguredPluginClassLoader.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,63 @@
 +package io.papermc.paper.plugin.provider.classloader;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -925,6 +925,7 @@ index 0000000000000000000000000000000000000000..a15e7474eb8eb1196f69070b7cf7fd5a
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.io.Closeable;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * The configured plugin class loader represents an <b>internal</b> abstraction over the classloaders used by the server
@@ -971,6 +972,13 @@ index 0000000000000000000000000000000000000000..a15e7474eb8eb1196f69070b7cf7fd5a
 +     * @param plugin the {@link JavaPlugin} that should be interlinked with this class loader.
 +     */
 +    void init(JavaPlugin plugin);
++
++    /**
++     * Gets the plugin held by this class loader.
++     *
++     * @return the plugin or null if it doesn't exist yet
++     */
++    @Nullable JavaPlugin getPlugin();
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/classloader/PaperClassLoaderStorage.java b/src/main/java/io/papermc/paper/plugin/provider/classloader/PaperClassLoaderStorage.java
 new file mode 100644
@@ -1835,7 +1843,7 @@ index a80251eff75430863b37db1c131e22593f3fcd5e..310c4041963a3f1e0a26e39a6da12a9b
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index 669a70faa95d0d6525a731d73499ed6fb0b48320..6175b04327b12e74140a0885f7326546dfaf269a 100644
+index 669a70faa95d0d6525a731d73499ed6fb0b48320..c9cf9d361a1289aba383718733a2098b5eafb38f 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 @@ -38,6 +38,7 @@ public abstract class JavaPlugin extends PluginBase {
@@ -1941,6 +1949,34 @@ index 669a70faa95d0d6525a731d73499ed6fb0b48320..6175b04327b12e74140a0885f7326546
      }
  
      /**
+@@ -394,10 +419,10 @@ public abstract class JavaPlugin extends PluginBase {
+             throw new IllegalArgumentException(clazz + " does not extend " + JavaPlugin.class);
+         }
+         final ClassLoader cl = clazz.getClassLoader();
+-        if (!(cl instanceof PluginClassLoader)) {
+-            throw new IllegalArgumentException(clazz + " is not initialized by " + PluginClassLoader.class);
++        if (!(cl instanceof io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader configuredPluginClassLoader)) { // Paper
++            throw new IllegalArgumentException(clazz + " is not initialized by a " + io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader.class); // Paper
+         }
+-        JavaPlugin plugin = ((PluginClassLoader) cl).plugin;
++        JavaPlugin plugin = configuredPluginClassLoader.getPlugin(); // Paper
+         if (plugin == null) {
+             throw new IllegalStateException("Cannot get plugin for " + clazz + " from a static initializer");
+         }
+@@ -420,10 +445,10 @@ public abstract class JavaPlugin extends PluginBase {
+     public static JavaPlugin getProvidingPlugin(@NotNull Class<?> clazz) {
+         Preconditions.checkArgument(clazz != null, "Null class cannot have a plugin");
+         final ClassLoader cl = clazz.getClassLoader();
+-        if (!(cl instanceof PluginClassLoader)) {
+-            throw new IllegalArgumentException(clazz + " is not provided by " + PluginClassLoader.class);
++        if (!(cl instanceof io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader configuredPluginClassLoader)) { // Paper
++            throw new IllegalArgumentException(clazz + " is not provided by a " + io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader.class); // Paper
+         }
+-        JavaPlugin plugin = ((PluginClassLoader) cl).plugin;
++        JavaPlugin plugin = configuredPluginClassLoader.getPlugin(); // Paper
+         if (plugin == null) {
+             throw new IllegalStateException("Cannot get plugin for " + clazz + " from a static initializer");
+         }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 index 047c0304fd617cec990f80815b43916c6ef5a94c..fa39c93d76ebb9eecce1f4b5203cb361e4778b4f 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
@@ -1987,7 +2023,7 @@ index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..f9e67e20133d349e43d126dbb48b34d4
  
      private final Logger logger;
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f668e8e8a 100644
+index 2f74ec96ece706de23156ebabfe493211bc05391..dd569f2fc6098650d202e834b343b1bff2d42284 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -29,7 +29,8 @@ import org.jetbrains.annotations.Nullable;
@@ -2000,12 +2036,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f
      private final JavaPluginLoader loader;
      private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
      private final PluginDescriptionFile description;
-@@ -39,20 +40,22 @@ final class PluginClassLoader extends URLClassLoader {
-     private final Manifest manifest;
-     private final URL url;
-     private final ClassLoader libraryLoader;
--    final JavaPlugin plugin;
-+    public final JavaPlugin plugin; // Paper
+@@ -43,16 +44,18 @@ final class PluginClassLoader extends URLClassLoader {
      private JavaPlugin pluginInit;
      private IllegalStateException pluginState;
      private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -2038,7 +2069,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f
          try {
              Class<?> jarClass;
              try {
-@@ -94,6 +101,22 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -94,6 +101,27 @@ final class PluginClassLoader extends URLClassLoader {
          return findResources(name);
      }
  
@@ -2056,12 +2087,17 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f
 +    public void init(JavaPlugin plugin) {
 +        this.initialize(plugin);
 +    }
++
++    @Override
++    public JavaPlugin getPlugin() {
++        return this.plugin;
++    }
 +    // Paper end
 +
      @Override
      protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
          return loadClass0(name, resolve, true, true);
-@@ -119,26 +142,11 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -119,26 +147,11 @@ final class PluginClassLoader extends URLClassLoader {
  
          if (checkGlobal) {
              // This ignores the libraries of other plugins, unless they are transitive dependencies.
@@ -2090,7 +2126,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f
  
                  return result;
              }
-@@ -167,7 +175,7 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -167,7 +180,7 @@ final class PluginClassLoader extends URLClassLoader {
                      throw new ClassNotFoundException(name, ex);
                  }
  
@@ -2099,7 +2135,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f
  
                  int dot = name.lastIndexOf('.');
                  if (dot != -1) {
-@@ -197,8 +205,8 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -197,8 +210,8 @@ final class PluginClassLoader extends URLClassLoader {
                  result = super.findClass(name);
              }
  
@@ -2109,7 +2145,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f
          }
  
          return result;
-@@ -207,6 +215,12 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -207,6 +220,12 @@ final class PluginClassLoader extends URLClassLoader {
      @Override
      public void close() throws IOException {
          try {
@@ -2122,7 +2158,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f
              super.close();
          } finally {
              jar.close();
-@@ -218,7 +232,7 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -218,7 +237,7 @@ final class PluginClassLoader extends URLClassLoader {
          return classes.values();
      }
  
@@ -2131,7 +2167,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..f92071617712a0f410475fae291fb85f
          Preconditions.checkArgument(javaPlugin != null, "Initializing plugin cannot be null");
          Preconditions.checkArgument(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
          if (this.plugin != null || this.pluginInit != null) {
-@@ -228,6 +242,32 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -228,6 +247,32 @@ final class PluginClassLoader extends URLClassLoader {
          pluginState = new IllegalStateException("Initial initialization");
          this.pluginInit = javaPlugin;
  
