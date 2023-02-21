@@ -1966,7 +1966,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          final PluginClassLoader loader;
          try {
 -            loader = new PluginClassLoader(this, getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null);
-+            loader = new PluginClassLoader(getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null, null); // Paper
++            loader = new PluginClassLoader(getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null); // Paper
          } catch (InvalidPluginException ex) {
              throw ex;
          } catch (Throwable ex) {
@@ -2011,7 +2011,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
 +    private java.util.logging.Logger logger; // Paper - add field
 +    private io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup classLoaderGroup; // Paper
-+    public io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext; // Paper
  
      static {
          ClassLoader.registerAsParallelCapable();
@@ -2019,7 +2018,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    PluginClassLoader(@NotNull final JavaPluginLoader loader, @Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader) throws IOException, InvalidPluginException, MalformedURLException {
 +    @org.jetbrains.annotations.ApiStatus.Internal // Paper
-+    public PluginClassLoader(@Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader, io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext) throws IOException, InvalidPluginException, MalformedURLException { // Paper
++    public PluginClassLoader(@Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader) throws IOException, InvalidPluginException, MalformedURLException { // Paper
          super(new URL[] {file.toURI().toURL()}, parent);
 -        Preconditions.checkArgument(loader != null, "Loader cannot be null");
 +        this.loader = null; // Paper - pass null into loader field
@@ -2035,7 +2034,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        // Paper start
 +        this.classLoaderGroup = io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage.instance().registerSpigotGroup(this); // Paper
-+        this.dependencyContext = dependencyContext;
 +        // Paper end
          try {
              Class<?> jarClass;
@@ -2072,23 +2070,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (result != null) {
                  // If the class was loaded from a library instead of a PluginClassLoader, we can assume that its associated plugin is a transitive dependency and can therefore skip this check.
-@@ -0,0 +0,0 @@ final class PluginClassLoader extends URLClassLoader {
- 
-                     if (provider != description
-                             && !seenIllegalAccess.contains(provider.getName())
+-                if (result.getClassLoader() instanceof PluginClassLoader) {
+-                    PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
+-
+-                    if (provider != description
+-                            && !seenIllegalAccess.contains(provider.getName())
 -                            && !((SimplePluginManager) loader.server.getPluginManager()).isTransitiveDepend(description, provider)) {
-+                        && !this.dependencyContext.isTransitiveDependency(description, provider)) { // Paper
- 
-                         seenIllegalAccess.add(provider.getName());
-                         if (plugin != null) {
-                             plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend or softdepend of this plugin.", new Object[]{name, provider.getFullName()});
-                         } else {
-                             // In case the bad access occurs on construction
+-
+-                        seenIllegalAccess.add(provider.getName());
+-                        if (plugin != null) {
+-                            plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend or softdepend of this plugin.", new Object[]{name, provider.getFullName()});
+-                        } else {
+-                            // In case the bad access occurs on construction
 -                            loader.server.getLogger().log(Level.WARNING, "[{0}] Loaded class {1} from {2} which is not a depend or softdepend of this plugin.", new Object[]{description.getName(), name, provider.getFullName()});
-+                            org.bukkit.Bukkit.getLogger().log(Level.WARNING, "[{0}] Loaded class {1} from {2} which is not a depend or softdepend of this plugin.", new Object[]{description.getName(), name, provider.getFullName()}); // Paper
-                         }
-                     }
-                 }
+-                        }
+-                    }
+-                }
++                // Paper - Totally delete the illegal access logic, we are never going to enforce it anyways here.
+ 
+                 return result;
+             }
 @@ -0,0 +0,0 @@ final class PluginClassLoader extends URLClassLoader {
                      throw new ClassNotFoundException(name, ex);
                  }
