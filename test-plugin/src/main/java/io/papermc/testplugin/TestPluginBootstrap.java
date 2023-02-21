@@ -3,7 +3,6 @@ package io.papermc.testplugin;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 import io.papermc.paper.lifecycle.ServerLifecyclePoints;
-import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 import io.papermc.paper.registry.Reference;
 import io.papermc.paper.registry.enums.EnumWritableRegistry;
 import io.papermc.paper.registry.ExtendedRegistry;
@@ -27,6 +26,12 @@ public class TestPluginBootstrap implements PluginBootstrap {
             .map(regContext -> "Doing something")
             .flatMap(s -> LifecyclePointFlux.create(ServerLifecyclePoints.STATIC_REGISTRIES_INITIALIZED).map(regContext -> "Doing Something other! " + s))
             .subscribe(System.out::println);*/
+        final Biome biome = Biome.create(
+            Key.key("test", "example"), 
+            ClimateSettings.builder().build(), 
+            BiomeSpecialEffects.builder().grassColor(0x0000FF).skyColor(0x0000FF).build()
+        );
+        ExtendedRegistry.register(ExtendedRegistry.BIOME_REGISTRY_KEY, biome);
 
         context.getLifecyclePointScheduler().schedule(ServerLifecyclePoints.WORLDGEN_REGISTRIES_INITIALIZED, registryInitializationContext -> {
             final EnumWritableRegistry<Biome> biomeRegistry = registryInitializationContext.writableRegistryAccess()
@@ -63,5 +68,4 @@ public class TestPluginBootstrap implements PluginBootstrap {
             context.getSLF4JLogger().info("LifecyclePointContext is built! No modifications allowed!");
         return new TestPlugin(this.secret, this.biomeReference);
     }
->>>>>>> 63b805be5 (Paper plugin Work)
 }
