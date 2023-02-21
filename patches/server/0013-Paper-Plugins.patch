@@ -454,7 +454,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..21e43223d7942b0e5e3c6b63aa2c455ec17ffde9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,131 @@
 +package io.papermc.paper.plugin;
 +
 +import com.mojang.logging.LogUtils;
@@ -567,6 +567,21 @@ index 0000000000000000000000000000000000000000..21e43223d7942b0e5e3c6b63aa2c455e
 +            load(dedicatedServer.options);
 +        } catch (Exception e) {
 +            throw new RuntimeException("Failed to reload!", e);
++        }
++
++        boolean hasPaperPlugin = false;
++        for (PluginProvider<?> provider : LaunchEntryPointHandler.INSTANCE.getStorage().get(Entrypoint.PLUGIN).getRegisteredProviders()) {
++            if (provider instanceof PaperPluginParent.PaperServerPluginProvider) {
++                hasPaperPlugin = true;
++                break;
++            }
++        }
++
++        if (hasPaperPlugin) {
++            LOGGER.error("======== WARNING ========");
++            LOGGER.error("You are reloading while having Paper plugins installed on your server.");
++            LOGGER.error("Paper plugins do NOT support being reloaded. This will cause some unexpected issues.");
++            LOGGER.error("=========================");
 +        }
 +    }
 +
@@ -6412,16 +6427,14 @@ index b5aa358638b9d0638dfe47f7ebac04cca1dd80b9..e43096e69a00f9ea96badd7c966443cf
                  }
                  // CraftBukkit start - easier than fixing the decompile
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index b7399e29094c66c88a6f4c0e996a906bcaa3b4ca..ed8724cabbbb2907e5f22205c15e1b0c125b4be5 100644
+index b7399e29094c66c88a6f4c0e996a906bcaa3b4ca..cef3b053d79e71eb66eb6bddf9365ed4d7042bae 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -110,6 +110,9 @@ public class Main {
+@@ -110,6 +110,7 @@ public class Main {
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-+            // Paper start
-+            io.papermc.paper.plugin.PluginInitializerManager.load(optionset);
-+            // Paper end
++            io.papermc.paper.plugin.PluginInitializerManager.load(optionset); // Paper
              Bootstrap.bootStrap();
              Bootstrap.validate();
              Util.startTimerHackThread();
