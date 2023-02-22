@@ -746,10 +746,10 @@ index 0000000000000000000000000000000000000000..f9a2c55a354c877749db3f92956de802
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f1a2d25079c841daff19f41f2b24fb8e97d2c7d3
+index 0000000000000000000000000000000000000000..4fa7147d0dcbfd7e40f6eab1f7b0c6d8bbcf6906
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,194 @@
 +package io.papermc.paper.plugin.entrypoint.classloader;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -929,7 +929,8 @@ index 0000000000000000000000000000000000000000..f1a2d25079c841daff19f41f2b24fb8e
 +    }
 +
 +    @Nullable
-+    public JavaPlugin getLoadedJavaPlugin() {
++    @Override
++    public JavaPlugin getPlugin() {
 +        return this.loadedJavaPlugin;
 +    }
 +
@@ -5682,7 +5683,7 @@ index 0000000000000000000000000000000000000000..b2a6544e321fa61c58bdf5684231de10
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0da361611bd93bc3299b8559d5c7c2127a8a6f0f
+index 0000000000000000000000000000000000000000..600023770e19f02258327816122298f58d73e4ab
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 @@ -0,0 +1,188 @@
@@ -5819,7 +5820,7 @@ index 0000000000000000000000000000000000000000..0da361611bd93bc3299b8559d5c7c212
 +
 +
 +            this.status = ProviderStatus.INITIALIZED;
-+            return loader.plugin;
++            return loader.getPlugin();
 +        } catch (Throwable ex) {
 +            this.status = ProviderStatus.ERRORED;
 +            SneakyThrow.sneaky(ex);
@@ -6282,22 +6283,22 @@ index 0000000000000000000000000000000000000000..fd55fd1d6518ebd1bc2513dd331f0720
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/StackWalkerUtil.java b/src/main/java/io/papermc/paper/util/StackWalkerUtil.java
-index f7114d5b8f2f93f62883e24da29afaf9f74ee1a6..00e78a495575abb9496b1849822605b613afe3b4 100644
+index f7114d5b8f2f93f62883e24da29afaf9f74ee1a6..8bf0630c0e06950cd99b7ae9898137f70c22063f 100644
 --- a/src/main/java/io/papermc/paper/util/StackWalkerUtil.java
 +++ b/src/main/java/io/papermc/paper/util/StackWalkerUtil.java
-@@ -1,9 +1,11 @@
+@@ -1,9 +1,10 @@
  package io.papermc.paper.util;
  
-+import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
++import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
  import org.bukkit.plugin.java.JavaPlugin;
- import org.bukkit.plugin.java.PluginClassLoader;
+-import org.bukkit.plugin.java.PluginClassLoader;
  import org.jetbrains.annotations.Nullable;
  
 +import java.util.Objects;
  import java.util.Optional;
  
  public class StackWalkerUtil {
-@@ -12,11 +14,20 @@ public class StackWalkerUtil {
+@@ -12,11 +13,18 @@ public class StackWalkerUtil {
      public static JavaPlugin getFirstPluginCaller() {
          Optional<JavaPlugin> foundFrame = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
              .walk(stream -> stream
@@ -6307,10 +6308,8 @@ index f7114d5b8f2f93f62883e24da29afaf9f74ee1a6..00e78a495575abb9496b1849822605b6
 -                    return classLoader.getPlugin();
 +                    ClassLoader classLoader =  frame.getDeclaringClass().getClassLoader();
 +                    JavaPlugin plugin;
-+                    if (classLoader instanceof PaperPluginClassLoader pluginClassLoader) {
-+                        plugin = pluginClassLoader.getLoadedJavaPlugin();
-+                    } else if (classLoader instanceof PluginClassLoader spigotClassloader) {
-+                        plugin = spigotClassloader.getPlugin();
++                    if (classLoader instanceof ConfiguredPluginClassLoader configuredPluginClassLoader) {
++                        plugin = configuredPluginClassLoader.getPlugin();
 +                    } else {
 +                        plugin = null;
 +                    }
