@@ -770,6 +770,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.io.File;
 +import java.io.IOException;
 +import java.net.URL;
++import java.net.URLClassLoader;
 +import java.nio.file.Path;
 +import java.util.ArrayList;
 +import java.util.Collections;
@@ -793,7 +794,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        registerAsParallelCapable();
 +    }
 +
-+    private final ClassLoader libraryLoader;
++    private final URLClassLoader libraryLoader;
 +    private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
 +    private final Logger logger;
 +    @Nullable
@@ -801,7 +802,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Nullable
 +    private PluginClassLoaderGroup group;
 +
-+    public PaperPluginClassLoader(Logger logger, Path source, JarFile file, PaperPluginMeta configuration, ClassLoader parentLoader, ClassLoader libraryLoader) throws IOException {
++    public PaperPluginClassLoader(Logger logger, Path source, JarFile file, PaperPluginMeta configuration, ClassLoader parentLoader, URLClassLoader libraryLoader) throws IOException {
 +        super(source, file, configuration, parentLoader);
 +        this.libraryLoader = libraryLoader;
 +
@@ -904,9 +905,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            config.getProvidedPlugins(),
 +            config.getMainClass(),
 +            "", // Classloader load order api
-+            List.of(), // Dependencies
-+            List.of(), // Soft Depends
-+            List.of(), // Load Before
++            config.getPluginDependencies(), // Dependencies
++            config.getPluginSoftDependencies(), // Soft Depends
++            config.getLoadBeforePlugins(), // Load Before
 +            config.getVersion(),
 +            Map.of(), // Commands, we use a separate system
 +            config.getDescription(),
@@ -944,6 +945,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ", loadedJavaPlugin=" + this.loadedJavaPlugin +
 +            ", group=" + this.group +
 +            '}';
++    }
++
++    @Override
++    public void close() throws IOException {
++        try {
++            super.close();
++        } finally {
++            this.libraryLoader.close();
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
