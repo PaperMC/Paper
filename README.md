@@ -4,7 +4,7 @@ Paper [![Paper Build Status](https://img.shields.io/github/actions/workflow/stat
 [![Open Collective](https://img.shields.io/opencollective/all/papermc?label=OpenCollective%20Sponsors)](https://opencollective.com/papermc)
 ===========
 
-High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
+High-performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
 
 
 **Support and Project Discussion:**
@@ -12,11 +12,11 @@ High performance Spigot fork that aims to fix gameplay and mechanics inconsisten
 
 How To (Server Admins)
 ------
-Paperclip is a jar file that you can download and run just like a normal jar file.
+Paperclip is a JAR file that you can download and run just like a normal JAR file.
 
-Download Paper from our [downloads page](https://papermc.io/downloads).
+Download Paperrformance from our [downloads page](https://papermc.io/downloads).
 
-Run the Paperclip jar directly from your server. Just like old times
+Run the Paperclip JAR directly from your server. Just like old times
 
   * Documentation on using Paper: [docs.papermc.io](https://docs.papermc.io)
   * For a sneak peek at upcoming features, [see here](https://github.com/PaperMC/Paper/projects)
@@ -43,7 +43,7 @@ How To (Plugin Developers)
 </dependency>
  ```
 
-**Or alternatively, with Gradle:**
+**Or with Gradle:**
 
  * Repository:
 ```kotlin
@@ -66,7 +66,7 @@ How To (Compiling Jar From Source)
 ------
 To compile Paper, you need JDK 17 and an internet connection.
 
-Clone this repo, run `./gradlew applyPatches`, then `./gradlew createReobfBundlerJar` from your terminal. You can find the compiled jar in the project root's `build/libs` directory.
+Clone this repo, run `./gradlew applyPatches`, then `./gradlew createReobfBundlerJar` from your terminal. You can find the compiled JAR in the project root's `build/libs` directory.
 
 To get a full list of tasks, run `./gradlew tasks`.
 
@@ -76,7 +76,7 @@ See [Contributing](CONTRIBUTING.md)
 
 Support Us
 ------
-First of all, thank you for considering helping out, we really appreciate that!  
+First of all, thank you for considering helping out, we appreciate that!  
 
 PaperMC has various recurring expenses, mostly related to infrastructure. Paper uses [Open Collective](https://opencollective.com/) via the [Open Source Collective fiscal host](https://opencollective.com/opensource) to manage expenses. Open Collective allows us to be extremely transparent, so you can always see how your donations are used. You can read more about financially supporting PaperMC [on our website](https://papermc.io/sponsors).  
 
