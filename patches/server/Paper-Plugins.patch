@@ -1590,6 +1590,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.Map;
++import java.util.function.Predicate;
 +
 +@SuppressWarnings("UnstableApiUsage")
 +public class DependencyUtil {
@@ -1614,14 +1615,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @NotNull
-+    public static MutableGraph<String> buildLoadGraph(@NotNull MutableGraph<String> dependencyGraph, @NotNull LoadOrderConfiguration configuration) {
++    public static MutableGraph<String> buildLoadGraph(@NotNull MutableGraph<String> dependencyGraph, @NotNull LoadOrderConfiguration configuration, Predicate<String> validator) {
 +        String identifier = configuration.getMeta().getName();
 +        for (String dependency : configuration.getLoadAfter()) {
-+            dependencyGraph.putEdge(identifier, dependency);
++            if (validator.test(dependency)) {
++                dependencyGraph.putEdge(identifier, dependency);
++            }
 +        }
 +
 +        for (String loadBeforeTarget : configuration.getLoadBefore()) {
-+            dependencyGraph.putEdge(loadBeforeTarget, identifier);
++            if (validator.test(loadBeforeTarget)) {
++                dependencyGraph.putEdge(loadBeforeTarget, identifier);
++            }
 +        }
 +
 +        dependencyGraph.addNode(identifier); // Make sure dependencies at least have a node
@@ -2422,7 +2427,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            LoadOrderConfiguration loadOrderConfiguration = validated.createConfiguration(providerMapMirror);
 +
 +            // Build a validated provider's load order changes
-+            DependencyUtil.buildLoadGraph(loadOrderGraph, loadOrderConfiguration);
++            DependencyUtil.buildLoadGraph(loadOrderGraph, loadOrderConfiguration, providerMap::containsKey);
 +
 +            // Build a validated provider's dependencies into the graph
 +            DependencyUtil.buildDependencyGraph(dependencyGraph, configuration);
