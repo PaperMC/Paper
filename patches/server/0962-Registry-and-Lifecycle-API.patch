@@ -350,48 +350,30 @@ index 0000000000000000000000000000000000000000..5c65bf55f04607ae668f3f8718fab9aa
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-index 9926eb59b83abffffb578356f148f045edc027cb..e212ecbc1c99409937847c39dce9200e4aa43089 100644
+index 9926eb59b83abffffb578356f148f045edc027cb..a3899ff37c1da64df7042d5afb6cce1e1a316b7e 100644
 --- a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
-@@ -2,6 +2,7 @@ package io.papermc.paper.plugin;
- 
- import com.mojang.logging.LogUtils;
- import io.papermc.paper.configuration.PaperConfigurations;
-+import io.papermc.paper.lifecycle.LifecyclePoints;
- import joptsimple.OptionSet;
- import org.bukkit.configuration.file.YamlConfiguration;
- import org.jetbrains.annotations.NotNull;
-@@ -67,6 +68,7 @@ public class PluginInitializerManager {
+@@ -67,6 +67,7 @@ public class PluginInitializerManager {
      }
  
      public static PluginInitializerManager init(final OptionSet optionSet) throws Exception {
-+        LifecyclePoints.launch();
++        io.papermc.paper.lifecycle.LifecyclePoints.launch();
          impl = parse(optionSet);
          return impl;
      }
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
-index 8249a7024537fccd99735b92abb1368e6647b5ae..424ab944a2392788709564b0811c651629b5017a 100644
+index 8249a7024537fccd99735b92abb1368e6647b5ae..4dcfdb03431290dbf8a92c454ea23d6c9526a231 100644
 --- a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 +++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
-@@ -1,26 +1,29 @@
- package io.papermc.paper.plugin.bootstrap;
- 
-+import io.papermc.paper.lifecycle.LifecyclePointScheduler;
- import io.papermc.paper.plugin.PluginInitializerManager;
- import io.papermc.paper.plugin.configuration.PluginMeta;
- import io.papermc.paper.plugin.provider.PluginProvider;
-+import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
- import org.jetbrains.annotations.NotNull;
- 
- import java.nio.file.Path;
+@@ -9,18 +9,19 @@ import java.nio.file.Path;
  import java.util.logging.Logger;
  
  public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
 -                                        Logger logger) implements PluginProviderContext {
-+                                        Logger logger, LifecyclePointScheduler lifecyclePointScheduler) implements PluginProviderContext {
++                                        Logger logger, io.papermc.paper.lifecycle.LifecyclePointScheduler lifecyclePointScheduler) implements PluginProviderContext {
  
 -    public static PluginProviderContextImpl of(PluginMeta config, Logger logger) {
-+    public static PluginProviderContextImpl of(PluginMeta config, Logger logger, LifecyclePointScheduler lifecyclePointScheduler) {
++    public static PluginProviderContextImpl of(PluginMeta config, Logger logger, io.papermc.paper.lifecycle.LifecyclePointScheduler lifecyclePointScheduler) {
          Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getDisplayName());
  
 -        return new PluginProviderContextImpl(config, dataFolder, logger);
@@ -402,43 +384,27 @@ index 8249a7024537fccd99735b92abb1368e6647b5ae..424ab944a2392788709564b0811c6516
          Path dataFolder = pluginFolder.resolve(provider.getMeta().getDisplayName());
 -
 -        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger());
-+        if (!(provider instanceof PaperPluginParent.PaperBootstrapProvider bootstrapProvider))
++        if (!(provider instanceof io.papermc.paper.plugin.provider.type.paper.PaperPluginParent.PaperBootstrapProvider bootstrapProvider))
 +            throw new RuntimeException("Given provider isn't bootstrap one!");
 +        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger(), bootstrapProvider.getProviderContext().getLifecyclePointScheduler());
      }
  
      @Override
-@@ -37,4 +40,9 @@ public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
+@@ -37,4 +38,9 @@ public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
      public @NotNull Logger getLogger() {
          return this.logger;
      }
 +
 +    @Override
-+    public @NotNull LifecyclePointScheduler getLifecyclePointScheduler() {
++    public @NotNull io.papermc.paper.lifecycle.LifecyclePointScheduler getLifecyclePointScheduler() {
 +        return this.lifecyclePointScheduler;
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-index a0773c6d24de1f2ce1f0d949cba26b9997b696e6..793aad3438e2afd5f8d143419556c02c3f178482 100644
+index a0773c6d24de1f2ce1f0d949cba26b9997b696e6..f1a497e260c11bae7a84b7f530d16fd70aaa81d7 100644
 --- a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-@@ -6,6 +6,7 @@ import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
- import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
- import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
- import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
-+import io.papermc.paper.lifecycle.LifecyclePointSchedulerImpl;
- import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
- import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
- import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
-@@ -13,6 +14,7 @@ import io.papermc.paper.plugin.provider.PluginProvider;
- import io.papermc.paper.plugin.provider.ProviderStatus;
- import io.papermc.paper.plugin.provider.ProviderStatusHolder;
- import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
-+import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
- import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
- import io.papermc.paper.plugin.provider.util.ProviderUtil;
- import org.bukkit.plugin.java.JavaPlugin;
-@@ -127,6 +129,10 @@ public class PaperPluginParent {
+@@ -127,6 +127,10 @@ public class PaperPluginParent {
              PaperPluginParent.this.classLoader.refreshClassloaderDependencyTree(context);
          }
  
@@ -450,46 +416,18 @@ index a0773c6d24de1f2ce1f0d949cba26b9997b696e6..793aad3438e2afd5f8d143419556c02c
          public String toString() {
              return "PaperBootstrapProvider{" +
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
-index db343a2f482ac375078610f0875692861f412ee2..1b580e2150270c655ddcb5da51da68fb731564da 100644
+index db343a2f482ac375078610f0875692861f412ee2..a2b95478bc5eea8a2edf6426303d1b1e1d8b4728 100644
 --- a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
-@@ -1,6 +1,7 @@
- package io.papermc.paper.plugin.provider.type.paper;
- 
- import com.destroystokyo.paper.utils.PaperPluginLogger;
-+import io.papermc.paper.lifecycle.LifecyclePointSchedulerImpl;
- import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
- import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
- import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
-@@ -24,7 +25,7 @@ class PaperPluginProviderFactory implements PluginTypeFactory<PaperPluginParent,
+@@ -24,7 +24,7 @@ class PaperPluginProviderFactory implements PluginTypeFactory<PaperPluginParent,
      @Override
      public PaperPluginParent build(JarFile file, PaperPluginMeta configuration, Path source) throws Exception {
          Logger logger = PaperPluginLogger.getLogger(configuration);
 -        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger);
-+        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger, new LifecyclePointSchedulerImpl());
++        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger, new io.papermc.paper.lifecycle.LifecyclePointSchedulerImpl());
  
          PaperClasspathBuilder builder = new PaperClasspathBuilder(context);
  
-diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-index e5b70ff297febd936e64055b79f48712d65dbed9..d323ad2e03850b65b94cf52ab3f734c4c0c55edc 100644
---- a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-+++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-@@ -1,6 +1,7 @@
- package io.papermc.paper.plugin.storage;
- 
- import com.mojang.logging.LogUtils;
-+import io.papermc.paper.lifecycle.LifecyclePointSchedulerImpl;
- import io.papermc.paper.plugin.PluginInitializerManager;
- import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
- import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
-@@ -15,6 +16,7 @@ import io.papermc.paper.plugin.provider.ProviderStatus;
- import io.papermc.paper.plugin.provider.ProviderStatusHolder;
- import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
- import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
-+import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
- import org.slf4j.Logger;
- 
- import java.util.ArrayList;
 diff --git a/src/main/java/io/papermc/paper/registry/APIConverters.java b/src/main/java/io/papermc/paper/registry/APIConverters.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..d5332ba235c1e17699b5d235095ab0e3dc037af9
@@ -2044,19 +1982,10 @@ index 0000000000000000000000000000000000000000..5ec93628a9b342ef69680070337997ff
 +
 +}
 diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-index ad802eb211f05f646159d7fc53f8a9427b46cb89..84bad0b2b8f46e8e0509325eb7082abd6e81d4f9 100644
+index ad802eb211f05f646159d7fc53f8a9427b46cb89..e4957150f7587bd8fbbef5076e00d9dbd61cf5dd 100644
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -6,6 +6,8 @@ import com.mojang.serialization.Codec;
- import com.mojang.serialization.Lifecycle;
- import java.util.Map;
- import java.util.function.Supplier;
-+
-+import io.papermc.paper.lifecycle.ServerLifecyclePoints;
- import net.minecraft.Util;
- import net.minecraft.commands.synchronization.ArgumentTypeInfo;
- import net.minecraft.commands.synchronization.ArgumentTypeInfos;
-@@ -306,6 +308,7 @@ public class BuiltInRegistries {
+@@ -306,6 +306,7 @@ public class BuiltInRegistries {
              return initializer.run(registry);
          });
          WRITABLE_REGISTRY.register((ResourceKey) key, registry, lifecycle); // Paper - decompile fix
@@ -2064,11 +1993,11 @@ index ad802eb211f05f646159d7fc53f8a9427b46cb89..84bad0b2b8f46e8e0509325eb7082abd
          return registry;
      }
  
-@@ -318,6 +321,7 @@ public class BuiltInRegistries {
+@@ -318,6 +319,7 @@ public class BuiltInRegistries {
          createContents();
          runnable.run(); // Paper
          freeze();
-+        io.papermc.paper.lifecycle.LifecyclePoints.enter(io.papermc.paper.lifecycle.ServerLifecyclePoints.STATIC_REGISTRIES_FROZEN, new ServerLifecyclePoints.StaticRegistryFrozenContext(io.papermc.paper.registry.RegistryAPI.getStaticAPIAccess())); // Paper - Lifecycle API
++        io.papermc.paper.lifecycle.LifecyclePoints.enter(io.papermc.paper.lifecycle.ServerLifecyclePoints.STATIC_REGISTRIES_FROZEN, new io.papermc.paper.lifecycle.ServerLifecyclePoints.StaticRegistryFrozenContext(io.papermc.paper.registry.RegistryAPI.getStaticAPIAccess())); // Paper - Lifecycle API
          validate(REGISTRY);
      }
  
@@ -2107,14 +2036,11 @@ index 38b3460acfb8f50be8f34a6b2bd04e9686472ea1..89dbd33483d9262642f222a00ac92e4f
              logErrors(map);
              throw new IllegalStateException("Failed to load registries due to above errors");
 diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
-index a1192d1f6b99669f843e8d9a8928ff0e8c030559..8f7f0d89b451a3392275a50bfcbcc1a32ffbf7c7 100644
+index a1192d1f6b99669f843e8d9a8928ff0e8c030559..951080156335e9a2b9c3e68ea12bf6a914f3a36b 100644
 --- a/src/main/java/net/minecraft/server/Bootstrap.java
 +++ b/src/main/java/net/minecraft/server/Bootstrap.java
-@@ -69,10 +69,16 @@ public class Bootstrap {
-                     EntitySelectorOptions.bootStrap();
-                     DispenseItemBehavior.bootStrap();
+@@ -71,8 +71,13 @@ public class Bootstrap {
                      CauldronInteraction.bootStrap();
-+
                      // Paper start
                      BuiltInRegistries.bootStrap(() -> {
 +                        io.papermc.paper.registry.RegistryAPI.launchAPI();
@@ -2129,7 +2055,7 @@ index a1192d1f6b99669f843e8d9a8928ff0e8c030559..8f7f0d89b451a3392275a50bfcbcc1a3
                      // Paper end
                      Bootstrap.wrapStreams();
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index a821cb33fbc29109aec68f9d6a0eb2efc121ee13..a8d358aed4a0fcf8b41c41ca66db725c41a651ae 100644
+index a821cb33fbc29109aec68f9d6a0eb2efc121ee13..230c213e57fcf6c5991f2074c55d6e03c02eccee 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -121,6 +121,8 @@ public class Main {
@@ -2137,7 +2063,7 @@ index a821cb33fbc29109aec68f9d6a0eb2efc121ee13..a8d358aed4a0fcf8b41c41ca66db725c
              // Register plugins from the flag
              io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.PluginFlagProviderSource.INSTANCE, files);
 +            io.papermc.paper.registry.RegistryAPI.BeforeBootstrapAPI.launchAPI();
-+            io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
++            io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers();
              // Paper end
              Bootstrap.bootStrap();
              Bootstrap.validate();

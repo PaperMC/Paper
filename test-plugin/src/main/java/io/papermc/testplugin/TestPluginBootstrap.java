@@ -22,10 +22,6 @@ public class TestPluginBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(@NotNull PluginProviderContext context) {
-         /*final LifecyclePointFlux.ConstructedFlux<ServerLifecyclePoints.StaticRegistryInitializationContext> constructed = LifecyclePointFlux.create(ServerLifecyclePoints.STATIC_REGISTRIES_INITIALIZED)
-            .map(regContext -> "Doing something")
-            .flatMap(s -> LifecyclePointFlux.create(ServerLifecyclePoints.STATIC_REGISTRIES_INITIALIZED).map(regContext -> "Doing Something other! " + s))
-            .subscribe(System.out::println);*/
         final Biome biome = Biome.create(
             Key.key("test", "example"), 
             ClimateSettings.builder().build(), 
@@ -59,7 +55,7 @@ public class TestPluginBootstrap implements PluginBootstrap {
             System.out.println("temperature: " + testBiome.getClimateSettings().temperature());
             biomeReference = biomeRegistry.getReference(testBiomeKey).orElseThrow();
 
-        })/*.schedule(constructed)*/.build(context.getConfiguration());
+        }).build(context.getConfiguration());
     }
 
     @Override
