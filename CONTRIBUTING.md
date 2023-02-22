@@ -4,11 +4,11 @@ PaperMC is happy you're willing to contribute to our projects. We are usually
 very lenient with all submitted PRs, but there are still some guidelines you
 can follow to make the approval process go more smoothly.
 
-## Use a Personal Fork and not Organization
+## Use a Personal Fork and not an Organization
 
 Paper will routinely modify your PR, whether it's a quick rebase or to take care
 of any minor nitpicks we might have. Often, it's better for us to solve these
-problems for you than make you go back and forth trying to fix it yourself.
+problems for you than make you go back and forth trying to fix them yourself.
 
 Unfortunately, if you use an organization for your PR, it prevents Paper from
 modifying it. This requires us to manually merge your PR, resulting in us
@@ -29,7 +29,7 @@ you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
 - `git` (package `git` everywhere);
 - A Java 17 or later JDK (packages vary, use Google/DuckDuckGo/etc.).
   - [Adoptium](https://adoptium.net/) has builds for most operating systems.
-  - Paper requires JDK 17 to build, however makes use of Gradle's
+  - Paper requires JDK 17 to build, however, makes use of Gradle's
     [Toolchains](https://docs.gradle.org/current/userguide/toolchains.html)
     feature to allow building with only JRE 8 or later installed. (Gradle will
     automatically provision JDK 17 for compilation if it cannot find an existing
@@ -93,7 +93,7 @@ patch;
 Your commit will be converted into a patch that you can then PR into Paper.
 
 > ❗ Please note that if you have some specific implementation detail you'd like
-> to document, you should do so in the patch message *or* in comments.
+> to document, you should do so in the patch message *or* in the comments.
 
 ## Modifying Patches
 
@@ -138,7 +138,7 @@ later;
 
 If you are simply editing a more recent commit or your change is small, simply
 making the change at HEAD and then moving the commit after you have tested it
-may be easier.
+maybe easier.
 
 This method has the benefit of being able to compile to test your change without
 messing with your HEADs.
@@ -146,7 +146,7 @@ messing with your HEADs.
 #### Manual method
 
 1. Make your change while at HEAD;
-1. Make a temporary commit. You don't need to make a message for this;
+1. Make a temporary commitment. You don't need to make a message for this;
 1. Type `git rebase -i base`, move (cut) your temporary commit and
 move it under the line of the patch you wish to modify;
 1. Change the `pick` to the appropriate action:
@@ -168,7 +168,7 @@ move it under the line of the patch you wish to modify;
   assist you too.
    - Alternatively, if you only know the name of the patch, you can do
   `git commit -a --fixup "Subject of Patch name"`.
-1. Rebase with autosquash: `git rebase -i --autosquash base`.
+1. Rebase with autosquashnt: `git rebase -i --autosquash base`.
 This will automatically move your fixup commit to the right place, and you just
 need to "save" the changes.
 1. Type `./gradlew rebuildPatches` in the root directory;
@@ -178,13 +178,13 @@ need to "save" the changes.
 ## Rebasing PRs
 
 Steps to rebase a PR to include the latest changes from `master`.  
-These steps assume the `origin` remote is your fork of this repository and `upstream` is the official PaperMC repository.
+These steps assume the `origin` remote is your fork of this repository and the `upstream` is the official PaperMC repository.
 
-1. Pull the latest changes from upstreams master: `git checkout master && git pull upstream master`.
+1. Pull the latest changes from the upstreams master: `git checkout master && git pull upstream master`.
 1. Checkout feature/fix branch and rebase on master: `git checkout patch-branch && git rebase master`.
 1. Apply updated patches: `./gradlew applyPatches`.
 1. If there are conflicts, fix them.
-1. If your PR creates new patches instead of modifying exist ones, in both the `Paper-Server` and `Paper-API` directories, ensure your newly-created patch is the last commit by either:
+1. If your PR creates new patches instead of modifying existing ones, in both the `Paper-Server` and `Paper-API` directories, ensure your newly-created patch is the last commit by either:
     * Renaming the patch file with a large 4-digit number in front (e.g. 9999-Patch-to-add-some-new-stuff.patch), and re-applying patches.
     * Running `git rebase --interactive base` and moving the commits to the end.
 1. Rebuild patches: `./gradlew rebuildPatches`.
@@ -215,7 +215,7 @@ All modifications to non-Paper files should be marked.
   line message here */` for the message itself.
 - One-line changes should have `// Paper` or `// Paper - reason`.
 
-Here's an example of how to mark changes by Paper:
+Here's an example of how to mark changes on Paper:
 
 ```java
 entity.getWorld().dontbeStupid(); // Paper - was beStupid() which is bad
@@ -229,11 +229,11 @@ entity.getWorld().explode(new BlockPosition(spawnLocation.getX(), spawnLocation.
 // Paper end
 ```
 
-We generally follow usual Java style (aka. Oracle style), or what is programmed
+We generally follow the usual Java style (aka. Oracle style), or what is programmed
 into most IDEs and formatters by default. There are a few notes, however:
 - It is fine to go over 80 lines as long as it doesn't hurt readability.  
 There are exceptions, especially in Spigot-related files
-- When in doubt or the code around your change is in a clearly different style,
+- When in doubt or the code around your change is in a different style,
 use the same style as the surrounding code.
 
 ## Access Transformers
