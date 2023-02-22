@@ -17,6 +17,42 @@ index ed524fe97d999f0adaebb0445f4a668a228e1fd2..04c47697c1b3fd813d54cb2e3e63eb01
      static <T extends Enum<T> & Keyed> void register(RegistryKey.EnumMutableRegistryKey<?, T> registryKey, T value) {
          API.simpleRegistry.register(registryKey, value);
      }
+diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeBuilder.java b/src/main/java/io/papermc/paper/world/biome/BiomeBuilder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..876e480b478ca7e997f052e5c2589d954f21c320
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/biome/BiomeBuilder.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.world.biome;
++
++import io.papermc.paper.registry.enums.EnumCreator;
++import io.papermc.paper.registry.key.ResourceKey;
++import net.kyori.adventure.key.Key;
++import org.bukkit.block.Biome;
++import org.jetbrains.annotations.NotNull;
++
++public interface BiomeBuilder {
++    @NotNull
++    BiomeBuilder climateSettings(@NotNull ClimateSettings climateSettings);
++
++    @NotNull
++    BiomeBuilder specialEffects(@NotNull BiomeSpecialEffects biomeSpecialEffects);
++
++    @NotNull
++    Biome build(ResourceKey<Biome> resourceKey);
++
++    @NotNull
++    Biome build(Key key);
++
++    interface BuilderFactory {
++        BiomeBuilder create();
++    }
++
++    final class API {
++        public static BuilderFactory builderFactory;
++        public static EnumCreator<Biome> enumCreator;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffects.java b/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffects.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..b6606698bb5119f2edb2d19542b544e79858b7a6
@@ -161,7 +197,7 @@ index 0000000000000000000000000000000000000000..b331d56f3780618fdde5ef083b616b93
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/block/Biome.java b/src/main/java/org/bukkit/block/Biome.java
-index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..a6843389eb78431f9932925aede7ca8e34251e44 100644
+index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..7e5d8d04ba757b21b85a42d4482371efe5111a3c 100644
 --- a/src/main/java/org/bukkit/block/Biome.java
 +++ b/src/main/java/org/bukkit/block/Biome.java
 @@ -78,9 +78,17 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
@@ -176,13 +212,13 @@ index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..a6843389eb78431f9932925aede7ca8e
      private Biome() {
          this.key = NamespacedKey.minecraft(name().toLowerCase(Locale.ROOT));
 +        // Paper start - biome API
-+        this.climateSettings = API.enumCreator.param(io.papermc.paper.registry.ExtendedRegistry.BIOME_REGISTRY_KEY, io.papermc.paper.world.biome.ClimateSettings.class, this.key);
-+        this.biomeSpecialEffects = API.enumCreator.param(io.papermc.paper.registry.ExtendedRegistry.BIOME_REGISTRY_KEY, io.papermc.paper.world.biome.BiomeSpecialEffects.class, this.key);
++        this.climateSettings = io.papermc.paper.world.biome.BiomeBuilder.API.enumCreator.param(io.papermc.paper.registry.ExtendedRegistry.BIOME_REGISTRY_KEY, io.papermc.paper.world.biome.ClimateSettings.class, this.key);
++        this.biomeSpecialEffects = io.papermc.paper.world.biome.BiomeBuilder.API.enumCreator.param(io.papermc.paper.registry.ExtendedRegistry.BIOME_REGISTRY_KEY, io.papermc.paper.world.biome.BiomeSpecialEffects.class, this.key);
 +        // Paper end
      }
  
      @NotNull
-@@ -94,5 +102,34 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
+@@ -94,5 +102,24 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
      public @NotNull String translationKey() {
          return "biome.minecraft." + this.key.getKey();
      }
@@ -202,18 +238,8 @@ index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..a6843389eb78431f9932925aede7ca8e
 +    }
 +
 +    @NotNull
-+    public static Biome create(@NotNull io.papermc.paper.registry.key.ResourceKey<Biome> resourceKey, @NotNull io.papermc.paper.world.biome.ClimateSettings climateSettings, @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects biomeSpecialEffects) {
-+        return API.enumCreator.create(resourceKey, climateSettings, biomeSpecialEffects);
-+    }
-+
-+    @NotNull
-+    public static Biome create(@NotNull net.kyori.adventure.key.Key key, @NotNull io.papermc.paper.world.biome.ClimateSettings biomeConfiguration, @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects biomeSpecialEffects) {
-+        return API.enumCreator.create(key, biomeConfiguration, biomeSpecialEffects);
-+    }
-+
-+    @org.jetbrains.annotations.ApiStatus.Internal
-+    public static class API {
-+        public static io.papermc.paper.registry.enums.EnumCreator<Biome> enumCreator;
++    public static io.papermc.paper.world.biome.BiomeBuilder builder() {
++        return io.papermc.paper.world.biome.BiomeBuilder.API.builderFactory.create();
 +    }
      // Paper end
  }

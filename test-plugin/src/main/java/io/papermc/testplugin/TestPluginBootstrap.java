@@ -22,11 +22,11 @@ public class TestPluginBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(@NotNull PluginProviderContext context) {
-        final Biome biome = Biome.create(
-            Key.key("test", "example"), 
-            ClimateSettings.builder().build(), 
-            BiomeSpecialEffects.builder().grassColor(0x0000FF).skyColor(0x0000FF).build()
-        );
+        final Biome biome = Biome.builder()
+            .climateSettings(ClimateSettings.builder().build())
+            .specialEffects(BiomeSpecialEffects.builder().grassColor(0x0000FF).skyColor(0x0000FF).build())
+            .build(Key.key("test", "example"));
+
         ExtendedRegistry.register(ExtendedRegistry.BIOME_REGISTRY_KEY, biome);
 
         context.getLifecyclePointScheduler().schedule(ServerLifecyclePoints.WORLDGEN_REGISTRIES_INITIALIZED, registryInitializationContext -> {
@@ -42,7 +42,10 @@ public class TestPluginBootstrap implements PluginBootstrap {
                 .skyColor(0x004764)
                 .build();
 
-            final Biome newBiome = Biome.create(testBiomeKey, climateSettings, biomeSpecialEffects);
+            final Biome newBiome = Biome.builder()
+                .climateSettings(climateSettings)
+                .specialEffects(biomeSpecialEffects)
+                .build(testBiomeKey);
             biomeRegistry.register(newBiome);
             System.out.println("resourcekey: " + testBiomeKey);
 

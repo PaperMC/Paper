@@ -81,10 +81,10 @@ index ff83ca0c019890cff2185ab7ac3256a7b182ffbc..b22c672b1a1798aebdcbb6ca9e2499bc
      }
  
 diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumCreators.java b/src/main/java/io/papermc/paper/registry/enums/EnumCreators.java
-index 1345d617ef20c63573ab9391799dd9f01126c4fa..208a85796625c4d508543117cb0c5a557a010cc2 100644
+index d65cba5e3fa495f5f9c9b8375cb8402cd8e2d933..46950f9ff2fd1f528d0cb515554e866e1fe9d877 100644
 --- a/src/main/java/io/papermc/paper/registry/enums/EnumCreators.java
 +++ b/src/main/java/io/papermc/paper/registry/enums/EnumCreators.java
-@@ -29,9 +29,11 @@ public final class EnumCreators {
+@@ -29,6 +29,7 @@ public final class EnumCreators {
      private static final Map<Class<?>, MethodHandle> methodHandleRegistry = new HashMap<>();
  
      static {
@@ -92,10 +92,6 @@ index 1345d617ef20c63573ab9391799dd9f01126c4fa..208a85796625c4d508543117cb0c5a55
      }
  
      public static void launchAPI() {
-+        org.bukkit.block.Biome.API.enumCreator = factory.create(org.bukkit.block.Biome.class, io.papermc.paper.world.biome.ClimateSettings.class, io.papermc.paper.world.biome.BiomeSpecialEffects.class);
-     }
- 
-     public static EnumCreatorFactory enumCreatorFactory() {
 diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumSettingExtractors.java b/src/main/java/io/papermc/paper/registry/enums/EnumSettingExtractors.java
 index c13f65f1bc3d297306bde0fc1364c1bc0773094c..9925614467f1855ad4e2b12e87d43acab6de9026 100644
 --- a/src/main/java/io/papermc/paper/registry/enums/EnumSettingExtractors.java
@@ -111,18 +107,26 @@ index c13f65f1bc3d297306bde0fc1364c1bc0773094c..9925614467f1855ad4e2b12e87d43aca
      public static <S, NMS> void registerEnumSetting(Class<S> setting, Function<NMS, S> extractor) {
 diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeAPI.java b/src/main/java/io/papermc/paper/world/biome/BiomeAPI.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d97a2cf5aeb8336fe63901d7109a4958eeacb708
+index 0000000000000000000000000000000000000000..242be246462369fe84274c946cd0239f002be406
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/biome/BiomeAPI.java
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,124 @@
 +package io.papermc.paper.world.biome;
 +
++import io.papermc.paper.registry.enums.EnumCreator;
++import io.papermc.paper.registry.enums.EnumCreators;
++import io.papermc.paper.registry.key.ResourceKey;
++import net.kyori.adventure.key.Key;
++import org.bukkit.block.Biome;
 +import org.jetbrains.annotations.NotNull;
 +
 +public final class BiomeAPI {
 +    private BiomeAPI() {}
 +
++    private static final EnumCreator<Biome> BIOME_ENUM_CREATOR = EnumCreators.getFactory().create(Biome.class, ClimateSettings.class, BiomeSpecialEffects.class);
++
 +    public static void launchAPI() {
++        BiomeBuilder.API.enumCreator = BIOME_ENUM_CREATOR;
 +        ClimateSettings.API.builderFactory = () -> new ClimateSettings.Builder() {
 +            float temperature = 0.7F;
 +            float downfall = 0.8F;
@@ -200,6 +204,33 @@ index 0000000000000000000000000000000000000000..d97a2cf5aeb8336fe63901d7109a4958
 +            @Override
 +            public @NotNull BiomeSpecialEffects build() {
 +                return new BiomeSpecialEffectsImpl(skyColor, fogColor, waterColor, waterFogColor, grassColor, foliageColor);
++            }
++        };
++
++        BiomeBuilder.API.builderFactory = () -> new BiomeBuilder() {
++            ClimateSettings climateSettings = ClimateSettings.builder().build();
++            BiomeSpecialEffects biomeSpecialEffects = BiomeSpecialEffects.builder().build();
++
++            @Override
++            public @NotNull BiomeBuilder climateSettings(@NotNull ClimateSettings climateSettings) {
++                this.climateSettings = climateSettings;
++                return this;
++            }
++
++            @Override
++            public @NotNull BiomeBuilder specialEffects(@NotNull BiomeSpecialEffects biomeSpecialEffects) {
++                this.biomeSpecialEffects = biomeSpecialEffects;
++                return this;
++            }
++
++            @Override
++            public @NotNull Biome build(ResourceKey<Biome> resourceKey) {
++                return this.build(resourceKey.key());
++            }
++
++            @Override
++            public @NotNull Biome build(Key key) {
++                return BiomeAPI.BIOME_ENUM_CREATOR.create(key, climateSettings, biomeSpecialEffects);
 +            }
 +        };
 +    }
