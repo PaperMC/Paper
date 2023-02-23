@@ -37,7 +37,7 @@ index 0000000000000000000000000000000000000000..7713a5b7e06da185685f18e79eae2c97
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/TeleportFlag.java b/src/main/java/io/papermc/paper/entity/TeleportFlag.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..61bf11978a712be805afb34506a4171ed1972777
+index 0000000000000000000000000000000000000000..4a9143ef4e4b9e822dd65702d4aa8e70c14124e4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/TeleportFlag.java
 @@ -0,0 +1,83 @@
@@ -51,11 +51,11 @@ index 0000000000000000000000000000000000000000..61bf11978a712be805afb34506a4171e
 + * Represents a flag that can be set on teleportation that may
 + * slightly modify the behavior.
 + *
-+ * @see EntityStateFlag
-+ * @see RelativeTeleportFlag
++ * @see EntityState
++ * @see Relative
 + */
 +@ApiStatus.Experimental
-+public sealed interface TeleportFlag permits TeleportFlag.EntityStateFlag, TeleportFlag.RelativeTeleportFlag {
++public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportFlag.Relative {
 +
 +    /**
 +     * Note: These flags only work on {@link org.bukkit.entity.Player} entities.
@@ -68,8 +68,8 @@ index 0000000000000000000000000000000000000000..61bf11978a712be805afb34506a4171e
 +     *
 +     * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
 +     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
-+    enum RelativeTeleportFlag implements TeleportFlag {
++    @ApiStatus.Experimental
++    enum Relative implements TeleportFlag {
 +        /**
 +         * Represents the player's X coordinate
 +         */
@@ -97,30 +97,30 @@ index 0000000000000000000000000000000000000000..61bf11978a712be805afb34506a4171e
 +     * teleportation.
 +     */
 +    @ApiStatus.Experimental
-+    enum EntityStateFlag implements TeleportFlag {
++    enum EntityState implements TeleportFlag {
 +        /**
 +         * If all passengers should not be required to be removed prior to teleportation.
-+         *
++         * <p>
 +         * Note
-+         * Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
++         * Teleporting to a different world with this flag present while the entity has entities riding it
 +         * will cause this teleportation to return false and not occur.
 +         */
-+        IGNORE_PASSENGERS,
++        RETAIN_PASSENGERS,
 +        /**
 +         * If the entity should not be dismounted if they are riding another entity.
-+         *
++         * <p>
 +         * Note:
-+         * Teleporting to a different world with dismount to false while this entity is riding another entity will
++         * Teleporting to a different world with this flag present while this entity is riding another entity will
 +         * cause this teleportation to return false and not occur.
 +         */
-+        IGNORE_DISMOUNT,
++        RETAIN_VEHICLE,
 +        /**
 +         * Indicates that a player should not have their current open inventory closed when teleporting.
-+         *
++         * <p>
 +         * Note:
 +         * This option will be ignored when teleported to a different world.
 +         */
-+        IGNORE_OPEN_INVENTORY;
++        RETAIN_OPEN_INVENTORY;
 +    }
 +
 +}
@@ -219,7 +219,7 @@ index 17ad43c24dc2e18f5cde0ac0bfae1de9fe415964..02979f3bce2d771120a39287cdfcb12c
      @Override
      Spigot spigot();
 diff --git a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
-index 113e620ce38bb8ff97cf24e309af59b717774b36..89f2f4b05c1732960bb844d3e26ec7c4e757246d 100644
+index 113e620ce38bb8ff97cf24e309af59b717774b36..cc75d2e84e68a1f63ec91a909c37407a46ddb16a 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
 @@ -13,8 +13,14 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
@@ -228,7 +228,7 @@ index 113e620ce38bb8ff97cf24e309af59b717774b36..89f2f4b05c1732960bb844d3e26ec7c4
  
 +    // Paper start - Teleport API
 +    private boolean dismounted = true;
-+    private final java.util.Set<io.papermc.paper.entity.TeleportFlag.RelativeTeleportFlag> teleportFlagSet;
++    private final java.util.Set<io.papermc.paper.entity.TeleportFlag.Relative> teleportFlagSet;
 +    // Paper end
 +
      public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
@@ -243,7 +243,7 @@ index 113e620ce38bb8ff97cf24e309af59b717774b36..89f2f4b05c1732960bb844d3e26ec7c4
  
 +    // Paper start - Teleport API
 +    @org.jetbrains.annotations.ApiStatus.Experimental
-+    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, boolean dismounted, @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull RelativeTeleportFlag> teleportFlagSet) {
++    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, boolean dismounted, @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> teleportFlagSet) {
 +        super(player, from, to);
 +
 +        this.dismounted = dismounted;
@@ -278,7 +278,7 @@ index 113e620ce38bb8ff97cf24e309af59b717774b36..89f2f4b05c1732960bb844d3e26ec7c4
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
 +    @NotNull
-+    public java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull RelativeTeleportFlag> getRelativeTeleportationFlags() {
++    public java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
 +        return this.teleportFlagSet;
 +    }
 +    // Paper end
