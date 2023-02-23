@@ -459,8 +459,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.PaperConfigurations;
++import io.papermc.paper.plugin.entrypoint.Entrypoint;
++import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
 +import joptsimple.OptionSet;
++import net.minecraft.server.dedicated.DedicatedServer;
 +import org.bukkit.configuration.file.YamlConfiguration;
++import org.bukkit.craftbukkit.CraftServer;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +import org.slf4j.Logger;
@@ -544,6 +550,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return updateDirectory;
 +    }
 +
++    public static void load(OptionSet optionSet) throws Exception {
++        // We have to load the bukkit configuration inorder to get the update folder location.
++        io.papermc.paper.plugin.PluginInitializerManager pluginSystem = io.papermc.paper.plugin.PluginInitializerManager.init(optionSet);
++        // Register the default plugin directory
++        io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.DirectoryProviderSource.INSTANCE, pluginSystem.pluginDirectoryPath());
++        @SuppressWarnings("unchecked")
++        java.util.List<File> files = (java.util.List<File>) optionSet.valuesOf("add-plugin");
++        // Register plugins from the flag
++        io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.PluginFlagProviderSource.INSTANCE, files);
++    }
++
++    // This will be the end of me...
++    public static void reload(DedicatedServer dedicatedServer) {
++        // Wipe the provider storage
++        LaunchEntryPointHandler.INSTANCE.populateProviderStorage();
++        try {
++            load(dedicatedServer.options);
++        } catch (Exception e) {
++            throw new RuntimeException("Failed to reload!", e);
++        }
++
++        boolean hasPaperPlugin = false;
++        for (PluginProvider<?> provider : LaunchEntryPointHandler.INSTANCE.getStorage().get(Entrypoint.PLUGIN).getRegisteredProviders()) {
++            if (provider instanceof PaperPluginParent.PaperServerPluginProvider) {
++                hasPaperPlugin = true;
++                break;
++            }
++        }
++
++        if (hasPaperPlugin) {
++            LOGGER.warn("======== WARNING ========");
++            LOGGER.warn("You are reloading while having Paper plugins installed on your server.");
++            LOGGER.warn("Paper plugins do NOT support being reloaded. This will cause some unexpected issues.");
++            LOGGER.warn("=========================");
++        }
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 new file mode 100644
@@ -668,8 +710,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final Map<Entrypoint<?>, ProviderStorage<?>> storage = new HashMap<>();
 +
 +    LaunchEntryPointHandler() {
-+        this.storage.put(Entrypoint.BOOTSTRAPPER, new BootstrapProviderStorage());
-+        this.storage.put(Entrypoint.PLUGIN, new ServerPluginProviderStorage());
++        this.populateProviderStorage();
 +    }
 +
 +    // Utility
@@ -706,6 +747,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @ApiStatus.Internal
 +    public Map<Entrypoint<?>, ProviderStorage<?>> getStorage() {
 +        return storage;
++    }
++
++    // Reload only
++    public void populateProviderStorage() {
++        this.storage.put(Entrypoint.BOOTSTRAPPER, new BootstrapProviderStorage());
++        this.storage.put(Entrypoint.PLUGIN, new ServerPluginProviderStorage());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/ClassloaderBytecodeModifier.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/ClassloaderBytecodeModifier.java
@@ -6388,17 +6435,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-+            // Paper start
-+
-+            // We have to load the bukkit configuration inorder to get the update folder location.
-+            io.papermc.paper.plugin.PluginInitializerManager pluginSystem = io.papermc.paper.plugin.PluginInitializerManager.init(optionset);
-+            // Register the default plugin directory
-+            io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.DirectoryProviderSource.INSTANCE, pluginSystem.pluginDirectoryPath());
-+            @SuppressWarnings("unchecked")
-+            java.util.List<File> files = (java.util.List<File>) optionset.valuesOf("add-plugin");
-+            // Register plugins from the flag
-+            io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.PluginFlagProviderSource.INSTANCE, files);
-+            // Paper end
++            io.papermc.paper.plugin.PluginInitializerManager.load(optionset); // Paper
              Bootstrap.bootStrap();
              Bootstrap.validate();
              Util.startTimerHackThread();
@@ -6466,6 +6503,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.pluginManager.enablePlugin(plugin);
          } catch (Throwable ex) {
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
+                 "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
+             ));
+         }
++        io.papermc.paper.plugin.PluginInitializerManager.reload(this.console); // Paper
+         this.loadPlugins();
+         this.enablePlugins(PluginLoadOrder.STARTUP);
+         this.enablePlugins(PluginLoadOrder.POSTWORLD);
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
