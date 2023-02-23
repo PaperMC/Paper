@@ -7,7 +7,7 @@ Also don't fire level events or game events if stalactite
 drip is cancelled
 
 diff --git a/src/main/java/net/minecraft/world/level/block/CauldronBlock.java b/src/main/java/net/minecraft/world/level/block/CauldronBlock.java
-index 53089c3a36bf2c0ec1bc9b436884deff0c30f028..46846ac9981e447fc6886aecf82563378a4f5548 100644
+index 53089c3a36bf2c0ec1bc9b436884deff0c30f028..2f85b893dd0abc39fcedec65acc89e1567faf6f0 100644
 --- a/src/main/java/net/minecraft/world/level/block/CauldronBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CauldronBlock.java
 @@ -36,10 +36,18 @@ public class CauldronBlock extends AbstractCauldronBlock {
@@ -16,7 +16,7 @@ index 53089c3a36bf2c0ec1bc9b436884deff0c30f028..46846ac9981e447fc6886aecf8256337
              if (precipitation == Biome.Precipitation.RAIN) {
 -                world.setBlockAndUpdate(pos, Blocks.WATER_CAULDRON.defaultBlockState());
 +                // Paper start - call event for initial fill
-+                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.WATER_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) {
++                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.WATER_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL, false)) { // avoid duplicate game event
 +                    return;
 +                }
 +                // Paper end
@@ -24,7 +24,7 @@ index 53089c3a36bf2c0ec1bc9b436884deff0c30f028..46846ac9981e447fc6886aecf8256337
              } else if (precipitation == Biome.Precipitation.SNOW) {
 -                world.setBlockAndUpdate(pos, Blocks.POWDER_SNOW_CAULDRON.defaultBlockState());
 +                // Paper start - call event for initial fill
-+                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.POWDER_SNOW_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) {
++                if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.POWDER_SNOW_CAULDRON.defaultBlockState(), null, CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL, false)) { // avoid duplicate game event
 +                    return;
 +                }
 +                // Paper end
@@ -54,15 +54,30 @@ index 53089c3a36bf2c0ec1bc9b436884deff0c30f028..46846ac9981e447fc6886aecf8256337
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
-index 24d2da792bc498adf4251555a538df4cafe2e827..1a7cb12fd3f183c00079d679452a01b8df8d2bbb 100644
+index 24d2da792bc498adf4251555a538df4cafe2e827..14164aa59fa5e315788cd7a207228081a05fd18f 100644
 --- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
-@@ -91,7 +91,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+@@ -91,7 +91,13 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
      }
  
      // CraftBukkit start
 -    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, Entity entity, CauldronLevelChangeEvent.ChangeReason reason) {
++    // Paper start
 +    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason) { // Paper - entity is nullable
++        return changeLevel(iblockdata, world, blockposition, newBlock, entity, reason, true);
++    }
++
++    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent) { // Paper - entity is nullable
++    // Paper end
          CraftBlockState newState = CraftBlockStates.getBlockState(world, blockposition);
          newState.setData(newBlock);
  
+@@ -104,7 +110,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+             return false;
+         }
+         newState.update(true);
+-        world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(newBlock));
++        if (sendGameEvent) world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(newBlock)); // Paper
+         return true;
+     }
+     // CraftBukkit end
