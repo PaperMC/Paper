@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: viktorhrekh <viktorhrekh@viesoft.dev>
+Date: Fri, 24 Feb 2023 11:56:04 +0200
+Subject: [PATCH] Allow plugin bootstrap to provide plugin of other type than
+ the plugin main if allowed in meta
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
+index 3808f5a9abc9f084cbabfc4cb95394cc37aaf4bb..c5f90af7d648452f0cff3c2ceb84ec7353737874 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
+@@ -49,6 +49,7 @@ public class PaperPluginMeta implements PluginMeta {
+     private List<LoadConfiguration> loadAfter = List.of();
+     private List<String> provides = List.of();
+     private boolean hasOpenClassloader = false;
++    private boolean allowsWrapping = false;
+     @Required
+     private String version;
+     private String description;
+@@ -217,6 +218,10 @@ public class PaperPluginMeta implements PluginMeta {
+         return this.loader;
+     }
+ 
++    public boolean getAllowsWrapping() {
++        return allowsWrapping;
++    }
++
+     public boolean hasOpenClassloader() {
+         return this.hasOpenClassloader;
+     }
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
+index a0773c6d24de1f2ce1f0d949cba26b9997b696e6..676371373e9111491eaab291a0cadee988f1aad8 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
+@@ -1,18 +1,18 @@
+ package io.papermc.paper.plugin.provider.type.paper;
+ 
+ import com.destroystokyo.paper.util.SneakyThrow;
+-import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
+-import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
+-import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
+-import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
+-import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
+-import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
+ import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
+ import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
++import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
++import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
+ import io.papermc.paper.plugin.provider.PluginProvider;
+ import io.papermc.paper.plugin.provider.ProviderStatus;
+ import io.papermc.paper.plugin.provider.ProviderStatusHolder;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
+ import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
++import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
+ import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
+ import io.papermc.paper.plugin.provider.util.ProviderUtil;
+ import org.bukkit.plugin.java.JavaPlugin;
+@@ -172,9 +172,12 @@ public class PaperPluginParent {
+                     plugin = bootstrap.createPlugin(PaperPluginParent.this.context);
+                 }
+ 
+-                // Don't allow plugins to load plugins other than the one defined in main. This restriction might not be necessary.
+-                if (!plugin.getClass().isAssignableFrom(Class.forName(PaperPluginParent.this.description.getMainClass(), true, plugin.getClass().getClassLoader()))) {
+-                    throw new IllegalArgumentException("Plugin provided must be the same type as main defined in plugin configuration!");
++                // Bypass the check if wrapping (returning class that does not inherit from the plugin main) is allowed for this plugin.
++                if (!getMeta().getAllowsWrapping()) {
++                    // Don't allow plugins to load plugins other than the one defined in main. This restriction might not be necessary.
++                    if (!plugin.getClass().isAssignableFrom(Class.forName(PaperPluginParent.this.description.getMainClass(), true, plugin.getClass().getClassLoader()))) {
++                        throw new IllegalArgumentException("Plugin provided must be the same type as main defined in plugin configuration!");
++                    }
+                 }
+ 
+                 this.status = ProviderStatus.INITIALIZED;
