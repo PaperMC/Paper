@@ -760,16 +760,18 @@ index 0000000000000000000000000000000000000000..b38e1e0f3d3055086f51bb191fd4b60e
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java b/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6c0f2c315387734f8dd4a7eca633aa0a9856dd17
+index 0000000000000000000000000000000000000000..48bc745ca9632fc46b5f786ff570434702eb47f2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.plugin.entrypoint;
 +
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.storage.BootstrapProviderStorage;
 +import io.papermc.paper.plugin.storage.ProviderStorage;
 +import io.papermc.paper.plugin.storage.ServerPluginProviderStorage;
++import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
++import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.HashMap;
@@ -782,9 +784,11 @@ index 0000000000000000000000000000000000000000..6c0f2c315387734f8dd4a7eca633aa0a
 +
 +    public static final LaunchEntryPointHandler INSTANCE = new LaunchEntryPointHandler();
 +    private final Map<Entrypoint<?>, ProviderStorage<?>> storage = new HashMap<>();
++    private final Object2BooleanMap<Entrypoint<?>> enteredMap = new Object2BooleanOpenHashMap<>();
 +
 +    LaunchEntryPointHandler() {
 +        this.populateProviderStorage();
++        this.enteredMap.defaultReturnValue(false);
 +    }
 +
 +    // Utility
@@ -800,6 +804,7 @@ index 0000000000000000000000000000000000000000..6c0f2c315387734f8dd4a7eca633aa0a
 +        }
 +
 +        storage.enter();
++        this.enteredMap.put(entrypoint, true);
 +    }
 +
 +    @Override
@@ -821,6 +826,10 @@ index 0000000000000000000000000000000000000000..6c0f2c315387734f8dd4a7eca633aa0a
 +    @ApiStatus.Internal
 +    public Map<Entrypoint<?>, ProviderStorage<?>> getStorage() {
 +        return storage;
++    }
++
++    public boolean hasEntered(Entrypoint<?> entrypoint) {
++        return this.enteredMap.getBoolean(entrypoint);
 +    }
 +
 +    // Reload only
