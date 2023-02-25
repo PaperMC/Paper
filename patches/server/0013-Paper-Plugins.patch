@@ -759,16 +759,18 @@ index 0000000000000000000000000000000000000000..b38e1e0f3d3055086f51bb191fd4b60e
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java b/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6c0f2c315387734f8dd4a7eca633aa0a9856dd17
+index 0000000000000000000000000000000000000000..48bc745ca9632fc46b5f786ff570434702eb47f2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/LaunchEntryPointHandler.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.plugin.entrypoint;
 +
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.storage.BootstrapProviderStorage;
 +import io.papermc.paper.plugin.storage.ProviderStorage;
 +import io.papermc.paper.plugin.storage.ServerPluginProviderStorage;
++import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
++import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.HashMap;
@@ -781,9 +783,11 @@ index 0000000000000000000000000000000000000000..6c0f2c315387734f8dd4a7eca633aa0a
 +
 +    public static final LaunchEntryPointHandler INSTANCE = new LaunchEntryPointHandler();
 +    private final Map<Entrypoint<?>, ProviderStorage<?>> storage = new HashMap<>();
++    private final Object2BooleanMap<Entrypoint<?>> enteredMap = new Object2BooleanOpenHashMap<>();
 +
 +    LaunchEntryPointHandler() {
 +        this.populateProviderStorage();
++        this.enteredMap.defaultReturnValue(false);
 +    }
 +
 +    // Utility
@@ -799,6 +803,7 @@ index 0000000000000000000000000000000000000000..6c0f2c315387734f8dd4a7eca633aa0a
 +        }
 +
 +        storage.enter();
++        this.enteredMap.put(entrypoint, true);
 +    }
 +
 +    @Override
@@ -820,6 +825,10 @@ index 0000000000000000000000000000000000000000..6c0f2c315387734f8dd4a7eca633aa0a
 +    @ApiStatus.Internal
 +    public Map<Entrypoint<?>, ProviderStorage<?>> getStorage() {
 +        return storage;
++    }
++
++    public boolean hasEntered(Entrypoint<?> entrypoint) {
++        return this.enteredMap.getBoolean(entrypoint);
 +    }
 +
 +    // Reload only
@@ -7126,17 +7135,24 @@ index ca70cd2e76c94f7a284c9af47c64252855f070a4..b366389fd1aed47e04884e9e495df83e
          validate(REGISTRY);
      }
 diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
-index 1eabd8b5a99850298838b11ba97e3d220f444378..8ff786c366332588a2df053438f23cc9fb7e2b84 100644
+index 1eabd8b5a99850298838b11ba97e3d220f444378..9e0f959b2966bf41463b4102664030fc0d4292e2 100644
 --- a/src/main/java/net/minecraft/server/Bootstrap.java
 +++ b/src/main/java/net/minecraft/server/Bootstrap.java
-@@ -76,7 +76,11 @@ public class Bootstrap {
+@@ -67,6 +67,7 @@ public class Bootstrap {
+             if (BuiltInRegistries.REGISTRY.keySet().isEmpty()) {
+                 throw new IllegalStateException("Unable to load registries");
+             } else {
++                io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping (before any registry is populated)
+                 FireBlock.bootStrap();
+                 ComposterBlock.bootStrap();
+                 if (EntityType.getKey(EntityType.PLAYER) == null) {
+@@ -76,7 +77,10 @@ public class Bootstrap {
                      EntitySelectorOptions.bootStrap();
                      DispenseItemBehavior.bootStrap();
                      CauldronInteraction.bootStrap();
 -                    BuiltInRegistries.bootStrap();
 +                    // Paper start
 +                    BuiltInRegistries.bootStrap(() -> {
-+                        io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
 +                    });
 +                    // Paper end
                      CreativeModeTabs.validate();

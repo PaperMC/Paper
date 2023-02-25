@@ -7,7 +7,7 @@ Currently includes generated key holder classes for types
 used in the Registry Modification API
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 948bd84db9923ef43cf753b7b72bf4d0081ab43a..4ee1aed72727e911bff4ac91bcacfd8eee87ecfc 100644
+index 479865c7ae668b061a2e035de719a2ef98c5b0bf..b9bf992867115fe6e84091a1a0b1f220de751699 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -1,6 +1,7 @@
@@ -85,19 +85,22 @@ index 0000000000000000000000000000000000000000..2512dba27edfdccbc4430815b6cba048
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c4b30b16ce4db754b958c493ad86d0863592c263
+index 0000000000000000000000000000000000000000..5dde0eac9aa6354f71a910aff1d5e484deef0a5d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Keyed;
 +import org.bukkit.GameEvent;
++import org.bukkit.MusicInstrument;
 +import org.bukkit.block.Biome;
++import org.bukkit.enchantments.Enchantment;
 +import org.bukkit.generator.structure.Structure;
 +import org.bukkit.generator.structure.StructureType;
 +import org.bukkit.inventory.meta.trim.TrimMaterial;
 +import org.bukkit.inventory.meta.trim.TrimPattern;
++import org.bukkit.potion.PotionEffectType;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +import static io.papermc.paper.registry.RegistryKeyImpl.create;
@@ -131,6 +134,21 @@ index 0000000000000000000000000000000000000000..c4b30b16ce4db754b958c493ad86d086
 +     * @see io.papermc.paper.registry.keys.StructureTypeKeys
 +     */
 +    RegistryKey<StructureType> STRUCTURE_TYPE = create("worldgen/structure_type");
++    /**
++     * Built-in registry for instruments.
++     * @see io.papermc.paper.registry.keys.MusicInstrumentKeys
++     */
++    RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
++    /**
++     * Built-in registry for enchantments.
++     * @see io.papermc.paper.registry.keys.EnchantmentKeys
++     */
++    RegistryKey<Enchantment> ENCHANTMENT = create("enchantment");
++    /**
++     * Built-in registry for potion effect types (mob effects).
++     * @see io.papermc.paper.registry.keys.MobEffectKeys
++     */
++    RegistryKey<PotionEffectType> MOB_EFFECT = create("mob_effect");
 +
 +    /* ********************** *
 +     * Data-driven Registries *
@@ -183,7 +201,7 @@ index 0000000000000000000000000000000000000000..9ad300fa1668cb59bbd85ff8091591db
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/TypedKey.java b/src/main/java/io/papermc/paper/registry/TypedKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..271454cd1b92ada4301025b57348ea77da9116a1
+index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a233bf3855e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/TypedKey.java
 @@ -0,0 +1,44 @@
@@ -227,13 +245,13 @@ index 0000000000000000000000000000000000000000..271454cd1b92ada4301025b57348ea77
 +     * @return a new key for the value key and registry key
 +     */
 +    @ApiStatus.Experimental
-+    static <T extends Keyed> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
++    static <T> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
 +        return new TypedKeyImpl<>(key, registryKey);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3c3fd73f7742bb8602e2f9164dd4c1208a412255
+index 0000000000000000000000000000000000000000..1a97b3359c4ece5c29131da7c3f208aaa8fab66e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
 @@ -0,0 +1,8 @@
@@ -243,7 +261,7 @@ index 0000000000000000000000000000000000000000..3c3fd73f7742bb8602e2f9164dd4c120
 +import net.kyori.adventure.key.Keyed;
 +import org.jetbrains.annotations.NotNull;
 +
-+record TypedKeyImpl<T extends Keyed>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
++record TypedKeyImpl<T>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
 +}
 diff --git a/src/main/java/org/bukkit/MinecraftExperimental.java b/src/main/java/org/bukkit/MinecraftExperimental.java
 index 2365a8c620be709b280fb08855752bb0995838fc..b63e24b3c4d2f1a08e39434caa527bb2e0edea22 100644

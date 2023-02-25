@@ -5,18 +5,18 @@ Subject: [PATCH] Improve Registry
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 13270b2197c594dc03d089aea46aa410dd9efd13..493d054cdda04bc08ab610a09c2a1d0290ae046c 100644
+index 7de20b041a0ec88043275f59546a892f26bdaff1..d6ae37baabf780abbd5d543b3c382237ac595360 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -126,6 +126,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -86,6 +86,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
  
-     private final Class<? super B> bukkitClass;
+     private final Class<?> bukkitClass; // Paper - this is just the class that needs to load to its static fields are initialized first
      private final Map<NamespacedKey, B> cache = new HashMap<>();
 +    private final Map<B, NamespacedKey> byValue = new java.util.IdentityHashMap<>(); // Paper - improve Registry
      private final net.minecraft.core.Registry<M> minecraftRegistry;
-     private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
-     private boolean init;
-@@ -170,6 +171,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+     private final BiFunction<? super NamespacedKey, M, B> minecraftToBukkit; // Paper
+     public final io.papermc.paper.registry.RegistryView<B> view; // Paper
+@@ -132,6 +133,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
          }
  
          this.cache.put(namespacedKey, bukkit);
@@ -24,7 +24,7 @@ index 13270b2197c594dc03d089aea46aa410dd9efd13..493d054cdda04bc08ab610a09c2a1d02
  
          return bukkit;
      }
-@@ -192,4 +194,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -154,4 +156,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
  
          return this.minecraftToBukkit.apply(namespacedKey, minecraft);
      }
@@ -61,10 +61,10 @@ index 5a570bae1262f768d86a6078bfded427294ed135..bf13fe2f858ee35c84c5a1f3fb2f7df6
      }
  }
 diff --git a/src/test/java/org/bukkit/registry/PerRegistryTest.java b/src/test/java/org/bukkit/registry/PerRegistryTest.java
-index 1c4966520b6401e6571aa44d5934dfa280bc80e3..010de6fbb75eb5d51639695d260f916072fdb22d 100644
+index 4e4ea083063daf22f1bb785ef212958ea889c43b..dad7935f9a4c7c8bb2a755cc0631330a59834233 100644
 --- a/src/test/java/org/bukkit/registry/PerRegistryTest.java
 +++ b/src/test/java/org/bukkit/registry/PerRegistryTest.java
-@@ -49,19 +49,22 @@ public class PerRegistryTest extends AbstractTestingBase {
+@@ -48,19 +48,22 @@ public class PerRegistryTest extends AbstractTestingBase {
  
      @ParameterizedTest
      @MethodSource("data")
@@ -91,7 +91,7 @@ index 1c4966520b6401e6571aa44d5934dfa280bc80e3..010de6fbb75eb5d51639695d260f9160
  
              this.assertSameMatchWithKeyMessage(registry, element, key.toString()); // namespace:key
              this.assertSameMatchWithKeyMessage(registry, element, key.getKey()); // key
-@@ -72,7 +75,7 @@ public class PerRegistryTest extends AbstractTestingBase {
+@@ -71,7 +74,7 @@ public class PerRegistryTest extends AbstractTestingBase {
          });
      }
  
