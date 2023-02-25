@@ -431,7 +431,7 @@ index db343a2f482ac375078610f0875692861f412ee2..a2b95478bc5eea8a2edf6426303d1b1e
  
 diff --git a/src/main/java/io/papermc/paper/registry/APIConverters.java b/src/main/java/io/papermc/paper/registry/APIConverters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3e2a969fc45b5c9abb817082b289405243f84705
+index 0000000000000000000000000000000000000000..e0c6070868240b813b60f2db4c8e15f9a3cd93da
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/APIConverters.java
 @@ -0,0 +1,59 @@
@@ -463,7 +463,7 @@ index 0000000000000000000000000000000000000000..3e2a969fc45b5c9abb817082b2894052
 +    public static void initializeConverterFunctions() {
 +    }
 +
-+    private static <API, NMS> void registerConverterFunction(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Function<? extends Registry<NMS>, ? extends Converters.Converter<API, NMS>> converterFunction) {
++    public static <API, NMS> void registerConverterFunction(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Function<? extends Registry<NMS>, ? extends Converters.Converter<API, NMS>> converterFunction) {
 +        APIConverters.CONVERTER_FUNCTIONS.put(registryKey, converterFunction);
 +    }
 +
@@ -1834,62 +1834,50 @@ index 0000000000000000000000000000000000000000..5061a7ec7c488217f7a9e4dbe1d48495
 +    record TestContext(int i) {
 +    }
 +}
-diff --git a/src/test/java/io/papermc/paper/registry/RegistryTest.java b/src/test/java/io/papermc/paper/registry/RegistryTest.java
+diff --git a/src/test/java/io/papermc/paper/registry/ConverterTest.java b/src/test/java/io/papermc/paper/registry/ConverterTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6c1dfa698bb7d47520d46d37a1a1ef62fc4d1dcb
+index 0000000000000000000000000000000000000000..5ea8873022a6aeb22a9114dac92b88c0e9e1cb23
 --- /dev/null
-+++ b/src/test/java/io/papermc/paper/registry/RegistryTest.java
-@@ -0,0 +1,70 @@
++++ b/src/test/java/io/papermc/paper/registry/ConverterTest.java
+@@ -0,0 +1,79 @@
 +package io.papermc.paper.registry;
 +
-+import io.papermc.paper.registry.key.KeyAPI;
 +import io.papermc.paper.registry.key.RegistryKey;
++import io.papermc.paper.registry.key.RegistryKeyImpls;
 +import io.papermc.paper.registry.key.ResourceKey;
 +import io.papermc.paper.registry.key.ResourceKeyImpl;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.Registry;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.level.biome.Biomes;
 +import org.bukkit.block.Biome;
-+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.support.AbstractTestingBase;
 +import org.junit.Assert;
++import org.junit.Before;
 +import org.junit.Test;
 +
-+public class RegistryTest extends AbstractTestingBase {
++import java.util.function.Function;
 +
-+    @Test
-+    public void testRegistryKeyImpl() {
++public class ConverterTest extends AbstractTestingBase {
++    Converters.CachedConverter<Key, ResourceLocation> keyConverter;
++    RegistryKey.EnumMutableRegistryKey<RegistryKey.RegistryLayerType, Biome> registryKey;
++
++    @Before
++    public void before() {
++        this.keyConverter = Converters.KEY_RESOURCE_LOCATION_CONVERTER.get();
++        RegistryAPI.BeforeBootstrapAPI.launchAPI();
 +        RegistryAPI.launchAPI();
-+        ResourceKey<? extends ExtendedRegistry<Biome>> resourceKey = ResourceKey.<Biome>create(Key.key("some", "any"));
-+        ResourceKey<Biome> biomeResourceKey = ResourceKey.create(resourceKey, Key.key("something", "other"));
-+        Assert.assertNotNull(biomeResourceKey);
++        RegistryAPI.getApiStorage().registerAPIClass(Biome.class, Registries.BIOME);
++        this.registryKey = ExtendedRegistry.API.registryKeyFactory.createEnumMutable(Biome.class, RegistryKey.RegistryLayerType.WORLDGEN.class);
++        Function<Registry<net.minecraft.world.level.biome.Biome>, Converters.Converter<Biome, net.minecraft.world.level.biome.Biome>> converterFunc = registry -> {
++            return Converters.Converter.create(biome -> BIOMES.get(Biomes.FOREST), biome -> Biome.FOREST);
++        };
++        APIConverters.registerConverterFunction(this.registryKey, converterFunc);
 +    }
-+/*
-+    @Test
-+    public void testRegistryConversion() {
-+        Registry<net.minecraft.world.level.biome.Biome> biomeRegistry = AbstractTestingBase.BIOMES;
-+
-+        Converters.Converter<Biome, net.minecraft.world.level.biome.Biome> converter = Converters.Converter.createCached(
-+            apiBiome -> {
-+                return biomeRegistry.get(CraftNamespacedKey.toMinecraft(apiBiome.getKey()));
-+            }, nmsBiome -> {
-+                Biome biome = org.bukkit.Registry.BIOME.get(CraftNamespacedKey.fromMinecraft(biomeRegistry.getKey(nmsBiome)));
-+                return (biome == null) ? Biome.CUSTOM : biome;
-+            }
-+        );
-+
-+        ExtendedRegistry<Biome> apiRegistry = ExtendedRegistryImpl.create(biomeRegistry, converter);
-+        int i = apiRegistry.numericalKey(Biome.BEACH);
-+        ResourceKey<Biome> biomeResourceKey = apiRegistry.resourceKey(Biome.BEACH).get();
-+        System.out.println("numerical: " + i);
-+        System.out.println("resourceKey: " + biomeResourceKey);
-+    }
-+ */
 +
 +    @Test
-+    public void testKeys() {
-+        Converters.CachedConverter<Key, ResourceLocation> keyConverter = Converters.KEY_RESOURCE_LOCATION_CONVERTER.get();
++    public void testKeyConverter() {
 +        Key apiKey = Key.key("test", "example");
 +        ResourceLocation resourceLocation = keyConverter.convertAPI(apiKey);
 +        Key key = keyConverter.convertNMS(resourceLocation);
@@ -1897,9 +1885,7 @@ index 0000000000000000000000000000000000000000..6c1dfa698bb7d47520d46d37a1a1ef62
 +    }
 +
 +    @Test
-+    public void testResourceKeyConversion() {
-+        KeyAPI.launchAPI();
-+        Converters.CachedConverter<Key, ResourceLocation> keyConverter = Converters.KEY_RESOURCE_LOCATION_CONVERTER.get();
++    public void testResourceKeyConverter() {
 +        Converters.CachedConverter<ResourceKey<Object>, net.minecraft.resources.ResourceKey<Object>> resourceKeyConverter = ResourceKeyImpl.makeConverter(keyConverter);
 +        Key regKey = Key.key("test", "example_registry");
 +        Key key = Key.key("test", "example");
@@ -1908,6 +1894,73 @@ index 0000000000000000000000000000000000000000..6c1dfa698bb7d47520d46d37a1a1ef62
 +        net.minecraft.resources.ResourceKey<Object> objectResourceKey = resourceKeyConverter.convertAPI(exampleResKey);
 +        ResourceKey<Object> objectResourceKey1 = resourceKeyConverter.convertNMS(objectResourceKey);
 +        Assert.assertEquals(exampleResKey, objectResourceKey1);
++    }
++
++    @Test
++    public void testRegistryKeyConverter() {
++        Converters.CachedConverter<RegistryKey<RegistryKey.RegistryLayerType, Biome>, net.minecraft.resources.ResourceKey<? extends Registry<Biome>>> converter = RegistryKeyImpls.createConverter(keyConverter);
++        net.minecraft.resources.ResourceKey<? extends Registry<Biome>> resourceKey = converter.convertAPI(registryKey);
++        RegistryKey<RegistryKey.RegistryLayerType, Biome> registryLayerTypeBiomeRegistryKey = converter.convertNMS(resourceKey);
++        Assert.assertEquals(registryKey, registryLayerTypeBiomeRegistryKey);
++    }
++
++    @Test
++    public void testAPIConverter() {
++        Converters.Converter<Biome, net.minecraft.world.level.biome.Biome> apiConverter = APIConverters.getOrCreateAPIConverter(registryKey, BIOMES);
++        Assert.assertNotNull(apiConverter);
++    }
++
++    @Test
++    public void testRegistryConverter() {
++        Converters.Converter<Biome, net.minecraft.world.level.biome.Biome> apiConverter = APIConverters.getOrCreateAPIConverter(registryKey, BIOMES);
++        Converters.Converter<ExtendedRegistry<Biome>, Registry<net.minecraft.world.level.biome.Biome>> extendedRegistryRegistryConverter = ExtendedRegistryImpl.makeImmutableConverter(apiConverter);
++        ExtendedRegistry<Biome> biomes = extendedRegistryRegistryConverter.convertNMS(BIOMES);
++        Registry<net.minecraft.world.level.biome.Biome> biomes1 = extendedRegistryRegistryConverter.convertAPI(biomes);
++        Assert.assertEquals(biomes1, BIOMES);
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/registry/RegistryTest.java b/src/test/java/io/papermc/paper/registry/RegistryTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..acb889ea84b8ff02c0faa28a814f98790ad298bf
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/registry/RegistryTest.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.registry;
++
++import io.papermc.paper.registry.key.RegistryKey;
++import io.papermc.paper.registry.key.ResourceKey;
++import net.kyori.adventure.key.Key;
++import org.bukkit.block.Biome;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.Test;
++
++public class RegistryTest extends AbstractTestingBase {
++    @Before
++    public void before() {
++        RegistryAPI.BeforeBootstrapAPI.launchAPI();
++        RegistryAPI.launchAPI();
++    }
++
++    @Test
++    public void testResourceKeyImpl() {
++        ResourceKey<? extends ExtendedRegistry<Biome>> resourceKey = ResourceKey.<Biome>create(Key.key("some", "any"));
++        Assert.assertNotNull(resourceKey);
++        ResourceKey<Biome> biomeResourceKey = ResourceKey.create(resourceKey, Key.key("something", "other"));
++        Assert.assertNotNull(biomeResourceKey);
++    }
++
++    @Test
++    public void testRegistryKeyFactory() {
++        RegistryKey.RegistryKeyFactory registryKeyFactory = ExtendedRegistry.API.registryKeyFactory;
++        Assert.assertNotNull(registryKeyFactory);
++        RegistryKey.MutableRegistryKey<RegistryKey.RegistryLayerType, Biome> immutable = registryKeyFactory.createMutable(Biome.class, RegistryKey.RegistryLayerType.STATIC.class);
++        Assert.assertNotNull(immutable);
++        RegistryKey.MutableRegistryKey<RegistryKey.RegistryLayerType, Biome> mutable = registryKeyFactory.createMutable(Biome.class, RegistryKey.RegistryLayerType.STATIC.class);
++        Assert.assertNotNull(mutable);
++        RegistryKey.EnumMutableRegistryKey<RegistryKey.RegistryLayerType, Biome> enumMutable = registryKeyFactory.createEnumMutable(Biome.class, RegistryKey.RegistryLayerType.STATIC.class);
++        Assert.assertNotNull(enumMutable);
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java

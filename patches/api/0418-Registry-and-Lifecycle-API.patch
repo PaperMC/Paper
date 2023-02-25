@@ -606,10 +606,10 @@ index f29e76a6b66ddfec12ddf8db6dcb2df6083b5982..8ebd28fb9709f789e9bc664c737bb9e1
          return this.key;
 diff --git a/src/main/java/io/papermc/paper/registry/WritableRegistry.java b/src/main/java/io/papermc/paper/registry/WritableRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3aa9237231b6ed875a46baed805fd0c7ef31bf63
+index 0000000000000000000000000000000000000000..67d52f48d9d5deefb5d2a2ddc4550d8ceb3256b3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/WritableRegistry.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,46 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.registry.key.ResourceKey;
@@ -617,18 +617,40 @@ index 0000000000000000000000000000000000000000..3aa9237231b6ed875a46baed805fd0c7
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * Provides functionality to add user defined game content
-+ * @param <T>
++ * An {@link ExtendedRegistry} implementation which provides functionality to add a user defined game content.
 + *
++ * @param <T> A type this {@link WritableRegistry} operates with.
 + * @see io.papermc.paper.registry.access.WritableRegistryAccess
 + */
 +public interface WritableRegistry<T> extends ExtendedRegistry<T> {
++    /**
++     * Associates the given {@link T} with a given {@link net.kyori.adventure.key.Key} and a given numerical key.
++     *
++     * @param numericalKey A numerical key you want to assign your {@link T} value to.
++     * @param key A {@link ResourceKey} you want to assign your {@link T} value to.
++     * @param value A {@link T} value you want to register.
++     * @return A {@link Reference} containing registered {@link T} instance.
++     */
 +    @NotNull
 +    Reference<T> registerMapping(int numericalKey, @NotNull ResourceKey<T> key, @NotNull T value);
 +
++    /**
++     * Same as {@link WritableRegistry#registerMapping(int, ResourceKey, Object)} but computes the numerical key automatically.
++     *
++     * @param key A {@link ResourceKey} you want to assign your {@link T} value to.
++     * @param value A {@link T} value you want to register.
++     * @return A {@link Reference} containing registered {@link Enum} instance.
++     */
 +    @NotNull
 +    Reference<T> register(@NotNull ResourceKey<T> key, @NotNull T value);
 +
++    /**
++     * Same as {@link WritableRegistry#register(ResourceKey, Object)} but with a {@link Key} instead.
++     *
++     * @param key A {@link Key} you want to assign your {@link T} value to.
++     * @param value A {@link T} value you want to register.
++     * @return A {@link Reference} containing registered {@link Enum} instance.
++     */
 +    @NotNull
 +    default Reference<T> register(@NotNull Key key, @NotNull T value) {
 +        return this.register(ResourceKey.create(this.resourceKey(), key), value);
@@ -636,10 +658,10 @@ index 0000000000000000000000000000000000000000..3aa9237231b6ed875a46baed805fd0c7
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java b/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..29492c4071b9f1e161b7a9c24c0139981ff78a6c
+index 0000000000000000000000000000000000000000..a431ac040f5dd0858b2e961fbdca30c25e4cd4a8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.registry.access;
 +
 +import io.papermc.paper.registry.ExtendedRegistry;
@@ -654,6 +676,14 @@ index 0000000000000000000000000000000000000000..29492c4071b9f1e161b7a9c24c013998
 + *  it means that {@link #registry(RegistryKey)} may return {@link Optional#empty()} based on where you get that {@link RegistryAccess} from.
 + */
 +public interface RegistryAccess {
++
++    /**
++     * Returns a {@link ExtendedRegistry} which you can access to. Note that what types of {@link ExtendedRegistry} this method provides depends on a given {@link RegistryAccess}.
++     *
++     * @param key A given {@link RegistryKey} of a {@link ExtendedRegistry} you want to access.
++     * @return A {@link ExtendedRegistry} which you can access to.
++     * @param <E> A type this registry operates with.
++     */
 +    @NotNull
 +    <E> Optional<ExtendedRegistry<E>> registry(@NotNull RegistryKey<? extends RegistryKey.RegistryLayerType, E> key);
 +}
@@ -745,10 +775,10 @@ index 0000000000000000000000000000000000000000..aba41ff94cb99f5db183398ce9792210
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java b/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1df1797405a3329bd2b6ba87c4785b95e1b69a08
+index 0000000000000000000000000000000000000000..aa53e205cb6ac3d8f8485c7504400a0875c36c9e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.registry.enums;
 +
 +import io.papermc.paper.registry.ExtendedRegistry;
@@ -757,12 +787,13 @@ index 0000000000000000000000000000000000000000..1df1797405a3329bd2b6ba87c4785b95
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * An {@link ExtendedRegistry} which provides functionality to register an {@link Enum} instances.
++ * Same as {@link io.papermc.paper.registry.WritableRegistry} but for the {@link Enum} registration.
 + *
-+ * @param <T>
++ * @param <T> A type this {@link EnumWritableRegistry} operates with.
 + */
 +public interface EnumWritableRegistry<T extends Enum<T> & Keyed> extends ExtendedRegistry<T> {
 +    /**
++     * Associates the given {@link Enum} with its {@link net.kyori.adventure.key.Key} provided by the {@link Keyed} interface and its numerical key.
 +     *
 +     * @param numericalKey A numerical key you want to assign your {@link Enum} value to.
 +     * @param value An {@link Enum} value you want to register.
@@ -773,6 +804,7 @@ index 0000000000000000000000000000000000000000..1df1797405a3329bd2b6ba87c4785b95
 +
 +    /**
 +     * Same as {@link EnumWritableRegistry#registerMapping(int, Enum)} but computes the numerical key automatically.
++     *
 +     * @param value An {@link Enum} value you want to register.
 +     * @return A {@link Reference} containing registered {@link Enum} instance.
 +     */
@@ -855,7 +887,7 @@ index 0000000000000000000000000000000000000000..447f2e2dbf3558ccb041f151fe4f5233
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/key/ResourceKey.java b/src/main/java/io/papermc/paper/registry/key/ResourceKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f7a790e99f238651ef1c62f667b0a6d4dff62c3
+index 0000000000000000000000000000000000000000..a9b72b1f56c0c28bbf3a5e75db451a2daeb7f65b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/key/ResourceKey.java
 @@ -0,0 +1,73 @@
@@ -867,7 +899,7 @@ index 0000000000000000000000000000000000000000..1f7a790e99f238651ef1c62f667b0a6d
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ *  Represents a key which contains information about its {@link Key} and the {@link Key} of its {@link ExtendedRegistry} it's able to be registered in.
++ * Represents a key which contains information about its {@link Key} and the {@link Key} of its {@link ExtendedRegistry} it's able to be registered in.
 + *
 + * @param <T> A type of element which the {@link ExtendedRegistry} operates with.
 + */
@@ -976,3 +1008,53 @@ index 0000000000000000000000000000000000000000..e09b2f311d9f60cbbe294bd16a5979c0
 +package io.papermc.paper.registry;
 +
 +import org.jetbrains.annotations.ApiStatus;
+diff --git a/src/test/java/io/papermc/paper/registry/SetupAPI.java b/src/test/java/io/papermc/paper/registry/SetupAPI.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9a056c7676dcdf0a04c73c16e7fc5351e0e5257b
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/registry/SetupAPI.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.registry;
++
++import io.papermc.paper.registry.key.RegistryKey;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Since we have Bukkit APIs touching Paper ones, we need to set up them for test to work.
++ */
++public class SetupAPI {
++    /**
++     * Nulls are enough for now.
++     */
++    public static void setup() {
++        ExtendedRegistry.API.registryKeyFactory = new RegistryKey.RegistryKeyFactory() {
++            @Override
++            public <L extends RegistryKey.RegistryLayerType, E> RegistryKey.@NotNull ImmutableRegistryKey<L, E> createImmutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryKey.RegistryLayerType> layerType) {
++                return null;
++            }
++
++            @Override
++            public <L extends RegistryKey.RegistryLayerType, E> RegistryKey.@NotNull MutableRegistryKey<L, E> createMutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryKey.RegistryLayerType> layerType) {
++                return null;
++            }
++
++            @Override
++            public <L extends RegistryKey.RegistryLayerType, E extends Enum<E> & Keyed> RegistryKey.@NotNull EnumMutableRegistryKey<L, E> createEnumMutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryKey.RegistryLayerType> layerType) {
++                return null;
++            }
++        };
++    }
++}
+diff --git a/src/test/java/org/bukkit/TestWorld.java b/src/test/java/org/bukkit/TestWorld.java
+index f64d024f5bbf9482aaddb56597b23b04c66f21bf..0df3f2db306ef36487033cd12783b8a2b25193e7 100644
+--- a/src/test/java/org/bukkit/TestWorld.java
++++ b/src/test/java/org/bukkit/TestWorld.java
+@@ -18,6 +18,7 @@ public final class TestWorld implements InvocationHandler {
+ 
+     static {
+         try {
++            io.papermc.paper.registry.SetupAPI.setup(); // Paper - setup API for test to work
+             io.papermc.paper.testing.TestServer.setup(); // Paper
+ 
+             ImmutableMap.Builder<Method, MethodHandler> methodMap = ImmutableMap.builder();

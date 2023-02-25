@@ -1,7 +1,6 @@
 package io.papermc.testplugin;
 
 import io.papermc.paper.registry.Reference;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
@@ -11,8 +10,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.logging.Level;
 
 public final class TestPlugin extends JavaPlugin implements Listener {
 
@@ -33,9 +30,8 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
-        // Set the custom biome to the position where a player joins the server.
         Player player = e.getPlayer();
-	Biome biome = player.getWorld().biome(player.getLocation());
+	    Biome biome = player.getWorld().biome(player.getLocation());
         System.out.println("joined: " + biome);
     }
 

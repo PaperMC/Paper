@@ -5,7 +5,7 @@ Subject: [PATCH] Biome creation API
 
 
 diff --git a/src/main/java/io/papermc/paper/registry/APIConverters.java b/src/main/java/io/papermc/paper/registry/APIConverters.java
-index 3e2a969fc45b5c9abb817082b289405243f84705..15a12a21ada8f8adf74067b0ca8c0c9db3c2fa73 100644
+index e0c6070868240b813b60f2db4c8e15f9a3cd93da..422b50a1166646c1bfa7f14c458ebb269cee462f 100644
 --- a/src/main/java/io/papermc/paper/registry/APIConverters.java
 +++ b/src/main/java/io/papermc/paper/registry/APIConverters.java
 @@ -9,6 +9,20 @@ import net.minecraft.server.MinecraftServer;
@@ -78,7 +78,7 @@ index 3e2a969fc45b5c9abb817082b289405243f84705..15a12a21ada8f8adf74067b0ca8c0c9d
 +        APIConverters.registerConverterFunction(ExtendedRegistry.BIOME_REGISTRY_KEY, registryConverterFunction);
      }
  
-     private static <API, NMS> void registerConverterFunction(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Function<? extends Registry<NMS>, ? extends Converters.Converter<API, NMS>> converterFunction) {
+     public static <API, NMS> void registerConverterFunction(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Function<? extends Registry<NMS>, ? extends Converters.Converter<API, NMS>> converterFunction) {
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryAPI.java b/src/main/java/io/papermc/paper/registry/RegistryAPI.java
 index ff83ca0c019890cff2185ab7ac3256a7b182ffbc..b22c672b1a1798aebdcbb6ca9e2499bcc6fdafc5 100644
 --- a/src/main/java/io/papermc/paper/registry/RegistryAPI.java
@@ -479,40 +479,50 @@ index b01904021bd4f485aaf03d1d7634b56f134d3099..8d0e3481f7b5450a9a0e7a41fa61b2c0
      // Paper end
  
      @Override
-diff --git a/src/test/java/io/papermc/paper/registry/RegistryTest.java b/src/test/java/io/papermc/paper/registry/RegistryTest.java
-index 6c1dfa698bb7d47520d46d37a1a1ef62fc4d1dcb..7ec828d6d65cd862af0f03db7f31daf1fdc6ba42 100644
---- a/src/test/java/io/papermc/paper/registry/RegistryTest.java
-+++ b/src/test/java/io/papermc/paper/registry/RegistryTest.java
-@@ -67,4 +67,14 @@ public class RegistryTest extends AbstractTestingBase {
-         ResourceKey<Object> objectResourceKey1 = resourceKeyConverter.convertNMS(objectResourceKey);
-         Assert.assertEquals(exampleResKey, objectResourceKey1);
-     }
-+
-+    @Test
-+    public void testRegistryKeyConversion() {
-+        KeyAPI.launchAPI();
-+        RegistryAPI.getApiStorage().registerAPIClass(Biome.class, Registries.BIOME);
-+        RegistryKey.RegistryKeyFactory registryKeyFactory = KeyAPI.createRegistryKeyFactory();
-+        RegistryKey.MutableRegistryKey<RegistryKey.RegistryLayerType.WORLDGEN, Biome> mutable = registryKeyFactory.createMutable(Biome.class, RegistryKey.RegistryLayerType.WORLDGEN.class);
-+        System.out.println("key: " + mutable.key());
-+        System.out.println("registry: " + mutable.registry());
-+    }
- }
 diff --git a/src/test/java/io/papermc/paper/world/biome/BiomeTest.java b/src/test/java/io/papermc/paper/world/biome/BiomeTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..632631d1a7b76e7b12a7cb5a87017181d2e87bb4
+index 0000000000000000000000000000000000000000..c67d8c375fddadc9d0fcb88bfba6bed5a6276bde
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/world/biome/BiomeTest.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,46 @@
 +package io.papermc.paper.world.biome;
 +
++import io.papermc.paper.registry.APIConverters;
++import io.papermc.paper.registry.Converters;
++import io.papermc.paper.registry.ExtendedRegistry;
++import io.papermc.paper.registry.RegistryAPI;
++import io.papermc.paper.registry.enums.EnumWritableRegistry;
++import io.papermc.paper.registry.key.RegistryKey;
++import net.kyori.adventure.key.Key;
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.util.Mth;
++import org.bukkit.block.Biome;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.Assert;
++import org.junit.Before;
 +import org.junit.Test;
 +
-+public class BiomeTest {
++public class BiomeTest extends AbstractTestingBase {
++    Converters.CachedConverter<Key, ResourceLocation> keyConverter;
++    RegistryKey.EnumMutableRegistryKey<RegistryKey.RegistryLayerType, Biome> registryKey;
++
++    @Before
++    public void before() {
++        this.keyConverter = Converters.KEY_RESOURCE_LOCATION_CONVERTER.get();
++        RegistryAPI.BeforeBootstrapAPI.launchAPI();
++        RegistryAPI.launchAPI();
++        APIConverters.initializeConverterFunctions();
++    }
++
 +    @Test
 +    public void test() {
-+        System.out.println(calculateSkyColor(0.7F));
++        RegistryAPI.getApiStorage().registerConverter(ExtendedRegistry.BIOME_REGISTRY_KEY, APIConverters.getOrCreateAPIConverter(ExtendedRegistry.BIOME_REGISTRY_KEY, BIOMES));
++        EnumWritableRegistry<Biome> apiRegistry = RegistryAPI.getApiStorage().getOrCreateRegistry(ExtendedRegistry.BIOME_REGISTRY_KEY, BIOMES);
++        Converters.Converter<ExtendedRegistry<Biome>, Registry<Object>> converter = RegistryAPI.getApiStorage().getConverter(ExtendedRegistry.BIOME_REGISTRY_KEY);
++        Registry<Object> nmsRegistry = converter.convertAPI(apiRegistry);
++        ExtendedRegistry<Biome> biomes = converter.convertNMS(nmsRegistry);
++        Assert.assertEquals(apiRegistry, biomes);
 +    }
 +
 +    protected static int calculateSkyColor(float temperature) {
