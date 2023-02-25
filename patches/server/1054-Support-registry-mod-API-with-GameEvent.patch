@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 25 Feb 2023 21:25:08 -0800
+Subject: [PATCH] Support registry mod API with GameEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+index 9342f034ef590594db046cd9b0810bd4075d8e6b..6c83c097cf7c9d0b985ca4f6abdb1db4de0140cc 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+@@ -60,7 +60,7 @@ public final class PaperRegistries {
+         REGISTRY_ENTRIES = List.of(
+             // built-ins
+             entry(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME),
+-            entry(Registries.GAME_EVENT, RegistryKey.GAME_EVENT, GameEvent.class, CraftGameEvent::new),
++            writable(Registries.GAME_EVENT, RegistryKey.GAME_EVENT, GameEvent.class, CraftGameEvent::new, CraftGameEvent.Builder::new),
+             entry(Registries.INSTRUMENT, RegistryKey.INSTRUMENT, MusicInstrument.class, CraftMusicInstrument::new),
+             entry(Registries.MOB_EFFECT, RegistryKey.MOB_EFFECT, PotionEffectType.class, CraftPotionEffectType::new),
+             entry(Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, StructureType.class, CraftStructureType::new),
+diff --git a/src/main/java/net/minecraft/world/level/gameevent/GameEvent.java b/src/main/java/net/minecraft/world/level/gameevent/GameEvent.java
+index ef0eecd4404fcce4046b53ff9e176ea59978d1ac..c4f8a03aac42507df2d9a84b3acf53887d2eed86 100644
+--- a/src/main/java/net/minecraft/world/level/gameevent/GameEvent.java
++++ b/src/main/java/net/minecraft/world/level/gameevent/GameEvent.java
+@@ -81,7 +81,7 @@ public record GameEvent(int notificationRadius) {
+     }
+ 
+     private static Holder.Reference<GameEvent> register(String id, int range) {
+-        return Registry.registerForHolder(BuiltInRegistries.GAME_EVENT, new ResourceLocation(id), new GameEvent(range));
++        return io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerForHolderWithListeners(BuiltInRegistries.GAME_EVENT, new ResourceLocation(id), new GameEvent(range)); // Paper
+     }
+ 
+     public static record Context(@Nullable Entity sourceEntity, @Nullable BlockState affectedState) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftGameEvent.java b/src/main/java/org/bukkit/craftbukkit/CraftGameEvent.java
+index ac9b4328cd55a68664a3f71186bc9a7be7cd9658..34c63a685606a55936f27dfe4393d23e46d8d20d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftGameEvent.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftGameEvent.java
+@@ -19,10 +19,12 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
+ 
+     private final NamespacedKey key;
+     private final net.minecraft.world.level.gameevent.GameEvent handle;
++    private final net.minecraft.resources.ResourceKey<net.minecraft.world.level.gameevent.GameEvent> handleKey; // Paper
+ 
+     public CraftGameEvent(NamespacedKey key, net.minecraft.world.level.gameevent.GameEvent handle) {
+         this.key = key;
+         this.handle = handle;
++        this.handleKey = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.GAME_EVENT, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(this.key)); // Paper
+     }
+ 
+     @Override
+@@ -58,4 +60,43 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
+     public String toString() {
+         return "CraftGameEvent{key=" + this.key + "}";
+     }
++
++    // Paper start
++    @Override
++    public int getRange() {
++        return this.handle.notificationRadius();
++    }
++
++    @Override
++    public int getVibrationLevel() {
++        return net.minecraft.world.level.gameevent.vibrations.VibrationSystem.getGameEventFrequency(this.handleKey);
++    }
++
++    public static final class Builder implements GameEvent.Builder, io.papermc.paper.registry.PaperRegistryBuilder<net.minecraft.world.level.gameevent.GameEvent, org.bukkit.GameEvent> {
++
++        private int range = 16;
++
++        public Builder(final io.papermc.paper.registry.TypedKey<GameEvent> $, final net.minecraft.world.level.gameevent.@org.checkerframework.checker.nullness.qual.Nullable GameEvent nms) {
++            if (nms != null) {
++                this.range = nms.notificationRadius();
++            }
++        }
++
++        @Override
++        public int range() {
++            return this.range;
++        }
++
++        @Override
++        public Builder range(final int range) {
++            this.range = range;
++            return this;
++        }
++
++        @Override
++        public net.minecraft.world.level.gameevent.GameEvent build() {
++            return new net.minecraft.world.level.gameevent.GameEvent(this.range);
++        }
++    }
++    // Paper end
+ }
