@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: viktorhrekh <viktorhrekh@viesoft.dev>
+Date: Sat, 25 Feb 2023 02:26:45 +0200
+Subject: [PATCH] Log message if paper plugin bootstrap provided external
+ plugin
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
+index a0773c6d24de1f2ce1f0d949cba26b9997b696e6..1d110cdfb1fb8f1642612ca1ab75eb3e4c579e67 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
+@@ -1,18 +1,18 @@
+ package io.papermc.paper.plugin.provider.type.paper;
+ 
+ import com.destroystokyo.paper.util.SneakyThrow;
+-import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
+-import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
+-import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
+-import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
+-import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
+-import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
+ import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
+ import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
++import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
++import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
+ import io.papermc.paper.plugin.provider.PluginProvider;
+ import io.papermc.paper.plugin.provider.ProviderStatus;
+ import io.papermc.paper.plugin.provider.ProviderStatusHolder;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
+ import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
++import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
+ import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
+ import io.papermc.paper.plugin.provider.util.ProviderUtil;
+ import org.bukkit.plugin.java.JavaPlugin;
+@@ -172,9 +172,8 @@ public class PaperPluginParent {
+                     plugin = bootstrap.createPlugin(PaperPluginParent.this.context);
+                 }
+ 
+-                // Don't allow plugins to load plugins other than the one defined in main. This restriction might not be necessary.
+                 if (!plugin.getClass().isAssignableFrom(Class.forName(PaperPluginParent.this.description.getMainClass(), true, plugin.getClass().getClassLoader()))) {
+-                    throw new IllegalArgumentException("Plugin provided must be the same type as main defined in plugin configuration!");
++                    logger.info("Bootstrap of plugin " + getMeta().getName() + " provided a plugin instance of class " + plugin.getClass().getName() + ", that does not match the declared main class of the plugin.");
+                 }
+ 
+                 this.status = ProviderStatus.INITIALIZED;
