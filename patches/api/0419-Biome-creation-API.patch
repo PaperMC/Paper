@@ -5,49 +5,80 @@ Subject: [PATCH] Biome creation API
 
 
 diff --git a/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java b/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
-index ed524fe97d999f0adaebb0445f4a668a228e1fd2..04c47697c1b3fd813d54cb2e3e63eb01716c1e45 100644
+index cebe4a149e991f6bddadd326ff33bcd4bd26a9c7..f30f3187447a9e44824c4fb0f2b89fcb5588bdbb 100644
 --- a/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
 +++ b/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
-@@ -23,6 +23,8 @@ import java.util.stream.StreamSupport;
+@@ -34,6 +34,8 @@ import java.util.stream.StreamSupport;
  public interface ExtendedRegistry<T> extends ResourceKeyed<ExtendedRegistry<T>>, Iterable<T> {
      Key ROOT_REGISTRY_KEY = Key.key("root");
  
-+    RegistryKey.EnumMutableRegistryKey<RegistryKey.RegistryLayerType.WORLDGEN, Biome> BIOME_REGISTRY_KEY = API.registryKeyFactory.createEnumMutable(Biome.class, RegistryKey.RegistryLayerType.WORLDGEN.class);
++    RegistryKey.EnumMutableRegistryKey<RegistryKey.RegistryLayerType.WORLDGEN, org.bukkit.block.Biome> BIOME_REGISTRY_KEY = API.registryKeyFactory.createEnumMutable(org.bukkit.block.Biome.class, RegistryKey.RegistryLayerType.WORLDGEN.class);
 +
-     static <T extends Enum<T> & Keyed> void register(RegistryKey.EnumMutableRegistryKey<?, T> registryKey, T value) {
-         API.simpleRegistry.register(registryKey, value);
-     }
+     /**
+      * Allows to register in the {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(PluginProviderContext)} method to any {@link Enum} represented {@link ExtendedRegistry} without the usage of {@link io.papermc.paper.lifecycle.ServerLifecyclePoints}.
+      * @param registryKey A {@link io.papermc.paper.registry.key.RegistryKey.EnumMutableRegistryKey} the {@link io.papermc.paper.registry.enums.EnumWritableRegistry} is associated with.
 diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeBuilder.java b/src/main/java/io/papermc/paper/world/biome/BiomeBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..876e480b478ca7e997f052e5c2589d954f21c320
+index 0000000000000000000000000000000000000000..8ef49735253b66834b0de6b78e4db5bd771aa2c8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/biome/BiomeBuilder.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,61 @@
 +package io.papermc.paper.world.biome;
 +
++import io.papermc.paper.registry.ExtendedRegistry;
 +import io.papermc.paper.registry.enums.EnumCreator;
 +import io.papermc.paper.registry.key.ResourceKey;
 +import net.kyori.adventure.key.Key;
 +import org.bukkit.block.Biome;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
-+public interface BiomeBuilder {
++/**
++ * Represents a builder of a {@link Biome} which can be used to make its new instances using the internal {@link EnumCreator} mechanism.
++ */
++@ApiStatus.Experimental
++public interface BiomeBuilder extends ExtendedRegistry.EnumRegistryInstanceBuilder<Biome> {
++    /**
++     * Sets {@link ClimateSettings} for this {@link Biome}, uses values of the forest biome if not set.
++     * @param climateSettings A {@link ClimateSettings} you want your new {@link Biome} to have.
++     * @return A {@link BiomeBuilder}.
++     */
 +    @NotNull
 +    BiomeBuilder climateSettings(@NotNull ClimateSettings climateSettings);
 +
++    /**
++     * Sets {@link BiomeSpecialEffects} for this {@link Biome}, uses values of the forest biome if not set.
++     * @param biomeSpecialEffects A {@link BiomeSpecialEffects} you want your new {@link Biome} to have.
++     * @return A {@link BiomeBuilder}.
++     */
 +    @NotNull
 +    BiomeBuilder specialEffects(@NotNull BiomeSpecialEffects biomeSpecialEffects);
 +
++    /**
++     * Builds this {@link Biome} and sets the given {@link ResourceKey} in it.
++     * @param resourceKey A given {@link ResourceKey}
++     * @return A {@link io.papermc.paper.registry.ExtendedRegistry.EnumRegistryInstance} which you either can register or get a plain value.
++     */
 +    @NotNull
-+    Biome build(ResourceKey<Biome> resourceKey);
++    @Override
++    ExtendedRegistry.EnumRegistryInstance<Biome> build(@NotNull ResourceKey<Biome> resourceKey);
 +
++    /**
++     * Builds this {@link Biome} and sets the given {@link Key} in it.
++     * @param key A given {@link Key}
++     * @return A {@link io.papermc.paper.registry.ExtendedRegistry.EnumRegistryInstance} which you either can register or get a plain value.
++     */
 +    @NotNull
-+    Biome build(Key key);
++    @Override
++    ExtendedRegistry.EnumRegistryInstance<Biome> build(@NotNull Key key);
 +
++    @ApiStatus.Internal
 +    interface BuilderFactory {
++        @NotNull
 +        BiomeBuilder create();
 +    }
 +
++    @ApiStatus.Internal
 +    final class API {
 +        public static BuilderFactory builderFactory;
 +        public static EnumCreator<Biome> enumCreator;
@@ -55,58 +86,126 @@ index 0000000000000000000000000000000000000000..876e480b478ca7e997f052e5c2589d95
 +}
 diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffects.java b/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffects.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b6606698bb5119f2edb2d19542b544e79858b7a6
+index 0000000000000000000000000000000000000000..b6817de05878cc795f57142d78294f22f5a4bc88
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffects.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,135 @@
 +package io.papermc.paper.world.biome;
 +
++import org.bukkit.Color;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.Optional;
 +
 +/**
-+ *
++ *  Represents a special effects of a {@link org.bukkit.block.Biome}. Used in {@link BiomeBuilder} to create new {@link org.bukkit.block.Biome}.
 + */
++@ApiStatus.Experimental
 +public interface BiomeSpecialEffects {
-+    int skyColor();
-+
-+    int fogColor();
-+
-+    int waterColor();
-+
-+    int waterFogColor();
-+
++    /**
++     * Returns a color of sky of a {@link org.bukkit.block.Biome}.
++     * @return A color of sky.
++     */
 +    @NotNull
-+    Optional<Integer> overriddenGrassColor();
++    Color skyColor();
 +
++    /**
++     * Returns a color of fog of a {@link org.bukkit.block.Biome}.
++     * @return A color of fog.
++     */
 +    @NotNull
-+    Optional<Integer> overriddenFoliageColor();
++    Color fogColor();
 +
++    /**
++     * Returns a color of water of a {@link org.bukkit.block.Biome}.
++     * @return A color of water.
++     */
++    @NotNull
++    Color waterColor();
++
++    /**
++     * Returns a color of water fog of a {@link org.bukkit.block.Biome}.
++     * @return A color of water fog.
++     */
++    @NotNull
++    Color waterFogColor();
++
++    /**
++     * Returns a color of grass of a {@link org.bukkit.block.Biome}.
++     * @return A color of grass.
++     */
++    @NotNull
++    Color grassColor() throws UnsupportedOperationException;
++
++    /**
++     * Returns a color of foliage of a {@link org.bukkit.block.Biome}.
++     * @return A color of foliage.
++     */
++    @NotNull
++    Color foliageColor() throws UnsupportedOperationException;
++
++    /**
++     * Makes a new {@link Builder} of this {@link BiomeSpecialEffects}.
++     * @return A new {@link Builder}.
++     */
 +    @NotNull
 +    static Builder builder() {
 +        return API.builderFactory.builder();
 +    }
 +
++    /**
++     * A builder, if values aren't set it sets values of the forest biome.
++     */
 +    interface Builder {
 +
++        /**
++         * Sets a color of sky.
++         * @param skyColor A given sky color.
++         * @return A builder.
++         */
 +        @NotNull
-+        Builder skyColor(int skyColor);
++        Builder skyColor(@NotNull Color skyColor);
 +
++        /**
++         * Sets a color of fog.
++         * @param fogColor A given fog color.
++         * @return A builder.
++         */
 +        @NotNull
-+        Builder fogColor(int fogColor);
++        Builder fogColor(@NotNull Color fogColor);
 +
++        /**
++         * Sets a color of water.
++         * @param waterColor A given water color.
++         * @return A builder.
++         */
 +        @NotNull
-+        Builder waterColor(int waterColor);
++        Builder waterColor(@NotNull Color waterColor);
 +
++        /**
++         * Sets a color of water fog.
++         * @param waterFogColor A given water fog color.
++         * @return A builder.
++         */
 +        @NotNull
-+        Builder waterFogColor(int waterFogColor);
++        Builder waterFogColor(@NotNull Color waterFogColor);
 +
++        /**
++         * Sets a color of grass.
++         * @param grassColor A given grass color.
++         * @return A builder.
++         */
 +        @NotNull
-+        Builder grassColor(int grassColor);
++        Builder grassColor(@NotNull Color grassColor);
 +
++        /**
++         * Sets a color of foliage.
++         * @param foliageColor A given foliage color.
++         * @return A builder.
++         */
 +        @NotNull
-+        Builder foliageColor(int foliageColor);
++        Builder foliageColor(@NotNull Color foliageColor);
 +
 +        /**
 +         * @return Constructed instance of biome special effects.
@@ -115,21 +214,23 @@ index 0000000000000000000000000000000000000000..b6606698bb5119f2edb2d19542b544e7
 +        BiomeSpecialEffects build();
 +    }
 +
++    @ApiStatus.Internal
 +    interface BuilderFactory {
 +        @NotNull
 +        Builder builder();
 +    }
 +
++    @ApiStatus.Internal
 +    final class API {
 +        static BuilderFactory builderFactory;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/world/biome/ClimateSettings.java b/src/main/java/io/papermc/paper/world/biome/ClimateSettings.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b331d56f3780618fdde5ef083b616b933e0df19d
+index 0000000000000000000000000000000000000000..9a5fc947eff4495d18d16a7ab4ee340a56a3205e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/biome/ClimateSettings.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.world.biome;
 +
 +import org.jetbrains.annotations.ApiStatus;
@@ -137,10 +238,22 @@ index 0000000000000000000000000000000000000000..b331d56f3780618fdde5ef083b616b93
 +
 +@ApiStatus.Experimental
 +public interface ClimateSettings {
++    /**
++     * Returns a temperature of a {@link org.bukkit.block.Biome}.
++     * @return A temperature of a {@link org.bukkit.block.Biome}.
++     */
 +    float temperature();
 +
++    /**
++     * Returns a downfall of a {@link org.bukkit.block.Biome}.
++     * @return A downfall of a {@link org.bukkit.block.Biome}.
++     */
 +    float downfall();
 +
++    /**
++     * Returns a {@link Precipitation} of a {@link org.bukkit.block.Biome}.
++     * @return A {@link Precipitation} of a {@link org.bukkit.block.Biome}.
++     */
 +    @NotNull
 +    Precipitation precipitation();
 +
@@ -150,11 +263,18 @@ index 0000000000000000000000000000000000000000..b331d56f3780618fdde5ef083b616b93
 +        SNOW
 +    }
 +
++    /**
++     * Makes a new {@link Builder}.
++     * @return A new {@link Builder}.
++     */
 +    @NotNull
 +    static Builder builder() {
 +        return API.builderFactory.create();
 +    }
 +
++    /**
++     * A builder, if values aren't set it sets values of the forest biome.
++     */
 +    interface Builder {
 +        /**
 +         * Sets 0.7F by default.
@@ -196,8 +316,62 @@ index 0000000000000000000000000000000000000000..b331d56f3780618fdde5ef083b616b93
 +        static BuilderFactory builderFactory;
 +    }
 +}
+diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
+index 39fa4c65e0f61450901662ff5c08d54a5d9841b2..58fc277cc39c3856b5f36908bfb8331234461024 100644
+--- a/src/main/java/org/bukkit/RegionAccessor.java
++++ b/src/main/java/org/bukkit/RegionAccessor.java
+@@ -27,8 +27,10 @@ public interface RegionAccessor extends Keyed { // Paper
+      * @param location the location of the biome
+      * @return Biome at the given location
+      * @see #getComputedBiome(int, int, int)
++     * @deprecated use {@link #biome(Location)} instead, it gives custom biome instances instead of {@link Biome#CUSTOM}.
+      */
+     @NotNull
++    @Deprecated // Paper - Biome creation API
+     Biome getBiome(@NotNull Location location);
+ 
+     /**
+@@ -39,8 +41,10 @@ public interface RegionAccessor extends Keyed { // Paper
+      * @param z Z-coordinate of the block
+      * @return Biome at the given coordinates
+      * @see #getComputedBiome(int, int, int)
++     * @deprecated use {@link #biome(int, int, int)} instead, it gives custom biome instances instead of {@link Biome#CUSTOM}.
+      */
+     @NotNull
++    @Deprecated // Paper - Biome creation API
+     Biome getBiome(int x, int y, int z);
+ 
+     // Paper start
+@@ -63,6 +67,27 @@ public interface RegionAccessor extends Keyed { // Paper
+      */
+     @NotNull
+     Biome getComputedBiome(int x, int y, int z);
++
++    /**
++     * Gets the {@link Biome} at the given {@link Location}, supports custom {@link Biome} instances using {@link io.papermc.paper.registry.enums.EnumCreator}.
++     *
++     * @param location the location of the biome
++     * @return Biome at the given location
++     * @see #getComputedBiome(int, int, int)
++     */
++    @NotNull
++    Biome biome(@NotNull Location location);
++
++    /**
++     * Gets the {@link Biome} at the given coordinates, supports custom {@link Biome} instances using {@link io.papermc.paper.registry.enums.EnumCreator}.
++     *
++     * @param x X-coordinate of the block
++     * @param y Y-coordinate of the block
++     * @param z Z-coordinate of the block
++     * @return Biome at the given coordinates
++     */
++    @NotNull
++    Biome biome(int x, int y, int z);
+     // Paper end
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/block/Biome.java b/src/main/java/org/bukkit/block/Biome.java
-index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..7e5d8d04ba757b21b85a42d4482371efe5111a3c 100644
+index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..a1a2a7c87d327500a5023568cc29eb314b39e1e4 100644
 --- a/src/main/java/org/bukkit/block/Biome.java
 +++ b/src/main/java/org/bukkit/block/Biome.java
 @@ -78,9 +78,17 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
@@ -218,28 +392,43 @@ index d56e1b50dd7da18f40278cec4bfdc9414aae0be1..7e5d8d04ba757b21b85a42d4482371ef
      }
  
      @NotNull
-@@ -94,5 +102,24 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
+@@ -94,5 +102,39 @@ public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable
      public @NotNull String translationKey() {
          return "biome.minecraft." + this.key.getKey();
      }
 +
++    /**
++     * Returns {@link io.papermc.paper.world.biome.ClimateSettings} of this {@link Biome}.
++     * @return A {@link io.papermc.paper.world.biome.ClimateSettings} of this {@link Biome}.
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
 +    public @NotNull io.papermc.paper.world.biome.ClimateSettings getClimateSettings() {
 +        return this.climateSettings.get();
 +    }
 +
++    /**
++     * Returns {@link io.papermc.paper.world.biome.BiomeSpecialEffects} of this {@link Biome}.
++     * @return A {@link io.papermc.paper.world.biome.BiomeSpecialEffects} of this {@link Biome}.
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
 +    public @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects getBiomeSpecialEffects() {
 +        return this.biomeSpecialEffects.get();
++    }
++
++    /**
++     * Creates a new builder to make new {@link Biome} instances.
++     * @return A new {@link io.papermc.paper.world.biome.BiomeBuilder}.
++     */
++    @NotNull
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    public static io.papermc.paper.world.biome.BiomeBuilder builder() {
++        return io.papermc.paper.world.biome.BiomeBuilder.API.builderFactory.create();
 +    }
 +
 +    Biome(@NotNull NamespacedKey key, @NotNull io.papermc.paper.world.biome.ClimateSettings climateSettings, @NotNull io.papermc.paper.world.biome.BiomeSpecialEffects biomeSpecialEffects) {
 +        this.key = key;
 +        this.climateSettings = com.google.common.base.Suppliers.memoize(() -> climateSettings);
 +        this.biomeSpecialEffects = com.google.common.base.Suppliers.memoize(() -> biomeSpecialEffects);
-+    }
-+
-+    @NotNull
-+    public static io.papermc.paper.world.biome.BiomeBuilder builder() {
-+        return io.papermc.paper.world.biome.BiomeBuilder.API.builderFactory.create();
 +    }
      // Paper end
  }

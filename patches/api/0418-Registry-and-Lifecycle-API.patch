@@ -6,13 +6,14 @@ Subject: [PATCH] Registry and Lifecycle API
 
 diff --git a/src/main/java/io/papermc/paper/lifecycle/LifecyclePoint.java b/src/main/java/io/papermc/paper/lifecycle/LifecyclePoint.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4ae07645186fc56431f7011ef71829eac5a76153
+index 0000000000000000000000000000000000000000..c26bb2a2e647607986124e2403073bc9bf143b12
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/lifecycle/LifecyclePoint.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.lifecycle;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NonBlocking;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -26,9 +27,15 @@ index 0000000000000000000000000000000000000000..4ae07645186fc56431f7011ef71829ea
 + */
 +public interface LifecyclePoint<C> {
 +
++    /**
++     * Internal method, schedules given {@link Consumer} with a given {@link PluginMeta} to this {@link LifecyclePoint}.
++     * @param consumer A given {@link Consumer}.
++     * @param pluginMeta A given {@link PluginMeta}.
++     */
 +    @NonBlocking
 +    void schedule(@NotNull Consumer<C> consumer, @NotNull PluginMeta pluginMeta);
 +
++    @ApiStatus.Internal
 +    interface LifecyclePointFactory {
 +        @NotNull
 +        <C> LifecyclePoint<C> createSingleEnter(@NotNull String name);
@@ -37,16 +44,17 @@ index 0000000000000000000000000000000000000000..4ae07645186fc56431f7011ef71829ea
 +        <C> LifecyclePoint<C> createMultiEnter(@NotNull String name);
 +    }
 +
++    @ApiStatus.Internal
 +    final class API {
 +        static LifecyclePointFactory lifecyclePointFactory;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/lifecycle/LifecyclePointScheduler.java b/src/main/java/io/papermc/paper/lifecycle/LifecyclePointScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4fc96e21a4dc690163a1266d443c3acd80b3748a
+index 0000000000000000000000000000000000000000..377e7b98214db361da8de0154e4d56100654ffba
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/lifecycle/LifecyclePointScheduler.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.lifecycle;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -59,7 +67,9 @@ index 0000000000000000000000000000000000000000..4fc96e21a4dc690163a1266d443c3acd
 +/**
 + * A class given in {@link io.papermc.paper.plugin.bootstrap.PluginProviderContext#getLifecyclePointScheduler()}.
 + * You can schedule various behaviors on {@link LifecyclePoint}s.
++ * <p>
 + * But to get it work you need to build it with a given {@link PluginMeta} using {@link #build(PluginMeta)}.
++ * <p>
 + * This class as well as {@link LifecyclePoint} is completely thread-safe,
 + * feel free to schedule actions on {@link LifecyclePoint} from different threads.
 + */
@@ -121,28 +131,48 @@ index 0000000000000000000000000000000000000000..4fc96e21a4dc690163a1266d443c3acd
 +}
 diff --git a/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java b/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..99393474cebd666eb1c2cb381bbd64163d7da85e
+index 0000000000000000000000000000000000000000..e8bf6dc968a2efdeee284c451b0a0bb1523544d0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/lifecycle/ServerLifecyclePoints.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.lifecycle;
 +
 +import io.papermc.paper.registry.access.RegistryAccess;
 +import io.papermc.paper.registry.access.WritableRegistryAccess;
 +import io.papermc.paper.registry.key.RegistryKey;
++import io.papermc.paper.registry.key.ResourceKey;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * A class statically containing {@link LifecyclePoint}s which you can use.
++ * Contains all {@link LifecyclePoint} instances which a user can scheduler their behaviour to using {@link LifecyclePointScheduler}.
++ * <p>
++ * {@link LifecyclePoint} instances there are either "single enter" or "multi enter".
++ * Multi enter ones are those {@link LifecyclePoint}s which can fire multiple times during runtime / in different places, i.e. both server initialization and reloading.
 + */
 +public final class ServerLifecyclePoints {
 +    private ServerLifecyclePoints() {}
 +
++    /**
++     * Fires when registries which have {@link io.papermc.paper.registry.key.RegistryKey.RegistryLayerType.STATIC} layer in their {@link RegistryKey} can be modified.
++     * Note that during this stage you can't access their content, i.e. use methods such as {@link io.papermc.paper.registry.ExtendedRegistry#get(ResourceKey)}.
++     */
 +    public static final LifecyclePoint<StaticRegistryInitializationContext> STATIC_REGISTRIES_INITIALIZED = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("STATIC_REGISTRIES_INITIALIZED");
++
++    /**
++     * Fires when registries which have {@link io.papermc.paper.registry.key.RegistryKey.RegistryLayerType.STATIC} layer in their {@link RegistryKey} can be safely accessed, but not modified.
++     */
 +    public static final LifecyclePoint<StaticRegistryFrozenContext> STATIC_REGISTRIES_FROZEN = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("STATIC_REGISTRIES_FROZEN");
++
++    /**
++     * Fires when registries which have {@link io.papermc.paper.registry.key.RegistryKey.RegistryLayerType.WORLDGEN} layer in their {@link RegistryKey} can be modified.
++     * Note that during this stage you can't access their content, i.e. use methods such as {@link io.papermc.paper.registry.ExtendedRegistry#get(ResourceKey)}.
++     */
 +    public static final LifecyclePoint<WorldgenRegistryInitializedContext> WORLDGEN_REGISTRIES_INITIALIZED = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("WORLDGEN_REGISTRIES_INITIALIZED");
++
++    /**
++     * Fires when registries which have {@link io.papermc.paper.registry.key.RegistryKey.RegistryLayerType.WORLDGEN} layer in their {@link RegistryKey} can be safely accessed, but not modified.
++     */
 +    public static final LifecyclePoint<WorldgenRegistryFrozenContext> WORLDGEN_REGISTRIES_FROZEN = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("WORLDGEN_REGISTRIES_FROZEN");
-+    // public static final LifecyclePoint<ReloadableRegistryInitializedContext> RELOADABLE_REGISTRY_INITIALIZED_ = LifecyclePoint.API.lifecyclePointFactory.createSingleEnter("");
 +
 +    public record StaticRegistryInitializationContext(@NotNull WritableRegistryAccess<RegistryKey.RegistryLayerType.STATIC> writableRegistryAccess) {
 +    }
@@ -155,8 +185,6 @@ index 0000000000000000000000000000000000000000..99393474cebd666eb1c2cb381bbd6416
 +
 +    public record WorldgenRegistryFrozenContext(@NotNull RegistryAccess registryAccess) {
 +    }
-+
-+    // public record ReloadableRegistryInitializedContext() {}
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContext.java
 index a4467fe1ba0dc348eab681900dbcac1770963591..ef90a6da9cbb913d2e4a5d62faa50f4bd1c17c48 100644
@@ -184,18 +212,19 @@ index a4467fe1ba0dc348eab681900dbcac1770963591..ef90a6da9cbb913d2e4a5d62faa50f4b
  }
 diff --git a/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java b/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed524fe97d999f0adaebb0445f4a668a228e1fd2
+index 0000000000000000000000000000000000000000..cebe4a149e991f6bddadd326ff33bcd4bd26a9c7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/ExtendedRegistry.java
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,279 @@
 +package io.papermc.paper.registry;
 +
++import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 +import io.papermc.paper.registry.key.RegistryKey;
 +import io.papermc.paper.registry.key.ResourceKey;
 +import io.papermc.paper.registry.key.ResourceKeyed;
 +import net.kyori.adventure.key.Key;
 +import org.bukkit.Keyed;
-+import org.bukkit.block.Biome;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
@@ -207,52 +236,117 @@ index 0000000000000000000000000000000000000000..ed524fe97d999f0adaebb0445f4a668a
 +import java.util.stream.StreamSupport;
 +
 +/**
-+ * Naming?
-+ * @param <T>
++ *  A (de-)serialization / verification mechanism used in Minecraft to add new game content and identify it.
++ *  Minecraft has content which is synchronized between a server and client, like {@link org.bukkit.block.Biome}.
++ *  There is also a content which exists only server-side and which doesn't need synchronization.
++ *  <p>
++ *  This interface provides a more detailed abstraction than {@link org.bukkit.Registry} for this internal mechanism.
++ *  It doesn't require the generic to be {@link Keyed}.
++ *
++ * @param <T> A type this {@link ExtendedRegistry} operates with.
++ *
++ * @see WritableRegistry
++ * @see io.papermc.paper.registry.enums.EnumWritableRegistry
++ * @see io.papermc.paper.registry.access.RegistryAccess
 + */
 +public interface ExtendedRegistry<T> extends ResourceKeyed<ExtendedRegistry<T>>, Iterable<T> {
 +    Key ROOT_REGISTRY_KEY = Key.key("root");
 +
-+    static <T extends Enum<T> & Keyed> void register(RegistryKey.EnumMutableRegistryKey<?, T> registryKey, T value) {
++    /**
++     * Allows to register in the {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(PluginProviderContext)} method to any {@link Enum} represented {@link ExtendedRegistry} without the usage of {@link io.papermc.paper.lifecycle.ServerLifecyclePoints}.
++     * @param registryKey A {@link io.papermc.paper.registry.key.RegistryKey.EnumMutableRegistryKey} the {@link io.papermc.paper.registry.enums.EnumWritableRegistry} is associated with.
++     * @param value A value you want to register.
++     * @param <T> A type the {@link io.papermc.paper.registry.enums.EnumWritableRegistry} operates with.
++     */
++    static <T extends Enum<T> & Keyed> void register(@NotNull RegistryKey.EnumMutableRegistryKey<?, T> registryKey, @NotNull T value) {
 +        API.simpleRegistry.register(registryKey, value);
 +    }
 +
-+    static <T> void register(RegistryKey<?, T> registryKey, ResourceKey<T> resourceKey, T value) {
++    /**
++     * Allows to register in the {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(PluginProviderContext)} method to any mutable {@link ExtendedRegistry} without the usage of {@link io.papermc.paper.lifecycle.ServerLifecyclePoints}.
++     * @param registryKey A {@link io.papermc.paper.registry.key.RegistryKey.MutableRegistryKey} the {@link WritableRegistry} is associated with.
++     * @param resourceKey A {@link ResourceKey} you want your value to be associated with.
++     * @param value A value you want to register.
++     * @param <T> A type the {@link WritableRegistry} operates with.
++     */
++    static <T> void register(@NotNull RegistryKey.MutableRegistryKey<?, T> registryKey, @NotNull ResourceKey<T> resourceKey, @NotNull T value) {
 +        API.simpleRegistry.register(registryKey, resourceKey, value);
 +    }
 +
-+    static <T> void register(RegistryKey<?, T> registryKey, Key key, T value) {
++    /**
++     * Allows to register in the {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(PluginProviderContext)} method to any mutable {@link ExtendedRegistry} without the usage of {@link io.papermc.paper.lifecycle.ServerLifecyclePoints}.
++     * @param registryKey A {@link io.papermc.paper.registry.key.RegistryKey.MutableRegistryKey} the {@link WritableRegistry} is associated with.
++     * @param key A {@link Key} you want your value to be associated with.
++     * @param value A value you want to register.
++     * @param <T> A type the {@link WritableRegistry} operates with.
++     */
++    static <T> void register(@NotNull RegistryKey.MutableRegistryKey<?, T> registryKey, @NotNull Key key, @NotNull T value) {
 +        API.simpleRegistry.register(registryKey, key, value);
 +    }
 +
++    /**
++     * Obtains {@link Reference} if possible.
++     * @param resourceKey A given {@link ResourceKey}.
++     * @return {@link Optional#empty()} if there is no value associated with the given {@link ResourceKey}
++     */
 +    @NotNull
 +    Optional<Reference<T>> getReference(@Nullable ResourceKey<T> resourceKey);
 +
++    /**
++     * Obtains {@link Reference} if possible using a numerical key.
++     * @param numericalKey A given numerical key
++     * @return {@link Optional#empty()} if there is no value associated with the given numerical key.
++     */
 +    @NotNull
 +    Optional<Reference<T>> getReference(int numericalKey);
 +
++    /**
++     * Same as {@link #getReference(ResourceKey)} But throws an exception if there is no value associated with the given {@link ResourceKey}.
++     * @param resourceKey A given {@link ResourceKey}.
++     * @return A {@link Reference} if it's present.
++     */
 +    @NotNull
 +    default Reference<T> getReferenceOrThrow(@Nullable ResourceKey<T> resourceKey) {
 +        return this.getReference(resourceKey)
 +            .orElseThrow(() -> new IllegalStateException("Missing key in " + this.key() + " : " + resourceKey));
 +    }
 +
++    /**
++     * Gets a value as a {@link Reference} of this {@link ExtendedRegistry}.
++     * @param value A value.
++     * @return A {@link Reference}.
++     */
 +    @Nullable
 +    @Contract("null -> null")
-+    Reference<T> asHolder(@Nullable T value);
++    Reference<T> asReference(@Nullable T value);
 +
++    /**
++     * Gets value associated with the given {@link ResourceKey}.
++     * @param resourceKey A given {@link ResourceKey}.
++     * @return {@link Optional#empty()} if there is no value associated with the given {@link ResourceKey}.
++     */
 +    @NotNull
 +    default Optional<T> getOptional(@Nullable ResourceKey<T> resourceKey) {
 +        return Optional.ofNullable(this.get(resourceKey));
 +    }
 +
++    /**
++     * Gets value associated with the given {@link Key}.
++     * @param key A given {@link Key}.
++     * @return {@link Optional#empty()} if there is no value associated with the given {@link Key}.
++     */
 +    @NotNull
 +    default Optional<T> getOptional(@Nullable Key key) {
 +        return Optional.ofNullable(this.get(key));
 +    }
 +
++    /**
++     * Gets value associated with the given {@link ResourceKey} or throws an exception if it's not present.
++     * @param resourceKey A given {@link ResourceKey}.
++     * @return A value.
++     */
 +    @NotNull
-+    default T getOrThrow(@Nullable ResourceKey<T> resourceKey) {
++    default T getOrThrow(@Nullable ResourceKey<T> resourceKey) throws IllegalStateException {
 +        final T value = this.get(resourceKey);
 +        if (value == null) {
 +            throw new IllegalStateException("Missing key in " + this.key() + " : " + resourceKey);
@@ -261,52 +355,139 @@ index 0000000000000000000000000000000000000000..ed524fe97d999f0adaebb0445f4a668a
 +        }
 +    }
 +
++    /**
++     * Gets value associated with the given {@link ResourceKey} or null if it's not present.
++     * @param resourceKey A given {@link ResourceKey}.
++     * @return A value.
++     */
 +    @Nullable
 +    @Contract("null -> null")
 +    T get(@Nullable ResourceKey<T> resourceKey);
 +
++    /**
++     * Gets value associated with the given {@link Key} or null if it's not present.
++     * @param key A given {@link Key}.
++     * @return A value.
++     */
 +    @Nullable
 +    @Contract("null -> null")
 +    T get(@Nullable Key key);
 +
++    /**
++     * Gets a {@link Key} a given value is associated with or null if there is no such a value in this {@link ExtendedRegistry}.
++     * @param value A given value.
++     * @return A {@link Key} associated with the given value.
++     */
 +    @Nullable
 +    @Contract("null -> null")
 +    Key key(@Nullable T value);
 +
++    /**
++     * Gets a {@link ResourceKey} associated with a given value.
++     * @param value A given value.
++     * @return {@link Optional#empty()} if there is no {@link ResourceKey} associated with the given value.
++     */
 +    @NotNull
 +    Optional<ResourceKey<T>> resourceKey(@Nullable T value);
 +
++    /**
++     * Gets a numerical key associated with a given value.
++     * @param value A given value.
++     * @return A numerical key associated with a given value.
++     */
 +    int numericalKey(@NotNull T value);
 +
++    /**
++     * Checks whether this {@link ExtendedRegistry} contains a given {@link Key} or not.
++     * @param key A given {@link Key}.
++     * @return True if this {@link ExtendedRegistry} contains a given {@link Key}.
++     */
 +    boolean containsKey(@NotNull Key key);
 +
++    /**
++     * Checks whether this {@link ExtendedRegistry} contains a given {@link ResourceKey} or not.
++     * @param resourceKey A given {@link ResourceKey}.
++     * @return True if this {@link ExtendedRegistry} contains a given {@link ResourceKey}.
++     */
 +    boolean containsKey(@NotNull ResourceKey<T> resourceKey);
 +
++    /**
++     * Returns a set of {@link Key} this {@link ExtendedRegistry} contains.
++     * @return A set of {@link Key} this {@link ExtendedRegistry} contains.
++     */
 +    @NotNull
 +    Set<Key> keySet();
 +
++    /**
++     * Returns a set of {@link ResourceKey} this {@link ExtendedRegistry} contains.
++     * @return A set of {@link ResourceKey} this {@link ExtendedRegistry} contains.
++     */
 +    @NotNull
 +    Set<ResourceKey<T>> resourceKeySet();
 +
++    /**
++     * Returns a set of entries this {@link ExtendedRegistry} contains.
++     * @return A set of entries.
++     */
 +    @NotNull
 +    Set<Map.Entry<ResourceKey<T>, T>> entrySet();
 +
++    /**
++     * Returns a {@link Stream} of {@link Reference} this {@link ExtendedRegistry} contains.
++     * @return A {@link Stream} of {@link Reference} this {@link ExtendedRegistry} contains.
++     */
 +    @NotNull
 +    Stream<Reference<T>> references();
 +
++    /**
++     * Returns a {@link Stream} of values this {@link ExtendedRegistry} contains.
++     * @return A {@link Stream} of values this {@link ExtendedRegistry} contains.
++     */
 +    @NotNull
 +    default Stream<T> stream() {
 +        return StreamSupport.stream(this.spliterator(), false);
 +    }
 +
-+    interface SimpleRegistry {
-+        <T extends Enum<T> & Keyed> void register(RegistryKey.EnumMutableRegistryKey<?, T> registryKey, T value);
++    /**
++     * An {@link Enum} instance which either may be registered or get without registering.
++     * @param <E>
++     */
++    @ApiStatus.NonExtendable
++    interface EnumRegistryInstance<E extends Enum<E> & Keyed> {
++        /**
++         * @return Registered enum value using {@link ExtendedRegistry#register(RegistryKey.EnumMutableRegistryKey, Enum)}.
++         */
++        @NotNull
++        E register();
 +
-+        <T> void register(RegistryKey<?, T> registryKey, ResourceKey<T> resourceKey, T value);
-+
-+        <T> void register(RegistryKey<?, T> registryKey, Key key, T value);
++        /**
++         * If you want to get a value without registering it, use this method.
++         *
++         * @return Plain value which wasn't registered.
++         */
++        @NotNull
++        E value();
 +    }
 +
++    @ApiStatus.Internal
++    interface EnumRegistryInstanceBuilder<E extends Enum<E> & Keyed> {
++        @NotNull
++        ExtendedRegistry.EnumRegistryInstance<E> build(@NotNull Key key);
++        
++        @NotNull
++        ExtendedRegistry.EnumRegistryInstance<E> build(@NotNull ResourceKey<E> resourceKey);
++    }
++
++    @ApiStatus.Internal
++    interface SimpleRegistry {
++        <T extends Enum<T> & Keyed> void register(@NotNull RegistryKey.EnumMutableRegistryKey<?, T> registryKey, @NotNull T value);
++
++        <T> void register(@NotNull RegistryKey<?, T> registryKey, @NotNull ResourceKey<T> resourceKey, @NotNull T value);
++
++        <T> void register(@NotNull RegistryKey<?, T> registryKey, @NotNull Key key, @NotNull T value);
++    }
++
++    @ApiStatus.Internal
 +    final class API {
 +        static ResourceKey.ResourceKeyFactory resourceKeyFactory;
 +        static Reference.ReferenceFactory referenceFactory;
@@ -315,7 +496,7 @@ index 0000000000000000000000000000000000000000..ed524fe97d999f0adaebb0445f4a668a
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/Reference.java b/src/main/java/io/papermc/paper/registry/Reference.java
-index d880810cbf05bc45051fe29515054211572e33b4..d1136caa02952e5828ea8f6d4619d56551b0b9b1 100644
+index d880810cbf05bc45051fe29515054211572e33b4..63380df17941526052f506925faca8da386910e0 100644
 --- a/src/main/java/io/papermc/paper/registry/Reference.java
 +++ b/src/main/java/io/papermc/paper/registry/Reference.java
 @@ -1,5 +1,7 @@
@@ -335,27 +516,44 @@ index d880810cbf05bc45051fe29515054211572e33b4..d1136caa02952e5828ea8f6d4619d565
  
      /**
       * Gets the value from the registry with the key.
-@@ -29,6 +31,12 @@ public interface Reference<T extends Keyed> extends Keyed {
+@@ -29,6 +31,26 @@ public interface Reference<T extends Keyed> extends Keyed {
       */
      @Nullable T valueOrNull();
  
++    /**
++     * Checks whether the reference is bound to a {@link ExtendedRegistry} or not.
++     * @return True if it's bound.
++     */
 +    boolean isBound();
 +
++    /**
++     * Checks if the value is associated with the given {@link Key}
++     * @param key A given {@link Key}
++     * @return True if it's associated with the given {@link Key}.
++     */
 +    boolean is(@NotNull Key key);
 +
++    /**
++     * Checks if the value is associated with the given {@link ResourceKey}
++     * @param resourceKey A given {@link ResourceKey}
++     * @return True if it's associated with the given {@link ResourceKey}.
++     */
 +    boolean is(@NotNull ResourceKey<T> resourceKey);
 +
      /**
       * Creates a reference to a registered value.
       *
-@@ -38,6 +46,11 @@ public interface Reference<T extends Keyed> extends Keyed {
+@@ -37,7 +59,14 @@ public interface Reference<T extends Keyed> extends Keyed {
+      * @param <T> the type of the value
       * @return a reference
       */
++    @Deprecated
      static <T extends Keyed> @NotNull Reference<T> create(@NotNull Registry<T> registry, @NotNull NamespacedKey key) {
 -        return new ReferenceImpl<>(registry, key);
 +        return ExtendedRegistry.API.referenceFactory.create(registry, key);
 +    }
 +
++    @org.jetbrains.annotations.ApiStatus.Internal
 +    interface ReferenceFactory {
 +        @NotNull
 +        <T extends Keyed> Reference<T> create(@NotNull Registry<T> registry, @NotNull Key key);
@@ -408,16 +606,22 @@ index f29e76a6b66ddfec12ddf8db6dcb2df6083b5982..8ebd28fb9709f789e9bc664c737bb9e1
          return this.key;
 diff --git a/src/main/java/io/papermc/paper/registry/WritableRegistry.java b/src/main/java/io/papermc/paper/registry/WritableRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8607507da91083c99cf918559ffd3b29b2938b61
+index 0000000000000000000000000000000000000000..3aa9237231b6ed875a46baed805fd0c7ef31bf63
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/WritableRegistry.java
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.registry.key.ResourceKey;
 +import net.kyori.adventure.key.Key;
 +import org.jetbrains.annotations.NotNull;
 +
++/**
++ * Provides functionality to add user defined game content
++ * @param <T>
++ *
++ * @see io.papermc.paper.registry.access.WritableRegistryAccess
++ */
 +public interface WritableRegistry<T> extends ExtendedRegistry<T> {
 +    @NotNull
 +    Reference<T> registerMapping(int numericalKey, @NotNull ResourceKey<T> key, @NotNull T value);
@@ -432,41 +636,33 @@ index 0000000000000000000000000000000000000000..8607507da91083c99cf918559ffd3b29
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java b/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a542291581b8fe75f4bd17f27b8f9c436e2a677d
+index 0000000000000000000000000000000000000000..29492c4071b9f1e161b7a9c24c0139981ff78a6c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/access/RegistryAccess.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,17 @@
 +package io.papermc.paper.registry.access;
 +
 +import io.papermc.paper.registry.ExtendedRegistry;
 +import io.papermc.paper.registry.key.RegistryKey;
-+import io.papermc.paper.registry.key.ResourceKey;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.Optional;
-+import java.util.stream.Stream;
 +
++/**
++ *  Provides {@link ExtendedRegistry} in various stages of Server initialization.
++ *  Note that {@link RegistryAccess} can be either composite or per-layer,
++ *  it means that {@link #registry(RegistryKey)} may return {@link Optional#empty()} based on where you get that {@link RegistryAccess} from.
++ */
 +public interface RegistryAccess {
 +    @NotNull
 +    <E> Optional<ExtendedRegistry<E>> registry(@NotNull RegistryKey<? extends RegistryKey.RegistryLayerType, E> key);
-+
-+    @NotNull
-+    Stream<RegistryEntry<?>> registries();
-+
-+    interface RegistryEntry<T> {
-+        @NotNull
-+        ResourceKey<? extends ExtendedRegistry<T>> key();
-+
-+        @NotNull
-+        ExtendedRegistry<T> registry();
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/access/WritableRegistryAccess.java b/src/main/java/io/papermc/paper/registry/access/WritableRegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a1cce78c6680ee6b1c02226c574072e8f78281f
+index 0000000000000000000000000000000000000000..634dcca879fa9eb8d7d6a7387754645a4a3095d8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/access/WritableRegistryAccess.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.registry.access;
 +
 +import io.papermc.paper.registry.WritableRegistry;
@@ -475,20 +671,37 @@ index 0000000000000000000000000000000000000000..1a1cce78c6680ee6b1c02226c574072e
 +import org.bukkit.Keyed;
 +import org.jetbrains.annotations.NotNull;
 +
++/**
++ * Same as {@link RegistryAccess} but guarantees that {@link WritableRegistry} instances it gives are safe to mutate based on its generic.
++ *
++ * @param <L> A layer / stage of server initialization when the {@link WritableRegistry} instances are safe to mutate.
++ */
 +public interface WritableRegistryAccess<L extends RegistryKey.RegistryLayerType> extends RegistryAccess {
-+
++    /**
++     * Gives a {@link WritableRegistry} only if the registry is generally safe to mutate and belongs to a layer that this {@link WritableRegistryAccess} guarantees its safe mutability.
++     *
++     * @param key A {@link RegistryKey} which shows that this registry is safe to mutate.
++     * @return A {@link WritableRegistry} instance.
++     * @param <E> A type the {@link WritableRegistry} operates with.
++     */
 +    @NotNull
 +    <E> WritableRegistry<E> registry(@NotNull RegistryKey.MutableRegistryKey<L, E> key);
 +
++    /**
++     * Same as {@link #registry(RegistryKey.MutableRegistryKey)} but for {@link Enum}.
++     * @param key A {@link RegistryKey} which shows that this registry is safe to mutate.
++     * @return A {@link WritableRegistry} instance.
++     * @param <E> A type the {@link WritableRegistry} operates with.
++     */
 +    @NotNull
 +    <E extends Enum<E> & Keyed> EnumWritableRegistry<E> registry(@NotNull RegistryKey.EnumMutableRegistryKey<L, E> key);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java b/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..80023548606e2a555c43a1e803c10b73489f3045
+index 0000000000000000000000000000000000000000..aba41ff94cb99f5db183398ce9792210efa2c5e3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/enums/EnumCreator.java
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,41 @@
 +package io.papermc.paper.registry.enums;
 +
 +import io.papermc.paper.registry.key.RegistryKey;
@@ -500,23 +713,42 @@ index 0000000000000000000000000000000000000000..80023548606e2a555c43a1e803c10b73
 +
 +import java.util.function.Supplier;
 +
++/**
++ * An internal API which allows to make new instances of {@link Enum} using {@link java.lang.invoke.MethodHandles}.
++ * It exists to support making new instances of Bukkit API enums without breaking backwards compatibility.
++ *
++ * @param <T> An {@link Enum} this {@link EnumCreator} creates / handles.
++ */
 +@ApiStatus.Internal
 +public interface EnumCreator<T extends Enum<T> & Keyed> {
++    /**
++     * Creates a new instance of an enum using constructor using {@link ResourceKey} and given parameters.
++     *
++     * @return A new {@link Enum} instance.
++     */
 +    @NotNull
 +    T create(@NotNull ResourceKey<T> resourceKey, @NotNull Object... params);
 +
++    /**
++     * Creates a new instance of an enum using constructor using {@link Key} and given parameters.
++     *
++     * @return A new {@link Enum} instance.
++     */
 +    @NotNull
 +    T create(@NotNull Key key, @NotNull Object... params);
 +
++    /**
++     *  An internal API for providing additional data for defined {@link Enum} values.
++     */
 +    @NotNull
 +    <P, API extends Enum<API> & Keyed> Supplier<P> param(@NotNull RegistryKey.EnumMutableRegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, @NotNull Class<P> type, @NotNull Key key);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java b/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d703aeac3185bf36aa5a6739f5a84f3434453eea
+index 0000000000000000000000000000000000000000..1df1797405a3329bd2b6ba87c4785b95e1b69a08
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/enums/EnumWritableRegistry.java
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.registry.enums;
 +
 +import io.papermc.paper.registry.ExtendedRegistry;
@@ -524,35 +756,82 @@ index 0000000000000000000000000000000000000000..d703aeac3185bf36aa5a6739f5a84f34
 +import org.bukkit.Keyed;
 +import org.jetbrains.annotations.NotNull;
 +
++/**
++ * An {@link ExtendedRegistry} which provides functionality to register an {@link Enum} instances.
++ *
++ * @param <T>
++ */
 +public interface EnumWritableRegistry<T extends Enum<T> & Keyed> extends ExtendedRegistry<T> {
++    /**
++     *
++     * @param numericalKey A numerical key you want to assign your {@link Enum} value to.
++     * @param value An {@link Enum} value you want to register.
++     * @return A {@link Reference} containing registered {@link Enum} instance.
++     */
 +    @NotNull
 +    Reference<T> registerMapping(int numericalKey, @NotNull T value);
 +
++    /**
++     * Same as {@link EnumWritableRegistry#registerMapping(int, Enum)} but computes the numerical key automatically.
++     * @param value An {@link Enum} value you want to register.
++     * @return A {@link Reference} containing registered {@link Enum} instance.
++     */
 +    @NotNull
 +    Reference<T> register(@NotNull T value);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/key/RegistryKey.java b/src/main/java/io/papermc/paper/registry/key/RegistryKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..73090cc3ab0b773f7e31820c20275038b8033b3e
+index 0000000000000000000000000000000000000000..447f2e2dbf3558ccb041f151fe4f5233ac3afff3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/key/RegistryKey.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,68 @@
 +package io.papermc.paper.registry.key;
 +
 +import io.papermc.paper.registry.ExtendedRegistry;
 +import org.bukkit.Keyed;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
++/**
++ * Represents a key which contains various info of a {@link ExtendedRegistry} it belongs to.
++ * This key is used in {@link io.papermc.paper.registry.access.RegistryAccess} and {@link io.papermc.paper.registry.access.WritableRegistryAccess} to get an {@link ExtendedRegistry} instance.
++ * This key also is used in {@link ExtendedRegistry#register(MutableRegistryKey, ResourceKey, Object)} to allow registering without having to use the {@link io.papermc.paper.lifecycle.LifecyclePoint} system.
++ *
++ * @param <L> A layer / stage when the registry this key belongs to is safe to mutate.
++ * @param <E> A type the registry operates with.
++ */
 +public interface RegistryKey<L extends RegistryKey.RegistryLayerType, E> extends ResourceKey<ExtendedRegistry<E>> {
++    /**
++     * Represents a {@link RegistryKey} which cannot be modified by a user.
++     *
++     * @param <L> A layer / stage when the registry this key belongs to is safe to mutate.
++     * @param <E> A type the registry operates with.
++     */
 +    interface ImmutableRegistryKey<L extends RegistryKey.RegistryLayerType, E> extends RegistryKey<L, E> {}
 +
++    /**
++     * Represents a {@link RegistryKey} which can be modified by a user and isn't an enum.
++     *
++     * @param <L> A layer / stage when the registry this key belongs to is safe to mutate.
++     * @param <E> A type the registry operates with.
++     */
 +    interface MutableRegistryKey<L extends RegistryKey.RegistryLayerType, E> extends RegistryKey<L, E> {}
 +
++    /**
++     * Represents a {@link RegistryKey} which can be modified by a user and which type is represented by an enum in the Bukkit API.
++     *
++     * @param <L> A layer / stage when the registry this key belongs to is safe to mutate.
++     * @param <E> A type the registry operates with.
++     */
 +    interface EnumMutableRegistryKey<L extends RegistryKey.RegistryLayerType, E extends Enum<E> & Keyed> extends RegistryKey<L, E> {}
 +
++    /**
++     * @return A type of registry layer / stage this key belongs to.
++     */
 +    @NotNull
 +    Class<? extends RegistryLayerType> layerType();
 +
++    @ApiStatus.Internal
 +    interface RegistryKeyFactory {
 +        @NotNull
 +        <L extends RegistryLayerType, E> ImmutableRegistryKey<L, E> createImmutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryLayerType> layerType);
@@ -564,6 +843,9 @@ index 0000000000000000000000000000000000000000..73090cc3ab0b773f7e31820c20275038
 +        <L extends RegistryLayerType, E extends Enum<E> & Keyed> EnumMutableRegistryKey<L, E> createEnumMutable(@NotNull Class<E> clazz, @NotNull Class<? extends RegistryLayerType> layerType);
 +    }
 +
++    /**
++     * Represents a layer / stage when the registry is initialized and safe to mutate, used in {@link io.papermc.paper.registry.access.WritableRegistryAccess}.
++     */
 +    interface RegistryLayerType {
 +        interface STATIC extends RegistryLayerType {}
 +        interface WORLDGEN extends RegistryLayerType {}
@@ -573,37 +855,70 @@ index 0000000000000000000000000000000000000000..73090cc3ab0b773f7e31820c20275038
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/key/ResourceKey.java b/src/main/java/io/papermc/paper/registry/key/ResourceKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5b01770830c0dfba93d95e6f9a9b6c8880983600
+index 0000000000000000000000000000000000000000..1f7a790e99f238651ef1c62f667b0a6d4dff62c3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/key/ResourceKey.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,73 @@
 +package io.papermc.paper.registry.key;
 +
 +import io.papermc.paper.registry.ExtendedRegistry;
 +import net.kyori.adventure.key.Key;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
++/**
++ *  Represents a key which contains information about its {@link Key} and the {@link Key} of its {@link ExtendedRegistry} it's able to be registered in.
++ *
++ * @param <T> A type of element which the {@link ExtendedRegistry} operates with.
++ */
 +public interface ResourceKey<T> {
++    /**
++     * Returns a key the element is associated with.
++     * @return A key the element is associated with.
++     */
 +    @NotNull
 +    Key key();
 +
++    /**
++     * Returns a key element's @{@link ExtendedRegistry} is associated with.
++     * @return A key element's @{@link ExtendedRegistry} is associated with.
++     */
 +    @NotNull
 +    Key registry();
 +
++    /**
++     * Returns true if this {@link ResourceKey} belongs to the given {@link ResourceKey} of a {@link ExtendedRegistry}.
++     * @param registryKey A {@link ResourceKey} of a {@link ExtendedRegistry}.
++     * @return True if this {@link ResourceKey} belongs to the given {@link ResourceKey} of a {@link ExtendedRegistry}.
++     */
 +    default boolean isFor(@NotNull ResourceKey<? extends ExtendedRegistry<T>> registryKey) {
 +        return this.registry().equals(registryKey.key());
 +    }
 +
++    /**
++     * Creates a new {@link ResourceKey} based on provided {@link ResourceKey} which belongs to a {@link ExtendedRegistry} and a {@link Key} the element is associated with.
++     * @param registryKey A {@link ResourceKey} of a {@link ExtendedRegistry} the element of this key is associated with.
++     * @param key A {@link Key} which the element is associated with.
++     * @return A new {@link ResourceKey} instance.
++     * @param <T> A type of element which the {@link ExtendedRegistry} operates with.
++     */
 +    @NotNull
 +    static <T> ResourceKey<T> create(@NotNull ResourceKey<? extends ExtendedRegistry<T>> registryKey, @NotNull Key key) {
 +        return API.resourceKeyFactory.create(registryKey, key);
 +    }
 +
++    /**
++     * Creates a new {@link ResourceKey} for a registry.
++     * @param registryKey A {@link Key} which the {@link ExtendedRegistry} is associated with.
++     * @return A {@link ResourceKey} of a {@link ExtendedRegistry}.
++     * @param <T> A type of element which the {@link ExtendedRegistry} operates with.
++     */
 +    @NotNull
 +    static <T> ResourceKey<? extends ExtendedRegistry<T>> create(@NotNull Key registryKey) {
 +        return API.resourceKeyFactory.create(registryKey);
 +    }
 +
++    @ApiStatus.Internal
 +    interface ResourceKeyFactory {
 +        @NotNull
 +        <T> ResourceKey<T> create(@NotNull ResourceKey<? extends ExtendedRegistry<T>> registryKey, @NotNull Key key);
@@ -612,28 +927,52 @@ index 0000000000000000000000000000000000000000..5b01770830c0dfba93d95e6f9a9b6c88
 +        <T> ResourceKey<? extends ExtendedRegistry<T>> create(@NotNull Key registryKey);
 +    }
 +
++    @ApiStatus.Internal
 +    final class API {
 +        static ResourceKey.ResourceKeyFactory resourceKeyFactory;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/key/ResourceKeyed.java b/src/main/java/io/papermc/paper/registry/key/ResourceKeyed.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f2441f66df36a9333e1980f81f44e9f7e8bfe9a5
+index 0000000000000000000000000000000000000000..aa9b8fa5f62496ac4d1e9d389733799506a891a9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/key/ResourceKeyed.java
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.registry.key;
 +
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.key.Keyed;
 +import org.jetbrains.annotations.NotNull;
 +
++/**
++ * Something which contains a {@link ResourceKey}.
++ * @param <T>  A type which {@link ResourceKey} contains.
++ */
 +public interface ResourceKeyed<T> extends Keyed {
++    /**
++     * @return A {@link ResourceKey} of this object.
++     */
 +    @NotNull
 +    ResourceKey<? extends T> resourceKey();
 +
++    /**
++     * @return A {@link Key} of an element this {@link ResourceKey} contains.
++     */
 +    @Override
 +    default @NotNull Key key() {
 +        return this.resourceKey().key();
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/package-info.java b/src/main/java/io/papermc/paper/registry/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e09b2f311d9f60cbbe294bd16a5979c0979cef5c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/package-info.java
+@@ -0,0 +1,7 @@
++/**
++ * An experimental Paper plugins API which allows users to add new game content without breaking Bukkit API.
++ */
++@ApiStatus.Experimental
++package io.papermc.paper.registry;
++
++import org.jetbrains.annotations.ApiStatus;

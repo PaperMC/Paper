@@ -10,13 +10,13 @@ import io.papermc.paper.registry.key.ResourceKey;
 import io.papermc.paper.world.biome.BiomeSpecialEffects;
 import io.papermc.paper.world.biome.ClimateSettings;
 import net.kyori.adventure.key.Key;
+import org.bukkit.Color;
 import org.bukkit.block.Biome;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 public class TestPluginBootstrap implements PluginBootstrap {
 
-    public String secret;
     final ResourceKey<Biome> testBiomeKey = ResourceKey.create(ExtendedRegistry.BIOME_REGISTRY_KEY, Key.key("testplugin", "my_new_biome"));
     Reference<Biome> biomeReference;
 
@@ -24,10 +24,9 @@ public class TestPluginBootstrap implements PluginBootstrap {
     public void bootstrap(@NotNull PluginProviderContext context) {
         final Biome biome = Biome.builder()
             .climateSettings(ClimateSettings.builder().build())
-            .specialEffects(BiomeSpecialEffects.builder().grassColor(0x0000FF).skyColor(0x0000FF).build())
-            .build(Key.key("test", "example"));
-
-        ExtendedRegistry.register(ExtendedRegistry.BIOME_REGISTRY_KEY, biome);
+            .specialEffects(BiomeSpecialEffects.builder().grassColor(Color.BLACK).skyColor(Color.BLACK).build())
+            .build(Key.key("test", "example"))
+            .register();
 
         context.getLifecyclePointScheduler().schedule(ServerLifecyclePoints.WORLDGEN_REGISTRIES_INITIALIZED, registryInitializationContext -> {
             final EnumWritableRegistry<Biome> biomeRegistry = registryInitializationContext.writableRegistryAccess()
@@ -38,14 +37,14 @@ public class TestPluginBootstrap implements PluginBootstrap {
                 .build();
 
             final BiomeSpecialEffects biomeSpecialEffects = BiomeSpecialEffects.builder()
-                .grassColor(0xE1F6FF)
-                .skyColor(0x004764)
+                .grassColor(Color.fromRGB(0xE1F6FF))
+                .skyColor(Color.fromRGB(0x004764))
                 .build();
 
             final Biome newBiome = Biome.builder()
                 .climateSettings(climateSettings)
                 .specialEffects(biomeSpecialEffects)
-                .build(testBiomeKey);
+                .build(testBiomeKey).value();
             biomeRegistry.register(newBiome);
             System.out.println("resourcekey: " + testBiomeKey);
 
@@ -57,7 +56,6 @@ public class TestPluginBootstrap implements PluginBootstrap {
             System.out.println("test biome: " + testBiome);
             System.out.println("temperature: " + testBiome.getClimateSettings().temperature());
             biomeReference = biomeRegistry.getReference(testBiomeKey).orElseThrow();
-
         }).build(context.getConfiguration());
     }
 
@@ -65,6 +63,6 @@ public class TestPluginBootstrap implements PluginBootstrap {
     public @NotNull JavaPlugin createPlugin(@NotNull PluginProviderContext context) {
         if (context.getLifecyclePointScheduler().isBuilt())
             context.getSLF4JLogger().info("LifecyclePointContext is built! No modifications allowed!");
-        return new TestPlugin(this.secret, this.biomeReference);
+        return new TestPlugin(this.biomeReference);
     }
 }

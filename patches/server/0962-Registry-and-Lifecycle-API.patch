@@ -78,10 +78,10 @@ index 0000000000000000000000000000000000000000..34089c38c03ff0802fed5a0a2094d088
 +}
 diff --git a/src/main/java/io/papermc/paper/lifecycle/LifecyclePointUtil.java b/src/main/java/io/papermc/paper/lifecycle/LifecyclePointUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..baef0b51dac3cb407816ddfef2d8b3b99845e6c4
+index 0000000000000000000000000000000000000000..ee4a2c5466c76fce21049af5c1c7a6a91538db1b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/lifecycle/LifecyclePointUtil.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.lifecycle;
 +
 +import io.papermc.paper.registry.APIConverters;
@@ -95,6 +95,7 @@ index 0000000000000000000000000000000000000000..baef0b51dac3cb407816ddfef2d8b3b9
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceLocation;
 +import org.bukkit.Keyed;
++import org.jetbrains.annotations.NotNull;
 +
 +import java.util.Collection;
 +import java.util.HashMap;
@@ -124,17 +125,17 @@ index 0000000000000000000000000000000000000000..baef0b51dac3cb407816ddfef2d8b3b9
 +        }
 +
 +        @Override
-+        public <T extends Enum<T> & Keyed> void register(RegistryKey.EnumMutableRegistryKey<?, T> registryKey, T value) {
++        public <T extends Enum<T> & Keyed> void register(RegistryKey.@NotNull EnumMutableRegistryKey<?, T> registryKey, @NotNull T value) {
 +            this.helpRegister(registryKey, value.getKey(), value);
 +        }
 +
 +        @Override
-+        public <T> void register(RegistryKey<?, T> registryKey, ResourceKey<T> resourceKey, T value) {
++        public <T> void register(@NotNull RegistryKey<?, T> registryKey, @NotNull ResourceKey<T> resourceKey, @NotNull T value) {
 +            this.helpRegister(registryKey, registryKey.key(), value);
 +        }
 +
 +        @Override
-+        public <T> void register(RegistryKey<?, T> registryKey, Key key, T value) {
++        public <T> void register(@NotNull RegistryKey<?, T> registryKey, @NotNull Key key, @NotNull T value) {
 +            this.helpRegister(registryKey, key, value);
 +        }
 +
@@ -150,7 +151,7 @@ index 0000000000000000000000000000000000000000..baef0b51dac3cb407816ddfef2d8b3b9
 +                if (RegistryAPI.getApiStorage().getRegistryByKey(registryKey) == null)
 +                    this.registryMap.get(lifecyclePoint).stream().filter(registry -> registry.key().location().equals(keyConverter.convertAPI(registryKey.key())))
 +                        .forEach(registry -> {
-+                            RegistryAPI.getApiStorage().registerConverterUnclassified(registryKey, APIConverters.createAPIConverter(registryKey, registry));
++                            RegistryAPI.getApiStorage().registerConverterUnclassified(registryKey, APIConverters.getOrCreateAPIConverter(registryKey, registry));
 +                            RegistryAPI.getApiStorage().getOrCreateRegistryUnclassified(registryKey, registry);
 +                        });
 +
@@ -430,22 +431,21 @@ index db343a2f482ac375078610f0875692861f412ee2..a2b95478bc5eea8a2edf6426303d1b1e
  
 diff --git a/src/main/java/io/papermc/paper/registry/APIConverters.java b/src/main/java/io/papermc/paper/registry/APIConverters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..61e0d7d9471bbc5b50ec2dc1e5263d4cd8ffe99a
+index 0000000000000000000000000000000000000000..3e2a969fc45b5c9abb817082b289405243f84705
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/APIConverters.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,59 @@
 +package io.papermc.paper.registry;
 +
-+import com.google.common.collect.BiMap;
-+import com.google.common.collect.HashBiMap;
 +import io.papermc.paper.registry.key.RegistryKey;
++import io.papermc.paper.registry.key.RegistryKeyImpls;
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceKey;
++import net.minecraft.server.MinecraftServer;
 +
 +import java.util.HashMap;
 +import java.util.Map;
 +import java.util.function.Function;
-+import java.util.function.Supplier;
 +
 +public final class APIConverters {
 +    private APIConverters() {}
@@ -454,7 +454,8 @@ index 0000000000000000000000000000000000000000..61e0d7d9471bbc5b50ec2dc1e5263d4c
 +     *  This converter "registry" returns function which receives NMS registry because most of API <-> NMS converters need it for conversion.
 +     */
 +    private static final Map<RegistryKey<? extends RegistryKey.RegistryLayerType, ?>, Function<? extends Registry<?>, ? extends Converters.Converter<?, ?>>> CONVERTER_FUNCTIONS = new HashMap<>();
-+    private static final BiMap<RegistryKey<? extends RegistryKey.RegistryLayerType, ?>, Supplier<ResourceKey<? extends Registry<?>>>> REGISTRY_KEY_REGISTRY = HashBiMap.create();
++    private static final Map<RegistryKey<? extends RegistryKey.RegistryLayerType, ?>, Converters.Converter<?, ?>> CREATED_CONVERTER_REGISTRY = new HashMap<>();
++    private static final Converters.CachedConverter<? extends RegistryKey<? extends RegistryKey.RegistryLayerType, ?>, ? extends ResourceKey<? extends Registry<?>>> REGISTRY_KEY_CONVERTER =RegistryKeyImpls.createConverter(Converters.KEY_RESOURCE_LOCATION_CONVERTER.get());
 +
 +    /**
 +     *  If you want to add a registry for a new API, add its converter in there.
@@ -462,26 +463,36 @@ index 0000000000000000000000000000000000000000..61e0d7d9471bbc5b50ec2dc1e5263d4c
 +    public static void initializeConverterFunctions() {
 +    }
 +
-+    public static void initializeRegistryKeys() {
-+    }
-+
-+    @SuppressWarnings("unchecked")
-+    public static <API, NMS> ResourceKey<? extends Registry<NMS>> getNMSRegistryKey(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey) {
-+        Supplier<ResourceKey<? extends Registry<?>>> resourceKeySupplier = REGISTRY_KEY_REGISTRY.get(registryKey);
-+        if (resourceKeySupplier == null)
-+            throw new IllegalStateException("There is no NMS registry key for such an API registry key: " + registryKey);
-+        return (ResourceKey<? extends Registry<NMS>>) resourceKeySupplier.get();
-+    }
-+
 +    private static <API, NMS> void registerConverterFunction(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Function<? extends Registry<NMS>, ? extends Converters.Converter<API, NMS>> converterFunction) {
 +        APIConverters.CONVERTER_FUNCTIONS.put(registryKey, converterFunction);
 +    }
 +
 +    @SuppressWarnings("unchecked")
-+    public static <API, NMS> Converters.Converter<API, NMS> createAPIConverter(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Registry<NMS> nmsRegistry) {
-+        final Function<Registry<?>, Converters.Converter<?, ?>> function = (Function<Registry<?>, Converters.Converter<?,?>>) APIConverters.CONVERTER_FUNCTIONS.get(registryKey);
-+        return (Converters.Converter<API, NMS>) function.apply(nmsRegistry);
++    public static <API, NMS> Converters.Converter<API, NMS> getOrCreateAPIConverter(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Registry<NMS> nmsRegistry) {
++        return (Converters.Converter<API, NMS>) APIConverters.CREATED_CONVERTER_REGISTRY.computeIfAbsent(registryKey, registryKey1 -> {
++            final Function<Registry<?>, Converters.Converter<?, ?>> function = (Function<Registry<?>, Converters.Converter<?,?>>) APIConverters.CONVERTER_FUNCTIONS.get(registryKey);
++            return function.apply(nmsRegistry);
++        });
 +    }
++
++    /**
++     * Used in Bukkit API when all registries are initialized to get or create an API converter.
++     */
++    @SuppressWarnings("unchecked")
++    public static <API, NMS> Converters.Converter<API, NMS> getOrCreateAPIConverterBukkit(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey) {
++        return (Converters.Converter<API, NMS>) APIConverters.CREATED_CONVERTER_REGISTRY.computeIfAbsent(registryKey, registryKey1 -> {
++            Registry<?> nmsRegistry = MinecraftServer.getServer().registries().compositeAccess().registry(APIConverters.convertAPI(registryKey))
++                .orElseThrow(() -> new IllegalStateException("Couldn't find registry with such a key: " + registryKey1 + ", to make an API <-> NMS converter."));
++            final Function<Registry<?>, Converters.Converter<?, ?>> function = (Function<Registry<?>, Converters.Converter<?,?>>) APIConverters.CONVERTER_FUNCTIONS.get(registryKey);
++            return function.apply(nmsRegistry);
++        });
++    }
++
++    @SuppressWarnings("unchecked")
++    private static <NMS> net.minecraft.resources.ResourceKey<? extends Registry<NMS>> convertAPI(RegistryKey<?, ?> registryKey) {
++        return (ResourceKey<? extends Registry<NMS>>) ((Converters.CachedConverter<RegistryKey<?, ?>, ResourceKey<? extends Registry<?>>>) REGISTRY_KEY_CONVERTER).convertAPI(registryKey);
++    }
++
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/Converters.java b/src/main/java/io/papermc/paper/registry/Converters.java
 new file mode 100644
@@ -647,7 +658,7 @@ index 0000000000000000000000000000000000000000..3609d3ea41f0b39ccb8ca16bab141152
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/ExtendedRegistryImpl.java b/src/main/java/io/papermc/paper/registry/ExtendedRegistryImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f02c6bcb4097305677cde4dbd0ad50ef2e4b7b5
+index 0000000000000000000000000000000000000000..285afcbd41ca3923595c24f3c9cba1caae56706c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/ExtendedRegistryImpl.java
 @@ -0,0 +1,177 @@
@@ -745,7 +756,7 @@ index 0000000000000000000000000000000000000000..1f02c6bcb4097305677cde4dbd0ad50e
 +    }
 +
 +    @Override
-+    public @Nullable Reference<API> asHolder(@Nullable API value) {
++    public @Nullable Reference<API> asReference(@Nullable API value) {
 +        return this.referenceConverter.convertNMS(this.registry.wrapAsHolder(this.apiToNmsConverter.convertAPI(value)));
 +    }
 +
@@ -1185,10 +1196,10 @@ index 0000000000000000000000000000000000000000..d12cc5bd55a2a735bd9142a0da533fbb
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/access/BakedWritableRegistryAccessImpl.java b/src/main/java/io/papermc/paper/registry/access/BakedWritableRegistryAccessImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a99ce4377326ee2726e8f489279ad794ae7ec9b6
+index 0000000000000000000000000000000000000000..768bb5a386f1206f0b499ab7bd9934f793e69e68
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/access/BakedWritableRegistryAccessImpl.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,64 @@
 +package io.papermc.paper.registry.access;
 +
 +import io.papermc.paper.registry.APIConverters;
@@ -1208,7 +1219,6 @@ index 0000000000000000000000000000000000000000..a99ce4377326ee2726e8f489279ad794
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.Optional;
-+import java.util.stream.Stream;
 +
 +public class BakedWritableRegistryAccessImpl<L extends RegistryKey.RegistryLayerType> implements WritableRegistryAccess<L> {
 +
@@ -1226,7 +1236,7 @@ index 0000000000000000000000000000000000000000..a99ce4377326ee2726e8f489279ad794
 +    public @NotNull <E> Optional<ExtendedRegistry<E>> registry(@NotNull RegistryKey<? extends RegistryKey.RegistryLayerType, E> key) {
 +        final Optional<? extends Registry<?>> registry = this.registryAccess.registry(convertAPI((RegistryKey<L, E>) key));
 +        return registry.map(nmsRegistry -> {
-+            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.createAPIConverter(key, nmsRegistry));
++            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.getOrCreateAPIConverter(key, nmsRegistry));
 +            return RegistryAPI.getApiStorage().getOrCreateRegistry(key, nmsRegistry);
 +        });
 +    }
@@ -1235,7 +1245,7 @@ index 0000000000000000000000000000000000000000..a99ce4377326ee2726e8f489279ad794
 +    public <E> @NotNull WritableRegistry<E> registry(@NotNull RegistryKey.MutableRegistryKey<L, E> key) {
 +        final Optional<? extends Registry<?>> registry = this.registryAccess.registry(convertAPI(key));
 +        return registry.map(nmsRegistry -> {
-+            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.createAPIConverter(key, nmsRegistry));
++            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.getOrCreateAPIConverter(key, nmsRegistry));
 +            return RegistryAPI.getApiStorage().getOrCreateRegistry(key, nmsRegistry);
 +        }).orElseThrow(() -> new IllegalStateException("There is no registry for " + key + " in this registry access"));
 +    }
@@ -1244,14 +1254,9 @@ index 0000000000000000000000000000000000000000..a99ce4377326ee2726e8f489279ad794
 +    public @NotNull <E extends Enum<E> & Keyed> EnumWritableRegistry<E> registry(@NotNull RegistryKey.EnumMutableRegistryKey<L, E> key) {
 +        final Optional<? extends Registry<?>> registry = this.registryAccess.registry(convertAPI(key));
 +        return registry.map(nmsRegistry -> {
-+            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.createAPIConverter(key, nmsRegistry));
++            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.getOrCreateAPIConverter(key, nmsRegistry));
 +            return RegistryAPI.getApiStorage().getOrCreateRegistry(key, nmsRegistry);
 +        }).orElseThrow(() -> new IllegalStateException("There is no registry for " + key + " in this registry access"));
-+    }
-+
-+    @Override
-+    public @NotNull Stream<RegistryEntry<?>> registries() {
-+        return Stream.of();
 +    }
 +
 +    @SuppressWarnings("unchecked")
@@ -1261,10 +1266,10 @@ index 0000000000000000000000000000000000000000..a99ce4377326ee2726e8f489279ad794
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/access/MappedWritableRegistryAccessImpl.java b/src/main/java/io/papermc/paper/registry/access/MappedWritableRegistryAccessImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18469c21f6a21393f8ef6b530ff6c91e118b6e6e
+index 0000000000000000000000000000000000000000..43e8087d61fa09c5100b7a8fbcc9731f224924c2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/access/MappedWritableRegistryAccessImpl.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.registry.access;
 +
 +import io.papermc.paper.registry.APIConverters;
@@ -1286,7 +1291,6 @@ index 0000000000000000000000000000000000000000..18469c21f6a21393f8ef6b530ff6c91e
 +import java.util.Map;
 +import java.util.Optional;
 +import java.util.stream.Collectors;
-+import java.util.stream.Stream;
 +
 +public class MappedWritableRegistryAccessImpl<L extends RegistryKey.RegistryLayerType> implements WritableRegistryAccess<L> {
 +    private final Map<ResourceKey<? extends Registry<?>>, Registry<?>> registries;
@@ -1303,7 +1307,7 @@ index 0000000000000000000000000000000000000000..18469c21f6a21393f8ef6b530ff6c91e
 +    public @NotNull <E> Optional<ExtendedRegistry<E>> registry(@NotNull RegistryKey<? extends RegistryKey.RegistryLayerType, E> key) {
 +        final Registry<?> registry = this.registries.get(convertAPI((RegistryKey<L, ?>) key));
 +        return Optional.ofNullable(registry).map(nmsRegistry -> {
-+            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.createAPIConverter(key, nmsRegistry));
++            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.getOrCreateAPIConverter(key, nmsRegistry));
 +            return RegistryAPI.getApiStorage().getOrCreateRegistry(key, nmsRegistry);
 +        });
 +    }
@@ -1312,7 +1316,7 @@ index 0000000000000000000000000000000000000000..18469c21f6a21393f8ef6b530ff6c91e
 +    public @NotNull <E> WritableRegistry<E> registry(RegistryKey.@NotNull MutableRegistryKey<L, E> key) {
 +        final Registry<?> registry = this.registries.get(convertAPI(key));
 +        return Optional.ofNullable(registry).map(nmsRegistry -> {
-+            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.createAPIConverter(key, nmsRegistry));
++            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.getOrCreateAPIConverter(key, nmsRegistry));
 +            return RegistryAPI.getApiStorage().getOrCreateRegistry(key, nmsRegistry);
 +        }).orElseThrow(() -> new IllegalStateException("There is no registry for " + key + " in this registry access"));
 +    }
@@ -1321,14 +1325,9 @@ index 0000000000000000000000000000000000000000..18469c21f6a21393f8ef6b530ff6c91e
 +    public @NotNull <E extends Enum<E> & Keyed> EnumWritableRegistry<E> registry(RegistryKey.@NotNull EnumMutableRegistryKey<L, E> key) {
 +        final Registry<?> registry = this.registries.get(convertAPI(key));
 +        return Optional.ofNullable(registry).map(nmsRegistry -> {
-+            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.createAPIConverter(key, nmsRegistry));
++            RegistryAPI.getApiStorage().registerConverter(key, APIConverters.getOrCreateAPIConverter(key, nmsRegistry));
 +            return RegistryAPI.getApiStorage().getOrCreateRegistry(key, nmsRegistry);
 +        }).orElseThrow(() -> new IllegalStateException("There is no registry for " + key + " in this registry access"));
-+    }
-+
-+    @Override
-+    public @NotNull Stream<RegistryEntry<?>> registries() {
-+        return Stream.of();
 +    }
 +
 +    @SuppressWarnings("unchecked")

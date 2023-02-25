@@ -5,16 +5,21 @@ Subject: [PATCH] Biome creation API
 
 
 diff --git a/src/main/java/io/papermc/paper/registry/APIConverters.java b/src/main/java/io/papermc/paper/registry/APIConverters.java
-index 61e0d7d9471bbc5b50ec2dc1e5263d4cd8ffe99a..cbeda838e74543c97bd274902557a2821879c5af 100644
+index 3e2a969fc45b5c9abb817082b289405243f84705..15a12a21ada8f8adf74067b0ca8c0c9db3c2fa73 100644
 --- a/src/main/java/io/papermc/paper/registry/APIConverters.java
 +++ b/src/main/java/io/papermc/paper/registry/APIConverters.java
-@@ -5,6 +5,15 @@ import com.google.common.collect.HashBiMap;
- import io.papermc.paper.registry.key.RegistryKey;
- import net.minecraft.core.Registry;
- import net.minecraft.resources.ResourceKey;
+@@ -9,6 +9,20 @@ import net.minecraft.server.MinecraftServer;
+ import java.util.HashMap;
+ import java.util.Map;
+ import java.util.function.Function;
 +// Paper start - Biome creation API
-+import com.google.common.base.Suppliers;
-+import net.minecraft.core.registries.Registries;
++import io.papermc.paper.world.biome.BiomeBuilder;
++import io.papermc.paper.world.biome.BiomeSpecialEffectsImpl;
++import io.papermc.paper.world.biome.ClimateSettings;
++import io.papermc.paper.world.biome.ClimateSettingsImpl;
++import io.papermc.paper.registry.enums.EnumSettingExtractors;
++import net.kyori.adventure.key.Key;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.world.level.biome.BiomeGenerationSettings;
 +import net.minecraft.world.level.biome.BiomeSpecialEffects;
 +import net.minecraft.world.level.biome.MobSpawnSettings;
@@ -22,9 +27,9 @@ index 61e0d7d9471bbc5b50ec2dc1e5263d4cd8ffe99a..cbeda838e74543c97bd274902557a282
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +// Paper end
  
- import java.util.HashMap;
- import java.util.Map;
-@@ -24,9 +33,35 @@ public final class APIConverters {
+ public final class APIConverters {
+     private APIConverters() {}
+@@ -24,6 +38,49 @@ public final class APIConverters {
       *  If you want to add a registry for a new API, add its converter in there.
       */
      public static void initializeConverterFunctions() {
@@ -36,30 +41,44 @@ index 61e0d7d9471bbc5b50ec2dc1e5263d4cd8ffe99a..cbeda838e74543c97bd274902557a282
 +                } else {
 +                    if (apiBiome == Biome.CUSTOM)
 +                        throw new IllegalStateException("Cannot convert CUSTOM biome!");
++                    final BiomeSpecialEffects.Builder builder = new BiomeSpecialEffects.Builder();
++                    BiomeSpecialEffectsImpl biomeSpecialEffects = (BiomeSpecialEffectsImpl) apiBiome.getBiomeSpecialEffects();
++                    biomeSpecialEffects.getOverriddenGrassColor().ifPresent(color -> builder.grassColorOverride(color.asRGB()));
++                    biomeSpecialEffects.getOverriddenFoliageColor().ifPresent(color -> builder.foliageColorOverride(color.asRGB()));
 +                    return new net.minecraft.world.level.biome.Biome.BiomeBuilder()
 +                        .temperature(apiBiome.getClimateSettings().temperature())
-+                        .downfall(1F)
-+                        .precipitation(net.minecraft.world.level.biome.Biome.Precipitation.RAIN)
++                        .downfall(apiBiome.getClimateSettings().downfall())
++                        .precipitation(ClimateSettingsImpl.precipitationConverter.convertAPI(apiBiome.getClimateSettings().precipitation()))
 +                        .generationSettings(new BiomeGenerationSettings.PlainBuilder().build())
 +                        .mobSpawnSettings(new MobSpawnSettings.Builder().build())
-+                        .specialEffects(new BiomeSpecialEffects.Builder().fogColor(1).waterFogColor(1).waterColor(1).skyColor(1).build())
-+                        .temperatureAdjustment(net.minecraft.world.level.biome.Biome.TemperatureModifier.FROZEN)
++                        .specialEffects(builder
++                            .skyColor(biomeSpecialEffects.skyColor().asRGB())
++                            .fogColor(biomeSpecialEffects.fogColor().asRGB())
++                            .waterColor(biomeSpecialEffects.waterColor().asRGB())
++                            .waterFogColor(biomeSpecialEffects.waterFogColor().asRGB())
++                            .build())
++                        .temperatureAdjustment(net.minecraft.world.level.biome.Biome.TemperatureModifier.NONE)
 +                        .build();
 +                }
 +            }, nmsBiome -> {
-+                Biome biome = org.bukkit.Registry.BIOME.get(CraftNamespacedKey.fromMinecraft(registry.getKey(nmsBiome)));
-+                return (biome == null) ? Biome.CUSTOM : biome;
++                final ResourceLocation location = registry.getKey(nmsBiome);
++                try {
++                    return Biome.valueOf(location.getPath());
++                } catch (final IllegalArgumentException e) {
++                    ClimateSettings climate = EnumSettingExtractors.getEnumExtractor(ClimateSettings.class).apply(nmsBiome);
++                    io.papermc.paper.world.biome.BiomeSpecialEffects effects = EnumSettingExtractors.getEnumExtractor(io.papermc.paper.world.biome.BiomeSpecialEffects.class).apply(nmsBiome);
++                    return BiomeBuilder.API.builderFactory.create()
++                        .climateSettings(climate)
++                        .specialEffects(effects)
++                        .build(Key.key(location.getNamespace(), location.getPath())).value();
++                }
 +            }
 +        );
 +
 +        APIConverters.registerConverterFunction(ExtendedRegistry.BIOME_REGISTRY_KEY, registryConverterFunction);
      }
  
-     public static void initializeRegistryKeys() {
-+        APIConverters.REGISTRY_KEY_REGISTRY.put(ExtendedRegistry.BIOME_REGISTRY_KEY, Suppliers.memoize(() -> Registries.BIOME));
-     }
- 
-     @SuppressWarnings("unchecked")
+     private static <API, NMS> void registerConverterFunction(RegistryKey<? extends RegistryKey.RegistryLayerType, API> registryKey, Function<? extends Registry<NMS>, ? extends Converters.Converter<API, NMS>> converterFunction) {
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryAPI.java b/src/main/java/io/papermc/paper/registry/RegistryAPI.java
 index ff83ca0c019890cff2185ab7ac3256a7b182ffbc..b22c672b1a1798aebdcbb6ca9e2499bcc6fdafc5 100644
 --- a/src/main/java/io/papermc/paper/registry/RegistryAPI.java
@@ -107,16 +126,18 @@ index c13f65f1bc3d297306bde0fc1364c1bc0773094c..9925614467f1855ad4e2b12e87d43aca
      public static <S, NMS> void registerEnumSetting(Class<S> setting, Function<NMS, S> extractor) {
 diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeAPI.java b/src/main/java/io/papermc/paper/world/biome/BiomeAPI.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..242be246462369fe84274c946cd0239f002be406
+index 0000000000000000000000000000000000000000..a41e47c250811a1986e654a25f136f4fdee1ca85
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/biome/BiomeAPI.java
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,140 @@
 +package io.papermc.paper.world.biome;
 +
++import io.papermc.paper.registry.ExtendedRegistry;
 +import io.papermc.paper.registry.enums.EnumCreator;
 +import io.papermc.paper.registry.enums.EnumCreators;
 +import io.papermc.paper.registry.key.ResourceKey;
 +import net.kyori.adventure.key.Key;
++import org.bukkit.Color;
 +import org.bukkit.block.Biome;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -128,6 +149,7 @@ index 0000000000000000000000000000000000000000..242be246462369fe84274c946cd0239f
 +    public static void launchAPI() {
 +        BiomeBuilder.API.enumCreator = BIOME_ENUM_CREATOR;
 +        ClimateSettings.API.builderFactory = () -> new ClimateSettings.Builder() {
++            // Copied from the forest biome
 +            float temperature = 0.7F;
 +            float downfall = 0.8F;
 +            ClimateSettings.Precipitation precipitation = ClimateSettings.Precipitation.NONE;
@@ -158,45 +180,45 @@ index 0000000000000000000000000000000000000000..242be246462369fe84274c946cd0239f
 +
 +        BiomeSpecialEffects.API.builderFactory = () -> new BiomeSpecialEffects.Builder() {
 +            // Values copied from the forest biome
-+            int skyColor = 7972607;
-+            int fogColor = 12638463;
-+            int waterColor = 4159204;
-+            int waterFogColor = 329011;
-+            Integer grassColor = null;
-+            Integer foliageColor = null;
++            Color skyColor = Color.fromRGB(7972607);
++            Color fogColor = Color.fromRGB(12638463);
++            Color waterColor = Color.fromRGB(4159204);
++            Color waterFogColor = Color.fromRGB(329011);
++            Color grassColor = null;
++            Color foliageColor = null;
 +
 +            @Override
-+            public BiomeSpecialEffects.@NotNull Builder skyColor(int skyColor) {
++            public BiomeSpecialEffects.@NotNull Builder skyColor(@NotNull Color skyColor) {
 +                this.skyColor = skyColor;
 +                return this;
 +            }
 +
 +            @Override
-+            public BiomeSpecialEffects.@NotNull Builder fogColor(int fogColor) {
++            public BiomeSpecialEffects.@NotNull Builder fogColor(@NotNull Color fogColor) {
 +                this.fogColor = fogColor;
 +                return this;
 +            }
 +
 +            @Override
-+            public BiomeSpecialEffects.@NotNull Builder waterColor(int waterColor) {
++            public BiomeSpecialEffects.@NotNull Builder waterColor(@NotNull Color waterColor) {
 +                this.waterColor = waterColor;
 +                return this;
 +            }
 +
 +            @Override
-+            public BiomeSpecialEffects.@NotNull Builder waterFogColor(int waterFogColor) {
++            public BiomeSpecialEffects.@NotNull Builder waterFogColor(@NotNull Color waterFogColor) {
 +                this.waterFogColor = waterFogColor;
 +                return this;
 +            }
 +
 +            @Override
-+            public BiomeSpecialEffects.@NotNull Builder grassColor(int grassColor) {
++            public BiomeSpecialEffects.@NotNull Builder grassColor(@NotNull Color grassColor) {
 +                this.grassColor = grassColor;
 +                return this;
 +            }
 +
 +            @Override
-+            public BiomeSpecialEffects.@NotNull Builder foliageColor(int foliageColor) {
++            public BiomeSpecialEffects.@NotNull Builder foliageColor(@NotNull Color foliageColor) {
 +                this.foliageColor = foliageColor;
 +                return this;
 +            }
@@ -224,85 +246,133 @@ index 0000000000000000000000000000000000000000..242be246462369fe84274c946cd0239f
 +            }
 +
 +            @Override
-+            public @NotNull Biome build(ResourceKey<Biome> resourceKey) {
++            public @NotNull ExtendedRegistry.EnumRegistryInstance<Biome> build(@NotNull ResourceKey<Biome> resourceKey) {
 +                return this.build(resourceKey.key());
 +            }
 +
 +            @Override
-+            public @NotNull Biome build(Key key) {
-+                return BiomeAPI.BIOME_ENUM_CREATOR.create(key, climateSettings, biomeSpecialEffects);
++            public @NotNull ExtendedRegistry.EnumRegistryInstance<Biome> build(@NotNull Key key) {
++                return new ExtendedRegistry.EnumRegistryInstance<>() {
++                    final Biome instance = BiomeAPI.BIOME_ENUM_CREATOR.create(key, climateSettings, biomeSpecialEffects);
++
++                    @Override
++                    public @NotNull Biome register() {
++                        ExtendedRegistry.register(ExtendedRegistry.BIOME_REGISTRY_KEY, this.instance);
++                        return this.instance;
++                    }
++
++                    @Override
++                    public @NotNull Biome value() {
++                        return this.instance;
++                    }
++                };
 +            }
 +        };
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffectsImpl.java b/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffectsImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..66b4b9ad140d5d7e57d34776fea277700eb437a0
+index 0000000000000000000000000000000000000000..a0c80ad190da44e4461bfdc0b919059bed32ac43
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/biome/BiomeSpecialEffectsImpl.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,99 @@
 +package io.papermc.paper.world.biome;
 +
++import net.minecraft.util.Mth;
++import net.minecraft.world.level.GrassColor;
 +import net.minecraft.world.level.biome.Biome;
++import org.bukkit.Color;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.Optional;
 +
 +public class BiomeSpecialEffectsImpl implements BiomeSpecialEffects {
-+    final int skyColor;
-+    final int fogColor;
-+    final int waterColor;
-+    final int waterFogColor;
-+    final Optional<Integer> grassColor;
-+    final Optional<Integer> foliageColor;
++    final Color skyColor;
++    final Color fogColor;
++    final Color waterColor;
++    final Color waterFogColor;
++    Color grassColor;
++    Color foliageColor;
++    final Color overriddenGrassColor;
++    final Color overriddenFoliageColor;
 +
-+    public BiomeSpecialEffectsImpl(int skyColor, int fogColor, int waterColor, int waterFogColor, Integer grassColor, Integer foliageColor) {
++    public BiomeSpecialEffectsImpl(Color skyColor, Color fogColor, Color waterColor, Color waterFogColor, Color grassColor, Color foliageColor) {
 +        this.skyColor = skyColor;
 +        this.fogColor = fogColor;
 +        this.waterColor = waterColor;
 +        this.waterFogColor = waterFogColor;
-+        this.grassColor = Optional.ofNullable(grassColor);
-+        this.foliageColor = Optional.ofNullable(foliageColor);
++        this.overriddenGrassColor = grassColor;
++        this.overriddenFoliageColor = foliageColor;
 +    }
 +
 +    public BiomeSpecialEffectsImpl(Biome handle) {
-+        this.skyColor = handle.getSkyColor();
-+        this.fogColor = handle.getFogColor();
-+        this.waterColor = handle.getWaterColor();
-+        this.waterFogColor = handle.getWaterFogColor();
-+        this.grassColor = handle.getSpecialEffects().getGrassColorOverride();
-+        this.foliageColor = handle.getSpecialEffects().getFoliageColorOverride();
++        this.skyColor = Color.fromRGB(handle.getSkyColor());
++        this.fogColor = Color.fromRGB(handle.getFogColor());
++        this.waterColor = Color.fromRGB(handle.getWaterColor());
++        this.waterFogColor = Color.fromRGB(handle.getWaterFogColor());
++        this.foliageColor = Color.fromRGB(handle.getFoliageColor());
++        this.grassColor = Color.fromRGB(this.getGrassColor(handle));
++        this.overriddenFoliageColor = handle.getSpecialEffects().getFoliageColorOverride().map(Color::fromRGB).orElse(null);
++        this.overriddenGrassColor = handle.getSpecialEffects().getGrassColorOverride().map(Color::fromRGB).orElse(null);
 +    }
 +
++    /**
++     * Copied from {@link Biome}
++     */
++    public int getGrassColor(Biome biome) {
++        return biome.getSpecialEffects().getGrassColorOverride().orElseGet(() -> this.getGrassColorFromTexture(biome));
++    }
++
++    private int getGrassColorFromTexture(Biome biome) {
++        double d = Mth.clamp(biome.getBaseTemperature(), 0.0F, 1.0F);
++        double e = Mth.clamp(biome.getDownfall(), 0.0F, 1.0F);
++        return GrassColor.get(d, e);
++    }
 +
 +    @Override
-+    public int skyColor() {
++    public @NotNull Color skyColor() {
 +        return this.skyColor;
 +    }
 +
 +    @Override
-+    public int fogColor() {
++    public @NotNull Color fogColor() {
 +        return this.fogColor;
 +    }
 +
 +    @Override
-+    public int waterColor() {
++    public @NotNull Color waterColor() {
 +        return this.waterColor;
 +    }
 +
 +    @Override
-+    public int waterFogColor() {
++    public @NotNull Color waterFogColor() {
 +        return this.waterFogColor;
 +    }
 +
 +    @Override
-+    public @NotNull Optional<Integer> overriddenGrassColor() {
-+        return grassColor;
++    public @NotNull Color grassColor() {
++        if (grassColor != null)
++            return grassColor;
++        if (overriddenGrassColor != null)
++            return overriddenGrassColor;
++        throw new UnsupportedOperationException("Cannot get grass color which biome which isn't constructed yet and which isn't overridden!");
 +    }
 +
 +    @Override
-+    public @NotNull Optional<Integer> overriddenFoliageColor() {
-+        return foliageColor;
++    public @NotNull Color foliageColor() {
++        if (foliageColor != null)
++            return foliageColor;
++        if (overriddenFoliageColor != null)
++            return overriddenFoliageColor;
++        throw new UnsupportedOperationException("Cannot get foliage color which biome which isn't constructed yet and which isn't overridden!");
++    }
++
++    public Optional<Color> getOverriddenGrassColor() {
++        return Optional.ofNullable(this.overriddenGrassColor);
++    }
++
++    public Optional<Color> getOverriddenFoliageColor() {
++        return Optional.ofNullable(this.overriddenFoliageColor);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/world/biome/ClimateSettingsImpl.java b/src/main/java/io/papermc/paper/world/biome/ClimateSettingsImpl.java
@@ -362,6 +432,53 @@ index 0000000000000000000000000000000000000000..5ec93628a9b342ef69680070337997ff
 +
 +
 +}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index 09be3f188f9710fa71c5db67023e654739721f21..c78de6d4f8526fee8754edc20aa90797dc89bc8c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -219,6 +219,17 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+     public Biome getComputedBiome(int x, int y, int z) {
+         return CraftBlock.biomeBaseToBiome(this.getHandle().registryAccess().registryOrThrow(Registries.BIOME), this.getHandle().getBiome(new BlockPos(x, y, z)));
+     }
++
++    @Override
++    public  Biome biome(Location location) {
++        return this.biome(location.getBlockX(), location.getBlockY(), location.getBlockZ());
++    }
++
++    @Override
++    public Biome biome(int x, int y, int z) {
++        return io.papermc.paper.registry.APIConverters.getOrCreateAPIConverterBukkit(io.papermc.paper.registry.ExtendedRegistry.BIOME_REGISTRY_KEY).convertNMS(this.getHandle().getBiome(new BlockPos(x, y, z)).value());
++    }
++
+     // Paper end
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
+index b01904021bd4f485aaf03d1d7634b56f134d3099..8d0e3481f7b5450a9a0e7a41fa61b2c079bc0e8c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
+@@ -28,6 +28,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
+ import org.bukkit.generator.LimitedRegion;
+ import org.bukkit.util.BoundingBox;
+ import org.bukkit.util.Consumer;
++import org.jetbrains.annotations.NotNull;
+ 
+ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRegion {
+ 
+@@ -172,6 +173,12 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
+         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+         return super.getComputedBiome(x, y, z);
+     }
++
++    @Override
++    public @NotNull Biome biome(int x, int y, int z) {
++        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
++        return super.biome(x, y, z);
++    }
+     // Paper end
+ 
+     @Override
 diff --git a/src/test/java/io/papermc/paper/registry/RegistryTest.java b/src/test/java/io/papermc/paper/registry/RegistryTest.java
 index 6c1dfa698bb7d47520d46d37a1a1ef62fc4d1dcb..7ec828d6d65cd862af0f03db7f31daf1fdc6ba42 100644
 --- a/src/test/java/io/papermc/paper/registry/RegistryTest.java
