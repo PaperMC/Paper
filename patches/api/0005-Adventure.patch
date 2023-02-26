@@ -1048,7 +1048,7 @@ index fee814e01a653d2b53c56e8b566383ca44aa5346..b71b780792b672b37c8fe65d43489b86
      public void setCustomName(@Nullable String name);
  }
 diff --git a/src/main/java/org/bukkit/NamespacedKey.java b/src/main/java/org/bukkit/NamespacedKey.java
-index c559f38fdb92cfee9f2e0ffb7088d1cf74a7f73d..f4540ceee4937a496a10a08429093adf8ae2cfc0 100644
+index c559f38fdb92cfee9f2e0ffb7088d1cf74a7f73d..a42f1d53340e4073038d46b7fabf5d44248d5b32 100644
 --- a/src/main/java/org/bukkit/NamespacedKey.java
 +++ b/src/main/java/org/bukkit/NamespacedKey.java
 @@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
@@ -1060,6 +1060,38 @@ index c559f38fdb92cfee9f2e0ffb7088d1cf74a7f73d..f4540ceee4937a496a10a08429093adf
  
      /**
       * The namespace representing all inbuilt keys.
+@@ -129,10 +129,11 @@ public final class NamespacedKey {
+ 
+     @Override
+     public int hashCode() {
+-        int hash = 5;
+-        hash = 47 * hash + this.namespace.hashCode();
+-        hash = 47 * hash + this.key.hashCode();
+-        return hash;
++        // Paper start
++        int result = this.namespace.hashCode();
++        result = (31 * result) + this.key.hashCode();
++        return result;
++        // Paper end
+     }
+ 
+     @Override
+@@ -140,11 +141,10 @@ public final class NamespacedKey {
+         if (obj == null) {
+             return false;
+         }
+-        if (getClass() != obj.getClass()) {
+-            return false;
+-        }
+-        final NamespacedKey other = (NamespacedKey) obj;
+-        return this.namespace.equals(other.namespace) && this.key.equals(other.key);
++        // Paper start
++        if (!(obj instanceof net.kyori.adventure.key.Key key)) return false;
++        return this.namespace.equals(key.namespace()) && this.key.equals(key.value());
++        // Paper end
+     }
+ 
+     @Override
 @@ -246,4 +246,24 @@ public final class NamespacedKey {
      public static NamespacedKey fromString(@NotNull String key) {
          return fromString(key, null);
@@ -4675,6 +4707,43 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..47b10df619ad2520b9bb673e2220f363
      void setColor(@NotNull ChatColor color);
  
      /**
+diff --git a/src/test/java/io/papermc/paper/adventure/KeyTest.java b/src/test/java/io/papermc/paper/adventure/KeyTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..70c575077d204e4b36d07559f6a8d952b84af1cf
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/adventure/KeyTest.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.adventure;
++
++import java.util.HashSet;
++import java.util.Set;
++import net.kyori.adventure.key.Key;
++import org.bukkit.NamespacedKey;
++import org.junit.Test;
++
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertTrue;
++
++public class KeyTest {
++
++    @Test
++    public void equalsTest() {
++        Key key = new NamespacedKey("test", "key");
++        Key key1 = Key.key("test", "key");
++        assertEquals(key, key1);
++        assertEquals(key1, key);
++    }
++
++    @Test
++    public void setTest() {
++        Key key = new NamespacedKey("test", "key");
++        Key key1 = Key.key("test", "key");
++        Set<Key> set = new HashSet<>(Set.of(key));
++        Set<Key> set1 = new HashSet<>(Set.of(key1));
++        assertTrue(set.contains(key1));
++        assertTrue(set1.contains(key));
++    }
++}
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
 index 8f35cda0d67ec66646c6096a5bf1c84891b8b0fd..9825db30d42701aad5d9970bbb989fbff0142fb1 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
