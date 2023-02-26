@@ -589,7 +589,7 @@ index 0000000000000000000000000000000000000000..f7e43c693140b7a820b2432db312df8f
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8249a7024537fccd99735b92abb1368e6647b5ae
+index 0000000000000000000000000000000000000000..7bf5daaeec4e4e3911741fa482def13b6044ce97
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 @@ -0,0 +1,40 @@
@@ -598,15 +598,15 @@ index 0000000000000000000000000000000000000000..8249a7024537fccd99735b92abb1368e
 +import io.papermc.paper.plugin.PluginInitializerManager;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.PluginProvider;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.nio.file.Path;
-+import java.util.logging.Logger;
 +
 +public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
-+                                        Logger logger) implements PluginProviderContext {
++                                        ComponentLogger logger) implements PluginProviderContext {
 +
-+    public static PluginProviderContextImpl of(PluginMeta config, Logger logger) {
++    public static PluginProviderContextImpl of(PluginMeta config, ComponentLogger logger) {
 +        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getDisplayName());
 +
 +        return new PluginProviderContextImpl(config, dataFolder, logger);
@@ -629,7 +629,7 @@ index 0000000000000000000000000000000000000000..8249a7024537fccd99735b92abb1368e
 +    }
 +
 +    @Override
-+    public @NotNull Logger getLogger() {
++    public @NotNull ComponentLogger getLogger() {
 +        return this.logger;
 +    }
 +}
@@ -2127,7 +2127,7 @@ index 0000000000000000000000000000000000000000..22189a1c42459c00d3e8bdeb980d15a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..746272e0f8fb5311d5408175abe08db8aa356376
+index 0000000000000000000000000000000000000000..779f6980a71db8df68c9cf20784976409d13929e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 @@ -0,0 +1,269 @@
@@ -2396,7 +2396,7 @@ index 0000000000000000000000000000000000000000..746272e0f8fb5311d5408175abe08db8
 +
 +    private void warnIfPaperPlugin(PluginProvider<T> provider) {
 +        if (provider instanceof PaperPluginParent.PaperServerPluginProvider) {
-+            provider.getLogger().warning("Loading Paper plugin in the legacy plugin loading logic. This is not recommended and may introduce some differences into load order. It's highly recommended you move away from this if you are wanting to use Paper plugins.");
++            provider.getLogger().warn("Loading Paper plugin in the legacy plugin loading logic. This is not recommended and may introduce some differences into load order. It's highly recommended you move away from this if you are wanting to use Paper plugins.");
 +        }
 +    }
 +}
@@ -4114,7 +4114,7 @@ index 0000000000000000000000000000000000000000..ea8cf22c35242eb9f3914b95df00e205
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a97ec947bc6cecf9d9183b236263fd4407e5fd7e
+index 0000000000000000000000000000000000000000..3fc9246c111f862438f2cebda7d429c1c0b9582e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java
 @@ -0,0 +1,55 @@
@@ -4122,6 +4122,7 @@ index 0000000000000000000000000000000000000000..a97ec947bc6cecf9d9183b236263fd44
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -4129,7 +4130,6 @@ index 0000000000000000000000000000000000000000..a97ec947bc6cecf9d9183b236263fd44
 +import java.util.List;
 +import java.util.Map;
 +import java.util.jar.JarFile;
-+import java.util.logging.Logger;
 +
 +/**
 + * PluginProviders are created by a {@link io.papermc.paper.plugin.provider.source.ProviderSource},
@@ -4165,7 +4165,7 @@ index 0000000000000000000000000000000000000000..a97ec947bc6cecf9d9183b236263fd44
 +
 +    PluginMeta getMeta();
 +
-+    Logger getLogger();
++    ComponentLogger getLogger();
 +
 +    LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad);
 +
@@ -5353,7 +5353,7 @@ index 0000000000000000000000000000000000000000..b7e8a5ba375a558e0442aa9facf96954
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a0773c6d24de1f2ce1f0d949cba26b9997b696e6
+index 0000000000000000000000000000000000000000..884ddb16ee6a5b182e932abb53fdf38a4444d765
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 @@ -0,0 +1,258 @@
@@ -5374,6 +5374,7 @@ index 0000000000000000000000000000000000000000..a0773c6d24de1f2ce1f0d949cba26b99
 +import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
 +import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
 +import io.papermc.paper.plugin.provider.util.ProviderUtil;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.bukkit.plugin.java.JavaPlugin;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -5382,7 +5383,6 @@ index 0000000000000000000000000000000000000000..a0773c6d24de1f2ce1f0d949cba26b99
 +import java.util.List;
 +import java.util.Map;
 +import java.util.jar.JarFile;
-+import java.util.logging.Logger;
 +
 +public class PaperPluginParent {
 +
@@ -5392,7 +5392,7 @@ index 0000000000000000000000000000000000000000..a0773c6d24de1f2ce1f0d949cba26b99
 +    private final PaperPluginMeta description;
 +    private final PaperPluginClassLoader classLoader;
 +    private final PluginProviderContext context;
-+    private final Logger logger;
++    private final ComponentLogger logger;
 +
 +    public PaperPluginParent(Path path, JarFile jarFile, PaperPluginMeta description, PaperPluginClassLoader classLoader, PluginProviderContext context) {
 +        this.path = path;
@@ -5445,7 +5445,7 @@ index 0000000000000000000000000000000000000000..a0773c6d24de1f2ce1f0d949cba26b99
 +        }
 +
 +        @Override
-+        public Logger getLogger() {
++        public ComponentLogger getLogger() {
 +            return PaperPluginParent.this.logger;
 +        }
 +
@@ -5552,7 +5552,7 @@ index 0000000000000000000000000000000000000000..a0773c6d24de1f2ce1f0d949cba26b99
 +        }
 +
 +        @Override
-+        public Logger getLogger() {
++        public ComponentLogger getLogger() {
 +            return PaperPluginParent.this.logger;
 +        }
 +
@@ -5617,10 +5617,10 @@ index 0000000000000000000000000000000000000000..a0773c6d24de1f2ce1f0d949cba26b99
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..db343a2f482ac375078610f0875692861f412ee2
+index 0000000000000000000000000000000000000000..eb0464a52d99a916bca8f93cd9294cdc30893671
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
@@ -5641,12 +5641,14 @@ index 0000000000000000000000000000000000000000..db343a2f482ac375078610f087569286
 +import java.util.jar.JarEntry;
 +import java.util.jar.JarFile;
 +import java.util.logging.Logger;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +
 +class PaperPluginProviderFactory implements PluginTypeFactory<PaperPluginParent, PaperPluginMeta> {
 +
 +    @Override
 +    public PaperPluginParent build(JarFile file, PaperPluginMeta configuration, Path source) throws Exception {
-+        Logger logger = PaperPluginLogger.getLogger(configuration);
++        Logger jul = PaperPluginLogger.getLogger(configuration);
++        ComponentLogger logger = ComponentLogger.logger(jul.getName());
 +        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger);
 +
 +        PaperClasspathBuilder builder = new PaperClasspathBuilder(context);
@@ -5662,7 +5664,7 @@ index 0000000000000000000000000000000000000000..db343a2f482ac375078610f087569286
 +            }
 +        }
 +
-+        PaperPluginClassLoader classLoader = builder.buildClassLoader(logger, source, file, configuration);
++        PaperPluginClassLoader classLoader = builder.buildClassLoader(jul, source, file, configuration);
 +        return new PaperPluginParent(source, file, configuration, classLoader, context);
 +    }
 +
@@ -5755,16 +5757,15 @@ index 0000000000000000000000000000000000000000..b2a6544e321fa61c58bdf5684231de10
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..600023770e19f02258327816122298f58d73e4ab
+index 0000000000000000000000000000000000000000..9a19abaccec91df9b2614dd6638d7bc199bdac2c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
-@@ -0,0 +1,188 @@
+@@ -0,0 +1,190 @@
 +package io.papermc.paper.plugin.provider.type.spigot;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
-+import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
@@ -5772,6 +5773,7 @@ index 0000000000000000000000000000000000000000..600023770e19f02258327816122298f5
 +import io.papermc.paper.plugin.provider.ProviderStatus;
 +import io.papermc.paper.plugin.provider.ProviderStatusHolder;
 +import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Server;
 +import org.bukkit.plugin.InvalidPluginException;
@@ -5800,6 +5802,7 @@ index 0000000000000000000000000000000000000000..600023770e19f02258327816122298f5
 +    private final PluginDescriptionFile description;
 +    private final JarFile jarFile;
 +    private final Logger logger;
++    private final ComponentLogger componentLogger;
 +    private ProviderStatus status;
 +    private DependencyContext dependencyContext;
 +
@@ -5808,6 +5811,7 @@ index 0000000000000000000000000000000000000000..600023770e19f02258327816122298f5
 +        this.jarFile = file;
 +        this.description = description;
 +        this.logger = PaperPluginLogger.getLogger(description);
++        this.componentLogger = ComponentLogger.logger(this.logger.getName());
 +    }
 +
 +    @Override
@@ -5907,8 +5911,8 @@ index 0000000000000000000000000000000000000000..600023770e19f02258327816122298f5
 +    }
 +
 +    @Override
-+    public Logger getLogger() {
-+        return this.logger;
++    public ComponentLogger getLogger() {
++        return this.componentLogger;
 +    }
 +
 +    @Override
