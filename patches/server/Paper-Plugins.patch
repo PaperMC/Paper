@@ -598,15 +598,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.PluginInitializerManager;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.PluginProvider;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.nio.file.Path;
-+import java.util.logging.Logger;
 +
 +public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
-+                                        Logger logger) implements PluginProviderContext {
++                                        ComponentLogger logger) implements PluginProviderContext {
 +
-+    public static PluginProviderContextImpl of(PluginMeta config, Logger logger) {
++    public static PluginProviderContextImpl of(PluginMeta config, ComponentLogger logger) {
 +        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getDisplayName());
 +
 +        return new PluginProviderContextImpl(config, dataFolder, logger);
@@ -629,7 +629,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public @NotNull Logger getLogger() {
++    public @NotNull ComponentLogger getLogger() {
 +        return this.logger;
 +    }
 +}
@@ -2396,7 +2396,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private void warnIfPaperPlugin(PluginProvider<T> provider) {
 +        if (provider instanceof PaperPluginParent.PaperServerPluginProvider) {
-+            provider.getLogger().warning("Loading Paper plugin in the legacy plugin loading logic. This is not recommended and may introduce some differences into load order. It's highly recommended you move away from this if you are wanting to use Paper plugins.");
++            provider.getLogger().warn("Loading Paper plugin in the legacy plugin loading logic. This is not recommended and may introduce some differences into load order. It's highly recommended you move away from this if you are wanting to use Paper plugins.");
 +        }
 +    }
 +}
@@ -4122,6 +4122,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -4129,7 +4130,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.List;
 +import java.util.Map;
 +import java.util.jar.JarFile;
-+import java.util.logging.Logger;
 +
 +/**
 + * PluginProviders are created by a {@link io.papermc.paper.plugin.provider.source.ProviderSource},
@@ -4165,7 +4165,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    PluginMeta getMeta();
 +
-+    Logger getLogger();
++    ComponentLogger getLogger();
 +
 +    LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad);
 +
@@ -5374,6 +5374,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
 +import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
 +import io.papermc.paper.plugin.provider.util.ProviderUtil;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.bukkit.plugin.java.JavaPlugin;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -5382,7 +5383,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.List;
 +import java.util.Map;
 +import java.util.jar.JarFile;
-+import java.util.logging.Logger;
 +
 +public class PaperPluginParent {
 +
@@ -5392,7 +5392,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final PaperPluginMeta description;
 +    private final PaperPluginClassLoader classLoader;
 +    private final PluginProviderContext context;
-+    private final Logger logger;
++    private final ComponentLogger logger;
 +
 +    public PaperPluginParent(Path path, JarFile jarFile, PaperPluginMeta description, PaperPluginClassLoader classLoader, PluginProviderContext context) {
 +        this.path = path;
@@ -5445,7 +5445,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        @Override
-+        public Logger getLogger() {
++        public ComponentLogger getLogger() {
 +            return PaperPluginParent.this.logger;
 +        }
 +
@@ -5552,7 +5552,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        @Override
-+        public Logger getLogger() {
++        public ComponentLogger getLogger() {
 +            return PaperPluginParent.this.logger;
 +        }
 +
@@ -5641,12 +5641,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.jar.JarEntry;
 +import java.util.jar.JarFile;
 +import java.util.logging.Logger;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +
 +class PaperPluginProviderFactory implements PluginTypeFactory<PaperPluginParent, PaperPluginMeta> {
 +
 +    @Override
 +    public PaperPluginParent build(JarFile file, PaperPluginMeta configuration, Path source) throws Exception {
-+        Logger logger = PaperPluginLogger.getLogger(configuration);
++        Logger jul = PaperPluginLogger.getLogger(configuration);
++        ComponentLogger logger = ComponentLogger.logger(jul.getName());
 +        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger);
 +
 +        PaperClasspathBuilder builder = new PaperClasspathBuilder(context);
@@ -5662,7 +5664,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        PaperPluginClassLoader classLoader = builder.buildClassLoader(logger, source, file, configuration);
++        PaperPluginClassLoader classLoader = builder.buildClassLoader(jul, source, file, configuration);
 +        return new PaperPluginParent(source, file, configuration, classLoader, context);
 +    }
 +
@@ -5764,7 +5766,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
-+import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
@@ -5772,6 +5773,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.provider.ProviderStatus;
 +import io.papermc.paper.plugin.provider.ProviderStatusHolder;
 +import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Server;
 +import org.bukkit.plugin.InvalidPluginException;
@@ -5800,6 +5802,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final PluginDescriptionFile description;
 +    private final JarFile jarFile;
 +    private final Logger logger;
++    private final ComponentLogger componentLogger;
 +    private ProviderStatus status;
 +    private DependencyContext dependencyContext;
 +
@@ -5808,6 +5811,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.jarFile = file;
 +        this.description = description;
 +        this.logger = PaperPluginLogger.getLogger(description);
++        this.componentLogger = ComponentLogger.logger(this.logger.getName());
 +    }
 +
 +    @Override
@@ -5907,8 +5911,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public Logger getLogger() {
-+        return this.logger;
++    public ComponentLogger getLogger() {
++        return this.componentLogger;
 +    }
 +
 +    @Override
@@ -7039,6 +7043,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.nio.file.Path;
@@ -7046,7 +7051,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.List;
 +import java.util.Map;
 +import java.util.jar.JarFile;
-+import java.util.logging.Logger;
 +
 +public class TestJavaPluginProvider implements PluginProvider<PaperTestPlugin> {
 +
@@ -7077,8 +7081,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public Logger getLogger() {
-+        return Logger.getLogger("TestPlugin");
++    public ComponentLogger getLogger() {
++        return ComponentLogger.logger("TestPlugin");
 +    }
 +
 +    @Override
