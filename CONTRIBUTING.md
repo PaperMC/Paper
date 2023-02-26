@@ -31,7 +31,7 @@ you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
   - [Adoptium](https://adoptium.net/) has builds for most operating systems.
   - Paper requires JDK 17 to build, however, makes use of Gradle's
     [Toolchains](https://docs.gradle.org/current/userguide/toolchains.html)
-    feature to allow building with only JRE 8 or later installed. (Gradle will
+    feature to allow building with only JRE 11 or later installed. (Gradle will
     automatically provision JDK 17 for compilation if it cannot find an existing
     install).
 
