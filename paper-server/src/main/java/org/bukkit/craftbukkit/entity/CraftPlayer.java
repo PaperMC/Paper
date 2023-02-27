@@ -724,15 +724,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendEquipmentChange(LivingEntity entity, EquipmentSlot slot, ItemStack item) {
+        this.sendEquipmentChange(entity, Map.of(slot, item));
+    }
+
+    @Override
+    public void sendEquipmentChange(LivingEntity entity, Map<EquipmentSlot, ItemStack> items) {
         Preconditions.checkArgument(entity != null, "entity must not be null");
-        Preconditions.checkArgument(slot != null, "slot must not be null");
-        Preconditions.checkArgument(item != null, "item must not be null");
+        Preconditions.checkArgument(items != null, "items must not be null");
 
-        if (getHandle().connection == null) return;
+        if (getHandle().connection == null) {
+            return;
+        }
 
-        List<Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>> equipment = Arrays.asList(
-                new Pair<>(CraftEquipmentSlot.getNMS(slot), CraftItemStack.asNMSCopy(item))
-        );
+        List<Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>> equipment = new ArrayList<>(items.size());
+        for (Map.Entry<EquipmentSlot, ItemStack> entry : items.entrySet()) {
+            EquipmentSlot slot = entry.getKey();
+            Preconditions.checkArgument(slot != null, "Cannot set null EquipmentSlot");
+
+            equipment.add(new Pair<>(CraftEquipmentSlot.getNMS(slot), CraftItemStack.asNMSCopy(entry.getValue())));
+        }
 
         getHandle().connection.send(new PacketPlayOutEntityEquipment(entity.getEntityId(), equipment));
     }
