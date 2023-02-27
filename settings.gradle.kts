@@ -1,5 +1,16 @@
 import java.util.Locale
 
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven("https://repo.papermc.io/repository/maven-public/")
+    }
+}
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.4.0"
+}
+
 if (!file(".git").exists()) {
     val errorText = """
         
@@ -18,13 +29,6 @@ if (!file(".git").exists()) {
         ===================================================
     """.trimIndent()
     error(errorText)
-}
-
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        maven("https://repo.papermc.io/repository/maven-public/")
-    }
 }
 
 rootProject.name = "paper"
