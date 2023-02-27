@@ -45,7 +45,7 @@
          this.level.gameEvent(this.source, GameEvent.EXPLODE, new Vec3D(this.x, this.y, this.z));
          Set<BlockPosition> set = Sets.newHashSet();
          boolean flag = true;
-@@ -211,7 +226,36 @@
+@@ -211,7 +226,39 @@
                          double d12 = (double) getSeenPercent(vec3d, entity);
                          double d13 = (1.0D - d7) * d12;
  
@@ -67,8 +67,11 @@
 +
 +                        if (entity instanceof EntityEnderDragon) {
 +                            for (EntityComplexPart entityComplexPart : ((EntityEnderDragon) entity).subEntities) {
-+                                if (list.contains(entityComplexPart)) {
-+                                    entityComplexPart.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
++                                // Calculate damage separately for each EntityComplexPart
++                                double d7part;
++                                if (list.contains(entityComplexPart) && (d7part = Math.sqrt(entityComplexPart.distanceToSqr(vec3d)) / f2) <= 1.0D) {
++                                    double d13part = (1.0D - d7part) * getSeenPercent(vec3d, entityComplexPart);
++                                    entityComplexPart.hurt(this.getDamageSource(), (float) ((int) ((d13part * d13part + d13part) / 2.0D * 7.0D * (double) f2 + 1.0D)));
 +                                }
 +                            }
 +                        } else {
@@ -83,7 +86,7 @@
                          double d14 = d13;
  
                          if (entity instanceof EntityLiving) {
-@@ -254,6 +298,51 @@
+@@ -254,6 +301,51 @@
  
              SystemUtils.shuffle(this.toBlow, this.level.random);
              ObjectListIterator objectlistiterator = this.toBlow.iterator();
@@ -135,7 +138,7 @@
  
              while (objectlistiterator.hasNext()) {
                  BlockPosition blockposition = (BlockPosition) objectlistiterator.next();
-@@ -272,8 +361,8 @@
+@@ -272,8 +364,8 @@
                              TileEntity tileentity = iblockdata.hasBlockEntity() ? this.level.getBlockEntity(blockposition) : null;
                              LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder(worldserver)).withRandom(this.level.random).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(blockposition)).withParameter(LootContextParameters.TOOL, ItemStack.EMPTY).withOptionalParameter(LootContextParameters.BLOCK_ENTITY, tileentity).withOptionalParameter(LootContextParameters.THIS_ENTITY, this.source);
  
@@ -146,7 +149,7 @@
                              }
  
                              iblockdata.spawnAfterBreak(worldserver, blockposition, ItemStack.EMPTY, flag2);
-@@ -305,7 +394,11 @@
+@@ -305,7 +397,11 @@
                  BlockPosition blockposition2 = (BlockPosition) objectlistiterator1.next();
  
                  if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockposition2).isAir() && this.level.getBlockState(blockposition2.below()).isSolidRender(this.level, blockposition2.below())) {
@@ -159,7 +162,7 @@
                  }
              }
          }
-@@ -317,6 +410,7 @@
+@@ -317,6 +413,7 @@
      }
  
      private static void addBlockDrops(ObjectArrayList<Pair<ItemStack, BlockPosition>> objectarraylist, ItemStack itemstack, BlockPosition blockposition) {
