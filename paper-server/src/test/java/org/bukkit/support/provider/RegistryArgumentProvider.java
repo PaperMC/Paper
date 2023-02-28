@@ -22,11 +22,11 @@ public class RegistryArgumentProvider implements ArgumentsProvider, AnnotationCo
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-        return RegistryArgumentProvider.getValues(this.registryType);
+        return RegistryArgumentProvider.getValues(io.papermc.paper.registry.PaperRegistryAccess.byType(this.registryType)); // Paper
     }
 
-    public static Stream<? extends Arguments> getValues(Class<? extends Keyed> registryType) {
-        Registry<?> registry = Bukkit.getRegistry(registryType);
+    public static Stream<? extends Arguments> getValues(io.papermc.paper.registry.RegistryKey<? extends Keyed> registryType) { // Paper
+        Registry<?> registry = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(registryType); // Paper
         return registry.stream().map(keyed -> (Handleable<?>) keyed)
                 .map(handleAble -> Arguments.of(handleAble, handleAble.getHandle()));
     }

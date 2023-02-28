@@ -93,13 +93,40 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         Preconditions.checkArgument(minecraft != null);
 
         net.minecraft.core.Registry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
-        B bukkit = bukkitRegistry.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft)
-                .orElseThrow(() -> new IllegalStateException(String.format("Cannot convert '%s' to bukkit representation, since it is not registered.", minecraft))).location()));
+        // Paper start - support direct Holders
+        final java.util.Optional<ResourceKey<M>> resourceKey = registry.getResourceKey(minecraft);
+        if (resourceKey.isEmpty() && bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry && craftRegistry.supportsDirectHolders()) {
+            return ((CraftRegistry<B, M>) registry).convertDirectHolder(Holder.direct(minecraft));
+        } else if (resourceKey.isEmpty()) {
+            throw new IllegalStateException(String.format("Cannot convert '%s' to bukkit representation, since it is not registered.", minecraft));
+        }
+        final B bukkit = bukkitRegistry.get(CraftNamespacedKey.fromMinecraft(resourceKey.get().location()));
+        // Paper end - support direct Holders
 
         Preconditions.checkArgument(bukkit != null);
 
         return bukkit;
     }
+
+    // Paper start - support direct Holders
+    public static <B extends Keyed, M> B minecraftHolderToBukkit(final Holder<M> minecraft, final Registry<B> bukkitRegistry) {
+        Preconditions.checkArgument(minecraft != null);
+
+        final B bukkit = switch (minecraft) {
+            case final Holder.Direct<M> direct -> {
+                if (!(bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry) || !craftRegistry.supportsDirectHolders()) {
+                    throw new IllegalArgumentException("Cannot convert direct holder to bukkit representation");
+                }
+                yield ((CraftRegistry<B, M>) bukkitRegistry).convertDirectHolder(direct);
+            }
+            case final Holder.Reference<M> reference -> bukkitRegistry.get(io.papermc.paper.util.MCUtil.fromResourceKey(reference.key()));
+            default -> throw new IllegalArgumentException("Unknown holder: " + minecraft);
+        };
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit;
+    }
+    // Paper end - support direct Holders
 
     /**
      * Usage note: Only use this method to delegate the conversion methods from the individual Craft classes to here.
@@ -116,6 +143,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(B bukkit, ResourceKey<net.minecraft.core.Registry<M>> registryKey) {
         Preconditions.checkArgument(bukkit != null);
+        // Paper start - support direct Holder
+        if (bukkit instanceof io.papermc.paper.util.Holderable<?>) {
+            return ((io.papermc.paper.util.Holderable<M>) bukkit).getHolder();
+        }
+        // Paper end - support direct Holder
 
         net.minecraft.core.Registry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
 
@@ -127,96 +159,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
                 + ", this can happen if a plugin creates its own registry entry with out properly registering it.");
     }
 
-    /**
-     * Note: Newly added registries should also be added to RegistriesArgumentProvider in the test package
-     *
-     * @param bukkitClass the bukkit class of the registry
-     * @param registryHolder the minecraft registry holder
-     * @return the bukkit registry of the provided class
-     */
-    public static <B extends Keyed> Registry<?> createRegistry(Class<? super B> bukkitClass, RegistryAccess registryHolder) {
-        if (bukkitClass == Art.class) {
-            return new CraftRegistry<>(Art.class, registryHolder.lookupOrThrow(Registries.PAINTING_VARIANT), CraftArt::new, FieldRename.NONE);
-        }
-        if (bukkitClass == Attribute.class) {
-            return new CraftRegistry<>(Attribute.class, registryHolder.lookupOrThrow(Registries.ATTRIBUTE), CraftAttribute::new, FieldRename.ATTRIBUTE_RENAME);
-        }
-        if (bukkitClass == Biome.class) {
-            return new CraftRegistry<>(Biome.class, registryHolder.lookupOrThrow(Registries.BIOME), CraftBiome::new, FieldRename.BIOME_RENAME);
-        }
-        if (bukkitClass == Enchantment.class) {
-            return new CraftRegistry<>(Enchantment.class, registryHolder.lookupOrThrow(Registries.ENCHANTMENT), CraftEnchantment::new, FieldRename.ENCHANTMENT_RENAME);
-        }
-        if (bukkitClass == Fluid.class) {
-            return new CraftRegistry<>(Fluid.class, registryHolder.lookupOrThrow(Registries.FLUID), CraftFluid::new, FieldRename.NONE);
-        }
-        if (bukkitClass == GameEvent.class) {
-            return new CraftRegistry<>(GameEvent.class, registryHolder.lookupOrThrow(Registries.GAME_EVENT), CraftGameEvent::new, FieldRename.NONE);
-        }
-        if (bukkitClass == MusicInstrument.class) {
-            return new CraftRegistry<>(MusicInstrument.class, registryHolder.lookupOrThrow(Registries.INSTRUMENT), CraftMusicInstrument::new, FieldRename.NONE);
-        }
-        if (bukkitClass == MenuType.class) {
-            return new CraftRegistry<>(MenuType.class, registryHolder.lookupOrThrow(Registries.MENU), CraftMenuType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == PotionEffectType.class) {
-            return new CraftRegistry<>(PotionEffectType.class, registryHolder.lookupOrThrow(Registries.MOB_EFFECT), CraftPotionEffectType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == Sound.class) {
-            return new CraftRegistry<>(Sound.class, registryHolder.lookupOrThrow(Registries.SOUND_EVENT), CraftSound::new, FieldRename.NONE);
-        }
-        if (bukkitClass == Structure.class) {
-            return new CraftRegistry<>(Structure.class, registryHolder.lookupOrThrow(Registries.STRUCTURE), CraftStructure::new, FieldRename.NONE);
-        }
-        if (bukkitClass == StructureType.class) {
-            return new CraftRegistry<>(StructureType.class, registryHolder.lookupOrThrow(Registries.STRUCTURE_TYPE), CraftStructureType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == Villager.Type.class) {
-            return new CraftRegistry<>(Villager.Type.class, registryHolder.lookupOrThrow(Registries.VILLAGER_TYPE), CraftVillager.CraftType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == Villager.Profession.class) {
-            return new CraftRegistry<>(Villager.Profession.class, registryHolder.lookupOrThrow(Registries.VILLAGER_PROFESSION), CraftVillager.CraftProfession::new, FieldRename.NONE);
-        }
-        if (bukkitClass == TrimMaterial.class) {
-            return new CraftRegistry<>(TrimMaterial.class, registryHolder.lookupOrThrow(Registries.TRIM_MATERIAL), CraftTrimMaterial::new, FieldRename.NONE);
-        }
-        if (bukkitClass == TrimPattern.class) {
-            return new CraftRegistry<>(TrimPattern.class, registryHolder.lookupOrThrow(Registries.TRIM_PATTERN), CraftTrimPattern::new, FieldRename.NONE);
-        }
-        if (bukkitClass == DamageType.class) {
-            return new CraftRegistry<>(DamageType.class, registryHolder.lookupOrThrow(Registries.DAMAGE_TYPE), CraftDamageType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == JukeboxSong.class) {
-            return new CraftRegistry<>(JukeboxSong.class, registryHolder.lookupOrThrow(Registries.JUKEBOX_SONG), CraftJukeboxSong::new, FieldRename.NONE);
-        }
-        if (bukkitClass == Wolf.Variant.class) {
-            return new CraftRegistry<>(Wolf.Variant.class, registryHolder.lookupOrThrow(Registries.WOLF_VARIANT), CraftWolf.CraftVariant::new, FieldRename.NONE);
-        }
-        if (bukkitClass == BlockType.class) {
-            return new CraftRegistry<>(BlockType.class, registryHolder.lookupOrThrow(Registries.BLOCK), CraftBlockType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == ItemType.class) {
-            return new CraftRegistry<>(ItemType.class, registryHolder.lookupOrThrow(Registries.ITEM), CraftItemType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == Frog.Variant.class) {
-            return new CraftRegistry<>(Frog.Variant.class, registryHolder.lookupOrThrow(Registries.FROG_VARIANT), CraftFrog.CraftVariant::new, FieldRename.NONE);
-        }
-        if (bukkitClass == Cat.Type.class) {
-            return new CraftRegistry<>(Cat.Type.class, registryHolder.lookupOrThrow(Registries.CAT_VARIANT), CraftCat.CraftType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == MapCursor.Type.class) {
-            return new CraftRegistry<>(MapCursor.Type.class, registryHolder.lookupOrThrow(Registries.MAP_DECORATION_TYPE), CraftMapCursor.CraftType::new, FieldRename.NONE);
-        }
-        if (bukkitClass == PatternType.class) {
-            return new CraftRegistry<>(PatternType.class, registryHolder.lookupOrThrow(Registries.BANNER_PATTERN), CraftPatternType::new, FieldRename.NONE);
-        }
+    // Paper - move to PaperRegistries
 
-        return null;
-    }
-
+    // Paper - NOTE: As long as all uses of the method below relate to *serialization* via ConfigurationSerializable, it's fine
     public static <B extends Keyed> B get(Registry<B> bukkit, NamespacedKey namespacedKey, ApiVersion apiVersion) {
         if (bukkit instanceof CraftRegistry<B, ?> craft) {
-            return craft.get(namespacedKey, apiVersion);
+            return craft.get(craft.serializationUpdater.apply(namespacedKey, apiVersion)); // Paper
         }
 
         if (bukkit instanceof Registry.SimpleRegistry<?> simple) {
@@ -234,23 +182,26 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return bukkit.get(namespacedKey);
     }
 
-    private final Class<? super B> bukkitClass;
+    private final Class<?> bukkitClass; // Paper - relax preload class
     private final Map<NamespacedKey, B> cache = new HashMap<>();
     private final net.minecraft.core.Registry<M> minecraftRegistry;
-    private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
-    private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater;
+    private final io.papermc.paper.registry.entry.RegistryTypeMapper<M, B> minecraftToBukkit; // Paper - switch to Holder
+    private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater; // Paper - rename to make it *clear* what it is *only* for
     private boolean init;
 
-    public CraftRegistry(Class<? super B> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater) {
+    public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<? super NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
+        // Paper start - switch to Holder
+        this(bukkitClass, minecraftRegistry, new io.papermc.paper.registry.entry.RegistryTypeMapper<>(minecraftToBukkit), serializationUpdater);
+    }
+    public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, io.papermc.paper.registry.entry.RegistryTypeMapper<M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
+        // Paper end - support Holders
         this.bukkitClass = bukkitClass;
         this.minecraftRegistry = minecraftRegistry;
         this.minecraftToBukkit = minecraftToBukkit;
-        this.updater = updater;
+        this.serializationUpdater = serializationUpdater;
     }
 
-    public B get(NamespacedKey namespacedKey, ApiVersion apiVersion) {
-        return this.get(this.updater.apply(namespacedKey, apiVersion));
-    }
+    // Paper - inline into CraftRegistry#get(Registry, NamespacedKey, ApiVersion) above
 
     @Override
     public B get(NamespacedKey namespacedKey) {
@@ -280,7 +231,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
             return this.get(namespacedKey);
         }
 
-        B bukkit = this.createBukkit(namespacedKey, this.minecraftRegistry.getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElse(null));
+        B bukkit = this.createBukkit(namespacedKey, this.minecraftRegistry.get(CraftNamespacedKey.toMinecraft(namespacedKey)).orElse(null)); // Paper - switch to Holder
         if (bukkit == null) {
             return null;
         }
@@ -311,11 +262,21 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return this.stream().iterator();
     }
 
-    public B createBukkit(NamespacedKey namespacedKey, M minecraft) {
+    public B createBukkit(NamespacedKey namespacedKey, Holder<M> minecraft) { // Paper - switch to Holder
         if (minecraft == null) {
             return null;
         }
 
-        return this.minecraftToBukkit.apply(namespacedKey, minecraft);
+        return this.minecraftToBukkit.createBukkit(namespacedKey, minecraft); // Paper - switch to Holder
     }
+
+    // Paper start - support Direct Holders
+    public boolean supportsDirectHolders() {
+        return this.minecraftToBukkit.supportsDirectHolders();
+    }
+
+    public B convertDirectHolder(Holder<M> holder) {
+        return this.minecraftToBukkit.convertDirectHolder(holder);
+    }
+    // Paper end - support Direct Holders
 }

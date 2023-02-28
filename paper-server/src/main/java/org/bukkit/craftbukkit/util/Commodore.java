@@ -220,20 +220,10 @@ public class Commodore {
 
     public byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
         final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
-        final boolean enumCompatibility = pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode");
         ClassReader cr = new ClassReader(b);
         ClassWriter cw = new ClassWriter(cr, 0);
 
-        List<String> methodEnumSignatures = Commodore.getMethodSignatures(b);
-        Multimap<String, String> enumLessToEnum = HashMultimap.create();
-        for (String method : methodEnumSignatures) {
-            enumLessToEnum.put(method.replace("Ljava/lang/Enum;", "Ljava/lang/Object;"), method);
-        }
-
         ClassVisitor visitor = cw;
-        if (enumCompatibility) {
-            visitor = new LimitedClassRemapper(cw, new SimpleRemapper(Commodore.ENUM_RENAMES));
-        }
 
         visitor = io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor); // Paper
         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
@@ -300,15 +290,6 @@ public class Commodore {
 
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-                if (enumCompatibility && (access & Opcodes.ACC_SYNTHETIC) != 0 && (access & Opcodes.ACC_BRIDGE) != 0 && desc.contains("Ljava/lang/Object;")) {
-                    // SPIGOT-7820: Do not use object method if enum method is present
-                    // The object method does only redirect to the enum method
-                    Collection<String> result = enumLessToEnum.get(desc.replace("Ljava/lang/Enum;", "Ljava/lang/Object;") + " " + name);
-                    if (result.size() == 2) {
-                        name = name + "_BUKKIT_UNUSED";
-                    }
-                }
-
                 return new MethodVisitor(this.api, super.visitMethod(access, name, desc, signature, exceptions)) {
                     // Paper start - Plugin rewrites
                     @Override

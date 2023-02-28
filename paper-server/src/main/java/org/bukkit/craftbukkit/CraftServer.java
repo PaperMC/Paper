@@ -284,7 +284,7 @@ public final class CraftServer implements Server {
     protected final DedicatedServer console;
     protected final DedicatedPlayerList playerList;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
-    private final Map<Class<?>, Registry<?>> registries = new HashMap<>();
+    // private final Map<Class<?>, Registry<?>> registries = new HashMap<>(); // Paper - replace with RegistryAccess
     private YamlConfiguration configuration;
     private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
@@ -431,6 +431,7 @@ public final class CraftServer implements Server {
     }
 
     private void loadCompatibilities() {
+        if (true) return; // Paper - Big nope
         ConfigurationSection compatibilities = this.configuration.getConfigurationSection("settings.compatibility");
         if (compatibilities == null) {
             this.activeCompatibilities = Collections.emptySet();
@@ -2754,7 +2755,7 @@ public final class CraftServer implements Server {
 
     @Override
     public <T extends Keyed> Registry<T> getRegistry(Class<T> aClass) {
-        return (Registry<T>) this.registries.computeIfAbsent(aClass, key -> CraftRegistry.createRegistry(aClass, this.console.registryAccess()));
+        return io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(aClass); // Paper - replace with RegistryAccess
     }
 
     @Deprecated

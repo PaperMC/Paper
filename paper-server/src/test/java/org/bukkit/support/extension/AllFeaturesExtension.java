@@ -39,22 +39,7 @@ public class AllFeaturesExtension extends BaseExtension {
 
         Bukkit.setServer(server);
 
-        when(server.getRegistry(any()))
-                .then(invocation -> {
-                    Class<? extends Keyed> keyed = invocation.getArgument(0);
-                    if (spyRegistries.containsKey(keyed)) {
-                        return spyRegistries.get(keyed);
-                    }
-
-                    Registry<?> registry = CraftRegistry.createRegistry(keyed, RegistryHelper.getRegistry());
-                    realRegistries.put(keyed, registry);
-
-                    Registry<?> spy = mock(registry.getClass(), withSettings().stubOnly().spiedInstance(registry).defaultAnswer(CALLS_REAL_METHODS));
-
-                    spyRegistries.put(keyed, spy);
-
-                    return spy;
-                });
+        // Paper - Add RegistryAccess for managing registries - replaced with registry access
 
         CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
     }

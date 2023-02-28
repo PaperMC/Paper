@@ -51,11 +51,14 @@ public class FieldRename {
         };
     }
 
-    @RequireCompatibility("allow-old-keys-in-registry")
-    public static <T extends Keyed> T get(Registry<T> registry, NamespacedKey namespacedKey) {
-        // We don't have version-specific changes, so just use current, and don't inject a version
-        return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
-    }
+    // Paper start - absolutely not, having this as an expectation for plugin developers opens a huge
+    // can of worms in the future, especially if mojang comes back and reuses some old key
+    //@RequireCompatibility("allow-old-keys-in-registry")
+    //public static <T extends Keyed> T get(Registry<T> registry, NamespacedKey namespacedKey) {
+    //    // We don't have version-specific changes, so just use current, and don't inject a version
+    //    return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
+    //}
+    // Paper end
 
     // PatternType
     private static final FieldRenameData PATTERN_TYPE_DATA = FieldRenameData.Builder.newBuilder()

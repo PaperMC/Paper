@@ -30,11 +30,7 @@ public class SlowExtension extends BaseExtension {
 
         Bukkit.setServer(server);
 
-        when(server.getRegistry(any()))
-                .then(invocation -> {
-                    Class<? extends Keyed> keyed = invocation.getArgument(0);
-                    return registries.computeIfAbsent(keyed, k -> CraftRegistry.createRegistry(keyed, RegistryHelper.getRegistry()));
-                });
+        // Paper - Add RegistryAccess for managing registries - replaced with registry access
 
         CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
     }

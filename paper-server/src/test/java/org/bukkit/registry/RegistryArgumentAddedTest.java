@@ -22,14 +22,17 @@ public class RegistryArgumentAddedTest {
         // Make sure every registry is created
         Class.forName(Registry.class.getName());
 
-        Set<Class<?>> loadedRegistries = new HashSet<>(AllFeaturesExtension.getRealRegistries().keySet());
-        Set<Class<?>> notFound = new HashSet<>();
+        // Paper start
+        Set<io.papermc.paper.registry.RegistryKey<?>> loadedRegistries = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        loadedRegistries.addAll(io.papermc.paper.registry.PaperRegistryAccess.instance().getLoadedServerBackedRegistries());
+        // Paper end
+        Set<io.papermc.paper.registry.RegistryKey<?>> notFound = new HashSet<>(); // Paper
 
         RegistriesArgumentProvider
                 .getData()
                 .map(Arguments::get)
                 .map(array -> array[0])
-                .map(clazz -> (Class<?>) clazz)
+                .map(clazz -> (io.papermc.paper.registry.RegistryKey<?>) clazz) // Paper
                 .forEach(clazz -> {
                     if (!loadedRegistries.remove(clazz)) {
                         notFound.add(clazz);

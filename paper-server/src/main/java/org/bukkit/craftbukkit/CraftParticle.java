@@ -216,11 +216,10 @@ public abstract class CraftParticle<D> implements Keyed {
         }
 
         public CraftParticleRegistry(net.minecraft.core.Registry<net.minecraft.core.particles.ParticleType<?>> minecraftRegistry) {
-            super(CraftParticle.class, minecraftRegistry, null, FieldRename.PARTICLE_TYPE_RENAME);
+            super(CraftParticle.class, minecraftRegistry, CraftParticleRegistry::createBukkit, FieldRename.PARTICLE_TYPE_RENAME); // Paper - switch to Holder
         }
 
-        @Override
-        public CraftParticle<?> createBukkit(NamespacedKey namespacedKey, net.minecraft.core.particles.ParticleType<?> particle) {
+        public static CraftParticle<?> createBukkit(NamespacedKey namespacedKey, net.minecraft.core.particles.ParticleType<?> particle) { // Paper - idk why this is a separate implementation, just wrap the function
             if (particle == null) {
                 return null;
             }
