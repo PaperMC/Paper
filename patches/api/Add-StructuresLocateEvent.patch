@@ -176,17 +176,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.event.world;
 +
++import io.papermc.paper.math.Position;
++import io.papermc.paper.util.TransformingRandomAccessList;
 +import io.papermc.paper.world.structure.ConfiguredStructure;
++import java.util.Collections;
++import java.util.List;
++import java.util.Objects;
 +import org.bukkit.Location;
 +import org.bukkit.World;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.world.WorldEvent;
++import org.bukkit.generator.structure.Structure;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
-+
-+import java.util.ArrayList;
-+import java.util.List;
++import org.jetbrains.annotations.UnmodifiableView;
 +
 +/**
 + * Called <b>before</b> a set of configured structures is located.
@@ -206,15 +210,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private final Location origin;
 +    private Result result;
-+    private List<ConfiguredStructure> configuredStructures;
++    private List<Structure> structures;
++    private List<ConfiguredStructure> legacy$structures;
 +    private int radius;
 +    private boolean findUnexplored;
 +    private boolean cancelled;
 +
-+    public StructuresLocateEvent(@NotNull World world, @NotNull Location origin, @NotNull List<ConfiguredStructure> configuredStructures, int radius, boolean findUnexplored) {
++    public StructuresLocateEvent(@NotNull World world, @NotNull Location origin, @NotNull List<Structure> structures, int radius, boolean findUnexplored) {
 +        super(world);
 +        this.origin = origin;
-+        this.configuredStructures = configuredStructures;
++        this.setStructures(structures);
 +        this.radius = radius;
 +        this.findUnexplored = findUnexplored;
 +    }
@@ -229,23 +234,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    /**
-+     * Gets the {@link Location} and {@link ConfiguredStructure} set as the result, if it was defined.
++     * Gets the {@link Location} and {@link Structure} set as the result, if it was defined.
 +     * <p>
 +     * Returns {@code null} if it has not been set by {@link StructuresLocateEvent#setResult(Result)}.
 +     * Since this event fires <i>before</i> the search is done, the actual result is unknown at this point.
 +     *
 +     * @return The result location and structure, if it has been set. null if it has not.
-+     * @see World#locateNearestStructure(Location, org.bukkit.StructureType, int, boolean)
++     * @see World#locateNearestStructure(Location, org.bukkit.generator.structure.StructureType, int, boolean)
 +     */
 +    public @Nullable Result getResult() {
 +        return this.result;
 +    }
 +
 +    /**
-+     * Sets the result {@link Location} and {@link ConfiguredStructure}. This causes the search to be
++     * Sets the result {@link Location} and {@link Structure}. This causes the search to be
 +     * skipped, and the result object passed here to be used as the result.
 +     *
-+     * @param result the {@link Location} and {@link ConfiguredStructure} of the search.
++     * @param result the {@link Location} and {@link Structure} of the search.
 +     */
 +    public void setResult(@Nullable Result result) {
 +        this.result = result;
@@ -255,18 +260,41 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Gets a mutable list of ConfiguredStructures that are valid targets for the search.
 +     *
 +     * @return a mutable list of ConfiguredStructures
++     * @deprecated use {@link #getStructures()}
 +     */
++    @Deprecated(forRemoval = true)
 +    public @NotNull List<ConfiguredStructure> getConfiguredStructures() {
-+        return this.configuredStructures;
++        return this.legacy$structures;
 +    }
 +
 +    /**
 +     * Sets the list of ConfiguredStructures that are valid targets for the search.
 +     *
 +     * @param configuredStructures a list of ConfiguredStructure targets
++     * @deprecated use {@link #setStructures(List)}
 +     */
++    @Deprecated(forRemoval = true)
 +    public void setConfiguredStructures(@NotNull List<ConfiguredStructure> configuredStructures) {
-+        this.configuredStructures = new ArrayList<>(configuredStructures);
++        this.setStructures(configuredStructures.stream().map(ConfiguredStructure::toModern).toList());
++    }
++
++    /**
++     * Gets an unmodifiable list of Structures that are valid targets for the search.
++     *
++     * @return an unmodifiable list of Structures
++     */
++    public @NotNull @UnmodifiableView List<Structure> getStructures() {
++        return Collections.unmodifiableList(this.structures);
++    }
++
++    /**
++     * Sets the list of Structures that are valid targets for the search.
++     *
++     * @param structures a list of Structures targets
++     */
++    public void setStructures(final @NotNull List<Structure> structures) {
++        this.structures = structures;
++        this.legacy$structures = new TransformingRandomAccessList<>(this.structures, ConfiguredStructure::fromModern, ConfiguredStructure::toModern);
 +    }
 +
 +    /**
@@ -274,7 +302,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * <p>
 +     * This radius may not always be obeyed during the structure search!
 +     *
-+     * @return the search radius.
++     * @return the search radius (in chunks)
 +     */
 +    public int getRadius() {
 +        return this.radius;
@@ -285,7 +313,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * <p>
 +     * This radius may not always be obeyed during the structure search!
 +     *
-+     * @param radius the search radius.
++     * @param radius the search radius (in chunks)
 +     */
 +    public void setRadius(int radius) {
 +        this.radius = radius;
@@ -335,7 +363,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /**
 +     * Result for {@link StructuresLocateEvent}.
 +     */
-+    public record Result(@NotNull Location position, @NotNull ConfiguredStructure configuredStructure) {
++    public record Result(@NotNull Position pos, @NotNull Structure structure) {
++
++        @Deprecated(forRemoval = true)
++        public Result(final @NotNull Location position, @NotNull ConfiguredStructure configuredStructure) {
++            this(position, configuredStructure.toModern());
++        }
++
++        @Deprecated(forRemoval = true)
++        public @NotNull ConfiguredStructure configuredStructure() {
++            return Objects.requireNonNull(ConfiguredStructure.fromModern(this.structure), "Please use the newer Structure API");
++        }
++
++        @Deprecated(forRemoval = true)
++        public @NotNull Location position() {
++            //noinspection DataFlowIssue
++            return this.pos.toLocation(null);
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
@@ -347,19 +391,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.world.structure;
 +
 +import io.papermc.paper.registry.Reference;
++import java.util.Objects;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
 +import org.bukkit.StructureType;
++import org.bukkit.generator.structure.Structure;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
-+
-+import java.util.Objects;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Represents a configured structure each with a
 + * {@link StructureType}. Multiple ConfiguredStructures can have
 + * the same {@link StructureType}.
++ * @deprecated use {@link Structure}
 + */
++@Deprecated(forRemoval = true)
 +public final class ConfiguredStructure implements Keyed {
 +
 +    public static final Reference<ConfiguredStructure> PILLAGER_OUTPOST = create("pillager_outpost");
@@ -441,6 +489,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static @NotNull Reference<ConfiguredStructure> create(@NotNull String name) {
 +        return Reference.create(Registry.CONFIGURED_STRUCTURE, NamespacedKey.minecraft(name));
 +    }
++
++    @ApiStatus.Internal
++    public @NotNull Structure toModern() {
++        return Objects.requireNonNull(Registry.STRUCTURE.get(this.key));
++    }
++
++    @ApiStatus.Internal
++    public static @Nullable ConfiguredStructure fromModern(@NotNull Structure structure) {
++        return Registry.CONFIGURED_STRUCTURE.get(structure.getKey());
++    }
 +}
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -454,7 +512,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /**
 +     * Configured structures.
 +     * @see io.papermc.paper.world.structure.ConfiguredStructure
++     * @deprecated use {@link #STRUCTURE}
 +     */
++    @Deprecated(forRemoval = true)
 +    Registry<io.papermc.paper.world.structure.ConfiguredStructure> CONFIGURED_STRUCTURE = Bukkit.getRegistry(io.papermc.paper.world.structure.ConfiguredStructure.class);
 +    // Paper end
  
