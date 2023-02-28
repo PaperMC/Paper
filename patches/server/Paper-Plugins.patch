@@ -1004,10 +1004,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void close() throws IOException {
-+        try {
++        try (this.jar; this.libraryLoader) {
 +            super.close();
-+        } finally {
-+            this.libraryLoader.close();
 +        }
 +    }
 +}
@@ -5089,13 +5087,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private String getPluginName(Path path) throws Exception {
-+        JarFile file = new JarFile(path.toFile());
-+        PluginFileType<?, ?> type = PluginFileType.guessType(file);
-+        if (type == null) {
-+            throw new IllegalArgumentException(path + " is not a valid plugin file, cannot load a plugin from it!");
-+        }
++        try (JarFile file = new JarFile(path.toFile())) {
++            PluginFileType<?, ?> type = PluginFileType.guessType(file);
++            if (type == null) {
++                throw new IllegalArgumentException(path + " is not a valid plugin file, cannot load a plugin from it!");
++            }
 +
-+        return type.getConfig(file).getName();
++            return type.getConfig(file).getName();
++        }
 +    }
 +
 +    private class UpdateFileVisitor implements FileVisitor<Path> {
@@ -5944,7 +5943,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            final PluginClassLoader loader;
 +            try {
-+                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description)); // Paper
++                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.jarFile); // Paper
 +            } catch (InvalidPluginException ex) {
 +                throw ex;
 +            } catch (Throwable ex) {
