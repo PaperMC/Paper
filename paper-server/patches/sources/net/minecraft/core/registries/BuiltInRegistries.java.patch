@@ -1,6 +1,24 @@
 --- a/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -323,14 +323,21 @@
+@@ -296,6 +296,17 @@
+     public static final Registry<SlotDisplay.Type<?>> SLOT_DISPLAY = registerSimple(Registries.SLOT_DISPLAY, SlotDisplays::bootstrap);
+     public static final Registry<RecipeBookCategory> RECIPE_BOOK_CATEGORY = registerSimple(Registries.RECIPE_BOOK_CATEGORY, RecipeBookCategories::bootstrap);
+     public static final Registry<? extends Registry<?>> REGISTRY = WRITABLE_REGISTRY;
++    // Paper start - add built-in registry conversions
++    public static final io.papermc.paper.registry.data.util.Conversions BUILT_IN_CONVERSIONS = new io.papermc.paper.registry.data.util.Conversions(new net.minecraft.resources.RegistryOps.RegistryInfoLookup() {
++        @Override
++        public <T> java.util.Optional<net.minecraft.resources.RegistryOps.RegistryInfo<T>> lookup(final ResourceKey<? extends Registry<? extends T>> registryRef) {
++            final Registry<T> registry = net.minecraft.server.RegistryLayer.STATIC_ACCESS.lookupOrThrow(registryRef);
++            return java.util.Optional.of(
++                new net.minecraft.resources.RegistryOps.RegistryInfo<>(registry, registry, Lifecycle.experimental())
++            );
++        }
++    });
++    // Paper end - add built-in registry conversions
+ 
+     private static <T> Registry<T> registerSimple(ResourceKey<? extends Registry<T>> key, BuiltInRegistries.RegistryBootstrap<T> initializer) {
+         return internalRegister(key, new MappedRegistry<>(key, Lifecycle.stable(), false), initializer);
+@@ -323,14 +334,22 @@
          ResourceKey<? extends Registry<T>> key, R registry, BuiltInRegistries.RegistryBootstrap<T> initializer
      ) {
          Bootstrap.checkBootstrapCalled(() -> "registry " + key.location());
@@ -18,8 +36,17 @@
 +    }
 +    public static void bootStrap(Runnable runnable) {
 +        // Paper end
++        REGISTRY.freeze(); // Paper - freeze main registry early
          createContents();
 +        runnable.run(); // Paper
          freeze();
          validate(REGISTRY);
+     }
+@@ -348,6 +367,7 @@
+ 
+         for (Registry<?> registry : REGISTRY) {
+             bindBootstrappedTagsToEmpty(registry);
++            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), BUILT_IN_CONVERSIONS); // Paper
+             registry.freeze();
+         }
      }

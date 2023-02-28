@@ -78,6 +78,14 @@ public class PaperRegistryAccess implements RegistryAccess {
         return possiblyUnwrap(registryHolder.get());
     }
 
+    public <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> WritableCraftRegistry<M, T, B> getWritableRegistry(final RegistryKey<T> key) {
+        final Registry<T> registry = this.getRegistry(key);
+        if (registry instanceof WritableCraftRegistry<?, T, ?>) {
+            return (WritableCraftRegistry<M, T, B>) registry;
+        }
+        throw new IllegalArgumentException(key + " does not point to a writable registry");
+    }
+
     private static <T extends Keyed> Registry<T> possiblyUnwrap(final Registry<T> registry) {
         if (registry instanceof final DelayedRegistry<T, ?> delayedRegistry) { // if not coming from legacy, unwrap the delayed registry
             return delayedRegistry.delegate();

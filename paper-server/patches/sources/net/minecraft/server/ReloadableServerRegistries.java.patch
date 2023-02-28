@@ -1,10 +1,30 @@
 --- a/net/minecraft/server/ReloadableServerRegistries.java
 +++ b/net/minecraft/server/ReloadableServerRegistries.java
-@@ -64,6 +64,7 @@
+@@ -50,8 +50,9 @@
+         );
+         HolderLookup.Provider provider = HolderLookup.Provider.create(list.stream());
+         RegistryOps<JsonElement> registryOps = provider.createSerializationContext(JsonOps.INSTANCE);
++        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(registryOps.lookupProvider); // Paper
+         List<CompletableFuture<WritableRegistry<?>>> list2 = LootDataType.values()
+-            .map(type -> scheduleRegistryLoad((LootDataType<?>)type, registryOps, resourceManager, prepareExecutor))
++            .map(type -> scheduleRegistryLoad((LootDataType<?>)type, registryOps, resourceManager, prepareExecutor, conversions)) // Paper
+             .toList();
+         CompletableFuture<List<WritableRegistry<?>>> completableFuture = Util.sequence(list2);
+         return completableFuture.thenApplyAsync(
+@@ -60,13 +61,14 @@
+     }
+ 
+     private static <T> CompletableFuture<WritableRegistry<?>> scheduleRegistryLoad(
+-        LootDataType<T> type, RegistryOps<JsonElement> ops, ResourceManager resourceManager, Executor prepareExecutor
++        LootDataType<T> type, RegistryOps<JsonElement> ops, ResourceManager resourceManager, Executor prepareExecutor, io.papermc.paper.registry.data.util.Conversions conversions // Paper
      ) {
          return CompletableFuture.supplyAsync(() -> {
              WritableRegistry<T> writableRegistry = new MappedRegistry<>(type.registryKey(), Lifecycle.experimental());
 +            io.papermc.paper.registry.PaperRegistryAccess.instance().registerReloadableRegistry(type.registryKey(), writableRegistry); // Paper - register reloadable registry
              Map<ResourceLocation, T> map = new HashMap<>();
              SimpleJsonResourceReloadListener.scanDirectory(resourceManager, type.registryKey(), ops, type.codec(), map);
-             map.forEach((id, value) -> writableRegistry.register(ResourceKey.create(type.registryKey(), id), (T)value, DEFAULT_REGISTRATION_INFO));
+-            map.forEach((id, value) -> writableRegistry.register(ResourceKey.create(type.registryKey(), id), (T)value, DEFAULT_REGISTRATION_INFO));
++            map.forEach((id, value) -> io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(writableRegistry, ResourceKey.create(type.registryKey(), id), value, DEFAULT_REGISTRATION_INFO, conversions)); // Paper - register with listeners
+             TagLoader.loadTagsForRegistry(resourceManager, writableRegistry);
+             return writableRegistry;
+         }, prepareExecutor);

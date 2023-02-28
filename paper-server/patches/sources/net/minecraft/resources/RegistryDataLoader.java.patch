@@ -9,7 +9,65 @@
      private static final RegistrationInfo NETWORK_REGISTRATION_INFO = new RegistrationInfo(Optional.empty(), Lifecycle.experimental());
      private static final Function<Optional<KnownPack>, RegistrationInfo> REGISTRATION_INFO_CACHE = Util.memoize(knownPacks -> {
          Lifecycle lifecycle = knownPacks.map(KnownPack::isVanilla).map(vanilla -> Lifecycle.stable()).orElse(Lifecycle.experimental());
-@@ -349,6 +349,7 @@
+@@ -238,13 +238,13 @@
+     }
+ 
+     private static <E> void loadElementFromResource(
+-        WritableRegistry<E> registry, Decoder<E> decoder, RegistryOps<JsonElement> ops, ResourceKey<E> key, Resource resource, RegistrationInfo entryInfo
++        WritableRegistry<E> registry, Decoder<E> decoder, RegistryOps<JsonElement> ops, ResourceKey<E> key, Resource resource, RegistrationInfo entryInfo, io.papermc.paper.registry.data.util.Conversions conversions // Paper - pass conversions
+     ) throws IOException {
+         try (Reader reader = resource.openAsReader()) {
+             JsonElement jsonElement = JsonParser.parseReader(reader);
+             DataResult<E> dataResult = decoder.parse(ops, jsonElement);
+             E object = dataResult.getOrThrow();
+-            registry.register(key, object, entryInfo);
++            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(registry, key, object, entryInfo, conversions); // Paper - register with listeners
+         }
+     }
+ 
+@@ -258,6 +258,7 @@
+         FileToIdConverter fileToIdConverter = FileToIdConverter.registry(registry.key());
+         RegistryOps<JsonElement> registryOps = RegistryOps.create(JsonOps.INSTANCE, infoGetter);
+ 
++        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(infoGetter); // Paper - create conversions
+         for (Entry<ResourceLocation, Resource> entry : fileToIdConverter.listMatchingResources(resourceManager).entrySet()) {
+             ResourceLocation resourceLocation = entry.getKey();
+             ResourceKey<E> resourceKey = ResourceKey.create(registry.key(), fileToIdConverter.fileToId(resourceLocation));
+@@ -265,7 +266,7 @@
+             RegistrationInfo registrationInfo = REGISTRATION_INFO_CACHE.apply(resource.knownPackInfo());
+ 
+             try {
+-                loadElementFromResource(registry, elementDecoder, registryOps, resourceKey, resource, registrationInfo);
++                loadElementFromResource(registry, elementDecoder, registryOps, resourceKey, resource, registrationInfo, conversions); // Paper - pass conversions
+             } catch (Exception var14) {
+                 errors.put(
+                     resourceKey,
+@@ -274,6 +275,7 @@
+             }
+         }
+ 
++        io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), conversions); // Paper - run pre-freeze listeners
+         TagLoader.loadTagsForRegistry(resourceManager, registry);
+     }
+ 
+@@ -291,6 +293,7 @@
+             RegistryOps<JsonElement> registryOps2 = RegistryOps.create(JsonOps.INSTANCE, infoGetter);
+             FileToIdConverter fileToIdConverter = FileToIdConverter.registry(registry.key());
+ 
++            final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(infoGetter); // Paper - create conversions
+             for (RegistrySynchronization.PackedRegistryEntry packedRegistryEntry : networkedRegistryData.elements) {
+                 ResourceKey<E> resourceKey = ResourceKey.create(registry.key(), packedRegistryEntry.id());
+                 Optional<Tag> optional = packedRegistryEntry.data();
+@@ -309,7 +312,7 @@
+ 
+                     try {
+                         Resource resource = factory.getResourceOrThrow(resourceLocation);
+-                        loadElementFromResource(registry, decoder, registryOps2, resourceKey, resource, NETWORK_REGISTRATION_INFO);
++                        loadElementFromResource(registry, decoder, registryOps2, resourceKey, resource, NETWORK_REGISTRATION_INFO, conversions); // Paper - pass conversions
+                     } catch (Exception var17) {
+                         loadingErrors.put(resourceKey, new IllegalStateException("Failed to parse local data", var17));
+                     }
+@@ -349,6 +352,7 @@
  
          RegistryDataLoader.Loader<T> create(Lifecycle lifecycle, Map<ResourceKey<?>, Exception> errors) {
              WritableRegistry<T> writableRegistry = new MappedRegistry<>(this.key, lifecycle);

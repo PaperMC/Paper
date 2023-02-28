@@ -62,7 +62,7 @@ public class NormalExtension extends BaseExtension {
 
         doAnswer(invocation ->
                 mocks.computeIfAbsent(invocation.getArgument(0), k -> mock(RegistryHelper.updateClass(keyed, invocation.getArgument(0)), withSettings().stubOnly().defaultAnswer(DEFAULT_ANSWER)))
-        ).when(registry).get(any()); // Allow static classes to fill there fields, so that it does not error out, just by loading them
+        ).when(registry).get((NamespacedKey) any()); // Allow static classes to fill there fields, so that it does not error out, just by loading them // Paper - registry modification api - specifically call namespaced key overload
 
         return registry;
     }

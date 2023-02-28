@@ -301,4 +301,17 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return this.byValue.get(value);
     }
     // Paper end - improve Registry
+
+    // Paper start - RegistrySet API
+    @Override
+    public boolean hasTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
+        return this.minecraftRegistry.get(net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(key.key()))).isPresent();
+    }
+
+    @Override
+    public io.papermc.paper.registry.tag.Tag<B> getTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
+        final net.minecraft.core.HolderSet.Named<M> namedHolderSet = this.minecraftRegistry.get(io.papermc.paper.registry.PaperRegistries.toNms(key)).orElseThrow();
+        return new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(key, namedHolderSet);
+    }
+    // Paper end - RegistrySet API
 }

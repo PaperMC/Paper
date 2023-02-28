@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.entry;
 
 import com.mojang.datafixers.util.Either;
+import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -58,6 +59,18 @@ public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
 
         public RegistryEntry<M, A> build() {
             return new CraftRegistryEntry<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit);
+        }
+
+        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> modifiable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
+            return new ModifiableRegistryEntry<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, filler);
+        }
+
+        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> addable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
+            return new AddableRegistryEntry<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, filler);
+        }
+
+        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> writable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
+            return new WritableRegistryEntry<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, filler);
         }
     }
 }

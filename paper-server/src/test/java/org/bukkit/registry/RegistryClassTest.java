@@ -111,7 +111,7 @@ public class RegistryClassTest {
                         outsideRequest.clear();
                         MockUtil.resetMock(spyRegistry);
                         doAnswer(invocation -> {
-                            Keyed item = realRegistry.get(invocation.getArgument(0));
+                            Keyed item = realRegistry.get((NamespacedKey) invocation.getArgument(0)); // Paper - registry modification api - specifically call namespaced key overload
 
                             if (item == null) {
                                 nullValue.add(invocation.getArgument(0));
@@ -120,10 +120,10 @@ public class RegistryClassTest {
                             nullAble.add(invocation.getArgument(0));
 
                             return item;
-                        }).when(spyRegistry).get(any());
+                        }).when(spyRegistry).get((NamespacedKey) any()); // Paper - registry modification api - specifically call namespaced key overload
 
                         doAnswer(invocation -> {
-                            Keyed item = realRegistry.get(invocation.getArgument(0));
+                            Keyed item = realRegistry.get((NamespacedKey) invocation.getArgument(0)); // Paper - registry modification api - specifically call namespaced key overload
 
                             if (item == null) {
                                 nullValue.add(invocation.getArgument(0));
@@ -138,7 +138,7 @@ public class RegistryClassTest {
                             notNullAble.add(invocation.getArgument(0));
 
                             return item;
-                        }).when(spyRegistry).getOrThrow(any());
+                        }).when(spyRegistry).getOrThrow((NamespacedKey) any()); // Paper - registry modification api - specifically call namespaced key overload
 
                         // Load class
                         try {
@@ -171,13 +171,13 @@ public class RegistryClassTest {
             outsideRequest
                     .computeIfAbsent(type, ty -> new ArrayList<>()).add(invocation.getArgument(0));
             return mock(type);
-        }).when(spyRegistry).get(any());
+        }).when(spyRegistry).get((NamespacedKey) any()); // Paper - registry modification api - specifically call namespaced key overload
 
         doAnswer(invocation -> {
             outsideRequest
                     .computeIfAbsent(type, ty -> new ArrayList<>()).add(invocation.getArgument(0));
             return mock(type);
-        }).when(spyRegistry).getOrThrow(any());
+        }).when(spyRegistry).getOrThrow((NamespacedKey) any()); // Paper - registry modification api - specifically call namespaced key overload
     }
 
     private static void initFieldDataCache() {
