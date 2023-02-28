@@ -803,10 +803,10 @@ index 0000000000000000000000000000000000000000..f9a2c55a354c877749db3f92956de802
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..392eb260b44d5f9e685ce09596c19f0af9cc0339
+index 0000000000000000000000000000000000000000..79581d917e754998123b94b9f4ea7d1e78f017ae
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,202 @@
 +package io.papermc.paper.plugin.entrypoint.classloader;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -1004,10 +1004,8 @@ index 0000000000000000000000000000000000000000..392eb260b44d5f9e685ce09596c19f0a
 +
 +    @Override
 +    public void close() throws IOException {
-+        try {
++        try (this.jar; this.libraryLoader) {
 +            super.close();
-+        } finally {
-+            this.libraryLoader.close();
 +        }
 +    }
 +}
@@ -4985,10 +4983,10 @@ index 0000000000000000000000000000000000000000..1822e076601db51c8a7954036853bee1
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e6a99f422038fad519215abf239135b11edc2bce
+index 0000000000000000000000000000000000000000..0077a0a82c04bae0d93ab5c9cf07364b7c947bb3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
-@@ -0,0 +1,156 @@
+@@ -0,0 +1,157 @@
 +package io.papermc.paper.plugin.provider.source;
 +
 +import io.papermc.paper.plugin.PluginInitializerManager;
@@ -5089,13 +5087,14 @@ index 0000000000000000000000000000000000000000..e6a99f422038fad519215abf239135b1
 +    }
 +
 +    private String getPluginName(Path path) throws Exception {
-+        JarFile file = new JarFile(path.toFile());
-+        PluginFileType<?, ?> type = PluginFileType.guessType(file);
-+        if (type == null) {
-+            throw new IllegalArgumentException(path + " is not a valid plugin file, cannot load a plugin from it!");
-+        }
++        try (JarFile file = new JarFile(path.toFile())) {
++            PluginFileType<?, ?> type = PluginFileType.guessType(file);
++            if (type == null) {
++                throw new IllegalArgumentException(path + " is not a valid plugin file, cannot load a plugin from it!");
++            }
 +
-+        return type.getConfig(file).getName();
++            return type.getConfig(file).getName();
++        }
 +    }
 +
 +    private class UpdateFileVisitor implements FileVisitor<Path> {
@@ -5819,7 +5818,7 @@ index 0000000000000000000000000000000000000000..b2a6544e321fa61c58bdf5684231de10
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9a19abaccec91df9b2614dd6638d7bc199bdac2c
+index 0000000000000000000000000000000000000000..c074e8651528a19a4485fb7e9d56c649ba704ca4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 @@ -0,0 +1,190 @@
@@ -5944,7 +5943,7 @@ index 0000000000000000000000000000000000000000..9a19abaccec91df9b2614dd6638d7bc1
 +
 +            final PluginClassLoader loader;
 +            try {
-+                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description)); // Paper
++                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.jarFile); // Paper
 +            } catch (InvalidPluginException ex) {
 +                throw ex;
 +            } catch (Throwable ex) {
