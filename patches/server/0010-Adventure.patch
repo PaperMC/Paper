@@ -2073,7 +2073,7 @@ index 0f7dd33d51281b383be0fb47d4e6b133f123ce1f..011c3d2dbd34dd0c2afba477202c937c
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 56016d59d66d90de2ac4326c16b09f86e4ac390b..722422c214ae346b5b6d29b5b99553eae5c64b5b 100644
+index 39f60f3878b57feeb6c2645a8ed4432fb53a0269..650d28ce34239d3ae9caa3852e1bac518790fd83 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -156,6 +156,7 @@ import net.minecraft.world.scores.Score;
@@ -2178,7 +2178,7 @@ index 56016d59d66d90de2ac4326c16b09f86e4ac390b..722422c214ae346b5b6d29b5b99553ea
          // CraftBukkit end
          this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 478d40c7cc0374cddb76486b6bd148a846a16813..6878af0ad58c40f54a216c12b28b990424ecd414 100644
+index 1cf586f485fcfb4e10bc239200367177b5f0da94..e5407a092c602cfec4bcc80198d2a9f3f5d3680b 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -185,6 +185,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
@@ -2305,20 +2305,7 @@ index 478d40c7cc0374cddb76486b6bd148a846a16813..6878af0ad58c40f54a216c12b28b9904
          } else {
              this.chat(s, message, true);
          }
-@@ -2357,6 +2369,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-     }
- 
-     public void sendPlayerChatMessage(PlayerChatMessage message, ChatType.Bound params) {
-+        // Paper start
-+        if (!this.getCraftPlayer().canSee(message.link().sender())) {
-+            this.sendDisguisedChatMessage(message.decoratedContent(), params);
-+            return;
-+        }
-+        // Paper end
-         this.send(new ClientboundPlayerChatPacket(message.link().sender(), message.link().index(), message.signature(), message.signedBody().pack(this.messageSignatureCache), message.unsignedContent(), message.filterMask(), params.toNetwork(this.player.level.registryAccess())));
-         this.addPendingMessage(message);
-     }
-@@ -2980,30 +2998,30 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2986,30 +2998,30 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  return;
              }
  
@@ -2852,7 +2839,7 @@ index 57ed87689c7cb709d54e611bfbdbb70890021df2..fd1da8431578832bcd1f3ca7890dd215
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 7e9381fcdaafb15b22d9f79592422b165b3e2523..5448d2a6fe8cace246b81742da19666ec24ca48c 100644
+index fd213200dcc5fe08f4b28e94ce2a0cf5b3c7ad5b..481c1f853bbe81da123cfb3f79ed4509cf127db8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -19,6 +19,12 @@ public class Main {
@@ -3334,7 +3321,7 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..f9863e138994f6c7a7975a852f106faa
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 87c9e95a184e316d1273debc9fc5f3ff6a5aa91f..8a78d0bde6f833b745c8a125bc251eb13ab2bb50 100644
+index 2864661527c55752bb43de3430ca29151a7502ab..ec27b75c4cf292ffc95ebad63617ffab48a10a16 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -277,14 +277,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -3507,20 +3494,7 @@ index 87c9e95a184e316d1273debc9fc5f3ff6a5aa91f..8a78d0bde6f833b745c8a125bc251eb1
      }
  
      @Override
-@@ -1351,6 +1423,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         return !this.hiddenEntities.containsKey(entity.getUniqueId());
-     }
- 
-+    // Paper start
-+    public boolean canSee(UUID entityUUID) {
-+        return !this.hiddenEntities.containsKey(entityUUID);
-+    }
-+    // Paper end
-+
-     @Override
-     public Map<String, Object> serialize() {
-         Map<String, Object> result = new LinkedHashMap<String, Object>();
-@@ -1488,7 +1566,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1502,7 +1574,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setResourcePack(String url) {
@@ -3529,7 +3503,7 @@ index 87c9e95a184e316d1273debc9fc5f3ff6a5aa91f..8a78d0bde6f833b745c8a125bc251eb1
      }
  
      @Override
-@@ -1503,7 +1581,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1517,7 +1589,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setResourcePack(String url, byte[] hash, boolean force) {
@@ -3538,7 +3512,7 @@ index 87c9e95a184e316d1273debc9fc5f3ff6a5aa91f..8a78d0bde6f833b745c8a125bc251eb1
      }
  
      @Override
-@@ -1519,6 +1597,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1533,6 +1605,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
@@ -3560,7 +3534,7 @@ index 87c9e95a184e316d1273debc9fc5f3ff6a5aa91f..8a78d0bde6f833b745c8a125bc251eb1
      public void addChannel(String channel) {
          Preconditions.checkState(this.channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel);
          channel = StandardMessenger.validateAndCorrectChannel(channel);
-@@ -1923,6 +2016,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1937,6 +2024,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : this.getHandle().clientViewDistance;
      }
  
@@ -3573,7 +3547,7 @@ index 87c9e95a184e316d1273debc9fc5f3ff6a5aa91f..8a78d0bde6f833b745c8a125bc251eb1
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -1968,6 +2067,254 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1982,6 +2075,254 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
@@ -4599,7 +4573,7 @@ index 78ea79b66cc9e90402ef5cdc2e5e04e0c74b1c26..4fede2161792ba3e7cdf0cc5a1f53318
  
          boolean hadFormat = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index b39ded554ee86bf840ce04eba58ac19d40226c9f..750f4b3930278c291f10015c7a8a8df57d04a286 100644
+index 21ca79fa628d9cc970942bcd5368d971d800753a..0bf46f90333d79e2cada286b493c5fc2b6903970 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -72,6 +72,43 @@ public final class CraftMagicNumbers implements UnsafeValues {
