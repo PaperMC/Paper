@@ -38,6 +38,7 @@ import net.minecraft.network.PacketDataSerializer;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
+import net.minecraft.network.protocol.game.ClientboundCustomChatCompletionsPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket;
@@ -836,6 +837,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         PacketPlayOutMap packet = new PacketPlayOutMap(map.getId(), map.getScale().getValue(), map.isLocked(), icons, new WorldMap.b(0, 0, 128, 128, data.buffer));
+        getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void addCustomChatCompletions(Collection<String> completions) {
+        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.a.ADD);
+    }
+
+    @Override
+    public void removeCustomChatCompletions(Collection<String> completions) {
+        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.a.REMOVE);
+    }
+
+    @Override
+    public void setCustomChatCompletions(Collection<String> completions) {
+        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.a.SET);
+    }
+
+    private void sendCustomChatCompletionPacket(Collection<String> completions, ClientboundCustomChatCompletionsPacket.a action) { // PAIL rename Action
+        if (getHandle().connection == null) return;
+
+        ClientboundCustomChatCompletionsPacket packet = new ClientboundCustomChatCompletionsPacket(action, new ArrayList<>(completions));
         getHandle().connection.send(packet);
     }
 
