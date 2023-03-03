@@ -638,6 +638,37 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void sendMap(@NotNull MapView map);
 
     /**
+     * Add custom chat completion suggestions shown to the player while typing a
+     * message.
+     *
+     * @param completions the completions to send
+     */
+    public void addCustomChatCompletions(@NotNull Collection<String> completions);
+
+    /**
+     * Remove custom chat completion suggestions shown to the player while
+     * typing a message.
+     *
+     * Online player names cannot be removed with this method. This will affect
+     * only custom completions added by {@link #addCustomChatCompletions(Collection)}
+     * or {@link #setCustomChatCompletions(Collection)}.
+     *
+     * @param completions the completions to remove
+     */
+    public void removeCustomChatCompletions(@NotNull Collection<String> completions);
+
+    /**
+     * Set the list of chat completion suggestions shown to the player while
+     * typing a message.
+     * <p>
+     * If completions were set previously, this method will remove them all and
+     * replace them with the provided completions.
+     *
+     * @param completions the completions to set
+     */
+    public void setCustomChatCompletions(@NotNull Collection<String> completions);
+
+    /**
      * Forces an update of the player's entire inventory.
      *
      * @deprecated This method should not be relied upon as it is a temporary
