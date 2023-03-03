@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityHopper.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityHopper.java
-@@ -32,6 +32,18 @@
+@@ -32,6 +32,21 @@
  import net.minecraft.world.phys.shapes.OperatorBoolean;
  import net.minecraft.world.phys.shapes.VoxelShapes;
  
@@ -8,9 +8,12 @@
 +import net.minecraft.world.InventoryLargeChest;
 +import net.minecraft.world.entity.vehicle.EntityMinecartHopper;
 +import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.inventory.CraftInventory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.inventory.HopperInventorySearchEvent;
 +import org.bukkit.event.inventory.InventoryMoveItemEvent;
 +import org.bukkit.event.inventory.InventoryPickupItemEvent;
 +import org.bukkit.inventory.Inventory;
@@ -19,7 +22,7 @@
  public class TileEntityHopper extends TileEntityLootable implements IHopper {
  
      public static final int MOVE_ITEM_SPEED = 8;
-@@ -40,6 +52,36 @@
+@@ -40,6 +55,36 @@
      private int cooldownTime;
      private long tickedGameTime;
  
@@ -56,7 +59,7 @@
      public TileEntityHopper(BlockPosition blockposition, IBlockData iblockdata) {
          super(TileEntityTypes.HOPPER, blockposition, iblockdata);
          this.items = NonNullList.withSize(5, ItemStack.EMPTY);
-@@ -113,7 +155,7 @@
+@@ -113,7 +158,7 @@
                  boolean flag = false;
  
                  if (!tileentityhopper.isEmpty()) {
@@ -65,7 +68,7 @@
                  }
  
                  if (!tileentityhopper.inventoryFull()) {
-@@ -147,7 +189,7 @@
+@@ -147,7 +192,7 @@
          return false;
      }
  
@@ -74,7 +77,7 @@
          IInventory iinventory1 = getAttachedContainer(world, blockposition, iblockdata);
  
          if (iinventory1 == null) {
-@@ -161,7 +203,28 @@
+@@ -161,7 +206,30 @@
                  for (int i = 0; i < iinventory.getContainerSize(); ++i) {
                      if (!iinventory.getItem(i).isEmpty()) {
                          ItemStack itemstack = iinventory.getItem(i).copy();
@@ -88,8 +91,10 @@
 +                        // Have to special case large chests as they work oddly
 +                        if (iinventory1 instanceof InventoryLargeChest) {
 +                            destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((InventoryLargeChest) iinventory1);
-+                        } else {
++                        } else if (iinventory1.getOwner() != null) {
 +                            destinationInventory = iinventory1.getOwner().getInventory();
++                        } else {
++                            destinationInventory = new CraftInventory(iinventory);
 +                        }
 +
 +                        InventoryMoveItemEvent event = new InventoryMoveItemEvent(iinventory.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
@@ -104,7 +109,7 @@
  
                          if (itemstack1.isEmpty()) {
                              iinventory1.setChanged();
-@@ -226,7 +289,34 @@
+@@ -226,7 +294,36 @@
  
          if (!itemstack.isEmpty() && canTakeItemFromContainer(iinventory, itemstack, i, enumdirection)) {
              ItemStack itemstack1 = itemstack.copy();
@@ -117,8 +122,10 @@
 +            // Have to special case large chests as they work oddly
 +            if (iinventory instanceof InventoryLargeChest) {
 +                sourceInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((InventoryLargeChest) iinventory);
-+            } else {
++            } else if (iinventory.getOwner() != null) {
 +                sourceInventory = iinventory.getOwner().getInventory();
++            } else {
++                sourceInventory = new CraftInventory(iinventory);
 +            }
 +
 +            InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), ihopper.getOwner().getInventory(), false);
@@ -140,7 +147,7 @@
  
              if (itemstack2.isEmpty()) {
                  iinventory.setChanged();
-@@ -241,6 +331,13 @@
+@@ -241,6 +338,13 @@
  
      public static boolean addItem(IInventory iinventory, EntityItem entityitem) {
          boolean flag = false;
@@ -154,3 +161,46 @@
          ItemStack itemstack = entityitem.getItem().copy();
          ItemStack itemstack1 = addItem((IInventory) null, iinventory, itemstack, (EnumDirection) null);
  
+@@ -327,16 +431,40 @@
+         return itemstack;
+     }
+ 
++    // CraftBukkit start
++    @Nullable
++    private static IInventory runHopperInventorySearchEvent(IInventory inventory, CraftBlock hopper, CraftBlock searchLocation, HopperInventorySearchEvent.ContainerType containerType) {
++        HopperInventorySearchEvent event = new HopperInventorySearchEvent((inventory != null) ? new CraftInventory(inventory) : null, containerType, hopper, searchLocation);
++        Bukkit.getServer().getPluginManager().callEvent(event);
++        CraftInventory craftInventory = (CraftInventory) event.getInventory();
++        return (craftInventory != null) ? craftInventory.getInventory() : null;
++    }
++    // CraftBukkit end
++
+     @Nullable
+     private static IInventory getAttachedContainer(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         EnumDirection enumdirection = (EnumDirection) iblockdata.getValue(BlockHopper.FACING);
+ 
+-        return getContainerAt(world, blockposition.relative(enumdirection));
++        // CraftBukkit start
++        BlockPosition searchPosition = blockposition.relative(enumdirection);
++        IInventory inventory = getContainerAt(world, blockposition.relative(enumdirection));
++
++        CraftBlock hopper = CraftBlock.at(world, blockposition);
++        CraftBlock searchBlock = CraftBlock.at(world, searchPosition);
++        return runHopperInventorySearchEvent(inventory, hopper, searchBlock, HopperInventorySearchEvent.ContainerType.DESTINATION);
++        // CraftBukkit end
+     }
+ 
+     @Nullable
+     private static IInventory getSourceContainer(World world, IHopper ihopper) {
+-        return getContainerAt(world, ihopper.getLevelX(), ihopper.getLevelY() + 1.0D, ihopper.getLevelZ());
++        // CraftBukkit start
++        IInventory inventory = getContainerAt(world, ihopper.getLevelX(), ihopper.getLevelY() + 1.0D, ihopper.getLevelZ());
++
++        BlockPosition blockPosition = new BlockPosition(ihopper.getLevelX(), ihopper.getLevelY(), ihopper.getLevelZ());
++        CraftBlock hopper = CraftBlock.at(world, blockPosition);
++        CraftBlock container = CraftBlock.at(world, blockPosition.above());
++        return runHopperInventorySearchEvent(inventory, hopper, container, HopperInventorySearchEvent.ContainerType.SOURCE);
++        // CraftBukkit end
+     }
+ 
+     public static List<EntityItem> getItemsAtAndAbove(World world, IHopper ihopper) {
