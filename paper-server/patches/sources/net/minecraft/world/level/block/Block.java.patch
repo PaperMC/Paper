@@ -1,11 +1,8 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -292,8 +292,26 @@
-             });
-             state.spawnAfterBreak((ServerLevel) world, pos, ItemStack.EMPTY, true);
-         }
-+
-+    }
+@@ -295,6 +295,24 @@
+ 
+     }
  
 +    // Paper start - Add BlockBreakBlockEvent
 +    public static boolean dropResources(BlockState state, LevelAccessor levelAccessor, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
@@ -22,11 +19,12 @@
 +            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
 +        }
 +        return true;
-     }
++    }
 +    // Paper end - Add BlockBreakBlockEvent
- 
++
      public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
          if (world instanceof ServerLevel) {
+             Block.getDrops(state, (ServerLevel) world, pos, blockEntity, entity, tool).forEach((itemstack1) -> {
 @@ -340,7 +358,13 @@
                  ItemEntity entityitem = (ItemEntity) itemEntitySupplier.get();
  
@@ -57,16 +55,27 @@
          }
  
      }
-@@ -369,7 +398,7 @@
+@@ -367,10 +396,18 @@
+         return this.defaultBlockState();
+     }
  
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - fix drops not preventing stats/food exhaustion
      public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
++        // Paper start - fix drops not preventing stats/food exhaustion
++        this.playerDestroy(world, player, pos, state, blockEntity, tool, true, true);
++    }
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
++        // Paper end - fix drops not preventing stats/food exhaustion
          player.awardStat(Stats.BLOCK_MINED.get(this));
 -        player.causeFoodExhaustion(0.005F);
 +        player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
++        if (includeDrops) { // Paper - fix drops not preventing stats/food exhaustion
          Block.dropResources(state, world, pos, blockEntity, player, tool);
++        } // Paper - fix drops not preventing stats/food exhaustion
      }
  
-@@ -490,15 +519,35 @@
+     public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {}
+@@ -490,15 +527,35 @@
          return this.builtInRegistryHolder;
      }
  
