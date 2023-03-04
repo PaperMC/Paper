@@ -35,44 +35,93 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    EYES;
 +}
-diff --git a/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java b/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java
+diff --git a/src/main/java/io/papermc/paper/entity/TeleportFlag.java b/src/main/java/io/papermc/paper/entity/TeleportFlag.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java
++++ b/src/main/java/io/papermc/paper/entity/TeleportFlag.java
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.entity;
 +
 +import org.bukkit.Location;
 +import org.bukkit.event.player.PlayerTeleportEvent;
++import org.jetbrains.annotations.ApiStatus;
 +
 +/**
-+ * Represents coordinates in a teleportation that should be handled relatively.
++ * Represents a flag that can be set on teleportation that may
++ * slightly modify the behavior.
 + *
-+ * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, boolean, boolean, RelativeTeleportFlag...)
++ * @see EntityState
++ * @see Relative
 + */
-+@org.jetbrains.annotations.ApiStatus.Experimental
-+public enum RelativeTeleportFlag {
++@ApiStatus.Experimental
++public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportFlag.Relative {
++
 +    /**
-+     * Represents the player's X coordinate
++     * Note: These flags only work on {@link org.bukkit.entity.Player} entities.
++     * <p>
++     * Represents coordinates in a teleportation that should be handled relatively.
++     * <p>
++     * Coordinates of the location that the client should handle as relative teleportation
++     * Relative teleportation flags are only used client side, and cause the player to not lose velocity in that
++     * specific coordinate. The location of the teleportation will not change.
++     *
++     * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
 +     */
-+    X,
++    @ApiStatus.Experimental
++    enum Relative implements TeleportFlag {
++        /**
++         * Represents the player's X coordinate
++         */
++        X,
++        /**
++         * Represents the player's Y coordinate
++         */
++        Y,
++        /**
++         * Represents the player's Z coordinate
++         */
++        Z,
++        /**
++         * Represents the player's yaw
++         */
++        YAW,
++        /**
++         * Represents the player's pitch
++         */
++        PITCH;
++    }
++
 +    /**
-+     * Represents the player's Y coordinate
++     * Represents flags that effect the entity's state on
++     * teleportation.
 +     */
-+    Y,
-+    /**
-+     * Represents the player's Z coordinate
-+     */
-+    Z,
-+    /**
-+     * Represents the player's yaw
-+     */
-+    YAW,
-+    /**
-+     * Represents the player's pitch
-+     */
-+    PITCH;
++    @ApiStatus.Experimental
++    enum EntityState implements TeleportFlag {
++        /**
++         * If all passengers should not be required to be removed prior to teleportation.
++         * <p>
++         * Note:
++         * Teleporting to a different world with this flag present while the entity has entities riding it
++         * will cause this teleportation to return false and not occur.
++         */
++        RETAIN_PASSENGERS,
++        /**
++         * If the entity should not be dismounted if they are riding another entity.
++         * <p>
++         * Note:
++         * Teleporting to a different world with this flag present while this entity is riding another entity will
++         * cause this teleportation to return false and not occur.
++         */
++        RETAIN_VEHICLE,
++        /**
++         * Indicates that a player should not have their current open inventory closed when teleporting.
++         * <p>
++         * Note:
++         * This option will be ignored when teleported to a different world.
++         */
++        RETAIN_OPEN_INVENTORY;
++    }
 +
 +}
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
@@ -90,69 +139,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - Teleport API
 +    /**
 +     * Teleports this entity to the given location.
-+     * <p>
-+     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
-+     * will cause this teleportation to return false and not occur.
 +     *
 +     * @param location New location to teleport this entity to
-+     * @param ignorePassengers If all passengers should not be required to be removed prior to teleportation
++     * @param teleportFlags Flags to be used in this teleportation
 +     * @return <code>true</code> if the teleport was successful
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
-+    default boolean teleport(@NotNull Location location, boolean ignorePassengers) {
-+        return this.teleport(location, TeleportCause.PLUGIN, ignorePassengers);
++    default boolean teleport(@NotNull Location location, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags) {
++        return this.teleport(location, TeleportCause.PLUGIN, teleportFlags);
 +    }
 +
 +    /**
 +     * Teleports this entity to the given location.
-+     * <p>
-+     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
-+     * will cause this teleportation to return false and not occur.
 +     *
 +     * @param location New location to teleport this entity to
 +     * @param cause The cause of this teleportation
-+     * @param ignorePassengers If all passengers should not be required to be removed prior to teleportation
++     * @param teleportFlags Flags to be used in this teleportation
 +     * @return <code>true</code> if the teleport was successful
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
-+    default boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers) {
-+        return this.teleport(location, cause, ignorePassengers, true);
-+    }
-+
-+    /**
-+     * Teleports this entity to the given location.
-+     * <p>
-+     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
-+     * will cause this teleportation to return false and not occur.
-+     * Note: Teleporting to a different world with dismount to false while this entity is riding another entity will
-+     * cause this teleportation to return false and not occur.
-+     *
-+     * @param location New location to teleport this entity to
-+     * @param ignorePassengers If all passengers should not be required to be removed prior to teleportation
-+     * @param dismount If the entity should be dismounted if they are riding another entity
-+     * @return <code>true</code> if the teleport was successful
-+     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
-+    default boolean teleport(@NotNull Location location, boolean ignorePassengers, boolean dismount) {
-+        return this.teleport(location, TeleportCause.PLUGIN, ignorePassengers, dismount);
-+    }
-+
-+    /**
-+     * Teleports this entity to the given location.
-+     * <p>
-+     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
-+     * will cause this teleportation to return false and not occur.
-+     * Note: Teleporting to a different world with dismount to false while this entity is riding another entity will
-+     * cause this teleportation to return false and not occur.
-+     *
-+     * @param location New location to teleport this entity to
-+     * @param cause The cause of this teleportation
-+     * @param ignorePassengers If all passengers should not be required to be removed prior to teleportation
-+     * @param dismount If the entity should be dismounted if they are riding another entity
-+     * @return <code>true</code> if the teleport was successful
-+     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
-+    boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers, boolean dismount);
++    boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
 +    // Paper end - Teleport API
 +
      /**
@@ -177,28 +183,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    void setRotation(float yaw, float pitch);
 +
 +    /**
-+     * Teleports this entity to the given location.
-+     * <p>
-+     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
-+     * will cause this teleportation to return false and not occur.
-+     * Note: Teleporting to a different world with dismount to false while this entity is riding another entity will
-+     * cause this teleportation to return false and not occur.
-+     *
-+     * <p>
-+     * Relative teleportation flags are only used client side, and cause the player to not lose velocity in that
-+     * specific coordinate. The location of the teleportation will not change.
-+     *
-+     * @param location New location to teleport this entity to
-+     * @param cause The cause of this teleportation
-+     * @param ignorePassengers If all passengers should not be required to be removed prior to teleportation
-+     * @param dismount If the entity should be dismounted if they are riding another entity
-+     * @param teleportFlags Coordinates of the location that the client should handle as relative teleportation
-+     * @return <code>true</code> if the teleport was successful
-+     */
-+    @org.jetbrains.annotations.ApiStatus.Experimental
-+    boolean teleport(@NotNull Location location, @NotNull org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount, @NotNull io.papermc.paper.entity.RelativeTeleportFlag @NotNull... teleportFlags);
-+
-+    /**
 +     * Causes the player to look towards the given position.
 +     *
 +     * @param x x coordinate
@@ -212,12 +196,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /**
 +     * Causes the player to look towards the given location.
 +     *
-+     * @param location Location to look at
++     * @param position Position to look at in the player's current world
 +     * @param playerAnchor What part of player should face the location
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
-+    default void lookAt(@NotNull Location location, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
-+        this.lookAt(location.getX(), location.getY(), location.getZ(), playerAnchor);
++    default void lookAt(@NotNull io.papermc.paper.math.Position position, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
++        this.lookAt(position.x(), position.y(), position.z(), playerAnchor);
 +    }
 +
 +    /**
@@ -244,7 +228,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - Teleport API
 +    private boolean dismounted = true;
-+    private final java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> teleportFlagSet;
++    private final java.util.Set<io.papermc.paper.entity.TeleportFlag.Relative> teleportFlagSet;
 +    // Paper end
 +
      public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
@@ -259,7 +243,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - Teleport API
 +    @org.jetbrains.annotations.ApiStatus.Experimental
-+    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, boolean dismounted, @NotNull java.util.Set<io.papermc.paper.entity.@NotNull RelativeTeleportFlag> teleportFlagSet) {
++    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, boolean dismounted, @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> teleportFlagSet) {
 +        super(player, from, to);
 +
 +        this.dismounted = dismounted;
@@ -294,7 +278,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
 +    @NotNull
-+    public java.util.Set<io.papermc.paper.entity.@NotNull RelativeTeleportFlag> getRelativeTeleportationFlags() {
++    public java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
 +        return this.teleportFlagSet;
 +    }
 +    // Paper end
