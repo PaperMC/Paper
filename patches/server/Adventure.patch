@@ -1921,6 +1921,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -public record ClientboundSystemChatPacket(String content, boolean overlay) implements Packet<ClientGamePacketListener> {
 +public record ClientboundSystemChatPacket(@javax.annotation.Nullable net.kyori.adventure.text.Component adventure$content, @javax.annotation.Nullable String content, boolean overlay) implements Packet<ClientGamePacketListener> { // Paper - Adventure
  
++    @io.papermc.paper.annotation.DoNotUse // Paper - No locale context
      public ClientboundSystemChatPacket(Component content, boolean overlay) {
 -        this(Component.Serializer.toJson(content), overlay);
 +        this(null, Component.Serializer.toJson(content), overlay); // Paper - Adventure
@@ -1942,8 +1943,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
  
      public ClientboundSystemChatPacket(FriendlyByteBuf buf) {
-         this(buf.readComponent(), buf.readBoolean());
-@@ -0,0 +0,0 @@ public record ClientboundSystemChatPacket(String content, boolean overlay) imple
+-        this(buf.readComponent(), buf.readBoolean());
++        this(null, io.papermc.paper.adventure.PaperAdventure.asJsonString(buf.readComponent(), buf.adventure$locale), buf.readBoolean()); // Paper - Adventure
+     }
  
      @Override
      public void write(FriendlyByteBuf buf) {
@@ -2126,6 +2128,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.connection.send(new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
                  boolean flag1 = true;
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+ 
+     public void sendSystemMessage(Component message, boolean overlay) {
+         if (this.acceptsSystemMessages(overlay)) {
+-            this.connection.send(new ClientboundSystemChatPacket(message, overlay), PacketSendListener.exceptionallySend(() -> {
++            this.connection.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(message), overlay), PacketSendListener.exceptionallySend(() -> { // Paper - Adventure
+                 if (this.acceptsSystemMessages(false)) {
+                     boolean flag1 = true;
+                     String s = message.getString(256);
+                     MutableComponent ichatmutablecomponent = Component.literal(s).withStyle(ChatFormatting.YELLOW);
+ 
+-                    return new ClientboundSystemChatPacket(Component.translatable("multiplayer.message_not_delivered", ichatmutablecomponent).withStyle(ChatFormatting.RED), false);
++                    return new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("multiplayer.message_not_delivered", ichatmutablecomponent).withStyle(ChatFormatting.RED)), false); // Paper - Adventure
+                 } else {
+                     return null;
+                 }
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -2256,6 +2274,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              this.broadcastChatMessage(playerchatmessage1);
                          }, this.server.chatExecutor); // CraftBukkit - async chat
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"));
+             return Optional.empty();
+         } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
+-            this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
++            this.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED)), false)); // Paper - Adventure
+             return Optional.empty();
+         } else {
+             Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(acknowledgment);
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              this.handleCommand(s);
          } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
              // Do nothing, this is coming from a plugin
@@ -2269,6 +2296,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                 }
+             });
+         } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) { // Re-add "Command Only" flag check
+-            this.send(new ClientboundSystemChatPacket(Component.translatable("chat.cannotSend").withStyle(ChatFormatting.RED), false));
++            this.send(new ClientboundSystemChatPacket(PaperAdventure.asAdventure(Component.translatable("chat.cannotSend").withStyle(ChatFormatting.RED)), false)); // Paper - Adventure
+         } else {
+             this.chat(s, message, true);
+         }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      }
  
