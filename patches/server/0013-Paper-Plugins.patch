@@ -1292,7 +1292,7 @@ index 0000000000000000000000000000000000000000..aae50ebba6ba1579b75af5370c8b020d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/PaperPluginClassLoaderStorage.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/PaperPluginClassLoaderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2c906e2c7d972b221a41acd614e00d0fbc1227c6
+index 0000000000000000000000000000000000000000..38a2a3a926c89c954e7407412a504f778c61737a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/PaperPluginClassLoaderStorage.java
 @@ -0,0 +1,93 @@
@@ -1325,7 +1325,7 @@ index 0000000000000000000000000000000000000000..2c906e2c7d972b221a41acd614e00d0f
 +    @Override
 +    public PluginClassLoaderGroup registerSpigotGroup(PluginClassLoader pluginClassLoader) {
 +        return this.registerGroup(pluginClassLoader, new SpigotPluginClassLoaderGroup(this.globalGroup, (library) -> {
-+            return Bukkit.getServer().getPluginManager().isTransitiveDependency(pluginClassLoader.getConfiguration(), library.getConfiguration());
++            return pluginClassLoader.dependencyContext.isTransitiveDependency(pluginClassLoader.getConfiguration(), library.getConfiguration());
 +        }));
 +    }
 +
@@ -5826,6 +5826,7 @@ index 0000000000000000000000000000000000000000..36f8dc31394333bb9aaa9341014037a4
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
++import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
@@ -5942,7 +5943,7 @@ index 0000000000000000000000000000000000000000..36f8dc31394333bb9aaa9341014037a4
 +
 +            final PluginClassLoader loader;
 +            try {
-+                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.jarFile); // Paper
++                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.jarFile, this.dependencyContext); // Paper
 +            } catch (InvalidPluginException ex) {
 +                throw ex;
 +            } catch (Throwable ex) {
@@ -5951,8 +5952,7 @@ index 0000000000000000000000000000000000000000..36f8dc31394333bb9aaa9341014037a4
 +
 +            // Override dependency context.
 +            // We must provide a temporary context in order to properly handle dependencies on the plugin classloader constructor.
-+            // EDIT - Only re add if dependency checking is needed for spigot plugins, but not anymore.
-+            // loader.dependencyContext = PaperPluginManagerImpl.getInstance();
++            loader.dependencyContext = PaperPluginManagerImpl.getInstance();
 +
 +
 +            this.status = ProviderStatus.INITIALIZED;
