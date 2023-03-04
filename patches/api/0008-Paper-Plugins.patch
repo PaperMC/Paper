@@ -904,10 +904,10 @@ index 0000000000000000000000000000000000000000..64e46fdfa4d404cb08c67a456e5990b7
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/classloader/ConfiguredPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/provider/classloader/ConfiguredPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ab1fb50912e411e708ba1e40303b1c08dabb086d
+index 0000000000000000000000000000000000000000..a21bdc57564aef7caf43dde3b2bcb2fc7f30461c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/classloader/ConfiguredPluginClassLoader.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.plugin.provider.classloader;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -970,6 +970,14 @@ index 0000000000000000000000000000000000000000..ab1fb50912e411e708ba1e40303b1c08
 +     * @return the plugin or null if it doesn't exist yet
 +     */
 +    @Nullable JavaPlugin getPlugin();
++
++    /**
++     * Get the plugin classloader group
++     * that is used by the underlying classloader
++     * @return classloader
++     */
++    @Nullable
++    PluginClassLoaderGroup getGroup();
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/classloader/PaperClassLoaderStorage.java b/src/main/java/io/papermc/paper/plugin/provider/classloader/PaperClassLoaderStorage.java
 new file mode 100644
@@ -2032,7 +2040,7 @@ index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaf
          }
  
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 2f74ec96ece706de23156ebabfe493211bc05391..2f045068c34c7c007565b7d7a17b7a003a79f37b 100644
+index 2f74ec96ece706de23156ebabfe493211bc05391..2d2fa6ce5200eb5c75a733f9f54f400113cc22b0 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -29,7 +29,8 @@ import org.jetbrains.annotations.Nullable;
@@ -2180,7 +2188,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..2f045068c34c7c007565b7d7a17b7a00
          Preconditions.checkArgument(javaPlugin != null, "Initializing plugin cannot be null");
          Preconditions.checkArgument(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
          if (this.plugin != null || this.pluginInit != null) {
-@@ -228,6 +249,32 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -228,6 +249,38 @@ final class PluginClassLoader extends URLClassLoader {
          pluginState = new IllegalStateException("Initial initialization");
          this.pluginInit = javaPlugin;
  
@@ -2212,6 +2220,12 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..2f045068c34c7c007565b7d7a17b7a00
 +            org.bukkit.configuration.serialization.ConfigurationSerialization.unregisterClass(serializable);
 +        }
      }
++
++    @Override
++    public @Nullable io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup getGroup() {
++        return this.classLoaderGroup;
++    }
++
 +    // Paper end
  }
 diff --git a/src/test/java/io/papermc/paper/testing/TestServer.java b/src/test/java/io/papermc/paper/testing/TestServer.java
