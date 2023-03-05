@@ -40,6 +40,14 @@ https://bugs.mojang.com/browse/MC-224454
 https://bugs.mojang.com/browse/MC-263999
   Fix mobs breaking doors not spawning block break particles
 
+https://bugs.mojang.com/browse/MC-210802
+  by: BillyGalbreath <Blake.Galbreath@Gmail.com>
+  Fixes sheep eating blocks outside of ticking range
+
+https://bugs.mojang.com/browse/MC-123848
+  by: BillyGalbreath <blake.galbreath@gmail.com>
+  Fixes item frames dropping items above when pointing down
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -81,6 +89,19 @@ index 6cd6d69a20e95e344fc18ab67dc300824537a59b..2e2a7c2cf3081187da817479a9da3eb1
                  }, true);
              }
          }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 9209b598d7168b82574e4800056b8b9f84265dd0..469083208110d5735e1bbda7a15c55a032d0e8cc 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1000,7 +1000,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+     // Paper end
+ 
+-    boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
++    public boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) { // Paper - public
+         // Spigot start
+         return this.anyPlayerCloseEnoughForSpawning(pos, false);
+     }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 06df21e55fdb70558b85fc095a04b3bb64fbe770..c6a7aace64785f76792b03be08fb69e4cb93d1b3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -124,7 +145,7 @@ index effe4c4fb37fe13aece70cdef4966047d4719af9..7152674d3f3fb98198585cb5ece2bb88
      default SoundEvent getSaddleSoundEvent() {
          return SoundEvents.HORSE_SADDLE;
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
-index 4253b3b1263a7ae5a2f5f3a34674dfea615a81ea..704a4ef1f89c0f3a5a9cf1367563ba305eabdbaf 100644
+index 784a894688f98f9d0368a36d456c5c94e1ee3695..a85885ee51df585fa11ae9f8fcd67ff2a71c5a18 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
 @@ -77,9 +77,10 @@ public class BreakDoorGoal extends DoorInteractGoal {
@@ -139,6 +160,22 @@ index 4253b3b1263a7ae5a2f5f3a34674dfea615a81ea..704a4ef1f89c0f3a5a9cf1367563ba30
          }
  
      }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+index b0caf52d00d8cd76550ab116291f8e11144a5e59..93bbda61f0eb2dd52573602b1f9cc7b031d1fc5a 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+@@ -31,6 +31,11 @@ public class EatBlockGoal extends Goal {
+ 
+     @Override
+     public boolean canUse() {
++        // Paper start - Fix MC-210802
++        if (!((net.minecraft.server.level.ServerLevel) this.level).chunkSource.chunkMap.anyPlayerCloseEnoughForSpawning(this.mob.chunkPosition())) {
++            return false;
++        }
++        // Paper end
+         if (this.mob.getRandom().nextInt(this.mob.isBaby() ? 50 : 1000) != 0) {
+             return false;
+         } else {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
 index 19540fd4a7f992888fadb6501d0c8a5a7e71fcf6..e241ae250f4f04a17ef2c583d00b065a4ca56a4c 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
@@ -192,6 +229,25 @@ index 6bab94ac458081e9ed6e1999a9a3f884dd710604..49d7109b6ca63c8073db777549a65b2f
      }
  
      public void equipArmor(Player player, ItemStack stack) {
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index a86472cce8e8fcde16d761842fe443a619f6e305..b42c060a5d8d68b5773a8a5e38c59707a277d9bb 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -287,6 +287,14 @@ public class ItemFrame extends HangingEntity {
+         }
+     }
+ 
++    // Paper start - Fix MC-123848 (spawn item frame drops above block)
++    @Nullable
++    @Override
++    public net.minecraft.world.entity.item.ItemEntity spawnAtLocation(ItemStack stack) {
++        return this.spawnAtLocation(stack, getDirection().equals(Direction.DOWN) ? -0.6F : 0.0F);
++    }
++    // Paper end
++
+     private void removeFramedMap(ItemStack itemstack) {
+         this.getFramedMapId().ifPresent((i) -> {
+             MapItemSavedData worldmap = MapItem.getSavedData(i, this.level());
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index f174094febfdfdc309f1b50877be60bae8a98156..5f407535298a31a34cfe114dd863fd6a9b977707 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
