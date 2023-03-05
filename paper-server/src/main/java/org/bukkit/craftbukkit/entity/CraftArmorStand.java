@@ -152,6 +152,14 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
         this.getHandle().noPhysics = !gravity;
     }
 
+    // Paper start - Armor Stand has its own invisible field
+    @Override
+    public void setInvisible(final boolean invisible) {
+        this.getHandle().setInvisible(invisible);
+        super.setInvisible(invisible);
+    }
+    // Paper end
+
     @Override
     public boolean isVisible() {
         return !this.getHandle().isInvisible();
