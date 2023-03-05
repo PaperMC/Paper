@@ -14,16 +14,12 @@ to cancel the death which has the benefit of also receiving the dropped
 items and experience which is otherwise only properly possible by using
 internal code.
 
-TODO 1.17: this needs to be checked (actually get off your lazy ass and cancel the events) for the following entities,
-maybe more (please check patch overrides for drops for more):
-- players, armor stands, foxes, chested donkeys/llamas
-
 == AT ==
 public net.minecraft.world.entity.LivingEntity getDeathSound()Lnet/minecraft/sounds/SoundEvent;
 public net.minecraft.world.entity.LivingEntity getSoundVolume()F
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index ab71db25415e87e2ebd299e4d491be5e08820c21..117d4d39bd8ad01207f7056f1d82681568de5b38 100644
+index 20c4ba5d00f5a40f5c7da282c9c069b365273041..4c8b1d30b82fd7a87f79983577695c680013d3f4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -235,6 +235,10 @@ public class ServerPlayer extends Player {
@@ -300,9 +296,46 @@ index 65dd844b9b38730a819158e1023c4abd829b52bb..170411b42aeef69c796d1409b59c3eb6
      public void addAdditionalSaveData(CompoundTag nbt) {
          super.addAdditionalSaveData(nbt);
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index f70f75867a8f03d42f240a0d007d2221269f2fdb..e463ae13ce6f65675c2b6d553ecf91db5a047dbc 100644
+index f70f75867a8f03d42f240a0d007d2221269f2fdb..4edd48ce10caf31ac0136af35f19836b555675e5 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -532,9 +532,9 @@ public class ArmorStand extends LivingEntity {
+                             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
+                             this.lastHit = i;
+                         } else {
+-                            this.brokenByPlayer(source);
++                            org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(source); // Paper
+                             this.showBreakingParticles();
+-                            this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.die() since above damagesource method will call death event
++                            if (!event.isCancelled()) this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.die() since above damagesource method will call death event // Paper
+                         }
+ 
+                         return true;
+@@ -594,12 +594,12 @@ public class ArmorStand extends LivingEntity {
+ 
+     }
+ 
+-    private void brokenByPlayer(DamageSource damageSource) {
++    private org.bukkit.event.entity.EntityDeathEvent brokenByPlayer(DamageSource damageSource) {  // Paper
+         drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.ARMOR_STAND))); // CraftBukkit - add to drops
+-        this.brokenByAnything(damageSource);
++        return this.brokenByAnything(damageSource); // Paper
+     }
+ 
+-    private void brokenByAnything(DamageSource damageSource) {
++    private org.bukkit.event.entity.EntityDeathEvent brokenByAnything(DamageSource damageSource) { // Paper
+         this.playBrokenSound();
+         // this.dropAllDeathLoot(damagesource); // CraftBukkit - moved down
+ 
+@@ -621,7 +621,7 @@ public class ArmorStand extends LivingEntity {
+                 this.armorItems.set(i, ItemStack.EMPTY);
+             }
+         }
+-        this.dropAllDeathLoot(damageSource); // CraftBukkit - moved from above
++        return this.dropAllDeathLoot(damageSource); // CraftBukkit - moved from above // Paper
+ 
+     }
+ 
 @@ -753,7 +753,8 @@ public class ArmorStand extends LivingEntity {
  
      @Override
