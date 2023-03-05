@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Doc <nachito94@msn.com>
+Date: Sun, 5 Mar 2023 15:07:53 -0300
+Subject: [PATCH] Add PlayerTeleportEndExitEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 289429eb464548acc80262a49444f49f8f57fc0c..fccc98b87433ab991226a3b1a9e28f9ed6a204ca 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1121,6 +1121,19 @@ public class ServerPlayer extends Player {
+         ResourceKey<LevelStem> resourcekey = worldserver1.getTypeKey(); // CraftBukkit
+ 
+         if (resourcekey == LevelStem.END && worldserver != null && worldserver.getTypeKey() == LevelStem.OVERWORLD) { // CraftBukkit
++            // Paper start - handle teleport event
++            Location enter = this.getBukkitEntity().getLocation();
++            Location exit = this.getBukkitEntity().getBedSpawnLocation();
++            if (exit == null) {
++                BlockPos exitBlockposition = this.getSpawnPoint(worldserver);
++                exit = new Location(worldserver.getWorld(), (double) ((float) exitBlockposition.getX() + 0.5F), (double) ((float) exitBlockposition.getY() + 0.1F), (double) ((float) exitBlockposition.getZ() + 0.5F), worldserver1.levelData.getSpawnAngle(), 0.0F);
++            }
++            io.papermc.paper.event.player.PlayerTeleportEndExitEvent tpEvent = new io.papermc.paper.event.player.PlayerTeleportEndExitEvent(this.getBukkitEntity(), enter, exit);
++            Bukkit.getServer().getPluginManager().callEvent(tpEvent);
++            if (tpEvent.isCancelled()) {
++                return null;
++            }
++            // Paper end
+             this.isChangingDimension = true; // CraftBukkit - Moved down from above
+             this.unRide();
+             this.getLevel().removePlayerImmediately(this, Entity.RemovalReason.CHANGED_DIMENSION);
