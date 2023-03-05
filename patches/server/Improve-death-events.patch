@@ -14,10 +14,6 @@ to cancel the death which has the benefit of also receiving the dropped
 items and experience which is otherwise only properly possible by using
 internal code.
 
-TODO 1.17: this needs to be checked (actually get off your lazy ass and cancel the events) for the following entities,
-maybe more (please check patch overrides for drops for more):
-- players, armor stands, foxes, chested donkeys/llamas
-
 == AT ==
 public net.minecraft.world.entity.LivingEntity getDeathSound()Lnet/minecraft/sounds/SoundEvent;
 public net.minecraft.world.entity.LivingEntity getSoundVolume()F
@@ -303,6 +299,43 @@ diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
+                             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
+                             this.lastHit = i;
+                         } else {
+-                            this.brokenByPlayer(source);
++                            org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(source); // Paper
+                             this.showBreakingParticles();
+-                            this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.die() since above damagesource method will call death event
++                            if (!event.isCancelled()) this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.die() since above damagesource method will call death event // Paper
+                         }
+ 
+                         return true;
+@@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
+ 
+     }
+ 
+-    private void brokenByPlayer(DamageSource damageSource) {
++    private org.bukkit.event.entity.EntityDeathEvent brokenByPlayer(DamageSource damageSource) {  // Paper
+         drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.ARMOR_STAND))); // CraftBukkit - add to drops
+-        this.brokenByAnything(damageSource);
++        return this.brokenByAnything(damageSource); // Paper
+     }
+ 
+-    private void brokenByAnything(DamageSource damageSource) {
++    private org.bukkit.event.entity.EntityDeathEvent brokenByAnything(DamageSource damageSource) { // Paper
+         this.playBrokenSound();
+         // this.dropAllDeathLoot(damagesource); // CraftBukkit - moved down
+ 
+@@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
+                 this.armorItems.set(i, ItemStack.EMPTY);
+             }
+         }
+-        this.dropAllDeathLoot(damageSource); // CraftBukkit - moved from above
++        return this.dropAllDeathLoot(damageSource); // CraftBukkit - moved from above // Paper
+ 
+     }
+ 
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
  
      @Override
