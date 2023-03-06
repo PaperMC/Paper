@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: elmital <54907162+elmital@users.noreply.github.com>
+Date: Mon, 6 Mar 2023 15:56:46 +0100
+Subject: [PATCH] CreatureSpawnEvent.SpawnReason should be retained for
+ teleported entities
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index e84c67f02bce4c2f9c4eeca1b888d53377fb20d7..4597cca29c90f53142be975eed4a39c6cdb493b8 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1439,13 +1439,16 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // SPIGOT-6415: Don't call spawn event for entities which travel trough worlds,
+         // since it is only an implementation detail, that a new entity is created when
+         // they are traveling between worlds.
+-        this.addDuringTeleport(entity, null);
++        // Paper start - CreatureSpawnEvent.SpawnReason should be retained for teleported entities
++        // this.addDuringTeleport(entity, null);
++        this.addEntity(entity, entity.spawnReason, false);
+     }
+ 
+-    public void addDuringTeleport(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
+-        this.addEntity(entity, reason);
++    // public void addDuringTeleport(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
++        // this.addEntity(entity, reason);
+         // CraftBukkit end
+-    }
++    // }
++    // Paper end
+ 
+     public void addDuringCommandTeleport(ServerPlayer player) {
+         this.addPlayer(player);
+@@ -1475,8 +1478,14 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         this.entityLookup.addNewEntity(player); // Paper - rewite chunk system
+     }
+ 
+-    // CraftBukkit start
++    // Paper start - CreatureSpawnEvent.SpawnReason should be retained for teleported entities
+     private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
++        return addEntity(entity, spawnReason, true);
++    }
++
++    // CraftBukkit start
++    private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason, boolean callSpawnEvent) {
++        // Paper end
+         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
+         // Paper start
+         if (entity.valid) {
+@@ -1512,7 +1521,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             }
+             // Paper end
+             // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
+-            if (spawnReason != null && !CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
++            if (callSpawnEvent && !CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) { // Paper - CreatureSpawnEvent.SpawnReason should be retained for teleported entities
+                 return false;
+             }
+             // CraftBukkit end
