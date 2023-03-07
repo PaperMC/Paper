@@ -970,6 +970,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return the plugin or null if it doesn't exist yet
 +     */
 +    @Nullable JavaPlugin getPlugin();
++
++    /**
++     * Get the plugin classloader group
++     * that is used by the underlying classloader
++     * @return classloader
++     */
++    @Nullable
++    PluginClassLoaderGroup getGroup();
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/classloader/PaperClassLoaderStorage.java b/src/main/java/io/papermc/paper/plugin/provider/classloader/PaperClassLoaderStorage.java
 new file mode 100644
@@ -1993,7 +2001,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          final PluginClassLoader loader;
          try {
 -            loader = new PluginClassLoader(this, getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null);
-+            loader = new PluginClassLoader(getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null, null); // Paper
++            loader = new PluginClassLoader(getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null, null, null); // Paper
          } catch (InvalidPluginException ex) {
              throw ex;
          } catch (Throwable ex) {
@@ -2051,6 +2059,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
 +    private java.util.logging.Logger logger; // Paper - add field
 +    private io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup classLoaderGroup; // Paper
++    public io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext; // Paper
  
      static {
          ClassLoader.registerAsParallelCapable();
@@ -2058,7 +2067,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    PluginClassLoader(@NotNull final JavaPluginLoader loader, @Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader) throws IOException, InvalidPluginException, MalformedURLException {
 +    @org.jetbrains.annotations.ApiStatus.Internal // Paper
-+    public PluginClassLoader(@Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader, @Nullable JarFile jarFile) throws IOException, InvalidPluginException, MalformedURLException { // Paper // Paper - use JarFile provided by SpigotPluginProvider
++    public PluginClassLoader(@Nullable final ClassLoader parent, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file, @Nullable ClassLoader libraryLoader, @Nullable JarFile jarFile, io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext) throws IOException, InvalidPluginException, MalformedURLException { // Paper // Paper - use JarFile provided by SpigotPluginProvider
          super(new URL[] {file.toURI().toURL()}, parent);
 -        Preconditions.checkArgument(loader != null, "Loader cannot be null");
 +        this.loader = null; // Paper - pass null into loader field
@@ -2075,7 +2084,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +
 +        // Paper start
-+        this.classLoaderGroup = io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage.instance().registerSpigotGroup(this); // Paper
++        this.dependencyContext = dependencyContext;
++        this.classLoaderGroup = io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage.instance().registerSpigotGroup(this);
 +        // Paper end
          try {
              Class<?> jarClass;
@@ -2210,6 +2220,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            org.bukkit.configuration.serialization.ConfigurationSerialization.unregisterClass(serializable);
 +        }
      }
++
++    @Override
++    public @Nullable io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup getGroup() {
++        return this.classLoaderGroup;
++    }
++
 +    // Paper end
  }
 diff --git a/src/test/java/io/papermc/paper/testing/TestServer.java b/src/test/java/io/papermc/paper/testing/TestServer.java

@@ -276,6 +276,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.entrypoint.classloader.group.LockingClassLoaderGroup;
 +import io.papermc.paper.plugin.entrypoint.classloader.group.PaperPluginClassLoaderStorage;
 +import io.papermc.paper.plugin.entrypoint.classloader.group.SimpleListPluginClassLoaderGroup;
++import io.papermc.paper.plugin.entrypoint.classloader.group.SpigotPluginClassLoaderGroup;
++import io.papermc.paper.plugin.entrypoint.classloader.group.StaticPluginClassLoaderGroup;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
@@ -390,10 +392,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                @Override
 +                public boolean load(PluginProvider<Object> provider, Object provided) {
++                    return true;
++                }
++
++                @Override
++                public boolean preloadProvider(PluginProvider<Object> provider) {
++                    // Don't load provider
 +                    loadOrder.add(provider.getMeta().getName());
 +                    return false;
 +                }
-+
 +            });
 +            modernPluginLoadingStrategy.loadProviders(pluginProviders);
 +
@@ -430,6 +437,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (group instanceof SimpleListPluginClassLoaderGroup listGroup) {
 +            JsonArray array = new JsonArray();
 +            classLoadersRoot.addProperty("main", listGroup.toString());
++            if (group instanceof StaticPluginClassLoaderGroup staticPluginClassLoaderGroup) {
++                classLoadersRoot.addProperty("plugin-holder", staticPluginClassLoaderGroup.getPluginClassloader().toString());
++            } else if (group instanceof SpigotPluginClassLoaderGroup spigotPluginClassLoaderGroup) {
++                classLoadersRoot.addProperty("plugin-holder", spigotPluginClassLoaderGroup.getPluginClassLoader().toString());
++            }
++
 +            classLoadersRoot.add("children", array);
 +            for (ConfiguredPluginClassLoader innerGroup : listGroup.getClassLoaders()) {
 +                array.add(this.writeClassloader(innerGroup));
@@ -1008,6 +1021,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            super.close();
 +        }
 +    }
++
++    @Override
++    public @Nullable PluginClassLoaderGroup getGroup() {
++        return this.group;
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
 new file mode 100644
@@ -1205,7 +1223,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public String toString() {
-+        return super.toString();
++        return "GLOBAL:" + super.toString();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/LockingClassLoaderGroup.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/group/LockingClassLoaderGroup.java
@@ -1302,7 +1320,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
 +import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
 +import io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup;
-+import org.bukkit.Bukkit;
 +import org.bukkit.plugin.java.PluginClassLoader;
 +import org.jetbrains.annotations.ApiStatus;
 +
@@ -1325,8 +1342,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public PluginClassLoaderGroup registerSpigotGroup(PluginClassLoader pluginClassLoader) {
 +        return this.registerGroup(pluginClassLoader, new SpigotPluginClassLoaderGroup(this.globalGroup, (library) -> {
-+            return Bukkit.getServer().getPluginManager().isTransitiveDependency(pluginClassLoader.getConfiguration(), library.getConfiguration());
-+        }));
++            return pluginClassLoader.dependencyContext.isTransitiveDependency(pluginClassLoader.getConfiguration(), library.getConfiguration());
++        }, pluginClassLoader));
 +    }
 +
 +    @Override
@@ -1343,7 +1360,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        return this.registerGroup(classLoader, new StaticPluginClassLoaderGroup(allowedLoaders, access));
++        return this.registerGroup(classLoader, new StaticPluginClassLoaderGroup(allowedLoaders, access, classLoader));
 +    }
 +
 +    private PluginClassLoaderGroup registerGroup(ConfiguredPluginClassLoader classLoader, PluginClassLoaderGroup group) {
@@ -1362,6 +1379,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void unregisterClassloader(ConfiguredPluginClassLoader configuredPluginClassLoader) {
 +        this.globalGroup.remove(configuredPluginClassLoader);
++        this.groups.remove(configuredPluginClassLoader.getGroup());
 +        for (PluginClassLoaderGroup group : this.groups) {
 +            group.remove(configuredPluginClassLoader);
 +        }
@@ -1372,7 +1390,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (this.globalGroup.getClassLoaders().contains(pluginLoader)) {
 +            return false;
 +        } else {
-+            this.globalGroup.getClassLoaders().add(pluginLoader);
++            this.globalGroup.add(pluginLoader);
 +            return true;
 +        }
 +    }
@@ -1540,6 +1558,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.plugin.provider.classloader.ClassLoaderAccess;
 +import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
++import org.bukkit.plugin.java.PluginClassLoader;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.function.Predicate;
@@ -1552,10 +1571,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public class SpigotPluginClassLoaderGroup extends SimpleListPluginClassLoaderGroup {
 +
 +    private final Predicate<ConfiguredPluginClassLoader> libraryClassloaderPredicate;
++    private final PluginClassLoader pluginClassLoader;
 +
-+    public SpigotPluginClassLoaderGroup(GlobalPluginClassLoaderGroup globalPluginClassLoaderGroup, Predicate<ConfiguredPluginClassLoader> libraryClassloaderPredicate) {
++    public SpigotPluginClassLoaderGroup(GlobalPluginClassLoaderGroup globalPluginClassLoaderGroup, Predicate<ConfiguredPluginClassLoader> libraryClassloaderPredicate, PluginClassLoader pluginClassLoader) {
 +        super(globalPluginClassLoaderGroup.getClassLoaders());
 +        this.libraryClassloaderPredicate = libraryClassloaderPredicate;
++        this.pluginClassLoader = pluginClassLoader;
 +    }
 +
 +    // Mirrors global list
@@ -1567,14 +1588,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public void remove(ConfiguredPluginClassLoader configuredPluginClassLoader) {
 +    }
 +
++    // Don't allow other plugins to access spigot dependencies, they should instead reference the global list
++    @Override
++    public ClassLoaderAccess getAccess() {
++        return v -> false;
++    }
++
 +    @Override
 +    protected Class<?> lookupClass(String name, boolean resolve, ConfiguredPluginClassLoader current) throws ClassNotFoundException {
 +        return current.loadClass(name, resolve, false, this.libraryClassloaderPredicate.test(current));
 +    }
 +
-+    @Override
-+    public ClassLoaderAccess getAccess() {
-+        return v -> true;
++    // DEBUG
++    public PluginClassLoader getPluginClassLoader() {
++        return pluginClassLoader;
 +    }
 +
 +    @Override
@@ -1603,15 +1630,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public class StaticPluginClassLoaderGroup extends SimpleListPluginClassLoaderGroup {
 +
 +    private final ClassLoaderAccess access;
++    // Debug only
++    private final ConfiguredPluginClassLoader mainClassloaderHolder;
 +
-+    public StaticPluginClassLoaderGroup(List<ConfiguredPluginClassLoader> classloaders, ClassLoaderAccess access) {
++    public StaticPluginClassLoaderGroup(List<ConfiguredPluginClassLoader> classloaders, ClassLoaderAccess access, ConfiguredPluginClassLoader mainClassloaderHolder) {
 +        super(classloaders);
 +        this.access = access;
++        this.mainClassloaderHolder = mainClassloaderHolder;
 +    }
 +
 +    @Override
 +    public ClassLoaderAccess getAccess() {
 +        return this.access;
++    }
++
++    // DEBUG
++    @ApiStatus.Internal
++    public ConfiguredPluginClassLoader getPluginClassloader() {
++        return this.mainClassloaderHolder;
 +    }
 +
 +    @Override
@@ -2556,9 +2592,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            try {
 +                this.configuration.applyContext(retrievedProvider, graphDependencyContext);
 +
-+                T instance = retrievedProvider.createInstance();
-+                if (this.configuration.load(retrievedProvider, instance)) {
-+                    loadedPlugins.add(new ProviderPair<>(retrievedProvider, instance));
++                if (this.configuration.preloadProvider(retrievedProvider)) {
++                    T instance = retrievedProvider.createInstance();
++                    if (this.configuration.load(retrievedProvider, instance)) {
++                        loadedPlugins.add(new ProviderPair<>(retrievedProvider, instance));
++                    }
 +                }
 +            } catch (Throwable ex) {
 +                LOGGER.error("Could not load plugin '%s' in folder '%s'".formatted(retrievedProvider.getFileName(), retrievedProvider.getParentSource()), ex); // Paper
@@ -2653,8 +2691,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +
-+import java.util.List;
-+
 +/**
 + * Used to share code with the modern and legacy plugin load strategy.
 + *
@@ -2665,6 +2701,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    void applyContext(PluginProvider<T> provider, DependencyContext dependencyContext);
 +
 +    boolean load(PluginProvider<T> provider, T provided);
++
++    default boolean preloadProvider(PluginProvider<T> provider) {
++        return true;
++    }
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
@@ -4960,7 +5000,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final Logger LOGGER = LogUtils.getLogger();
 +
 +    public DirectoryProviderSource() {
-+        super("Directory '%s'"::formatted);
++        super("File '%s'"::formatted);
 +    }
 +
 +    @Override
@@ -5826,6 +5866,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
++import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
@@ -5942,7 +5983,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            final PluginClassLoader loader;
 +            try {
-+                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.jarFile); // Paper
++                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.jarFile, this.dependencyContext); // Paper
 +            } catch (InvalidPluginException ex) {
 +                throw ex;
 +            } catch (Throwable ex) {
@@ -5951,8 +5992,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            // Override dependency context.
 +            // We must provide a temporary context in order to properly handle dependencies on the plugin classloader constructor.
-+            // EDIT - Only re add if dependency checking is needed for spigot plugins, but not anymore.
-+            // loader.dependencyContext = PaperPluginManagerImpl.getInstance();
++            loader.dependencyContext = PaperPluginManagerImpl.getInstance();
 +
 +
 +            this.status = ProviderStatus.INITIALIZED;
