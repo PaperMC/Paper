@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * A RegionAccessor gives access to getting, modifying and spawning {@link Biome}, {@link BlockState} and {@link Entity},
  * as well as generating some basic structures.
  */
-public interface RegionAccessor extends Keyed { // Paper
+public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.FeatureFlagSetHolder { // Paper - feature flag API
 
     /**
      * Gets the {@link Biome} at the given {@link Location}.

@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
  * created and viewed by the player.
  */
 @ApiStatus.Experimental
-public interface MenuType extends Keyed {
+public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - make FeatureDependant
 
     /**
      * A MenuType which represents a chest with 1 row.

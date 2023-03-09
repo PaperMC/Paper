@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * This enum reflects and matches each potion state that can be obtained from
  * the Creative mode inventory
  */
-public enum PotionType implements Keyed {
+public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - feature flag API
     WATER("water"),
     MUNDANE("mundane"),
     THICK("thick"),

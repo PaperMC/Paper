@@ -111,8 +111,7 @@ public interface UnsafeValues {
     @Deprecated(since = "1.21.3", forRemoval = true)
     String getTranslationKey(Attribute attribute);
 
-    @Nullable
-    FeatureFlag getFeatureFlag(@NotNull NamespacedKey key);
+    // Paper - replace with better system
 
     /**
      * Do not use, method will get removed, and the plugin won't run

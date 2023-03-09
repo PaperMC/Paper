@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
  * changes may occur. Do not use this API in plugins.
  */
 @ApiStatus.Experimental // Paper - already required for registry builders
-public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - add Translatable
+public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add Translatable & feature flag API
 
     /**
      * Typed represents a subtype of {@link ItemType}s that have a known item meta type
@@ -2412,7 +2412,9 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      *
      * @param world the world to check
      * @return true if this ItemType can be used in this World.
+     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
      */
+    @Deprecated(forRemoval = true, since = "1.21.1") // Paper
     boolean isEnabledByFeature(@NotNull World world);
 
     /**

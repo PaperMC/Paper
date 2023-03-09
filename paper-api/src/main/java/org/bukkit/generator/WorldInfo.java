@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Holds various information of a World
  */
-public interface WorldInfo {
+public interface WorldInfo extends io.papermc.paper.world.flag.FeatureFlagSetHolder { // Paper - feature flag API
 
     /**
      * Gets the unique name of this world
