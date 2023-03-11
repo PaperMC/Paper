@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Sat, 11 Mar 2023 03:30:09 +0100
+Subject: [PATCH] Upgrade to snakeyaml 2.0
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 9421e45653e68922a51cf0071792e6fa7999d0b8..fc933f92d7b6b0b1a9bf837f4421dbdab2fb9023 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -26,7 +26,7 @@ dependencies {
+     api("com.google.guava:guava:31.1-jre")
+     api("com.google.code.gson:gson:2.10")
+     api("net.md-5:bungeecord-chat:1.16-R0.4-deprecated+build.6") // Paper
+-    api("org.yaml:snakeyaml:1.33")
++    api("org.yaml:snakeyaml:2.0") // Paper - snakeyaml 2.0
+     // Paper start
+     api("com.googlecode.json-simple:json-simple:1.1.1") {
+         isTransitive = false // includes junit
+diff --git a/src/main/java/org/bukkit/configuration/file/YamlConstructor.java b/src/main/java/org/bukkit/configuration/file/YamlConstructor.java
+index 092599425808df891e8753cf5441c5b48080c7e5..7f794d2bbb4142bf4b4b2135ccd74074c5559c12 100644
+--- a/src/main/java/org/bukkit/configuration/file/YamlConstructor.java
++++ b/src/main/java/org/bukkit/configuration/file/YamlConstructor.java
+@@ -14,6 +14,7 @@ import org.yaml.snakeyaml.nodes.Tag;
+ public class YamlConstructor extends SafeConstructor {
+ 
+     public YamlConstructor() {
++        super(YamlCreator.trustedLoaderOptions()); // Paper - snakeyaml 2.0
+         this.yamlConstructors.put(Tag.MAP, new ConstructCustomObject());
+     }
+ 
+diff --git a/src/main/java/org/bukkit/configuration/file/YamlCreator.java b/src/main/java/org/bukkit/configuration/file/YamlCreator.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..44a11a12b71fb89715a83aa216b754f07e3646c5
+--- /dev/null
++++ b/src/main/java/org/bukkit/configuration/file/YamlCreator.java
+@@ -0,0 +1,20 @@
++package org.bukkit.configuration.file;
++
++import org.jetbrains.annotations.NotNull;
++import org.yaml.snakeyaml.DumperOptions;
++import org.yaml.snakeyaml.LoaderOptions;
++import org.yaml.snakeyaml.inspector.TrustedTagInspector;
++
++public final class YamlCreator {
++    public static @NotNull LoaderOptions trustedLoaderOptions() {
++        LoaderOptions options = new LoaderOptions();
++        options.setTagInspector(new TrustedTagInspector());
++        return options;
++    }
++
++    public static @NotNull DumperOptions trustedDumperOptions() {
++        return new DumperOptions();
++    }
++
++    private YamlCreator(){}
++}
+diff --git a/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java b/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
+index 4670f866812c2a79c632f396c72a4b28783e58dd..c5ec4365ea057319fcd83ccef37b939b7b525428 100644
+--- a/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
++++ b/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
+@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.representer.Representer;
+ public class YamlRepresenter extends Representer {
+ 
+     public YamlRepresenter() {
++        super(YamlCreator.trustedDumperOptions()); // Paper - snakeyaml 2.0
+         this.multiRepresenters.put(ConfigurationSection.class, new RepresentConfigurationSection());
+         this.multiRepresenters.put(ConfigurationSerializable.class, new RepresentConfigurationSerializable());
+         // SPIGOT-6234: We could just switch YamlConstructor to extend Constructor rather than SafeConstructor, however there is a very small risk of issues with plugins treating config as untrusted input
+diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+index f1ae66989afaa433bf2896e0bfe2cea472f774d8..62449837706356fac2d1c1708730838d838fbaf7 100644
+--- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
++++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+@@ -200,7 +200,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
+         @Override
+         @NotNull
+         protected Yaml initialValue() {
+-            return new Yaml(new SafeConstructor() {
++            return new Yaml(new SafeConstructor(org.bukkit.configuration.file.YamlCreator.trustedLoaderOptions()) { // Paper - snakeyaml 2.0
+                 {
+                     yamlConstructors.put(null, new AbstractConstruct() {
+                         @NotNull
