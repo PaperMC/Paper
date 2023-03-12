@@ -61,31 +61,49 @@ index 0000000000000000000000000000000000000000..3f6afc006ca529e92e25e291266f1f96
 +
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/AttributePair.java b/src/main/java/io/papermc/paper/inventory/item/properties/AttributePair.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2d2cab1890cfdab945bb6700899da7906ff490c5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/item/properties/AttributePair.java
+@@ -0,0 +1,7 @@
++package io.papermc.paper.inventory.item.properties;
++
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeModifier;
++
++public record AttributePair(Attribute attribute, AttributeModifier modifier) {
++}
+diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/EnchantmentPair.java b/src/main/java/io/papermc/paper/inventory/item/properties/EnchantmentPair.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e338b2eb52c8cef657981b8744b95f894b0ebcf6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/item/properties/EnchantmentPair.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.inventory.item.properties;
++
++import org.bukkit.enchantments.Enchantment;
++
++public record EnchantmentPair(Enchantment enchantment, int level) {
++}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5b610d0414b5a2bc83eab0c01cfdaa47784ef7a6
+index 0000000000000000000000000000000000000000..ac5daa5179812d49f4248b173c562eab10b990f7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,122 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
++import io.leangen.geantyref.TypeFactory;
 +import io.papermc.paper.math.Position;
++import io.papermc.paper.property.PropertyHolder;
 +import io.papermc.paper.property.PropertyKey;
-+import io.papermc.paper.property.StoredPropertyHolder;
-+import io.papermc.paper.property.value.ListValue;
-+import io.papermc.paper.property.value.MapValue;
-+import io.papermc.paper.property.value.MultiMapValue;
-+import io.papermc.paper.property.value.SetValue;
-+import io.papermc.paper.property.value.Value;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.Color;
 +import org.bukkit.FireworkEffect;
 +import org.bukkit.MusicInstrument;
 +import org.bukkit.NamespacedKey;
-+import org.bukkit.attribute.Attribute;
-+import org.bukkit.attribute.AttributeModifier;
-+import org.bukkit.enchantments.Enchantment;
 +import org.bukkit.entity.Axolotl;
 +import org.bukkit.inventory.ItemFlag;
 +import org.bukkit.inventory.ItemStack;
@@ -93,102 +111,107 @@ index 0000000000000000000000000000000000000000..5b610d0414b5a2bc83eab0c01cfdaa47
 +import org.bukkit.potion.PotionEffect;
 +import org.jetbrains.annotations.ApiStatus;
 +
++import java.util.List;
++import java.util.Set;
++
 +@ApiStatus.Experimental
 +public interface ItemProperties {
 +
 +    // COMMON
-+    PropertyKey<MapValue<Enchantment, Integer>> ENCHANTMENTS = PropertyKey.ofMap("Enchantments", Enchantment.class, Integer.class);
-+    PropertyKey<Value<Boolean>> UNBREAKABLE = PropertyKey.of("Unbreakable", Boolean.class);
++    PropertyKey<List<EnchantmentPair>> ENCHANTMENTS = PropertyKey.of("Enchantments", TypeFactory.parameterizedClass(List.class, EnchantmentPair.class));
++    PropertyKey<Boolean> UNBREAKABLE = PropertyKey.of("Unbreakable", Boolean.class);
 +    //PropertyKey<> CAN_DESTROY_BLOCK_LIST = PropertyKey.ofSimpleValue("CanDestroy", );
 +    //PropertyKey CAN_PLACE_ON_BLOCK_LIST = PropertyKey.ofSimpleValue("CanPlaceOn", );
-+    PropertyKey<SetValue<ItemFlag>> HIDE_FLAGS = PropertyKey.ofSet("HideFlags", ItemFlag.class);
-+    PropertyKey<Value<Integer>> REPAIR_COST = PropertyKey.of("RepairCost", Integer.class);
-+    PropertyKey<Value<Integer>> CUSTOM_MODEL_DATA = PropertyKey.of("CustomModelData", Integer.class);
-+    PropertyKey<Value<Integer>> DAMAGE = PropertyKey.of("damage", Integer.class);
-+    PropertyKey<MultiMapValue<Attribute, AttributeModifier>> ATTRIBUTES = PropertyKey.ofMultiMap("AttributeModifiers", Attribute.class, AttributeModifier.class);
-+    PropertyKey<StoredPropertyHolder> BLOCK_STATE = PropertyKey.ofPropertyHolder("BlockStateTag");
-+    PropertyKey<StoredPropertyHolder> ENTITY_TAG = PropertyKey.ofPropertyHolder("EntityTag");
++    PropertyKey<Set<ItemFlag>> HIDE_FLAGS = PropertyKey.of("HideFlags", TypeFactory.parameterizedClass(Set.class, ItemFlag.class));
++    PropertyKey<Integer> REPAIR_COST = PropertyKey.of("RepairCost", Integer.class);
++    PropertyKey<Integer> CUSTOM_MODEL_DATA = PropertyKey.of("CustomModelData", Integer.class);
++    PropertyKey<Integer> DAMAGE = PropertyKey.of("damage", Integer.class);
++    PropertyKey<List<AttributePair>> ATTRIBUTES = PropertyKey.of("AttributeModifiers", TypeFactory.parameterizedClass(List.class, AttributePair.class));
++    PropertyKey<PropertyHolder.Mutable> BLOCK_STATE = PropertyKey.of("BlockStateTag", PropertyHolder.Mutable.class);
++    PropertyKey<PropertyHolder.Mutable> ENTITY_TAG = PropertyKey.of("EntityTag", PropertyHolder.Mutable.class);
 +
 +    // DISPLAY PROPERTIES
-+    PropertyKey<StoredPropertyHolder> DISPLAY = PropertyKey.ofPropertyHolder("display");
++    PropertyKey<PropertyHolder.Mutable> DISPLAY = PropertyKey.of("display", PropertyHolder.Mutable.class);
 +
-+    PropertyKey<Value<Component>> DISPLAY_NAME = PropertyKey.of("Name", Component.class);
-+    PropertyKey<ListValue<Component>> LORE = PropertyKey.ofList("Lore", Component.class);
-+    PropertyKey<Value<Color>> COLOR = PropertyKey.of("color", Color.class);
-+    PropertyKey<Value<Color>> MAP_COLOR = PropertyKey.of("MapColor", Color.class);
++    PropertyKey<Component> DISPLAY_NAME = PropertyKey.of("Name", Component.class);
++    PropertyKey<List<Component>> LORE = PropertyKey.of("Lore", TypeFactory.parameterizedClass(List.class, Component.class));
++    PropertyKey<Color> COLOR = PropertyKey.of("color", Color.class);
++    PropertyKey<Color> MAP_COLOR = PropertyKey.of("MapColor", Color.class);
 +
 +    // CUSTOM
-+    PropertyKey<StoredPropertyHolder> PUBLIC_BUKKIT_VALUES = PropertyKey.ofPropertyHolder("PublicBukkitValues");
++    PropertyKey<PropertyHolder.Mutable> PUBLIC_BUKKIT_VALUES = PropertyKey.of("PublicBukkitValues", PropertyHolder.Mutable.class);
 +    @Deprecated(forRemoval = true)
-+    PropertyKey<Value<String>> LOC_NAME = PropertyKey.of("LocName", String.class);
++    PropertyKey<String> LOC_NAME = PropertyKey.of("LocName", String.class);
 +
 +
 +    // TropicalFishBucketMeta
-+    PropertyKey<Value<TropicalFishVariant>> TROPICAL_FISH_BUCKET_VARIANT = PropertyKey.of("BucketVariantTag", TropicalFishVariant.class);
++    PropertyKey<TropicalFishVariant> TROPICAL_FISH_BUCKET_VARIANT = PropertyKey.of("BucketVariantTag", TropicalFishVariant.class);
 +
 +    // SuspiciousStewMeta
-+    PropertyKey<ListValue<StewEffect>> STEW_EFFECTS = PropertyKey.ofList("Effects", StewEffect.class);
++    PropertyKey<List<StewEffect>> STEW_EFFECTS = PropertyKey.of("Effects", TypeFactory.parameterizedClass(List.class, StewEffect.class));
 +
 +    // CraftMetaSkull
 +    // Can be a STRING or a skull profile
-+    PropertyKey<Value<PlayerProfile>> SKULL_OWNER = PropertyKey.of("SkullOwner", PlayerProfile.class);
-+    PropertyKey<Value<String>> SKULL_OWNER_NAME = PropertyKey.of("SkullOwner", String.class);
++    PropertyKey<PlayerProfile> SKULL_OWNER = PropertyKey.of("SkullOwner", PlayerProfile.class);
++    PropertyKey<String> SKULL_OWNER_NAME = PropertyKey.of("SkullOwner", String.class);
 +
 +    // PotionMeta
-+    PropertyKey<Value<PotionData>> DEFAULT_POTION_TYPE = PropertyKey.of("Potion", PotionData.class);
-+    PropertyKey<ListValue<PotionEffect>> CUSTOM_POTION_EFFECTS = PropertyKey.ofList("CustomPotionEffects", PotionEffect.class);
++    PropertyKey<PotionData> DEFAULT_POTION_TYPE = PropertyKey.of("Potion", PotionData.class);
++    PropertyKey<List<PotionEffect>> CUSTOM_POTION_EFFECTS = PropertyKey.of("CustomPotionEffects", TypeFactory.parameterizedClass(List.class, PotionEffect.class));
 +
 +    // MapMeta
-+    PropertyKey<Value<Integer>> MAP_ID = PropertyKey.of("map", Integer.class);
-+    PropertyKey<Value<Byte>> MAP_SCALE_DIRECTION = PropertyKey.of("map_scale_direction", Byte.class);
++    PropertyKey<Integer> MAP_ID = PropertyKey.of("map", Integer.class);
++    PropertyKey<Byte> MAP_SCALE_DIRECTION = PropertyKey.of("map_scale_direction", Byte.class);
 +    // Unused, really. Marks the map to be locked when crafted
-+    PropertyKey<Value<Boolean>> MAP_TO_LOCK = PropertyKey.of("map_to_lock", Boolean.class);
++    PropertyKey<Boolean> MAP_TO_LOCK = PropertyKey.of("map_to_lock", Boolean.class);
 +
 +    // KnowledgeBookMeta
-+    PropertyKey<ListValue<NamespacedKey>> RECIPES = PropertyKey.ofList("Recipes", NamespacedKey.class);
++    PropertyKey<List<NamespacedKey>> RECIPES = PropertyKey.of("Recipes", TypeFactory.parameterizedClass(List.class, NamespacedKey.class));
 +
 +    // FireworkMeta
-+    PropertyKey<Value<Byte>> FLIGHT = PropertyKey.of("Flight", Byte.class);
-+    PropertyKey<ListValue<FireworkEffect>> EXPLOSIONS = PropertyKey.ofList("Explosions", FireworkEffect.class);
++    PropertyKey<Byte> FLIGHT = PropertyKey.of("Flight", Byte.class);
++    PropertyKey<List<FireworkEffect>> EXPLOSIONS = PropertyKey.of("Explosions", TypeFactory.parameterizedClass(List.class, FireworkEffect.class));
 +
 +    // FireworkEffectMeta
-+    PropertyKey<Value<FireworkEffect>> EXPLOSION = PropertyKey.of("Explosion", FireworkEffect.class);
++    PropertyKey<FireworkEffect> EXPLOSION = PropertyKey.of("Explosion", FireworkEffect.class);
 +
 +    // EnchantmentStorageMeta
-+    PropertyKey<MapValue<Enchantment, Integer>> STORED_ENCHANTMENTS = PropertyKey.ofMap("StoredEnchantments", Enchantment.class, Integer.class);
++    PropertyKey<List<EnchantmentPair>> STORED_ENCHANTMENTS = PropertyKey.of("StoredEnchantments", TypeFactory.parameterizedClass(List.class, EnchantmentPair.class));
 +
 +    // CrossbowMeta
-+    PropertyKey<Value<Boolean>> CHARGED = PropertyKey.of("Charged", Boolean.class);
-+    PropertyKey<ListValue<ItemStack>> CHARGED_PROJECTILES = PropertyKey.ofList("ChargedProjectiles", ItemStack.class);
++    PropertyKey<Boolean> CHARGED = PropertyKey.of("Charged", Boolean.class);
++    PropertyKey<List<ItemStack>> CHARGED_PROJECTILES = PropertyKey.of("ChargedProjectiles", TypeFactory.parameterizedClass(List.class, ItemStack.class));
 +
 +    // CompassMeta
-+    PropertyKey<Value<Position>> LODESTONE_POS = PropertyKey.of("LodestonePos", Position.class);
-+    PropertyKey<Value<NamespacedKey>> LODESTONE_DIMENSION = PropertyKey.of("LodestoneDimension", NamespacedKey.class);
-+    PropertyKey<Value<Boolean>> LODESTONE_TRACKED = PropertyKey.of("LodestoneTracked", Boolean.class);
++    PropertyKey<Position> LODESTONE_POS = PropertyKey.of("LodestonePos", Position.class);
++    PropertyKey<NamespacedKey> LODESTONE_DIMENSION = PropertyKey.of("LodestoneDimension", NamespacedKey.class);
++    PropertyKey<Boolean> LODESTONE_TRACKED = PropertyKey.of("LodestoneTracked", Boolean.class);
 +
 +    // BundleMeta
-+    PropertyKey<ListValue<ItemStack>> ITEMS = PropertyKey.ofList("Items", ItemStack.class);
++    PropertyKey<List<ItemStack>> ITEMS = PropertyKey.of("Items", TypeFactory.parameterizedClass(List.class, ItemStack.class));
 +
 +    // BookMeta
-+    PropertyKey<Value<String>> TITLE = PropertyKey.of("title", String.class);
-+    PropertyKey<Value<String>> TITLE_FILTERED = PropertyKey.of("filtered_title", String.class);
-+    PropertyKey<Value<String>> AUTHOR = PropertyKey.of("author", String.class);
-+    PropertyKey<ListValue<Component>> PAGES = PropertyKey.ofList("pages", Component.class);
-+    PropertyKey<ListValue<Component>> PAGES_FILTERED = PropertyKey.ofList("filtered_pages", Component.class);
-+    PropertyKey<Value<Integer>> GENERATION = PropertyKey.of("generation", Integer.class);
-+    PropertyKey<Value<Boolean>> RESOLVED = PropertyKey.of("resolved", Boolean.class);
++    PropertyKey<String> TITLE = PropertyKey.of("title", String.class);
++    PropertyKey<String> TITLE_FILTERED = PropertyKey.of("filtered_title", String.class);
++    PropertyKey<String> AUTHOR = PropertyKey.of("author", String.class);
++    PropertyKey<List<Component>> PAGES = PropertyKey.of("pages", TypeFactory.parameterizedClass(List.class, Component.class));
++    PropertyKey<List<Component>> PAGES_FILTERED = PropertyKey.of("filtered_pages", TypeFactory.parameterizedClass(List.class, Component.class));
++    PropertyKey<Integer> GENERATION = PropertyKey.of("generation", Integer.class);
++    PropertyKey<Boolean> RESOLVED = PropertyKey.of("resolved", Boolean.class);
 +
 +    // UnsignedBookMeta
-+    PropertyKey<ListValue<String>> PAGES_WRITTEN = PropertyKey.ofList("pages", String.class);
++    PropertyKey<List<String>> PAGES_WRITTEN = PropertyKey.of("pages", TypeFactory.parameterizedClass(List.class, String.class));
 +
 +    // BlockStateMeta
-+    PropertyKey<StoredPropertyHolder> BLOCK_ENTITY_TAG = PropertyKey.ofPropertyHolder("BlockEntityTag");
++    PropertyKey<PropertyHolder.Mutable> BLOCK_ENTITY_TAG = PropertyKey.of("BlockEntityTag", PropertyHolder.Mutable.class);
++    // Some odd entity tags included in item meta
++    PropertyKey<NamespacedKey> NOTE_BLOCK_SOUND = PropertyKey.of("note_block_sound", NamespacedKey.class);
 +
 +    // AxolotlBucket
-+    PropertyKey<Value<Axolotl.Variant>> VARIANT = PropertyKey.of("Variant", Axolotl.Variant.class);
++    PropertyKey<Axolotl.Variant> VARIANT = PropertyKey.of("Variant", Axolotl.Variant.class);
 +
 +    // MusicInstrumentMeta
-+    PropertyKey<Value<MusicInstrument>> INSTRUMENT = PropertyKey.of("instrument", MusicInstrument.class);
++    PropertyKey<MusicInstrument> INSTRUMENT = PropertyKey.of("instrument", MusicInstrument.class);
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java b/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java
@@ -220,97 +243,15 @@ index 0000000000000000000000000000000000000000..061e2627e2f1202504a214edb2f5764a
 +@ApiStatus.Experimental
 +public record TropicalFishVariant(DyeColor patternColor, DyeColor bodyColor, TropicalFish.Pattern type) {
 +}
-diff --git a/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java b/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..c1625903975c3d5cf3ff91fd6e714df21a664cef
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java
-@@ -0,0 +1,71 @@
-+package io.papermc.paper.property;
-+
-+import io.papermc.paper.property.value.Value;
-+import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.Nullable;
-+
-+import java.util.HashMap;
-+import java.util.Map;
-+
-+@ApiStatus.Experimental
-+public class ImmutablePropertyBuilder {
-+
-+    private final Map<PropertyKey<? extends Value<?>>, Value<?>> map = new HashMap<>();
-+
-+    ImmutablePropertyBuilder() {
-+    }
-+
-+    public <T extends Value<V>, V> ImmutablePropertyBuilder of(PropertyKey<T> key, Value<V> data) {
-+        this.map.put(key, data);
-+        return this;
-+    }
-+
-+    @SuppressWarnings("unchecked")
-+    public PropertyHolder.Immutable build() {
-+        return new PropertyHolder.Immutable() {
-+            @Override
-+            public <T> @Nullable T get(PropertyKey<? extends Value<T>> property) {
-+                return (T) ImmutablePropertyBuilder.this.map.get(property).getValue();
-+            }
-+
-+            @Override
-+            public <T> @Nullable T getOrDefault(PropertyKey<? extends Value<T>> property, T value) {
-+               T val = this.get(property);
-+               if (val == null) {
-+                   return value;
-+               }
-+
-+               return val;
-+            }
-+
-+            @Override
-+            public <E, V extends Value<E>> @Nullable V getValue(PropertyKey<V> property) {
-+                return (V) ImmutablePropertyBuilder.this.map.get(property);
-+            }
-+
-+            @Override
-+            public <V, T extends Value<V>> @Nullable T getValueOrDefault(PropertyKey<T> key, T value) {
-+                T val = this.getValue(key);
-+                if (val == null) {
-+                    return value;
-+                }
-+
-+                return val;
-+            }
-+
-+            @Override
-+            public boolean hasProperty(PropertyKey<?> propertyKey) {
-+                return ImmutablePropertyBuilder.this.map.containsKey(propertyKey);
-+            }
-+
-+            @Override
-+            public boolean isEmpty() {
-+                return ImmutablePropertyBuilder.this.map.isEmpty();
-+            }
-+        };
-+    }
-+
-+
-+    private record Entry<T>(PropertyKey<? extends Value<T>> key, T value) {
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyHolder.java b/src/main/java/io/papermc/paper/property/PropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dd86aab72e09d0c18451380151bfe866c602b3d5
+index 0000000000000000000000000000000000000000..11ec4ea036252daaefd7651549e7ca3127747f70
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyHolder.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.property;
 +
-+import io.papermc.paper.property.value.MapValue;
-+import io.papermc.paper.property.value.Value;
-+import org.bukkit.enchantments.Enchantment;
 +import org.jetbrains.annotations.ApiStatus;
-+
-+import java.util.Map;
 +
 +@ApiStatus.Experimental
 +// Represents a property reader during runtime
@@ -318,15 +259,13 @@ index 0000000000000000000000000000000000000000..dd86aab72e09d0c18451380151bfe866
 +
 +    interface Mutable extends PropertyHolder, Cloneable {
 +
-+        void set(Value<?> value);
++        <T> void unset(PropertyKey<T> key);
 +
-+        <T> void unset(PropertyKey<? extends Value<T>> key);
++        <T> void set(PropertyKey<T> key, T value);
 +
-+        <T> void set(PropertyKey<? extends Value<T>> key, T value);
++        <T> T create(PropertyKey<T> key);
 +
-+        <V, T extends Value<V>> T create(PropertyKey<T> key);
-+
-+        <V, T extends Value<V>> T getOrCreate(PropertyKey<T> key);
++        <T> T getOrCreate(PropertyKey<T> key);
 +
 +        Mutable clone();
 +
@@ -335,109 +274,57 @@ index 0000000000000000000000000000000000000000..dd86aab72e09d0c18451380151bfe866
 +
 +    interface Immutable extends PropertyHolder {
 +
-+        public static ImmutablePropertyBuilder builder() {
-+            return new ImmutablePropertyBuilder();
-+        }
-+
 +    }
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyKey.java b/src/main/java/io/papermc/paper/property/PropertyKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..020e257b18517441f04c19587d6ed395c57d086a
+index 0000000000000000000000000000000000000000..1486b9317c02dc64c09e7c3931bb1c5cfc4b087a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyKey.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.property;
 +
-+import com.google.common.collect.Multimap;
 +import io.leangen.geantyref.TypeFactory;
 +import io.leangen.geantyref.TypeToken;
-+import io.papermc.paper.property.value.ListValue;
-+import io.papermc.paper.property.value.MapValue;
-+import io.papermc.paper.property.value.MultiMapValue;
-+import io.papermc.paper.property.value.SetValue;
-+import io.papermc.paper.property.value.Value;
-+import net.kyori.adventure.text.Component;
-+import org.bukkit.attribute.Attributable;
-+import org.bukkit.attribute.AttributeModifier;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +import java.lang.reflect.Type;
-+import java.util.List;
-+import java.util.Map;
-+import java.util.Set;
 +
 +@ApiStatus.Experimental
-+public interface PropertyKey<T extends Value<?>> {
++public interface PropertyKey<T> {
 +
-+    static <V> PropertyKey<SetValue<V>> ofSet(String key, TypeToken<V> valueToken) {
-+        return new PropertyKeyImpl<>(key, TypeFactory.parameterizedClass(Set.class, valueToken.getType()), TypeFactory.parameterizedClass(SetValue.class, valueToken.getType()));
++    static <T> PropertyKey<T> of(String key, Class<T> token) {
++        return new PropertyKeyImpl<>(key, token);
 +    }
 +
-+    static <V> PropertyKey<SetValue<V>> ofSet(String key, Class<V> valueToken) {
-+        return new PropertyKeyImpl<>(key, TypeFactory.parameterizedClass(Set.class, valueToken), TypeFactory.parameterizedClass(SetValue.class, valueToken));
++    static <T> PropertyKey<T> of(String key, TypeToken<T> token) {
++        return new PropertyKeyImpl<>(key, token.getType());
 +    }
 +
-+    static <K, V> PropertyKey<MapValue<K, V>> ofMap(String key, TypeToken<K> keyToken, TypeToken<V> valueToken) {
-+        return new PropertyKeyImpl<>(key, TypeFactory.parameterizedClass(Map.class, keyToken.getType(), valueToken.getType()), TypeFactory.parameterizedClass(MapValue.class, keyToken.getType(), valueToken.getType()));
-+    }
-+
-+    static <K, V> PropertyKey<MapValue<K, V>> ofMap(String key, Class<K> keyToken, Class<V> valueToken) {
-+        return new PropertyKeyImpl<>(key, TypeFactory.parameterizedClass(Map.class, keyToken, valueToken), TypeFactory.parameterizedClass(MapValue.class, keyToken, valueToken));
-+    }
-+
-+    static <T extends Value<V>, V> PropertyKey<T> of(String key, Class<V> token) {
-+        return new PropertyKeyImpl<>(key, token, TypeFactory.parameterizedClass(Value.class, token.getClass()));
-+    }
-+
-+    static <T extends Value<V>, V> PropertyKey<T> of(String key, TypeToken<V> token) {
-+        return new PropertyKeyImpl<>(key, token.getType(), TypeFactory.parameterizedClass(Value.class, token.getType()));
-+    }
-+
-+    static PropertyKey<StoredPropertyHolder> ofPropertyHolder(String display) {
-+        return new PropertyKeyImpl<>(display, PropertyHolder.class, StoredPropertyHolder.class);
-+    }
-+
-+    static <V> PropertyKey<ListValue<V>> ofList(String key, TypeToken<V> valueToken) {
-+        return new PropertyKeyImpl<>(key, TypeFactory.parameterizedClass(List.class, valueToken.getType()), TypeFactory.parameterizedClass(ListValue.class, valueToken.getType()));
-+    }
-+
-+    static <V> PropertyKey<ListValue<V>> ofList(String key, Class<V> valueToken) {
-+        return new PropertyKeyImpl<>(key, TypeFactory.parameterizedClass(List.class, valueToken), TypeFactory.parameterizedClass(ListValue.class, valueToken));
-+    }
-+
-+    static <K, V> PropertyKey<MultiMapValue<K, V>> ofMultiMap(String key, TypeToken<K> keyToken, TypeToken<V> valueToken) {
-+        return new PropertyKeyImpl<>(key, TypeFactory.parameterizedClass(Multimap.class, keyToken.getType(), valueToken.getType()), TypeFactory.parameterizedClass(MultiMapValue.class, keyToken.getType(), valueToken.getType()));
-+    }
-+
-+    static <K, V> PropertyKey<MultiMapValue<K, V>> ofMultiMap(String key, Class<K> keyToken, Class<V> valueToken) {
-+        return new PropertyKeyImpl<>(key, TypeFactory.parameterizedClass(Multimap.class, keyToken, valueToken), TypeFactory.parameterizedClass(MultiMapValue.class, keyToken, valueToken));
++    static <T> PropertyKey<T> of(String key, Type type) {
++        return new PropertyKeyImpl<>(key, type);
 +    }
 +
 +    String getKey();
 +
 +    Type getValueType();
 +
-+    Type getPropertyType();
-+
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyKeyImpl.java b/src/main/java/io/papermc/paper/property/PropertyKeyImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c5f4c227939de55222f7bc8a48ac3560c28846e3
+index 0000000000000000000000000000000000000000..6dcab731dcd726636184ec012ef5bf90e40076c7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyKeyImpl.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,20 @@
 +package io.papermc.paper.property;
 +
-+import io.leangen.geantyref.TypeToken;
-+import io.papermc.paper.property.value.Value;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +import java.lang.reflect.Type;
 +
 +@ApiStatus.Experimental
-+record PropertyKeyImpl<V, T extends Value<V>>(String key, Type value, Type propertyType) implements PropertyKey<T> {
++record PropertyKeyImpl<V>(String key, Type value) implements PropertyKey<V> {
 +
 +    @Override
 +    public String getKey() {
@@ -449,179 +336,30 @@ index 0000000000000000000000000000000000000000..c5f4c227939de55222f7bc8a48ac3560
 +        return this.value;
 +    }
 +
-+    @Override
-+    public Type getPropertyType() {
-+        return this.propertyType;
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyReader.java b/src/main/java/io/papermc/paper/property/PropertyReader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..40be500efa682a8b6820a688744e8673b394d7cd
+index 0000000000000000000000000000000000000000..1b4ea7be24136ff6de8a6232a70ee1431f502a2a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyReader.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,18 @@
 +package io.papermc.paper.property;
 +
-+import io.papermc.paper.property.value.Value;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
-+
-+import java.util.Set;
 +
 +@ApiStatus.Experimental
 +public interface PropertyReader {
 +
-+    @Nullable
-+    <T> T get(PropertyKey<? extends Value<T>> property);
++    @Nullable <T> T get(PropertyKey<T> property);
 +
 +    @Contract("_,!null -> !null")
-+    @Nullable
-+    <T> T getOrDefault(PropertyKey<? extends Value<T>> property, T value);
-+
-+    @Nullable
-+    <E, V extends Value<E>> V getValue(PropertyKey<V> property);
-+
-+    @Contract("_,!null -> !null")
-+    @Nullable
-+    <V, T extends Value<V>> T getValueOrDefault(PropertyKey<T> key, T value);
++    @Nullable <T> T getOrDefault(PropertyKey<T> property, T value);
 +
 +    boolean hasProperty(PropertyKey<?> propertyKey);
 +
 +    boolean isEmpty();
-+}
-diff --git a/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java b/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..25c29239be3fa6b1557156c561e696dd630cd0f2
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java
-@@ -0,0 +1,10 @@
-+package io.papermc.paper.property;
-+
-+import io.papermc.paper.property.value.Value;
-+import org.jetbrains.annotations.ApiStatus;
-+
-+@ApiStatus.Experimental
-+// Represents a property reader during runtime
-+public interface StoredPropertyHolder extends PropertyHolder.Mutable, Value<PropertyHolder> {
-+
-+}
-diff --git a/src/main/java/io/papermc/paper/property/value/ListValue.java b/src/main/java/io/papermc/paper/property/value/ListValue.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..9ab7f713d89948404bca7eac30a8a4493a69e591
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/value/ListValue.java
-@@ -0,0 +1,23 @@
-+package io.papermc.paper.property.value;
-+
-+import org.jetbrains.annotations.ApiStatus;
-+
-+import java.util.List;
-+
-+@ApiStatus.Experimental
-+public interface ListValue<V> extends Value<List<V>>, Iterable<V> {
-+
-+    V get(int index);
-+
-+    default boolean isEmpty() {
-+        return this.size() == 0;
-+    }
-+
-+    int size();
-+
-+    void add(V value);
-+
-+    void insert(V value, int index);
-+
-+    V remove(int index);
-+}
-diff --git a/src/main/java/io/papermc/paper/property/value/MapValue.java b/src/main/java/io/papermc/paper/property/value/MapValue.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..dac05af44c9abaef7288eb8ae4ff0ce1566d7db9
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/value/MapValue.java
-@@ -0,0 +1,24 @@
-+package io.papermc.paper.property.value;
-+
-+import org.jetbrains.annotations.ApiStatus;
-+
-+import java.util.Map;
-+
-+@ApiStatus.Experimental
-+public interface MapValue<K, V> extends Value<Map<K, V>>, Iterable<Map.Entry<K, V>> {
-+
-+    V getEntry(K key);
-+
-+    boolean has(K key);
-+
-+    V put(K key, V value);
-+
-+    boolean removeEntry(K key);
-+
-+    default boolean isEmpty() {
-+        return this.size() == 0;
-+    }
-+
-+    int size();
-+
-+}
-diff --git a/src/main/java/io/papermc/paper/property/value/MultiMapValue.java b/src/main/java/io/papermc/paper/property/value/MultiMapValue.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0554bd30bde16def299e1de3a185b5ab5044d11b
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/value/MultiMapValue.java
-@@ -0,0 +1,10 @@
-+package io.papermc.paper.property.value;
-+
-+import com.google.common.collect.Multimap;
-+import org.jetbrains.annotations.ApiStatus;
-+
-+import java.util.Map;
-+
-+@ApiStatus.Experimental
-+public interface MultiMapValue<K, V> extends Value<Multimap<K, V>> {
-+}
-diff --git a/src/main/java/io/papermc/paper/property/value/SetValue.java b/src/main/java/io/papermc/paper/property/value/SetValue.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..a56e6098f4f186a18e35a3d9b689eaf5d24cfb14
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/value/SetValue.java
-@@ -0,0 +1,15 @@
-+package io.papermc.paper.property.value;
-+
-+import org.jetbrains.annotations.ApiStatus;
-+
-+import java.util.Set;
-+
-+@ApiStatus.Experimental
-+public interface SetValue<V> extends Value<Set<V>> {
-+
-+    boolean contains(V value);
-+
-+    void add(V value);
-+
-+    void remove(V value);
-+}
-diff --git a/src/main/java/io/papermc/paper/property/value/Value.java b/src/main/java/io/papermc/paper/property/value/Value.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..e73f236b792f38ea2ce7dd7a1dd366144c420ce9
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/value/Value.java
-@@ -0,0 +1,14 @@
-+package io.papermc.paper.property.value;
-+
-+import io.papermc.paper.property.PropertyKey;
-+import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.Nullable;
-+
-+@ApiStatus.Experimental
-+public interface Value<T> {
-+
-+    @Nullable
-+    T getValue();
-+
-+    PropertyKey<? extends Value<T>> getKey();
 +}
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
 index b92255a9c87620f46adb140689b1cd328a476d61..0df20b4ba13306e718a49d84e10b3a111c9eea0b 100644

@@ -2,7 +2,6 @@ package io.papermc.testplugin;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.inventory.item.properties.ItemProperties;
-import io.papermc.paper.property.StoredPropertyHolder;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
