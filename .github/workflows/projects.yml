@@ -1,0 +1,65 @@
+name: Update Projects
+
+on:
+  issues:
+    types:
+      - labeled
+      - unlabeled
+      - closed
+      - reopened
+
+concurrency:
+  group: update-projects-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  bugs:
+    if: "github.event_name == 'issues' && contains(github.event.*.labels.*.name, 'type: bug')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: PaperMC/update-projects-action@v0.2.0
+        name: Update open issue
+        if: github.event.issue.state == 'open'
+        with:
+          github-token: ${{ secrets.PROJECT_ACTIONS_TOKEN }}
+          project-url: https://github.com/orgs/PaperMC/projects/5/views/2
+          column-field: Status
+          label-to-column-map: |
+            {
+              "status: needs triage": "🕑 Needs Triage",
+              "status: accepted": "✅ Accepted",
+              "status: in progress": "Needs Work",
+              "status: rebase required": "Needs Work",
+              "status: blocked": "Needs Work",
+              "status: defer upstream": "Needs Work",
+              "status: input wanted": "Needs Work",
+              "status: waiting on reporter": "⌛ Waiting for Reporter",
+              "resolution: works-as-intended": "Invalid",
+              "resolution: invalid": "Invalid",
+              "resolution: wontfix": "Invalid",
+              "resolution: duplicate": "Invalid",
+              "resolution: cannot reproduce": "Invalid",
+              "resolution: unsupported": "Invalid",
+              "resolution: incomplete": "Invalid",
+              "resolution: superseded": "Invalid"
+            }
+
+      - uses: PaperMC/update-projects-action@v0.2.0
+        name: Update closed issue
+        if: github.event.issue.state == 'closed'
+        with:
+          github-token: ${{ secrets.PROJECT_ACTIONS_TOKEN }}
+          project-url: https://github.com/orgs/PaperMC/projects/5/views/2
+          column-field: Status
+          clear-on-no-match: false
+          label-to-column-map: |
+            {
+              "resolution: works-as-intended": "Invalid",
+              "resolution: invalid": "Invalid",
+              "resolution: wontfix": "Invalid",
+              "resolution: duplicate": "Invalid",
+              "resolution: cannot reproduce": "Invalid",
+              "resolution: unsupported": "Invalid",
+              "resolution: incomplete": "Invalid",
+              "resolution: superseded": "Invalid"
+            }
