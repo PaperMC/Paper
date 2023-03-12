@@ -18,10 +18,10 @@ index 9421e45653e68922a51cf0071792e6fa7999d0b8..869bda6a16b48b3e31aef321938a2a19
      apiAndDocs("net.kyori:adventure-api")
 diff --git a/src/main/java/io/papermc/paper/inventory/item/ItemStack.java b/src/main/java/io/papermc/paper/inventory/item/ItemStack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..098a04271404faa15dcbb8a33cbcf826a6933517
+index 0000000000000000000000000000000000000000..3f6afc006ca529e92e25e291266f1f966727e9fa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/ItemStack.java
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.inventory.item;
 +
 +import com.google.common.base.Preconditions;
@@ -33,11 +33,13 @@ index 0000000000000000000000000000000000000000..098a04271404faa15dcbb8a33cbcf826
 +import org.bukkit.Material;
 +import org.bukkit.enchantments.Enchantment;
 +import org.bukkit.inventory.meta.ItemMeta;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +import java.util.Map;
 +
++@ApiStatus.Experimental
 +// Temporary, soon will move this to the bukkit itemstack class
 +public interface ItemStack extends HoverEventSource<HoverEvent.ShowItem>, Translatable, Cloneable {
 +
@@ -61,12 +63,13 @@ index 0000000000000000000000000000000000000000..098a04271404faa15dcbb8a33cbcf826
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..897b797b3760170ffb740bf05d3e05975a839343
+index 0000000000000000000000000000000000000000..5b610d0414b5a2bc83eab0c01cfdaa47784ef7a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,124 @@
 +package io.papermc.paper.inventory.item.properties;
 +
++import com.destroystokyo.paper.profile.PlayerProfile;
 +import io.papermc.paper.math.Position;
 +import io.papermc.paper.property.PropertyKey;
 +import io.papermc.paper.property.StoredPropertyHolder;
@@ -78,6 +81,7 @@ index 0000000000000000000000000000000000000000..897b797b3760170ffb740bf05d3e0597
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.Color;
 +import org.bukkit.FireworkEffect;
++import org.bukkit.MusicInstrument;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeModifier;
@@ -87,7 +91,9 @@ index 0000000000000000000000000000000000000000..897b797b3760170ffb740bf05d3e0597
 +import org.bukkit.inventory.ItemStack;
 +import org.bukkit.potion.PotionData;
 +import org.bukkit.potion.PotionEffect;
++import org.jetbrains.annotations.ApiStatus;
 +
++@ApiStatus.Experimental
 +public interface ItemProperties {
 +
 +    // COMMON
@@ -125,9 +131,8 @@ index 0000000000000000000000000000000000000000..897b797b3760170ffb740bf05d3e0597
 +
 +    // CraftMetaSkull
 +    // Can be a STRING or a skull profile
-+    PropertyKey<Value<PlayerHeadPartial>> SKULL_OWNER = PropertyKey.of("SkullOwner", PlayerHeadPartial.class);
-+    @Deprecated(forRemoval = true)
-+    PropertyKey<Value<org.bukkit.profile.PlayerProfile>> SKULL_OWNER_LEGACY_BUKKIT = PropertyKey.of("SkullOwner", org.bukkit.profile.PlayerProfile.class);
++    PropertyKey<Value<PlayerProfile>> SKULL_OWNER = PropertyKey.of("SkullOwner", PlayerProfile.class);
++    PropertyKey<Value<String>> SKULL_OWNER_NAME = PropertyKey.of("SkullOwner", String.class);
 +
 +    // PotionMeta
 +    PropertyKey<Value<PotionData>> DEFAULT_POTION_TYPE = PropertyKey.of("Potion", PotionData.class);
@@ -182,60 +187,55 @@ index 0000000000000000000000000000000000000000..897b797b3760170ffb740bf05d3e0597
 +    // AxolotlBucket
 +    PropertyKey<Value<Axolotl.Variant>> VARIANT = PropertyKey.of("Variant", Axolotl.Variant.class);
 +
-+}
-diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/PlayerHeadPartial.java b/src/main/java/io/papermc/paper/inventory/item/properties/PlayerHeadPartial.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..d2477d57619b689602038ba208d20e5174865735
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/inventory/item/properties/PlayerHeadPartial.java
-@@ -0,0 +1,8 @@
-+package io.papermc.paper.inventory.item.properties;
++    // MusicInstrumentMeta
++    PropertyKey<Value<MusicInstrument>> INSTRUMENT = PropertyKey.of("instrument", MusicInstrument.class);
 +
-+import com.destroystokyo.paper.profile.PlayerProfile;
-+import org.bukkit.potion.PotionEffectType;
-+import org.jetbrains.annotations.Nullable;
-+
-+public record PlayerHeadPartial(@Nullable String playerName, @Nullable PlayerProfile profile) {
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java b/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..38721f6ea05d9014c1ebaeb35ec0ffbed7768234
+index 0000000000000000000000000000000000000000..4861b9e3c431e3e9d61aa3949fed61c68869357d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,8 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import org.bukkit.potion.PotionEffectType;
++import org.jetbrains.annotations.ApiStatus;
 +
++@ApiStatus.Experimental
 +public record StewEffect(PotionEffectType effect, int duration) {
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java b/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6198f1e633a28b3cc8b977216a98af607b2bedfc
+index 0000000000000000000000000000000000000000..061e2627e2f1202504a214edb2f5764a8a757298
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,9 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import org.bukkit.DyeColor;
 +import org.bukkit.entity.TropicalFish;
++import org.jetbrains.annotations.ApiStatus;
 +
++@ApiStatus.Experimental
 +public record TropicalFishVariant(DyeColor patternColor, DyeColor bodyColor, TropicalFish.Pattern type) {
 +}
 diff --git a/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java b/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..73dfdd74946b4b0eb3a6f5138e68ed56d8283e09
+index 0000000000000000000000000000000000000000..c1625903975c3d5cf3ff91fd6e714df21a664cef
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/ImmutablePropertyBuilder.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,71 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.Value;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Nullable;
 +
 +import java.util.HashMap;
 +import java.util.Map;
 +
++@ApiStatus.Experimental
 +public class ImmutablePropertyBuilder {
 +
 +    private final Map<PropertyKey<? extends Value<?>>, Value<?>> map = new HashMap<>();
@@ -285,6 +285,11 @@ index 0000000000000000000000000000000000000000..73dfdd74946b4b0eb3a6f5138e68ed56
 +            public boolean hasProperty(PropertyKey<?> propertyKey) {
 +                return ImmutablePropertyBuilder.this.map.containsKey(propertyKey);
 +            }
++
++            @Override
++            public boolean isEmpty() {
++                return ImmutablePropertyBuilder.this.map.isEmpty();
++            }
 +        };
 +    }
 +
@@ -294,18 +299,20 @@ index 0000000000000000000000000000000000000000..73dfdd74946b4b0eb3a6f5138e68ed56
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyHolder.java b/src/main/java/io/papermc/paper/property/PropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3d281c081d3a997455d19e9dd5e86d1806c830b6
+index 0000000000000000000000000000000000000000..dd86aab72e09d0c18451380151bfe866c602b3d5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyHolder.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.MapValue;
 +import io.papermc.paper.property.value.Value;
 +import org.bukkit.enchantments.Enchantment;
++import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.Map;
 +
++@ApiStatus.Experimental
 +// Represents a property reader during runtime
 +public interface PropertyHolder extends PropertyReader {
 +
@@ -320,6 +327,10 @@ index 0000000000000000000000000000000000000000..3d281c081d3a997455d19e9dd5e86d18
 +        <V, T extends Value<V>> T create(PropertyKey<T> key);
 +
 +        <V, T extends Value<V>> T getOrCreate(PropertyKey<T> key);
++
++        Mutable clone();
++
++        void clear();
 +    }
 +
 +    interface Immutable extends PropertyHolder {
@@ -333,10 +344,10 @@ index 0000000000000000000000000000000000000000..3d281c081d3a997455d19e9dd5e86d18
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyKey.java b/src/main/java/io/papermc/paper/property/PropertyKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d18841d965c239973068b33e5b187929df0648ee
+index 0000000000000000000000000000000000000000..020e257b18517441f04c19587d6ed395c57d086a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyKey.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.property;
 +
 +import com.google.common.collect.Multimap;
@@ -350,12 +361,14 @@ index 0000000000000000000000000000000000000000..d18841d965c239973068b33e5b187929
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.attribute.Attributable;
 +import org.bukkit.attribute.AttributeModifier;
++import org.jetbrains.annotations.ApiStatus;
 +
 +import java.lang.reflect.Type;
 +import java.util.List;
 +import java.util.Map;
 +import java.util.Set;
 +
++@ApiStatus.Experimental
 +public interface PropertyKey<T extends Value<?>> {
 +
 +    static <V> PropertyKey<SetValue<V>> ofSet(String key, TypeToken<V> valueToken) {
@@ -411,17 +424,19 @@ index 0000000000000000000000000000000000000000..d18841d965c239973068b33e5b187929
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyKeyImpl.java b/src/main/java/io/papermc/paper/property/PropertyKeyImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..15f34c333778c024554f9beb284981c4bdad91cd
+index 0000000000000000000000000000000000000000..c5f4c227939de55222f7bc8a48ac3560c28846e3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyKeyImpl.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.property;
 +
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.property.value.Value;
++import org.jetbrains.annotations.ApiStatus;
 +
 +import java.lang.reflect.Type;
 +
++@ApiStatus.Experimental
 +record PropertyKeyImpl<V, T extends Value<V>>(String key, Type value, Type propertyType) implements PropertyKey<T> {
 +
 +    @Override
@@ -441,16 +456,21 @@ index 0000000000000000000000000000000000000000..15f34c333778c024554f9beb284981c4
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyReader.java b/src/main/java/io/papermc/paper/property/PropertyReader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1ccbb407279dedba855c0c804689176a8fdeba83
+index 0000000000000000000000000000000000000000..40be500efa682a8b6820a688744e8673b394d7cd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyReader.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,31 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.Value;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
++import java.util.Set;
++
++@ApiStatus.Experimental
 +public interface PropertyReader {
 +
 +    @Nullable
@@ -469,31 +489,37 @@ index 0000000000000000000000000000000000000000..1ccbb407279dedba855c0c804689176a
 +
 +    boolean hasProperty(PropertyKey<?> propertyKey);
 +
++    boolean isEmpty();
 +}
 diff --git a/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java b/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..21a48a4b3fdc96664f08c1853159f24f44d79797
+index 0000000000000000000000000000000000000000..25c29239be3fa6b1557156c561e696dd630cd0f2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/StoredPropertyHolder.java
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,10 @@
 +package io.papermc.paper.property;
 +
 +import io.papermc.paper.property.value.Value;
++import org.jetbrains.annotations.ApiStatus;
 +
++@ApiStatus.Experimental
 +// Represents a property reader during runtime
 +public interface StoredPropertyHolder extends PropertyHolder.Mutable, Value<PropertyHolder> {
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/ListValue.java b/src/main/java/io/papermc/paper/property/value/ListValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..376608c6bdffdc71535eb683c4882af072a6806d
+index 0000000000000000000000000000000000000000..9ab7f713d89948404bca7eac30a8a4493a69e591
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/ListValue.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.property.value;
++
++import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.List;
 +
++@ApiStatus.Experimental
 +public interface ListValue<V> extends Value<List<V>>, Iterable<V> {
 +
 +    V get(int index);
@@ -512,14 +538,17 @@ index 0000000000000000000000000000000000000000..376608c6bdffdc71535eb683c4882af0
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/MapValue.java b/src/main/java/io/papermc/paper/property/value/MapValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b8d71c04868c127264f30c53ec74d2f2819f8079
+index 0000000000000000000000000000000000000000..dac05af44c9abaef7288eb8ae4ff0ce1566d7db9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/MapValue.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.property.value;
++
++import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.Map;
 +
++@ApiStatus.Experimental
 +public interface MapValue<K, V> extends Value<Map<K, V>>, Iterable<Map.Entry<K, V>> {
 +
 +    V getEntry(K key);
@@ -539,28 +568,33 @@ index 0000000000000000000000000000000000000000..b8d71c04868c127264f30c53ec74d2f2
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/MultiMapValue.java b/src/main/java/io/papermc/paper/property/value/MultiMapValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b52867e8c79fe65662d4ebe82cd19f367c77b9fd
+index 0000000000000000000000000000000000000000..0554bd30bde16def299e1de3a185b5ab5044d11b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/MultiMapValue.java
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,10 @@
 +package io.papermc.paper.property.value;
 +
 +import com.google.common.collect.Multimap;
++import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.Map;
 +
++@ApiStatus.Experimental
 +public interface MultiMapValue<K, V> extends Value<Multimap<K, V>> {
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/SetValue.java b/src/main/java/io/papermc/paper/property/value/SetValue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c4ccabf3ad96ed6e83c0ed2096cdd62d8940e449
+index 0000000000000000000000000000000000000000..a56e6098f4f186a18e35a3d9b689eaf5d24cfb14
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/SetValue.java
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,15 @@
 +package io.papermc.paper.property.value;
++
++import org.jetbrains.annotations.ApiStatus;
 +
 +import java.util.Set;
 +
++@ApiStatus.Experimental
 +public interface SetValue<V> extends Value<Set<V>> {
 +
 +    boolean contains(V value);
@@ -571,31 +605,23 @@ index 0000000000000000000000000000000000000000..c4ccabf3ad96ed6e83c0ed2096cdd62d
 +}
 diff --git a/src/main/java/io/papermc/paper/property/value/Value.java b/src/main/java/io/papermc/paper/property/value/Value.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fab6096d1e0edece524f62bcf09990c3ab897b2d
+index 0000000000000000000000000000000000000000..e73f236b792f38ea2ce7dd7a1dd366144c420ce9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/value/Value.java
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,14 @@
 +package io.papermc.paper.property.value;
 +
 +import io.papermc.paper.property.PropertyKey;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Nullable;
 +
++@ApiStatus.Experimental
 +public interface Value<T> {
 +
 +    @Nullable
 +    T getValue();
 +
 +    PropertyKey<? extends Value<T>> getKey();
-+}
-diff --git a/src/main/java/io/papermc/paper/property/value/handler/PropertyValueHandler.java b/src/main/java/io/papermc/paper/property/value/handler/PropertyValueHandler.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..46fb5f54feeefc7cf954bec257bff0a682fae3ff
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/value/handler/PropertyValueHandler.java
-@@ -0,0 +1,4 @@
-+package io.papermc.paper.property.value.handler;
-+
-+public interface PropertyValueHandler {
 +}
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
 index b92255a9c87620f46adb140689b1cd328a476d61..0df20b4ba13306e718a49d84e10b3a111c9eea0b 100644
