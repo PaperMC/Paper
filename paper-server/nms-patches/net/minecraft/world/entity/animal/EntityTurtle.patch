@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/EntityTurtle.java
 +++ b/net/minecraft/world/entity/animal/EntityTurtle.java
-@@ -307,7 +307,9 @@
+@@ -308,7 +308,9 @@
      protected void ageBoundaryReached() {
          super.ageBoundaryReached();
          if (!this.isBaby() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
@@ -10,24 +10,28 @@
          }
  
      }
-@@ -334,7 +336,9 @@
+@@ -335,7 +337,9 @@
  
      @Override
      public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
 +        org.bukkit.craftbukkit.event.CraftEventFactory.entityDamage = entitylightning; // CraftBukkit
-         this.hurt(DamageSource.LIGHTNING_BOLT, Float.MAX_VALUE);
+         this.hurt(this.damageSources().lightningBolt(), Float.MAX_VALUE);
 +        org.bukkit.craftbukkit.event.CraftEventFactory.entityDamage = null; // CraftBukkit
      }
  
      private static class e extends ControllerMove {
-@@ -482,8 +486,12 @@
+@@ -487,12 +491,16 @@
                  } else if (this.turtle.layEggCounter > this.adjustedTickDelay(200)) {
                      World world = this.turtle.level;
  
 +                    // CraftBukkit start
 +                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), (IBlockData) Blocks.TURTLE_EGG.defaultBlockState().setValue(BlockTurtleEgg.EGGS, this.turtle.random.nextInt(4) + 1)).isCancelled()) {
                      world.playSound((EntityHuman) null, blockposition, SoundEffects.TURTLE_LAY_EGG, SoundCategory.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
-                     world.setBlock(this.blockPos.above(), (IBlockData) Blocks.TURTLE_EGG.defaultBlockState().setValue(BlockTurtleEgg.EGGS, this.turtle.random.nextInt(4) + 1), 3);
+                     BlockPosition blockposition1 = this.blockPos.above();
+                     IBlockData iblockdata = (IBlockData) Blocks.TURTLE_EGG.defaultBlockState().setValue(BlockTurtleEgg.EGGS, this.turtle.random.nextInt(4) + 1);
+ 
+                     world.setBlock(blockposition1, iblockdata, 3);
+                     world.gameEvent(GameEvent.BLOCK_PLACE, blockposition1, GameEvent.a.of(this.turtle, iblockdata));
 +                    }
 +                    // CraftBukkit end
                      this.turtle.setHasEgg(false);

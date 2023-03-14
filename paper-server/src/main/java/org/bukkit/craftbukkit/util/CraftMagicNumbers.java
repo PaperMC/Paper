@@ -237,12 +237,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "1afe2ffe8a9d7fc510442a168b3d4338";
+        return "3009edc0fff87fa34680686663bd59df";
     }
 
     @Override
     public int getDataVersion() {
-        return SharedConstants.getCurrentVersion().getWorldVersion();
+        return SharedConstants.getCurrentVersion().getDataVersion().getVersion();
     }
 
     @Override

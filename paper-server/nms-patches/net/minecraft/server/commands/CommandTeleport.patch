@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/commands/CommandTeleport.java
 +++ b/net/minecraft/server/commands/CommandTeleport.java
-@@ -35,6 +35,12 @@
+@@ -33,6 +33,13 @@
  import net.minecraft.world.phys.Vec2F;
  import net.minecraft.world.phys.Vec3D;
  
@@ -8,27 +8,23 @@
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.event.entity.EntityTeleportEvent;
++import org.bukkit.event.player.PlayerTeleportEvent;
 +// CraftBukkit end
 +
  public class CommandTeleport {
  
      private static final SimpleCommandExceptionType INVALID_POSITION = new SimpleCommandExceptionType(IChatBaseComponent.translatable("commands.teleport.invalidPosition"));
-@@ -159,14 +165,29 @@
-                 }
+@@ -147,7 +154,30 @@
+             float f2 = MathHelper.wrapDegrees(f);
+             float f3 = MathHelper.wrapDegrees(f1);
  
-                 if (worldserver == entity.level) {
--                    ((EntityPlayer) entity).connection.teleport(d0, d1, d2, f2, f3, set);
-+                    ((EntityPlayer) entity).connection.teleport(d0, d1, d2, f2, f3, set, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND); // CraftBukkit
-                 } else {
--                    ((EntityPlayer) entity).teleportTo(worldserver, d0, d1, d2, f2, f3);
-+                    ((EntityPlayer) entity).teleportTo(worldserver, d0, d1, d2, f2, f3, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND); // CraftBukkit
-                 }
- 
-                 entity.setYHeadRot(f2);
-             } else {
-                 float f4 = MathHelper.clamp(f3, -90.0F, 90.0F);
-+                // CraftBukkit start - Teleport event
-+                Location to = new Location(worldserver.getWorld(), d0, d1, d2, f2, f4);
+-            if (entity.teleportTo(worldserver, d0, d1, d2, set, f2, f3)) {
++            // CraftBukkit start - Teleport event
++            boolean result;
++            if (entity instanceof EntityPlayer player) {
++                result = player.teleportTo(worldserver, d0, d1, d2, set, f2, f3, PlayerTeleportEvent.TeleportCause.COMMAND);
++            } else {
++                Location to = new Location(worldserver.getWorld(), d0, d1, d2, f2, f3);
 +                EntityTeleportEvent event = new EntityTeleportEvent(entity.getBukkitEntity(), entity.getBukkitEntity().getLocation(), to);
 +                worldserver.getCraftServer().getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {
@@ -39,9 +35,14 @@
 +                d1 = to.getY();
 +                d2 = to.getZ();
 +                f2 = to.getYaw();
-+                f4 = to.getPitch();
++                f3 = to.getPitch();
 +                worldserver = ((CraftWorld) to.getWorld()).getHandle();
++
++                result = entity.teleportTo(worldserver, d0, d1, d2, set, f2, f3);
++            }
++
++            if (result) {
 +                // CraftBukkit end
- 
-                 if (worldserver == entity.level) {
-                     entity.moveTo(d0, d1, d2, f2, f4);
+                 if (commandteleport_a != null) {
+                     commandteleport_a.perform(commandlistenerwrapper, entity);
+                 }

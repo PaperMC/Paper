@@ -107,6 +107,7 @@ public class CraftBoat extends CraftVehicle implements Boat {
             case OAK -> Type.OAK;
             case BIRCH -> Type.BIRCH;
             case ACACIA -> Type.ACACIA;
+            case CHERRY -> Type.CHERRY;
             case JUNGLE -> Type.JUNGLE;
             case SPRUCE -> Type.SPRUCE;
             case DARK_OAK -> Type.DARK_OAK;
@@ -123,6 +124,7 @@ public class CraftBoat extends CraftVehicle implements Boat {
             case SPRUCE -> EntityBoat.EnumBoatType.SPRUCE;
             case DARK_OAK -> EntityBoat.EnumBoatType.DARK_OAK;
             case JUNGLE -> EntityBoat.EnumBoatType.JUNGLE;
+            case CHERRY -> EntityBoat.EnumBoatType.CHERRY;
             case ACACIA -> EntityBoat.EnumBoatType.ACACIA;
             case BIRCH -> EntityBoat.EnumBoatType.BIRCH;
             case OAK -> EntityBoat.EnumBoatType.OAK;

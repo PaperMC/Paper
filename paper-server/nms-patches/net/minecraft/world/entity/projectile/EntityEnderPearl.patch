@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityEnderPearl.java
 +++ b/net/minecraft/world/entity/projectile/EntityEnderPearl.java
-@@ -17,6 +17,13 @@
+@@ -16,6 +16,13 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  
@@ -14,10 +14,10 @@
  public class EntityEnderPearl extends EntityProjectileThrowable {
  
      public EntityEnderPearl(EntityTypes<? extends EntityEnderPearl> entitytypes, World world) {
-@@ -53,23 +60,36 @@
+@@ -52,23 +59,36 @@
                  EntityPlayer entityplayer = (EntityPlayer) entity;
  
-                 if (entityplayer.connection.getConnection().isConnected() && entityplayer.level == this.level && !entityplayer.isSleeping()) {
+                 if (entityplayer.connection.isAcceptingMessages() && entityplayer.level == this.level && !entityplayer.isSleeping()) {
 -                    if (this.random.nextFloat() < 0.05F && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
 -                        EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(this.level);
 +                    // CraftBukkit start - Fire PlayerTeleportEvent
@@ -29,7 +29,7 @@
 +                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
 +                    Bukkit.getPluginManager().callEvent(teleEvent);
 +
-+                    if (!teleEvent.isCancelled() && !entityplayer.connection.isDisconnected()) {
++                    if (!teleEvent.isCancelled() && !entityplayer.connection.isAcceptingMessages()) {
 +                        if (this.random.nextFloat() < 0.05F && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
 +                            EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(this.level);
 +
@@ -54,17 +54,17 @@
 +                        entityplayer.connection.teleport(teleEvent.getTo());
 +                        entity.resetFallDistance();
 +                        CraftEventFactory.entityDamage = this;
-+                        entity.hurt(DamageSource.FALL, 5.0F);
++                        entity.hurt(this.damageSources().fall(), 5.0F);
 +                        CraftEventFactory.entityDamage = null;
                      }
 -
 -                    entity.resetFallDistance();
--                    entity.hurt(DamageSource.FALL, 5.0F);
+-                    entity.hurt(this.damageSources().fall(), 5.0F);
 +                    // CraftBukkit end
                  }
              } else if (entity != null) {
                  entity.teleportTo(this.getX(), this.getY(), this.getZ());
-@@ -98,7 +118,7 @@
+@@ -97,7 +117,7 @@
      public Entity changeDimension(WorldServer worldserver) {
          Entity entity = this.getOwner();
  

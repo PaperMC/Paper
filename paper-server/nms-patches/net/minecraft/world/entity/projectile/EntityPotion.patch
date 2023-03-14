@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityPotion.java
 +++ b/net/minecraft/world/entity/projectile/EntityPotion.java
-@@ -32,6 +32,16 @@
+@@ -31,6 +31,16 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  
@@ -17,7 +17,7 @@
  public class EntityPotion extends EntityProjectileThrowable implements ItemSupplier {
  
      public static final double SPLASH_RANGE = 4.0D;
-@@ -100,7 +110,7 @@
+@@ -99,7 +109,7 @@
  
              if (flag) {
                  this.applyWater();
@@ -26,7 +26,7 @@
                  if (this.isLingering()) {
                      this.makeAreaOfEffectCloud(itemstack, potionregistry);
                  } else {
-@@ -149,6 +159,7 @@
+@@ -148,6 +158,7 @@
      private void applySplash(List<MobEffect> list, @Nullable Entity entity) {
          AxisAlignedBB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
          List<EntityLiving> list1 = this.level.getEntitiesOfClass(EntityLiving.class, axisalignedbb);
@@ -34,8 +34,8 @@
  
          if (!list1.isEmpty()) {
              Entity entity1 = this.getEffectSource();
-@@ -167,21 +178,47 @@
-                             d1 = 1.0D;
+@@ -168,24 +179,50 @@
+                             d1 = 1.0D - Math.sqrt(d0) / 4.0D;
                          }
  
 -                        Iterator iterator1 = list.iterator();
@@ -76,7 +76,10 @@
 +                    if (mobeffectlist.isInstantenous()) {
 +                        mobeffectlist.applyInstantenousEffect(this, this.getOwner(), entityliving, mobeffect.getAmplifier(), d1);
 +                    } else {
-+                        int i = (int) (d1 * (double) mobeffect.getDuration() + 0.5D);
++                        int i = mobeffect.mapDuration((j) -> {
++                            return (int) (d1 * (double) j + 0.5D);
++                        });
++                        MobEffect mobeffect1 = new MobEffect(mobeffectlist, i, mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isVisible());
  
 -                        while (iterator1.hasNext()) {
 -                            MobEffect mobeffect = (MobEffect) iterator1.next();
@@ -85,18 +88,21 @@
 -                            if (mobeffectlist.isInstantenous()) {
 -                                mobeffectlist.applyInstantenousEffect(this, this.getOwner(), entityliving, mobeffect.getAmplifier(), d1);
 -                            } else {
--                                int i = (int) (d1 * (double) mobeffect.getDuration() + 0.5D);
+-                                int i = mobeffect.mapDuration((j) -> {
+-                                    return (int) (d1 * (double) j + 0.5D);
+-                                });
+-                                MobEffect mobeffect1 = new MobEffect(mobeffectlist, i, mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isVisible());
 -
--                                if (i > 20) {
--                                    entityliving.addEffect(new MobEffect(mobeffectlist, i, mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isVisible()), entity1);
+-                                if (!mobeffect1.endsWithin(20)) {
+-                                    entityliving.addEffect(mobeffect1, entity1);
 -                                }
 -                            }
-+                        if (i > 20) {
-+                            entityliving.addEffect(new MobEffect(mobeffectlist, i, mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isVisible()), entity1, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_SPLASH); // CraftBukkit
++                        if (!mobeffect1.endsWithin(20)) {
++                            entityliving.addEffect(mobeffect1, entity1, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_SPLASH); // CraftBukkit
                          }
                      }
                  }
-@@ -217,7 +254,14 @@
+@@ -221,7 +258,14 @@
              entityareaeffectcloud.setFixedColor(nbttagcompound.getInt("CustomPotionColor"));
          }
  
@@ -112,7 +118,7 @@
      }
  
      public boolean isLingering() {
-@@ -228,13 +272,25 @@
+@@ -232,13 +276,25 @@
          IBlockData iblockdata = this.level.getBlockState(blockposition);
  
          if (iblockdata.is(TagsBlock.FIRE)) {

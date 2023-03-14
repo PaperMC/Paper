@@ -1,23 +1,23 @@
 --- a/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
 +++ b/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
-@@ -74,6 +74,8 @@
- import net.minecraft.world.phys.AxisAlignedBB;
+@@ -78,6 +78,8 @@
+ import net.minecraft.world.phys.Vec2F;
  import net.minecraft.world.phys.Vec3D;
  
 +import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason; // CraftBukkit
 +
- public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, HasCustomInventoryScreen, IJumpable, ISaddleable {
+ public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, HasCustomInventoryScreen, OwnableEntity, IJumpable, ISaddleable {
  
      public static final int EQUIPMENT_SLOT_OFFSET = 400;
-@@ -113,6 +115,7 @@
-     private float mouthAnimO;
-     protected boolean canGallop = true;
+@@ -139,6 +141,7 @@
      protected int gallopSoundCounter;
+     @Nullable
+     private UUID owner;
 +    public int maxDomestication = 100; // CraftBukkit - store max domestication value
  
      protected EntityHorseAbstract(EntityTypes<? extends EntityHorseAbstract> entitytypes, World world) {
          super(entitytypes, world);
-@@ -312,7 +315,7 @@
+@@ -338,7 +341,7 @@
      public void createInventory() {
          InventorySubcontainer inventorysubcontainer = this.inventory;
  
@@ -26,7 +26,7 @@
          if (inventorysubcontainer != null) {
              inventorysubcontainer.removeListener(this);
              int i = Math.min(inventorysubcontainer.getContainerSize(), this.inventory.getContainerSize());
-@@ -416,7 +419,7 @@
+@@ -442,7 +445,7 @@
      }
  
      public int getMaxTemper() {
@@ -35,7 +35,7 @@
      }
  
      @Override
-@@ -487,7 +490,7 @@
+@@ -513,7 +516,7 @@
          }
  
          if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
@@ -44,7 +44,7 @@
              flag = true;
          }
  
-@@ -564,7 +567,7 @@
+@@ -590,7 +593,7 @@
          super.aiStep();
          if (!this.level.isClientSide && this.isAlive()) {
              if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
@@ -53,7 +53,7 @@
              }
  
              if (this.canEatGrass()) {
-@@ -838,6 +841,7 @@
+@@ -857,6 +860,7 @@
          if (this.getOwnerUUID() != null) {
              nbttagcompound.putUUID("Owner", this.getOwnerUUID());
          }
@@ -61,7 +61,7 @@
  
          if (!this.inventory.getItem(0).isEmpty()) {
              nbttagcompound.put("SaddleItem", this.inventory.getItem(0).save(new NBTTagCompound()));
-@@ -865,6 +869,11 @@
+@@ -884,6 +888,11 @@
          if (uuid != null) {
              this.setOwnerUUID(uuid);
          }
@@ -73,7 +73,7 @@
  
          if (nbttagcompound.contains("SaddleItem", 10)) {
              ItemStack itemstack = ItemStack.of(nbttagcompound.getCompound("SaddleItem"));
-@@ -942,6 +951,18 @@
+@@ -986,6 +995,18 @@
  
      @Override
      public void handleStartJump(int i) {

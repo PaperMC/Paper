@@ -59,6 +59,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             Material.BIRCH_SIGN,
             Material.BIRCH_WALL_HANGING_SIGN,
             Material.BIRCH_WALL_SIGN,
+            Material.CHERRY_HANGING_SIGN,
+            Material.CHERRY_SIGN,
+            Material.CHERRY_WALL_HANGING_SIGN,
+            Material.CHERRY_WALL_SIGN,
             Material.CRIMSON_HANGING_SIGN,
             Material.CRIMSON_SIGN,
             Material.CRIMSON_WALL_HANGING_SIGN,
@@ -113,7 +117,9 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             Material.SCULK_CATALYST,
             Material.SCULK_SHRIEKER,
             Material.SCULK_SENSOR,
-            Material.CHISELED_BOOKSHELF
+            Material.CHISELED_BOOKSHELF,
+            Material.DECORATED_POT,
+            Material.SUSPICIOUS_SAND
     );
 
     static {

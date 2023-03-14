@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/IDispenseBehavior.java
 +++ b/net/minecraft/core/dispenser/IDispenseBehavior.java
-@@ -77,6 +77,21 @@
+@@ -78,6 +78,21 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import org.slf4j.Logger;
  
@@ -22,7 +22,7 @@
  public interface IDispenseBehavior {
  
      Logger LOGGER = LogUtils.getLogger();
-@@ -201,14 +216,42 @@
+@@ -202,14 +217,42 @@
                  EnumDirection enumdirection = (EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING);
                  EntityTypes entitytypes = ((ItemMonsterEgg) itemstack.getItem()).getType(itemstack.getTag());
  
@@ -67,7 +67,7 @@
                  isourceblock.getLevel().gameEvent((Entity) null, GameEvent.ENTITY_PLACE, isourceblock.getPos());
                  return itemstack;
              }
-@@ -227,12 +270,40 @@
+@@ -228,13 +271,41 @@
                  EnumDirection enumdirection = (EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING);
                  BlockPosition blockposition = isourceblock.getPos().relative(enumdirection);
                  WorldServer worldserver = isourceblock.getLevel();
@@ -99,17 +99,18 @@
 +                }
 +                // CraftBukkit end
 +
-                 EntityArmorStand entityarmorstand = new EntityArmorStand(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D);
+                 Consumer<EntityArmorStand> consumer = EntityTypes.appendDefaultStackConfig((entityarmorstand) -> {
+                     entityarmorstand.setYRot(enumdirection.toYRot());
+                 }, worldserver, itemstack, (EntityHuman) null);
+                 EntityArmorStand entityarmorstand = (EntityArmorStand) EntityTypes.ARMOR_STAND.spawn(worldserver, itemstack.getTag(), consumer, blockposition, EnumMobSpawn.DISPENSER, false, false);
  
-                 EntityTypes.updateCustomEntityTag(worldserver, (EntityHuman) null, entityarmorstand, itemstack.getTag());
-                 entityarmorstand.setYRot(enumdirection.toYRot());
-                 worldserver.addFreshEntity(entityarmorstand);
--                itemstack.shrink(1);
-+                // itemstack.shrink(1); // CraftBukkit - Handled during event processing
+                 if (entityarmorstand != null) {
+-                    itemstack.shrink(1);
++                    // itemstack.shrink(1); // CraftBukkit - Handled during event processing
+                 }
+ 
                  return itemstack;
-             }
-         });
-@@ -251,8 +322,35 @@
+@@ -255,8 +326,35 @@
                  });
  
                  if (!list.isEmpty()) {
@@ -146,7 +147,7 @@
                      this.setSuccess(true);
                      return itemstack;
                  } else {
-@@ -279,7 +377,35 @@
+@@ -283,7 +381,35 @@
                      entityhorseabstract = (EntityHorseAbstract) iterator1.next();
                  } while (!entityhorseabstract.isArmor(itemstack) || entityhorseabstract.isWearingArmor() || !entityhorseabstract.isTamed());
  
@@ -183,7 +184,7 @@
                  this.setSuccess(true);
                  return itemstack;
              }
-@@ -322,9 +448,35 @@
+@@ -326,9 +452,35 @@
                      }
  
                      entityhorsechestedabstract = (EntityHorseChestedAbstract) iterator1.next();
@@ -221,7 +222,7 @@
                  this.setSuccess(true);
                  return itemstack;
              }
-@@ -333,12 +485,41 @@
+@@ -337,12 +489,41 @@
              @Override
              public ItemStack execute(ISourceBlock isourceblock, ItemStack itemstack) {
                  EnumDirection enumdirection = (EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING);
@@ -264,7 +265,7 @@
                  return itemstack;
              }
  
-@@ -360,12 +541,40 @@
+@@ -364,12 +545,40 @@
                  double d3 = randomsource.triangle((double) enumdirection.getStepX(), 0.11485000000000001D);
                  double d4 = randomsource.triangle((double) enumdirection.getStepY(), 0.11485000000000001D);
                  double d5 = randomsource.triangle((double) enumdirection.getStepZ(), 0.11485000000000001D);
@@ -310,7 +311,7 @@
                  return itemstack;
              }
  
-@@ -399,9 +608,52 @@
+@@ -405,9 +614,52 @@
                  BlockPosition blockposition = isourceblock.getPos().relative((EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING));
                  WorldServer worldserver = isourceblock.getLevel();
  
@@ -364,7 +365,7 @@
                  } else {
                      return this.defaultDispenseItemBehavior.dispense(isourceblock, itemstack);
                  }
-@@ -428,7 +680,7 @@
+@@ -434,7 +686,7 @@
                  Block block = iblockdata.getBlock();
  
                  if (block instanceof IFluidSource) {
@@ -373,7 +374,7 @@
  
                      if (itemstack1.isEmpty()) {
                          return super.execute(isourceblock, itemstack);
-@@ -436,6 +688,32 @@
+@@ -442,6 +694,32 @@
                          worldserver.gameEvent((Entity) null, GameEvent.FLUID_PICKUP, blockposition);
                          Item item = itemstack1.getItem();
  
@@ -406,7 +407,7 @@
                          itemstack.shrink(1);
                          if (itemstack.isEmpty()) {
                              return new ItemStack(item);
-@@ -457,14 +735,42 @@
+@@ -463,14 +741,42 @@
              protected ItemStack execute(ISourceBlock isourceblock, ItemStack itemstack) {
                  WorldServer worldserver = isourceblock.getLevel();
  
@@ -451,7 +452,7 @@
                  } else if (!BlockCampfire.canLight(iblockdata) && !CandleBlock.canLight(iblockdata) && !CandleCakeBlock.canLight(iblockdata)) {
                      if (iblockdata.getBlock() instanceof BlockTNT) {
                          BlockTNT.explode(worldserver, blockposition);
-@@ -490,12 +796,62 @@
+@@ -496,12 +802,62 @@
                  this.setSuccess(true);
                  WorldServer worldserver = isourceblock.getLevel();
                  BlockPosition blockposition = isourceblock.getPos().relative((EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING));
@@ -514,7 +515,7 @@
  
                  return itemstack;
              }
-@@ -505,12 +861,41 @@
+@@ -511,12 +867,41 @@
              protected ItemStack execute(ISourceBlock isourceblock, ItemStack itemstack) {
                  WorldServer worldserver = isourceblock.getLevel();
                  BlockPosition blockposition = isourceblock.getPos().relative((EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING));
@@ -558,7 +559,7 @@
                  return itemstack;
              }
          });
-@@ -535,6 +920,30 @@
+@@ -541,6 +926,30 @@
                  EnumDirection enumdirection = (EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING);
                  BlockPosition blockposition = isourceblock.getPos().relative(enumdirection);
  
@@ -589,7 +590,7 @@
                  if (worldserver.isEmptyBlock(blockposition) && BlockWitherSkull.canSpawnMob(worldserver, blockposition, itemstack)) {
                      worldserver.setBlock(blockposition, (IBlockData) Blocks.WITHER_SKELETON_SKULL.defaultBlockState().setValue(BlockSkull.ROTATION, RotationSegment.convertToSegment(enumdirection)), 3);
                      worldserver.gameEvent((Entity) null, GameEvent.BLOCK_PLACE, blockposition);
-@@ -560,6 +969,30 @@
+@@ -566,6 +975,30 @@
                  BlockPosition blockposition = isourceblock.getPos().relative((EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING));
                  BlockPumpkinCarved blockpumpkincarved = (BlockPumpkinCarved) Blocks.CARVED_PUMPKIN;
  
@@ -620,7 +621,7 @@
                  if (worldserver.isEmptyBlock(blockposition) && blockpumpkincarved.canSpawnGolem(worldserver, blockposition)) {
                      if (!worldserver.isClientSide) {
                          worldserver.setBlock(blockposition, blockpumpkincarved.defaultBlockState(), 3);
-@@ -609,6 +1042,30 @@
+@@ -615,6 +1048,30 @@
                  BlockPosition blockposition = isourceblock.getPos().relative((EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING));
                  IBlockData iblockdata = worldserver.getBlockState(blockposition);
  

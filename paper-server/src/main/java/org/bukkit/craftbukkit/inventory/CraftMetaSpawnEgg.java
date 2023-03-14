@@ -71,6 +71,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
             Material.SKELETON_HORSE_SPAWN_EGG,
             Material.SKELETON_SPAWN_EGG,
             Material.SLIME_SPAWN_EGG,
+            Material.SNIFFER_SPAWN_EGG,
             Material.SNOW_GOLEM_SPAWN_EGG,
             Material.SPIDER_SPAWN_EGG,
             Material.SQUID_SPAWN_EGG,

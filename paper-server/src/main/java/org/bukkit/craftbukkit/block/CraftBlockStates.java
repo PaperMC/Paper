@@ -12,10 +12,12 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.level.GeneratorAccess;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
+import net.minecraft.world.level.block.entity.DecoratedPotBlockEntity;
 import net.minecraft.world.level.block.entity.HangingSignBlockEntity;
 import net.minecraft.world.level.block.entity.SculkCatalystBlockEntity;
 import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
 import net.minecraft.world.level.block.entity.SculkShriekerBlockEntity;
+import net.minecraft.world.level.block.entity.SuspiciousSandBlockEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntityBanner;
 import net.minecraft.world.level.block.entity.TileEntityBarrel;
@@ -130,6 +132,8 @@ public final class CraftBlockStates {
                         Material.BAMBOO_WALL_SIGN,
                         Material.BIRCH_SIGN,
                         Material.BIRCH_WALL_SIGN,
+                        Material.CHERRY_SIGN,
+                        Material.CHERRY_WALL_SIGN,
                         Material.CRIMSON_SIGN,
                         Material.CRIMSON_WALL_SIGN,
                         Material.DARK_OAK_SIGN,
@@ -155,6 +159,8 @@ public final class CraftBlockStates {
                         Material.BAMBOO_WALL_HANGING_SIGN,
                         Material.BIRCH_HANGING_SIGN,
                         Material.BIRCH_WALL_HANGING_SIGN,
+                        Material.CHERRY_HANGING_SIGN,
+                        Material.CHERRY_WALL_HANGING_SIGN,
                         Material.CRIMSON_HANGING_SIGN,
                         Material.CRIMSON_WALL_HANGING_SIGN,
                         Material.DARK_OAK_HANGING_SIGN,
@@ -303,6 +309,7 @@ public final class CraftBlockStates {
         register(Material.COMPARATOR, CraftComparator.class, CraftComparator::new, TileEntityComparator::new);
         register(Material.CONDUIT, CraftConduit.class, CraftConduit::new, TileEntityConduit::new);
         register(Material.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new, TileEntityLightDetector::new);
+        register(Material.DECORATED_POT, CraftDecoratedPot.class, CraftDecoratedPot::new, DecoratedPotBlockEntity::new);
         register(Material.DISPENSER, CraftDispenser.class, CraftDispenser::new, TileEntityDispenser::new);
         register(Material.DROPPER, CraftDropper.class, CraftDropper::new, TileEntityDropper::new);
         register(Material.ENCHANTING_TABLE, CraftEnchantingTable.class, CraftEnchantingTable::new, TileEntityEnchantTable::new);
@@ -321,6 +328,7 @@ public final class CraftBlockStates {
         register(Material.SMOKER, CraftSmoker.class, CraftSmoker::new, TileEntitySmoker::new);
         register(Material.SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new, TileEntityMobSpawner::new);
         register(Material.STRUCTURE_BLOCK, CraftStructureBlock.class, CraftStructureBlock::new, TileEntityStructure::new);
+        register(Material.SUSPICIOUS_SAND, CraftSuspiciousSand.class, CraftSuspiciousSand::new, SuspiciousSandBlockEntity::new);
         register(Material.TRAPPED_CHEST, CraftChest.class, CraftChest::new, TileEntityChestTrapped::new);
     }
 

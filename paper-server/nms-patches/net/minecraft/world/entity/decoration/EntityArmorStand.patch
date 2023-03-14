@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/decoration/EntityArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/EntityArmorStand.java
-@@ -43,6 +43,15 @@
+@@ -44,6 +44,15 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
@@ -16,7 +16,7 @@
  public class EntityArmorStand extends EntityLiving {
  
      public static final int WOBBLE_TIME = 5;
-@@ -105,6 +114,13 @@
+@@ -106,6 +115,13 @@
          this.setPos(d0, d1, d2);
      }
  
@@ -30,7 +30,7 @@
      @Override
      public void refreshDimensions() {
          double d0 = this.getX();
-@@ -160,13 +176,20 @@
+@@ -161,13 +177,20 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -53,7 +53,7 @@
          }
  
      }
-@@ -402,6 +425,22 @@
+@@ -403,6 +426,22 @@
              return false;
          } else {
              ItemStack itemstack2;
@@ -76,10 +76,10 @@
  
              if (entityhuman.getAbilities().instabuild && itemstack1.isEmpty() && !itemstack.isEmpty()) {
                  itemstack2 = itemstack.copy();
-@@ -430,9 +469,19 @@
+@@ -431,9 +470,19 @@
      public boolean hurt(DamageSource damagesource, float f) {
          if (!this.level.isClientSide && !this.isRemoved()) {
-             if (DamageSource.OUT_OF_WORLD.equals(damagesource)) {
+             if (damagesource.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 +                // CraftBukkit start
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
 +                    return false;
@@ -94,24 +94,24 @@
 +                    return false;
 +                }
 +                // CraftBukkit end
-                 if (damagesource.isExplosion()) {
+                 if (damagesource.is(DamageTypeTags.IS_EXPLOSION)) {
                      this.brokenByAnything(damagesource);
                      this.kill();
-@@ -472,7 +521,7 @@
-                         } else {
-                             this.brokenByPlayer(damagesource);
-                             this.showBreakingParticles();
--                            this.kill();
-+                            this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.die() since above damagesource method will call death event
-                         }
+@@ -482,7 +531,7 @@
+                             } else {
+                                 this.brokenByPlayer(damagesource);
+                                 this.showBreakingParticles();
+-                                this.kill();
++                                this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.discard() since above damagesource method will call death event
+                             }
  
-                         return true;
-@@ -533,13 +582,13 @@
-     }
+                             return true;
+@@ -550,13 +599,13 @@
+             itemstack.setHoverName(this.getCustomName());
+         }
  
-     private void brokenByPlayer(DamageSource damagesource) {
--        Block.popResource(this.level, this.blockPosition(), new ItemStack(Items.ARMOR_STAND));
-+        drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.ARMOR_STAND))); // CraftBukkit - add to drops
+-        Block.popResource(this.level, this.blockPosition(), itemstack);
++        drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
          this.brokenByAnything(damagesource);
      }
  
@@ -122,7 +122,7 @@
  
          ItemStack itemstack;
          int i;
-@@ -547,7 +596,7 @@
+@@ -564,7 +613,7 @@
          for (i = 0; i < this.handItems.size(); ++i) {
              itemstack = (ItemStack) this.handItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -131,7 +131,7 @@
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -555,10 +604,11 @@
+@@ -572,10 +621,11 @@
          for (i = 0; i < this.armorItems.size(); ++i) {
              itemstack = (ItemStack) this.armorItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -144,7 +144,7 @@
  
      }
  
-@@ -659,8 +709,16 @@
+@@ -676,8 +726,16 @@
          return this.isSmall();
      }
  

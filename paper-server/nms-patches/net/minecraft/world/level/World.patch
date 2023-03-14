@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/World.java
 +++ b/net/minecraft/world/level/World.java
-@@ -70,6 +70,31 @@
+@@ -72,6 +72,31 @@
  import net.minecraft.world.phys.Vec3D;
  import net.minecraft.world.scores.Scoreboard;
  
@@ -32,11 +32,11 @@
  public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public static final Codec<ResourceKey<World>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
-@@ -111,7 +136,43 @@
-     private final ResourceKey<World> dimension;
+@@ -115,7 +140,43 @@
+     private final DamageSources damageSources;
      private long subTickCount;
  
--    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j) {
+-    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, IRegistryCustom iregistrycustom, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j) {
 +    // CraftBukkit start Added the following
 +    private final CraftWorld world;
 +    public boolean pvpMode;
@@ -62,7 +62,7 @@
 +
 +    public abstract ResourceKey<WorldDimension> getTypeKey();
 +
-+    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
++    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, IRegistryCustom iregistrycustom, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
 +        this.generator = gen;
 +        this.world = new CraftWorld((WorldServer) this, gen, biomeProvider, env);
 +
@@ -77,7 +77,7 @@
          this.profiler = supplier;
          this.levelData = worlddatamutable;
          this.dimensionTypeRegistration = holder;
-@@ -126,12 +187,12 @@
+@@ -130,12 +191,12 @@
              this.worldBorder = new WorldBorder() {
                  @Override
                  public double getCenterX() {
@@ -92,10 +92,10 @@
                  }
              };
          } else {
-@@ -142,6 +203,42 @@
-         this.biomeManager = new BiomeManager(this, i);
-         this.isDebug = flag1;
+@@ -148,6 +209,42 @@
          this.neighborUpdater = new CollectingNeighborUpdater(this, j);
+         this.registryAccess = iregistrycustom;
+         this.damageSources = new DamageSources(iregistrycustom);
 +        // CraftBukkit start
 +        getWorldBorder().world = (WorldServer) this;
 +        // From PlayerList.setPlayerFileData
@@ -135,7 +135,7 @@
      }
  
      @Override
-@@ -199,6 +296,17 @@
+@@ -205,6 +302,17 @@
  
      @Override
      public boolean setBlock(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
@@ -153,7 +153,7 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -206,9 +314,24 @@
+@@ -212,9 +320,24 @@
          } else {
              Chunk chunk = this.getChunkAt(blockposition);
              Block block = iblockdata.getBlock();
@@ -179,7 +179,7 @@
                  return false;
              } else {
                  IBlockData iblockdata2 = this.getBlockState(blockposition);
-@@ -219,6 +342,7 @@
+@@ -225,6 +348,7 @@
                      this.getProfiler().pop();
                  }
  
@@ -187,7 +187,7 @@
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
-@@ -245,12 +369,69 @@
+@@ -251,12 +375,69 @@
  
                      this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
                  }
@@ -257,7 +257,7 @@
      public void onBlockStateChange(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
      @Override
-@@ -336,6 +517,14 @@
+@@ -342,6 +523,14 @@
  
      @Override
      public IBlockData getBlockState(BlockPosition blockposition) {
@@ -272,7 +272,7 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
-@@ -527,6 +716,16 @@
+@@ -533,6 +722,16 @@
      @Nullable
      @Override
      public TileEntity getBlockEntity(BlockPosition blockposition) {
@@ -289,7 +289,7 @@
          return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, Chunk.EnumTileEntityState.IMMEDIATE));
      }
  
-@@ -534,6 +733,12 @@
+@@ -540,6 +739,12 @@
          BlockPosition blockposition = tileentity.getBlockPos();
  
          if (!this.isOutsideBuildHeight(blockposition)) {
@@ -302,7 +302,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(tileentity);
          }
      }
-@@ -664,7 +869,7 @@
+@@ -670,7 +875,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EntityComplexPart entitycomplexpart = aentitycomplexpart[k];

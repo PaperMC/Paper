@@ -1,15 +1,18 @@
 --- a/net/minecraft/server/network/PacketStatusListener.java
 +++ b/net/minecraft/server/network/PacketStatusListener.java
-@@ -9,6 +9,18 @@
+@@ -9,6 +9,21 @@
  import net.minecraft.network.protocol.status.PacketStatusOutServerInfo;
- import net.minecraft.server.MinecraftServer;
+ import net.minecraft.network.protocol.status.ServerPing;
  
 +// CraftBukkit start
 +import com.mojang.authlib.GameProfile;
 +import java.net.InetSocketAddress;
++import java.util.Collections;
 +import java.util.Iterator;
++import java.util.Optional;
 +import net.minecraft.SharedConstants;
 +import net.minecraft.network.protocol.status.ServerPing;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.EntityPlayer;
 +import org.bukkit.craftbukkit.util.CraftChatMessage;
 +import org.bukkit.craftbukkit.util.CraftIconCache;
@@ -19,13 +22,14 @@
  public class PacketStatusListener implements PacketStatusInListener {
  
      private static final IChatBaseComponent DISCONNECT_REASON = IChatBaseComponent.translatable("multiplayer.status.request_handled");
-@@ -35,7 +47,102 @@
+@@ -35,7 +50,101 @@
              this.connection.disconnect(PacketStatusListener.DISCONNECT_REASON);
          } else {
              this.hasRequestedStatus = true;
--            this.connection.send(new PacketStatusOutServerInfo(this.server.getStatus()));
+-            this.connection.send(new PacketStatusOutServerInfo(this.status));
 +            // CraftBukkit start
-+            // this.connection.send(new PacketStatusOutServerInfo(this.server.getStatus()));
++            // this.connection.send(new PacketStatusOutServerInfo(this.status));
++            MinecraftServer server = MinecraftServer.getServer();
 +            final Object[] players = server.getPlayerList().players.toArray();
 +            class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
 +
@@ -92,7 +96,7 @@
 +            }
 +
 +            ServerListPingEvent event = new ServerListPingEvent();
-+            this.server.server.getPluginManager().callEvent(event);
++            server.server.getPluginManager().callEvent(event);
 +
 +            java.util.List<GameProfile> profiles = new java.util.ArrayList<GameProfile>(players.length);
 +            for (Object player : players) {
@@ -106,17 +110,15 @@
 +                }
 +            }
 +
-+            ServerPing.ServerPingPlayerSample playerSample = new ServerPing.ServerPingPlayerSample(event.getMaxPlayers(), profiles.size());
-+            if (!this.server.hidesOnlinePlayers()) {
-+                playerSample.setSample(profiles.toArray(new GameProfile[profiles.size()]));
-+            }
++            ServerPing.ServerPingPlayerSample playerSample = new ServerPing.ServerPingPlayerSample(event.getMaxPlayers(), profiles.size(), (server.hidesOnlinePlayers()) ? Collections.emptyList() : profiles);
 +
-+            ServerPing ping = new ServerPing();
-+            ping.setFavicon(event.icon.value);
-+            ping.setDescription(CraftChatMessage.fromString(event.getMotd(), true)[0]);
-+            ping.setPlayers(playerSample);
-+            int version = SharedConstants.getCurrentVersion().getProtocolVersion();
-+            ping.setVersion(new ServerPing.ServerData(server.getServerModName() + " " + server.getServerVersion(), version));
++            ServerPing ping = new ServerPing(
++                    CraftChatMessage.fromString(event.getMotd(), true)[0],
++                    Optional.of(playerSample),
++                    Optional.of(new ServerPing.ServerData(server.getServerModName() + " " + server.getServerVersion(), SharedConstants.getCurrentVersion().getProtocolVersion())),
++                    (event.icon.value != null) ? Optional.of(new ServerPing.a(event.icon.value)) : Optional.empty(),
++                    server.enforceSecureProfile()
++            );
 +
 +            this.connection.send(new PacketStatusOutServerInfo(ping));
 +            // CraftBukkit end

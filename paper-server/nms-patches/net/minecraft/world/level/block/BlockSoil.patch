@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockSoil.java
 +++ b/net/minecraft/world/level/block/BlockSoil.java
-@@ -25,6 +25,11 @@
+@@ -27,6 +27,11 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  
@@ -12,14 +12,14 @@
  public class BlockSoil extends Block {
  
      public static final BlockStateInteger MOISTURE = BlockProperties.MOISTURE;
-@@ -81,26 +86,49 @@
+@@ -83,26 +88,49 @@
  
          if (!isNearWater(worldserver, blockposition) && !worldserver.isRainingAt(blockposition.above())) {
              if (i > 0) {
 -                worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockSoil.MOISTURE, i - 1), 2);
 +                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(worldserver, blockposition, (IBlockData) iblockdata.setValue(BlockSoil.MOISTURE, i - 1), 2); // CraftBukkit
              } else if (!isUnderCrops(worldserver, blockposition)) {
-                 turnToDirt(iblockdata, worldserver, blockposition);
+                 turnToDirt((Entity) null, iblockdata, worldserver, blockposition);
              }
          } else if (i < 7) {
 -            worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockSoil.MOISTURE, 7), 2);
@@ -49,19 +49,19 @@
 +                return;
 +            }
 +            // CraftBukkit end
-             turnToDirt(iblockdata, world, blockposition);
+             turnToDirt(entity, iblockdata, world, blockposition);
          }
  
 -        super.fallOn(world, iblockdata, blockposition, entity, f);
 +        // super.fallOn(world, iblockdata, blockposition, entity, f); // CraftBukkit - moved up
      }
  
-     public static void turnToDirt(IBlockData iblockdata, World world, BlockPosition blockposition) {
+     public static void turnToDirt(@Nullable Entity entity, IBlockData iblockdata, World world, BlockPosition blockposition) {
 +        // CraftBukkit start
 +        if (CraftEventFactory.callBlockFadeEvent(world, blockposition, Blocks.DIRT.defaultBlockState()).isCancelled()) {
 +            return;
 +        }
 +        // CraftBukkit end
-         world.setBlockAndUpdate(blockposition, pushEntitiesUp(iblockdata, Blocks.DIRT.defaultBlockState(), world, blockposition));
-     }
+         IBlockData iblockdata1 = pushEntitiesUp(iblockdata, Blocks.DIRT.defaultBlockState(), world, blockposition);
  
+         world.setBlockAndUpdate(blockposition, iblockdata1);

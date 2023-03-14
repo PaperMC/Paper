@@ -14,7 +14,7 @@
  public class VibrationListener implements GameEventListener {
  
      @VisibleForTesting
-@@ -96,7 +103,7 @@
+@@ -98,7 +105,7 @@
              }), ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter((vibrationlistener) -> {
                  return vibrationlistener.travelTimeInTicks;
              })).apply(instance, (positionsource, integer, optional, vibrationselector, integer1) -> {
@@ -23,24 +23,25 @@
              });
          });
      }
-@@ -138,7 +145,7 @@
+@@ -140,7 +147,8 @@
                  --this.travelTimeInTicks;
                  if (this.travelTimeInTicks <= 0) {
                      this.travelTimeInTicks = 0;
--                    this.config.onSignalReceive(worldserver, this, new BlockPosition(this.currentVibration.pos()), this.currentVibration.gameEvent(), (Entity) this.currentVibration.getEntity(worldserver).orElse((Object) null), (Entity) this.currentVibration.getProjectileOwner(worldserver).orElse((Object) null), this.currentVibration.distance());
-+                    this.config.onSignalReceive(worldserver, this, new BlockPosition(this.currentVibration.pos()), this.currentVibration.gameEvent(), (Entity) this.currentVibration.getEntity(worldserver).orElse(null), (Entity) this.currentVibration.getProjectileOwner(worldserver).orElse(null), this.currentVibration.distance()); // CraftBukkit - decompile error
+-                    this.config.onSignalReceive(worldserver, this, BlockPosition.containing(this.currentVibration.pos()), this.currentVibration.gameEvent(), (Entity) this.currentVibration.getEntity(worldserver).orElse((Object) null), (Entity) this.currentVibration.getProjectileOwner(worldserver).orElse((Object) null), this.currentVibration.distance());
++                    // CraftBukkit - decompile error
++                    this.config.onSignalReceive(worldserver, this, BlockPosition.containing(this.currentVibration.pos()), this.currentVibration.gameEvent(), (Entity) this.currentVibration.getEntity(worldserver).orElse(null), (Entity) this.currentVibration.getProjectileOwner(worldserver).orElse(null), this.currentVibration.distance());
                      this.currentVibration = null;
                  }
              }
-@@ -170,7 +177,14 @@
+@@ -172,7 +180,14 @@
              } else {
                  Vec3D vec3d1 = (Vec3D) optional.get();
  
--                if (!this.config.shouldListen(worldserver, this, new BlockPosition(vec3d), gameevent, gameevent_a)) {
+-                if (!this.config.shouldListen(worldserver, this, BlockPosition.containing(vec3d), gameevent, gameevent_a)) {
 +                // CraftBukkit start
-+                boolean defaultCancel = !this.config.shouldListen(worldserver, this, new BlockPosition(vec3d), gameevent, gameevent_a);
++                boolean defaultCancel = !this.config.shouldListen(worldserver, this, BlockPosition.containing(vec3d), gameevent, gameevent_a);
 +                Entity entity = gameevent_a.sourceEntity();
-+                BlockReceiveGameEvent event = new BlockReceiveGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(gameevent))), CraftBlock.at(worldserver, new BlockPosition(vec3d1)), (entity == null) ? null : entity.getBukkitEntity());
++                BlockReceiveGameEvent event = new BlockReceiveGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(gameevent))), CraftBlock.at(worldserver, BlockPosition.containing(vec3d1)), (entity == null) ? null : entity.getBukkitEntity());
 +                event.setCancelled(defaultCancel);
 +                worldserver.getCraftServer().getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {

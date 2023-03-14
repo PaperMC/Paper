@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -74,6 +74,40 @@
+@@ -75,6 +75,40 @@
  import net.minecraft.world.level.block.state.pattern.ShapeDetectorBlock;
  import org.slf4j.Logger;
  
@@ -16,15 +16,15 @@
 +import net.minecraft.server.level.WorldServer;
 +import net.minecraft.sounds.SoundCategory;
 +import net.minecraft.util.datafix.fixes.DataConverterTypes;
-+import net.minecraft.world.level.block.BlockJukeBox;
 +import net.minecraft.world.level.block.BlockSapling;
 +import net.minecraft.world.level.block.BlockTileEntity;
 +import net.minecraft.world.level.block.BlockWitherSkull;
-+import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.SoundEffectType;
 +import net.minecraft.world.level.block.entity.TileEntity;
++import net.minecraft.world.level.block.entity.TileEntityJukeBox;
 +import net.minecraft.world.level.block.entity.TileEntitySign;
 +import net.minecraft.world.level.block.entity.TileEntitySkull;
++import net.minecraft.world.level.gameevent.GameEvent;
 +import org.bukkit.Location;
 +import org.bukkit.TreeType;
 +import org.bukkit.block.BlockState;
@@ -41,7 +41,7 @@
  public final class ItemStack {
  
      public static final Codec<ItemStack> CODEC = RecordCodecBuilder.create((instance) -> {
-@@ -150,16 +184,30 @@
+@@ -151,16 +185,30 @@
          this.updateEmptyCacheFlag();
      }
  
@@ -74,7 +74,7 @@
              this.getItem().verifyTagAfterLoad(this.tag);
          }
  
-@@ -167,6 +215,11 @@
+@@ -168,6 +216,11 @@
              this.setDamageValue(this.getDamageValue());
          }
  
@@ -86,7 +86,7 @@
          this.updateEmptyCacheFlag();
      }
  
-@@ -224,7 +277,7 @@
+@@ -225,7 +278,7 @@
          return this.getItem().builtInRegistryHolder().tags();
      }
  
@@ -95,7 +95,7 @@
          EntityHuman entityhuman = itemactioncontext.getPlayer();
          BlockPosition blockposition = itemactioncontext.getClickedPos();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getLevel(), blockposition, false);
-@@ -232,12 +285,158 @@
+@@ -233,12 +286,171 @@
          if (entityhuman != null && !entityhuman.getAbilities().mayBuild && !this.hasAdventureModePlaceTagForBlock(itemactioncontext.getLevel().registryAccess().registryOrThrow(Registries.BLOCK), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -208,8 +208,21 @@
 +                    // Special case juke boxes as they update their tile entity. Copied from ItemRecord.
 +                    // PAIL: checkme on updates.
 +                    if (this.item instanceof ItemRecord) {
-+                        ((BlockJukeBox) Blocks.JUKEBOX).setRecord(entityhuman, world, blockposition, world.getBlockState(blockposition), this);
-+                        world.levelEvent((EntityHuman) null, 1010, blockposition, Item.getId(this.item));
++                        TileEntity tileentity = world.getBlockEntity(blockposition);
++
++                        if (tileentity instanceof TileEntityJukeBox) {
++                            TileEntityJukeBox tileentityjukebox = (TileEntityJukeBox) tileentity;
++
++                            // There can only be one
++                            ItemStack record = this.copy();
++                            if (!record.isEmpty()) {
++                                record.setCount(1);
++                            }
++
++                            tileentityjukebox.setFirstItem(record);
++                            world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.a.of(entityhuman, world.getBlockState(blockposition)));
++                        }
++
 +                        this.shrink(1);
 +                        entityhuman.awardStat(StatisticList.PLAY_RECORD);
 +                    }
@@ -255,7 +268,7 @@
  
              return enuminteractionresult;
          }
-@@ -318,6 +517,21 @@
+@@ -319,6 +531,21 @@
                  }
  
                  i -= k;
@@ -277,7 +290,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -339,6 +553,11 @@
+@@ -340,6 +567,11 @@
                  if (this.hurt(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -289,7 +302,7 @@
  
                      this.shrink(1);
                      if (t0 instanceof EntityHuman) {
-@@ -493,6 +712,17 @@
+@@ -494,6 +726,17 @@
          return this.tag;
      }
  
@@ -307,7 +320,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -859,6 +1089,12 @@
+@@ -864,6 +1107,12 @@
      }
  
      public void setRepairCost(int i) {
@@ -320,7 +333,7 @@
          this.getOrCreateTag().putInt("RepairCost", i);
      }
  
-@@ -908,6 +1144,13 @@
+@@ -913,6 +1162,13 @@
          nbttaglist.add(nbttagcompound);
      }
  

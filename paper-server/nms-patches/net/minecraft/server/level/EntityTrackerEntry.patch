@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/EntityTrackerEntry.java
 +++ b/net/minecraft/server/level/EntityTrackerEntry.java
-@@ -42,6 +42,12 @@
+@@ -44,6 +44,12 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
@@ -13,7 +13,7 @@
  public class EntityTrackerEntry {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -63,8 +69,12 @@
+@@ -65,8 +71,12 @@
      private boolean wasOnGround;
      @Nullable
      private List<DataWatcher.b<?>> trackedDataValues;
@@ -27,16 +27,16 @@
          this.ap = Vec3D.ZERO;
          this.lastPassengers = Collections.emptyList();
          this.level = worldserver;
-@@ -85,7 +95,7 @@
+@@ -86,7 +96,7 @@
+         List<Entity> list = this.entity.getPassengers();
  
          if (!list.equals(this.lastPassengers)) {
-             this.lastPassengers = list;
 -            this.broadcast.accept(new PacketPlayOutMount(this.entity));
 +            this.broadcastAndSend(new PacketPlayOutMount(this.entity)); // CraftBukkit
-         }
- 
-         Entity entity = this.entity;
-@@ -93,18 +103,18 @@
+             this.changedPassengers(list, this.lastPassengers).forEach((entity) -> {
+                 if (entity instanceof EntityPlayer) {
+                     EntityPlayer entityplayer = (EntityPlayer) entity;
+@@ -105,18 +115,18 @@
          if (entity instanceof EntityItemFrame) {
              EntityItemFrame entityitemframe = (EntityItemFrame) entity;
  
@@ -59,7 +59,7 @@
  
                              worldmap.tickCarriedBy(entityplayer, itemstack);
                              Packet<?> packet = worldmap.getUpdatePacket(integer, entityplayer);
-@@ -209,7 +219,27 @@
+@@ -229,7 +239,27 @@
  
          ++this.tickCount;
          if (this.entity.hurtMarked) {
@@ -88,17 +88,18 @@
              this.entity.hurtMarked = false;
          }
  
-@@ -224,13 +254,16 @@
-         PlayerConnection playerconnection = entityplayer.connection;
+@@ -252,14 +282,17 @@
+         List<Packet<PacketListenerPlayOut>> list = new ArrayList();
  
-         Objects.requireNonNull(entityplayer.connection);
--        this.sendPairingData(playerconnection::send);
-+        this.sendPairingData(playerconnection::send, entityplayer); // CraftBukkit - add player
+         Objects.requireNonNull(list);
+-        this.sendPairingData(list::add);
++        this.sendPairingData(list::add, entityplayer); // CraftBukkit - add player
+         entityplayer.connection.send(new ClientboundBundlePacket(list));
          this.entity.startSeenByPlayer(entityplayer);
      }
  
--    public void sendPairingData(Consumer<Packet<?>> consumer) {
-+    public void sendPairingData(Consumer<Packet<?>> consumer, EntityPlayer entityplayer) { // CraftBukkit - add player
+-    public void sendPairingData(Consumer<Packet<PacketListenerPlayOut>> consumer) {
++    public void sendPairingData(Consumer<Packet<PacketListenerPlayOut>> consumer, EntityPlayer entityplayer) { // CraftBukkit - add player
          if (this.entity.isRemoved()) {
 -            EntityTrackerEntry.LOGGER.warn("Fetching packet for removed entity {}", this.entity);
 +            // CraftBukkit start - Remove useless error spam, just return
@@ -108,7 +109,7 @@
          }
  
          Packet<PacketListenerPlayOut> packet = this.entity.getAddEntityPacket();
-@@ -246,6 +279,12 @@
+@@ -275,6 +308,12 @@
          if (this.entity instanceof EntityLiving) {
              Collection<AttributeModifiable> collection = ((EntityLiving) this.entity).getAttributes().getSyncableAttributes();
  
@@ -121,7 +122,7 @@
              if (!collection.isEmpty()) {
                  consumer.accept(new PacketPlayOutUpdateAttributes(this.entity.getId(), collection));
              }
-@@ -277,8 +316,14 @@
+@@ -306,8 +345,14 @@
              if (!list.isEmpty()) {
                  consumer.accept(new PacketPlayOutEntityEquipment(this.entity.getId(), list));
              }
@@ -136,7 +137,7 @@
          if (this.entity instanceof EntityLiving) {
              EntityLiving entityliving = (EntityLiving) this.entity;
              Iterator iterator = entityliving.getActiveEffects().iterator();
-@@ -321,6 +366,11 @@
+@@ -350,6 +395,11 @@
              Set<AttributeModifiable> set = ((EntityLiving) this.entity).getAttributes().getDirtyAttributes();
  
              if (!set.isEmpty()) {

@@ -184,6 +184,7 @@ public final class CraftItemFactory implements ItemFactory {
         case SKELETON_HORSE_SPAWN_EGG:
         case SKELETON_SPAWN_EGG:
         case SLIME_SPAWN_EGG:
+        case SNIFFER_SPAWN_EGG:
         case SNOW_GOLEM_SPAWN_EGG:
         case SPIDER_SPAWN_EGG:
         case SQUID_SPAWN_EGG:
@@ -230,6 +231,10 @@ public final class CraftItemFactory implements ItemFactory {
         case BIRCH_SIGN:
         case BIRCH_WALL_HANGING_SIGN:
         case BIRCH_WALL_SIGN:
+        case CHERRY_HANGING_SIGN:
+        case CHERRY_SIGN:
+        case CHERRY_WALL_HANGING_SIGN:
+        case CHERRY_WALL_SIGN:
         case CRIMSON_HANGING_SIGN:
         case CRIMSON_SIGN:
         case CRIMSON_WALL_HANGING_SIGN:
@@ -302,6 +307,8 @@ public final class CraftItemFactory implements ItemFactory {
         case SCULK_SHRIEKER:
         case SCULK_SENSOR:
         case CHISELED_BOOKSHELF:
+        case DECORATED_POT:
+        case SUSPICIOUS_SAND:
             return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);

@@ -216,7 +216,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public InetSocketAddress getAddress() {
         if (getHandle().connection == null) return null;
 
-        SocketAddress addr = getHandle().connection.connection.getRemoteAddress();
+        SocketAddress addr = getHandle().connection.getRemoteAddress();
         if (addr instanceof InetSocketAddress) {
             return (InetSocketAddress) addr;
         } else {
@@ -842,20 +842,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void addCustomChatCompletions(Collection<String> completions) {
-        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.a.ADD);
+        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.Action.ADD);
     }
 
     @Override
     public void removeCustomChatCompletions(Collection<String> completions) {
-        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.a.REMOVE);
+        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.Action.REMOVE);
     }
 
     @Override
     public void setCustomChatCompletions(Collection<String> completions) {
-        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.a.SET);
+        this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.Action.SET);
     }
 
-    private void sendCustomChatCompletionPacket(Collection<String> completions, ClientboundCustomChatCompletionsPacket.a action) { // PAIL rename Action
+    private void sendCustomChatCompletionPacket(Collection<String> completions, ClientboundCustomChatCompletionsPacket.Action action) {
         if (getHandle().connection == null) return;
 
         ClientboundCustomChatCompletionsPacket packet = new ClientboundCustomChatCompletionsPacket(action, new ArrayList<>(completions));

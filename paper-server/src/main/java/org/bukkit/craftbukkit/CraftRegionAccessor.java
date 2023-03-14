@@ -10,8 +10,6 @@ import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
@@ -81,6 +79,7 @@ import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
+import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Camel;
 import org.bukkit.entity.Cat;
@@ -92,6 +91,7 @@ import org.bukkit.entity.Cod;
 import org.bukkit.entity.ComplexLivingEntity;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.Creeper;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Dolphin;
 import org.bukkit.entity.Donkey;
 import org.bukkit.entity.DragonFireball;
@@ -127,7 +127,9 @@ import org.bukkit.entity.Hoglin;
 import org.bukkit.entity.Husk;
 import org.bukkit.entity.Illager;
 import org.bukkit.entity.Illusioner;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.IronGolem;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.LeashHitch;
 import org.bukkit.entity.LightningStrike;
@@ -165,6 +167,7 @@ import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.SkeletonHorse;
 import org.bukkit.entity.Slime;
 import org.bukkit.entity.SmallFireball;
+import org.bukkit.entity.Sniffer;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.Snowman;
 import org.bukkit.entity.SpectralArrow;
@@ -176,6 +179,7 @@ import org.bukkit.entity.Strider;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.Tadpole;
 import org.bukkit.entity.Tameable;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
@@ -396,6 +400,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             case TALL_MANGROVE:
                 gen = TreeFeatures.TALL_MANGROVE;
                 break;
+            case CHERRY:
+                gen = TreeFeatures.CHERRY;
+                break;
             case TREE:
             default:
                 gen = TreeFeatures.OAK;
@@ -579,7 +586,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             }
             entity.moveTo(x, y, z, yaw, pitch);
         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
-            BlockPosition pos = new BlockPosition(x, y, z);
+            BlockPosition pos = BlockPosition.containing(x, y, z);
             entity = EntityFallingBlock.fall(world, pos, getHandle().getBlockState(pos));
         } else if (Projectile.class.isAssignableFrom(clazz)) {
             if (Snowball.class.isAssignableFrom(clazz)) {
@@ -856,6 +863,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 entity = EntityTypes.FROG.create(world);
             } else if (Warden.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.WARDEN.create(world);
+            } else if (Sniffer.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.SNIFFER.create(world);
             }
 
             if (entity != null) {
@@ -865,7 +874,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         } else if (Hanging.class.isAssignableFrom(clazz)) {
             if (LeashHitch.class.isAssignableFrom(clazz)) {
                 // SPIGOT-5732: LeashHitch has no direction and is always centered at a block
-                entity = new EntityLeash(world, new BlockPosition(x, y, z));
+                entity = new EntityLeash(world, BlockPosition.containing(x, y, z));
             } else {
                 BlockFace face = BlockFace.SELF;
                 BlockFace[] faces = new BlockFace[]{BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH};
@@ -879,7 +888,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                     faces = new BlockFace[]{BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH, BlockFace.UP, BlockFace.DOWN};
                 }
 
-                final BlockPosition pos = new BlockPosition(x, y, z);
+                final BlockPosition pos = BlockPosition.containing(x, y, z);
                 for (BlockFace dir : faces) {
                     IBlockData nmsBlock = getHandle().getBlockState(pos.relative(CraftBlock.blockFaceToNotch(dir)));
                     if (nmsBlock.getMaterial().isSolid() || BlockDiodeAbstract.isDiode(nmsBlock)) {
@@ -920,9 +929,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                     }
                 } else if (ItemFrame.class.isAssignableFrom(clazz)) {
                     if (GlowItemFrame.class.isAssignableFrom(clazz)) {
-                        entity = new net.minecraft.world.entity.decoration.GlowItemFrame(world, new BlockPosition(x, y, z), dir);
+                        entity = new net.minecraft.world.entity.decoration.GlowItemFrame(world, BlockPosition.containing(x, y, z), dir);
                     } else {
-                        entity = new EntityItemFrame(world, new BlockPosition(x, y, z), dir);
+                        entity = new EntityItemFrame(world, BlockPosition.containing(x, y, z), dir);
                     }
                 }
             }
@@ -940,6 +949,21 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         } else if (Marker.class.isAssignableFrom(clazz)) {
             entity = EntityTypes.MARKER.create(world);
             entity.setPos(x, y, z);
+        } else if (Interaction.class.isAssignableFrom(clazz)) {
+            entity = EntityTypes.INTERACTION.create(world);
+            entity.setPos(x, y, z);
+        } else if (Display.class.isAssignableFrom(clazz)) {
+            if (BlockDisplay.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.BLOCK_DISPLAY.create(world);
+            } else if (ItemDisplay.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.ITEM_DISPLAY.create(world);
+            } else if (TextDisplay.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.TEXT_DISPLAY.create(world);
+            }
+
+            if (entity != null) {
+                entity.setPos(x, y, z);
+            }
         }
 
         if (entity != null) {

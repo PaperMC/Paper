@@ -7,7 +7,6 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.core.BlockPosition;
 import net.minecraft.core.Position;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
@@ -15,8 +14,7 @@ import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.PlayerChunkMap;
 import net.minecraft.server.level.WorldServer;
-import net.minecraft.sounds.SoundEffect;
-import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
 import net.minecraft.world.entity.EntityCreature;
@@ -26,6 +24,7 @@ import net.minecraft.world.entity.EntityLightning;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTameableAnimal;
 import net.minecraft.world.entity.GlowSquid;
+import net.minecraft.world.entity.Interaction;
 import net.minecraft.world.entity.Marker;
 import net.minecraft.world.entity.ambient.EntityAmbient;
 import net.minecraft.world.entity.ambient.EntityBat;
@@ -71,6 +70,7 @@ import net.minecraft.world.entity.animal.horse.EntityHorseSkeleton;
 import net.minecraft.world.entity.animal.horse.EntityHorseZombie;
 import net.minecraft.world.entity.animal.horse.EntityLlama;
 import net.minecraft.world.entity.animal.horse.EntityLlamaTrader;
+import net.minecraft.world.entity.animal.sniffer.Sniffer;
 import net.minecraft.world.entity.boss.EntityComplexPart;
 import net.minecraft.world.entity.boss.enderdragon.EntityEnderCrystal;
 import net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon;
@@ -273,6 +273,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     else if (entity instanceof Axolotl) { return new CraftAxolotl(server, (Axolotl) entity); }
                     else if (entity instanceof Goat) { return new CraftGoat(server, (Goat) entity); }
                     else if (entity instanceof Frog) { return new CraftFrog(server, (Frog) entity); }
+                    else if (entity instanceof Sniffer) { return new CraftSniffer(server, (Sniffer) entity); }
                     else  { return new CraftAnimals(server, (EntityAnimal) entity); }
                 }
                 // Monsters
@@ -422,6 +423,13 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         else if (entity instanceof EntityEvokerFangs) { return new CraftEvokerFangs(server, (EntityEvokerFangs) entity); }
         else if (entity instanceof EntityLlamaSpit) { return new CraftLlamaSpit(server, (EntityLlamaSpit) entity); }
         else if (entity instanceof Marker) { return new CraftMarker(server, (Marker) entity); }
+        else if (entity instanceof Interaction) { return new CraftInteraction(server, (Interaction) entity); }
+        else if (entity instanceof Display) {
+            if (entity instanceof Display.BlockDisplay) { return new CraftBlockDisplay(server, (Display.BlockDisplay) entity); }
+            else if (entity instanceof Display.ItemDisplay) { return new CraftItemDisplay(server, (Display.ItemDisplay) entity); }
+            else if (entity instanceof Display.TextDisplay) { return new CraftTextDisplay(server, (Display.TextDisplay) entity); }
+            else { return new CraftDisplay(server, (Display) entity); }
+        }
         // CHECKSTYLE:ON
 
         throw new AssertionError("Unknown entity " + (entity == null ? null : entity.getClass()));
@@ -1012,7 +1020,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isInvulnerable() {
-        return getHandle().isInvulnerableTo(DamageSource.GENERIC);
+        return getHandle().isInvulnerableTo(getHandle().damageSources().generic());
     }
 
     @Override

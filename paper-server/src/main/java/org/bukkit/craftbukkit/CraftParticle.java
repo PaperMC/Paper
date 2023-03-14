@@ -132,6 +132,9 @@ public enum CraftParticle {
     SCULK_CHARGE("sculk_charge"),
     SCULK_CHARGE_POP("sculk_charge_pop"),
     SHRIEK("shriek"),
+    DRIPPING_CHERRY_LEAVES("dripping_cherry_leaves"),
+    FALLING_CHERRY_LEAVES("falling_cherry_leaves"),
+    LANDING_CHERRY_LEAVES("landing_cherry_leaves"),
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK("block"),
     LEGACY_BLOCK_DUST("block"),

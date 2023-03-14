@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/player/EntityHuman.java
 +++ b/net/minecraft/world/entity/player/EntityHuman.java
-@@ -115,6 +115,20 @@
+@@ -117,6 +117,20 @@
  import net.minecraft.world.scores.ScoreboardTeamBase;
  import org.slf4j.Logger;
  
@@ -21,7 +21,7 @@
  public abstract class EntityHuman extends EntityLiving {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -128,7 +142,8 @@
+@@ -130,7 +144,8 @@
      public static final float SWIMMING_BB_HEIGHT = 0.6F;
      public static final float DEFAULT_EYE_HEIGHT = 1.62F;
      public static final EntitySize STANDING_DIMENSIONS = EntitySize.scalable(0.6F, 1.8F);
@@ -31,7 +31,7 @@
      private static final int FLY_ACHIEVEMENT_SPEED = 25;
      private static final DataWatcherObject<Float> DATA_PLAYER_ABSORPTION_ID = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.FLOAT);
      private static final DataWatcherObject<Integer> DATA_SCORE_ID = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.INT);
-@@ -138,10 +153,10 @@
+@@ -140,10 +155,10 @@
      protected static final DataWatcherObject<NBTTagCompound> DATA_SHOULDER_RIGHT = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.COMPOUND_TAG);
      private long timeEntitySatOnShoulder;
      private final PlayerInventory inventory = new PlayerInventory(this);
@@ -44,18 +44,9 @@
      protected int jumpTriggerTime;
      public float oBob;
      public float bob;
-@@ -158,7 +173,7 @@
-     public int experienceLevel;
-     public int totalExperience;
-     public float experienceProgress;
--    protected int enchantmentSeed;
-+    public int enchantmentSeed;
-     protected final float defaultFlySpeed = 0.02F;
-     private int lastLevelUpTime;
-     private final GameProfile gameProfile;
-@@ -169,6 +184,16 @@
-     @Nullable
+@@ -172,6 +187,16 @@
      public EntityFishingHook fishing;
+     protected float hurtDir;
  
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
@@ -70,7 +61,7 @@
      public EntityHuman(World world, BlockPosition blockposition, float f, GameProfile gameprofile) {
          super(EntityTypes.PLAYER, world);
          this.lastItemInMainHand = ItemStack.EMPTY;
-@@ -308,7 +333,7 @@
+@@ -311,7 +336,7 @@
          ItemStack itemstack = this.getItemBySlot(EnumItemSlot.HEAD);
  
          if (itemstack.is(Items.TURTLE_HELMET) && !this.isEyeInFluid(TagsFluid.WATER)) {
@@ -79,7 +70,7 @@
          }
  
      }
-@@ -502,7 +527,8 @@
+@@ -505,7 +530,8 @@
  
          if (this.level.getDifficulty() == EnumDifficulty.PEACEFUL && this.level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
              if (this.getHealth() < this.getMaxHealth() && this.tickCount % 20 == 0) {
@@ -89,7 +80,7 @@
              }
  
              if (this.foodData.needsFood() && this.tickCount % 10 == 0) {
-@@ -666,6 +692,13 @@
+@@ -664,6 +690,13 @@
  
      @Nullable
      public EntityItem drop(ItemStack itemstack, boolean flag, boolean flag1) {
@@ -103,7 +94,7 @@
          if (itemstack.isEmpty()) {
              return null;
          } else {
-@@ -700,6 +733,33 @@
+@@ -698,6 +731,33 @@
                  entityitem.setDeltaMovement((double) (-f3 * f2 * 0.3F) + Math.cos((double) f5) * (double) f6, (double) (-f1 * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (f4 * f2 * 0.3F) + Math.sin((double) f5) * (double) f6);
              }
  
@@ -137,7 +128,7 @@
              return entityitem;
          }
      }
-@@ -790,7 +850,7 @@
+@@ -788,7 +848,7 @@
          }
  
          if (nbttagcompound.contains("LastDeathLocation", 10)) {
@@ -146,7 +137,7 @@
              Logger logger = EntityHuman.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -823,7 +883,7 @@
+@@ -821,7 +881,7 @@
          }
  
          this.getLastDeathLocation().flatMap((globalpos) -> {
@@ -155,7 +146,7 @@
              Logger logger = EntityHuman.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -850,12 +910,12 @@
+@@ -848,12 +908,12 @@
                  return false;
              } else {
                  if (!this.level.isClientSide) {
@@ -170,7 +161,7 @@
                      }
  
                      if (this.level.getDifficulty() == EnumDifficulty.EASY) {
-@@ -867,7 +927,13 @@
+@@ -865,7 +925,13 @@
                      }
                  }
  
@@ -185,7 +176,7 @@
              }
          }
      }
-@@ -887,10 +953,29 @@
+@@ -885,10 +951,29 @@
      }
  
      public boolean canHarmPlayer(EntityHuman entityhuman) {
@@ -218,7 +209,7 @@
      }
  
      @Override
-@@ -932,8 +1017,13 @@
+@@ -930,8 +1015,13 @@
          }
      }
  
@@ -233,7 +224,7 @@
          if (!this.isInvulnerableTo(damagesource)) {
              f = this.getDamageAfterArmorAbsorb(damagesource, f);
              f = this.getDamageAfterMagicAbsorb(damagesource, f);
-@@ -948,7 +1038,7 @@
+@@ -946,7 +1036,7 @@
              }
  
              if (f != 0.0F) {
@@ -241,8 +232,8 @@
 +                this.causeFoodExhaustion(damagesource.getFoodExhaustion(), EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
                  float f3 = this.getHealth();
  
-                 this.setHealth(this.getHealth() - f);
-@@ -959,6 +1049,7 @@
+                 this.getCombatTracker().recordDamage(damagesource, f3, f);
+@@ -957,6 +1047,7 @@
  
              }
          }
@@ -250,7 +241,7 @@
      }
  
      @Override
-@@ -1122,7 +1213,7 @@
+@@ -1121,7 +1212,7 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
@@ -259,7 +250,7 @@
                  if (f > 0.0F || f1 > 0.0F) {
                      boolean flag = f2 > 0.9F;
                      boolean flag1 = false;
-@@ -1161,8 +1252,15 @@
+@@ -1160,8 +1251,15 @@
                      if (entity instanceof EntityLiving) {
                          f3 = ((EntityLiving) entity).getHealth();
                          if (j > 0 && !entity.isOnFire()) {
@@ -277,20 +268,20 @@
                          }
                      }
  
-@@ -1190,8 +1288,11 @@
+@@ -1189,8 +1287,11 @@
                                  EntityLiving entityliving = (EntityLiving) iterator.next();
  
                                  if (entityliving != this && entityliving != entity && !this.isAlliedTo((Entity) entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
 +                                    // CraftBukkit start - Only apply knockback if the damage hits
-+                                    if (entityliving.hurt(DamageSource.playerAttack(this).sweep(), f4)) {
++                                    if (entityliving.hurt(this.damageSources().playerAttack(this).sweep(), f4)) {
                                      entityliving.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
--                                    entityliving.hurt(DamageSource.playerAttack(this), f4);
+-                                    entityliving.hurt(this.damageSources().playerAttack(this), f4);
 +                                    }
 +                                    // CraftBukkit end
                                  }
                              }
  
-@@ -1200,9 +1301,26 @@
+@@ -1199,9 +1300,26 @@
                          }
  
                          if (entity instanceof EntityPlayer && entity.hurtMarked) {
@@ -317,7 +308,7 @@
                          }
  
                          if (flag2) {
-@@ -1247,7 +1365,14 @@
+@@ -1246,7 +1364,14 @@
  
                              this.awardStat(StatisticList.DAMAGE_DEALT, Math.round(f5 * 10.0F));
                              if (j > 0) {
@@ -333,7 +324,7 @@
                              }
  
                              if (this.level instanceof WorldServer && f5 > 2.0F) {
-@@ -1257,12 +1382,17 @@
+@@ -1256,12 +1381,17 @@
                              }
                          }
  
@@ -352,7 +343,7 @@
                      }
                  }
  
-@@ -1339,6 +1469,12 @@
+@@ -1338,6 +1468,12 @@
      }
  
      public Either<EntityHuman.EnumBedResult, Unit> startSleepInBed(BlockPosition blockposition) {
@@ -365,7 +356,7 @@
          this.startSleeping(blockposition);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1423,9 +1559,9 @@
+@@ -1422,9 +1558,9 @@
          super.jumpFromGround();
          this.awardStat(StatisticList.JUMP);
          if (this.isSprinting()) {
@@ -377,9 +368,9 @@
          }
  
      }
-@@ -1459,7 +1595,11 @@
+@@ -1454,7 +1590,11 @@
+ 
              this.setDeltaMovement(vec3d2.x, d3 * 0.6D, vec3d2.z);
-             this.flyingSpeed = f;
              this.resetFallDistance();
 -            this.setSharedFlag(7, false);
 +            // CraftBukkit start
@@ -390,7 +381,7 @@
          } else {
              super.travel(vec3d);
          }
-@@ -1494,19 +1634,19 @@
+@@ -1489,19 +1629,19 @@
                  i = Math.round((float) Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
                  if (i > 0) {
                      this.awardStat(StatisticList.SWIM_ONE_CM, i);
@@ -413,7 +404,7 @@
                  }
              } else if (this.onClimbable()) {
                  if (d1 > 0.0D) {
-@@ -1517,13 +1657,13 @@
+@@ -1512,13 +1652,13 @@
                  if (i > 0) {
                      if (this.isSprinting()) {
                          this.awardStat(StatisticList.SPRINT_ONE_CM, i);
@@ -430,7 +421,7 @@
                      }
                  }
              } else if (this.isFallFlying()) {
-@@ -1589,12 +1729,24 @@
+@@ -1584,12 +1724,24 @@
      }
  
      public void startFallFlying() {
@@ -456,7 +447,7 @@
      }
  
      @Override
-@@ -1685,10 +1837,21 @@
+@@ -1680,10 +1832,21 @@
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
  
@@ -479,7 +470,7 @@
              }
  
          }
-@@ -1774,13 +1937,20 @@
+@@ -1769,13 +1932,20 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -503,7 +494,7 @@
          }
  
      }
-@@ -1819,26 +1989,31 @@
+@@ -1814,26 +1984,31 @@
  
      protected void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level.getGameTime()) {

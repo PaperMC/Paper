@@ -68,12 +68,12 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public void setOwner(UUID uuid) {
-        item.setOwner(uuid);
+        item.setTarget(uuid);
     }
 
     @Override
     public UUID getOwner() {
-        return item.getOwner();
+        return item.target;
     }
 
     @Override
@@ -83,7 +83,7 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public UUID getThrower() {
-        return item.getThrower();
+        return item.thrower;
     }
 
     @Override

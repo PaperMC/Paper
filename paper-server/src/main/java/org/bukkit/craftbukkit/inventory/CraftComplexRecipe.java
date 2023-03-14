@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import net.minecraft.core.IRegistryCustom;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.IRecipeComplex;
 import org.bukkit.NamespacedKey;
@@ -17,7 +18,7 @@ public class CraftComplexRecipe implements CraftRecipe, ComplexRecipe {
 
     @Override
     public ItemStack getResult() {
-        return CraftItemStack.asCraftMirror(recipe.getResultItem());
+        return CraftItemStack.asCraftMirror(recipe.getResultItem(IRegistryCustom.EMPTY));
     }
 
     @Override

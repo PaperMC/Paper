@@ -11,29 +11,29 @@
  public class EntitySnowman extends EntityGolem implements IShearable, IRangedEntity {
  
      private static final DataWatcherObject<Byte> DATA_PUMPKIN_ID = DataWatcher.defineId(EntitySnowman.class, DataWatcherRegistry.BYTE);
-@@ -103,7 +107,7 @@
-             BiomeBase biomebase = (BiomeBase) this.level.getBiome(blockposition).value();
- 
-             if (biomebase.shouldSnowGolemBurn(blockposition)) {
--                this.hurt(DamageSource.ON_FIRE, 1.0F);
-+                this.hurt(CraftEventFactory.MELTING, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
+@@ -97,7 +101,7 @@
+         super.aiStep();
+         if (!this.level.isClientSide) {
+             if (this.level.getBiome(this.blockPosition()).is(BiomeTags.SNOW_GOLEM_MELTS)) {
+-                this.hurt(this.damageSources().onFire(), 1.0F);
++                this.hurt(this.damageSources().melting, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
              }
  
              if (!this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-@@ -119,7 +123,11 @@
-                 BlockPosition blockposition1 = new BlockPosition(i, j, k);
+@@ -113,7 +117,11 @@
+                 BlockPosition blockposition = new BlockPosition(j, k, l);
  
-                 if (this.level.getBlockState(blockposition1).isAir() && iblockdata.canSurvive(this.level, blockposition1)) {
--                    this.level.setBlockAndUpdate(blockposition1, iblockdata);
+                 if (this.level.getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level, blockposition)) {
+-                    this.level.setBlockAndUpdate(blockposition, iblockdata);
 +                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level, blockposition1, iblockdata, this)) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level, blockposition, iblockdata, this)) {
 +                        continue;
 +                    }
 +                    // CraftBukkit end
-                     this.level.gameEvent(GameEvent.BLOCK_PLACE, blockposition1, GameEvent.a.of(this, iblockdata));
+                     this.level.gameEvent(GameEvent.BLOCK_PLACE, blockposition, GameEvent.a.of(this, iblockdata));
                  }
              }
-@@ -151,6 +159,11 @@
+@@ -145,6 +153,11 @@
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
  
          if (itemstack.is(Items.SHEARS) && this.readyForShearing()) {
@@ -45,7 +45,7 @@
              this.shear(SoundCategory.PLAYERS);
              this.gameEvent(GameEvent.SHEAR, entityhuman);
              if (!this.level.isClientSide) {
-@@ -170,7 +183,9 @@
+@@ -164,7 +177,9 @@
          this.level.playSound((EntityHuman) null, (Entity) this, SoundEffects.SNOW_GOLEM_SHEAR, soundcategory, 1.0F, 1.0F);
          if (!this.level.isClientSide()) {
              this.setPumpkin(false);

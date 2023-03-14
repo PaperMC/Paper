@@ -70,7 +70,7 @@ public class CraftAllay extends CraftCreature implements org.bukkit.entity.Allay
     public void startDancing(Location location) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(location.getBlock().getType().equals(Material.JUKEBOX), "The Block in the Location need to be a JukeBox");
-        getHandle().setJukeboxPlaying(new BlockPosition(location.getX(), location.getY(), location.getZ()), true);
+        getHandle().setJukeboxPlaying(BlockPosition.containing(location.getX(), location.getY(), location.getZ()), true);
     }
 
     @Override
