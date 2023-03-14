@@ -7,7 +7,7 @@ Subject: [PATCH] More Teleport API
 public net.minecraft.server.network.ServerGamePacketListenerImpl internalTeleport(DDDFFLjava/util/Set;Z)V
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 3c0378e8b0f1cb56331b9e89db8f530f3a0dcf64..c81ae9fd083c255c0964c344b3c4ad1dc8ddba7b 100644
+index 3c0378e8b0f1cb56331b9e89db8f530f3a0dcf64..bcbea0fa4fc277f08d90eea5ea4411516362e21e 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1708,11 +1708,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -17,10 +17,10 @@ index 3c0378e8b0f1cb56331b9e89db8f530f3a0dcf64..c81ae9fd083c255c0964c344b3c4ad1d
 -        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause);
 +        // Paper start - Teleport API
 +        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
-+        for (net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument relativeArgument : set) {
++        for (RelativeMovement relativeArgument : set) {
 +            relativeFlags.add(org.bukkit.craftbukkit.entity.CraftPlayer.toApiRelativeFlag(relativeArgument));
 +        }
-+        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, flag, java.util.Set.copyOf(relativeFlags));
++        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, java.util.Set.copyOf(relativeFlags));
 +        // Paper end
          this.cserver.getPluginManager().callEvent(event);
  
@@ -74,7 +74,7 @@ index 7df1eebce5b62214943e55314e9ec98f056fa330..2aee8aacd50431c18ff28af678348ec2
          // Let the server handle cross world teleports
          if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 63f383fec691d7f6160ec3d8d675c8db0aad1bcd..e84614aa646980da09f21e757e0ce0ae8fc89f9e 100644
+index 8e16fc9263cfd43bb85d368b0a6f36624a6ebf91..0a32183038420823811d8a5ae5eadeef73304296 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1231,13 +1231,100 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
