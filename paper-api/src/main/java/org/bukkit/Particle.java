@@ -123,6 +123,9 @@ public enum Particle {
     SCULK_CHARGE(Float.class),
     SCULK_CHARGE_POP,
     SHRIEK(Integer.class),
+    DRIPPING_CHERRY_LEAVES,
+    FALLING_CHERRY_LEAVES,
+    LANDING_CHERRY_LEAVES,
     /**
      * Uses {@link BlockData} as DataType
      */

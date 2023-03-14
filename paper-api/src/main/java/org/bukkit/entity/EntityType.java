@@ -279,6 +279,11 @@ public enum EntityType implements Keyed, Translatable {
     TADPOLE("tadpole", Tadpole.class, -1),
     WARDEN("warden", Warden.class, -1),
     CAMEL("camel", Camel.class, -1),
+    BLOCK_DISPLAY("block_display", BlockDisplay.class, -1),
+    INTERACTION("interaction", Interaction.class, -1),
+    ITEM_DISPLAY("item_display", ItemDisplay.class, -1),
+    SNIFFER("sniffer", Sniffer.class, -1),
+    TEXT_DISPLAY("text_display", TextDisplay.class, -1),
     /**
      * A fishing line and bobber.
      */

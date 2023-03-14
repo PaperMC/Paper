@@ -202,6 +202,10 @@ public final class GameRule<T> {
      * end portal effects will propagate across the entire server.
      */
     public static final GameRule<Boolean> GLOBAL_SOUND_EVENTS = new GameRule<>("globalSoundEvents", Boolean.class);
+    /**
+     * Whether vines will spread.
+     */
+    public static final GameRule<Boolean> DO_VINES_SPREAD = new GameRule<>("doVinesSpread", Boolean.class);
 
     // Numerical rules
     /**
@@ -234,6 +238,11 @@ public final class GameRule<T> {
      * single tick from a single chain.
      */
     public static final GameRule<Integer> MAX_COMMAND_CHAIN_LENGTH = new GameRule<>("maxCommandChainLength", Integer.class);
+
+    /**
+     * Determines the maximum number of blocks which a command can modify.
+     */
+    public static final GameRule<Integer> COMMAND_MODIFICATION_BLOCK_LIMIT = new GameRule<>("commandModificationBlockLimit", Integer.class);
 
     /**
      * The percentage of online players which must be sleeping for the night to

@@ -195,7 +195,8 @@ public enum EnchantmentTarget {
                     || item.equals(Material.PIGLIN_HEAD)
                     || item.equals(Material.PLAYER_HEAD)
                     || item.equals(Material.CREEPER_HEAD)
-                    || item.equals(Material.DRAGON_HEAD);
+                    || item.equals(Material.DRAGON_HEAD)
+                    || item.equals(Material.SHIELD);
         }
     },
 

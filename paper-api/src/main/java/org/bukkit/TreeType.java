@@ -93,4 +93,8 @@ public enum TreeType {
      * Tall mangrove tree
      */
     TALL_MANGROVE,
+    /**
+     * Cherry tree
+     */
+    CHERRY,
 }

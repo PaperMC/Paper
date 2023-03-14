@@ -388,6 +388,7 @@ public abstract class InventoryView {
                 }
                 break;
             case LOOM:
+            case SMITHING_NEW:
                 if (slot == 3) {
                     type = InventoryType.SlotType.RESULT;
                 } else {

@@ -45,9 +45,11 @@ public final class GameEvent implements Keyed {
     @Deprecated
     public static final GameEvent ENTITY_DAMAGED = getEvent("entity_damage");
     public static final GameEvent ENTITY_DIE = getEvent("entity_die");
+    public static final GameEvent ENTITY_DISMOUNT = getEvent("entity_dismount");
     @Deprecated
     public static final GameEvent ENTITY_DYING = getEvent("entity_die");
     public static final GameEvent ENTITY_INTERACT = getEvent("entity_interact");
+    public static final GameEvent ENTITY_MOUNT = getEvent("entity_mount");
     @Deprecated
     public static final GameEvent ENTITY_KILLED = getEvent("entity_die");
     public static final GameEvent ENTITY_PLACE = getEvent("entity_place");

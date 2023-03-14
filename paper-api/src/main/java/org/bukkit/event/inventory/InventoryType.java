@@ -138,6 +138,13 @@ public enum InventoryType {
      * Pseudo chiseled bookshelf inventory, with 6 slots of undefined type.
      */
     CHISELED_BOOKSHELF(6, "Chiseled Bookshelf"),
+    /**
+     * The new smithing inventory, with 3 CRAFTING slots and 1 RESULT slot.
+     *
+     * @deprecated draft, experimental 1.20 API
+     */
+    @Deprecated
+    SMITHING_NEW(4, "Upgrade Gear"),
     ;
 
     private final int size;
