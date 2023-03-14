@@ -8,7 +8,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  }
              }
  
@@ -16,15 +16,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (flag1) {
                  if (flag) {
                      this.level.broadcastEntityEvent(this, (byte) 29);
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
-                         b0 = 2;
-                     }
- 
+                 } else {
 +                    if (!knockbackCancelled) // Paper - Disable explosion knockback
-                     this.level.broadcastEntityEvent(this, b0);
+                     this.level.broadcastDamageEvent(this, source);
                  }
  
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  }
              }
  
@@ -37,19 +34,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -0,0 +0,0 @@ public class Explosion {
-                         double d14 = d13;
- 
                          if (entity instanceof LivingEntity) {
--                            d14 = ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13);
-+                            d14 = entity instanceof Player && level.paperConfig().environment.disableExplosionKnockback ? 0 : ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13); // Paper - Disable explosion knockback
-                         }
+                             LivingEntity entityliving = (LivingEntity) entity;
  
-                         entity.setDeltaMovement(entity.getDeltaMovement().add(d8 * d14, d9 * d14, d10 * d14));
+-                            d14 = ProtectionEnchantment.getExplosionKnockbackAfterDampener(entityliving, d13);
++                            d14 = entity instanceof Player && level.paperConfig().environment.disableExplosionKnockback ? 0 : ProtectionEnchantment.getExplosionKnockbackAfterDampener(entityliving, d13); // Paper - disable explosion knockback
+                         } else {
+                             d14 = d13;
+                         }
+@@ -0,0 +0,0 @@ public class Explosion {
                          if (entity instanceof Player) {
                              Player entityhuman = (Player) entity;
  
 -                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying)) {
 +                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying) && !level.paperConfig().environment.disableExplosionKnockback) { // Paper - Disable explosion knockback
-                                 this.hitPlayers.put(entityhuman, new Vec3(d8 * d13, d9 * d13, d10 * d13));
+                                 this.hitPlayers.put(entityhuman, vec3d1);
                              }
                          }
