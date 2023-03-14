@@ -74,7 +74,7 @@ index 7df1eebce5b62214943e55314e9ec98f056fa330..2aee8aacd50431c18ff28af678348ec2
          // Let the server handle cross world teleports
          if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 63f383fec691d7f6160ec3d8d675c8db0aad1bcd..b6efec1f72b038dfdbe8f3676006d2eed864dffb 100644
+index 63f383fec691d7f6160ec3d8d675c8db0aad1bcd..e84614aa646980da09f21e757e0ce0ae8fc89f9e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1231,13 +1231,100 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -123,17 +123,17 @@ index 63f383fec691d7f6160ec3d8d675c8db0aad1bcd..b6efec1f72b038dfdbe8f3676006d2ee
 +        };
 +    }
 +
-+    public static net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument toNmsRelativeFlag(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
++    public static net.minecraft.world.entity.RelativeMovement toNmsRelativeFlag(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
 +        return switch (apiFlag) {
-+            case X -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.X;
-+            case Y -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Y;
-+            case Z -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Z;
-+            case PITCH -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.X_ROT;
-+            case YAW -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Y_ROT;
++            case X -> net.minecraft.world.entity.RelativeMovement.X;
++            case Y -> net.minecraft.world.entity.RelativeMovement.Y;
++            case Z -> net.minecraft.world.entity.RelativeMovement.Z;
++            case PITCH -> net.minecraft.world.entity.RelativeMovement.X_ROT;
++            case YAW -> net.minecraft.world.entity.RelativeMovement.Y_ROT;
 +        };
 +    }
 +
-+    public static io.papermc.paper.entity.TeleportFlag.Relative toApiRelativeFlag(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument nmsFlag) {
++    public static io.papermc.paper.entity.TeleportFlag.Relative toApiRelativeFlag(net.minecraft.world.entity.RelativeMovement nmsFlag) {
 +        return switch (nmsFlag) {
 +            case X -> io.papermc.paper.entity.TeleportFlag.Relative.X;
 +            case Y -> io.papermc.paper.entity.TeleportFlag.Relative.Y;
@@ -145,13 +145,13 @@ index 63f383fec691d7f6160ec3d8d675c8db0aad1bcd..b6efec1f72b038dfdbe8f3676006d2ee
 +
 +    @Override
 +    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-+        java.util.Set<net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument> relativeArguments;
++        java.util.Set<net.minecraft.world.entity.RelativeMovement> relativeArguments;
 +        java.util.Set<io.papermc.paper.entity.TeleportFlag> allFlags;
 +        if (flags.length == 0) {
 +            relativeArguments = Set.of();
 +            allFlags = Set.of();
 +        } else {
-+            relativeArguments = java.util.EnumSet.noneOf(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.class);
++            relativeArguments = java.util.EnumSet.noneOf(net.minecraft.world.entity.RelativeMovement.class);
 +            allFlags = new HashSet<>();
 +            for (io.papermc.paper.entity.TeleportFlag flag : flags) {
 +                if (flag instanceof io.papermc.paper.entity.TeleportFlag.Relative relativeTeleportFlag) {
@@ -209,7 +209,7 @@ index 63f383fec691d7f6160ec3d8d675c8db0aad1bcd..b6efec1f72b038dfdbe8f3676006d2ee
          // Check if the fromWorld and toWorld are the same.
          if (fromWorld == toWorld) {
 -            entity.connection.teleport(to);
-+            entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), relativeArguments, dismount); // Paper - Teleport API
++            entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), relativeArguments); // Paper - Teleport API
          } else {
              server.getHandle().respawn(entity, toWorld, true, to, !toWorld.paperConfig().environment.disableTeleportationSuffocationCheck); // Paper
          }
