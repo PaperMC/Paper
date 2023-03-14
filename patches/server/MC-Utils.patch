@@ -5446,6 +5446,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static long getEpochMillis() {
+diff --git a/src/main/java/net/minecraft/WorldVersion.java b/src/main/java/net/minecraft/WorldVersion.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/WorldVersion.java
++++ b/src/main/java/net/minecraft/WorldVersion.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.storage.DataVersion;
+ 
+ public interface WorldVersion {
+     DataVersion getDataVersion();
++    // Paper start
++    default int getWorldVersion() {
++        return this.getDataVersion().getVersion();
++    }
++    // Paper end
+ 
+     String getId();
+ 
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
@@ -5495,11 +5511,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
 @@ -0,0 +0,0 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
-                         JvmProfiler.INSTANCE.onPacketSent(k, integer, channelHandlerContext.channel().remoteAddress(), j);
+                         JvmProfiler.INSTANCE.onPacketSent(l, i, channelHandlerContext.channel().remoteAddress(), k);
                      }
                  } catch (Throwable var10) {
--                    LOGGER.error("Error receiving packet {}", integer, var10);
-+                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", integer, packet.isSkippable(), var10); // Paper - Give proper error message
+-                    LOGGER.error("Error receiving packet {}", i, var10);
++                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var10); // Paper - Give proper error message
                      if (packet.isSkippable()) {
                          throw new SkipPacketException(var10);
                      } else {
@@ -5540,7 +5556,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 +        io.papermc.paper.util.CachedLists.reset(); // Paper
          this.profiler.push("tallying");
-         long l = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
+         long j = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              try {
@@ -6526,7 +6542,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
-         // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
+         // IRegistryCustom.Dimension iregistrycustom_dimension = minecraftserver.registryAccess(); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
@@ -6541,7 +6557,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-         this.maxUpStep = 1.0F;
+         this.setMaxUpStep(1.0F);
          this.fudgeSpawnLocation(world);
  
 +        this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
@@ -6642,7 +6658,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
      public boolean collides = true;
      public Set<UUID> collidableExemptions = new HashSet<>();
      public boolean bukkitPickUpLoot;
@@ -6654,7 +6670,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/n
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity {
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
          return this.target;
      }
  

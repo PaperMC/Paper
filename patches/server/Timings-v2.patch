@@ -721,7 +721,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class PacketUtils {
              engine.executeIfPossible(() -> {
                  if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerGamePacketListenerImpl && ((ServerGamePacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
-                 if (listener.getConnection().isConnected()) {
+                 if (listener.isAcceptingMessages()) {
 -                    try {
 +                    co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
 +                    try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
@@ -821,15 +821,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end
          this.profiler.push("tallying");
-         long l = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
+         long j = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         this.frameTimer.logFrameDuration(i1 - i);
+         this.frameTimer.logFrameDuration(k - i);
          this.profiler.pop();
          org.spigotmc.WatchdogThread.tick(); // Spigot
 -        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
 -        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
+     }
+ 
+     private ServerStatus buildServerStatus() {
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void tickChildren(BooleanSupplier shouldKeepTicking) {
@@ -1421,9 +1425,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 +import co.aikar.timings.MinecraftTimings; // Paper
  
- public abstract class LivingEntity extends Entity {
+ public abstract class LivingEntity extends Entity implements Attackable {
  
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
      @Override
      public void tick() {
@@ -1431,7 +1435,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          super.tick();
          this.updatingUsingItem();
          this.updateSwimAmount();
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          }
  
          if (!this.isRemoved()) {
@@ -1441,7 +1445,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          double d0 = this.getX() - this.xo;
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          if (this.isSleeping()) {
              this.setXRot(0.0F);
          }
@@ -1450,7 +1454,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void detectEquipmentUpdates() {
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
          this.setDeltaMovement(d4, d5, d6);
          this.level.getProfiler().push("ai");
@@ -1458,7 +1462,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.isImmobile()) {
              this.jumping = false;
              this.xxa = 0.0F;
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.serverAiStep();
              this.level.getProfiler().pop();
          }
@@ -1466,19 +1470,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.level.getProfiler().pop();
          this.level.getProfiler().push("jump");
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
-         this.updateFallFlying();
-         AABB axisalignedbb = this.getBoundingBox();
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         LivingEntity entityliving = this.getControllingPassenger();
+         Vec3 vec3d1 = new Vec3((double) this.xxa, (double) this.yya, (double) this.zza);
  
 -        SpigotTimings.timerEntityAIMove.startTiming(); // Spigot
-+        // SpigotTimings.timerEntityAIMove.startTiming(); // Spigot // Paper
-         this.travel(new Vec3((double) this.xxa, (double) this.yya, (double) this.zza));
++        //SpigotTimings.timerEntityAIMove.startTiming(); // Spigot // Paper
+         if (entityliving != null && this.isAlive()) {
+             this.travelRidden(entityliving, vec3d1);
+         } else {
+             this.travel(vec3d1);
+         }
 -        SpigotTimings.timerEntityAIMove.stopTiming(); // Spigot
-+        // SpigotTimings.timerEntityAIMove.stopTiming(); // Spigot // Paper
++        //SpigotTimings.timerEntityAIMove.stopTiming(); // Spigot // Paper
+ 
          this.level.getProfiler().pop();
          this.level.getProfiler().push("freezing");
-         boolean flag1 = this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES);
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.checkAutoSpinAttack(axisalignedbb, this.getBoundingBox());
          }
  
@@ -1487,7 +1495,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.timerEntityAICollision.stopTiming(); // Spigot
          this.level.getProfiler().pop();
          if (!this.level.isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
-             this.hurt(DamageSource.DROWN, 1.0F);
+             this.hurt(this.damageSources().drown(), 1.0F);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
@@ -2012,14 +2020,13 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftIconCache.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftIconCache.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftIconCache.java
-@@ -0,0 +0,0 @@ import org.bukkit.util.CachedServerIcon;
- public class CraftIconCache implements CachedServerIcon {
-     public final String value;
- 
-+    public String getData() { return value; } // Paper
-     public CraftIconCache(final String value) {
+@@ -0,0 +0,0 @@ public class CraftIconCache implements CachedServerIcon {
+     public CraftIconCache(final byte[] value) {
          this.value = value;
      }
++
++    public String getData() { return "data:image/png;base64," + new String(java.util.Base64.getEncoder().encode(value), java.nio.charset.StandardCharsets.UTF_8); } // Paper
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java

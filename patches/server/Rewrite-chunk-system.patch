@@ -13471,7 +13471,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static ChunkStatus getStatus(int level) {
          return level < 33 ? ChunkStatus.FULL : ChunkStatus.getStatusAroundFullChunk(level - 33);
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-         return ChunkHolder.FULL_CHUNK_STATUSES[Mth.clamp(33 - distance + 1, (int) 0, ChunkHolder.FULL_CHUNK_STATUSES.length - 1)];
+         return ChunkHolder.FULL_CHUNK_STATUSES[Mth.clamp(33 - distance + 1, 0, ChunkHolder.FULL_CHUNK_STATUSES.length - 1)];
      }
  
 -    public boolean wasAccessibleSinceLastSave() {
@@ -14311,7 +14311,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - replace player loader system
      public void setViewDistance(int watchDistance) {
-         int j = Mth.clamp(watchDistance + 1, (int) 3, (int) 33);
+         int j = Mth.clamp(watchDistance + 1, 3, 33);
  
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              int k = this.viewDistance;
@@ -17286,8 +17286,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                }
 -
 -            });
--            CompoundTag compoundTag = new CompoundTag();
--            compoundTag.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+-            CompoundTag compoundTag = NbtUtils.addCurrentDataVersion(new CompoundTag());
 -            compoundTag.put("Entities", listTag);
 -            writeChunkPos(compoundTag, chunkPos);
 -            this.worker.store(chunkPos, compoundTag).exceptionally((ex) -> {
@@ -17321,6 +17320,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (!force && entities.isEmpty()) {
 +            return null;
 +        }
++
 +        ListTag listTag = new ListTag();
 +        entities.forEach((entity) -> { // diff here: use entities parameter
 +            CompoundTag compoundTag = new CompoundTag();
@@ -17329,10 +17329,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +        });
-+        CompoundTag compoundTag = new CompoundTag();
-+        compoundTag.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
++        CompoundTag compoundTag = NbtUtils.addCurrentDataVersion(new CompoundTag());
 +        compoundTag.put("Entities", listTag);
 +        writeChunkPos(compoundTag, chunkPos);
++        // Paper - remove worker usage
 +
 +        return !force && listTag.isEmpty() ? null : compoundTag;
 +    }
@@ -17347,10 +17347,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    private CompoundTag upgradeChunkTag(CompoundTag chunkNbt) {
 +    public static CompoundTag upgradeChunkTag(CompoundTag chunkNbt) { // Paper - public and static
-         int i = getVersion(chunkNbt);
-         return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY_CHUNK, chunkNbt, i, SharedConstants.getCurrentVersion().getWorldVersion()); // Paper - route to new converter system
+         int i = NbtUtils.getDataVersion(chunkNbt, -1);
+         return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY_CHUNK, chunkNbt, i, net.minecraft.SharedConstants.getCurrentVersion().getWorldVersion()); // Paper - route to new converter system
      }
-@@ -0,0 +0,0 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
  
      @Override
      public void close() throws IOException {
