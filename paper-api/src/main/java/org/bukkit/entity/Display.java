@@ -150,15 +150,19 @@ public interface Display extends Entity {
      * Gets the scoreboard team overridden glow color of this display.
      *
      * @return glow color
+     * @deprecated API subject to change
      */
     @Nullable
+    @Deprecated
     public Color getGlowColorOverride();
 
     /**
      * Sets the scoreboard team overridden glow color of this display.
      *
      * @param color new color
+     * @deprecated API subject to change
      */
+    @Deprecated
     public void setGlowColorOverride(@Nullable Color color);
 
     /**
