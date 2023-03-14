@@ -86,35 +86,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
-diff --git a/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java b/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
-+++ b/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
-@@ -0,0 +0,0 @@ public class EntityDamageSource extends DamageSource {
- 
-     @Override
-     public boolean scalesWithDifficulty() {
--        return this.entity instanceof LivingEntity && !(this.entity instanceof Player);
-+        return super.scalesWithDifficulty() || this.entity instanceof LivingEntity && !(this.entity instanceof Player); // Paper - fix MC-258535 - respect the scalesWithDifficulty override
-     }
- 
-     @Nullable
-diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
-+++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
-                 // CraftBukkit end
-                 float f3 = this.getHealth();
- 
--                this.setHealth(f3 - f);
-+                // Paper start - MC-121048
-                 this.getCombatTracker().recordDamage(damagesource, f3, f);
-+                this.setHealth(f3 - f);
-+                // Paper end
-                 // CraftBukkit start
-                 if (!human) {
-                     this.setAbsorptionAmount(this.getAbsorptionAmount() - f);
 diff --git a/src/main/java/net/minecraft/world/entity/Saddleable.java b/src/main/java/net/minecraft/world/entity/Saddleable.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Saddleable.java
@@ -193,26 +164,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!player.getAbilities().instabuild) {
                  stack.shrink(1);
              }
-diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
-+++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
-@@ -0,0 +0,0 @@ public class Creeper extends Monster implements PowerableMob {
-             this.level.playSound(player, this.getX(), this.getY(), this.getZ(), soundeffect, this.getSoundSource(), 1.0F, this.random.nextFloat() * 0.4F + 0.8F);
-             if (!this.level.isClientSide) {
-                 this.ignite();
-+                if (itemstack.isDamageableItem()) { // Paper - only call hurtAndBreak for a damageable item - MC-257875
-                 itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
-                     entityhuman1.broadcastBreakEvent(hand);
-                 });
-+                // Paper start - just consume the item - MC-257875
-+                } else if (!player.getAbilities().instabuild) {
-+                    itemstack.shrink(1);
-+                }
-+                // Paper end
-             }
- 
-             return InteractionResult.sidedSuccess(this.level.isClientSide);
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
