@@ -73,7 +73,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
      public Set<UUID> collidableExemptions = new HashSet<>();
      public boolean bukkitPickUpLoot;
      public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
@@ -81,7 +81,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public float getBukkitYaw() {
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              if (knockbackCancelled) this.level.broadcastEntityEvent(this, (byte) 2); // Paper - Disable explosion knockback
              if (this.isDeadOrDying()) {
                  if (!this.checkTotemDeathProtection(source)) {
@@ -99,7 +99,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
              } else if (flag1) {
                  this.playHurtSound(source);
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          if (!this.isRemoved() && !this.dead) {
              Entity entity = damageSource.getEntity();
              LivingEntity entityliving = this.getKillCredit();
@@ -108,7 +108,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (this.deathScore >= 0 && entityliving != null) {
                  entityliving.awardKillScore(this, this.deathScore, damageSource);
              }
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              if (!this.level.isClientSide && this.hasCustomName()) {
                  if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
@@ -168,7 +168,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          if (!this.level.isClientSide) {
              boolean flag = false;
  
@@ -177,7 +177,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                      BlockPos blockposition = this.blockPosition();
                      BlockState iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          }
      }
  
@@ -190,7 +190,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Entity entity = source.getEntity();
          int i;
  
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          this.dropEquipment(); // CraftBukkit - from below
          if (this.shouldDropLoot() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
              this.dropFromLootTable(source, flag);
@@ -223,7 +223,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/n
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity {
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
                  }
  
                  this.spawnAtLocation(itemstack);
@@ -300,24 +300,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
-                             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
-                             this.lastHit = i;
-                         } else {
--                            this.brokenByPlayer(source);
-+                            org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(source); // Paper
-                             this.showBreakingParticles();
--                            this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.die() since above damagesource method will call death event
-+                            if (!event.isCancelled()) this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.die() since above damagesource method will call death event // Paper
-                         }
+                                 this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
+                                 this.lastHit = i;
+                             } else {
+-                                this.brokenByPlayer(source);
++                                org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(source); // Paper
+                                 this.showBreakingParticles();
++                                if (!event.isCancelled()) // Paper
+                                 this.discard(); // CraftBukkit - SPIGOT-4890: remain as this.discard() since above damagesource method will call death event
+                             }
  
-                         return true;
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
  
      }
  
 -    private void brokenByPlayer(DamageSource damageSource) {
-+    private org.bukkit.event.entity.EntityDeathEvent brokenByPlayer(DamageSource damageSource) {  // Paper
-         drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.ARMOR_STAND))); // CraftBukkit - add to drops
++    private org.bukkit.event.entity.EntityDeathEvent brokenByPlayer(DamageSource damageSource) { // Paper
+         ItemStack itemstack = new ItemStack(Items.ARMOR_STAND);
+ 
+         if (this.hasCustomName()) {
+@@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
+         }
+ 
+         drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
 -        this.brokenByAnything(damageSource);
 +        return this.brokenByAnything(damageSource); // Paper
      }

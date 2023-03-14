@@ -48,8 +48,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void setProtocol(ConnectionProtocol state) {
 +        protocol = state; // Paper
          this.channel.attr(Connection.ATTRIBUTE_PROTOCOL).set(state);
+         this.channel.attr(BundlerInfo.BUNDLER_PROVIDER).set(state);
          this.channel.config().setAutoRead(true);
-         Connection.LOGGER.debug("Enabled auto read");
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          Validate.notNull(listener, "packetListener", new Object[0]);
          this.packetListener = listener;
@@ -354,6 +354,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
  
 +                    if (!disableFlushConsolidation) channel.pipeline().addFirst(new io.netty.handler.flush.FlushConsolidationHandler()); // Paper
-                     channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyQueryHandler(ServerConnectionListener.this)).addLast("splitter", new Varint21FrameDecoder()).addLast("decoder", new PacketDecoder(PacketFlow.SERVERBOUND)).addLast("prepender", new Varint21LengthFieldPrepender()).addLast("encoder", new PacketEncoder(PacketFlow.CLIENTBOUND));
-                     int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
-                     Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
+                     ChannelPipeline channelpipeline = channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyQueryHandler(ServerConnectionListener.this));
+ 
+                     Connection.configureSerialization(channelpipeline, PacketFlow.SERVERBOUND);
