@@ -17,7 +17,7 @@ Subject: [PATCH] CB fixes
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index ae219be37c5fcec3dd3f8b08819551003e66d351..8309eb14140ebcf62ae7be1dfa0177ac7fcf83d7 100644
+index ad011c4f328129e2e5eb6b1b1f5e1d282d1ec04a..3bcbdf37ad9d76ec97ad3f20e7a683e267441ed9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -294,7 +294,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -30,25 +30,25 @@ index ae219be37c5fcec3dd3f8b08819551003e66d351..8309eb14140ebcf62ae7be1dfa0177ac
          if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
              this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/Marker.java b/src/main/java/net/minecraft/world/entity/Marker.java
-index d9f07a311ec5a253bdfb681414e1f8033a576a23..6f110ece5686d1fc73b93fb9e0a73f2c1bcf4586 100644
+index 15ec0d085d09d9a70eb6cdd47f9e4587dd1402b5..9cd0f0628a3f533229d25d9ccd0d381364f4957c 100644
 --- a/src/main/java/net/minecraft/world/entity/Marker.java
 +++ b/src/main/java/net/minecraft/world/entity/Marker.java
-@@ -39,8 +39,9 @@ public class Marker extends Entity {
+@@ -49,8 +49,8 @@ public class Marker extends Entity {
      }
  
      @Override
 -    protected void addPassenger(Entity passenger) {
-+    protected boolean addPassenger(Entity passenger) { // Paper - fix upstream
-         passenger.stopRiding();
-+        return false; // Paper - fix upstream
+-        throw new IllegalStateException("Should never addPassenger without checking couldAcceptPassenger()");
++    protected boolean addPassenger(Entity passenger) { // Paper - fix return type
++        return false; // Paper
      }
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-index 2222a8be261142dd7a42170ad3fe314eeea1deb5..136da73e372b59f37665743c70833e815cd0070b 100644
+index 36222d2140aa1151c30e095afc557ea7db91911f..9d4a3041ecae2adda40134710eb1edb8571228aa 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -421,9 +421,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
+@@ -441,9 +441,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
      }
  
      @Override
@@ -61,10 +61,10 @@ index 2222a8be261142dd7a42170ad3fe314eeea1deb5..136da73e372b59f37665743c70833e81
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index 99af167b02c1291f9f5fd1a195a3eb65de87002b..874f7ea643d27eec47d51a10ad472af7e8ec402e 100644
+index 161ad6ab1443b2ce33a2d7d91d189c855db0453b..15a9736a870055d639d03063c7cf67fd769fff36 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -44,7 +44,7 @@ public class StructureCheck {
+@@ -43,7 +43,7 @@ public class StructureCheck {
      private final Registry<Biome> biomes;
      private final Registry<Structure> structureConfigs;
      private final StructureTemplateManager structureTemplateManager;
@@ -73,7 +73,7 @@ index 99af167b02c1291f9f5fd1a195a3eb65de87002b..874f7ea643d27eec47d51a10ad472af7
      private final ChunkGenerator chunkGenerator;
      private final RandomState randomState;
      private final LevelHeightAccessor heightAccessor;
-@@ -54,7 +54,7 @@ public class StructureCheck {
+@@ -53,7 +53,7 @@ public class StructureCheck {
      private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
      private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
  
@@ -83,10 +83,10 @@ index 99af167b02c1291f9f5fd1a195a3eb65de87002b..874f7ea643d27eec47d51a10ad472af7
          this.registryAccess = registryManager;
          this.structureTemplateManager = structureTemplateManager;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8873bf84c71c48297a360df9c99e511fa0af5b40..f29395b6bf9eebd4830bbcda7d96085fb8e3d8b0 100644
+index 2cd8fc55056596731b34731a5fdf975f9a9f43ce..059ba63319f6ca04750a7d6b095e6179cae68b4f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2305,7 +2305,13 @@ public final class CraftServer implements Server {
+@@ -2303,7 +2303,13 @@ public final class CraftServer implements Server {
          Validate.notNull(key, "NamespacedKey cannot be null");
  
          LootTables registry = this.getServer().getLootTables();

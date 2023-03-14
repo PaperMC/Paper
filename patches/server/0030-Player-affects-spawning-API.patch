@@ -21,10 +21,10 @@ index 5c3b11f738c1ea19981cc878aa6c2323497391a0..6fd874a83a248e6a7d427d18d11fc608
      public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
          double d4 = max * max;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 99218eac34374a4d13451cfec15006c3bf0d755f..bb7c459c126be789bb12d08a569fe344e08914b8 100644
+index f74e1788692c3f9b291e6ba5043944a3179b97e1..eee466e718f52329f8200ff830f5f1e44cda3e7e 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -808,7 +808,7 @@ public abstract class Mob extends LivingEntity {
+@@ -837,7 +837,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
          if (this.level.getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
              this.discard();
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
@@ -47,7 +47,7 @@ index e368478dba01a9b11adf23ed64bed61c73a78a28..17fda4857f74d2994525262472700e77
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
-index 87f66fd33e404367d924137b2d8aac3b06937f43..2dcda3b03796655da443e1b3dd68c6f6bca20d21 100644
+index b5ee60c62cf1b8c59fdd7c8e6934321453015fd6..23ded94c7c7e4f96951e281efff499f1c61ec5c0 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 @@ -127,7 +127,7 @@ public class Silverfish extends Monster {
@@ -73,13 +73,13 @@ index 8ea60d388fff4a6368652ff96f648e5880053a2b..8ecbb64f9db9346757c5597404489496
                              entityzombie.finalizeSpawn(worldserver, this.level.getCurrentDifficultyAt(entityzombie.blockPosition()), MobSpawnType.REINFORCEMENT, (SpawnGroupData) null, (CompoundTag) null);
                              worldserver.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 47b5ef810348f8c702acb09b280b41b6b7227b6f..60fb74537fdc96005cbf6aa1670e773c0faa2f26 100644
+index f15c717b255a71906ab39644449a172efbaf2d3d..8726d50841da43729f076a2b0a9645ecea2a3f3a 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -179,6 +179,9 @@ public abstract class Player extends LivingEntity {
-     private Optional<GlobalPos> lastDeathLocation;
+@@ -182,6 +182,9 @@ public abstract class Player extends LivingEntity {
      @Nullable
      public FishingHook fishing;
+     protected float hurtDir;
 +    // Paper start
 +    public boolean affectsSpawning = true;
 +    // Paper end
@@ -87,7 +87,7 @@ index 47b5ef810348f8c702acb09b280b41b6b7227b6f..60fb74537fdc96005cbf6aa1670e773c
      // CraftBukkit start
      public boolean fauxSleeping;
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index f035206f2f59cb293d503c638ff06333a797a7a9..3e83bff81a0656d5e1d079ad9e63c7d27561c8e3 100644
+index 776dfbf3b33317370db3b50b8bbb95823344ee06..7b60c13cbe3d2a0d0657391a7b6be4e3706720fa 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -54,7 +54,7 @@ public abstract class BaseSpawner {
@@ -137,10 +137,10 @@ index be6e3e21ad62da01e5e2dd78e300cbc8efdbeb42..ea98625fe7c00743b8df74a24e6d4b75
          for(Player player : this.players()) {
              if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 92e5b781049122e3de3784ec4197557f2730b3b3..eecfbd4e835bfc3d98194365e360a827fb02bb38 100644
+index d60dc99e2b926847f42a32e9d093a31556d179d8..aa8f41ac360592a37306e439c85dda81acaaa6dc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -2113,8 +2113,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2187,8 +2187,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      @Override
      public String getLocale() {
          return this.getHandle().locale;

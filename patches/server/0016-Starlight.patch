@@ -4472,7 +4472,7 @@ index 0000000000000000000000000000000000000000..7784d72ddd6db00c674e22759c00c430
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 74d1ae0104e8d0795df50f00317fd860de4f112e..a7feddc31da0870faa3d32a7108282e9e9143180 100644
+index 941ca1b44c7cac656bdd76c7095887b1c3570aec..30e330cc3a2f51e4ec9555671e3eeb7bb14bdfa3 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -55,7 +55,7 @@ public class ChunkHolder {
@@ -4485,10 +4485,10 @@ index 74d1ae0104e8d0795df50f00317fd860de4f112e..a7feddc31da0870faa3d32a7108282e9
      private final DebugBuffer<ChunkHolder.ChunkSaveDebug> chunkToSaveHistory;
      public int oldTicketLevel;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index cb1387a18f4306829c75b07a73195b54dbe63ad0..a07c413f1ee1a1689ca8ca87137cf4992d85c7aa 100644
+index 091c9e9bdbe4e956386df011ddf01cba42c30da1..578849f64de38dc75cdefeb243422c4c89a5c69c 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -131,7 +131,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -134,7 +134,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final LongSet entitiesInLevel;
      public final ServerLevel level;
      private final ThreadedLevelLightEngine lightEngine;
@@ -4820,18 +4820,18 @@ index 0d536d72ac918fbd403397ff369d10143ee9c204..6051e5f272838ef23276a90e21c2fc82
      public static <T> TicketType<T> create(String name, Comparator<T> argumentComparator) {
          return new TicketType<>(name, argumentComparator, 0L);
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index aa2f76ff47699f23474f2e409ef9b773e48d50b8..5bba39a066ede470cebc92724735c86ecfd4239d 100644
+index 2cb3463f3d77a32ada67a6251707d741d18910ca..0eb877c80c6492d03681c70f7866ad705a62454e 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -726,6 +726,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -751,6 +751,7 @@ public abstract class BlockBehaviour implements FeatureElement {
              this.emissiveRendering = blockbase_info.emissiveRendering;
-             this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
+             this.offsetFunction = blockbase_info.offsetFunction;
              this.spawnParticlesOnBreak = blockbase_info.spawnParticlesOnBreak;
 +            this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
          }
  
          // Paper start
-@@ -734,6 +735,18 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -759,6 +760,18 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.shapeExceedsCube;
          }
          // Paper end
@@ -4850,7 +4850,7 @@ index aa2f76ff47699f23474f2e409ef9b773e48d50b8..5bba39a066ede470cebc92724735c86e
  
          public void initCache() {
              this.fluidState = ((Block) this.owner).getFluidState(this.asState());
-@@ -742,6 +755,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -767,6 +780,7 @@ public abstract class BlockBehaviour implements FeatureElement {
                  this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
              }
              this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
@@ -5031,7 +5031,7 @@ index 80b98e6667f1a0c21d019c58a8a0d4cc5b0f48e1..8033c8741a0f73919a357893652592b3
          super(wrapped.getPos(), UpgradeData.EMPTY, wrapped.levelHeightAccessor, wrapped.getLevel().registryAccess().registryOrThrow(Registries.BIOME), wrapped.getBlendingData());
          this.wrapped = wrapped;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 49f091183111958ebd3fb56964fc5d728c16755c..be181106a223f6bb824ddf58690674617c6dacb5 100644
+index 8e11ca5e8cc43a27482a1794d843359d7428bdde..2753e2a1991ec39f03c2a81f3262f94f0e3fe9a7 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -93,6 +93,10 @@ public class LevelChunk extends ChunkAccess {
@@ -5059,7 +5059,7 @@ index 49f091183111958ebd3fb56964fc5d728c16755c..be181106a223f6bb824ddf5869067461
  
          while (iterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-index 240c19f4a7552a01b3c48f1f6413119e4cfc2b67..4843bd864deba357e0a4b2fd844324218af9774f 100644
+index afba733824d84d650e669eda028bf4d28cf006b4..cd82985b0aa821dccc0484f328407381d58ec81f 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -142,7 +142,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
@@ -5089,7 +5089,7 @@ index 92a64c49b1c7227a5b34488ea15d3d8adb0f9c80..0b67858f8d6689b34816f9556f3424af
          this.fluidTicks = fluidTickScheduler;
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 6fdd5c92ab069896e3921faa042cbdb3c29d0538..a3c14a470ac7055abd00ac6f4f1c02065a485d3b 100644
+index aa4f2dc63dd79e6c3d7594d2fd63fa0091df5f53..bca8084f7e76d036378705aa802217cc1bfdbc7d 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -84,6 +84,14 @@ public class ChunkSerializer {
@@ -5215,9 +5215,9 @@ index 6fdd5c92ab069896e3921faa042cbdb3c29d0538..a3c14a470ac7055abd00ac6f4f1c0206
 +        ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] skyNibbles = chunk.getSkyNibbles();
 +        // Paper end - rewrite light impl
          ChunkPos chunkcoordintpair = chunk.getPos();
-         CompoundTag nbttagcompound = new CompoundTag();
+         CompoundTag nbttagcompound = NbtUtils.addCurrentDataVersion(new CompoundTag());
  
-@@ -392,11 +437,14 @@ public class ChunkSerializer {
+@@ -391,11 +436,14 @@ public class ChunkSerializer {
          for (int i = lightenginethreaded.getMinLightSection(); i < lightenginethreaded.getMaxLightSection(); ++i) {
              int j = chunk.getSectionIndexFromSectionY(i);
              boolean flag1 = j >= 0 && j < achunksection.length;
@@ -5236,7 +5236,7 @@ index 6fdd5c92ab069896e3921faa042cbdb3c29d0538..a3c14a470ac7055abd00ac6f4f1c0206
  
                  if (flag1) {
                      LevelChunkSection chunksection = achunksection[j];
-@@ -411,13 +459,27 @@ public class ChunkSerializer {
+@@ -410,13 +458,27 @@ public class ChunkSerializer {
                      nbttagcompound1.put("biomes", (Tag) dataresult1.getOrThrow(false, logger1::error));
                  }
  
@@ -5268,7 +5268,7 @@ index 6fdd5c92ab069896e3921faa042cbdb3c29d0538..a3c14a470ac7055abd00ac6f4f1c0206
  
                  if (!nbttagcompound1.isEmpty()) {
                      nbttagcompound1.putByte("Y", (byte) i);
-@@ -428,7 +490,8 @@ public class ChunkSerializer {
+@@ -427,7 +489,8 @@ public class ChunkSerializer {
  
          nbttagcompound.put("sections", nbttaglist);
          if (flag) {
@@ -5278,7 +5278,7 @@ index 6fdd5c92ab069896e3921faa042cbdb3c29d0538..a3c14a470ac7055abd00ac6f4f1c0206
          }
  
          ListTag nbttaglist1 = new ListTag();
-@@ -503,6 +566,17 @@ public class ChunkSerializer {
+@@ -502,6 +565,17 @@ public class ChunkSerializer {
          }));
      }
  

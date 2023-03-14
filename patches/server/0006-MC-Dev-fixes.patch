@@ -5,10 +5,10 @@ Subject: [PATCH] MC Dev fixes
 
 
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index d33cce0265a85a23d726742e7752331b63449144..dc7a805d3058244ba13c2268666f274e7ec069dc 100644
+index c400121d4956014a376760360180e5141013d702..b3e0495e0f242c96d4348438c0257c2045b801e5 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
-@@ -370,7 +370,7 @@ public class Util {
+@@ -357,7 +357,7 @@ public class Util {
      }
  
      public static <K> Hash.Strategy<K> identityStrategy() {
@@ -18,10 +18,10 @@ index d33cce0265a85a23d726742e7752331b63449144..dc7a805d3058244ba13c2268666f274e
  
      public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> futures) {
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
-index d4c46f44f7a998121482c2fc56d7986881d489d8..6801a3aa5f2f1e9a7a72ff81c09b4944ecb8349d 100644
+index 77bf6865c6df829c5b5455d440cb2222a0d8f2af..819562d2c938fa05b8e8a00d1ae1f7c1fc9b00d5 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
 +++ b/src/main/java/net/minecraft/core/BlockPos.java
-@@ -379,12 +379,12 @@ public class BlockPos extends Vec3i {
+@@ -370,12 +370,12 @@ public class BlockPos extends Vec3i {
                      if (this.index == l) {
                          return this.endOfData();
                      } else {
@@ -40,10 +40,10 @@ index d4c46f44f7a998121482c2fc56d7986881d489d8..6801a3aa5f2f1e9a7a72ff81c09b4944
                  }
              };
 diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-index 3233f69345838af653b4259d2142169930533a69..5b8ecf5b0165ed2cd4397cdee958e97c2e8f18d5 100644
+index 396d065805853318b0fed98b64b2e1ab0a022e51..a969cd46694ce3094b4a65cf188677d38ae72198 100644
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -305,7 +305,7 @@ public class BuiltInRegistries {
+@@ -307,7 +307,7 @@ public class BuiltInRegistries {
          LOADERS.put(resourceLocation, () -> {
              return initializer.run(registry);
          });
@@ -52,38 +52,26 @@ index 3233f69345838af653b4259d2142169930533a69..5b8ecf5b0165ed2cd4397cdee958e97c
          return registry;
      }
  
-diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
-index 24e864d1cd376e9f94cfa68fd06f96b239eed888..c0fe7c576f2361e599bc23003da7c49bb7cb62b2 100644
---- a/src/main/java/net/minecraft/nbt/NbtUtils.java
-+++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
-@@ -505,7 +505,7 @@ public final class NbtUtils {
-     }
- 
-     public static CompoundTag update(DataFixer fixer, DataFixTypes fixTypes, CompoundTag compound, int oldVersion, int targetVersion) {
--        return fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue();
-+        return (CompoundTag) fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue(); // Paper - decompile fix
-     }
- 
-     public static Component toPrettyComponent(Tag element) {
 diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
-index 2df8fa1ae2dc58291add80fae0599ee4ff5066ee..ed7e1a6fc745df745d5bc79623948bb1015c9252 100644
+index 9ff8afe750bc469c11c70b2f44c8a78887a8cd00..ea30dad0134644a8ad292a892450404203f3535e 100644
 --- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
 +++ b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
-@@ -138,8 +138,7 @@ public class ComponentUtils {
+@@ -138,9 +138,8 @@ public class ComponentUtils {
              ComponentContents string = text.getContents();
              if (string instanceof TranslatableContents) {
                  TranslatableContents translatableContents = (TranslatableContents)string;
 -                String string = translatableContents.getKey();
--                return Language.getInstance().has(string);
-+                return Language.getInstance().has(translatableContents.getKey()); // Paper - decompile fix
+                 String string2 = translatableContents.getFallback();
+-                return string2 != null || Language.getInstance().has(string);
++                return string2 != null || Language.getInstance().has(translatableContents.getKey()); // Paper - decompile fix
              }
          }
  
 diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-index bc7c6b40ec160d7d449546265b9808e15e587247..178215878c4bbf4ddb24002fcd6d1156a44494ff 100644
+index 41d6569c00db3d467f6e90d33ebd261529b89f4c..5f051cb22ae77f4d8994b07ac5b963bd0ff05673 100644
 --- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 +++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-@@ -87,7 +87,7 @@ public class RegistryDataLoader {
+@@ -91,7 +91,7 @@ public class RegistryDataLoader {
          return new RegistryOps.RegistryInfoLookup() {
              @Override
              public <T> Optional<RegistryOps.RegistryInfo<T>> lookup(ResourceKey<? extends Registry<? extends T>> registryRef) {
@@ -93,10 +81,10 @@ index bc7c6b40ec160d7d449546265b9808e15e587247..178215878c4bbf4ddb24002fcd6d1156
          };
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 870db0028becd6b76af76190fae908d0031ed94d..06b1da8b559f9d545f1593d81de7b25e0a12f176 100644
+index 2ed954f1fab3235a1d3fff2dd0d24c3b398b4d67..41a6756144a3b826d32ecb85a71d26761e25ec11 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1747,7 +1747,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1775,7 +1775,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              PackRepository resourcepackrepository = this.packRepository;
  
              Objects.requireNonNull(this.packRepository);
@@ -132,10 +120,10 @@ index 2dc801061025888192c3bf2c4c38b928c16a0165..ca788f0dcec4a117b410fe8348969e05
  
      public static <T> SortedArraySet<T> create(Comparator<T> comparator) {
 diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-index 02c10fcdad18f7194e804d94449f291d636163a2..2222a8be261142dd7a42170ad3fe314eeea1deb5 100644
+index 37a01cd6f616cac741d50066aaba21911a1ed3bb..36222d2140aa1151c30e095afc557ea7db91911f 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -147,7 +147,7 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
+@@ -150,7 +150,7 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
      @Override
      protected void customServerAiStep() {
          this.level.getProfiler().push("camelBrain");
@@ -145,10 +133,10 @@ index 02c10fcdad18f7194e804d94449f291d636163a2..2222a8be261142dd7a42170ad3fe314e
          this.level.getProfiler().pop();
          this.level.getProfiler().push("camelActivityUpdate");
 diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
-index 471b9258320ba0002d741267144c80c149f5f34c..8852cc6253c8bc1a9f7591cd2b0beb95bb4f4d33 100644
+index 872243700e982c97c8ef491684a447afc7a24bdf..c12b8831deb54deb191908ba8a769d4c78825d5b 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
-@@ -106,7 +106,7 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
+@@ -104,7 +104,7 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
  
      @Override
      public Brain<Frog> getBrain() {
@@ -171,7 +159,7 @@ index 64314cf4dc53a1a0a5f676fa00503858e0120dfa..45741410a13cffe3419e34b5607b048b
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index d025df087e7b87fbc89a722226f2f2263c54ac47..2f712bfc1f717ba410bf34669d7b0a919ca218cc 100644
+index 4d2d23ff118e9307d50ca2a5194b83450c91a752..ab6dc3449a1d3b7acf1d7bf5ac1c24224cc252c7 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 @@ -78,7 +78,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
@@ -184,7 +172,7 @@ index d025df087e7b87fbc89a722226f2f2263c54ac47..2f712bfc1f717ba410bf34669d7b0a91
          this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
          RecipeManager.LOGGER.info("Loaded {} recipes", map1.size());
 diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-index 7798cbbae6b72d64e6129cebf1f66696f21e15f9..240c19f4a7552a01b3c48f1f6413119e4cfc2b67 100644
+index b445f90b70d5a74f5bdc1b081500da4742e1c093..afba733824d84d650e669eda028bf4d28cf006b4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -56,7 +56,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
