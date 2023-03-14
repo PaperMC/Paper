@@ -174,27 +174,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +}
-diff --git a/src/main/java/net/minecraft/network/protocol/status/ClientboundStatusResponsePacket.java b/src/main/java/net/minecraft/network/protocol/status/ClientboundStatusResponsePacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/status/ClientboundStatusResponsePacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/status/ClientboundStatusResponsePacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.util.GsonHelper;
- import net.minecraft.util.LowerCaseEnumTypeAdapterFactory;
- 
- public class ClientboundStatusResponsePacket implements Packet<ClientStatusPacketListener> {
--    private static final Gson GSON = (new GsonBuilder()).registerTypeAdapter(ServerStatus.Version.class, new ServerStatus.Version.Serializer()).registerTypeAdapter(ServerStatus.Players.class, new ServerStatus.Players.Serializer()).registerTypeAdapter(ServerStatus.class, new ServerStatus.Serializer()).registerTypeHierarchyAdapter(Component.class, new Component.Serializer()).registerTypeHierarchyAdapter(Style.class, new Style.Serializer()).registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory()).create();
-+    private static final Gson GSON = (new GsonBuilder()).registerTypeAdapter(ServerStatus.Version.class, new ServerStatus.Version.Serializer()).registerTypeAdapter(ServerStatus.Players.class, new ServerStatus.Players.Serializer()).registerTypeAdapter(ServerStatus.class, new ServerStatus.Serializer()).registerTypeHierarchyAdapter(Component.class, new Component.Serializer()).registerTypeHierarchyAdapter(Style.class, new Style.Serializer()).registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory())
-+        .registerTypeAdapter(io.papermc.paper.adventure.AdventureComponent.class, new io.papermc.paper.adventure.AdventureComponent.Serializer())
-+        .create();
-     private final ServerStatus status;
- 
-     public ClientboundStatusResponsePacket(ServerStatus metadata) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ package net.minecraft.server;
- 
+ import com.google.common.base.Preconditions;
  import com.google.common.base.Splitter;
  import com.google.common.collect.ImmutableList;
 +import co.aikar.timings.Timings;
@@ -204,14 +189,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.lastServerStatus = i;
-             this.status.setPlayers(new ServerStatus.Players(this.getMaxPlayers(), this.getPlayerCount()));
-             if (!this.hidesOnlinePlayers()) {
--                GameProfile[] agameprofile = new GameProfile[Math.min(this.getPlayerCount(), 12)];
-+                GameProfile[] agameprofile = new GameProfile[Math.min(this.getPlayerCount(), org.spigotmc.SpigotConfig.playerSample)]; // Paper
-                 int j = Mth.nextInt(this.random, 0, this.getPlayerCount() - agameprofile.length);
+         if (this.hidesOnlinePlayers()) {
+             return new ServerStatus.Players(i, list.size(), List.of());
+         } else {
+-            int j = Math.min(list.size(), 12);
++            int j = Math.min(list.size(), org.spigotmc.SpigotConfig.playerSample); // Paper
+             ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList(j);
+             int k = Mth.nextInt(this.random, 0, list.size() - j);
  
-                 for (int k = 0; k < agameprofile.length; ++k) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
@@ -223,8 +208,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - Replace everything
 +            /*
              // CraftBukkit start
-             // this.connection.send(new PacketStatusOutServerInfo(this.server.getStatus()));
-             final Object[] players = this.server.getPlayerList().players.toArray();
+             // this.connection.send(new PacketStatusOutServerInfo(this.status));
+             MinecraftServer server = MinecraftServer.getServer();
 @@ -0,0 +0,0 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
  
              this.connection.send(new ClientboundStatusResponsePacket(ping));

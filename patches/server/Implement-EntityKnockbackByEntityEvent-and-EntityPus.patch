@@ -36,16 +36,16 @@ diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                         d0 = (Math.random() - Math.random()) * 0.01D;
                      }
  
-                     this.hurtDir = (float) (Mth.atan2(d1, d0) * 57.2957763671875D - (double) this.getYRot());
 -                    this.knockback(0.4000000059604645D, d0, d1);
 +                    this.knockback(0.4000000059604645D, d0, d1, entity1); // Paper
-                 } else {
-                     this.hurtDir = (float) ((int) (Math.random() * 2.0D) * 180);
-                 }
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+                     if (!flag) {
+                         this.indicateDamage(d0, d1);
+                     }
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      protected void blockedByShield(LivingEntity target) {
@@ -54,7 +54,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private boolean checkTotemDeathProtection(DamageSource source) {
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      public void knockback(double strength, double x, double z) {
@@ -66,7 +66,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          strength *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
          if (strength > 0.0D) {
              this.hasImpulse = true;
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              Vec3 vec3d1 = (new Vec3(x, 0.0D, z)).normalize().scale(strength);
  
              this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
@@ -86,7 +86,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/n
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity {
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements Targeting {
  
          if (flag) {
              if (f1 > 0.0F && target instanceof LivingEntity) {
@@ -102,7 +102,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class RamTarget extends Behavior<Goat> {
              float f = 0.25F * (float)(i - j);
              float g = Mth.clamp(entity.getSpeed() * 1.65F, 0.2F, 3.0F) + f;
-             float h = livingEntity.isDamageSourceBlocked(DamageSource.mobAttack(entity)) ? 0.5F : 1.0F;
+             float h = livingEntity.isDamageSourceBlocked(world.damageSources().mobAttack(entity)) ? 0.5F : 1.0F;
 -            livingEntity.knockback((double)(h * g) * this.getKnockbackForce.applyAsDouble(entity), this.ramDirection.x(), this.ramDirection.z());
 +            livingEntity.knockback((double)(h * g) * this.getKnockbackForce.applyAsDouble(entity), this.ramDirection.x(), this.ramDirection.z(), entity); // Paper
              this.finishRam(world, entity);
@@ -113,7 +113,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
 @@ -0,0 +0,0 @@ public class SonicBoom extends Behavior<Warden> {
-                 target.hurt(DamageSource.sonicBoom(entity), 10.0F);
+                 target.hurt(world.damageSources().sonicBoom(entity), 10.0F);
                  double d = 0.5D * (1.0D - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
                  double e = 2.5D * (1.0D - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
 -                target.push(vec33.x() * e, vec33.y() * d, vec33.z() * e);
@@ -132,7 +132,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                entity.push(d2 / d4 * 4.0D, 0.20000000298023224D, d3 / d4 * 4.0D);
 +                entity.push(d2 / d4 * 4.0D, 0.20000000298023224D, d3 / d4 * 4.0D, this); // Paper
                  if (!this.phaseManager.getCurrentPhase().isSitting() && ((LivingEntity) entity).getLastHurtByMobTimestamp() < entity.tickCount - 2) {
-                     entity.hurt(DamageSource.mobAttack(this), 5.0F);
+                     entity.hurt(this.damageSources().mobAttack(this), 5.0F);
                      this.doEnchantDamageEffects(this, entity);
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -179,9 +179,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
                                  if (entityliving != this && entityliving != target && !this.isAlliedTo((Entity) entityliving) && (!(entityliving instanceof ArmorStand) || !((ArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
                                      // CraftBukkit start - Only apply knockback if the damage hits
-                                     if (entityliving.hurt(DamageSource.playerAttack(this).sweep(), f4)) {
+                                     if (entityliving.hurt(this.damageSources().playerAttack(this).sweep(), f4)) {
 -                                    entityliving.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)));
-+                                    entityliving.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this); // Paper
++                                    entityliving.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this); // Pa
                                      }
                                      // CraftBukkit end
                                  }

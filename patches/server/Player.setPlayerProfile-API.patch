@@ -8,6 +8,19 @@ This can be useful for changing name or skins after a player has logged in.
 == AT ==
 public-f net.minecraft.world.entity.player.Player gameProfile
 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         this.internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch(), Collections.emptySet());
+     }
+ 
+-    private void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set) {
++    public void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set) { // Paper
+         // CraftBukkit start
+         if (Float.isNaN(f)) {
+             f = 0;
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
@@ -66,8 +79,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public InetSocketAddress getAddress() {
          if (this.getHandle().connection == null) return null;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         this.hiddenEntities.put(entity.getUniqueId(), hidingPlugins);
  
+     private void untrackAndHideEntity(org.bukkit.entity.Entity entity) {
          // Remove this entity from the hidden player's EntityTrackerEntry
 -        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
 +        // Paper start
@@ -90,28 +103,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
      }
  
-     @Override
-@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         }
-         this.hiddenEntities.remove(entity.getUniqueId());
- 
--        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
-+        // Paper start
-         Entity other = ((CraftEntity) entity).getHandle();
-+        registerEntity(other);
-+
-+        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
-+    }
-+    private void registerEntity(Entity other) {
-+        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
-+        // Paper end
- 
-         if (other instanceof ServerPlayer) {
-             ServerPlayer otherPlayer = (ServerPlayer) other;
+     void resetAndHideEntity(org.bukkit.entity.Entity entity) {
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
              entry.updatePlayer(this.getHandle());
          }
++        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity)); // Paper
 +    }
 +    // Paper start
 +    @Override
@@ -130,22 +127,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                bukkitPlayer.unregisterEntity(self);
 +            }
 +        }
- 
--        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
++
 +        // Set the game profile here, we should have unregistered the entity via iterating all player entities above.
 +        self.gameProfile = gameProfile;
-+
+ 
+-        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
 +        // Re-register the game profile for all players
 +        for (ServerPlayer player : players) {
 +            CraftPlayer bukkitPlayer = player.getBukkitEntity();
 +            if (bukkitPlayer.canSee(this)) {
-+                bukkitPlayer.registerEntity(self);
++                bukkitPlayer.trackAndShowEntity(self);
 +            }
 +        }
 +        // Refresh misc player things AFTER sending game profile
 +        this.refreshPlayer();
      }
  
+     void resetAndShowEntity(org.bukkit.entity.Entity entity) {
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             this.trackAndShowEntity(entity);
+         }
+     }
++    // Paper start
 +    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
 +        return new com.destroystokyo.paper.profile.CraftPlayerProfile(this).clone();
 +    }
@@ -160,7 +163,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ServerLevel worldserver = handle.getLevel();
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(worldserver.dimensionTypeId(), worldserver.dimension(), net.minecraft.world.level.biome.BiomeManager.obfuscateSeed(worldserver.getSeed()), handle.gameMode.getGameModeForPlayer(), handle.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA, this.getHandle().getLastDeathLocation()));
 +        handle.onUpdateAbilities();
-+        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet(), false);
++        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet());
 +        net.minecraft.server.MinecraftServer.getServer().getPlayerList().sendAllPlayerInfo(handle);
 +
 +        if (this.isOp()) {
@@ -169,10 +172,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +    // Paper end
-+
+ 
      public void onEntityRemove(Entity entity) {
-         this.hiddenEntities.remove(entity.getUUID());
-     }
+         this.invertedVisibilityEntities.remove(entity.getUUID());
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
