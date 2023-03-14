@@ -5,10 +5,10 @@ Subject: [PATCH] Use single player info update packet on join
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ac63b21c5f7996d1cc79d6923887f55f2c91dd05..bac6b62419d85b3772ef243aa3d5f73311abdda7 100644
+index 3bec358de0348ba64ddbd83b63814fdc7b375b55..ed09fc864a400f8a12e4097e28542a5792d1a902 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -3611,7 +3611,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3625,7 +3625,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          this.signedMessageDecoder = session.createMessageDecoder(this.player.getUUID());
          this.chatMessageChain.append((executor) -> {
              this.player.setChatSession(session);
@@ -18,19 +18,19 @@ index ac63b21c5f7996d1cc79d6923887f55f2c91dd05..bac6b62419d85b3772ef243aa3d5f733
          });
      }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 1b0ca19cd61a55998676b9f8ca17bf79966385db..835e439a1af327c67558653ef79ef7e59692a976 100644
+index 3793cc8a2cc917ba33b18c5af7fac25e9c1da288..c0c14766adaac855112f85a203a6163b8adfdded 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -297,7 +297,7 @@ public abstract class PlayerList {
+@@ -303,7 +303,7 @@ public abstract class PlayerList {
+             player.sendServerStatus(serverping);
+         }
  
-         playerconnection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
-         player.sendServerStatus(this.server.getStatus());
 -        player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(this.players));
-+        // player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(this.players)); // Paper - use single player info update packet
++        // player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(this.players)); // Paper
          this.players.add(player);
          this.playersByName.put(player.getScoreboardName().toLowerCase(java.util.Locale.ROOT), player); // Spigot
          this.playersByUUID.put(player.getUUID(), player);
-@@ -333,6 +333,7 @@ public abstract class PlayerList {
+@@ -339,6 +339,7 @@ public abstract class PlayerList {
          // CraftBukkit start - sendAll above replaced with this loop
          ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(player));
  
@@ -38,7 +38,7 @@ index 1b0ca19cd61a55998676b9f8ca17bf79966385db..835e439a1af327c67558653ef79ef7e5
          for (int i = 0; i < this.players.size(); ++i) {
              ServerPlayer entityplayer1 = (ServerPlayer) this.players.get(i);
  
-@@ -340,12 +341,17 @@ public abstract class PlayerList {
+@@ -346,12 +347,17 @@ public abstract class PlayerList {
                  entityplayer1.connection.send(packet);
              }
  
@@ -58,3 +58,16 @@ index 1b0ca19cd61a55998676b9f8ca17bf79966385db..835e439a1af327c67558653ef79ef7e5
          player.sentListPacket = true;
          player.supressTrackerForLogin = false; // Paper
          ((ServerLevel)player.level).getChunkSource().chunkMap.addEntity(player); // Paper - track entity now
+diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSources.java b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
+index 6d46908692637ace5d81a9948f5ed42e142f549a..31b515fd19555585d6e3a6f1da3bcd7fac380a50 100644
+--- a/src/main/java/net/minecraft/world/damagesource/DamageSources.java
++++ b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
+@@ -242,8 +242,4 @@ public class DamageSources {
+     public DamageSource sonicBoom(Entity attacker) {
+         return this.source(DamageTypes.SONIC_BOOM, attacker);
+     }
+-
+-    public DamageSource badRespawnPointExplosion(Vec3 position) {
+-        return new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), position);
+-    }
+ }
