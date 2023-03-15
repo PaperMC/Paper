@@ -1169,6 +1169,109 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return net.minecraft.network.chat.Component.Serializer.fromJson(GsonComponentSerializer.gson().serializer().toJsonTree(component));
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/adventure/providers/ClickCallbackProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ClickCallbackProviderImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/providers/ClickCallbackProviderImpl.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.adventure.providers;
++
++import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.event.ClickCallback;
++import net.kyori.adventure.text.event.ClickEvent;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Queue;
++import java.util.concurrent.ConcurrentLinkedQueue;
++import java.util.concurrent.atomic.AtomicLong;
++
++@SuppressWarnings("UnstableApiUsage") // permitted provider
++public class ClickCallbackProviderImpl implements ClickCallback.Provider {
++
++    public static final CallbackManager CALLBACK_MANAGER = new CallbackManager();
++
++    @Override
++    public @NotNull ClickEvent create(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
++        return ClickEvent.runCommand("/paper callback " + CALLBACK_MANAGER.addCallback(callback, options));
++    }
++
++    public static final class CallbackManager {
++
++        private final Long2ObjectMap<StoredCallback> callbacks = new Long2ObjectOpenHashMap<>();
++        private final Queue<StoredCallback> queue = new ConcurrentLinkedQueue<>();
++        private final AtomicLong current = new AtomicLong();
++
++        private CallbackManager() {
++        }
++
++        public long addCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
++            final long id = current.getAndIncrement();
++            this.queue.add(new StoredCallback(callback, options, id));
++            return id;
++        }
++
++        public void handleQueue(final int currentTick) {
++            // Evict expired entries
++            if (currentTick % 100 == 0) {
++                this.callbacks.values().removeIf(callback -> !callback.valid());
++            }
++
++            // Add entries from queue
++            StoredCallback callback;
++            while ((callback = this.queue.poll()) != null) {
++                this.callbacks.put(callback.id(), callback);
++            }
++        }
++
++        public void runCallback(final @NotNull Audience audience, final long id) {
++            final StoredCallback callback = this.callbacks.get(id);
++            if (callback != null && callback.valid()) { //TODO Message if expired/invalid?
++                callback.takeUse();
++                callback.callback.accept(audience);
++            }
++        }
++    }
++
++    private static final class StoredCallback {
++        private final long startedAt = System.nanoTime();
++        private final ClickCallback<Audience> callback;
++        private final long lifetime;
++        private final long id;
++        private int remainingUses;
++
++        private StoredCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options, final long id) {
++            this.callback = callback;
++            this.lifetime = options.lifetime().toNanos();
++            this.remainingUses = options.uses();
++            this.id = id;
++        }
++
++        public void takeUse() {
++            if (this.remainingUses != ClickCallback.UNLIMITED_USES) {
++                this.remainingUses--;
++            }
++        }
++
++        public boolean hasRemainingUses() {
++            return this.remainingUses == ClickCallback.UNLIMITED_USES || this.remainingUses > 0;
++        }
++
++        public boolean expired() {
++            return System.nanoTime() - this.startedAt >= this.lifetime;
++        }
++
++        public boolean valid() {
++            return hasRemainingUses() && !expired();
++        }
++
++        public long id() {
++            return this.id;
++        }
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -2023,6 +2126,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private int playerIdleTimeout;
      public final long[] tickTimes;
      @Nullable
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         SpigotTimings.schedulerTimer.startTiming(); // Spigot
+         this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
+         SpigotTimings.schedulerTimer.stopTiming(); // Spigot
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
+         this.profiler.push("commandFunctions");
+         SpigotTimings.commandFunctionsTimer.startTiming(); // Spigot
+         this.getFunctions().tick();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.motd;
      }
@@ -4692,6 +4803,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          HashSet<Player> reference = new HashSet<Player>(players.size());
          for (ServerPlayer player : players) {
              reference.add(player.getBukkitEntity());
+diff --git a/src/main/resources/META-INF/services/net.kyori.adventure.text.event.ClickCallback$Provider b/src/main/resources/META-INF/services/net.kyori.adventure.text.event.ClickCallback$Provider
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/resources/META-INF/services/net.kyori.adventure.text.event.ClickCallback$Provider
+@@ -0,0 +1 @@
++io.papermc.paper.adventure.providers.ClickCallbackProviderImpl
 diff --git a/src/main/resources/META-INF/services/net.kyori.adventure.text.logger.slf4j.ComponentLoggerProvider b/src/main/resources/META-INF/services/net.kyori.adventure.text.logger.slf4j.ComponentLoggerProvider
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
