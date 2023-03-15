@@ -3,6 +3,8 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Tue, 22 Nov 2022 13:16:01 -0800
 Subject: [PATCH] check global player list where appropriate
 
+Makes certain entities check all players when searching for a player
+instead of just checking players in their world.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index e265a11ef8cbb7b4da6dac01eb7f1aa45e0d6869..5a5ff40df37db9cbd53c584ed26a3ce4888b29c0 100644
@@ -21,6 +23,19 @@ index e265a11ef8cbb7b4da6dac01eb7f1aa45e0d6869..5a5ff40df37db9cbd53c584ed26a3ce4
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 80970c877b9e729fc88451745a490f0b80a7c1b6..a7d74f16d82853f40d5641794dc12a8404359c94 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3571,7 +3571,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public void onItemPickup(ItemEntity item) {
+-        Entity entity = item.getOwner();
++        Entity entity = item.thrower != null ? this.level.getGlobalPlayerByUUID(item.thrower) : null; // Paper - check all players
+ 
+         if (entity instanceof ServerPlayer) {
+             CriteriaTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.trigger((ServerPlayer) entity, item.getItem(), this);
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Animal.java b/src/main/java/net/minecraft/world/entity/animal/Animal.java
 index 6216513805add7c8f52e1ed6c77e2d26786b3ab5..3c4d142e982c34a23bdb5da1f51c8dcacc0532c1 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Animal.java
