@@ -81,16 +81,13 @@ index 0000000000000000000000000000000000000000..953c30500892e5f0c55b8597bc708ea8
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b3a58bf4b654e336826dc04da9e2f80ff8b9a9a7
+index 0000000000000000000000000000000000000000..e7931b6cb2a46d07ac017f620b807e3474dc481e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,144 @@
 +package io.papermc.paper.command;
 +
-+import io.papermc.paper.command.subcommands.EntityCommand;
-+import io.papermc.paper.command.subcommands.HeapDumpCommand;
-+import io.papermc.paper.command.subcommands.ReloadCommand;
-+import io.papermc.paper.command.subcommands.VersionCommand;
++import io.papermc.paper.command.subcommands.*;
 +import it.unimi.dsi.fastutil.Pair;
 +import java.util.ArrayList;
 +import java.util.Arrays;
@@ -127,11 +124,13 @@ index 0000000000000000000000000000000000000000..b3a58bf4b654e336826dc04da9e2f80f
 +        commands.put(Set.of("entity"), new EntityCommand());
 +        commands.put(Set.of("reload"), new ReloadCommand());
 +        commands.put(Set.of("version"), new VersionCommand());
++        commands.put(Set.of("callback"), new CallbackCommand());
 +
 +        return commands.entrySet().stream()
 +            .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 +            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 +    });
++    private static final Set<String> COMPLETABLE_SUBCOMMANDS = SUBCOMMANDS.entrySet().stream().filter(entry -> entry.getValue().tabCompletes()).map(Map.Entry::getKey).collect(Collectors.toSet());
 +    // alias -> subcommand label
 +    private static final Map<String, String> ALIASES = Util.make(() -> {
 +        final Map<String, Set<String>> aliases = new HashMap<>();
@@ -173,7 +172,7 @@ index 0000000000000000000000000000000000000000..b3a58bf4b654e336826dc04da9e2f80f
 +        final @Nullable Location location
 +    ) throws IllegalArgumentException {
 +        if (args.length <= 1) {
-+            return CommandUtil.getListMatchingLast(sender, args, SUBCOMMANDS.keySet());
++            return CommandUtil.getListMatchingLast(sender, args, COMPLETABLE_SUBCOMMANDS);
 +        }
 +
 +        final @Nullable Pair<String, PaperSubcommand> subCommand = resolveCommand(args[0]);
@@ -265,10 +264,10 @@ index 0000000000000000000000000000000000000000..6a00f3d38da8107825ab1d405f337fd0
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperSubcommand.java b/src/main/java/io/papermc/paper/command/PaperSubcommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6ff5d42a866d2752c73a766815aa190b2b0dc36f
+index 0000000000000000000000000000000000000000..7e9e0ff8639be135bf8575e375cbada5b57164e1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/PaperSubcommand.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,20 @@
 +package io.papermc.paper.command;
 +
 +import java.util.Collections;
@@ -283,6 +282,53 @@ index 0000000000000000000000000000000000000000..6ff5d42a866d2752c73a766815aa190b
 +
 +    default List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
 +        return Collections.emptyList();
++    }
++
++    default boolean tabCompletes() {
++        return true;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/CallbackCommand.java b/src/main/java/io/papermc/paper/command/subcommands/CallbackCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..62e121e703716b38162020d34467855a02443d88
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/CallbackCommand.java
+@@ -0,0 +1,37 @@
++package io.papermc.paper.command.subcommands;
++
++import io.papermc.paper.adventure.providers.ClickCallbackProviderImpl;
++import io.papermc.paper.command.PaperSubcommand;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.event.ClickCallback;
++import net.kyori.adventure.text.event.ClickEvent;
++import org.bukkit.command.CommandSender;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import java.time.Duration;
++
++@DefaultQualifier(NonNull.class)
++public final class CallbackCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        if (args.length != 1) {
++            return false;
++        }
++
++        final long id;
++        try {
++            id = Long.parseLong(args[0]);
++        } catch (final NumberFormatException ignored) {
++            return false;
++        }
++
++        ClickCallbackProviderImpl.CALLBACK_MANAGER.runCallback(sender, id);
++        return true;
++    }
++
++    @Override
++    public boolean tabCompletes() {
++        return false;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
