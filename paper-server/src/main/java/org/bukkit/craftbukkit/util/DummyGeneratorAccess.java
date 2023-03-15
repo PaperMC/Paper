@@ -38,7 +38,6 @@ import net.minecraft.world.level.material.FluidTypes;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.phys.AxisAlignedBB;
 import net.minecraft.world.phys.Vec3D;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.TickListEmpty;
 
@@ -121,7 +120,7 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
 
     @Override
     public void gameEvent(GameEvent gameevent, Vec3D vec3d, GameEvent.a gameevent_a) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // Used by BlockComposter
     }
 
     @Override
