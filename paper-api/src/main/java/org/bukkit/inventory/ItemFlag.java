@@ -31,7 +31,11 @@ public enum ItemFlag {
      */
     HIDE_POTION_EFFECTS,
     /**
-     * Setting to show/hide dyes from coloured leather armour
+     * Setting to show/hide dyes from colored leather armor.
      */
-    HIDE_DYE;
+    HIDE_DYE,
+    /**
+     * Setting to show/hide armor trim from leather armor.
+     */
+    HIDE_ARMOR_TRIM;
 }
