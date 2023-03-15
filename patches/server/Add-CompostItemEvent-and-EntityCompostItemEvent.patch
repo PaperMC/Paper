@@ -9,11 +9,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 @@ -0,0 +0,0 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
-                 if (state != dummyBlockState && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, dummyBlockState).isCancelled()) { // if block state will change and event cancelled
                      return InteractionResult.sidedSuccess(world.isClientSide);
                  }
--                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack, rand);
-+                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
+                 BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack, rand);
 +                if (iblockdata1 == null) {
 +                    return InteractionResult.PASS;
 +                }
@@ -38,19 +36,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        if ((i != 0 || f <= 0.0F) && rand >= (double) f) {
 +        // Paper start
-+        io.papermc.paper.event.block.CompostItemEvent event;
 +        boolean willRaiseLevel = !((i != 0 || f <= 0.0F) && rand >= (double) f);
-+        if (entity == null) {
-+            event = new io.papermc.paper.event.block.CompostItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
-+        } else {
-+            event = new io.papermc.paper.event.entity.EntityCompostItemEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++        if (generatoraccess == DummyGeneratorAccess.INSTANCE || entity == null) { // call event on test run or when entity is null (via hopper)
++            final io.papermc.paper.event.block.CompostItemEvent event;
++            if (entity == null) {
++                event = new io.papermc.paper.event.block.CompostItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++            } else {
++                event = new io.papermc.paper.event.entity.EntityCompostItemEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++            }
++            if (!event.callEvent()) {
++                return null;
++            }
++            willRaiseLevel = event.willRaiseLevel();
 +        }
-+
-+        if (!event.callEvent()) {
-+            return null;
-+        }
-+
-+        if (!event.willRaiseLevel()) {
++        if (!willRaiseLevel) {
 +            // Paper end
              return iblockdata;
          } else {
