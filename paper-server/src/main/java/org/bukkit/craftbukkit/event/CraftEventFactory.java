@@ -1075,14 +1075,18 @@ public class CraftEventFactory {
         return handleNonLivingEntityDamageEvent(entity, source, damage, cancelOnZeroDamage, false);
     }
 
-    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelOnZeroDamage, boolean cancelled) {
+    public static EntityDamageEvent callNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelled) {
         final EnumMap<DamageModifier, Double> modifiers = new EnumMap<DamageModifier, Double>(DamageModifier.class);
         final EnumMap<DamageModifier, Function<? super Double, Double>> functions = new EnumMap(DamageModifier.class);
 
         modifiers.put(DamageModifier.BASE, damage);
         functions.put(DamageModifier.BASE, ZERO);
 
-        final EntityDamageEvent event = handleEntityDamageEvent(entity, source, modifiers, functions, cancelled);
+        return handleEntityDamageEvent(entity, source, modifiers, functions, cancelled);
+    }
+
+    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelOnZeroDamage, boolean cancelled) {
+        final EntityDamageEvent event = callNonLivingEntityDamageEvent(entity, source, damage, cancelled);
 
         if (event == null) {
             return false;

@@ -1,0 +1,45 @@
+--- a/net/minecraft/world/entity/Interaction.java
++++ b/net/minecraft/world/entity/Interaction.java
+@@ -24,6 +24,12 @@
+ import net.minecraft.world.phys.AxisAlignedBB;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import net.minecraft.world.damagesource.DamageSource;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityDamageEvent;
++// CraftBukkit end
++
+ public class Interaction extends Entity implements Attackable, Targeting {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -62,7 +68,7 @@
+             this.setHeight(nbttagcompound.getFloat("height"));
+         }
+ 
+-        DataResult dataresult;
++        DataResult<com.mojang.datafixers.util.Pair<Interaction.PlayerAction, net.minecraft.nbt.NBTBase>> dataresult; // CraftBukkit - decompile error
+         Logger logger;
+ 
+         if (nbttagcompound.contains("attack")) {
+@@ -138,12 +144,19 @@
+     public boolean skipAttackInteraction(Entity entity) {
+         if (entity instanceof EntityHuman) {
+             EntityHuman entityhuman = (EntityHuman) entity;
++            // CraftBukkit start
++            DamageSource source = entityhuman.damageSources().playerAttack(entityhuman);
++            EntityDamageEvent event = CraftEventFactory.callNonLivingEntityDamageEvent(this, source, 1.0F, false);
++            if (event.isCancelled()) {
++                return true;
++            }
++            // CraftBukkit end
+ 
+             this.attack = new Interaction.PlayerAction(entityhuman.getUUID(), this.level.getGameTime());
+             if (entityhuman instanceof EntityPlayer) {
+                 EntityPlayer entityplayer = (EntityPlayer) entityhuman;
+ 
+-                CriterionTriggers.PLAYER_HURT_ENTITY.trigger(entityplayer, this, entityhuman.damageSources().generic(), 1.0F, 1.0F, false);
++                CriterionTriggers.PLAYER_HURT_ENTITY.trigger(entityplayer, this, source, (float) event.getFinalDamage(), 1.0F, false); // CraftBukkit
+             }
+ 
+             return !this.getResponse();
