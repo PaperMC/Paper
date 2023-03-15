@@ -7534,6 +7534,7 @@ public enum Material implements Keyed, Translatable {
             case ACACIA_DOOR:
             case ACACIA_FENCE:
             case ACACIA_FENCE_GATE:
+            case ACACIA_HANGING_SIGN:
             case ACACIA_LOG:
             case ACACIA_PLANKS:
             case ACACIA_PRESSURE_PLATE:
@@ -7545,9 +7546,23 @@ public enum Material implements Keyed, Translatable {
             case ACACIA_WOOD:
             case AZALEA:
             case BAMBOO:
+            case BAMBOO_BLOCK:
+            case BAMBOO_BUTTON:
+            case BAMBOO_CHEST_RAFT:
+            case BAMBOO_DOOR:
+            case BAMBOO_FENCE:
+            case BAMBOO_FENCE_GATE:
+            case BAMBOO_HANGING_SIGN:
             case BAMBOO_MOSAIC:
             case BAMBOO_MOSAIC_SLAB:
             case BAMBOO_MOSAIC_STAIRS:
+            case BAMBOO_PLANKS:
+            case BAMBOO_PRESSURE_PLATE:
+            case BAMBOO_RAFT:
+            case BAMBOO_SIGN:
+            case BAMBOO_SLAB:
+            case BAMBOO_STAIRS:
+            case BAMBOO_TRAPDOOR:
             case BARREL:
             case BIRCH_BOAT:
             case BIRCH_BUTTON:
@@ -7555,6 +7570,7 @@ public enum Material implements Keyed, Translatable {
             case BIRCH_DOOR:
             case BIRCH_FENCE:
             case BIRCH_FENCE_GATE:
+            case BIRCH_HANGING_SIGN:
             case BIRCH_LOG:
             case BIRCH_PLANKS:
             case BIRCH_PRESSURE_PLATE:
@@ -7579,6 +7595,22 @@ public enum Material implements Keyed, Translatable {
             case BROWN_WOOL:
             case CARTOGRAPHY_TABLE:
             case CHARCOAL:
+            case CHERRY_BOAT:
+            case CHERRY_BUTTON:
+            case CHERRY_CHEST_BOAT:
+            case CHERRY_DOOR:
+            case CHERRY_FENCE:
+            case CHERRY_FENCE_GATE:
+            case CHERRY_HANGING_SIGN:
+            case CHERRY_LOG:
+            case CHERRY_PLANKS:
+            case CHERRY_PRESSURE_PLATE:
+            case CHERRY_SAPLING:
+            case CHERRY_SIGN:
+            case CHERRY_SLAB:
+            case CHERRY_STAIRS:
+            case CHERRY_TRAPDOOR:
+            case CHERRY_WOOD:
             case CHEST:
             case CHISELED_BOOKSHELF:
             case COAL:
@@ -7595,6 +7627,7 @@ public enum Material implements Keyed, Translatable {
             case DARK_OAK_DOOR:
             case DARK_OAK_FENCE:
             case DARK_OAK_FENCE_GATE:
+            case DARK_OAK_HANGING_SIGN:
             case DARK_OAK_LOG:
             case DARK_OAK_PLANKS:
             case DARK_OAK_PRESSURE_PLATE:
@@ -7623,6 +7656,7 @@ public enum Material implements Keyed, Translatable {
             case JUNGLE_DOOR:
             case JUNGLE_FENCE:
             case JUNGLE_FENCE_GATE:
+            case JUNGLE_HANGING_SIGN:
             case JUNGLE_LOG:
             case JUNGLE_PLANKS:
             case JUNGLE_PRESSURE_PLATE:
@@ -7654,6 +7688,7 @@ public enum Material implements Keyed, Translatable {
             case MANGROVE_DOOR:
             case MANGROVE_FENCE:
             case MANGROVE_FENCE_GATE:
+            case MANGROVE_HANGING_SIGN:
             case MANGROVE_LOG:
             case MANGROVE_PLANKS:
             case MANGROVE_PRESSURE_PLATE:
@@ -7671,6 +7706,7 @@ public enum Material implements Keyed, Translatable {
             case OAK_DOOR:
             case OAK_FENCE:
             case OAK_FENCE_GATE:
+            case OAK_HANGING_SIGN:
             case OAK_LOG:
             case OAK_PLANKS:
             case OAK_PRESSURE_PLATE:
@@ -7700,6 +7736,7 @@ public enum Material implements Keyed, Translatable {
             case SPRUCE_DOOR:
             case SPRUCE_FENCE:
             case SPRUCE_FENCE_GATE:
+            case SPRUCE_HANGING_SIGN:
             case SPRUCE_LOG:
             case SPRUCE_PLANKS:
             case SPRUCE_PRESSURE_PLATE:
@@ -7712,8 +7749,11 @@ public enum Material implements Keyed, Translatable {
             case STICK:
             case STRIPPED_ACACIA_LOG:
             case STRIPPED_ACACIA_WOOD:
+            case STRIPPED_BAMBOO_BLOCK:
             case STRIPPED_BIRCH_LOG:
             case STRIPPED_BIRCH_WOOD:
+            case STRIPPED_CHERRY_LOG:
+            case STRIPPED_CHERRY_WOOD:
             case STRIPPED_DARK_OAK_LOG:
             case STRIPPED_DARK_OAK_WOOD:
             case STRIPPED_JUNGLE_LOG:
