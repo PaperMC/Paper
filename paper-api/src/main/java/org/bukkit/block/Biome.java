@@ -72,6 +72,7 @@ public enum Biome implements Keyed {
     FROZEN_PEAKS,
     JAGGED_PEAKS,
     STONY_PEAKS,
+    CHERRY_GROVE,
     /**
      * Represents a custom Biome
      */
