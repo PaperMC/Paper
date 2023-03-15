@@ -5,15 +5,13 @@ Subject: [PATCH] Add CompostItemEvent and EntityCompostItemEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-index e81bda56c58df6c3109382c17e86f4cc0f16cf81..fc3f08db8e3747e6e9d6f448c91e51144d480585 100644
+index e81bda56c58df6c3109382c17e86f4cc0f16cf81..ae90e86327957bb784e2d81694ee7eea288bb455 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-@@ -235,7 +235,10 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
-                 if (state != dummyBlockState && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, dummyBlockState).isCancelled()) { // if block state will change and event cancelled
+@@ -236,6 +236,9 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
                      return InteractionResult.sidedSuccess(world.isClientSide);
                  }
--                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack, rand);
-+                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
+                 BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack, rand);
 +                if (iblockdata1 == null) {
 +                    return InteractionResult.PASS;
 +                }
@@ -32,30 +30,31 @@ index e81bda56c58df6c3109382c17e86f4cc0f16cf81..fc3f08db8e3747e6e9d6f448c91e5114
              // CraftBukkit end
  
              stack.shrink(1);
-@@ -315,7 +323,21 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -315,7 +323,22 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          int i = (Integer) iblockdata.getValue(ComposterBlock.LEVEL);
          float f = ComposterBlock.COMPOSTABLES.getFloat(itemstack.getItem());
  
 -        if ((i != 0 || f <= 0.0F) && rand >= (double) f) {
 +        // Paper start
-+        io.papermc.paper.event.block.CompostItemEvent event;
 +        boolean willRaiseLevel = !((i != 0 || f <= 0.0F) && rand >= (double) f);
-+        if (entity == null) {
-+            event = new io.papermc.paper.event.block.CompostItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
-+        } else {
-+            event = new io.papermc.paper.event.entity.EntityCompostItemEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++        if (generatoraccess == DummyGeneratorAccess.INSTANCE || entity == null) { // call event on test run or when entity is null (via hopper)
++            final io.papermc.paper.event.block.CompostItemEvent event;
++            if (entity == null) {
++                event = new io.papermc.paper.event.block.CompostItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++            } else {
++                event = new io.papermc.paper.event.entity.EntityCompostItemEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++            }
++            if (!event.callEvent()) {
++                return null;
++            }
++            willRaiseLevel = event.willRaiseLevel();
 +        }
-+
-+        if (!event.callEvent()) {
-+            return null;
-+        }
-+
-+        if (!event.willRaiseLevel()) {
++        if (!willRaiseLevel) {
 +            // Paper end
              return iblockdata;
          } else {
              int j = i + 1;
-@@ -460,6 +482,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -460,6 +483,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
                  this.changed = true;
                  BlockState iblockdata = ComposterBlock.addItem((Entity) null, this.state, this.level, this.pos, itemstack);
  
