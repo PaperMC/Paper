@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 14 Mar 2023 20:03:21 -0700
+Subject: [PATCH] Fix sniffer and new smithing table
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index efcfce93d17507bb6cc870a94eaa777429050d18..5719172a31f005ce419f365011d53712a9b2820f 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -74,12 +74,20 @@ public class Sniffer extends Animal {
+ 
+     public Sniffer(EntityType<? extends Animal> type, Level world) {
+         super(type, world);
+-        this.entityData.define(DATA_STATE, Sniffer.State.IDLING);
+-        this.entityData.define(DATA_DROP_SEED_AT_TICK, 0);
++        // Paper - move to defineSyncedData
+         this.getNavigation().setCanFloat(true);
+         this.setPathfindingMalus(BlockPathTypes.WATER, -2.0F);
+     }
+ 
++    // Paper start
++    @Override
++    protected void defineSynchedData() {
++        super.defineSynchedData();
++        this.entityData.define(DATA_STATE, Sniffer.State.IDLING);
++        this.entityData.define(DATA_DROP_SEED_AT_TICK, 0);
++    }
++    // Paper end
++
+     @Override
+     protected float getStandingEyeHeight(Pose pose, EntityDimensions dimensions) {
+         return this.getDimensions(pose).height * 0.6F;
+@@ -388,7 +396,7 @@ public class Sniffer extends Animal {
+ 
+     @Override
+     public Brain<Sniffer> getBrain() {
+-        return super.getBrain();
++        return (Brain<Sniffer>) super.getBrain(); // Paper - decompile issue
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 109e6afb8fcce0fb539ef93c6c872daa010dc3ff..f60e94560b89a3c6ed1ad0f8bc636d58bf48d222 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1668,7 +1668,7 @@ public class CraftEventFactory {
+     public static void callPrepareSmithingEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
+         PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
+         //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
+-        event.getInventory().setItem(2, event.getResult());
++        event.getInventory().setItem(view.getType() == org.bukkit.event.inventory.InventoryType.SMITHING_NEW ? 3 : 2, event.getResult()); // Paper - use correct result slot index depending on inventory type
+         //return event; // Paper
+     }
+     // Paper end
