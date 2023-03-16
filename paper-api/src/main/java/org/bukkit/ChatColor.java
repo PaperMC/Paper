@@ -243,6 +243,15 @@ public enum ChatColor {
         for (int index = length - 1; index > -1; index--) {
             char section = input.charAt(index);
             if (section == COLOR_CHAR && index < length - 1) {
+
+                String hexColor = getHexColor(input, index);
+                if (hexColor != null) {
+                    // We got a hex color
+                    result = hexColor + result;
+                    break;
+                }
+
+                // It is not a hex color, check normal color
                 char c = input.charAt(index + 1);
                 ChatColor color = getByChar(c);
 
@@ -258,6 +267,48 @@ public enum ChatColor {
         }
 
         return result;
+    }
+
+    @Nullable
+    private static String getHexColor(@NotNull String input, int index) {
+        // Check for hex color with the format '§x§1§2§3§4§5§6'
+        // Our index is currently on the last '§' which means to have a potential hex color
+        // The index - 11 must be an 'x' and index - 12 must be a '§'
+        // But first check if the string is long enough
+        if (index < 12) {
+            return null;
+        }
+
+        if (input.charAt(index - 11) != 'x' || input.charAt(index - 12) != COLOR_CHAR) {
+            return null;
+        }
+
+        // We got a potential hex color
+        // Now check if every the chars switches between '§' and a hex number
+        // First check '§'
+        for (int i = index - 10; i <= index; i += 2) {
+            if (input.charAt(i) != COLOR_CHAR) {
+                return null;
+            }
+        }
+
+        for (int i = index - 9; i <= (index + 1); i += 2) {
+            char toCheck = input.charAt(i);
+            if (toCheck < '0' || toCheck > 'f') {
+                return null;
+            }
+
+            if (toCheck > '9' && toCheck < 'A') {
+                return null;
+            }
+
+            if (toCheck > 'F' && toCheck < 'a') {
+                return null;
+            }
+        }
+
+        // We got a hex color return it
+        return input.substring(index - 12, index + 2);
     }
 
     static {
