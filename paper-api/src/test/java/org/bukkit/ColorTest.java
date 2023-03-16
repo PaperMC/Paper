@@ -10,19 +10,27 @@ public class ColorTest {
     static class TestColor {
         static int id = 0;
         final String name;
+        final int argb;
         final int rgb;
         final int bgr;
+        final int a;
         final int r;
         final int g;
         final int b;
 
         TestColor(int rgb, int bgr, int r, int g, int b) {
+            this((255 << 24 | r << 16 | g << 8 | b), rgb, bgr, 255, r, g, b);
+        }
+
+        TestColor(int argb, int rgb, int bgr, int a, int r, int g, int b) {
+            this.argb = argb;
             this.rgb = rgb;
             this.bgr = bgr;
+            this.a = a;
             this.r = r;
             this.g = g;
             this.b = b;
-            this.name = id + ":" + Integer.toHexString(rgb).toUpperCase() + "_" + Integer.toHexString(bgr).toUpperCase() + "-r" + Integer.toHexString(r).toUpperCase() + "-g" + Integer.toHexString(g).toUpperCase() + "-b" + Integer.toHexString(b).toUpperCase();
+            this.name = id + ":" + Integer.toHexString(argb).toUpperCase() + "_" + Integer.toHexString(rgb).toUpperCase() + "_" + Integer.toHexString(bgr).toUpperCase() + "-a" + Integer.toHexString(a).toUpperCase() + "-r" + Integer.toHexString(r).toUpperCase() + "-g" + Integer.toHexString(g).toUpperCase() + "-b" + Integer.toHexString(b).toUpperCase();
         }
     }
 
@@ -32,7 +40,10 @@ public class ColorTest {
         new TestColor(0xFFFFAA, 0xAAFFFF, 0xFF, 0xFF, 0xAA),
         new TestColor(0xFF00FF, 0xFF00FF, 0xFF, 0x00, 0xFF),
         new TestColor(0x67FF22, 0x22FF67, 0x67, 0xFF, 0x22),
-        new TestColor(0x000000, 0x000000, 0x00, 0x00, 0x00)
+        new TestColor(0x000000, 0x000000, 0x00, 0x00, 0x00),
+        /*            0xAARRGGBB, 0xRRGGBB, 0xBBGGRR, 0xAA, 0xRR, 0xGG, 0xBB */
+        new TestColor(0xFF559922, 0x559922, 0x229955, 0xFF, 0x55, 0x99, 0x22),
+        new TestColor(0x00000000, 0x000000, 0x000000, 0x00, 0x00, 0x00, 0x00)
     };
 
     @Test
@@ -55,11 +66,15 @@ public class ColorTest {
     @Test
     public void testEqualities() {
         for (TestColor testColor : examples) {
+            Color fromARGB = Color.fromARGB(testColor.argb);
+            Color fromARGBs = Color.fromARGB(testColor.a, testColor.r, testColor.g, testColor.b);
             Color fromRGB = Color.fromRGB(testColor.rgb);
             Color fromBGR = Color.fromBGR(testColor.bgr);
             Color fromRGBs = Color.fromRGB(testColor.r, testColor.g, testColor.b);
             Color fromBGRs = Color.fromBGR(testColor.b, testColor.g, testColor.r);
 
+            assertThat(testColor.name, fromARGB, is(fromARGB));
+            assertThat(testColor.name, fromARGBs, is(fromARGBs));
             assertThat(testColor.name, fromRGB, is(fromRGBs));
             assertThat(testColor.name, fromRGB, is(fromBGR));
             assertThat(testColor.name, fromRGB, is(fromBGRs));
@@ -73,17 +88,26 @@ public class ColorTest {
     public void testInequalities() {
         for (int i = 1; i < examples.length; i++) {
             TestColor testFrom = examples[i];
-            Color from = Color.fromRGB(testFrom.rgb);
+            Color from = Color.fromARGB(testFrom.argb);
             for (int j = i - 1; j >= 0; j--) {
                 TestColor testTo = examples[j];
-                Color to = Color.fromRGB(testTo.rgb);
+                Color to = Color.fromARGB(testTo.argb);
                 String name = testFrom.name + " to " + testTo.name;
                 assertThat(name, from, is(not(to)));
 
-                Color transform = from.setRed(testTo.r).setBlue(testTo.b).setGreen(testTo.g);
+                Color transform = from.setAlpha(testTo.a).setRed(testTo.r).setBlue(testTo.b).setGreen(testTo.g);
                 assertThat(name, transform, is(not(sameInstance(from))));
                 assertThat(name, transform, is(to));
             }
+        }
+    }
+
+    // ARGB tests
+    @Test
+    public void testARGB() {
+        for (TestColor testColor : examples) {
+            assertThat(testColor.name, Color.fromARGB(testColor.argb).asARGB(), is(testColor.argb));
+            assertThat(testColor.name, Color.fromARGB(testColor.a, testColor.r, testColor.g, testColor.b).asARGB(), is(testColor.argb));
         }
     }
 
@@ -147,6 +171,74 @@ public class ColorTest {
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidBGR4() {
         Color.fromBGR(-1);
+    }
+
+    // Alpha tests
+    @Test
+    public void testAlpha() {
+        for (TestColor testColor : examples) {
+            assertThat(testColor.name, Color.fromARGB(testColor.argb).getAlpha(), is(testColor.a));
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA01() {
+        Color.fromARGB(-1, 0x00, 0x00, 0x00);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA02() {
+        Color.fromARGB(Integer.MAX_VALUE, 0x00, 0x00, 0x00);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA03() {
+        Color.fromARGB(Integer.MIN_VALUE, 0x00, 0x00, 0x00);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA04() {
+        Color.fromARGB(0x100, 0x00, 0x00, 0x00);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA05() {
+        Color.fromBGR(0x00, 0x00, 0x00).setAlpha(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA06() {
+        Color.fromBGR(0x00, 0x00, 0x00).setAlpha(Integer.MAX_VALUE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA07() {
+        Color.fromBGR(0x00, 0x00, 0x00).setAlpha(Integer.MIN_VALUE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA08() {
+        Color.fromBGR(0x00, 0x00, 0x00).setAlpha(0x100);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA09() {
+        Color.WHITE.setAlpha(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA10() {
+        Color.WHITE.setAlpha(Integer.MAX_VALUE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA11() {
+        Color.WHITE.setAlpha(Integer.MIN_VALUE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidA12() {
+        Color.WHITE.setAlpha(0x100);
     }
 
     // Red tests
