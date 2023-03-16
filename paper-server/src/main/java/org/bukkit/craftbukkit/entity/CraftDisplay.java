@@ -128,7 +128,7 @@ public class CraftDisplay extends CraftEntity implements Display {
     public Color getGlowColorOverride() {
         int color = getHandle().getGlowColorOverride();
 
-        return (color == -1) ? null : Color.fromRGB(color);
+        return (color == -1) ? null : Color.fromARGB(color);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class CraftDisplay extends CraftEntity implements Display {
         if (color == null) {
             getHandle().setGlowColorOverride(-1);
         } else {
-            getHandle().setGlowColorOverride(color.asRGB());
+            getHandle().setGlowColorOverride(color.asARGB());
         }
     }
 
