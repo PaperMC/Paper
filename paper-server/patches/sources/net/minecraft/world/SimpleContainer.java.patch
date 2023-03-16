@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/SimpleContainer.java
 +++ b/net/minecraft/world/SimpleContainer.java
-@@ -14,16 +14,74 @@
+@@ -14,16 +14,84 @@
  import net.minecraft.world.item.Item;
  import net.minecraft.world.item.ItemStack;
  
@@ -50,9 +50,19 @@
 +    public org.bukkit.inventory.InventoryHolder getOwner() {
 +        return this.bukkitOwner;
 +    }
-+
+ 
 +    @Override
 +    public Location getLocation() {
++        // Paper start - Fix inventories returning null Locations
++        // When the block inventory does not have a tile state that implements getLocation, e. g. composters
++        if (this.bukkitOwner instanceof org.bukkit.inventory.BlockInventoryHolder blockInventoryHolder) {
++            return blockInventoryHolder.getBlock().getLocation();
++        }
++        // When the bukkit owner is a bukkit entity, but does not implement Container itself, e. g. horses
++        if (this.bukkitOwner instanceof org.bukkit.entity.Entity entity) {
++            return entity.getLocation();
++        }
++        // Paper end - Fix inventories returning null Locations
 +        return null;
 +    }
 +
@@ -62,7 +72,7 @@
 +            this.items.set(slot, original.items.get(slot).copy());
 +        }
 +    }
- 
++
      public SimpleContainer(int size) {
 -        this.size = size;
 -        this.items = NonNullList.withSize(size, ItemStack.EMPTY);
