@@ -851,7 +851,6 @@ public class CraftEventFactory {
     }
 
     private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
-        ResourceKey<DamageType> sourceType = source.typeHolder().unwrapKey().get();
         if (source.is(DamageTypeTags.IS_EXPLOSION)) {
             DamageCause damageCause;
             Entity damager = entityDamage;
@@ -880,24 +879,24 @@ public class CraftEventFactory {
             }
             return event;
         } else if (source.getEntity() != null) {
-            Entity damager = source.getDirectEntity();
+            Entity damager = source.getEntity();
             DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
 
-            if (source.isIndirect()) {
-                damager = source.getEntity();
+            if (source.isIndirect() && source.getDirectEntity() != null) {
+                damager = source.getDirectEntity();
                 if (damager.getBukkitEntity() instanceof ThrownPotion) {
                     cause = DamageCause.MAGIC;
                 } else if (damager.getBukkitEntity() instanceof Projectile) {
                     cause = DamageCause.PROJECTILE;
                 }
-            } else if ("thorns".equals(source.getMsgId())) {
+            } else if (source.is(DamageTypes.THORNS)) {
                 cause = DamageCause.THORNS;
-            } else if ("sonic_boom".equals(source.getMsgId())) {
+            } else if (source.is(DamageTypes.SONIC_BOOM)) {
                 cause = DamageCause.SONIC_BOOM;
             }
 
             return callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions, cancelled);
-        } else if (sourceType == DamageTypes.OUT_OF_WORLD) {
+        } else if (source.is(DamageTypes.OUT_OF_WORLD)) {
             EntityDamageEvent event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.VOID, modifiers, modifierFunctions);
             event.setCancelled(cancelled);
             callEvent(event);
@@ -907,7 +906,7 @@ public class CraftEventFactory {
                 entity.lastDamageCancelled = true; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
             }
             return event;
-        } else if (sourceType == DamageTypes.LAVA) {
+        } else if (source.is(DamageTypes.LAVA)) {
             EntityDamageEvent event = (new EntityDamageByBlockEvent(blockDamage, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
             event.setCancelled(cancelled);
 
@@ -925,13 +924,13 @@ public class CraftEventFactory {
         } else if (blockDamage != null) {
             DamageCause cause = null;
             Block damager = blockDamage;
-            if (sourceType == DamageTypes.CACTUS || sourceType == DamageTypes.SWEET_BERRY_BUSH || sourceType == DamageTypes.STALAGMITE || "fallingStalactite".equals(source.getMsgId()) || "anvil".equals(source.getMsgId())) {
+            if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.STALAGMITE) || source.is(DamageTypes.FALLING_STALACTITE) || source.is(DamageTypes.FALLING_ANVIL)) {
                 cause = DamageCause.CONTACT;
-            } else if (sourceType == DamageTypes.HOT_FLOOR) {
+            } else if (source.is(DamageTypes.HOT_FLOOR)) {
                 cause = DamageCause.HOT_FLOOR;
-            } else if (sourceType == DamageTypes.MAGIC) {
+            } else if (source.is(DamageTypes.MAGIC)) {
                 cause = DamageCause.MAGIC;
-            } else if (sourceType == DamageTypes.IN_FIRE) {
+            } else if (source.is(DamageTypes.IN_FIRE)) {
                 cause = DamageCause.FIRE;
             } else {
                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.getMsgId()));
@@ -953,15 +952,15 @@ public class CraftEventFactory {
             DamageCause cause = null;
             CraftEntity damager = entityDamage.getBukkitEntity();
             entityDamage = null;
-            if ("fallingStalactite".equals(source.getMsgId()) || "fallingBlock".equals(source.getMsgId()) || "anvil".equals(source.getMsgId())) {
+            if (source.is(DamageTypes.FALLING_STALACTITE) || source.is(DamageTypes.FALLING_BLOCK) || source.is(DamageTypes.FALLING_ANVIL)) {
                 cause = DamageCause.FALLING_BLOCK;
             } else if (damager instanceof LightningStrike) {
                 cause = DamageCause.LIGHTNING;
-            } else if (sourceType == DamageTypes.FALL) {
+            } else if (source.is(DamageTypes.FALL)) {
                 cause = DamageCause.FALL;
-            } else if (sourceType == DamageTypes.DRAGON_BREATH) {
+            } else if (source.is(DamageTypes.DRAGON_BREATH)) {
                 cause = DamageCause.DRAGON_BREATH;
-            } else if (sourceType == DamageTypes.MAGIC) {
+            } else if (source.is(DamageTypes.MAGIC)) {
                 cause = DamageCause.MAGIC;
             } else {
                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager.getHandle(), source.getMsgId()));
@@ -978,33 +977,33 @@ public class CraftEventFactory {
         }
 
         DamageCause cause = null;
-        if (sourceType == DamageTypes.IN_FIRE) {
+        if (source.is(DamageTypes.IN_FIRE)) {
             cause = DamageCause.FIRE;
-        } else if (sourceType == DamageTypes.STARVE) {
+        } else if (source.is(DamageTypes.STARVE)) {
             cause = DamageCause.STARVATION;
-        } else if (sourceType == DamageTypes.WITHER) {
+        } else if (source.is(DamageTypes.WITHER)) {
             cause = DamageCause.WITHER;
-        } else if (sourceType == DamageTypes.IN_WALL) {
+        } else if (source.is(DamageTypes.IN_WALL)) {
             cause = DamageCause.SUFFOCATION;
-        } else if (sourceType == DamageTypes.DROWN) {
+        } else if (source.is(DamageTypes.DROWN)) {
             cause = DamageCause.DROWNING;
-        } else if (sourceType == DamageTypes.ON_FIRE) {
+        } else if (source.is(DamageTypes.ON_FIRE)) {
             cause = DamageCause.FIRE_TICK;
         } else if (source.isMelting()) {
             cause = DamageCause.MELTING;
         } else if (source.isPoison()) {
             cause = DamageCause.POISON;
-        } else if (sourceType == DamageTypes.MAGIC) {
+        } else if (source.is(DamageTypes.MAGIC)) {
             cause = DamageCause.MAGIC;
-        } else if (sourceType == DamageTypes.FALL) {
+        } else if (source.is(DamageTypes.FALL)) {
             cause = DamageCause.FALL;
-        } else if (sourceType == DamageTypes.FLY_INTO_WALL) {
+        } else if (source.is(DamageTypes.FLY_INTO_WALL)) {
             cause = DamageCause.FLY_INTO_WALL;
-        } else if (sourceType == DamageTypes.CRAMMING) {
+        } else if (source.is(DamageTypes.CRAMMING)) {
             cause = DamageCause.CRAMMING;
-        } else if (sourceType == DamageTypes.DRY_OUT) {
+        } else if (source.is(DamageTypes.DRY_OUT)) {
             cause = DamageCause.DRYOUT;
-        } else if (sourceType == DamageTypes.FREEZE) {
+        } else if (source.is(DamageTypes.FREEZE)) {
             cause = DamageCause.FREEZE;
         } else {
             cause = DamageCause.CUSTOM;
@@ -1043,11 +1042,11 @@ public class CraftEventFactory {
     private static final Function<? super Double, Double> ZERO = Functions.constant(-0.0);
 
     public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, double rawDamage, double hardHatModifier, double blockingModifier, double armorModifier, double resistanceModifier, double magicModifier, double absorptionModifier, Function<Double, Double> hardHat, Function<Double, Double> blocking, Function<Double, Double> armor, Function<Double, Double> resistance, Function<Double, Double> magic, Function<Double, Double> absorption) {
-        Map<DamageModifier, Double> modifiers = new EnumMap<DamageModifier, Double>(DamageModifier.class);
-        Map<DamageModifier, Function<? super Double, Double>> modifierFunctions = new EnumMap<DamageModifier, Function<? super Double, Double>>(DamageModifier.class);
+        Map<DamageModifier, Double> modifiers = new EnumMap<>(DamageModifier.class);
+        Map<DamageModifier, Function<? super Double, Double>> modifierFunctions = new EnumMap<>(DamageModifier.class);
         modifiers.put(DamageModifier.BASE, rawDamage);
         modifierFunctions.put(DamageModifier.BASE, ZERO);
-        if ("fallingBlock".equals(source.getMsgId()) || "anvil".equals(source.getMsgId())) {
+        if (source.is(DamageTypes.FALLING_BLOCK) || source.is(DamageTypes.FALLING_ANVIL)) {
             modifiers.put(DamageModifier.HARD_HAT, hardHatModifier);
             modifierFunctions.put(DamageModifier.HARD_HAT, hardHat);
         }
