@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 17 Mar 2023 14:53:21 -0400
+Subject: [PATCH] Set entityDamage on Interaction DamageEvent
+
+This properly calls EntityDamageByEntityEvent.
+
+In general, the use of the event here is improper as we have to essentially simulate a fake attack here.
+Vanilla does something a bit similar in order to allow datapacks to listen for more than one event in a single tick,
+but it's a bit silly for this to be the case for plugins too.
+But, we are stuck with this now, as upstream has decided to use this event here.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Interaction.java b/src/main/java/net/minecraft/world/entity/Interaction.java
+index 4f1a2b8bb3b837f5e6f7888f267701b789ea5c02..a2aadd4b99f4f0df38438533cb8c6e8fabd95d44 100644
+--- a/src/main/java/net/minecraft/world/entity/Interaction.java
++++ b/src/main/java/net/minecraft/world/entity/Interaction.java
+@@ -145,7 +145,9 @@ public class Interaction extends Entity implements Attackable, Targeting {
+             Player entityhuman = (Player) attacker;
+             // CraftBukkit start
+             DamageSource source = entityhuman.damageSources().playerAttack(entityhuman);
++            CraftEventFactory.entityDamage = entityhuman; // Paper
+             EntityDamageEvent event = CraftEventFactory.callNonLivingEntityDamageEvent(this, source, 1.0F, false);
++            CraftEventFactory.entityDamage = null; // Paper
+             if (event.isCancelled()) {
+                 return true;
+             }
