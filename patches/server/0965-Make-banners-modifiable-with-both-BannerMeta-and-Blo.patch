@@ -32,7 +32,7 @@ index f45e4acee69bd95ff2e41feaf44f5414d2e40df0..5d47d47358dfa082e9b7bf142a24bd2e
              case AXOLOTL_SPAWN_EGG:
              case BAT_SPAWN_EGG:
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
-index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c728eae618 100644
+index 881f221517dc062a34489df6f7e006af9540953f..8e7b632fe42486da91729a555cb9990fa8291289 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 @@ -18,7 +18,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -85,15 +85,24 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
              return;
          }
  
-@@ -102,10 +112,19 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -100,12 +110,27 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+         }
+     }
  
-     CraftMetaBanner(Map<String, Object> map) {
-         super(map);
-+        // Paper start - Correctly deserialize old BannerMeta to new BlockStateMeta
++    // Paper start - Correctly deserialize old BannerMeta to new BlockStateMeta
++    private static Map<String, Object> ensureDefaultMaterialPresence(Map<String, Object> map) {
 +        if (map.containsKey("blockMaterial")) {
-+            return;
++            return map;
++        } else {
++            final Map<String, Object> newMap = new java.util.HashMap<>(map);
++            newMap.put("blockMaterial", "minecraft:white_banner");
++            return newMap;
 +        }
-+        this.material = Material.WHITE_BANNER;
++    }
++
+     CraftMetaBanner(Map<String, Object> map) {
+-        super(map);
++        super(CraftMetaBanner.ensureDefaultMaterialPresence(map));
 +        if (map.containsKey("internal")) {
 +            return;
 +        }
@@ -106,7 +115,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
          }
  
          Iterable<?> rawPatternList = SerializableMeta.getObject(Iterable.class, map, PATTERNS.BUKKIT, true);
-@@ -123,6 +142,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -123,6 +148,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      @Override
      void applyToItem(CompoundTag tag) {
          super.applyToItem(tag);
@@ -114,7 +123,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
  
          CompoundTag entityTag = new CompoundTag();
          if (this.base != null) {
-@@ -144,46 +164,88 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -144,46 +170,88 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
  
      @Override
      public DyeColor getBaseColor() {
@@ -203,7 +212,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
          return this.patterns.size();
      }
  
-@@ -191,6 +253,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -191,6 +259,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
          super.serialize(builder);
  
@@ -211,7 +220,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
          if (this.base != null) {
              builder.put(BASE.BUKKIT, this.base.toString());
          }
-@@ -206,6 +269,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -206,6 +275,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      int applyHash() {
          final int original;
          int hash = original = super.applyHash();
@@ -219,7 +228,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
          if (this.base != null) {
              hash = 31 * hash + this.base.hashCode();
          }
-@@ -217,6 +281,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -217,6 +287,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
  
      @Override
      public boolean equalsCommon(CraftMetaItem meta) {
@@ -227,7 +236,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
          if (!super.equalsCommon(meta)) {
              return false;
          }
-@@ -230,11 +295,13 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -230,11 +301,13 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
  
      @Override
      boolean notUncommon(CraftMetaItem meta) {
@@ -241,7 +250,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
          return super.isEmpty() && this.patterns.isEmpty() && this.base == null;
      }
  
-@@ -246,7 +313,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+@@ -246,7 +319,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
      @Override
      public CraftMetaBanner clone() {
          CraftMetaBanner meta = (CraftMetaBanner) super.clone();
@@ -251,7 +260,7 @@ index 881f221517dc062a34489df6f7e006af9540953f..cabf141fcd9ba1ef25d45e46376217c7
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 1957e82b67b4aa301d12468d5a81d96e621dab49..0fdb24d6716de62e6e01174a10648875825cb437 100644
+index 1957e82b67b4aa301d12468d5a81d96e621dab49..8413721ba51191555d66dedb14cbb2b6ec99e61e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 @@ -40,7 +40,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
@@ -263,12 +272,3 @@ index 1957e82b67b4aa301d12468d5a81d96e621dab49..0fdb24d6716de62e6e01174a10648875
              Material.FURNACE,
              Material.CHEST,
              Material.TRAPPED_CHEST,
-@@ -130,7 +130,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
-     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
-     static final ItemMetaKey BLOCK_ENTITY_TAG = new ItemMetaKey("BlockEntityTag");
- 
--    final Material material;
-+    Material material; // Paper - Remove final keyword, so it can be changed in CraftMetaBanner's deserialized constructor
-     CompoundTag blockEntityTag;
- 
-     CraftMetaBlockState(CraftMetaItem meta, Material material) {
