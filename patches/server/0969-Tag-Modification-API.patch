@@ -1,0 +1,135 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 18 Mar 2023 14:37:29 -0700
+Subject: [PATCH] Tag Modification API
+
+== AT ==
+public net.minecraft.tags.TagNetworkSerialization$NetworkPayload <init>(Ljava/util/Map;)V
+
+diff --git a/src/main/java/io/papermc/paper/tag/PaperTagUpdate.java b/src/main/java/io/papermc/paper/tag/PaperTagUpdate.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c744e7bcf59fbd3007f8506d024546e0d7f2b11d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/PaperTagUpdate.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.tag;
++
++import com.google.common.collect.ImmutableMap;
++import it.unimi.dsi.fastutil.ints.IntArrayList;
++import it.unimi.dsi.fastutil.ints.IntList;
++import java.util.Map;
++import java.util.Set;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.Keyed;
++import net.minecraft.core.Holder;
++import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.tags.TagNetworkSerialization;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public record PaperTagUpdate<B extends Keyed, M>(
++    ResourceKey<? extends Registry<M>> registryKey,
++    Map<Key, Set<B>> updatedTags,
++    Map<net.minecraft.tags.TagKey<M>, java.util.List<net.minecraft.core.Holder<M>>> nmsTags
++) implements TagUpdate<B> {
++
++    // logic was adapted from TagNetworkSerialization#serializeToNetwork
++    public void addToNetworkPayloadMap(final Map<ResourceKey<? extends Registry<?>>, TagNetworkSerialization.NetworkPayload> networkPayload, final RegistryAccess registryAccess) {
++        final ImmutableMap.Builder<ResourceLocation, IntList> map = ImmutableMap.builder();
++        final Registry<M> registry = registryAccess.registryOrThrow(this.registryKey);
++        this.nmsTags.forEach((key, tagValues) -> {
++            final IntList idList = new IntArrayList(tagValues.size());
++            for(Holder<M> holder : tagValues) {
++                if (holder.kind() != Holder.Kind.REFERENCE) {
++                    throw new IllegalStateException("Can't serialize unregistered value " + holder);
++                }
++
++                idList.add(registry.getId(holder.value()));
++            }
++
++            map.put(key.location(), idList);
++        });
++        networkPayload.put(this.registryKey, new TagNetworkSerialization.NetworkPayload(map.build()));
++    }
++
++    public void applyToRegistry(final RegistryAccess registryAccess) {
++        registryAccess.registryOrThrow(this.registryKey).bindTags(this.nmsTags);
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+index 34888b525fd35ac64e6e5e66036ad965a6769959..59ddba449d49c7f9d447b665eb52c765ff6b15ec 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+@@ -78,4 +78,25 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+     public Stream<B> values() {
+         return this.minecraftRegistry.keySet().stream().map(minecraftKey -> this.get(CraftNamespacedKey.fromMinecraft(minecraftKey)));
+     }
++    // Paper start - tag updates
++    @Override
++    public io.papermc.paper.tag.TagUpdate<B> createTagUpdate(final java.util.function.Consumer<Map<net.kyori.adventure.key.Key, java.util.Set<B>>> editConsumer) {
++        final Map<net.kyori.adventure.key.Key, java.util.Set<B>> map = this.minecraftRegistry.getTags().collect(
++            java.util.stream.Collectors.toMap(
++                pair -> io.papermc.paper.adventure.PaperAdventure.asAdventure(pair.getFirst().location()),
++                pair -> pair.getSecond().stream().map(holder -> java.util.Objects.requireNonNull(this.get(CraftNamespacedKey.fromMinecraft(holder.unwrapKey().orElseThrow().location())), () -> "Couldn't get bukkit object for key " + holder.unwrapKey())).collect(java.util.stream.Collectors.toSet()),
++                (bs, bs2) -> { throw new IllegalStateException("No duplicate tag keys"); },
++                HashMap::new
++            )
++        );
++        editConsumer.accept(map);
++        final Map<net.minecraft.tags.TagKey<M>, java.util.List<net.minecraft.core.Holder<M>>> newTags = map.entrySet().stream().collect(
++            java.util.stream.Collectors.toMap(
++                entry -> net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(entry.getKey())),
++                entry -> entry.getValue().stream().map(b -> (net.minecraft.core.Holder<M>) this.minecraftRegistry.getHolderOrThrow(net.minecraft.resources.ResourceKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(b.key())))).toList()
++            )
++        );
++        return new io.papermc.paper.tag.PaperTagUpdate<>(this.minecraftRegistry.key(), map, newTags);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index f9a9d2bb7b6d1bf4a0931438de4d8c7ee0757479..ddddfdb95e9936a560e435b807d9cc3e7ac0b234 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2919,4 +2919,22 @@ public final class CraftServer implements Server {
+     }
+ 
+     // Paper end
++    // Paper start - tag updates
++    @Override
++    public void applyTagUpdate(final Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates) {
++        for (final io.papermc.paper.tag.TagUpdate<?> update : tagUpdates) {
++            ((io.papermc.paper.tag.PaperTagUpdate<?, ?>) update).applyToRegistry(this.console.registryAccess());
++        }
++        net.minecraft.world.level.block.Blocks.rebuildCache();
++        this.playerList.broadcastAll(createTagUpdatePacket(tagUpdates, this.console.registryAccess()));
++    }
++
++    public static net.minecraft.network.protocol.game.ClientboundUpdateTagsPacket createTagUpdatePacket(final Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates, final net.minecraft.core.RegistryAccess registryAccess) {
++        final Map<ResourceKey<? extends net.minecraft.core.Registry<?>>, net.minecraft.tags.TagNetworkSerialization.NetworkPayload> map = new java.util.HashMap<>();
++        for (final io.papermc.paper.tag.TagUpdate<?> update : tagUpdates) {
++            ((io.papermc.paper.tag.PaperTagUpdate<?, ?>) update).addToNetworkPayloadMap(map, registryAccess);
++        }
++        return new net.minecraft.network.protocol.game.ClientboundUpdateTagsPacket(map);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index eca5e6b93dd84307bf9dbadf32414d6f506e69dc..cf350b2d6969f20cc0d1933a9ba51475f9d942d8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3148,4 +3148,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return this.spigot;
+     }
+     // Spigot end
++
++    // Paper start - tag updates
++    @Override
++    public void sendTagUpdates(final Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates) {
++        this.getHandle().connection.send(CraftServer.createTagUpdatePacket(tagUpdates, this.getHandle().getLevel().registryAccess()));
++    }
++    // Paper end
+ }

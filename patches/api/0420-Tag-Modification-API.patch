@@ -1,0 +1,144 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 18 Mar 2023 14:36:47 -0700
+Subject: [PATCH] Tag Modification API
+
+
+diff --git a/src/main/java/io/papermc/paper/tag/TagUpdate.java b/src/main/java/io/papermc/paper/tag/TagUpdate.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8ec1289f25521f6c8bc1910c7c60e809a2ea08d1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/TagUpdate.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.tag;
++
++import java.util.Map;
++import java.util.Set;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++/**
++ * Represents an update to a set of tags that can be
++ * sent to any number of players or a single player.
++ */
++@ApiStatus.NonExtendable
++public interface TagUpdate<T extends Keyed> {
++
++    /**
++     * Get the set of updated tags.
++     *
++     * @return an immutable map describing tags
++     */
++    @NotNull @Unmodifiable Map<Key, Set<T>> updatedTags();
++}
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 0a3a41ae4c488b148266129d3663be3f8830d509..1c3e941c3322ab39a99e5c4f08fcb64bee8f32c5 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -271,6 +271,20 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+         return (namespacedKey != null) ? get(namespacedKey) : null;
+     }
+ 
++    // Paper start - tag updates
++    /**
++     * Edits the tags the server and client use to determine various behaviors.
++     * In the consumer parameter, the map and initial sets will be mutable to make
++     * changes and after the consumer, they will be sent to the client.
++     *
++     * @param editConsumer the consumer to edit the map of tags
++     * @throws UnsupportedOperationException if this registry doesn't support editing tags
++     */
++    default io.papermc.paper.tag.TagUpdate<T> createTagUpdate(final java.util.function.@NotNull Consumer<Map<net.kyori.adventure.key.Key, java.util.Set<T>>> editConsumer) {
++        throw new UnsupportedOperationException("This registry doesn't support editing tags");
++    }
++    // Paper end
++
+     static final class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> {
+ 
+         private final Map<NamespacedKey, T> map;
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 2204336d8800311b65e894739ab1b27273e7c6f2..87cba207c54cb53e5491cdaf250ce751fb8e52c5 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2139,4 +2139,36 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
+     // Paper end
++    // Paper start - tag updates
++    /**
++     * Applies this tag update to the tags on the server. After
++     * applying the changes, updates will be sent to all connected
++     * clients with the new tags.
++     * <p>
++     * These changes will be reset when the server is restarted
++     * or reloaded through {@code /bukkit:reload} or {@code /minecraft:reload}.
++     * Listen to {@link io.papermc.paper.event.server.ServerResourcesReloadedEvent} if
++     * you want to preserve your changes through reloads.
++     *
++     * @param tagUpdate the tag update to send
++     * @see #applyTagUpdate(Iterable) for multiple updates at once
++     */
++    default void applyTagUpdate(io.papermc.paper.tag.@NotNull TagUpdate<?> tagUpdate) {
++        this.applyTagUpdate(java.util.Set.of(tagUpdate));
++    }
++
++    /**
++     * Applies this tag update to the tags on the server. After
++     * applying the changes, updates will be sent to all connected
++     * clients with the new tags.
++     * <p>
++     * These changes will be reset when the server is restarted
++     * or reloaded through {@code /bukkit:reload} or {@code /minecraft:reload}.
++     * Listen to {@link io.papermc.paper.event.server.ServerResourcesReloadedEvent} if
++     * you want to preserve your changes through reloads.
++     *
++     * @param tagUpdates the tag updates to send
++     */
++    void applyTagUpdate(@NotNull Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 660f28e371176c62e38a84b187958aceb235c8e3..935fdae93a3a5abdb5643993895b22542a5bd97c 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -3000,4 +3000,37 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     @Override
+     Spigot spigot();
+     // Spigot end
++
++    // Paper start - tag updates
++    /**
++     * Send a tag update to this player. The player's client
++     * will apply this tag change and update its behavior
++     * accordingly.
++     * <p>
++     * These changes will be reset when the server is restarted
++     * or reloaded through {@code /bukkit:reload} or {@code /minecraft:reload}.
++     * Listen to {@link io.papermc.paper.event.server.ServerResourcesReloadedEvent} if
++     * you want to preserve your changes through reloads.
++     *
++     * @param tagUpdate the tag update to send
++     * @see #sendTagUpdates(Iterable) for multiple updates at once
++     */
++    default void sendTagUpdate(io.papermc.paper.tag.@NotNull TagUpdate<?> tagUpdate) {
++        this.sendTagUpdates(java.util.Set.of(tagUpdate));
++    }
++
++    /**
++     * Send a group of tag updates to this player. The player's client
++     * will apply these tag changes and update its behavior
++     * accordingly.
++     * <p>
++     * These changes will be reset when the server is restarted
++     * or reloaded through {@code /bukkit:reload} or {@code /minecraft:reload}.
++     * Listen to {@link io.papermc.paper.event.server.ServerResourcesReloadedEvent} if
++     * you want to preserve your changes through reloads.
++     *
++     * @param tagUpdates the tag updates to send
++     */
++    void sendTagUpdates(@NotNull Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates);
++    // Paper end
+ }
