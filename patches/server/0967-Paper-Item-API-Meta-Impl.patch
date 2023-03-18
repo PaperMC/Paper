@@ -1,0 +1,2742 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sat, 18 Mar 2023 01:08:20 -0400
+Subject: [PATCH] Paper Item API Meta Impl
+
+
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java b/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..396d651a9c45042c58bf64586e67f8cd8069c239
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java
+@@ -0,0 +1,70 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.entity.Axolotl;
++import org.bukkit.inventory.meta.AxolotlBucketMeta;
++import org.jetbrains.annotations.NotNull;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaAxolotlBucket extends PaperMeta implements AxolotlBucketMeta {
++
++    public MetaAxolotlBucket(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public @NotNull Axolotl.Variant getVariant() {
++        return this.propertyHolder.get(ItemProperties.VARIANT);
++    }
++
++    @Override
++    public void setVariant(Axolotl.@NotNull Variant variant) {
++        this.propertyHolder.set(ItemProperties.VARIANT, variant);
++    }
++
++    @Override
++    public boolean hasVariant() {
++        return this.propertyHolder.hasProperty(ItemProperties.VARIANT);
++    }
++
++    @Override
++    public @NotNull MetaAxolotlBucket clone() {
++        return new MetaAxolotlBucket(this.propertyHolder.clone(), material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.VARIANT);
++        this.propertyHolder.unset(ItemProperties.ENTITY_TAG);
++    }
++
++    // Equality logic
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isBucketEmpty();
++    }
++
++    boolean isBucketEmpty() {
++        return !(this.hasVariant() || this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null);
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaAxolotlBucket that) {
++            return (this.hasVariant() ? that.hasVariant() && this.getVariant().equals(that.getVariant()) : !that.hasVariant()) && (this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null ? that.propertyHolder.get(ItemProperties.ENTITY_TAG) != null && this.propertyHolder.get(ItemProperties.ENTITY_TAG).equals(that.propertyHolder.get(ItemProperties.ENTITY_TAG)) : that.propertyHolder.get(ItemProperties.ENTITY_TAG) == null);
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaAxolotlBucket || this.isBucketEmpty());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBanner.java b/src/main/java/io/papermc/paper/item/meta/MetaBanner.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c7cf2b32e5dae65e05516dd9629bff3fea1cc63f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBanner.java
+@@ -0,0 +1,113 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.DyeColor;
++import org.bukkit.Material;
++import org.bukkit.block.banner.Pattern;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.BannerMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.ArrayList;
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaBanner extends PaperMeta implements BannerMeta {
++
++    public MetaBanner(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public @NotNull MetaBanner clone() {
++        return new MetaBanner(this.propertyHolder.clone(), material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    @Override
++    public @Nullable DyeColor getBaseColor() {
++        return this.getFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.BASE);
++    }
++
++    @Override
++    public void setBaseColor(@Nullable DyeColor color) {
++        this.setFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.BASE, color);
++    }
++
++    @Override
++    public @NotNull List<Pattern> getPatterns() {
++        return this.getFromPropertyPathOrElse(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.PATTERNS, List.of());
++    }
++
++    @Override
++    public void setPatterns(@NotNull List<Pattern> patterns) {
++        this.setFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.PATTERNS, patterns);
++    }
++
++    @Override
++    public void addPattern(@NotNull Pattern pattern) {
++        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++        patterns.add(pattern);
++    }
++
++    @Override
++    public @NotNull Pattern getPattern(int i) {
++        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++        return patterns.get(i);
++    }
++
++    @Override
++    public @NotNull Pattern removePattern(int i) {
++        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++
++        return patterns.remove(i);
++    }
++
++    @Override
++    public void setPattern(int i, @NotNull Pattern pattern) {
++        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++
++        patterns.set(i, pattern);
++    }
++
++    @Override
++    public int numberOfPatterns() {
++        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
++        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++
++        return patterns.size();
++    }
++
++    // Equality logic
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaBanner that) {
++            return this.getBaseColor() == that.getBaseColor() && this.getPatterns().equals(that.getPatterns());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaBanner || (this.getPatterns().isEmpty() && this.getBaseColor() == null));
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.getPatterns().isEmpty() && this.getBaseColor() == null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java b/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..72386ae8e0f85a3abc05709fbeabf2c55aa2fb0b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java
+@@ -0,0 +1,129 @@
++package io.papermc.paper.item.meta;
++
++import com.destroystokyo.paper.MaterialSetTag;
++import com.google.common.base.Objects;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.nbt.AdapterContext;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import org.apache.commons.lang.Validate;
++import org.bukkit.DyeColor;
++import org.bukkit.Material;
++import org.bukkit.block.BlockState;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.block.CraftBanner;
++import org.bukkit.craftbukkit.block.CraftBlockEntityState;
++import org.bukkit.craftbukkit.block.CraftBlockStates;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.BlockStateMeta;
++import org.jetbrains.annotations.NotNull;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaBlockState extends PaperMeta implements BlockStateMeta {
++
++    public MetaBlockState(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasBlockState() {
++        return this.propertyHolder.hasProperty(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    @Override
++    public BlockState getBlockState() {
++        MutablePropertyView holder = this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG);
++
++        Material stateMaterial = (this.material != Material.SHIELD) ? this.material : shieldToBannerHack(holder); // Only actually used for jigsaws
++        if (holder != null) {
++            if (this.material == Material.SHIELD) {
++                holder.set(PaperMetaProperties.IDENTIFIER, "minecraft:banner");
++            } else if (this.material == Material.BEE_NEST || this.material == Material.BEEHIVE) {
++                holder.set(PaperMetaProperties.IDENTIFIER, "minecraft:beehive");
++            } else if (MaterialSetTag.SHULKER_BOXES.isTagged(this.material)) {
++                holder.set(PaperMetaProperties.IDENTIFIER, "minecraft:shulker_box");
++            }
++        }
++
++        // This is expected to always return a CraftBlockEntityState for the passed material:
++        return CraftBlockStates.getBlockState(stateMaterial, null); // TODO
++    }
++
++    @Override
++    public void setBlockState(BlockState blockState) {
++        Validate.notNull(blockState, "blockState must not be null");
++
++        Material stateMaterial = (this.material != Material.SHIELD) ? this.material : shieldToBannerHack(this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG));
++        Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
++        Validate.isTrue(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + this.material);
++
++        MutablePropertyView mutable = NbtPropertyHolder.simpleBlob(((CraftBlockEntityState) blockState).getSnapshotNBT(), AdapterContext.empty());
++        this.propertyHolder.set(ItemProperties.BLOCK_ENTITY_TAG, mutable);
++        // Set shield base
++        if (this.material == Material.SHIELD) {
++            mutable.set(PaperMetaProperties.BASE, ((CraftBanner) blockState).getBaseColor());
++        }
++    }
++
++    private static Material shieldToBannerHack(MutablePropertyView tag) {
++        if (tag == null) {
++            return Material.WHITE_BANNER;
++        }
++
++        DyeColor colorValue = tag.get(PaperMetaProperties.BASE);
++        if (colorValue == null) {
++            return Material.WHITE_BANNER;
++        }
++
++        return switch (colorValue) {
++            case WHITE -> Material.WHITE_BANNER;
++            case ORANGE -> Material.ORANGE_BANNER;
++            case MAGENTA -> Material.MAGENTA_BANNER;
++            case LIGHT_BLUE -> Material.LIGHT_BLUE_BANNER;
++            case YELLOW -> Material.YELLOW_BANNER;
++            case LIME -> Material.LIME_BANNER;
++            case PINK -> Material.PINK_BANNER;
++            case GRAY -> Material.GRAY_BANNER;
++            case LIGHT_GRAY -> Material.LIGHT_GRAY_BANNER;
++            case CYAN -> Material.CYAN_BANNER;
++            case PURPLE -> Material.PURPLE_BANNER;
++            case BLUE -> Material.BLUE_BANNER;
++            case BROWN -> Material.BROWN_BANNER;
++            case GREEN -> Material.GREEN_BANNER;
++            case RED -> Material.RED_BANNER;
++            case BLACK -> Material.BLACK_BANNER;
++        };
++    }
++
++    @Override
++    public @NotNull MetaBlockState clone() {
++        return new MetaBlockState(this.propertyHolder.clone(), material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    // Equality
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaBlockState that) {
++            return Objects.equal(this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG), that.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG));
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaBlockState || this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG) == null);
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG) == null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBook.java b/src/main/java/io/papermc/paper/item/meta/MetaBook.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fab5e9f674
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBook.java
+@@ -0,0 +1,507 @@
++package io.papermc.paper.item.meta;
++
++import com.google.common.collect.ImmutableList;
++import io.leangen.geantyref.TypeFactory;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.item.property.ItemPropertyRegistration;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.chat.ComponentSerializer;
++import net.minecraft.nbt.CompoundTag;
++import org.apache.commons.lang.Validate;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.inventory.meta.BookMeta;
++import org.jetbrains.annotations.NotNull;
++import org.spigotmc.ValidateUtils;
++
++import java.util.AbstractList;
++import java.util.Arrays;
++import java.util.List;
++import java.util.Objects;
++
++// TODO: Cleanup, I hate all of this
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaBook extends PaperMeta implements BookMeta {
++
++
++    static final int MAX_PAGES = 100;
++    static final int MAX_PAGE_LENGTH = 320; // 256 limit + 64 characters to allow for psuedo colour codes
++    static final int MAX_TITLE_LENGTH = 32;
++
++
++    public MetaBook(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasAuthor() {
++        return MetaBook.this.propertyHolder.hasProperty(ItemProperties.AUTHOR);
++    }
++
++    @Override
++    public boolean hasTitle() {
++        return MetaBook.this.propertyHolder.hasProperty(ItemProperties.TITLE);
++    }
++
++    @Override
++    public boolean hasPages() {
++        List<Component> pages = this.propertyHolder.get(ItemProperties.PAGES);
++        return pages != null && !pages.isEmpty();
++    }
++
++    @Override
++    public boolean hasGeneration() {
++        return this.propertyHolder.hasProperty(ItemProperties.GENERATION);
++    }
++
++    @Override
++    public String getTitle() {
++        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
++        if (author != null) {
++            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
++        }
++
++        return author;
++    }
++
++    @Override
++    public boolean setTitle(final String title) {
++        if (title == null) {
++            MetaBook.this.propertyHolder.unset(ItemProperties.AUTHOR);
++            return true;
++        } else if (title.length() > MAX_TITLE_LENGTH) {
++            return false;
++        }
++
++        MetaBook.this.propertyHolder.set(ItemProperties.AUTHOR, title);
++        return true;
++    }
++
++    @Override
++    public String getAuthor() {
++        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
++        if (author != null) {
++            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
++        }
++
++        return author;
++    }
++
++    @Override
++    public void setAuthor(String author) {
++        if (author != null) {
++            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
++        }
++
++        MetaBook.this.propertyHolder.set(ItemProperties.AUTHOR, author);
++    }
++
++    @Override
++    public Generation getGeneration() {
++        if (!MetaBook.this.propertyHolder.hasProperty(ItemProperties.GENERATION)) {
++            return null;
++        }
++
++        int generation = MetaBook.this.propertyHolder.get(ItemProperties.GENERATION);
++        return Generation.values()[generation];
++    }
++
++    @Override
++    public void setGeneration(Generation generation) {
++        if (generation == null) {
++            MetaBook.this.propertyHolder.unset(ItemProperties.GENERATION);
++        } else {
++            MetaBook.this.propertyHolder.set(ItemProperties.GENERATION, generation.ordinal());
++        }
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component title() {
++        String title = MetaBook.this.propertyHolder.get(ItemProperties.TITLE);
++        return title == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title);
++    }
++
++    @Override
++    public org.bukkit.inventory.meta.BookMeta title(net.kyori.adventure.text.Component title) {
++        this.setTitle(title == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(title));
++        return this;
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component author() {
++        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
++        return author == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(author);
++    }
++
++    @Override
++    public org.bukkit.inventory.meta.BookMeta author(net.kyori.adventure.text.Component author) {
++        this.setAuthor(author == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(author));
++        return this;
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component page(final int page) {
++        Validate.isTrue(isValidPage(page), "Invalid page number");
++        return MetaBook.this.propertyHolder.get(this.getPageProperty()).get(page);
++    }
++
++    @Override
++    public void page(final int page, net.kyori.adventure.text.Component data) {
++        if (!isValidPage(page)) {
++            throw new IllegalArgumentException("Invalid page number " + page + "/" + this.getPageCount());
++        }
++        List<Component> pages = MetaBook.this.propertyHolder.get(this.getPageProperty());
++
++        if (data == null) {
++            data = net.kyori.adventure.text.Component.empty();
++        }
++        pages.set(page - 1, data);
++    }
++
++    @Override
++    public List<net.kyori.adventure.text.Component> pages() {
++        List<Component> pages = MetaBook.this.propertyHolder.get(this.getPageProperty());
++        if (pages == null) {
++            return List.of();
++        }
++
++        return pages;
++    }
++
++    @Override
++    public BookMeta pages(List<net.kyori.adventure.text.Component> pages) {
++        MetaBook.this.propertyHolder.unset(this.getPageProperty());
++        for (net.kyori.adventure.text.Component page : pages) {
++            addPages(page);
++        }
++        return this;
++    }
++
++    @Override
++    public BookMeta pages(net.kyori.adventure.text.Component... pages) {
++        MetaBook.this.propertyHolder.unset(this.getPageProperty());
++        addPages(pages);
++        return this;
++    }
++
++    @Override
++    public void addPages(net.kyori.adventure.text.Component... pages) {
++        List<Component> pageList = MetaBook.this.propertyHolder.get(this.getPageProperty());
++        for (net.kyori.adventure.text.Component page : pages) {
++            if (pageList.size() >= MAX_PAGES) {
++                return;
++            }
++
++            if (page == null) {
++                page = net.kyori.adventure.text.Component.empty();
++            }
++
++            pageList.add(page);
++        }
++    }
++
++    public PropertyKey<List<Component>> getPageProperty() {
++        return ItemProperties.PAGES;
++    }
++
++    class CraftMetaBookBuilder implements BookMetaBuilder {
++        private net.kyori.adventure.text.Component title = null;
++        private net.kyori.adventure.text.Component author = null;
++        private final List<net.kyori.adventure.text.Component> pages = new java.util.ArrayList<>();
++
++        @Override
++        public BookMetaBuilder title(net.kyori.adventure.text.Component title) {
++            this.title = title;
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder author(net.kyori.adventure.text.Component author) {
++            this.author = author;
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder addPage(net.kyori.adventure.text.Component page) {
++            this.pages.add(page);
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder pages(net.kyori.adventure.text.Component... pages) {
++            java.util.Collections.addAll(this.pages, pages);
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder pages(java.util.Collection<net.kyori.adventure.text.Component> pages) {
++            this.pages.addAll(pages);
++            return this;
++        }
++
++        @Override
++        public BookMeta build() {
++            return this.build(title, author, pages);
++        }
++
++        protected BookMeta build(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
++            MetaBook metaBook = new MetaBook(NbtPropertyHolder.simpleBlob(new CompoundTag(), ItemPropertyRegistration.ITEM_CONTEXT), Material.WRITTEN_BOOK);
++            metaBook.propertyHolder.set(ItemProperties.TITLE, LegacyComponentSerializer.legacySection().serialize(title));
++            metaBook.propertyHolder.set(ItemProperties.AUTHOR, LegacyComponentSerializer.legacySection().serialize(author));
++            metaBook.propertyHolder.set(ItemProperties.PAGES, pages);
++
++            return metaBook;
++        }
++    }
++
++    @Override
++    public BookMetaBuilder toBuilder() {
++        return new MetaBook.CraftMetaBookBuilder();
++    }
++
++    @Override
++    public String getPage(final int page) {
++        Validate.isTrue(this.isValidPage(page), "Invalid page number");
++        // assert: pages != null
++        return this.convertDataToPlainPage(MetaBook.this.propertyHolder.get(PAGES_LEGACY).get(page - 1));
++    }
++
++    @Override
++    public void setPage(final int page, final String text) {
++        if (!this.isValidPage(page)) {
++            throw new IllegalArgumentException("Invalid page number " + page + "/" + this.getPageCount());
++        }
++        // assert: pages != null
++
++        String newText = this.validatePage(text);
++        MetaBook.this.propertyHolder.get(PAGES_LEGACY).set(page - 1, this.convertPlainPageToData(newText));
++    }
++
++    @Override
++    public void setPages(final String... pages) {
++        this.setPages(Arrays.asList(pages));
++    }
++
++    @Override
++    public void addPage(final String... pages) {
++        for (String page : pages) {
++            page = this.validatePage(page);
++            this.internalAddPage(this.convertPlainPageToData(page));
++        }
++    }
++
++    String validatePage(String page) {
++        if (page == null) {
++            page = "";
++        } else if (page.length() > MAX_PAGE_LENGTH) {
++            page = page.substring(0, MAX_PAGE_LENGTH);
++        }
++        return page;
++    }
++
++    @Override
++    public int getPageCount() {
++        List<String> pages = MetaBook.this.propertyHolder.get(PAGES_LEGACY);
++        return (pages == null) ? 0 : pages.size();
++    }
++
++    @Override
++    public List<String> getPages() {
++        List<String> pages = MetaBook.this.propertyHolder.getOrDefault(PAGES_LEGACY, List.of());
++
++        return pages.stream().map(this::convertDataToPlainPage).collect(ImmutableList.toImmutableList());
++    }
++
++    @Override
++    public void setPages(List<String> pages) {
++        MetaBook.this.propertyHolder.unset(PAGES_LEGACY);
++        if (pages.isEmpty()) {
++            return;
++        }
++
++        for (String page : pages) {
++            this.addPage(page);
++        }
++    }
++
++    protected String convertPlainPageToData(String page) {
++        // Writable books store their data as plain Strings, so we don't need to convert anything.
++        return page;
++    }
++
++    protected String convertDataToPlainPage(String pageData) {
++        // pageData is expected to already be a plain String.
++        return pageData;
++    }
++
++
++    // Legacy Spigot IMPL
++    private static final PropertyKey<List<String>> PAGES_LEGACY = PropertyKey.of("pages", TypeFactory.parameterizedClass(List.class, String.class));
++
++    private final BookMeta.Spigot spigot = new SpigotMeta();
++
++    private class SpigotMeta extends BookMeta.Spigot {
++
++        private String pageToJSON(String page) {
++            if (MetaBook.this instanceof MetaBookSigned) {
++                // Page data is already in JSON format:
++                return page;
++            } else {
++                // Convert from plain String to JSON (similar to conversion between writable books and written books):
++                net.minecraft.network.chat.Component component = CraftChatMessage.fromString(page, true, true)[0];
++                return CraftChatMessage.toJSON(component);
++            }
++        }
++
++        private String componentsToPage(BaseComponent[] components) {
++            // asserted: components != null
++            if (MetaBook.this instanceof MetaBookSigned) {
++                // Pages are in JSON format:
++                return ComponentSerializer.toString(components);
++            } else {
++                // Convert component to plain String:
++                return CraftChatMessage.fromJSONComponent(ComponentSerializer.toString(components));
++            }
++        }
++
++        @Override
++        public BaseComponent[] getPage(final int page) {
++            Validate.isTrue(MetaBook.this.isValidPage(page), "Invalid page number");
++            return ComponentSerializer.parse(this.pageToJSON(MetaBook.this.propertyHolder.get(PAGES_LEGACY).get(page - 1)));
++        }
++
++        @Override
++        public void setPage(final int page, final BaseComponent... text) {
++            if (!MetaBook.this.isValidPage(page)) {
++                throw new IllegalArgumentException("Invalid page number " + page + "/" + MetaBook.this.getPageCount());
++            }
++
++            BaseComponent[] newText = text == null ? new BaseComponent[0] : text;
++            MetaBook.this.propertyHolder.get(PAGES_LEGACY).set(page - 1, this.componentsToPage(newText));
++        }
++
++        @Override
++        public void setPages(final BaseComponent[]... pages) {
++            this.setPages(Arrays.asList(pages));
++        }
++
++        @Override
++        public void addPage(final BaseComponent[]... pages) {
++            for (BaseComponent[] page : pages) {
++                if (page == null) {
++                    page = new BaseComponent[0];
++                }
++
++                MetaBook.this.internalAddPage(this.componentsToPage(page));
++            }
++        }
++
++        @Override
++        public List<BaseComponent[]> getPages() {
++            List<String> pages = MetaBook.this.propertyHolder.get(PAGES_LEGACY);
++            if (pages == null || pages.isEmpty()) {
++                return List.of();
++            }
++
++            return new AbstractList<BaseComponent[]>() {
++
++                @Override
++                public BaseComponent[] get(int index) {
++                    return ComponentSerializer.parse(MetaBook.SpigotMeta.this.pageToJSON(pages.get(index)));
++                }
++
++                @Override
++                public int size() {
++                    return pages.size();
++                }
++            };
++        }
++
++        @Override
++        public void setPages(List<BaseComponent[]> pages) {
++            MetaBook.this.propertyHolder.unset(PAGES_LEGACY);
++            if (pages.isEmpty()) {
++                return;
++            }
++
++            for (BaseComponent[] page : pages) {
++                this.addPage(page);
++            }
++        }
++    }
++
++    // Utilities
++    private boolean isValidPage(int page) {
++        return page > 0 && page <= this.getPageCount();
++    }
++
++    private void internalAddPage(String page) {
++        // asserted: page != null
++        List<String> pages = MetaBook.this.propertyHolder.get(PAGES_LEGACY);
++        if (pages != null && pages.size() >= MAX_PAGES) {
++            return;
++        } else if (pages == null) {
++            pages = MetaBook.this.propertyHolder.create(PAGES_LEGACY);
++        }
++
++        pages.add(page);
++    }
++
++    @Override
++    public BookMeta.Spigot spigot() {
++        return this.spigot;
++    }
++
++    @Override
++    public @NotNull MetaBook clone() {
++        return new MetaBook(this.propertyHolder.clone(), material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.TITLE);
++        this.propertyHolder.unset(ItemProperties.TITLE_FILTERED);
++        this.propertyHolder.unset(ItemProperties.AUTHOR);
++        this.propertyHolder.unset(ItemProperties.PAGES);
++        this.propertyHolder.unset(ItemProperties.PAGES_FILTERED);
++        this.propertyHolder.unset(ItemProperties.GENERATION);
++        this.propertyHolder.unset(ItemProperties.RESOLVED);
++    }
++
++    // Equality
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaBook that) {
++            return (this.hasTitle() ? that.hasTitle() && this.getTitle().equals(that.getTitle()) : !that.hasTitle())
++                && (this.hasAuthor() ? that.hasAuthor() && this.getAuthor().equals(that.getAuthor()) : !that.hasAuthor())
++                && (Objects.equals(this.getPages(), that.getPages()))
++                && (Objects.equals(this.propertyHolder.get(ItemProperties.RESOLVED), that.propertyHolder.get(ItemProperties.RESOLVED)))
++                && (this.hasGeneration() ? that.hasGeneration() && this.getGeneration().equals(that.getGeneration()) : !that.hasGeneration());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaBook || this.isBookEmpty());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isBookEmpty();
++    }
++
++    boolean isBookEmpty() {
++        return !((!this.getPages().isEmpty()) || this.hasAuthor() || this.hasTitle() || this.hasGeneration() || (this.propertyHolder.get(ItemProperties.RESOLVED) != null));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java b/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2b4f7c053e4cb3a52b96596a734c676d87323c2f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.PropertyKey;
++import net.kyori.adventure.text.Component;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.inventory.meta.BookMeta;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaBookSigned extends MetaBook implements BookMeta {
++
++    public MetaBookSigned(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    protected String convertPlainPageToData(String page) {
++        return CraftChatMessage.fromStringToJSON(page, true);
++    }
++
++    @Override
++    protected String convertDataToPlainPage(String pageData) {
++        return CraftChatMessage.fromJSONComponent(pageData);
++    }
++
++    @Override
++    public PropertyKey<List<Component>> getPageProperty() {
++        return ItemProperties.PAGES;
++    }
++
++    @Override
++    public @NotNull MetaBookSigned clone() {
++        return new MetaBookSigned(this.propertyHolder.clone(), material);
++    }
++
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        return super.equalsCommon(meta);
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaBookSigned || isBookEmpty());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty();
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBundle.java b/src/main/java/io/papermc/paper/item/meta/MetaBundle.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..64a4a5d7a5f51abf1fae984a870a2409d9e87e10
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBundle.java
+@@ -0,0 +1,87 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.BundleMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collections;
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaBundle extends PaperMeta implements BundleMeta {
++
++    public MetaBundle(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasItems() {
++        List<ItemStack> items = this.propertyHolder.get(ItemProperties.ITEMS);
++        return items != null && !items.isEmpty();
++    }
++
++    @Override
++    public @NotNull List<ItemStack> getItems() {
++        List<ItemStack> items = this.propertyHolder.get(ItemProperties.ITEMS);
++        if (items == null) {
++            return List.of();
++        }
++
++
++        return Collections.unmodifiableList(items);
++    }
++
++    @Override
++    public void setItems(@Nullable List<ItemStack> items) {
++        this.propertyHolder.set(ItemProperties.ITEMS, items);
++    }
++
++    @Override
++    public void addItem(@NotNull ItemStack item) {
++        List<ItemStack> items = this.propertyHolder.getOrCreate(ItemProperties.ITEMS);
++        items.add(item);
++    }
++
++    @Override
++    public @NotNull MetaBundle clone() {
++        return new MetaBundle(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.ITEMS);
++    }
++
++    // Equality
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isBundleEmpty();
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaBundle that) {
++
++            return (this.hasItems() ? that.hasItems() && this.getItems().equals(that.getItems()) : !that.hasItems());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaBundle || this.isBundleEmpty());
++    }
++
++    boolean isBundleEmpty() {
++        return !(this.hasItems());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaCompass.java b/src/main/java/io/papermc/paper/item/meta/MetaCompass.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4933e3e9b79d2f4a6f361293f73da733b67d839
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaCompass.java
+@@ -0,0 +1,109 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.math.Position;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.World;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.CompassMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Objects;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaCompass extends PaperMeta implements CompassMeta {
++
++    public MetaCompass(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasLodestone() {
++        return this.propertyHolder.hasProperty(ItemProperties.LODESTONE_DIMENSION);
++    }
++
++    @Override
++    public @Nullable Location getLodestone() {
++        NamespacedKey dimension = this.propertyHolder.get(ItemProperties.LODESTONE_DIMENSION);
++        if (dimension == null) {
++            return null;
++        }
++
++        World world = Bukkit.getWorld(dimension);
++
++        Position position = this.propertyHolder.get(ItemProperties.LODESTONE_POS);
++        if (position == null) {
++            return null;
++        }
++
++        return position.toLocation(world);
++    }
++
++    @Override
++    public void setLodestone(@Nullable Location lodestone) {
++        this.propertyHolder.set(ItemProperties.LODESTONE_POS, lodestone);
++        this.propertyHolder.set(ItemProperties.LODESTONE_DIMENSION, lodestone.getWorld().getKey());
++    }
++
++    @Override
++    public boolean isLodestoneTracked() {
++        return this.propertyHolder.getOrDefault(ItemProperties.LODESTONE_TRACKED, false);
++    }
++
++    @Override
++    public void setLodestoneTracked(boolean tracked) {
++        this.propertyHolder.set(ItemProperties.LODESTONE_TRACKED, tracked);
++    }
++
++    @Override
++    public @NotNull MetaCompass clone() {
++        return new MetaCompass(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.LODESTONE_DIMENSION);
++        this.propertyHolder.unset(ItemProperties.LODESTONE_POS);
++        this.propertyHolder.unset(ItemProperties.LODESTONE_TRACKED);
++    }
++
++    // Equality
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaCompass that) {
++
++            return (this.hasLodestone() ? that.hasLodestone() && Objects.equals( this.propertyHolder.get(ItemProperties.LODESTONE_DIMENSION), that.propertyHolder.get(ItemProperties.LODESTONE_DIMENSION))
++                && this.getLodestone().equals(that.getLodestone()) : !that.hasLodestone())
++                && this.isLodestoneTracked() == that.isLodestoneTracked();
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaCompass || this.isCompassEmpty());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isCompassEmpty();
++    }
++
++    boolean isCompassEmpty() {
++        return !(this.hasLodestone() || this.hasLodestoneTracked());
++    }
++
++    boolean hasLodestoneTracked() {
++        return this.propertyHolder.hasProperty(ItemProperties.LODESTONE_TRACKED);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java b/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..20c28152a56ac682b32d273c6b676dbafd9b9b8e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java
+@@ -0,0 +1,102 @@
++package io.papermc.paper.item.meta;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import net.minecraft.world.item.ArrowItem;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.CrossbowMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaCrossbow extends PaperMeta implements CrossbowMeta {
++
++    public MetaCrossbow(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasChargedProjectiles() {
++        List<ItemStack> effects = this.propertyHolder.get(ItemProperties.CHARGED_PROJECTILES);
++        return effects != null && !effects.isEmpty();
++    }
++
++    @Override
++    public @NotNull List<ItemStack> getChargedProjectiles() {
++        return this.propertyHolder.getOrDefault(ItemProperties.CHARGED_PROJECTILES, List.of());
++    }
++
++    @Override
++    public void setChargedProjectiles(@Nullable List<ItemStack> projectiles) {
++        this.propertyHolder.unset(ItemProperties.CHARGED_PROJECTILES);
++        this.propertyHolder.set(ItemProperties.CHARGED, false);
++
++        if (projectiles == null) {
++            return;
++        }
++
++        for (ItemStack i : projectiles) {
++            this.addChargedProjectile(i);
++        }
++    }
++
++    @Override
++    public void addChargedProjectile(@NotNull ItemStack item) {
++        Preconditions.checkArgument(item != null, "item");
++        Preconditions.checkArgument(item.getType() == Material.FIREWORK_ROCKET || CraftMagicNumbers.getItem(item.getType()) instanceof ArrowItem, "Item %s is not an arrow or firework rocket", item);
++
++        this.propertyHolder.set(ItemProperties.CHARGED, true);
++        this.propertyHolder.getOrCreate(ItemProperties.CHARGED_PROJECTILES).add(item);
++    }
++
++    @Override
++    public @NotNull MetaCrossbow clone() {
++        return new MetaCrossbow(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.CHARGED);
++        this.propertyHolder.unset(ItemProperties.CHARGED_PROJECTILES);
++    }
++
++    // Equality
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isCrossbowEmpty();
++    }
++
++    boolean isCrossbowEmpty() {
++        return !(this.hasChargedProjectiles());
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaCrossbow that) {
++
++            return this.hasChargedProjectiles() == that.hasChargedProjectiles()
++                && (this.charged() ? that.charged() && this.getChargedProjectiles().equals(that.getChargedProjectiles()) : !that.hasChargedProjectiles());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaCrossbow || this.isCrossbowEmpty());
++    }
++
++    public boolean charged() {
++        return this.propertyHolder.getOrDefault(ItemProperties.CHARGED, false);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaEnchantmentStorage.java b/src/main/java/io/papermc/paper/item/meta/MetaEnchantmentStorage.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..665bb85331faeb8a9612fc0c13b5fc1232432208
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaEnchantmentStorage.java
+@@ -0,0 +1,170 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.EnchantmentPair;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.types.EnchantmentPairImpl;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.enchantments.Enchantment;
++import org.bukkit.inventory.meta.EnchantmentStorageMeta;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaEnchantmentStorage extends PaperMeta implements EnchantmentStorageMeta {
++
++    public MetaEnchantmentStorage(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasStoredEnchant(Enchantment ench) {
++        List<EnchantmentPair> enchantments = this.propertyHolder.get(ItemProperties.STORED_ENCHANTMENTS);
++        if (enchantments == null) {
++            return false;
++        }
++
++        for (EnchantmentPair next : enchantments) {
++            if (next.enchantment() == ench) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    public int getStoredEnchantLevel(Enchantment ench) {
++        List<EnchantmentPair> enchantmentPairs = this.propertyHolder.get(ItemProperties.STORED_ENCHANTMENTS);
++        if (enchantmentPairs == null) {
++            return 0;
++        }
++        for (EnchantmentPair pair : enchantmentPairs) {
++            if (pair.enchantment() == ench) {
++                return pair.level();
++            }
++        }
++
++        return 0;
++    }
++
++    @Override
++    public Map<Enchantment, Integer> getStoredEnchants() {
++        List<EnchantmentPair> pairs = this.propertyHolder.getOrCreate(ItemProperties.STORED_ENCHANTMENTS);
++        Map<Enchantment, Integer> map = new HashMap<>();
++        for (EnchantmentPair enchantmentPair : pairs) {
++            map.put(enchantmentPair.enchantment(), enchantmentPair.level());
++        }
++
++        return map;
++    }
++
++    @Override
++    public boolean addStoredEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
++        if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
++            List<EnchantmentPair> enchantments = this.propertyHolder.getOrCreate(ItemProperties.STORED_ENCHANTMENTS);
++
++            EnchantmentPair oldValue = null;
++            int oldIndex = 0;
++            for (int i = 0; i < enchantments.size(); i++) {
++                EnchantmentPair value = enchantments.get(i);
++                if (value.enchantment() == ench) {
++                    oldValue = value;
++                    oldIndex = i;
++                    break;
++                }
++            }
++
++            if (oldValue == null) {
++                enchantments.add(new EnchantmentPairImpl(ench, level));
++                return true;
++            } else {
++                enchantments.set(oldIndex, new EnchantmentPairImpl(ench, level));
++                return oldValue.level() != level;
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    public boolean removeStoredEnchant(Enchantment ench) {
++        List<EnchantmentPair> enchantmentMap = this.propertyHolder.get(ItemProperties.STORED_ENCHANTMENTS);
++        if (enchantmentMap == null) {
++            return false;
++        }
++
++        Iterator<EnchantmentPair> iterator = enchantmentMap.listIterator();
++        while (iterator.hasNext()) {
++            EnchantmentPair next = iterator.next();
++            if (next.enchantment() == ench) {
++                iterator.remove();
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    public boolean hasStoredEnchants() {
++        return this.propertyHolder.hasProperty(ItemProperties.STORED_ENCHANTMENTS) && !this.propertyHolder.get(ItemProperties.STORED_ENCHANTMENTS).isEmpty();
++    }
++
++    @Override
++    public boolean hasConflictingStoredEnchant(Enchantment ench) {
++        if (!hasStoredEnchants()) {
++            return false;
++        }
++
++        for (EnchantmentPair enchant : this.propertyHolder.getOrDefault(ItemProperties.STORED_ENCHANTMENTS, List.of())) {
++            if (enchant.enchantment().conflictsWith(ench)) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    public @NotNull MetaEnchantmentStorage clone() {
++        return new MetaEnchantmentStorage(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.STORED_ENCHANTMENTS);
++    }
++
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isEnchantedEmpty();
++    }
++
++    boolean isEnchantedEmpty() {
++        return !this.hasStoredEnchants();
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaEnchantmentStorage that) {
++            return (this.hasStoredEnchants() ? that.hasStoredEnchants() && this.getStoredEnchants().equals(that.getStoredEnchants()) : !that.hasStoredEnchants());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaEnchantmentStorage || this.isEnchantedEmpty());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaFirework.java b/src/main/java/io/papermc/paper/item/meta/MetaFirework.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e97ff75858de7192f4a2b06c85a4f188d2a97fe4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaFirework.java
+@@ -0,0 +1,133 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.apache.commons.lang.Validate;
++import org.bukkit.FireworkEffect;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.FireworkMeta;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaFirework extends PaperMeta implements FireworkMeta {
++
++    public MetaFirework(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasEffects() {
++        List<FireworkEffect> effects = this.propertyHolder.get(ItemProperties.EXPLOSIONS);
++        return effects != null && !effects.isEmpty();
++    }
++
++    @Override
++    public void addEffect(FireworkEffect effect) {
++        this.addEffects(List.of(effect));
++    }
++
++    @Override
++    public void addEffects(FireworkEffect... effects) {
++        if (effects.length == 0) {
++            return;
++        }
++
++        this.addEffects(List.of(effects));
++    }
++
++    @Override
++    public void addEffects(Iterable<FireworkEffect> effects) {
++        List<FireworkEffect> explosions = this.propertyHolder.getOrCreate(ItemProperties.EXPLOSIONS);
++        for (FireworkEffect fireworkEffect : effects) {
++            explosions.add(fireworkEffect);
++        }
++    }
++
++    @Override
++    public List<FireworkEffect> getEffects() {
++        return this.propertyHolder.get(ItemProperties.EXPLOSIONS);
++    }
++
++    @Override
++    public int getEffectsSize() {
++        List<FireworkEffect> effects = this.propertyHolder.get(ItemProperties.EXPLOSIONS);
++        return effects == null ? 0 : effects.size();
++    }
++
++    @Override
++    public void removeEffect(int index) {
++        List<FireworkEffect> effects = this.propertyHolder.get(ItemProperties.EXPLOSIONS);
++        if (effects == null) {
++            throw new IndexOutOfBoundsException("Index: " + index + ", Size: 0");
++        } else {
++            effects.remove(index);
++        }
++    }
++
++    @Override
++    public void clearEffects() {
++        this.propertyHolder.unset(ItemProperties.EXPLOSIONS);
++    }
++
++    @Override
++    public int getPower() {
++        return this.propertyHolder.getOrDefault(ItemProperties.FLIGHT, (byte) 0);
++    }
++
++    @Override
++    public void setPower(int power) {
++        Validate.isTrue(power >= 0, "Power cannot be less than zero: ", power);
++        Validate.isTrue(power < 0x80, "Power cannot be more than 127: ", power);
++        this.propertyHolder.set(ItemProperties.FLIGHT, (byte) power);
++    }
++
++
++    @Override
++    public @NotNull MetaFirework clone() {
++        return new MetaFirework(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.FLIGHT);
++        this.propertyHolder.unset(ItemProperties.EXPLOSIONS);
++    }
++
++    // Equality
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isFireworkEmpty();
++    }
++
++    boolean isFireworkEmpty() {
++        return !(this.hasEffects() || this.hasPower());
++    }
++
++    boolean hasPower() {
++        return this.getPower() != 0;
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++
++        if (meta instanceof MetaFirework that) {
++
++            return (this.hasPower() ? that.hasPower() && this.getPower() == that.getPower() : !that.hasPower())
++                && (this.hasEffects() ? that.hasEffects() && this.getEffects().equals(that.getEffects()) : !that.hasEffects());
++        }
++
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaFirework || this.isFireworkEmpty());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaFireworkEffect.java b/src/main/java/io/papermc/paper/item/meta/MetaFireworkEffect.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..354ffdddecb50a1acf26d281154cfeea4cd29788
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaFireworkEffect.java
+@@ -0,0 +1,71 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.FireworkEffect;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.FireworkEffectMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaFireworkEffect extends PaperMeta implements FireworkEffectMeta {
++
++    public MetaFireworkEffect(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public void setEffect(@Nullable FireworkEffect effect) {
++        this.propertyHolder.set(ItemProperties.EXPLOSION, effect);
++    }
++
++    @Override
++    public boolean hasEffect() {
++        return this.propertyHolder.hasProperty(ItemProperties.EXPLOSION);
++    }
++
++    @Override
++    public @Nullable FireworkEffect getEffect() {
++        return this.propertyHolder.get(ItemProperties.EXPLOSION);
++    }
++
++    @Override
++    public @NotNull MetaFireworkEffect clone() {
++        return new MetaFireworkEffect(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.EXPLOSION);
++    }
++
++    // Equality
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && !this.hasChargeMeta();
++    }
++
++    boolean hasChargeMeta() {
++        return this.hasEffect();
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaFireworkEffect that) {
++            return (this.hasEffect() ? that.hasEffect() && this.getEffect().equals(that.getEffect()) : !that.hasEffect());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaFireworkEffect || !this.hasChargeMeta());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaKnowledgeBook.java b/src/main/java/io/papermc/paper/item/meta/MetaKnowledgeBook.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6a4f1b788fb02f6d5255bc48d6c8e9fc61d7503b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaKnowledgeBook.java
+@@ -0,0 +1,86 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.KnowledgeBookMeta;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaKnowledgeBook extends PaperMeta implements KnowledgeBookMeta {
++
++    static final int MAX_RECIPES = Short.MAX_VALUE;
++
++    public MetaKnowledgeBook(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasRecipes() {
++        List<NamespacedKey> effects = this.propertyHolder.get(ItemProperties.RECIPES);
++        return effects != null && !effects.isEmpty();
++    }
++
++    @Override
++    public @NotNull List<NamespacedKey> getRecipes() {
++        return this.propertyHolder.getOrDefault(ItemProperties.RECIPES, List.of());
++    }
++
++    @Override
++    public void setRecipes(@NotNull List<NamespacedKey> recipes) {
++        this.propertyHolder.set(ItemProperties.RECIPES, recipes);
++    }
++
++    @Override
++    public void addRecipe(@NotNull NamespacedKey... recipes) {
++        List<NamespacedKey> keys = this.propertyHolder.getOrCreate(ItemProperties.RECIPES);
++        for (NamespacedKey key : recipes) {
++            if (keys.size() > MAX_RECIPES) {
++                break;
++            }
++
++            keys.add(key);
++        }
++    }
++
++    @Override
++    public @NotNull MetaKnowledgeBook clone() {
++        return new MetaKnowledgeBook(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.RECIPES);
++    }
++
++    // Equality
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isBookEmpty();
++    }
++
++    boolean isBookEmpty() {
++        return !(this.hasRecipes());
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaKnowledgeBook that) {
++            return (this.hasRecipes() ? that.hasRecipes() && this.getRecipes().equals(that.getRecipes()) : !that.hasRecipes());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaKnowledgeBook || this.isBookEmpty());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaLeatherArmor.java b/src/main/java/io/papermc/paper/item/meta/MetaLeatherArmor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..601de48cb795475282783c8d7e5edf7a7bc4b529
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaLeatherArmor.java
+@@ -0,0 +1,76 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Color;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.LeatherArmorMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaLeatherArmor extends PaperMeta implements LeatherArmorMeta {
++
++    private static final Color DEFAULT_LEATHER_COLOR = Color.fromRGB(0xA06540);
++
++    public MetaLeatherArmor(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public @NotNull Color getColor() {
++        return this.getFromPropertyPathOrElse(ItemProperties.DISPLAY, ItemProperties.COLOR, DEFAULT_LEATHER_COLOR);
++    }
++
++    @Override
++    public void setColor(@Nullable Color color) {
++        this.setFromPropertyPath(ItemProperties.DISPLAY, ItemProperties.COLOR, color);
++    }
++
++    @Override
++    public @NotNull MetaLeatherArmor clone() {
++        return new MetaLeatherArmor(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.unsetInPropertyPath(ItemProperties.DISPLAY, ItemProperties.COLOR);
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isLeatherArmorEmpty();
++    }
++
++    boolean isLeatherArmorEmpty() {
++        return !(this.hasColor());
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaLeatherArmor that) {
++            return this.getColor().equals(that.getColor());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaLeatherArmor || this.isLeatherArmorEmpty());
++    }
++
++    boolean hasColor() {
++        Color color = this.getColor();
++        if (color == null) {
++            return false;
++        }
++
++        // LEGACY
++        return !DEFAULT_LEATHER_COLOR.equals(color);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaMap.java b/src/main/java/io/papermc/paper/item/meta/MetaMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..93f4753097e4bc48063cffce7d1a9a3c89389d77
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaMap.java
+@@ -0,0 +1,143 @@
++package io.papermc.paper.item.meta;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Bukkit;
++import org.bukkit.Color;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.MapMeta;
++import org.bukkit.map.MapView;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaMap extends PaperMeta implements MapMeta {
++
++    public MetaMap(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasMapId() {
++        return this.propertyHolder.hasProperty(ItemProperties.MAP_ID);
++    }
++
++    @Override
++    public int getMapId() {
++        Integer mapId = this.propertyHolder.get(ItemProperties.MAP_ID);
++        Preconditions.checkState(mapId != null, "Item does not have map associated - check hasMapView() first!");
++
++        return mapId.intValue();
++    }
++
++    @Override
++    public void setMapId(int id) {
++        this.propertyHolder.set(ItemProperties.MAP_ID, id);
++    }
++
++    @Override
++    public boolean hasMapView() {
++        return this.hasMapId();
++    }
++
++    @Override
++    public MapView getMapView() {
++        return Bukkit.getMap(this.getMapId());
++    }
++
++    @Override
++    public void setMapView(MapView map) {
++        this.propertyHolder.set(ItemProperties.MAP_ID, (map != null) ? map.getId() : null);
++    }
++
++    @Override
++    public boolean isScaling() {
++        return this.propertyHolder.getOrDefault(ItemProperties.MAP_SCALE_DIRECTION, (byte) 0) > 0;
++    }
++
++    @Override
++    public void setScaling(boolean value) {
++        this.propertyHolder.set(ItemProperties.MAP_SCALE_DIRECTION, (byte) (value ? 1 : 0));
++    }
++
++    boolean hasScaling() {
++        return this.isScaling();
++    }
++
++    // isn't wrapped in a display tag....
++    // Stupid legacy!
++    @Override
++    public boolean hasLocationName() {
++        return this.propertyHolder.hasProperty(ItemProperties.LOC_NAME);
++    }
++
++    @Override
++    public @Nullable String getLocationName() {
++        return this.propertyHolder.get(ItemProperties.LOC_NAME);
++    }
++
++    @Override
++    public void setLocationName(@Nullable String name) {
++        this.propertyHolder.set(ItemProperties.LOC_NAME, name);
++    }
++
++    @Override
++    public boolean hasColor() {
++        return this.hasInPropertyPath(ItemProperties.DISPLAY, ItemProperties.MAP_COLOR);
++    }
++
++    @Override
++    public @Nullable Color getColor() {
++        return this.getFromPropertyPath(ItemProperties.DISPLAY, ItemProperties.MAP_COLOR);
++    }
++
++    @Override
++    public void setColor(@Nullable Color color) {
++        this.setFromPropertyPath(ItemProperties.DISPLAY, ItemProperties.MAP_COLOR, color);
++    }
++
++    @Override
++    public @NotNull MetaMap clone() {
++        return new MetaMap(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.MAP_ID);
++        this.unsetInPropertyPath(ItemProperties.DISPLAY, ItemProperties.MAP_COLOR);
++        this.propertyHolder.unset(ItemProperties.MAP_SCALE_DIRECTION);
++    }
++
++    // equality
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isMapEmpty();
++    }
++
++    boolean isMapEmpty() {
++        return !(this.hasMapId() || this.hasScaling() | this.hasLocationName() || this.hasColor());
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaMap that) {
++
++            return (this.isScaling() == that.isScaling())
++                && (this.hasMapId() ? that.hasMapId() && this.getMapId() == that.getMapId() : !that.hasMapId())
++                && (this.hasLocationName() ? that.hasLocationName() && this.getLocationName().equals(that.getLocationName()) : !that.hasLocationName())
++                && (this.hasColor() ? that.hasColor() && this.getColor().equals(that.getColor()) : !that.hasColor());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaMap || this.isMapEmpty());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaMusicInstrument.java b/src/main/java/io/papermc/paper/item/meta/MetaMusicInstrument.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5184543b7f42d35241af0e10063da279f9ae3069
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaMusicInstrument.java
+@@ -0,0 +1,65 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Material;
++import org.bukkit.MusicInstrument;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.MusicInstrumentMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaMusicInstrument extends PaperMeta implements MusicInstrumentMeta {
++
++    public MetaMusicInstrument(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public void setInstrument(@Nullable MusicInstrument instrument) {
++        this.propertyHolder.set(ItemProperties.INSTRUMENT, instrument);
++    }
++
++    @Override
++    public @Nullable MusicInstrument getInstrument() {
++        return this.propertyHolder.get(ItemProperties.INSTRUMENT);
++    }
++
++    @Override
++    public @NotNull MetaMusicInstrument clone() {
++        return new MetaMusicInstrument(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.INSTRUMENT);
++    }
++
++    // Equality
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaMusicInstrument that) {
++            return this.getInstrument() == that.getInstrument();
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaMusicInstrument || this.isInstrumentEmpty());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isInstrumentEmpty();
++    }
++
++    boolean isInstrumentEmpty() {
++        return this.getInstrument() == null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java b/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2053e7a7945c1551a13658bdb43b8444ad5075a9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java
+@@ -0,0 +1,193 @@
++package io.papermc.paper.item.meta;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++import com.mojang.authlib.GameProfile;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Bukkit;
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.OfflinePlayer;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
++import org.bukkit.entity.Player;
++import org.bukkit.inventory.meta.SkullMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Objects;
++
++// Ignores the STRING "SkullOwner" property, as that is temporary
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaPlayerHead extends PaperMeta implements SkullMeta {
++
++    static final int MAX_OWNER_LENGTH = 16;
++
++    public MetaPlayerHead(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasOwner() {
++        PlayerProfile profile = this.propertyHolder.get(ItemProperties.SKULL_OWNER);
++        String name = this.propertyHolder.get(ItemProperties.SKULL_OWNER_NAME);
++
++        return profile != null || name != null;
++    }
++
++    @Override
++    public String getOwner() {
++        PlayerProfile profile = this.propertyHolder.get(ItemProperties.SKULL_OWNER);
++        String name = this.propertyHolder.get(ItemProperties.SKULL_OWNER_NAME);
++        if (profile != null && profile.getName() != null) {
++            return profile.getName();
++        }
++
++        return name;
++    }
++
++    // Paper start
++    @Override
++    public void setPlayerProfile(@org.jetbrains.annotations.Nullable com.destroystokyo.paper.profile.PlayerProfile profile) {
++        this.propertyHolder.set(ItemProperties.SKULL_OWNER, profile);
++    }
++
++    @org.jetbrains.annotations.Nullable
++    @Override
++    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
++        return this.propertyHolder.get(ItemProperties.SKULL_OWNER);
++    }
++    // Paper end
++
++    @Override
++    public OfflinePlayer getOwningPlayer() {
++        if (this.hasOwner()) {
++            PlayerProfile profile = this.propertyHolder.get(ItemProperties.SKULL_OWNER);
++            String name = this.propertyHolder.get(ItemProperties.SKULL_OWNER_NAME);
++            if (name != null) {
++                return Bukkit.getOfflinePlayer(name);
++            }
++
++            if (profile.getId() != null) {
++                return Bukkit.getOfflinePlayer(profile.getId());
++            }
++
++            if (profile.getName() != null) {
++                return Bukkit.getOfflinePlayer(profile.getName());
++            }
++        }
++
++        return null;
++    }
++
++    @Override
++    public boolean setOwner(String name) {
++        if (name != null && name.length() > MAX_OWNER_LENGTH) {
++            return false;
++        }
++
++        if (name == null) {
++            this.setProfile(null);
++        } else {
++            this.setProfile(Bukkit.createProfile(name));
++        }
++
++        return true;
++    }
++
++    @Override
++    public boolean setOwningPlayer(OfflinePlayer owner) {
++        if (owner == null) {
++            this.setProfile(null);
++        } else if (owner instanceof Player player) {
++            this.setProfile(player.getPlayerProfile());
++        } else {
++            this.setProfile(Bukkit.createProfile(owner.getUniqueId(), owner.getName()));
++        }
++
++        return true;
++    }
++
++    @Override
++    @Deprecated // Paper
++    public org.bukkit.profile.PlayerProfile getOwnerProfile() {
++        if (!this.hasOwner()) {
++            return null;
++        }
++
++        return this.propertyHolder.get(ItemProperties.SKULL_OWNER);
++    }
++
++    @Override
++    @Deprecated // Paper
++    public void setOwnerProfile(org.bukkit.profile.PlayerProfile profile) {
++        if (profile == null) {
++            this.setProfile(null);
++        } else {
++            GameProfile gameProfile = (((com.destroystokyo.paper.profile.SharedPlayerProfile) profile).buildGameProfile());
++            CraftPlayerProfile.validateSkullProfile(gameProfile);
++
++            this.setProfile(profile); // Paper
++        }
++    }
++
++    @Override
++    public void setNoteBlockSound(@Nullable NamespacedKey noteBlockSound) {
++        this.setFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, ItemProperties.NOTE_BLOCK_SOUND, noteBlockSound);
++    }
++
++    @Override
++    public @Nullable NamespacedKey getNoteBlockSound() {
++        return this.getFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, ItemProperties.NOTE_BLOCK_SOUND);
++    }
++
++    @Override
++    public @NotNull MetaPlayerHead clone() {
++        return new MetaPlayerHead(this.propertyHolder.clone(), this.material);
++    }
++
++    private void setProfile(org.bukkit.profile.PlayerProfile gameProfile) {
++        if (gameProfile == null) {
++            this.propertyHolder.set(ItemProperties.SKULL_OWNER, null);
++            return;
++        }
++
++        // Convert bukkit -> paper
++        this.propertyHolder.set(ItemProperties.SKULL_OWNER, new com.destroystokyo.paper.profile.CraftPlayerProfile(((CraftPlayerProfile) gameProfile).buildGameProfile()));
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.SKULL_OWNER);
++        this.propertyHolder.unset(ItemProperties.SKULL_OWNER_NAME);
++        this.propertyHolder.unset(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    // Equality
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaPlayerHead that) {
++            // SPIGOT-5403: equals does not check properties
++            return (this.getPlayerProfile() != null ? that.getPlayerProfile() != null && this.getPlayerProfile().equals(that.getPlayerProfile()) : that.getPlayerProfile() == null) && Objects.equals(this.getNoteBlockSound(), that.getNoteBlockSound());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaPlayerHead || this.isSkullEmpty());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isSkullEmpty();
++    }
++
++    boolean isSkullEmpty() {
++        return this.getPlayerProfile() == null && this.getNoteBlockSound() == null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaPotion.java b/src/main/java/io/papermc/paper/item/meta/MetaPotion.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819b9328fca
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaPotion.java
+@@ -0,0 +1,188 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Color;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.PotionMeta;
++import org.bukkit.potion.PotionData;
++import org.bukkit.potion.PotionEffect;
++import org.bukkit.potion.PotionEffectType;
++import org.bukkit.potion.PotionType;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Iterator;
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaPotion extends PaperMeta implements PotionMeta {
++
++    private static final PotionData DEFAULT_TYPE = new PotionData(PotionType.UNCRAFTABLE, false, false);
++
++    public MetaPotion(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public void setBasePotionData(@NotNull PotionData data) {
++        this.propertyHolder.set(ItemProperties.DEFAULT_POTION_TYPE, data);
++    }
++
++    @Override
++    public @NotNull PotionData getBasePotionData() {
++        return this.propertyHolder.getOrDefault(ItemProperties.DEFAULT_POTION_TYPE, DEFAULT_TYPE);
++    }
++
++    @Override
++    public boolean hasCustomEffects() {
++        List<PotionEffect> effects = this.propertyHolder.get(ItemProperties.CUSTOM_POTION_EFFECTS);
++        return effects != null && !effects.isEmpty();
++    }
++
++    @Override
++    public @NotNull List<PotionEffect> getCustomEffects() {
++        return this.propertyHolder.getOrDefault(ItemProperties.CUSTOM_POTION_EFFECTS, List.of());
++    }
++
++    @Override
++    public boolean addCustomEffect(@NotNull PotionEffect effect, boolean overwrite) {
++        List<PotionEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.CUSTOM_POTION_EFFECTS);
++        int i = 0;
++        for (PotionEffect old : effects) {
++            if (old.getType() == effect.getType()) {
++                if (!overwrite) {
++                    return false;
++                } else if (old.getAmplifier() == effect.getAmplifier() && old.getDuration() == effect.getDuration() && old.isAmbient() == effect.isAmbient()) {
++                    return false;
++                }
++
++                break;
++            }
++            i++;
++        }
++
++        effects.add(i, effect);
++        return true;
++    }
++
++    @Override
++    public boolean removeCustomEffect(@NotNull PotionEffectType type) {
++        List<PotionEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.CUSTOM_POTION_EFFECTS);
++        if (effects == null) {
++            return false;
++        }
++
++        boolean changed = false;
++        Iterator<PotionEffect> iterator = effects.iterator();
++        while (iterator.hasNext()) {
++            PotionEffect next = iterator.next();
++            if (next.getType() == type) {
++                iterator.remove();
++                changed = true;
++            }
++        }
++
++        return changed;
++    }
++
++    @Override
++    public boolean hasCustomEffect(@NotNull PotionEffectType type) {
++        List<PotionEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.CUSTOM_POTION_EFFECTS);
++        for (PotionEffect old : effects) {
++            if (old.getType() == type) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    public boolean clearCustomEffects() {
++        boolean changed = this.hasCustomEffects();
++        this.propertyHolder.unset(ItemProperties.CUSTOM_POTION_EFFECTS);
++        return changed;
++    }
++
++    @Override
++    public boolean setMainEffect(@NotNull PotionEffectType type) {
++        List<PotionEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.CUSTOM_POTION_EFFECTS);
++        PotionEffect found = null;
++        int i = 0;
++        for (PotionEffect old : effects) {
++            if (old.getType() == type) {
++                found = old;
++                break;
++            }
++            i++;
++        }
++
++        if (i == 0 || found == null) {
++            return false;
++        }
++
++        PotionEffect old = effects.get(0);
++        effects.set(0, found);
++        effects.set(i, old);
++
++        return true;
++    }
++
++    @Override
++    public boolean hasColor() {
++        return this.hasInPropertyPath(ItemProperties.DISPLAY, ItemProperties.COLOR);
++    }
++
++    @Override
++    public @Nullable Color getColor() {
++        return this.getFromPropertyPath(ItemProperties.DISPLAY, ItemProperties.COLOR);
++    }
++
++    @Override
++    public void setColor(@Nullable Color color) {
++        this.setFromPropertyPath(ItemProperties.DISPLAY, ItemProperties.COLOR, color);
++    }
++
++    @Override
++    public @NotNull MetaPotion clone() {
++        return new MetaPotion(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.DEFAULT_POTION_TYPE);
++        this.propertyHolder.unset(ItemProperties.CUSTOM_POTION_EFFECTS);
++    }
++
++    // Equality
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaPotion that) {
++
++            return this.getBasePotionData().equals(that.getBasePotionData())
++                && (this.hasCustomEffects() ? that.hasCustomEffects() && this.getCustomEffects().equals(that.getCustomEffects()) : !that.hasCustomEffects())
++                && (this.hasColor() ? that.hasColor() && this.getColor().equals(that.getColor()) : !that.hasColor());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaPotion || this.isPotionEmpty());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isPotionEmpty();
++    }
++
++    boolean isPotionEmpty() {
++        return (this.getBasePotionData().getType() == PotionType.UNCRAFTABLE) && !(this.hasCustomEffects() || this.hasColor());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaSpawnEgg.java b/src/main/java/io/papermc/paper/item/meta/MetaSpawnEgg.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a981e1a1aed8afcde3e74c0d264aa7910ca95829
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaSpawnEgg.java
+@@ -0,0 +1,70 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.entity.EntityType;
++import org.bukkit.inventory.meta.SpawnEggMeta;
++import org.jetbrains.annotations.NotNull;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaSpawnEgg extends PaperMeta implements SpawnEggMeta {
++
++    public MetaSpawnEgg(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public EntityType getSpawnedType() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public void setSpawnedType(EntityType type) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull MetaSpawnEgg clone() {
++        return new MetaSpawnEgg(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.ENTITY_TAG);
++    }
++
++    // Equality
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isSpawnEggEmpty();
++    }
++
++    boolean isSpawnEggEmpty() {
++        return !(this.hasSpawnedType() || this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null);
++    }
++
++    boolean hasSpawnedType() {
++        return false;
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaSpawnEgg that) {
++
++            return this.hasSpawnedType() ? that.hasSpawnedType() : !that.hasSpawnedType()
++                && this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null ? that.propertyHolder.get(ItemProperties.ENTITY_TAG) != null && this.propertyHolder.get(ItemProperties.ENTITY_TAG).equals(that.propertyHolder.get(ItemProperties.ENTITY_TAG)) : this.propertyHolder.get(ItemProperties.ENTITY_TAG) == null;
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaSpawnEgg || this.isSpawnEggEmpty());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java b/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cba72e053c77ee1c37333f21efa555261ecd5ec1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java
+@@ -0,0 +1,139 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.inventory.item.properties.StewEffect;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.nbt.types.StewEffectsListNbt;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.SuspiciousStewMeta;
++import org.bukkit.potion.PotionEffect;
++import org.bukkit.potion.PotionEffectType;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.ArrayList;
++import java.util.Iterator;
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaSuspiciousStew extends PaperMeta implements SuspiciousStewMeta {
++
++    public MetaSuspiciousStew(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public boolean hasCustomEffects() {
++        List<StewEffect> effects = this.propertyHolder.get(ItemProperties.STEW_EFFECTS);
++        return effects != null && !effects.isEmpty();
++    }
++
++    @Override
++    public @NotNull List<PotionEffect> getCustomEffects() {
++        List<PotionEffect> effects = new ArrayList<>();
++        for (StewEffect effect : this.propertyHolder.getOrDefault(ItemProperties.STEW_EFFECTS, List.of())) {
++            effects.add(new PotionEffect(effect.effect(), effect.duration(), 0));
++        }
++
++        return effects;
++    }
++
++    @Override
++    public boolean addCustomEffect(@NotNull PotionEffect effect, boolean overwrite) {
++        List<StewEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.STEW_EFFECTS);
++        int i = 0;
++        for (StewEffect old : effects) {
++            if (old.effect() == effect.getType()) {
++                if (!overwrite) {
++                    return false;
++                }
++                if (old.duration() == effect.getDuration()) {
++                    return false;
++                }
++
++                break;
++            }
++            i++;
++        }
++
++        effects.set(i, new StewEffectsListNbt.StewEffectImpl(effect.getType(), effect.getDuration()));
++
++        return true;
++    }
++
++    @Override
++    public boolean removeCustomEffect(@NotNull PotionEffectType type) {
++        List<StewEffect> effects = this.propertyHolder.get(ItemProperties.STEW_EFFECTS);
++        if (effects == null) {
++            return false;
++        }
++
++        boolean changed = false;
++        Iterator<StewEffect> iterator = effects.iterator();
++        while (iterator.hasNext()) {
++            StewEffect next = iterator.next();
++            if (next.effect() == type) {
++                iterator.remove();
++                changed = true;
++            }
++        }
++
++        return changed;
++    }
++
++    @Override
++    public boolean hasCustomEffect(@NotNull PotionEffectType type) {
++        List<StewEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.STEW_EFFECTS);
++        for (StewEffect old : effects) {
++            if (old.effect() == type) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    public boolean clearCustomEffects() {
++        boolean changed = this.hasCustomEffects();
++        this.propertyHolder.unset(ItemProperties.STEW_EFFECTS);
++        return changed;
++    }
++
++    @Override
++    public @NotNull MetaSuspiciousStew clone() {
++        return new MetaSuspiciousStew(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.STEW_EFFECTS);
++    }
++
++    // Equality
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isStewEmpty();
++    }
++
++    boolean isStewEmpty() {
++        return !this.hasCustomEffects();
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaSuspiciousStew that) {
++            return (this.hasCustomEffects() ? that.hasCustomEffects() && this.getCustomEffects().equals(that.getCustomEffects()) : !that.hasCustomEffects());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaSuspiciousStew || this.isStewEmpty());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaTropicalFishBucket.java b/src/main/java/io/papermc/paper/item/meta/MetaTropicalFishBucket.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e2f5ebff3b41eb93d1757d299ccdd8db31c110c7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaTropicalFishBucket.java
+@@ -0,0 +1,106 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.inventory.item.properties.TropicalFishVariant;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.nbt.types.TropicalFishVariantNbt;
++import org.bukkit.DyeColor;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.entity.TropicalFish;
++import org.bukkit.inventory.meta.TropicalFishBucketMeta;
++import org.jetbrains.annotations.NotNull;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaTropicalFishBucket extends PaperMeta implements TropicalFishBucketMeta {
++
++    private static final TropicalFishVariant DEFAULT = new TropicalFishVariantNbt.TropicalFishVariantImpl(DyeColor.WHITE, DyeColor.WHITE, TropicalFish.Pattern.KOB);
++
++    public MetaTropicalFishBucket(MutablePropertyView mutable, Material material) {
++        super(mutable, material);
++    }
++
++    @Override
++    public @NotNull DyeColor getPatternColor() {
++        TropicalFishVariant variant = this.propertyHolder.getOrDefault(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, DEFAULT);
++        return variant.patternColor();
++    }
++
++    @Override
++    public void setPatternColor(@NotNull DyeColor color) {
++        TropicalFishVariant variant = this.propertyHolder.getOrDefault(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, DEFAULT);
++        this.set(new TropicalFishVariantNbt.TropicalFishVariantImpl(color, variant.bodyColor(), variant.type()));
++    }
++
++    @Override
++    public @NotNull DyeColor getBodyColor() {
++        TropicalFishVariant variant = this.propertyHolder.getOrDefault(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, DEFAULT);
++        return variant.bodyColor();
++    }
++
++    @Override
++    public void setBodyColor(@NotNull DyeColor color) {
++        TropicalFishVariant variant = this.propertyHolder.getOrDefault(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, DEFAULT);
++        this.set(new TropicalFishVariantNbt.TropicalFishVariantImpl(variant.patternColor(), color, variant.type()));
++    }
++
++    @Override
++    public @NotNull TropicalFish.Pattern getPattern() {
++        TropicalFishVariant variant = this.propertyHolder.getOrDefault(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, DEFAULT);
++        return variant.type();
++    }
++
++    @Override
++    public void setPattern(TropicalFish.@NotNull Pattern pattern) {
++        TropicalFishVariant variant = this.propertyHolder.getOrDefault(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, DEFAULT);
++        this.set(new TropicalFishVariantNbt.TropicalFishVariantImpl(variant.patternColor(), variant.bodyColor(), pattern));
++    }
++
++    @Override
++    public boolean hasVariant() {
++        return this.propertyHolder.hasProperty(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT);
++    }
++
++    private void set(TropicalFishVariantNbt.TropicalFishVariantImpl variant) {
++        this.propertyHolder.set(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, variant);
++    }
++
++    @Override
++    public @NotNull MetaTropicalFishBucket clone() {
++        return new MetaTropicalFishBucket(this.propertyHolder.clone(), this.material);
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT);
++        this.propertyHolder.unset(ItemProperties.ENTITY_TAG);
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaTropicalFishBucket that) {
++
++            return (this.hasVariant() ? that.hasVariant() && this.propertyHolder.get(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT).equals(that.propertyHolder.get(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT)) : !that.hasVariant())
++                && (this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null ? that.propertyHolder.get(ItemProperties.ENTITY_TAG) != null && this.propertyHolder.get(ItemProperties.ENTITY_TAG).equals(that.propertyHolder.get(ItemProperties.ENTITY_TAG)) : that.propertyHolder.get(ItemProperties.ENTITY_TAG) == null);
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaTropicalFishBucket || this.isBucketEmpty());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isBucketEmpty();
++    }
++
++    boolean isBucketEmpty() {
++        return !(this.hasVariant() || this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null);
++    }
++}
