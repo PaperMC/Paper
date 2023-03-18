@@ -61,10 +61,10 @@ index 0000000000000000000000000000000000000000..c744e7bcf59fbd3007f8506d024546e0
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 34888b525fd35ac64e6e5e66036ad965a6769959..59ddba449d49c7f9d447b665eb52c765ff6b15ec 100644
+index 34888b525fd35ac64e6e5e66036ad965a6769959..b36152de02637ed6b1beccc4f7cbdd7ce059a0e9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -78,4 +78,25 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -78,4 +78,31 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      public Stream<B> values() {
          return this.minecraftRegistry.keySet().stream().map(minecraftKey -> this.get(CraftNamespacedKey.fromMinecraft(minecraftKey)));
      }
@@ -81,12 +81,18 @@ index 34888b525fd35ac64e6e5e66036ad965a6769959..59ddba449d49c7f9d447b665eb52c765
 +        );
 +        editConsumer.accept(map);
 +        final Map<net.minecraft.tags.TagKey<M>, java.util.List<net.minecraft.core.Holder<M>>> newTags = map.entrySet().stream().collect(
-+            java.util.stream.Collectors.toMap(
++            java.util.stream.Collectors.toUnmodifiableMap(
 +                entry -> net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(entry.getKey())),
 +                entry -> entry.getValue().stream().map(b -> (net.minecraft.core.Holder<M>) this.minecraftRegistry.getHolderOrThrow(net.minecraft.resources.ResourceKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(b.key())))).toList()
 +            )
 +        );
-+        return new io.papermc.paper.tag.PaperTagUpdate<>(this.minecraftRegistry.key(), map, newTags);
++        final Map<net.kyori.adventure.key.Key, java.util.Set<B>> immutable = map.entrySet().stream().collect(
++            java.util.stream.Collectors.toUnmodifiableMap(
++                Map.Entry::getKey,
++                entry -> java.util.Set.copyOf(entry.getValue())
++            )
++        );
++        return new io.papermc.paper.tag.PaperTagUpdate<>(this.minecraftRegistry.key(), immutable, newTags);
 +    }
 +    // Paper end
  }
