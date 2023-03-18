@@ -63,37 +63,72 @@ index 0000000000000000000000000000000000000000..3f6afc006ca529e92e25e291266f1f96
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/AttributePair.java b/src/main/java/io/papermc/paper/inventory/item/properties/AttributePair.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d2cab1890cfdab945bb6700899da7906ff490c5
+index 0000000000000000000000000000000000000000..6cd50769b3d1db43e4a7da341be0dc3b93001f98
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/AttributePair.java
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeModifier;
++import org.jetbrains.annotations.NotNull;
 +
-+public record AttributePair(Attribute attribute, AttributeModifier modifier) {
++/**
++ * Represents a serialized attribute that is grouped with a modifier.
++ */
++public interface AttributePair {
++
++    /**
++     * Gets the attribute
++     * @return attribute
++     */
++    @NotNull Attribute attribute();
++
++    /**
++     * Gets the modifier
++     * @return modifier
++     */
++    @NotNull AttributeModifier modifier();
++
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/EnchantmentPair.java b/src/main/java/io/papermc/paper/inventory/item/properties/EnchantmentPair.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e338b2eb52c8cef657981b8744b95f894b0ebcf6
+index 0000000000000000000000000000000000000000..9733d750bfc0bcabf995fe54ba8c9d2c180df85c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/EnchantmentPair.java
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import org.bukkit.enchantments.Enchantment;
++import org.jetbrains.annotations.NotNull;
 +
-+public record EnchantmentPair(Enchantment enchantment, int level) {
++/**
++ * Represents a serialized enchantment with its level.
++ */
++public interface EnchantmentPair {
++
++    /**
++     * Gets the enchantment
++     * @return enchantment
++     */
++    @NotNull Enchantment enchantment();
++
++    /**
++     * Gets the level
++     * @return level
++     */
++    int level();
++
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..25a04d5b37616bda097377b58c5886ebaa57f97a
+index 0000000000000000000000000000000000000000..f4b148db9236d6b77cbacab564adebaf126dd1aa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,124 @@
 +package io.papermc.paper.inventory.item.properties;
 +
++import com.destroystokyo.paper.Namespaced;
 +import com.destroystokyo.paper.profile.PlayerProfile;
 +import io.leangen.geantyref.TypeFactory;
 +import io.papermc.paper.math.Position;
@@ -120,8 +155,8 @@ index 0000000000000000000000000000000000000000..25a04d5b37616bda097377b58c5886eb
 +    // COMMON
 +    PropertyKey<List<EnchantmentPair>> ENCHANTMENTS = PropertyKey.of("Enchantments", TypeFactory.parameterizedClass(List.class, EnchantmentPair.class));
 +    PropertyKey<Boolean> UNBREAKABLE = PropertyKey.of("Unbreakable", Boolean.class);
-+    //PropertyKey<> CAN_DESTROY_BLOCK_LIST = PropertyKey.ofSimpleValue("CanDestroy", );
-+    //PropertyKey CAN_PLACE_ON_BLOCK_LIST = PropertyKey.ofSimpleValue("CanPlaceOn", );
++    PropertyKey<List<Namespaced>> CAN_DESTROY_BLOCK_LIST = PropertyKey.of("CanDestroy", TypeFactory.parameterizedClass(List.class, Namespaced.class)); // TODO: BETTER REPRESENTATION
++    PropertyKey<List<Namespaced>> CAN_PLACE_ON_BLOCK_LIST = PropertyKey.of("CanPlaceOn", TypeFactory.parameterizedClass(List.class, Namespaced.class)); // TODO: BETTER REPRESENTATION
 +    PropertyKey<Set<ItemFlag>> HIDE_FLAGS = PropertyKey.of("HideFlags", TypeFactory.parameterizedClass(Set.class, ItemFlag.class));
 +    PropertyKey<Integer> REPAIR_COST = PropertyKey.of("RepairCost", Integer.class);
 +    PropertyKey<Integer> CUSTOM_MODEL_DATA = PropertyKey.of("CustomModelData", Integer.class);
@@ -169,6 +204,7 @@ index 0000000000000000000000000000000000000000..25a04d5b37616bda097377b58c5886eb
 +    PropertyKey<List<NamespacedKey>> RECIPES = PropertyKey.of("Recipes", TypeFactory.parameterizedClass(List.class, NamespacedKey.class));
 +
 +    // FireworkMeta
++    PropertyKey<MutablePropertyView> FIREWORKS = PropertyKey.of("Fireworks", MutablePropertyView.class);
 +    PropertyKey<Byte> FLIGHT = PropertyKey.of("Flight", Byte.class);
 +    PropertyKey<List<FireworkEffect>> EXPLOSIONS = PropertyKey.of("Explosions", TypeFactory.parameterizedClass(List.class, FireworkEffect.class));
 +
@@ -216,61 +252,135 @@ index 0000000000000000000000000000000000000000..25a04d5b37616bda097377b58c5886eb
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java b/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4861b9e3c431e3e9d61aa3949fed61c68869357d
+index 0000000000000000000000000000000000000000..97effe9ca4a064759ce19f280ca284333ae620ff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,22 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import org.bukkit.potion.PotionEffectType;
-+import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
 +
-+@ApiStatus.Experimental
-+public record StewEffect(PotionEffectType effect, int duration) {
++/**
++ * Represents a serialized stew effect with a duration.
++ */
++public interface StewEffect {
++
++    /**
++     * Gets the effect type
++     * @return type
++     */
++    @NotNull PotionEffectType effect();
++
++    /**
++     * Gets the duration in ticks
++     * @return duration
++     */
++    int duration();
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java b/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..061e2627e2f1202504a214edb2f5764a8a757298
+index 0000000000000000000000000000000000000000..3ae8e35cb98c2b39714f3347ad49a474e505b45a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/TropicalFishVariant.java
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import org.bukkit.DyeColor;
 +import org.bukkit.entity.TropicalFish;
-+import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
 +
-+@ApiStatus.Experimental
-+public record TropicalFishVariant(DyeColor patternColor, DyeColor bodyColor, TropicalFish.Pattern type) {
++/**
++ * Represents a serialized tropical fish.
++ */
++public interface TropicalFishVariant {
++
++    /**
++     * Gets the pattern color
++     * @return color
++     */
++    @NotNull DyeColor patternColor();
++
++    /**
++     * Gets the body color
++     * @return color
++     */
++    @NotNull DyeColor bodyColor();
++
++    /**
++     * Gets the type
++     * @return type
++     */
++    @NotNull TropicalFish.Pattern type();
 +}
 diff --git a/src/main/java/io/papermc/paper/property/MutablePropertyView.java b/src/main/java/io/papermc/paper/property/MutablePropertyView.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..942c90c4102ed7a1da3da3ad6722d406095cc537
+index 0000000000000000000000000000000000000000..d73a2276a3e56905e9595f85f5532f06f8dc583d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/MutablePropertyView.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.property;
++
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +public interface MutablePropertyView extends PropertyView, Cloneable {
 +
-+    <T> void unset(PropertyKey<T> key);
++    /**
++     * Unsets a property key.
++     *
++     * @param key key
++     */
++    void unset(@NotNull PropertyKey<?> key);
 +
-+    <T> void set(PropertyKey<T> key, T value);
++    /**
++     * Sets the value of the given property key.
++     *
++     * @param key   key
++     * @param value value
++     * @param <T>   type
++     */
++    <T> void set(@NotNull PropertyKey<T> key, @Nullable T value);
 +
-+    <T> T create(PropertyKey<T> key);
++    /**
++     * Creates a new property key. TODO: I don't like this
++     *
++     * @param key
++     * @param <T>
++     * @return
++     */
++    @NotNull
++    <T> T create(@NotNull PropertyKey<T> key);
 +
-+    <T> T getOrCreate(PropertyKey<T> key);
++    /**
++     * TODO: I don't like this
++     *
++     * @param key
++     * @param <T>
++     * @return
++     */
++    @NotNull
++    <T> T getOrCreate(@NotNull PropertyKey<T> key);
 +
++    /**
++     * Clones the given property view.
++     *
++     * @return cloned value
++     */
++    @NotNull
 +    MutablePropertyView clone();
 +
++    /**
++     * Clears the property view.
++     */
 +    void clear();
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyKey.java b/src/main/java/io/papermc/paper/property/PropertyKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2c1065656f05d150a5dc265a49d6f94ae354c921
+index 0000000000000000000000000000000000000000..4d02e565476a04cdccf78d700a14aa45586f7233
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyKey.java
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,72 @@
 +package io.papermc.paper.property;
 +
 +import io.leangen.geantyref.TypeToken;
@@ -295,7 +405,8 @@ index 0000000000000000000000000000000000000000..2c1065656f05d150a5dc265a49d6f94a
 +     * @param <T>   type
 +     * @return property key
 +     */
-+    static <T> PropertyKey<T> of(String key, Class<T> token) {
++    @NotNull
++    static <T> PropertyKey<T> of(@NotNull String key, @NotNull Class<T> token) {
 +        return new PropertyKeyImpl<>(key, token);
 +    }
 +
@@ -307,7 +418,8 @@ index 0000000000000000000000000000000000000000..2c1065656f05d150a5dc265a49d6f94a
 +     * @param <T>   type
 +     * @return property key
 +     */
-+    static <T> PropertyKey<T> of(String key, TypeToken<T> token) {
++    @NotNull
++    static <T> PropertyKey<T> of(@NotNull String key, @NotNull TypeToken<T> token) {
 +        return new PropertyKeyImpl<>(key, token.getType());
 +    }
 +
@@ -319,7 +431,8 @@ index 0000000000000000000000000000000000000000..2c1065656f05d150a5dc265a49d6f94a
 +     * @param <T>  type
 +     * @return property key
 +     */
-+    static <T> PropertyKey<T> of(String key, Type type) {
++    @NotNull
++    static <T> PropertyKey<T> of(@NotNull String key, @NotNull Type type) {
 +        return new PropertyKeyImpl<>(key, type);
 +    }
 +
@@ -369,10 +482,10 @@ index 0000000000000000000000000000000000000000..325a0452f41b495184d718849f280569
 +}
 diff --git a/src/main/java/io/papermc/paper/property/PropertyView.java b/src/main/java/io/papermc/paper/property/PropertyView.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d44edfb99b33556484f930a68e485163d490564f
+index 0000000000000000000000000000000000000000..ffee1712ff301a681fd2efa42a893df617053013
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/PropertyView.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,57 @@
 +package io.papermc.paper.property;
 +
 +import org.jetbrains.annotations.ApiStatus;
@@ -394,15 +507,15 @@ index 0000000000000000000000000000000000000000..d44edfb99b33556484f930a68e485163
 +     * @param <T> type
 +     * @return value
 +     */
-+    @Nullable <T> T get(PropertyKey<T> key);
++    @Nullable <T> T get(@NotNull PropertyKey<T> key);
 +
 +    /**
 +     * Gets the value of a property with the given key.
 +     * Will return the provided default value if the value is not present.
 +     *
-+     * @param key key
++     * @param key          key
 +     * @param defaultValue value to return if returned key value is null
-+     * @param <T> type
++     * @param <T>          type
 +     * @return value
 +     */
 +    @Contract("_,!null -> !null")
@@ -425,6 +538,7 @@ index 0000000000000000000000000000000000000000..d44edfb99b33556484f930a68e485163
 +
 +    /**
 +     * Returns if the current reader contains no properties.
++     *
 +     * @return is empty
 +     */
 +    boolean isEmpty();
@@ -444,7 +558,7 @@ index b92255a9c87620f46adb140689b1cd328a476d61..bf91c5e84186a4124ef0e7665af36ac5
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 449d6e1995eedbfaeffdc5d1f1c2295378006aa8..27203ae4007bbad209b1c3a6bd423348d37bd457 100644
+index 449d6e1995eedbfaeffdc5d1f1c2295378006aa8..592530563a499da9d6e071fa9f5964b3ea6ba59f 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -985,5 +985,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
@@ -452,7 +566,7 @@ index 449d6e1995eedbfaeffdc5d1f1c2295378006aa8..27203ae4007bbad209b1c3a6bd423348
          return livingEntity.damageItemStack(this, amount);
      }
 +
-+
++    @NotNull
 +    public io.papermc.paper.property.MutablePropertyView getPropertyHolder() {
 +        return Bukkit.getUnsafe().getPropertyHolder(this);
 +    }
