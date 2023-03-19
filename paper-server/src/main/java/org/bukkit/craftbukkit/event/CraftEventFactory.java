@@ -878,12 +878,15 @@ public class CraftEventFactory {
                 entity.lastDamageCancelled = true; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
             }
             return event;
-        } else if (source.getEntity() != null) {
+        } else if (source.getEntity() != null || source.getDirectEntity() != null) {
             Entity damager = source.getEntity();
             DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
 
             if (source.isIndirect() && source.getDirectEntity() != null) {
                 damager = source.getDirectEntity();
+            }
+
+            if (damager instanceof IProjectile) {
                 if (damager.getBukkitEntity() instanceof ThrownPotion) {
                     cause = DamageCause.MAGIC;
                 } else if (damager.getBukkitEntity() instanceof Projectile) {
