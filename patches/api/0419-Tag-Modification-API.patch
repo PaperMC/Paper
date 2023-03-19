@@ -6,10 +6,10 @@ Subject: [PATCH] Tag Modification API
 
 diff --git a/src/main/java/io/papermc/paper/tag/TagUpdate.java b/src/main/java/io/papermc/paper/tag/TagUpdate.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8ec1289f25521f6c8bc1910c7c60e809a2ea08d1
+index 0000000000000000000000000000000000000000..17081b71d8507d834688390a981a4df56ddecccd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/tag/TagUpdate.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.tag;
 +
 +import java.util.Map;
@@ -25,6 +25,7 @@ index 0000000000000000000000000000000000000000..8ec1289f25521f6c8bc1910c7c60e809
 + * sent to any number of players or a single player.
 + */
 +@ApiStatus.NonExtendable
++@ApiStatus.Experimental
 +public interface TagUpdate<T extends Keyed> {
 +
 +    /**
@@ -35,10 +36,10 @@ index 0000000000000000000000000000000000000000..8ec1289f25521f6c8bc1910c7c60e809
 +    @NotNull @Unmodifiable Map<Key, Set<T>> updatedTags();
 +}
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 0a3a41ae4c488b148266129d3663be3f8830d509..1c3e941c3322ab39a99e5c4f08fcb64bee8f32c5 100644
+index 0a3a41ae4c488b148266129d3663be3f8830d509..2ff1eb67ddd852a001044b332b45f0e4e121db6b 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
-@@ -271,6 +271,20 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -271,6 +271,57 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
          return (namespacedKey != null) ? get(namespacedKey) : null;
      }
  
@@ -47,12 +48,49 @@ index 0a3a41ae4c488b148266129d3663be3f8830d509..1c3e941c3322ab39a99e5c4f08fcb64b
 +     * Edits the tags the server and client use to determine various behaviors.
 +     * In the consumer parameter, the map and initial sets will be mutable to make
 +     * changes and after the consumer, they will be sent to the client.
++     * <p>
++     * <b>Supported Registries:</b>
++     * <ul>
++     *     <li>{@link Registry#STRUCTURE}</li>
++     *     <li>{@link Registry#STRUCTURE_TYPE}</li>
++     * </ul>
 +     *
 +     * @param editConsumer the consumer to edit the map of tags
 +     * @throws UnsupportedOperationException if this registry doesn't support editing tags
++     * @see #editTags(java.util.function.Consumer)
 +     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
 +    default io.papermc.paper.tag.TagUpdate<T> createTagUpdate(final java.util.function.@NotNull Consumer<Map<net.kyori.adventure.key.Key, java.util.Set<T>>> editConsumer) {
 +        throw new UnsupportedOperationException("This registry doesn't support editing tags");
++    }
++
++    /**
++     * Applies this edit to the tags on the server. After
++     * applying the changes, updates will be sent to all connected
++     * clients with the new tags.
++     * <p>
++     * If you are making changes to several registries, it is recommended
++     * to group these changes by creating tag updates and applying them all
++     * at once.
++     * These changes will be reset when the server is restarted
++     * or reloaded through {@code /bukkit:reload} or {@code /minecraft:reload}.
++     * Listen to {@link io.papermc.paper.event.server.ServerResourcesReloadedEvent} if
++     * you want to preserve your changes through reloads.
++     * <p>
++     * <b>Supported Registries:</b>
++     * <ul>
++     *     <li>{@link Registry#STRUCTURE}</li>
++     *     <li>{@link Registry#STRUCTURE_TYPE}</li>
++     * </ul>
++     *
++     * @param editConsumer the consumer to edit the map of tags
++     * @throws UnsupportedOperationException if this registry doesn't support editing tags
++     * @see #createTagUpdate(java.util.function.Consumer)
++     * @see Server#applyTagUpdate(Iterable)
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    default void editTags(final java.util.function.@NotNull Consumer<Map<net.kyori.adventure.key.Key, java.util.Set<T>>> editConsumer) {
++        Bukkit.getServer().applyTagUpdate(this.createTagUpdate(editConsumer));
 +    }
 +    // Paper end
 +
@@ -60,10 +98,10 @@ index 0a3a41ae4c488b148266129d3663be3f8830d509..1c3e941c3322ab39a99e5c4f08fcb64b
  
          private final Map<NamespacedKey, T> map;
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 2204336d8800311b65e894739ab1b27273e7c6f2..87cba207c54cb53e5491cdaf250ce751fb8e52c5 100644
+index 2204336d8800311b65e894739ab1b27273e7c6f2..0cb6f2b0e3c3992cba916742bdb26da04f720b08 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -2139,4 +2139,36 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -2139,4 +2139,38 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
       */
      @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
      // Paper end
@@ -81,6 +119,7 @@ index 2204336d8800311b65e894739ab1b27273e7c6f2..87cba207c54cb53e5491cdaf250ce751
 +     * @param tagUpdate the tag update to send
 +     * @see #applyTagUpdate(Iterable) for multiple updates at once
 +     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
 +    default void applyTagUpdate(io.papermc.paper.tag.@NotNull TagUpdate<?> tagUpdate) {
 +        this.applyTagUpdate(java.util.Set.of(tagUpdate));
 +    }
@@ -97,14 +136,15 @@ index 2204336d8800311b65e894739ab1b27273e7c6f2..87cba207c54cb53e5491cdaf250ce751
 +     *
 +     * @param tagUpdates the tag updates to send
 +     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
 +    void applyTagUpdate(@NotNull Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates);
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 660f28e371176c62e38a84b187958aceb235c8e3..935fdae93a3a5abdb5643993895b22542a5bd97c 100644
+index 660f28e371176c62e38a84b187958aceb235c8e3..9d6c8422020ce266f9bb6377d26d2c6d2ca22d98 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -3000,4 +3000,37 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -3000,4 +3000,39 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      @Override
      Spigot spigot();
      // Spigot end
@@ -123,6 +163,7 @@ index 660f28e371176c62e38a84b187958aceb235c8e3..935fdae93a3a5abdb5643993895b2254
 +     * @param tagUpdate the tag update to send
 +     * @see #sendTagUpdates(Iterable) for multiple updates at once
 +     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
 +    default void sendTagUpdate(io.papermc.paper.tag.@NotNull TagUpdate<?> tagUpdate) {
 +        this.sendTagUpdates(java.util.Set.of(tagUpdate));
 +    }
@@ -139,6 +180,7 @@ index 660f28e371176c62e38a84b187958aceb235c8e3..935fdae93a3a5abdb5643993895b2254
 +     *
 +     * @param tagUpdates the tag updates to send
 +     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
 +    void sendTagUpdates(@NotNull Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates);
 +    // Paper end
  }
