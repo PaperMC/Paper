@@ -20,6 +20,11 @@ import org.jetbrains.annotations.Nullable;
  */
 @SerializableAs("PotionEffect")
 public class PotionEffect implements ConfigurationSerializable {
+    /**
+     * A constant denoting infinite potion duration.
+     */
+    public static final int INFINITE_DURATION = -1;
+
     private static final String AMPLIFIER = "amplifier";
     private static final String DURATION = "duration";
     private static final String TYPE = "effect";
@@ -179,10 +184,38 @@ public class PotionEffect implements ConfigurationSerializable {
      * Returns the duration (in ticks) that this effect will run for when
      * applied to a {@link LivingEntity}.
      *
-     * @return The duration of the effect
+     * @return The duration of the effect, or {@value #INFINITE_DURATION} if
+     * this effect is infinite
+     * @see #isInfinite()
      */
     public int getDuration() {
         return duration;
+    }
+
+    /**
+     * Returns whether or not this potion effect has an infinite duration. Potion
+     * effects with infinite durations will display an infinite symbol and never
+     * expire unless manually removed.
+     *
+     * @return whether this duration is infinite or not
+     */
+    public boolean isInfinite() {
+        return duration == INFINITE_DURATION;
+    }
+
+    /**
+     * Returns whether or not this potion effect has a shorter duration than the
+     * provided potion effect.
+     * <p>
+     * An infinite duration is considered longer than non-infinite durations. If
+     * both potion effects have infinite durations, then neither is shorter than
+     * the other and this method will return false.
+     *
+     * @param other the other effect
+     * @return true if this effect is shorter than the other, false if longer or equal
+     */
+    public boolean isShorterThan(@NotNull PotionEffect other) {
+        return !isInfinite() && (duration < other.duration || other.isInfinite());
     }
 
     /**
