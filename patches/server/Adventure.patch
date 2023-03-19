@@ -1177,8 +1177,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.adventure.providers;
 +
-+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import java.util.HashMap;
++import java.util.Map;
++import java.util.UUID;
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.event.ClickCallback;
 +import net.kyori.adventure.text.event.ClickEvent;
@@ -1186,7 +1187,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import java.util.Queue;
 +import java.util.concurrent.ConcurrentLinkedQueue;
-+import java.util.concurrent.atomic.AtomicLong;
 +
 +@SuppressWarnings("UnstableApiUsage") // permitted provider
 +public class ClickCallbackProviderImpl implements ClickCallback.Provider {
@@ -1200,15 +1200,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static final class CallbackManager {
 +
-+        private final Long2ObjectMap<StoredCallback> callbacks = new Long2ObjectOpenHashMap<>();
++        private final Map<UUID, StoredCallback> callbacks = new HashMap<>();
 +        private final Queue<StoredCallback> queue = new ConcurrentLinkedQueue<>();
-+        private final AtomicLong current = new AtomicLong();
 +
 +        private CallbackManager() {
 +        }
 +
-+        public long addCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
-+            final long id = current.getAndIncrement();
++        public UUID addCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
++            final UUID id = UUID.randomUUID();
 +            this.queue.add(new StoredCallback(callback, options, id));
 +            return id;
 +        }
@@ -1226,7 +1225,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        public void runCallback(final @NotNull Audience audience, final long id) {
++        public void runCallback(final @NotNull Audience audience, final UUID id) {
 +            final StoredCallback callback = this.callbacks.get(id);
 +            if (callback != null && callback.valid()) { //TODO Message if expired/invalid?
 +                callback.takeUse();
@@ -1239,10 +1238,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        private final long startedAt = System.nanoTime();
 +        private final ClickCallback<Audience> callback;
 +        private final long lifetime;
-+        private final long id;
++        private final UUID id;
 +        private int remainingUses;
 +
-+        private StoredCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options, final long id) {
++        private StoredCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options, final UUID id) {
 +            this.callback = callback;
 +            this.lifetime = options.lifetime().toNanos();
 +            this.remainingUses = options.uses();
@@ -1267,7 +1266,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return hasRemainingUses() && !expired();
 +        }
 +
-+        public long id() {
++        public UUID id() {
 +            return this.id;
 +        }
 +    }
