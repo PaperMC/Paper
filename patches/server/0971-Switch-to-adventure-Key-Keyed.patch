@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 19 Mar 2023 15:39:44 -0700
+Subject: [PATCH] Switch to adventure Key/Keyed
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+index 34888b525fd35ac64e6e5e66036ad965a6769959..40fa74a462c6304f2f14d8c7655b16516de94482 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+@@ -36,7 +36,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+         return null;
+     }
+ 
+-    private final Map<NamespacedKey, B> cache = new HashMap<>();
++    private final Map<net.kyori.adventure.key.Key, B> cache = new HashMap<>(); // Paper - switch to adventure Key
+     private final net.minecraft.core.Registry<M> minecraftRegistry;
+     private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
+ 
+@@ -46,13 +46,13 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+     }
+ 
+     @Override
+-    public B get(NamespacedKey namespacedKey) {
++    public B get(net.kyori.adventure.key.Key namespacedKey) { // Paper - switch to adventure Key
+         B cached = this.cache.get(namespacedKey);
+         if (cached != null) {
+             return cached;
+         }
+ 
+-        B bukkit = this.createBukkit(namespacedKey, this.minecraftRegistry.getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElse(null));
++        B bukkit = this.createBukkit(asBukkit(namespacedKey), this.minecraftRegistry.getOptional(io.papermc.paper.adventure.PaperAdventure.asVanilla(namespacedKey)).orElse(null)); // Paper - switch to adventure Key
+         if (bukkit == null) {
+             return null;
+         }
+@@ -78,4 +78,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+     public Stream<B> values() {
+         return this.minecraftRegistry.keySet().stream().map(minecraftKey -> this.get(CraftNamespacedKey.fromMinecraft(minecraftKey)));
+     }
++    // Paper start - switch to adventure Key
++    private static NamespacedKey asBukkit(net.kyori.adventure.key.Key key) {
++        return key instanceof NamespacedKey ns ? ns : new org.bukkit.NamespacedKey(key.namespace(), key.value());
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index ebbbfc318439fec33331d71563e528cd3429e541..54375e28f2b28540bc79f352e4a32d6c88f6f68a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -450,6 +450,12 @@ public class Commodore
+                             return;
+                         }
+                         // Paper end
++                        // Paper start - rewrite Registry generic change
++                        if (owner.equals("org/bukkit/Registry") && name.equals("get") && desc.equals("(Lorg/bukkit/NamespacedKey;)Lorg/bukkit/Keyed;")) {
++                            super.visitMethodInsn(opcode, owner, name, "(Lnet/kyori/adventure/key/Key;)Lnet/kyori/adventure/key/Keyed;", itf);
++                            return;
++                        }
++                        // Paper end
+                         if ( modern )
+                         {
+                             if ( owner.equals( "org/bukkit/Material" ) )
+diff --git a/src/test/java/io/papermc/paper/testing/LazyRegistry.java b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
+index 8dd0df8c2cc25d37a2590a07872682230a9335f2..ff4206938814250c7ff77129dd51bfea22ed3b3c 100644
+--- a/src/test/java/io/papermc/paper/testing/LazyRegistry.java
++++ b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
+@@ -17,7 +17,7 @@ public record LazyRegistry(Supplier<Registry<Keyed>> supplier) implements Regist
+     }
+ 
+     @Override
+-    public @Nullable Keyed get(@NotNull final NamespacedKey key) {
++    public @Nullable Keyed get(@NotNull final net.kyori.adventure.key.Key key) {
+         return this.supplier().get().get(key);
+     }
+ }

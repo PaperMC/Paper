@@ -1,0 +1,135 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 19 Mar 2023 15:39:30 -0700
+Subject: [PATCH] Switch to adventure Key/Keyed
+
+
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 0a3a41ae4c488b148266129d3663be3f8830d509..1bba050f425fe70774f9cdba3f2cea2d94c927e6 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
+  *
+  * @param <T> type of item in the registry
+  */
+-public interface Registry<T extends Keyed> extends Iterable<T> {
++public interface Registry<T extends net.kyori.adventure.key.Keyed> extends Iterable<T> { // Paper - switch to adventure Key
+ 
+     /**
+      * Server advancements.
+@@ -40,8 +40,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+ 
+         @Nullable
+         @Override
+-        public Advancement get(@NotNull NamespacedKey key) {
+-            return Bukkit.getAdvancement(key);
++        public Advancement get(@NotNull net.kyori.adventure.key.Key key) { // Paper - switch to adventure Key
++            return Bukkit.getAdvancement(asBukkit(key)); // Paper - switch to adventure Key
+         }
+ 
+         @NotNull
+@@ -78,8 +78,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+ 
+         @Nullable
+         @Override
+-        public KeyedBossBar get(@NotNull NamespacedKey key) {
+-            return Bukkit.getBossBar(key);
++        public KeyedBossBar get(@NotNull net.kyori.adventure.key.Key key) { // Paper - switch to adventure Key
++            return Bukkit.getBossBar(asBukkit(key)); // Paper - switch to adventure Key
+         }
+ 
+         @NotNull
+@@ -97,8 +97,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+ 
+         @Nullable
+         @Override
+-        public Enchantment get(@NotNull NamespacedKey key) {
+-            return Enchantment.getByKey(key);
++        public Enchantment get(@NotNull net.kyori.adventure.key.Key key) { // Paper - switch to adventure Key
++            return Enchantment.getByKey(asBukkit(key)); // Paper - switch to adventure Key
+         }
+ 
+         @NotNull
+@@ -176,8 +176,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+ 
+         @Nullable
+         @Override
+-        public MemoryKey get(@NotNull NamespacedKey key) {
+-            return MemoryKey.getByKey(key);
++        public MemoryKey get(@NotNull net.kyori.adventure.key.Key key) { // Paper - switch to adventure Key
++            return MemoryKey.getByKey(asBukkit(key)); // Paper - switch to adventure Key
+         }
+     };
+     /**
+@@ -207,8 +207,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+ 
+         @Nullable
+         @Override
+-        public GameEvent get(@NotNull NamespacedKey key) {
+-            return GameEvent.getByKey(key);
++        public GameEvent get(@NotNull net.kyori.adventure.key.Key key) { // Paper - switch to adventure Key
++            return GameEvent.getByKey(asBukkit(key)); // Paper - switch to adventure Key
+         }
+     };
+     // Paper start
+@@ -229,8 +229,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+ 
+         @Nullable
+         @Override
+-        public org.bukkit.potion.PotionEffectType get(@NotNull NamespacedKey key) {
+-            return org.bukkit.potion.PotionEffectType.getByKey(key);
++        public org.bukkit.potion.PotionEffectType get(@NotNull net.kyori.adventure.key.Key key) { // Paper - switch to adventure Key
++            return org.bukkit.potion.PotionEffectType.getByKey(asBukkit(key)); // Paper - switch to adventure Key
+         }
+ 
+         @NotNull
+@@ -245,10 +245,15 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      * Get the object by its key.
+      *
+      * @param key non-null key
+-     * @return item or null if does not exist
++     * @return item or null if it does not exist
+      */
+-    @Nullable
+-    T get(@NotNull NamespacedKey key);
++    // Paper start
++    @Nullable T get(@NotNull net.kyori.adventure.key.Key key);
++
++    private static NamespacedKey asBukkit(net.kyori.adventure.key.Key key) {
++        return key instanceof NamespacedKey ns ? ns : new org.bukkit.NamespacedKey(key.namespace(), key.value());
++    }
++    // Paper end
+ 
+     /**
+      * Attempts to match the registered object with the given key.
+@@ -292,10 +297,16 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+         }
+ 
+         @Nullable
+-        @Override
++        // @Override // Paper
+         public T get(@NotNull NamespacedKey key) {
+             return map.get(key);
+         }
++        // Paper start - switch to adventure Key
++        @Override
++        public @Nullable T get(final net.kyori.adventure.key.@NotNull Key key) {
++            return this.map.get(asBukkit(key));
++        }
++        // Paper end
+ 
+         @NotNull
+         @Override
+diff --git a/src/test/java/io/papermc/paper/testing/EmptyRegistry.java b/src/test/java/io/papermc/paper/testing/EmptyRegistry.java
+index ba9ddce87a9f385e729a5c2cf7c5eec120e388a7..1325905466b7fe6220fbba83321053dd23170236 100644
+--- a/src/test/java/io/papermc/paper/testing/EmptyRegistry.java
++++ b/src/test/java/io/papermc/paper/testing/EmptyRegistry.java
+@@ -17,7 +17,7 @@ public record EmptyRegistry() implements Registry<Keyed> {
+     }
+ 
+     @Override
+-    public @Nullable Keyed get(@NotNull final NamespacedKey key) {
++    public @Nullable Keyed get(@NotNull final net.kyori.adventure.key.Key key) {
+         return null;
+     }
+ }
