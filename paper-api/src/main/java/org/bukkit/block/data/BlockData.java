@@ -199,4 +199,20 @@ public interface BlockData extends Cloneable {
      * @return true if the face is sturdy and can support a block, false otherwise
      */
     boolean isFaceSturdy(@NotNull BlockFace face, @NotNull BlockSupport support);
+
+    /**
+     * Gets the material that a player would use to place this block.
+     * <p>
+     * For most blocks this is the same as {@link #getMaterial()} but some blocks
+     * have different materials used to place them.
+     *
+     * For example:
+     * <pre>
+     * {@link Material#REDSTONE_WIRE} -> {@link Material#REDSTONE}
+     * {@link Material#CARROTS} -> {@link Material#CARROT}
+     * </pre>
+     * @return placement material
+     */
+    @NotNull
+    Material getPlacementMaterial();
 }
