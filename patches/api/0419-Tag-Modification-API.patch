@@ -35,8 +35,53 @@ index 0000000000000000000000000000000000000000..17081b71d8507d834688390a981a4df5
 +     */
 +    @NotNull @Unmodifiable Map<Key, Set<T>> updatedTags();
 +}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index ac9b690fcccb60b587e5345f12f1383afd0a73a1..fb1974f2ae09289e89dc4430d30b57bad63868af 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2464,4 +2464,40 @@ public final class Bukkit {
+     public static Server.Spigot spigot() {
+         return server.spigot();
+     }
++    // Paper start - tag updates
++    /**
++     * Applies this tag update to the tags on the server. After
++     * applying the changes, updates will be sent to all connected
++     * clients with the new tags.
++     * <p>
++     * These changes will be reset when the server is restarted
++     * or reloaded through {@code /bukkit:reload} or {@code /minecraft:reload}.
++     * Listen to {@link io.papermc.paper.event.server.ServerResourcesReloadedEvent} if
++     * you want to preserve your changes through reloads.
++     *
++     * @param tagUpdate the tag update to send
++     * @see #applyTagUpdates(Iterable) for multiple updates at once
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    public static void applyTagUpdate(io.papermc.paper.tag.@NotNull TagUpdate<?> tagUpdate) {
++        server.applyTagUpdate(tagUpdate);
++    }
++
++    /**
++     * Applies this tag update to the tags on the server. After
++     * applying the changes, updates will be sent to all connected
++     * clients with the new tags.
++     * <p>
++     * These changes will be reset when the server is restarted
++     * or reloaded through {@code /bukkit:reload} or {@code /minecraft:reload}.
++     * Listen to {@link io.papermc.paper.event.server.ServerResourcesReloadedEvent} if
++     * you want to preserve your changes through reloads.
++     *
++     * @param tagUpdates the tag updates to send
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    public static void applyTagUpdates(@NotNull Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates) {
++        server.applyTagUpdates(tagUpdates);
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 0a3a41ae4c488b148266129d3663be3f8830d509..2ff1eb67ddd852a001044b332b45f0e4e121db6b 100644
+index 0a3a41ae4c488b148266129d3663be3f8830d509..2ba5b5031c3e3cd764a63c02f6be622fd3ec84f2 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
 @@ -271,6 +271,57 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
@@ -60,7 +105,7 @@ index 0a3a41ae4c488b148266129d3663be3f8830d509..2ff1eb67ddd852a001044b332b45f0e4
 +     * @see #editTags(java.util.function.Consumer)
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
-+    default io.papermc.paper.tag.TagUpdate<T> createTagUpdate(final java.util.function.@NotNull Consumer<Map<net.kyori.adventure.key.Key, java.util.Set<T>>> editConsumer) {
++    default @NotNull io.papermc.paper.tag.TagUpdate<T> createTagUpdate(final java.util.function.@NotNull Consumer<Map<net.kyori.adventure.key.Key, java.util.Set<T>>> editConsumer) {
 +        throw new UnsupportedOperationException("This registry doesn't support editing tags");
 +    }
 +
@@ -86,7 +131,7 @@ index 0a3a41ae4c488b148266129d3663be3f8830d509..2ff1eb67ddd852a001044b332b45f0e4
 +     * @param editConsumer the consumer to edit the map of tags
 +     * @throws UnsupportedOperationException if this registry doesn't support editing tags
 +     * @see #createTagUpdate(java.util.function.Consumer)
-+     * @see Server#applyTagUpdate(Iterable)
++     * @see Server#applyTagUpdates(Iterable)
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
 +    default void editTags(final java.util.function.@NotNull Consumer<Map<net.kyori.adventure.key.Key, java.util.Set<T>>> editConsumer) {
@@ -98,7 +143,7 @@ index 0a3a41ae4c488b148266129d3663be3f8830d509..2ff1eb67ddd852a001044b332b45f0e4
  
          private final Map<NamespacedKey, T> map;
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 2204336d8800311b65e894739ab1b27273e7c6f2..0cb6f2b0e3c3992cba916742bdb26da04f720b08 100644
+index 2204336d8800311b65e894739ab1b27273e7c6f2..8fea8f53e7a89baa1dc32d9f5c249307aba7aae0 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -2139,4 +2139,38 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
@@ -117,11 +162,11 @@ index 2204336d8800311b65e894739ab1b27273e7c6f2..0cb6f2b0e3c3992cba916742bdb26da0
 +     * you want to preserve your changes through reloads.
 +     *
 +     * @param tagUpdate the tag update to send
-+     * @see #applyTagUpdate(Iterable) for multiple updates at once
++     * @see #applyTagUpdates(Iterable) for multiple updates at once
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
 +    default void applyTagUpdate(io.papermc.paper.tag.@NotNull TagUpdate<?> tagUpdate) {
-+        this.applyTagUpdate(java.util.Set.of(tagUpdate));
++        this.applyTagUpdates(java.util.Set.of(tagUpdate));
 +    }
 +
 +    /**
@@ -137,7 +182,7 @@ index 2204336d8800311b65e894739ab1b27273e7c6f2..0cb6f2b0e3c3992cba916742bdb26da0
 +     * @param tagUpdates the tag updates to send
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Experimental
-+    void applyTagUpdate(@NotNull Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates);
++    void applyTagUpdates(@NotNull Iterable<io.papermc.paper.tag.TagUpdate<?>> tagUpdates);
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
