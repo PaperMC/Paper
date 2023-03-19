@@ -1171,14 +1171,15 @@ index 0000000000000000000000000000000000000000..2a08e0461db4e699b7e6a1558a4419c8
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/providers/ClickCallbackProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ClickCallbackProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..04bc65019b7abf331feb1b6c5475466b9d7ad075
+index 0000000000000000000000000000000000000000..3c17001bcd3862a76a22df488bff80a0ff4d1b83
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/providers/ClickCallbackProviderImpl.java
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,96 @@
 +package io.papermc.paper.adventure.providers;
 +
-+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import java.util.HashMap;
++import java.util.Map;
++import java.util.UUID;
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.event.ClickCallback;
 +import net.kyori.adventure.text.event.ClickEvent;
@@ -1186,7 +1187,6 @@ index 0000000000000000000000000000000000000000..04bc65019b7abf331feb1b6c5475466b
 +
 +import java.util.Queue;
 +import java.util.concurrent.ConcurrentLinkedQueue;
-+import java.util.concurrent.atomic.AtomicLong;
 +
 +@SuppressWarnings("UnstableApiUsage") // permitted provider
 +public class ClickCallbackProviderImpl implements ClickCallback.Provider {
@@ -1200,15 +1200,14 @@ index 0000000000000000000000000000000000000000..04bc65019b7abf331feb1b6c5475466b
 +
 +    public static final class CallbackManager {
 +
-+        private final Long2ObjectMap<StoredCallback> callbacks = new Long2ObjectOpenHashMap<>();
++        private final Map<UUID, StoredCallback> callbacks = new HashMap<>();
 +        private final Queue<StoredCallback> queue = new ConcurrentLinkedQueue<>();
-+        private final AtomicLong current = new AtomicLong();
 +
 +        private CallbackManager() {
 +        }
 +
-+        public long addCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
-+            final long id = current.getAndIncrement();
++        public UUID addCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options) {
++            final UUID id = UUID.randomUUID();
 +            this.queue.add(new StoredCallback(callback, options, id));
 +            return id;
 +        }
@@ -1226,7 +1225,7 @@ index 0000000000000000000000000000000000000000..04bc65019b7abf331feb1b6c5475466b
 +            }
 +        }
 +
-+        public void runCallback(final @NotNull Audience audience, final long id) {
++        public void runCallback(final @NotNull Audience audience, final UUID id) {
 +            final StoredCallback callback = this.callbacks.get(id);
 +            if (callback != null && callback.valid()) { //TODO Message if expired/invalid?
 +                callback.takeUse();
@@ -1239,10 +1238,10 @@ index 0000000000000000000000000000000000000000..04bc65019b7abf331feb1b6c5475466b
 +        private final long startedAt = System.nanoTime();
 +        private final ClickCallback<Audience> callback;
 +        private final long lifetime;
-+        private final long id;
++        private final UUID id;
 +        private int remainingUses;
 +
-+        private StoredCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options, final long id) {
++        private StoredCallback(final @NotNull ClickCallback<Audience> callback, final ClickCallback.@NotNull Options options, final UUID id) {
 +            this.callback = callback;
 +            this.lifetime = options.lifetime().toNanos();
 +            this.remainingUses = options.uses();
@@ -1267,7 +1266,7 @@ index 0000000000000000000000000000000000000000..04bc65019b7abf331feb1b6c5475466b
 +            return hasRemainingUses() && !expired();
 +        }
 +
-+        public long id() {
++        public UUID id() {
 +            return this.id;
 +        }
 +    }
@@ -3928,7 +3927,7 @@ index 4d341db0daecb5f6ff1f0a1a9238f9dedb4b50d1..27cf140f8a7715caec5637d7b487720c
      private final Player.Spigot spigot = new Player.Spigot()
      {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTextDisplay.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTextDisplay.java
-index 1bed95ee1af2354b710361f737bffa2ff9ec4f97..1b4277655bded7e560ef4ba8477dd0d701a50cc0 100644
+index b7f54a7d90a2a34e641f152eb8f5c3c62033e511..2d04443a9efd6e4b5eb1e360a727d8492323724b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTextDisplay.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTextDisplay.java
 @@ -38,6 +38,17 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
@@ -3950,7 +3949,7 @@ index 1bed95ee1af2354b710361f737bffa2ff9ec4f97..1b4277655bded7e560ef4ba8477dd0d7
      @Override
      public int getLineWidth() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 131be7a463e74178622482a74bd42917d775495c..15f16844bf151f8244d7333faec215f1092e2147 100644
+index f9499aa8fc5443b54617c8e84011af5d0325bd45..2c3518ea974be5fce424093e9b710c853fd52a7a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -820,9 +820,9 @@ public class CraftEventFactory {
