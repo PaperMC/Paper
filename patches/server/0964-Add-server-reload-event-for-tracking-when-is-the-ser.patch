@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheMeinerLP <p.glanz@madfix.me>
+Date: Sun, 19 Mar 2023 15:00:56 +0100
+Subject: [PATCH] Add server reload event for tracking when is the server
+ reloading
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index f9a9d2bb7b6d1bf4a0931438de4d8c7ee0757479..3490d03a38f936c6979bf2e0ab1cf41952614ebd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -15,6 +15,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
+ import com.mojang.datafixers.util.Pair;
+ import com.mojang.serialization.DynamicOps;
+ import com.mojang.serialization.Lifecycle;
++import io.papermc.paper.event.server.ServerReloadEvent;
+ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+ import java.awt.image.BufferedImage;
+ import java.io.ByteArrayOutputStream;
+@@ -924,6 +925,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public void reload() {
++        new ServerReloadEvent(ServerReloadEvent.Order.START).callEvent();
+         org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
+         this.reloadCount++;
+         this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
+@@ -1016,6 +1018,7 @@ public final class CraftServer implements Server {
+         this.enablePlugins(PluginLoadOrder.POSTWORLD);
+         this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
+         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
++        new ServerReloadEvent(ServerReloadEvent.Order.END).callEvent();
+     }
+ 
+     // Paper start
