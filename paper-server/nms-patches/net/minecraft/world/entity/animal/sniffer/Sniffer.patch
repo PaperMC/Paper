@@ -24,7 +24,53 @@
      @Override
      protected float getStandingEyeHeight(EntityPose entitypose, EntitySize entitysize) {
          return this.getDimensions(entitypose).height * 0.6F;
-@@ -278,7 +287,7 @@
+@@ -114,7 +123,7 @@
+         return BlockPosition.containing(vec3d.x(), this.getY(), vec3d.z());
+     }
+ 
+-    private Sniffer.a getState() {
++    public Sniffer.a getState() { // PAIL private -> public
+         return (Sniffer.a) this.entityData.get(Sniffer.DATA_STATE);
+     }
+ 
+@@ -207,7 +216,7 @@
+         return this;
+     }
+ 
+-    Optional<BlockPosition> calculateDigPosition() {
++    public Optional<BlockPosition> calculateDigPosition() { // PAIL public
+         return IntStream.range(0, 5).mapToObj((i) -> {
+             return LandRandomPos.getPos(this, 10 + 2 * i, 3);
+         }).filter(Objects::nonNull).map(BlockPosition::containing).map(BlockPosition::below).filter(this::canDig).findFirst();
+@@ -218,7 +227,7 @@
+         return false;
+     }
+ 
+-    boolean canDig() {
++    public boolean canDig() { // PAIL public
+         return !this.isPanicking() && !this.isBaby() && !this.isInWater() && this.canDig(this.getHeadPosition().below());
+     }
+ 
+@@ -245,6 +254,13 @@
+             BlockPosition blockposition = this.getHeadPosition();
+             EntityItem entityitem = new EntityItem(this.level, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), itemstack);
+ 
++            // CraftBukkit start - handle EntityDropItemEvent
++            org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             entityitem.setDefaultPickUpDelay();
+             this.level.addFreshEntity(entityitem);
+             this.playSound(SoundEffects.SNIFFER_DROP_SEED, 1.0F, 1.0F);
+@@ -274,15 +290,15 @@
+         return this;
+     }
+ 
+-    private Sniffer storeExploredPosition(BlockPosition blockposition) {
++    public Sniffer storeExploredPosition(BlockPosition blockposition) { // PAIL private -> public
          List<BlockPosition> list = (List) this.getExploredPositions().limit(20L).collect(Collectors.toList());
  
          list.add(0, blockposition);
@@ -33,7 +79,12 @@
          return this;
      }
  
-@@ -416,7 +425,7 @@
+-    private Stream<BlockPosition> getExploredPositions() {
++    public Stream<BlockPosition> getExploredPositions() { // PAIL private -> public
+         return this.getBrain().getMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS).stream().flatMap(Collection::stream);
+     }
+ 
+@@ -416,7 +432,7 @@
  
      @Override
      public BehaviorController<Sniffer> getBrain() {
