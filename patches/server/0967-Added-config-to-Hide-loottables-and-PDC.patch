@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jayson <jayson2001@hotmail.be>
+Date: Sun, 19 Mar 2023 12:44:43 +0100
+Subject: [PATCH] Added config to Hide loottables and PDC
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+index 4532f3a0d74feae0a1249b53e1bfbc18a8808b32..bcdcc4b411fc794760589a6e0b8791801daf2c1c 100644
+--- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+@@ -100,6 +100,10 @@ public class WorldConfiguration extends ConfigurationPart {
+ 
+     public class Entities extends ConfigurationPart {
+         public boolean entitiesTargetWithFollowRange = false;
++
++        public boolean hideLootTables = false;
++
++        public boolean hidePDC = false;
+         public MobEffects mobEffects;
+ 
+         public class MobEffects extends ConfigurationPart {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+index f2d1ef0e02524544352c757da406d3f7224961d3..d573ee9dc67370d76d0ab63906d03c7d9706fec9 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -1,7 +1,10 @@
+ package net.minecraft.world.level.block.entity;
+ 
++import com.destroystokyo.paper.PaperConfig;
+ import com.mojang.logging.LogUtils;
+ import javax.annotation.Nullable;
++
++import io.papermc.paper.configuration.PaperConfigurations;
+ import net.minecraft.CrashReportCategory;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.registries.BuiltInRegistries;
+@@ -13,6 +16,8 @@ import net.minecraft.world.item.BlockItem;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.state.BlockState;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.CraftServer;
+ import org.slf4j.Logger;
+ 
+ // CraftBukkit start
+@@ -25,6 +30,8 @@ import org.spigotmc.CustomTimingsHandler; // Spigot
+ import co.aikar.timings.MinecraftTimings; // Paper
+ import co.aikar.timings.Timing; // Paper
+ 
++import java.awt.print.Paper;
++
+ public abstract class BlockEntity {
+ 
+     public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
+@@ -256,16 +263,28 @@ public abstract class BlockEntity {
+     // CraftBukkit end
+     // Paper start
+     public CompoundTag sanitizeSentNbt(CompoundTag tag) {
+-        if (tag.contains("LootTable")) {
+-            // If this block entity has a LootTable tag, remove it to hide the chest contents
++        // Remove the PublicBukkitValues tag
++        tag.remove("PublicBukkitValues");
++
++        // Check if LootTable visibility is enabled and remove LootTable and LootTableSeed tags if necessary
++        boolean hideLootTables = this.level.paperConfig().entities.hideLootTables;
++        if (hideLootTables && tag.contains("LootTable")) {
+             tag.remove("LootTable");
+             tag.remove("LootTableSeed");
+         }
++
++        // Check if PDC functionality is enabled and remove PDC-related tags if necessary
++        boolean hidePdc = this.level.paperConfig().entities.hidePDC;
++        if (hidePdc && tag.contains("PlayerData")) {
++            tag.remove("PlayerData");
++        }
++
+         // Remove any other sensitive data from the tag here
+         // ...
+ 
+         return tag;
+     }
++
+     // Paper end
+ 
+ }
