@@ -18,10 +18,10 @@ index 7ba60b4b4f29a42c58d98aafc5ea0fa3214f554c..652c7df2c783de56b947535ff25781b0
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EventVerboseCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EventVerboseCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3dfa5d82c4ab0396ffce46f829ba0dd4d65b1c94
+index 0000000000000000000000000000000000000000..165bb5324aa06e4bd204a570b45b185b0bd11a84
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/EventVerboseCommand.java
-@@ -0,0 +1,153 @@
+@@ -0,0 +1,160 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.destroystokyo.paper.event.server.ServerTickEndEvent;
@@ -35,6 +35,7 @@ index 0000000000000000000000000000000000000000..3dfa5d82c4ab0396ffce46f829ba0dd4
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.event.Event;
++import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -49,8 +50,10 @@ index 0000000000000000000000000000000000000000..3dfa5d82c4ab0396ffce46f829ba0dd4
 +import java.nio.file.Path;
 +import java.time.LocalDateTime;
 +import java.time.format.DateTimeFormatter;
++import java.util.Collection;
 +import java.util.LinkedList;
 +import java.util.List;
++import java.util.Map;
 +import java.util.stream.Stream;
 +
 +import static net.kyori.adventure.text.Component.text;
@@ -79,8 +82,7 @@ index 0000000000000000000000000000000000000000..3dfa5d82c4ab0396ffce46f829ba0dd4
 +            try {
 +                Files.createDirectories(parent);
 +                currentFile = Files.createFile(path);
-+                sender.sendMessage(text("Writing event verbose to " + path, GREEN));
-+                sender.sendMessage(text("To save the file, run this command again!", GREEN));
++                sender.sendMessage(text("Now storing event verbose, run this command again to save your file", GREEN));
 +            } catch (IOException e) {
 +                sender.sendMessage(text("Failed to create event verbose files! See the console for more info.", RED));
 +                MinecraftServer.LOGGER.warn("Error occurred while creating event verbose files", e);
@@ -138,7 +140,7 @@ index 0000000000000000000000000000000000000000..3dfa5d82c4ab0396ffce46f829ba0dd4
 +    }
 +
 +    /**
-+     * Wrapper class for QoL GSON Serialization
++     * Wrapper class for QoL Serialization, just stores the event object and the time it ran to log eventually
 +     */
 +    private static final class Wrapper {
 +        private final String timestamp;
@@ -150,6 +152,10 @@ index 0000000000000000000000000000000000000000..3dfa5d82c4ab0396ffce46f829ba0dd4
 +        }
 +
 +        @Nullable
++        /**
++         * Properly serialize our Wrapper into a JsonObject, so we can log it properly
++         * @implNote Is null if the event has only final fields
++         */
 +        private JsonObject serialize() {
 +            JsonObject parent = new JsonObject();
 +            parent.addProperty("timestamp", timestamp);
@@ -157,8 +163,9 @@ index 0000000000000000000000000000000000000000..3dfa5d82c4ab0396ffce46f829ba0dd4
 +            obj.addProperty("event", event.getEventName());
 +            try {
 +                Field[] fields = event.getClass().getDeclaredFields();
-+                //ignore update events / anything unchangeable
-+                if(Stream.of(fields).allMatch(f -> Modifier.isFinal(f.getModifiers())))
++                //ignore update events / anything unchangeable except for ItemStacks, Collections and Maps
++                if(Stream.of(fields).allMatch(f -> Modifier.isFinal(f.getModifiers()) && !f.getType().equals(ItemStack.class) &&
++                    !Map.class.isAssignableFrom(f.getType()) && !Collection.class.isAssignableFrom(f.getType())))
 +                    return null;
 +                for (Field f : fields) {
 +                    if(f.getName().equalsIgnoreCase("handlers"))
@@ -175,23 +182,23 @@ index 0000000000000000000000000000000000000000..3dfa5d82c4ab0396ffce46f829ba0dd4
 +        }
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
-index dab211c458311869c61779305580a1c7da830f71..88a2a10a8cd20358fb0035357cc3880ad8d20df4 100644
---- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
-+++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
-@@ -1,6 +1,7 @@
- package io.papermc.paper.plugin.manager;
- 
- import com.google.common.graph.MutableGraph;
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..dfb91cb8e19e0159e0eba9367ca7396125da6d1c 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -4,6 +4,7 @@ import co.aikar.timings.TimedEventExecutor;
+ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+ import com.destroystokyo.paper.exception.ServerEventException;
+ import com.google.common.collect.Sets;
 +import io.papermc.paper.command.subcommands.EventVerboseCommand;
- import io.papermc.paper.plugin.PermissionManager;
- import io.papermc.paper.plugin.configuration.PluginMeta;
- import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
-@@ -124,6 +125,7 @@ public class PaperPluginManagerImpl implements PluginManager, DependencyContext
-     @Override
-     public void callEvent(@NotNull Event event) throws IllegalStateException {
-         this.paperEventManager.callEvent(event);
+ import org.bukkit.Server;
+ import org.bukkit.Warning;
+ import org.bukkit.event.Event;
+@@ -41,6 +42,7 @@ class PaperEventManager {
+         } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+         }
 +        EventVerboseCommand.tryLogEvent(event);
-     }
  
-     @Override
+         HandlerList handlers = event.getHandlers();
+         RegisteredListener[] listeners = handlers.getRegisteredListeners();
