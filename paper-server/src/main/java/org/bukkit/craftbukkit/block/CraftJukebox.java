@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.block;
 
-import com.google.common.base.Preconditions;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BlockJukeBox;
 import net.minecraft.world.level.block.Blocks;
@@ -11,13 +10,29 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Jukebox;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftInventoryJukebox;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.inventory.JukeboxInventory;
 
 public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> implements Jukebox {
 
     public CraftJukebox(World world, TileEntityJukeBox tileEntity) {
         super(world, tileEntity);
+    }
+
+    @Override
+    public JukeboxInventory getSnapshotInventory() {
+        return new CraftInventoryJukebox(this.getSnapshot());
+    }
+
+    @Override
+    public JukeboxInventory getInventory() {
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
+        }
+
+        return new CraftInventoryJukebox(this.getTileEntity());
     }
 
     @Override
