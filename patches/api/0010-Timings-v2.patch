@@ -3400,12 +3400,12 @@ index fbf56bcc4540f7f1a8ced7cc2cd96e291c1ac273..8602b96bfc860ff1fea4c1c7a3655ce3
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable java.util.UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
 +
-         }
++        }
 +
 +        // Paper start
 +        public int getPing() {
 +            throw new UnsupportedOperationException( "Not supported yet." );
-+        }
+         }
 +        // Paper end
      }
  
@@ -3611,8 +3611,7 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
      public CustomTimingsHandler(@NotNull String name) {
 -        this(name, null);
 -    }
-+        Timing timing;
- 
+-
 -    public CustomTimingsHandler(@NotNull String name, @Nullable CustomTimingsHandler parent) {
 -        this.name = name;
 -        this.parent = parent;
@@ -3635,16 +3634,7 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            long avg = time / count;
 -
 -            printStream.println("    " + timings.name + " Time: " + time + " Count: " + count + " Avg: " + avg + " Violations: " + timings.violations);
-+        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
-+        try {
-+            final Method ofSafe = TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, Timing.class);
-+            ofSafe.setAccessible(true);
-+            timing = (Timing) ofSafe.invoke(null,"Minecraft", "(Deprecated API) " + name, null);
-+        } catch (Exception e) {
-+            e.printStackTrace();
-+            Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
-+            timing = Timings.NULL_HANDLER;
-         }
+-        }
 -        printStream.println("# Version " + Bukkit.getVersion());
 -        int entities = 0;
 -        int livingEntities = 0;
@@ -3654,9 +3644,8 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -        }
 -        printStream.println("# Entities " + entities);
 -        printStream.println("# LivingEntities " + livingEntities);
-+        handler = timing;
-     }
- 
+-    }
+-
 -    /**
 -     * Resets all timings.
 -     */
@@ -3668,9 +3657,7 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -        }
 -        TimingsCommand.timingStart = System.nanoTime();
 -    }
-+    public void startTiming() { handler.startTiming(); }
-+    public void stopTiming() { handler.stopTiming(); }
- 
+-
 -    /**
 -     * Ticked every tick by CraftBukkit to count the number of times a timer
 -     * caused TPS loss.
@@ -3686,7 +3673,8 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            }
 -        }
 -    }
--
++        Timing timing;
+ 
 -    /**
 -     * Starts timing to track a section of code.
 -     */
@@ -3697,9 +3685,19 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            if (parent != null && ++parent.timingDepth == 1) {
 -                parent.start = start;
 -            }
--        }
--    }
--
++        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
++        try {
++            final Method ofSafe = TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, Timing.class);
++            ofSafe.setAccessible(true);
++            timing = (Timing) ofSafe.invoke(null,"Minecraft", "(Deprecated API) " + name, null);
++        } catch (Exception e) {
++            e.printStackTrace();
++            Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
++            timing = Timings.NULL_HANDLER;
+         }
++        handler = timing;
+     }
+ 
 -    /**
 -     * Stops timing a section of code.
 -     */
@@ -3718,7 +3716,9 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            }
 -        }
 -    }
--
++    public void startTiming() { handler.startTiming(); }
++    public void stopTiming() { handler.stopTiming(); }
+ 
 -    /**
 -     * Reset this timer, setting all values to zero.
 -     */
