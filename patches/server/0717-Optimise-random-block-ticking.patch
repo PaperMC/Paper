@@ -173,7 +173,14 @@ index 1f683d734b9e272c8f4c48d922f3dcd12d0ffd1a..9523f6acd2c86892b390e14aaab628b4
          if (randomTickSpeed > 0) {
 -            LevelChunkSection[] achunksection = chunk.getSections();
 -            int j1 = achunksection.length;
--
++            LevelChunkSection[] sections = chunk.getSections();
++            int minSection = io.papermc.paper.util.WorldUtil.getMinSection(this);
++            for (int sectionIndex = 0; sectionIndex < sections.length; ++sectionIndex) {
++                LevelChunkSection section = sections[sectionIndex];
++                if (section == null || section.tickingList.size() == 0) {
++                    continue;
++                }
+ 
 -            for (int k1 = 0; k1 < j1; ++k1) {
 -                LevelChunkSection chunksection = achunksection[k1];
 -
@@ -185,40 +192,35 @@ index 1f683d734b9e272c8f4c48d922f3dcd12d0ffd1a..9523f6acd2c86892b390e14aaab628b4
 -
 -                        gameprofilerfiller.push("randomTick");
 -                        BlockState iblockdata3 = chunksection.getBlockState(blockposition2.getX() - j, blockposition2.getY() - l1, blockposition2.getZ() - k);
-+            LevelChunkSection[] sections = chunk.getSections();
-+            int minSection = io.papermc.paper.util.WorldUtil.getMinSection(this);
-+            for (int sectionIndex = 0; sectionIndex < sections.length; ++sectionIndex) {
-+                LevelChunkSection section = sections[sectionIndex];
-+                if (section == null || section.tickingList.size() == 0) {
-+                    continue;
-+                }
- 
+-
 -                        if (iblockdata3.isRandomlyTicking()) {
 -                            iblockdata3.randomTick(this, blockposition2, this.random);
 -                        }
+-
+-                        FluidState fluid = iblockdata3.getFluidState();
+-
+-                        if (fluid.isRandomlyTicking()) {
+-                            fluid.randomTick(this, blockposition2, this.random);
+-                        }
+-
+-                        gameprofilerfiller.pop();
 +                int yPos = (sectionIndex + minSection) << 4;
 +                for (int a = 0; a < randomTickSpeed; ++a) {
 +                    int tickingBlocks = section.tickingList.size();
 +                    int index = this.randomTickRandom.nextInt(16 * 16 * 16);
 +                    if (index >= tickingBlocks) {
 +                        continue;
-+                    }
- 
--                        FluidState fluid = iblockdata3.getFluidState();
+                     }
++
 +                    long raw = section.tickingList.getRaw(index);
 +                    int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
 +                    int randomX = location & 15;
 +                    int randomY = ((location >>> (4 + 4)) & 255) | yPos;
 +                    int randomZ = (location >>> 4) & 15;
- 
--                        if (fluid.isRandomlyTicking()) {
--                            fluid.randomTick(this, blockposition2, this.random);
--                        }
++
 +                    BlockPos blockposition2 = blockposition.set(j + randomX, randomY, k + randomZ);
 +                    BlockState iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
- 
--                        gameprofilerfiller.pop();
--                    }
++
 +                    iblockdata.randomTick(this, blockposition2, this.randomTickRandom);
 +                    // We drop the fluid tick since LAVA is ALREADY TICKED by the above method (See LiquidBlock).
 +                    // TODO CHECK ON UPDATE (ping the Canadian)
@@ -377,7 +379,14 @@ index 8c8445af8a2fe684fdbb468f8d8605d44a803758..c7e2796e136ee8fb7d7e438a7fc59826
  
      public void recalcBlockCounts() {
 -        class a implements PalettedContainer.CountConsumer<BlockState> {
--
++        // Paper start - unfuck this
++        this.tickingList.clear();
++        this.nonEmptyBlockCount = 0;
++        this.tickingBlockCount = 0;
++        this.tickingFluidCount = 0;
++        this.states.forEachLocation((BlockState iblockdata, int i) -> {
++            FluidState fluid = iblockdata.getFluidState();
+ 
 -            public int nonEmptyBlockCount;
 -            public int tickingBlockCount;
 -            public int tickingFluidCount;
@@ -392,38 +401,31 @@ index 8c8445af8a2fe684fdbb468f8d8605d44a803758..c7e2796e136ee8fb7d7e438a7fc59826
 -                    if (iblockdata.isRandomlyTicking()) {
 -                        this.tickingBlockCount += i;
 -                    }
-+        // Paper start - unfuck this
-+        this.tickingList.clear();
-+        this.nonEmptyBlockCount = 0;
-+        this.tickingBlockCount = 0;
-+        this.tickingFluidCount = 0;
-+        this.states.forEachLocation((BlockState iblockdata, int i) -> {
-+            FluidState fluid = iblockdata.getFluidState();
-+
 +            if (!iblockdata.isAir()) {
 +                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
 +                if (iblockdata.isRandomlyTicking()) {
 +                    this.tickingBlockCount = (short)(this.tickingBlockCount + 1);
 +                    this.tickingList.add(i, iblockdata);
                  }
-+            }
- 
+-
 -                if (!fluid.isEmpty()) {
 -                    this.nonEmptyBlockCount += i;
 -                    if (fluid.isRandomlyTicking()) {
 -                        this.tickingFluidCount += i;
 -                    }
-+            if (!fluid.isEmpty()) {
-+                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
-+                if (fluid.isRandomlyTicking()) {
-+                    this.tickingFluidCount = (short) (this.tickingFluidCount + 1);
-                 }
+-                }
 -
              }
 -        }
  
 -        a a0 = new a();
--
++            if (!fluid.isEmpty()) {
++                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
++                if (fluid.isRandomlyTicking()) {
++                    this.tickingFluidCount = (short) (this.tickingFluidCount + 1);
++                }
++            }
+ 
 -        this.states.count(a0);
 -        this.nonEmptyBlockCount = (short) a0.nonEmptyBlockCount;
 -        this.tickingBlockCount = (short) a0.tickingBlockCount;

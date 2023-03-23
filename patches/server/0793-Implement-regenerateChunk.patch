@@ -6,7 +6,7 @@ Subject: [PATCH] Implement regenerateChunk
 Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 5086fcbbd908f5759653ce44b8524345b479d2b8..e52008c574d1f8738c02848c98aee12dd5fb30ab 100644
+index 8fcc553b6f1bf62fb9febb46402940039c37606a..eeeaaf379c7273c276e1faac5d6c55730d5b51bc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -138,6 +138,7 @@ import org.bukkit.util.Vector;
@@ -25,10 +25,6 @@ index 5086fcbbd908f5759653ce44b8524345b479d2b8..e52008c574d1f8738c02848c98aee12d
 -        /*
 -        if (!unloadChunk0(x, z, false)) {
 -            return false;
--        }
--
--        final long chunkKey = ChunkCoordIntPair.pair(x, z);
--        world.getChunkProvider().unloadQueue.remove(chunkKey);
 +        // Paper start - implement regenerateChunk method
 +        final ServerLevel serverLevel = this.world;
 +        final net.minecraft.server.level.ServerChunkCache serverChunkCache = serverLevel.getChunkSource();
@@ -37,8 +33,10 @@ index 5086fcbbd908f5759653ce44b8524345b479d2b8..e52008c574d1f8738c02848c98aee12d
 +        for (final BlockPos blockPos : BlockPos.betweenClosed(chunkPos.getMinBlockX(), serverLevel.getMinBuildHeight(), chunkPos.getMinBlockZ(), chunkPos.getMaxBlockX(), serverLevel.getMaxBuildHeight() - 1, chunkPos.getMaxBlockZ())) {
 +            levelChunk.removeBlockEntity(blockPos);
 +            serverLevel.setBlock(blockPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 16);
-+        }
-+
+         }
+ 
+-        final long chunkKey = ChunkCoordIntPair.pair(x, z);
+-        world.getChunkProvider().unloadQueue.remove(chunkKey);
 +        for (final ChunkStatus chunkStatus : REGEN_CHUNK_STATUSES) {
 +            final List<ChunkAccess> list = new ArrayList<>();
 +            final int range = Math.max(1, chunkStatus.getRange());

@@ -2791,7 +2791,7 @@ index 0000000000000000000000000000000000000000..5989ee21297935651b0edd44b8239e65
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 0084898567e8bb74fa271b65b56523a5c26d387c..e24589a4cb42b0163e4a1455b8b11d7130b5cd41 100644
+index 16ec0cd908659d6d53e565281b8db9f81951277d..92b3c40959eac827ed8861fec8658e57f2910628 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -802,7 +802,6 @@ public final class Bukkit {
@@ -2803,7 +2803,7 @@ index 0084898567e8bb74fa271b65b56523a5c26d387c..e24589a4cb42b0163e4a1455b8b11d71
  
      /**
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 892e03189957b0072827be4fd485dd98352334e8..ac087402c90dad4b3c499fcf8507e50e9099cea5 100644
+index 0a333c1439b3623d38029b88ce6d5ff159ae1ddd..bce277cd3a452769cd86dc017a2e548a170d6acc 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -1768,6 +1768,26 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
@@ -2886,7 +2886,7 @@ index 0000000000000000000000000000000000000000..f9a00aecca5ec41b460bf41dfe1c6969
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index caa29be46e8541b69ec47c181eb3320d6515b544..6fd341482d5250ad814e870360e40b52427f799a 100644
+index 75759131bd94b672bec4cd8e271ebff1ad391cba..5cfd88eec9bf02e83d77b6fce1a5c14b7687f48b 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -33,7 +33,8 @@ public abstract class Command {
@@ -3392,7 +3392,7 @@ index 516d7fc7812aac343782861d0d567f54aa578c2a..00000000000000000000000000000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index baf0887ec941533f8007f2c7f7ab78f16b45bd74..8d8a540c844e5365eed75a87db197a8fd4249bcd 100644
+index fbf56bcc4540f7f1a8ced7cc2cd96e291c1ac273..8602b96bfc860ff1fea4c1c7a3655ce3a9516cf4 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -2077,7 +2077,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
@@ -3400,12 +3400,12 @@ index baf0887ec941533f8007f2c7f7ab78f16b45bd74..8d8a540c844e5365eed75a87db197a8f
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable java.util.UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
 +
-+        }
+         }
 +
 +        // Paper start
 +        public int getPing() {
 +            throw new UnsupportedOperationException( "Not supported yet." );
-         }
++        }
 +        // Paper end
      }
  
@@ -3611,7 +3611,8 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
      public CustomTimingsHandler(@NotNull String name) {
 -        this(name, null);
 -    }
--
++        Timing timing;
+ 
 -    public CustomTimingsHandler(@NotNull String name, @Nullable CustomTimingsHandler parent) {
 -        this.name = name;
 -        this.parent = parent;
@@ -3634,7 +3635,16 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            long avg = time / count;
 -
 -            printStream.println("    " + timings.name + " Time: " + time + " Count: " + count + " Avg: " + avg + " Violations: " + timings.violations);
--        }
++        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
++        try {
++            final Method ofSafe = TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, Timing.class);
++            ofSafe.setAccessible(true);
++            timing = (Timing) ofSafe.invoke(null,"Minecraft", "(Deprecated API) " + name, null);
++        } catch (Exception e) {
++            e.printStackTrace();
++            Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
++            timing = Timings.NULL_HANDLER;
+         }
 -        printStream.println("# Version " + Bukkit.getVersion());
 -        int entities = 0;
 -        int livingEntities = 0;
@@ -3644,8 +3654,9 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -        }
 -        printStream.println("# Entities " + entities);
 -        printStream.println("# LivingEntities " + livingEntities);
--    }
--
++        handler = timing;
+     }
+ 
 -    /**
 -     * Resets all timings.
 -     */
@@ -3657,7 +3668,9 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -        }
 -        TimingsCommand.timingStart = System.nanoTime();
 -    }
--
++    public void startTiming() { handler.startTiming(); }
++    public void stopTiming() { handler.stopTiming(); }
+ 
 -    /**
 -     * Ticked every tick by CraftBukkit to count the number of times a timer
 -     * caused TPS loss.
@@ -3673,8 +3686,7 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            }
 -        }
 -    }
-+        Timing timing;
- 
+-
 -    /**
 -     * Starts timing to track a section of code.
 -     */
@@ -3685,19 +3697,9 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            if (parent != null && ++parent.timingDepth == 1) {
 -                parent.start = start;
 -            }
-+        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
-+        try {
-+            final Method ofSafe = TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, Timing.class);
-+            ofSafe.setAccessible(true);
-+            timing = (Timing) ofSafe.invoke(null,"Minecraft", "(Deprecated API) " + name, null);
-+        } catch (Exception e) {
-+            e.printStackTrace();
-+            Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
-+            timing = Timings.NULL_HANDLER;
-         }
-+        handler = timing;
-     }
- 
+-        }
+-    }
+-
 -    /**
 -     * Stops timing a section of code.
 -     */
@@ -3716,9 +3718,7 @@ index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..123647bb10fc89508437d7a0bd3fd31d
 -            }
 -        }
 -    }
-+    public void startTiming() { handler.startTiming(); }
-+    public void stopTiming() { handler.stopTiming(); }
- 
+-
 -    /**
 -     * Reset this timer, setting all values to zero.
 -     */

@@ -49,12 +49,6 @@ index bc72f5380c49c0d389e53d270165d4108a3bb901..ec1aa8d5fbfdafc35948a04f4d8d65e8
          if (stringreader.canRead() && stringreader.peek() == '/') {
              stringreader.skip();
          }
--
--        ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
--
--        this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
--            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
--            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
 +            final String command = packet.getCommand();
 +            final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event = new com.destroystokyo.paper.event.server.AsyncTabCompleteEvent(this.getCraftPlayer(), command, true, null);
 +            event.callEvent();
@@ -62,10 +56,14 @@ index bc72f5380c49c0d389e53d270165d4108a3bb901..ec1aa8d5fbfdafc35948a04f4d8d65e8
 +            // If the event isn't handled, we can assume that we have no completions, and so we'll ask the server
 +            if (!event.isHandled()) {
 +                if (!event.isCancelled()) {
-+
+ 
+-        ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
 +                    this.server.scheduleOnMain(() -> { // This needs to be on main
 +                        ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
-+
+ 
+-        this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
+-            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
+-            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
 +                        this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
 +                            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
 +                            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));

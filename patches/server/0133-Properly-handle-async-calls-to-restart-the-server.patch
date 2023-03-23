@@ -30,7 +30,7 @@ will have plugins and worlds saving to the disk has a high potential to result
 in corruption/dataloss.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index e7b8e53a8709babb147a1ee3f375e96638f425a4..24f9d7314ab6c70fec42150e6065a7546c5de828 100644
+index 776f7a27c4e85e713863f8fd0d37fc61e2bb0e49..b248a4ab47728c078dbc922896964e0e893fc255 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -236,6 +236,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -98,24 +98,10 @@ index 94d8ba376cd1f024b244654cac9bb62bb19e3060..a142a56a920e153ed84c08cece993f10
 +            if ( isRestarting )
              {
 -                System.out.println( "Attempting to restart with " + restartScript );
-+                System.out.println( "Attempting to restart with " + SpigotConfig.restartScript );
-+            } else
-+            {
-+                System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
-+            }
-+            // Stop the watchdog
-+            WatchdogThread.doStop();
- 
+-
 -                // Disable Watchdog
 -                WatchdogThread.doStop();
-+            shutdownServer( isRestarting );
-+            // Paper end
-+        } catch ( Exception ex )
-+        {
-+            ex.printStackTrace();
-+        }
-+    }
- 
+-
 -                // Kick all players
 -                for ( ServerPlayer p : (List<ServerPlayer>) MinecraftServer.getServer().getPlayerList().players )
 -                {
@@ -130,6 +116,73 @@ index 94d8ba376cd1f024b244654cac9bb62bb19e3060..a142a56a920e153ed84c08cece993f10
 -                }
 -                // Close the socket so we can rebind with the new process
 -                MinecraftServer.getServer().getConnection().stop();
+-
+-                // Give time for it to kick in
+-                try
+-                {
+-                    Thread.sleep( 100 );
+-                } catch ( InterruptedException ex )
+-                {
+-                }
+-
+-                // Actually shutdown
+-                try
+-                {
+-                    MinecraftServer.getServer().close();
+-                } catch ( Throwable t )
+-                {
+-                }
+-
+-                // This will be done AFTER the server has completely halted
+-                Thread shutdownHook = new Thread()
+-                {
+-                    @Override
+-                    public void run()
+-                    {
+-                        try
+-                        {
+-                            String os = System.getProperty( "os.name" ).toLowerCase(java.util.Locale.ENGLISH);
+-                            if ( os.contains( "win" ) )
+-                            {
+-                                Runtime.getRuntime().exec( "cmd /c start " + restartScript );
+-                            } else
+-                            {
+-                                Runtime.getRuntime().exec( "sh " + restartScript );
+-                            }
+-                        } catch ( Exception e )
+-                        {
+-                            e.printStackTrace();
+-                        }
+-                    }
+-                };
+-
+-                shutdownHook.setDaemon( true );
+-                Runtime.getRuntime().addShutdownHook( shutdownHook );
++                System.out.println( "Attempting to restart with " + SpigotConfig.restartScript );
+             } else
+             {
+                 System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
+-
+-                // Actually shutdown
+-                try
+-                {
+-                    MinecraftServer.getServer().close();
+-                } catch ( Throwable t )
+-                {
+-                }
+             }
+-            System.exit( 0 );
++            // Stop the watchdog
++            WatchdogThread.doStop();
++
++            shutdownServer( isRestarting );
++            // Paper end
+         } catch ( Exception ex )
+         {
+             ex.printStackTrace();
+         }
+     }
++
 +    // Paper start - sync copied from above with minor changes, async added
 +    private static void shutdownServer(boolean isRestarting)
 +    {
@@ -147,23 +200,9 @@ index 94d8ba376cd1f024b244654cac9bb62bb19e3060..a142a56a920e153ed84c08cece993f10
 +            } catch ( InterruptedException ex )
 +            {
 +            }
- 
--                // Give time for it to kick in
--                try
--                {
--                    Thread.sleep( 100 );
--                } catch ( InterruptedException ex )
--                {
--                }
++
 +            closeSocket();
- 
--                // Actually shutdown
--                try
--                {
--                    MinecraftServer.getServer().close();
--                } catch ( Throwable t )
--                {
--                }
++
 +            // Actually shutdown
 +            try
 +            {
@@ -174,9 +213,7 @@ index 94d8ba376cd1f024b244654cac9bb62bb19e3060..a142a56a920e153ed84c08cece993f10
 +
 +            // Actually stop the JVM
 +            System.exit( 0 );
- 
--                // This will be done AFTER the server has completely halted
--                Thread shutdownHook = new Thread()
++
 +        } else
 +        {
 +            // Mark the server to shutdown at the end of the tick
@@ -228,63 +265,32 @@ index 94d8ba376cd1f024b244654cac9bb62bb19e3060..a142a56a920e153ed84c08cece993f10
 +            {
 +                @Override
 +                public void run()
-                 {
--                    @Override
--                    public void run()
++                {
 +                    try
-                     {
--                        try
++                    {
 +                        String os = System.getProperty( "os.name" ).toLowerCase(java.util.Locale.ENGLISH);
 +                        if ( os.contains( "win" ) )
-                         {
--                            String os = System.getProperty( "os.name" ).toLowerCase(java.util.Locale.ENGLISH);
--                            if ( os.contains( "win" ) )
--                            {
--                                Runtime.getRuntime().exec( "cmd /c start " + restartScript );
--                            } else
--                            {
--                                Runtime.getRuntime().exec( "sh " + restartScript );
--                            }
--                        } catch ( Exception e )
++                        {
 +                            Runtime.getRuntime().exec( "cmd /c start " + restartScript );
 +                        } else
-                         {
--                            e.printStackTrace();
++                        {
 +                            Runtime.getRuntime().exec( "sh " + restartScript );
-                         }
++                        }
 +                    } catch ( Exception e )
 +                    {
 +                        e.printStackTrace();
-                     }
--                };
--
--                shutdownHook.setDaemon( true );
--                Runtime.getRuntime().addShutdownHook( shutdownHook );
--            } else
--            {
--                System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
--
--                // Actually shutdown
--                try
--                {
--                    MinecraftServer.getServer().close();
--                } catch ( Throwable t )
--                {
-                 }
--            }
--            System.exit( 0 );
--        } catch ( Exception ex )
++                    }
++                }
 +            };
 +
 +            shutdownHook.setDaemon( true );
 +            Runtime.getRuntime().addShutdownHook( shutdownHook );
 +            return true;
 +        } else
-         {
--            ex.printStackTrace();
++        {
 +            return false;
-         }
-     }
++        }
++    }
 +    // Paper end
 +
  }

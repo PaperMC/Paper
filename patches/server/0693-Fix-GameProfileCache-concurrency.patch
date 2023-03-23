@@ -105,15 +105,15 @@ index 2456edc11b29a92b1648937cd3dd6a9a05706803..b48650c38751a925b83fb4c19ac02f87
              jsonarray.add(GameProfileCache.writeGameProfile(usercache_usercacheentry, dateformat));
          });
          String s = this.gson.toJson(jsonarray);
-@@ -332,8 +349,19 @@ public class GameProfileCache {
+@@ -332,9 +349,20 @@ public class GameProfileCache {
      }
  
      private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
 -        return ImmutableList.copyOf(this.profilesByUUID.values()).stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit((long) limit);
 +        // Paper start - allow better concurrency
 +        return this.listTopMRUProfiles(limit).stream();
-+    }
-+
+     }
+ 
 +    private List<GameProfileCache.GameProfileInfo> listTopMRUProfiles(int limit) {
 +        try {
 +            this.stateLock.lock();
@@ -121,8 +121,9 @@ index 2456edc11b29a92b1648937cd3dd6a9a05706803..b48650c38751a925b83fb4c19ac02f87
 +        } finally {
 +            this.stateLock.unlock();
 +        }
-     }
++    }
 +    // Paper end
- 
++
      private static JsonElement writeGameProfile(GameProfileCache.GameProfileInfo entry, DateFormat dateFormat) {
          JsonObject jsonobject = new JsonObject();
+ 

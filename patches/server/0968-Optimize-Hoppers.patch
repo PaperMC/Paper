@@ -13,7 +13,7 @@ Subject: [PATCH] Optimize Hoppers
 * Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 081871412e92ce909ad9c51a8d18ede53596c049..e67c4a7aaa11f5c67f926f92e0a174af526c2ec3 100644
+index 2e2cc6647a4c5acc8495b1c7ad6df3a49c94ac6d..4450d825a5474da211f0e83f845d8c7129fa08aa 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1524,6 +1524,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -281,10 +281,18 @@ index 789e5458f4a137694563a22612455506807de51b..cba114f554644a37339c93026630c66c
 -                    if (!iinventory.getItem(i).isEmpty()) {
 -                        ItemStack itemstack = iinventory.getItem(i).copy();
 -                        // ItemStack itemstack1 = addItem(iinventory, iinventory1, iinventory.removeItem(i, 1), enumdirection);
--
++                // Paper start - replace logic; MAKE SURE TO CHECK FOR DIFFS ON UPDATES
++                return hopperPush(world, iinventory1, enumdirection, hopper);
++                // for (int i = 0; i < iinventory.getContainerSize(); ++i) {
++                //     if (!iinventory.getItem(i).isEmpty()) {
++                //         ItemStack itemstack = iinventory.getItem(i).copy();
++                //         // ItemStack itemstack1 = addItem(iinventory, iinventory1, iinventory.removeItem(i, 1), enumdirection);
+ 
 -                        // CraftBukkit start - Call event when pushing items into other inventories
 -                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.removeItem(i, world.spigotConfig.hopperAmount)); // Spigot
--
++                //         // CraftBukkit start - Call event when pushing items into other inventories
++                //         CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.removeItem(i, world.spigotConfig.hopperAmount)); // Spigot
+ 
 -                        Inventory destinationInventory;
 -                        // Have to special case large chests as they work oddly
 -                        if (iinventory1 instanceof CompoundContainer) {
@@ -294,26 +302,6 @@ index 789e5458f4a137694563a22612455506807de51b..cba114f554644a37339c93026630c66c
 -                        } else {
 -                            destinationInventory = new CraftInventory(iinventory);
 -                        }
--
--                        InventoryMoveItemEvent event = new InventoryMoveItemEvent(iinventory.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
--                        world.getCraftServer().getPluginManager().callEvent(event);
--                        if (event.isCancelled()) {
--                            hopper.setItem(i, itemstack);
--                            hopper.setCooldown(world.spigotConfig.hopperTransfer); // Spigot
--                            return false;
--                        }
--                        int origCount = event.getItem().getAmount(); // Spigot
--                        ItemStack itemstack1 = HopperBlockEntity.addItem(iinventory, iinventory1, CraftItemStack.asNMSCopy(event.getItem()), enumdirection);
-+                // Paper start - replace logic; MAKE SURE TO CHECK FOR DIFFS ON UPDATES
-+                return hopperPush(world, iinventory1, enumdirection, hopper);
-+                // for (int i = 0; i < iinventory.getContainerSize(); ++i) {
-+                //     if (!iinventory.getItem(i).isEmpty()) {
-+                //         ItemStack itemstack = iinventory.getItem(i).copy();
-+                //         // ItemStack itemstack1 = addItem(iinventory, iinventory1, iinventory.removeItem(i, 1), enumdirection);
-+
-+                //         // CraftBukkit start - Call event when pushing items into other inventories
-+                //         CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.removeItem(i, world.spigotConfig.hopperAmount)); // Spigot
-+
 +                //         Inventory destinationInventory;
 +                //        // Have to special case large chests as they work oddly
 +                //         if (iinventory1 instanceof CompoundContainer) {
@@ -323,7 +311,16 @@ index 789e5458f4a137694563a22612455506807de51b..cba114f554644a37339c93026630c66c
 +                //         } else {
 +                //             destinationInventory = new CraftInventory(iinventory);
 +                //         }
-+
+ 
+-                        InventoryMoveItemEvent event = new InventoryMoveItemEvent(iinventory.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
+-                        world.getCraftServer().getPluginManager().callEvent(event);
+-                        if (event.isCancelled()) {
+-                            hopper.setItem(i, itemstack);
+-                            hopper.setCooldown(world.spigotConfig.hopperTransfer); // Spigot
+-                            return false;
+-                        }
+-                        int origCount = event.getItem().getAmount(); // Spigot
+-                        ItemStack itemstack1 = HopperBlockEntity.addItem(iinventory, iinventory1, CraftItemStack.asNMSCopy(event.getItem()), enumdirection);
 +                //         InventoryMoveItemEvent event = new InventoryMoveItemEvent(iinventory.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
 +                //         world.getCraftServer().getPluginManager().callEvent(event);
 +                //         if (event.isCancelled()) {
@@ -411,7 +408,14 @@ index 789e5458f4a137694563a22612455506807de51b..cba114f554644a37339c93026630c66c
 -            // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.removeItem(i, 1), (EnumDirection) null);
 -            // CraftBukkit start - Call event on collection of items from inventories into the hopper
 -            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.removeItem(i, world.spigotConfig.hopperAmount)); // Spigot
--
++        // Paper start - replace pull logic; MAKE SURE TO CHECK FOR DIFFS WHEN UPDATING
++        if (!itemstack.isEmpty() && HopperBlockEntity.canTakeItemFromContainer(ihopper, iinventory, itemstack, i, enumdirection)) { // If this logic changes, update above. this is left unused incase reflective plugins
++            return hopperPull(world, ihopper, iinventory, itemstack, i);
++            // ItemStack itemstack1 = itemstack.copy();
++            // // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.removeItem(i, 1), (EnumDirection) null);
++            // // CraftBukkit start - Call event on collection of items from inventories into the hopper
++            // CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.removeItem(i, world.spigotConfig.hopperAmount)); // Spigot
+ 
 -            Inventory sourceInventory;
 -            // Have to special case large chests as they work oddly
 -            if (iinventory instanceof CompoundContainer) {
@@ -421,38 +425,6 @@ index 789e5458f4a137694563a22612455506807de51b..cba114f554644a37339c93026630c66c
 -            } else {
 -                sourceInventory = new CraftInventory(iinventory);
 -            }
--
--            InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), ihopper.getOwner().getInventory(), false);
--
--            Bukkit.getServer().getPluginManager().callEvent(event);
--            if (event.isCancelled()) {
--                iinventory.setItem(i, itemstack1);
--
--                if (ihopper instanceof HopperBlockEntity) {
--                    ((HopperBlockEntity) ihopper).setCooldown(world.spigotConfig.hopperTransfer); // Spigot
--                }
--
--                return false;
--            }
--            int origCount = event.getItem().getAmount(); // Spigot
--            ItemStack itemstack2 = HopperBlockEntity.addItem(iinventory, ihopper, CraftItemStack.asNMSCopy(event.getItem()), null);
--            // CraftBukkit end
--
--            if (itemstack2.isEmpty()) {
--                iinventory.setChanged();
--                return true;
--            }
--
--            itemstack1.shrink(origCount - itemstack2.getCount()); // Spigot
--            iinventory.setItem(i, itemstack1);
-+        // Paper start - replace pull logic; MAKE SURE TO CHECK FOR DIFFS WHEN UPDATING
-+        if (!itemstack.isEmpty() && HopperBlockEntity.canTakeItemFromContainer(ihopper, iinventory, itemstack, i, enumdirection)) { // If this logic changes, update above. this is left unused incase reflective plugins
-+            return hopperPull(world, ihopper, iinventory, itemstack, i);
-+            // ItemStack itemstack1 = itemstack.copy();
-+            // // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.removeItem(i, 1), (EnumDirection) null);
-+            // // CraftBukkit start - Call event on collection of items from inventories into the hopper
-+            // CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.removeItem(i, world.spigotConfig.hopperAmount)); // Spigot
-+
 +            // Inventory sourceInventory;
 +            // // Have to special case large chests as they work oddly
 +            // if (iinventory instanceof CompoundContainer) {
@@ -462,28 +434,46 @@ index 789e5458f4a137694563a22612455506807de51b..cba114f554644a37339c93026630c66c
 +            // } else {
 +            //     sourceInventory = new CraftInventory(iinventory);
 +            // }
-+
+ 
+-            InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), ihopper.getOwner().getInventory(), false);
 +            // InventoryMoveItemEvent event = new InventoryMoveItemEvent(sourceInventory, oitemstack.clone(), ihopper.getOwner().getInventory(), false);
-+
+ 
+-            Bukkit.getServer().getPluginManager().callEvent(event);
+-            if (event.isCancelled()) {
+-                iinventory.setItem(i, itemstack1);
 +            // Bukkit.getServer().getPluginManager().callEvent(event);
 +            // if (event.isCancelled()) {
 +            //     iinventory.setItem(i, itemstack1);
-+
+ 
+-                if (ihopper instanceof HopperBlockEntity) {
+-                    ((HopperBlockEntity) ihopper).setCooldown(world.spigotConfig.hopperTransfer); // Spigot
+-                }
 +                // if (ihopper instanceof HopperBlockEntity) {
 +                //     ((HopperBlockEntity) ihopper).setCooldown(world.spigotConfig.hopperTransfer); // Spigot
 +                // }
-+
+ 
+-                return false;
+-            }
+-            int origCount = event.getItem().getAmount(); // Spigot
+-            ItemStack itemstack2 = HopperBlockEntity.addItem(iinventory, ihopper, CraftItemStack.asNMSCopy(event.getItem()), null);
+-            // CraftBukkit end
 +                // return false;
 +            // }
 +            // int origCount = event.getItem().getAmount(); // Spigot
 +            // ItemStack itemstack2 = HopperBlockEntity.addItem(iinventory, ihopper, CraftItemStack.asNMSCopy(event.getItem()), null);
 +            // // CraftBukkit end
-+
+ 
+-            if (itemstack2.isEmpty()) {
+-                iinventory.setChanged();
+-                return true;
+-            }
 +            // if (itemstack2.isEmpty()) {
 +            //     iinventory.setChanged();
 +            //     return true;
 +            // }
-+
+ 
+-            itemstack1.shrink(origCount - itemstack2.getCount()); // Spigot
+-            iinventory.setItem(i, itemstack1);
 +            // itemstack1.shrink(origCount - itemstack2.getCount()); // Spigot
 +            // iinventory.setItem(i, itemstack1);
 +            // Paper end

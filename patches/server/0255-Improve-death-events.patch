@@ -70,7 +70,7 @@ index dad0368c8b55be018167bd8b113a80b7508647f1..77a74d41679e88d748d903295ac4f455
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index d29519bd75e6e5a97b06aae86c485b49c4415fb8..73cefc7ec582cb0fbfcff32cb9311f34ec2f31f0 100644
+index 7c0e1963383a1a2862930cf77844e5c8c80e70e3..4c1992bcffd629ef53f14c5a0146eab2ddcb563c 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -258,6 +258,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -119,8 +119,13 @@ index d29519bd75e6e5a97b06aae86c485b49c4415fb8..73cefc7ec582cb0fbfcff32cb9311f34
 +            // Paper - moved into if below
              if (this.level instanceof ServerLevel) {
 -                if (entity == null || entity.wasKilled((ServerLevel) this.level, this)) {
+-                    this.gameEvent(GameEvent.ENTITY_DIE);
+-                    this.dropAllDeathLoot(damageSource);
+-                    this.createWitherRose(entityliving);
+-                }
 +                // Paper - move below into if for onKill
-+
+ 
+-                this.level.broadcastEntityEvent(this, (byte) 3);
 +                // Paper start
 +                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(damageSource);
 +                if (deathEvent == null || !deathEvent.isCancelled()) {
@@ -148,15 +153,11 @@ index d29519bd75e6e5a97b06aae86c485b49c4415fb8..73cefc7ec582cb0fbfcff32cb9311f34
 +                    if (entity != null) {
 +                        entity.wasKilled((ServerLevel) this.level, this);
 +                    }
-                     this.gameEvent(GameEvent.ENTITY_DIE);
--                    this.dropAllDeathLoot(damageSource);
--                    this.createWitherRose(entityliving);
++                    this.gameEvent(GameEvent.ENTITY_DIE);
 +                } else {
 +                    this.dead = false;
 +                    this.setHealth((float) deathEvent.getReviveHealth());
-                 }
--
--                this.level.broadcastEntityEvent(this, (byte) 3);
++                }
 +                // Paper end
 +                this.createWitherRose(entityliving);
              }
@@ -220,7 +221,7 @@ index d29519bd75e6e5a97b06aae86c485b49c4415fb8..73cefc7ec582cb0fbfcff32cb9311f34
      // CraftBukkit start
      public int getExpReward() {
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index e818687adf432e7ff47c8442ed2ea32d41c06b64..60d833bf8b7dcee046da9712a2dc809b05a31b42 100644
+index 984a33d5e1f790a9c78ba57f2dc21fb072a44b3d..dbf442e9686e59723ed0456f97e472cc663f8cc7 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -1065,7 +1065,13 @@ public abstract class Mob extends LivingEntity implements Targeting {
@@ -352,7 +353,7 @@ index e38cbdff34479673f1640c46d727f1a807a609c7..dbb4bfb3d1f1ce2e435ca531be36ea44
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 2d704af9491bec382e00a40fde36c6e01c8484f2..e3239cfb4237163389313f88496ad5e69b891c86 100644
+index 6b1b1b49b1b070dab106e9712d66c3916f0a7797..3a4a1f32409d7dddd30a643017da9bc6f6694187 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -2262,7 +2262,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -372,7 +373,7 @@ index 2d704af9491bec382e00a40fde36c6e01c8484f2..e3239cfb4237163389313f88496ad5e6
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index c24e84e07f3f0d93da079ddf73e0e67b7d58fe8b..bdd4572489cd12ea19560fe82006e3fe4db29b50 100644
+index ea385119db05699e355411e779f4464067f923f1..ea83f115d96302731ee7576b682bee95259422de 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -806,9 +806,16 @@ public class CraftEventFactory {
