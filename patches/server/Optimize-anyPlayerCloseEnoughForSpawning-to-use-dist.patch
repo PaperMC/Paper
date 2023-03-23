@@ -136,17 +136,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        int chunkRange = level.spigotConfig.mobSpawnRange;
 -        chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
 -        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
--
--        final int finalChunkRange = chunkRange; // Paper for lambda below
--        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
--        double blockRange = 16384.0D; // Paper
--        // Spigot end
--        long i = chunkcoordintpair.toLong();
 +    // Paper start - optimise anyPlayerCloseEnoughForSpawning
 +    final boolean anyPlayerCloseEnoughForSpawning(ChunkPos chunkcoordintpair, boolean reducedRange) {
 +        return this.anyPlayerCloseEnoughForSpawning(this.getUpdatingChunkIfPresent(chunkcoordintpair.toLong()), chunkcoordintpair, reducedRange);
 +    }
  
+-        final int finalChunkRange = chunkRange; // Paper for lambda below
+-        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
+-        double blockRange = 16384.0D; // Paper
+-        // Spigot end
+-        long i = chunkcoordintpair.toLong();
+-
 -        if (!this.distanceManager.hasPlayersNearby(i)) {
 +    final boolean anyPlayerCloseEnoughForSpawning(ChunkHolder playerchunk, ChunkPos chunkcoordintpair, boolean reducedRange) {
 +        // this function is so hot that removing the map lookup call can have an order of magnitude impact on its performance
@@ -158,18 +158,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            Iterator iterator = this.playerMap.getPlayers(i).iterator();
 -
 -            ServerPlayer entityplayer;
-+        }
-+        Object[] backingSet = playersInRange.getBackingSet();
- 
+-
 -            do {
 -                if (!iterator.hasNext()) {
 -                    return false;
-+        if (reducedRange) {
-+            for (int i = 0, len = backingSet.length; i < len; ++i) {
-+                Object raw = backingSet[i];
-+                if (!(raw instanceof ServerPlayer player)) {
-+                    continue;
-                 }
+-                }
 -
 -                entityplayer = (ServerPlayer) iterator.next();
 -                // Paper start - add PlayerNaturallySpawnCreaturesEvent
@@ -179,14 +172,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    event = entityplayer.playerNaturallySpawnedEvent;
 -                    if (event == null || event.isCancelled()) return false;
 -                    blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
-+                // don't check spectator and whatnot, already handled by mob spawn map update
-+                if (euclideanDistanceSquared(chunkcoordintpair, player) < player.lastEntitySpawnRadiusSquared) {
-+                    return true; // in range
-                 }
+-                }
 -                // Paper end
 -            } while (!this.playerIsCloseEnoughForSpawning(entityplayer, chunkcoordintpair, blockRange)); // Spigot
 -
 -            return true;
+         }
++        Object[] backingSet = playersInRange.getBackingSet();
++
++        if (reducedRange) {
++            for (int i = 0, len = backingSet.length; i < len; ++i) {
++                Object raw = backingSet[i];
++                if (!(raw instanceof ServerPlayer player)) {
++                    continue;
++                }
++                // don't check spectator and whatnot, already handled by mob spawn map update
++                if (euclideanDistanceSquared(chunkcoordintpair, player) < player.lastEntitySpawnRadiusSquared) {
++                    return true; // in range
++                }
 +            }
 +        } else {
 +            final double range = (DistanceManager.MOB_SPAWN_RANGE * 16) * (DistanceManager.MOB_SPAWN_RANGE * 16);
@@ -201,7 +204,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    return true; // in range
 +                }
 +            }
-         }
++        }
 +        // no players in range
 +        return false;
 +        // Paper end - optimise anyPlayerCloseEnoughForSpawning

@@ -8,6 +8,7 @@ Subject: [PATCH] Test changes
 - Ignore package-private methods for nullability annotations
 - Add excludes for classes which don't pass
 
+Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
@@ -147,6 +148,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -0,0 +0,0 @@ public class AnnotationTest {
+         "Lorg/jetbrains/annotations/Nullable;",
+         "Lorg/jetbrains/annotations/NotNull;",
+         "Lorg/jetbrains/annotations/Contract;",
+-        "Lorg/bukkit/UndefinedNullability;"
++        "Lorg/bukkit/UndefinedNullability;",
++        // Paper start
++        "Lorg/checkerframework/checker/nullness/qual/MonotonicNonNull;",
++        "Lorg/checkerframework/checker/nullness/qual/NonNull;",
++        "Lorg/checkerframework/checker/nullness/qual/Nullable;",
++        "Lorg/checkerframework/checker/nullness/qual/PolyNull;",
++        // Paper end
+     };
+ 
+     private static final String[] EXCLUDED_CLASSES = {
+@@ -0,0 +0,0 @@ public class AnnotationTest {
          "org/bukkit/util/io/Wrapper",
          "org/bukkit/plugin/java/PluginClassLoader",
          // Generic functional interface
@@ -176,7 +192,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    } else if (method.invisibleTypeAnnotations != null) {
 +                        dance: for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
 +                            final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
-+                            if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_RETURN && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                            if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_RETURN && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
 +                                warn = false;
 +                                break dance; // cha cha real smooth
 +                            }
@@ -197,7 +213,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        if (method.invisibleTypeAnnotations != null) {
 +                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
 +                                final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
-+                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
 +                                    continue dancing;
 +                                }
 +                            }
@@ -272,12 +288,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return true;
 +            }
 +        }
-+
+ 
+-    private static boolean isWellAnnotated(@Nullable List<AnnotationNode> annotations) {
 +        return false;
 +    }
 +    // Paper end
- 
--    private static boolean isWellAnnotated(@Nullable List<AnnotationNode> annotations) {
++
 +    private static boolean isWellAnnotated(@Nullable List<? extends AnnotationNode> annotations) { // Paper
          if (annotations == null) {
              return false;
