@@ -139,6 +139,10 @@ public enum InventoryType {
      */
     CHISELED_BOOKSHELF(6, "Chiseled Bookshelf", false),
     /**
+     * Pseudo jukebox inventory with 1 slot of undefined type.
+     */
+    JUKEBOX(1, "Jukebox", false),
+    /**
      * The new smithing inventory, with 3 CRAFTING slots and 1 RESULT slot.
      *
      * @deprecated draft, experimental 1.20 API
