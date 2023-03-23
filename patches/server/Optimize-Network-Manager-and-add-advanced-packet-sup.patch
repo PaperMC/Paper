@@ -107,22 +107,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
 -        if (this.isConnected()) {
 -            this.flushQueue();
--            this.sendPacket(packet, callbacks);
--        } else {
--            this.queue.add(new Connection.PacketHolder(packet, callbacks));
 +        // Paper start - handle oversized packets better
 +        boolean connected = this.isConnected();
 +        if (!connected && !preparing) {
 +            return; // Do nothing
-         }
++        }
 +        packet.onPacketDispatch(getPlayer());
 +        if (connected && (InnerUtil.canSendImmediate(this, packet) || (
 +            io.papermc.paper.util.MCUtil.isMainThread() && packet.isReady() && this.queue.isEmpty() &&
 +            (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
 +        ))) {
-+            this.sendPacket(packet, callbacks);
+             this.sendPacket(packet, callbacks);
+-        } else {
+-            this.queue.add(new Connection.PacketHolder(packet, callbacks));
 +            return;
-+        }
+         }
 +        // write the packets to the queue, then flush - antixray hooks there already
 +        java.util.List<Packet> extraPackets = InnerUtil.buildExtraPackets(packet);
 +        boolean hasExtraPackets = extraPackets != null && !extraPackets.isEmpty();
@@ -185,10 +184,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    private void flushQueue() {
--        try { // Paper - add pending task queue
--        if (this.channel != null && this.channel.isOpen()) {
--            Queue queue = this.queue;
--
 +    // Paper start - rewrite this to be safer if ran off main thread
 +    private boolean flushQueue() { // void -> boolean
 +        if (!isConnected()) {
@@ -198,20 +193,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return processQueue();
 +        } else if (isPending) {
 +            // Should only happen during login/status stages
-             synchronized (this.queue) {
--                Connection.PacketHolder networkmanager_queuedpacket;
--
--                while ((networkmanager_queuedpacket = (Connection.PacketHolder) this.queue.poll()) != null) {
--                    this.sendPacket(networkmanager_queuedpacket.packet, networkmanager_queuedpacket.listener);
--                }
--
++            synchronized (this.queue) {
 +                return this.processQueue();
-             }
-         }
++            }
++        }
 +        return false;
 +    }
 +    private boolean processQueue() {
-+        try { // Paper - add pending task queue
+         try { // Paper - add pending task queue
+-        if (this.channel != null && this.channel.isOpen()) {
+-            Queue queue = this.queue;
 +        if (this.queue.isEmpty()) return true;
 +        // If we are on main, we are safe here in that nothing else should be processing queue off main anymore
 +        // But if we are not on main due to login/status, the parent is synchronized on packetQueue
@@ -223,13 +214,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (queued == null) {
 +                return true;
 +            }
-+
+ 
+-            synchronized (this.queue) {
+-                Connection.PacketHolder networkmanager_queuedpacket;
 +            // Paper start - checking isConsumed flag and skipping packet sending
 +            if (queued.isConsumed()) {
 +                continue;
 +            }
 +            // Paper end - checking isConsumed flag and skipping packet sending
-+
+ 
+-                while ((networkmanager_queuedpacket = (Connection.PacketHolder) this.queue.poll()) != null) {
+-                    this.sendPacket(networkmanager_queuedpacket.packet, networkmanager_queuedpacket.listener);
 +            Packet<?> packet = queued.packet;
 +            if (!packet.isReady()) {
 +                return false;
@@ -237,9 +232,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                iterator.remove();
 +                if (queued.tryMarkConsumed()) { // Paper - try to mark isConsumed flag for de-duplicating packet
 +                    this.sendPacket(packet, queued.listener);
-+                }
-+            }
-+        }
+                 }
+-
+             }
+         }
 +        return true;
          } finally { // Paper start - add pending task queue
              Runnable r;

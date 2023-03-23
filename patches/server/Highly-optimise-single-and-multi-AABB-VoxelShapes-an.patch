@@ -24,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - optimise collisions
 +    static final UnsafeList<AABB> TEMP_COLLISION_LIST = new UnsafeList<>(1024);
 +    static boolean tempCollisionListInUse;
- 
++
 +    public static UnsafeList<AABB> getTempCollisionList() {
 +        if (!Bukkit.isPrimaryThread() || tempCollisionListInUse) {
 +            return new UnsafeList<>(16);
@@ -40,7 +40,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ((UnsafeList)list).setSize(0);
 +        tempCollisionListInUse = false;
 +    }
-+
+ 
 +    static final UnsafeList<Entity> TEMP_GET_ENTITIES_LIST = new UnsafeList<>(1024);
 +    static boolean tempGetEntitiesListInUse;
 +
@@ -1277,26 +1277,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        boolean flag1 = movement.y != vec3d1.y;
 -        boolean flag2 = movement.z != vec3d1.z;
 -        boolean flag3 = this.onGround || flag1 && movement.y < 0.0D;
+-
+-        if (this.maxUpStep() > 0.0F && flag3 && (flag || flag2)) {
+-            Vec3 vec3d2 = Entity.collideBoundingBox(this, new Vec3(movement.x, (double) this.maxUpStep(), movement.z), axisalignedbb, this.level, list);
+-            Vec3 vec3d3 = Entity.collideBoundingBox(this, new Vec3(0.0D, (double) this.maxUpStep(), 0.0D), axisalignedbb.expandTowards(movement.x, 0.0D, movement.z), this.level, list);
+-
+-            if (vec3d3.y < (double) this.maxUpStep()) {
+-                Vec3 vec3d4 = Entity.collideBoundingBox(this, new Vec3(movement.x, 0.0D, movement.z), axisalignedbb.move(vec3d3), this.level, list).add(vec3d3);
+-
+-                if (vec3d4.horizontalDistanceSqr() > vec3d2.horizontalDistanceSqr()) {
+-                    vec3d2 = vec3d4;
 +        // Paper start - optimise collisions
 +        // This is a copy of vanilla's except that it uses strictly AABB math
 +        if (movement.x == 0.0 && movement.y == 0.0 && movement.z == 0.0) {
 +            return movement;
 +        }
- 
--        if (this.maxUpStep() > 0.0F && flag3 && (flag || flag2)) {
--            Vec3 vec3d2 = Entity.collideBoundingBox(this, new Vec3(movement.x, (double) this.maxUpStep(), movement.z), axisalignedbb, this.level, list);
--            Vec3 vec3d3 = Entity.collideBoundingBox(this, new Vec3(0.0D, (double) this.maxUpStep(), 0.0D), axisalignedbb.expandTowards(movement.x, 0.0D, movement.z), this.level, list);
++
 +        final Level world = this.level;
 +        final AABB currBoundingBox = this.getBoundingBox();
- 
--            if (vec3d3.y < (double) this.maxUpStep()) {
--                Vec3 vec3d4 = Entity.collideBoundingBox(this, new Vec3(movement.x, 0.0D, movement.z), axisalignedbb.move(vec3d3), this.level, list).add(vec3d3);
++
 +        if (io.papermc.paper.util.CollisionUtil.isEmpty(currBoundingBox)) {
 +            return movement;
 +        }
- 
--                if (vec3d4.horizontalDistanceSqr() > vec3d2.horizontalDistanceSqr()) {
--                    vec3d2 = vec3d4;
++
 +        final List<AABB> potentialCollisions = io.papermc.paper.util.CachedLists.getTempCollisionList();
 +        try {
 +            final double stepHeight = (double)this.maxUpStep();
@@ -1323,16 +1326,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -            if (vec3d2.horizontalDistanceSqr() > vec3d1.horizontalDistanceSqr()) {
 -                return vec3d2.add(Entity.collideBoundingBox(this, new Vec3(0.0D, -vec3d2.y + movement.y, 0.0D), axisalignedbb.move(vec3d2), this.level, list));
--            }
--        }
 +            io.papermc.paper.util.CollisionUtil.getCollisions(world, this, collisionBox, potentialCollisions, false, this.level.paperConfig().chunks.preventMovingIntoUnloadedChunks,
 +                false, false, null, null);
- 
--        return vec3d1;
++
 +            if (io.papermc.paper.util.CollisionUtil.isCollidingWithBorderEdge(world.getWorldBorder(), collisionBox)) {
 +                io.papermc.paper.util.CollisionUtil.addBoxesToIfIntersects(world.getWorldBorder().getCollisionShape(), collisionBox, potentialCollisions);
-+            }
-+
+             }
+-        }
+ 
+-        return vec3d1;
 +            final Vec3 limitedMoveVector = io.papermc.paper.util.CollisionUtil.performCollisions(movement, currBoundingBox, potentialCollisions);
 +
 +            if (stepHeight > 0.0

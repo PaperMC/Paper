@@ -98,10 +98,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if ( isRestarting )
              {
 -                System.out.println( "Attempting to restart with " + restartScript );
--
++                System.out.println( "Attempting to restart with " + SpigotConfig.restartScript );
++            } else
++            {
++                System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
++            }
++            // Stop the watchdog
++            WatchdogThread.doStop();
+ 
 -                // Disable Watchdog
 -                WatchdogThread.doStop();
--
++            shutdownServer( isRestarting );
++            // Paper end
++        } catch ( Exception ex )
++        {
++            ex.printStackTrace();
++        }
++    }
+ 
 -                // Kick all players
 -                for ( ServerPlayer p : (List<ServerPlayer>) MinecraftServer.getServer().getPlayerList().players )
 -                {
@@ -116,73 +130,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                }
 -                // Close the socket so we can rebind with the new process
 -                MinecraftServer.getServer().getConnection().stop();
--
--                // Give time for it to kick in
--                try
--                {
--                    Thread.sleep( 100 );
--                } catch ( InterruptedException ex )
--                {
--                }
--
--                // Actually shutdown
--                try
--                {
--                    MinecraftServer.getServer().close();
--                } catch ( Throwable t )
--                {
--                }
--
--                // This will be done AFTER the server has completely halted
--                Thread shutdownHook = new Thread()
--                {
--                    @Override
--                    public void run()
--                    {
--                        try
--                        {
--                            String os = System.getProperty( "os.name" ).toLowerCase(java.util.Locale.ENGLISH);
--                            if ( os.contains( "win" ) )
--                            {
--                                Runtime.getRuntime().exec( "cmd /c start " + restartScript );
--                            } else
--                            {
--                                Runtime.getRuntime().exec( "sh " + restartScript );
--                            }
--                        } catch ( Exception e )
--                        {
--                            e.printStackTrace();
--                        }
--                    }
--                };
--
--                shutdownHook.setDaemon( true );
--                Runtime.getRuntime().addShutdownHook( shutdownHook );
-+                System.out.println( "Attempting to restart with " + SpigotConfig.restartScript );
-             } else
-             {
-                 System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
--
--                // Actually shutdown
--                try
--                {
--                    MinecraftServer.getServer().close();
--                } catch ( Throwable t )
--                {
--                }
-             }
--            System.exit( 0 );
-+            // Stop the watchdog
-+            WatchdogThread.doStop();
-+
-+            shutdownServer( isRestarting );
-+            // Paper end
-         } catch ( Exception ex )
-         {
-             ex.printStackTrace();
-         }
-     }
-+
 +    // Paper start - sync copied from above with minor changes, async added
 +    private static void shutdownServer(boolean isRestarting)
 +    {
@@ -200,9 +147,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            } catch ( InterruptedException ex )
 +            {
 +            }
-+
+ 
+-                // Give time for it to kick in
+-                try
+-                {
+-                    Thread.sleep( 100 );
+-                } catch ( InterruptedException ex )
+-                {
+-                }
 +            closeSocket();
-+
+ 
+-                // Actually shutdown
+-                try
+-                {
+-                    MinecraftServer.getServer().close();
+-                } catch ( Throwable t )
+-                {
+-                }
 +            // Actually shutdown
 +            try
 +            {
@@ -213,7 +174,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            // Actually stop the JVM
 +            System.exit( 0 );
-+
+ 
+-                // This will be done AFTER the server has completely halted
+-                Thread shutdownHook = new Thread()
 +        } else
 +        {
 +            // Mark the server to shutdown at the end of the tick
@@ -265,32 +228,63 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            {
 +                @Override
 +                public void run()
-+                {
+                 {
+-                    @Override
+-                    public void run()
 +                    try
-+                    {
+                     {
+-                        try
 +                        String os = System.getProperty( "os.name" ).toLowerCase(java.util.Locale.ENGLISH);
 +                        if ( os.contains( "win" ) )
-+                        {
+                         {
+-                            String os = System.getProperty( "os.name" ).toLowerCase(java.util.Locale.ENGLISH);
+-                            if ( os.contains( "win" ) )
+-                            {
+-                                Runtime.getRuntime().exec( "cmd /c start " + restartScript );
+-                            } else
+-                            {
+-                                Runtime.getRuntime().exec( "sh " + restartScript );
+-                            }
+-                        } catch ( Exception e )
 +                            Runtime.getRuntime().exec( "cmd /c start " + restartScript );
 +                        } else
-+                        {
+                         {
+-                            e.printStackTrace();
 +                            Runtime.getRuntime().exec( "sh " + restartScript );
-+                        }
+                         }
 +                    } catch ( Exception e )
 +                    {
 +                        e.printStackTrace();
-+                    }
-+                }
+                     }
+-                };
+-
+-                shutdownHook.setDaemon( true );
+-                Runtime.getRuntime().addShutdownHook( shutdownHook );
+-            } else
+-            {
+-                System.out.println( "Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server." );
+-
+-                // Actually shutdown
+-                try
+-                {
+-                    MinecraftServer.getServer().close();
+-                } catch ( Throwable t )
+-                {
+                 }
+-            }
+-            System.exit( 0 );
+-        } catch ( Exception ex )
 +            };
 +
 +            shutdownHook.setDaemon( true );
 +            Runtime.getRuntime().addShutdownHook( shutdownHook );
 +            return true;
 +        } else
-+        {
+         {
+-            ex.printStackTrace();
 +            return false;
-+        }
-+    }
+         }
+     }
 +    // Paper end
 +
  }

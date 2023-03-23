@@ -13176,15 +13176,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            entityplayer.connection.send(packet);
 -        });
 -    }
-+        // Paper start - per player view distance
-+        // there can be potential desync with player's last mapped section and the view distance map, so use the
-+        // view distance map here.
-+        com.destroystokyo.paper.util.misc.PlayerAreaMap viewDistanceMap = this.chunkMap.playerChunkManager.broadcastMap; // Paper - replace old player chunk manager
-+        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> players = viewDistanceMap.getObjectsInRange(this.pos);
-+        if (players == null) {
-+            return;
-+        }
- 
+-
 -    public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getOrScheduleFuture(ChunkStatus targetStatus, ChunkMap chunkStorage) {
 -        int i = targetStatus.getIndex();
 -        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(i);
@@ -13194,7 +13186,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -            if (either == null) {
 -                String s = "value in future for status: " + targetStatus + " was incorrectly set to null at chunk: " + this.pos;
--
++        // Paper start - per player view distance
++        // there can be potential desync with player's last mapped section and the view distance map, so use the
++        // view distance map here.
++        com.destroystokyo.paper.util.misc.PlayerAreaMap viewDistanceMap = this.chunkMap.playerChunkManager.broadcastMap; // Paper - replace old player chunk manager
++        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> players = viewDistanceMap.getObjectsInRange(this.pos);
++        if (players == null) {
++            return;
++        }
+ 
 -                throw chunkStorage.debugFuturesAndCreateReportedException(new IllegalStateException("null value previously set for chunk status"), s);
 +        Object[] backingSet = players.getBackingSet();
 +        for (int i = 0, len = backingSet.length; i < len; ++i) {
@@ -13258,9 +13258,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public final int getTicketLevel() { // Paper - final for inline
 -        return this.ticketLevel;
-+        return this.newChunkHolder.getTicketLevel(); // Paper - rewrite chunk system
-     }
- 
+-    }
+-
 -    public int getQueueLevel() {
 -        return this.queueLevel;
 -    }
@@ -13286,8 +13285,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                completablefuture1.complete(null); // CraftBukkit - decompile error
 -            });
 -        });
--    }
--
++        return this.newChunkHolder.getTicketLevel(); // Paper - rewrite chunk system
+     }
+ 
 -    private void demoteFullChunk(ChunkMap playerchunkmap, ChunkHolder.FullChunkStatus playerchunk_state) {
 -        this.pendingFullStateConfirmation.cancel(false);
 -        playerchunkmap.onFullChunkStatusChange(this.pos, playerchunk_state);
@@ -13823,16 +13823,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        } finally {
 -            super.close();
 -        }
--
 +        throw new UnsupportedOperationException("Use ServerChunkCache#close"); // Paper - rewrite chunk system
-     }
++    }
  
 +    // Paper start - rewrite chunk system
 +    protected void saveIncrementally() {
 +        this.level.chunkTaskScheduler.chunkHolderManager.autoSave(); // Paper - rewrite chunk system
-+    }
+     }
 +    // Paper end - - rewrite chunk system
-+
+ 
      protected void saveAllChunks(boolean flush) {
 -        if (flush) {
 -            List<ChunkHolder> list = (List) io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList()); // Paper
@@ -14492,25 +14491,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        Set<ServerPlayer> set = this.playerMap.getPlayers(chunkPos.toLong());
 -        Builder<ServerPlayer> builder = ImmutableList.builder();
 -        Iterator iterator = set.iterator();
--
--        while (iterator.hasNext()) {
--            ServerPlayer entityplayer = (ServerPlayer) iterator.next();
--            SectionPos sectionposition = entityplayer.getLastSectionPos();
--
--            if (onlyOnWatchDistanceEdge && ChunkMap.isChunkOnRangeBorder(chunkPos.x, chunkPos.z, sectionposition.x(), sectionposition.z(), this.viewDistance) || !onlyOnWatchDistanceEdge && ChunkMap.isChunkInRange(chunkPos.x, chunkPos.z, sectionposition.x(), sectionposition.z(), this.viewDistance)) {
--                builder.add(entityplayer);
--            }
 +        // Paper start - per player view distance
 +        // there can be potential desync with player's last mapped section and the view distance map, so use the
 +        // view distance map here.
 +        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> players = this.playerChunkManager.broadcastMap.getObjectsInRange(chunkPos);
 +        if (players == null) {
 +            return java.util.Collections.emptyList();
-         }
++        }
  
--        return builder.build();
+-        while (iterator.hasNext()) {
+-            ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+-            SectionPos sectionposition = entityplayer.getLastSectionPos();
 +        List<ServerPlayer> ret = new java.util.ArrayList<>(players.size());
-+
+ 
+-            if (onlyOnWatchDistanceEdge && ChunkMap.isChunkOnRangeBorder(chunkPos.x, chunkPos.z, sectionposition.x(), sectionposition.z(), this.viewDistance) || !onlyOnWatchDistanceEdge && ChunkMap.isChunkInRange(chunkPos.x, chunkPos.z, sectionposition.x(), sectionposition.z(), this.viewDistance)) {
+-                builder.add(entityplayer);
 +        Object[] backingSet = players.getBackingSet();
 +        for (int i = 0, len = backingSet.length; i < len; ++i) {
 +            if (!(backingSet[i] instanceof ServerPlayer player)) {
@@ -14518,10 +14513,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            if (!this.playerChunkManager.isChunkSent(player, chunkPos.x, chunkPos.z, onlyOnWatchDistanceEdge)) {
 +                continue;
-+            }
+             }
 +            ret.add(player);
-+        }
-+
+         }
+ 
+-        return builder.build();
 +        return ret;
 +        // Paper end - per player view distance
      }
@@ -14887,8 +14883,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private void dumpTickets(String path) {
 -        try {
 -            FileOutputStream fileoutputstream = new FileOutputStream(new File(path));
-+    // Paper - rewrite chunk system
- 
+-
 -            try {
 -                ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().iterator();
 -
@@ -14909,7 +14904,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                } catch (Throwable throwable1) {
 -                    throwable.addSuppressed(throwable1);
 -                }
--
++    // Paper - rewrite chunk system
+ 
 -                throw throwable;
 -            }
 -
@@ -15129,23 +15125,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            ChunkHolder.FullChunkStatus oldChunkState = ChunkHolder.getFullChunkStatus(playerchunk.oldTicketLevel);
 -            ChunkHolder.FullChunkStatus currentChunkState = ChunkHolder.getFullChunkStatus(playerchunk.getTicketLevel());
 -            currentlyUnloading = (oldChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !currentChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER));
-+        boolean needsFullScheduling = leastStatus == ChunkStatus.FULL && (chunkHolder == null || !chunkHolder.getChunkStatus().isOrAfter(ChunkHolder.FullChunkStatus.BORDER));
-+
-+        if ((chunkHolder == null || chunkHolder.getTicketLevel() > minLevel || needsFullScheduling) && !create) {
-+            return ChunkHolder.UNLOADED_CHUNK_FUTURE;
-         }
+-        }
 -        if (create && !currentlyUnloading) {
 -            // CraftBukkit end
 -            this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
 -            if (this.chunkAbsent(playerchunk, l)) {
 -                ProfilerFiller gameprofilerfiller = this.level.getProfiler();
- 
+-
 -                gameprofilerfiller.push("chunkLoad");
 -                this.runDistanceManagerUpdates();
 -                playerchunk = this.getVisibleChunkIfPresent(k);
 -                gameprofilerfiller.pop();
 -                if (this.chunkAbsent(playerchunk, l)) {
 -                    throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("No chunk holder after ticket has been added"));
+-                }
+-            }
++        boolean needsFullScheduling = leastStatus == ChunkStatus.FULL && (chunkHolder == null || !chunkHolder.getChunkStatus().isOrAfter(ChunkHolder.FullChunkStatus.BORDER));
++
++        if ((chunkHolder == null || chunkHolder.getTicketLevel() > minLevel || needsFullScheduling) && !create) {
++            return ChunkHolder.UNLOADED_CHUNK_FUTURE;
+         }
+ 
+-        return this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
+-    }
 +        io.papermc.paper.chunk.system.scheduling.NewChunkHolder.ChunkCompletion chunkCompletion = chunkHolder == null ? null : chunkHolder.getLastChunkCompletion();
 +        if (needsFullScheduling || chunkCompletion == null || !chunkCompletion.genStatus().isOrAfter(leastStatus)) {
 +            // schedule
@@ -15155,10 +15157,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    ret.complete(Either.right(ChunkHolder.ChunkLoadingFailure.UNLOADED));
 +                } else {
 +                    ret.complete(Either.left(chunk));
-                 }
--            }
++                }
 +            };
-+
+ 
+-    private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
+-        return holder == null || holder.oldTicketLevel > maxLevel; // CraftBukkit using oldTicketLevel for isLoaded checks
 +            this.level.chunkTaskScheduler.scheduleChunkLoad(
 +                chunkX, chunkZ, leastStatus, true,
 +                isUrgent ? ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.BLOCKING : ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL,
@@ -15169,17 +15172,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            // can return now
 +            return CompletableFuture.completedFuture(Either.left(chunkCompletion.chunk()));
-         }
--
--        return this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
++        }
 +        // Paper end - rewrite chunk system
      }
  
--    private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
--        return holder == null || holder.oldTicketLevel > maxLevel; // CraftBukkit using oldTicketLevel for isLoaded checks
--    }
 +    // Paper - rewrite chunk system
- 
++
      @Override
      public boolean hasChunk(int x, int z) {
 -        ChunkHolder playerchunk = this.getVisibleChunkIfPresent((new ChunkPos(x, z)).toLong());
@@ -16534,21 +16532,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                if (result.size() >= limit) {
 -                    return AbortableIterationConsumer.Continuation.ABORT;
 -                }
-+        // Paper start - optimise this call
-+        //TODO use limit
-+        if (filter instanceof net.minecraft.world.entity.EntityType entityTypeTest) {
-+            ((ServerLevel) this).getEntityLookup().getEntities(entityTypeTest, box, result, predicate);
-+        } else {
-+            Predicate<? super T> test = (obj) -> {
-+                return filter.tryCast(obj) != null;
-+            };
-+            predicate = predicate == null ? test : test.and((Predicate) predicate);
-+            Class base;
-+            if (filter == null || (base = filter.getBaseClass()) == null || base == Entity.class) {
-+                ((ServerLevel) this).getEntityLookup().getEntities((Entity) null, box, (List) result, (Predicate)predicate);
-+            } else {
-+                ((ServerLevel) this).getEntityLookup().getEntities(base, null, box, (List) result, (Predicate)predicate); // Paper - optimise this call
-             }
+-            }
 -
 -            if (entity instanceof EnderDragon) {
 -                EnderDragon entityenderdragon = (EnderDragon) entity;
@@ -16566,7 +16550,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        }
 -                    }
 -                }
--            }
++        // Paper start - optimise this call
++        //TODO use limit
++        if (filter instanceof net.minecraft.world.entity.EntityType entityTypeTest) {
++            ((ServerLevel) this).getEntityLookup().getEntities(entityTypeTest, box, result, predicate);
++        } else {
++            Predicate<? super T> test = (obj) -> {
++                return filter.tryCast(obj) != null;
++            };
++            predicate = predicate == null ? test : test.and((Predicate) predicate);
++            Class base;
++            if (filter == null || (base = filter.getBaseClass()) == null || base == Entity.class) {
++                ((ServerLevel) this).getEntityLookup().getEntities((Entity) null, box, (List) result, (Predicate)predicate);
++            } else {
++                ((ServerLevel) this).getEntityLookup().getEntities(base, null, box, (List) result, (Predicate)predicate); // Paper - optimise this call
+             }
 -
 -            return AbortableIterationConsumer.Continuation.CONTINUE;
 -        });
@@ -16974,9 +16972,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -            return protochunk1;
 +            return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
-         }
-     }
- 
++        }
++    }
++
 +    // Paper start - async chunk save for unload
 +    public record AsyncSaveData(
 +        Tag blockTickList, // non-null if we had to go to the server's tick list
@@ -16998,7 +16996,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (blockEntityNbt != null) {
 +                blockEntitiesSerialized.add(blockEntityNbt);
 +            }
-+        }
+         }
 +
 +        return new AsyncSaveData(
 +            tickLists.get(BLOCK_TICKS_TAG),
@@ -17006,12 +17004,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            blockEntitiesSerialized,
 +            world.getGameTime()
 +        );
-+    }
+     }
 +    // Paper end
-+
+ 
      private static void logErrors(ChunkPos chunkPos, int y, String message) {
          ChunkSerializer.LOGGER.error("Recoverable errors when loading section [" + chunkPos.x + ", " + y + ", " + chunkPos.z + "]: " + message);
-     }
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
      // CraftBukkit end
  
@@ -17151,11 +17148,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } catch (Throwable thr) {
 +            return CompletableFuture.failedFuture(thr);
 +        }
-     }
++    }
 +    @Nullable
 +    public CompoundTag readSync(ChunkPos chunkPos) throws IOException {
 +        return this.regionFileCache.read(chunkPos);
-+    }
+     }
 +    // Paper end - async chunk io
  
 -    public void write(ChunkPos chunkPos, CompoundTag nbt) {
@@ -17242,17 +17239,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -        }, this.entityDeserializerQueue::tell);
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system - copy out read logic into readEntities
-     }
- 
--    private static ChunkPos readChunkPos(CompoundTag chunkNbt) {
++    }
++
 +    // Paper start - rewrite chunk system
 +    public static List<Entity> readEntities(ServerLevel level, CompoundTag compoundTag) {
 +        ListTag listTag = compoundTag.getList("Entities", 10);
 +        List<Entity> list = EntityType.loadEntitiesRecursive(listTag, level).collect(ImmutableList.toImmutableList());
 +        return list;
-+    }
+     }
 +    // Paper end - rewrite chunk system
-+
+ 
+-    private static ChunkPos readChunkPos(CompoundTag chunkNbt) {
 +    public static ChunkPos readChunkPos(CompoundTag chunkNbt) { // Paper - public
          int[] is = chunkNbt.getIntArray("Position");
          return new ChunkPos(is[0], is[1]);
@@ -17294,10 +17291,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
--    @Override
--    public void flush(boolean sync) {
--        this.worker.synchronize(sync).join();
--        this.entityDeserializerQueue.runAll();
 +    // Paper start - rewrite chunk system
 +    public static void copyEntities(final CompoundTag from, final CompoundTag into) {
 +        if (from == null) {
@@ -17311,9 +17304,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final ListTag entitiesInto = into.getList("Entities", net.minecraft.nbt.Tag.TAG_COMPOUND);
 +        into.put("Entities", entitiesInto); // this is in case into doesn't have any entities
 +        entitiesInto.addAll(0, entitiesFrom.copy()); // need to copy, this is coming from the save thread
-     }
- 
--    private CompoundTag upgradeChunkTag(CompoundTag chunkNbt) {
++    }
++
 +    public static CompoundTag saveEntityChunk(List<Entity> entities, ChunkPos chunkPos, ServerLevel level) {
 +        return saveEntityChunk0(entities, chunkPos, level, false);
 +    }
@@ -17339,11 +17331,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - rewrite chunk system
 +
-+    @Override
-+    public void flush(boolean sync) {
+     @Override
+     public void flush(boolean sync) {
+-        this.worker.synchronize(sync).join();
+-        this.entityDeserializerQueue.runAll();
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
-+    }
-+
+     }
+ 
+-    private CompoundTag upgradeChunkTag(CompoundTag chunkNbt) {
 +    public static CompoundTag upgradeChunkTag(CompoundTag chunkNbt) { // Paper - public and static
          int i = NbtUtils.getDataVersion(chunkNbt, -1);
          return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY_CHUNK, chunkNbt, i, net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion()); // Paper - route to new converter system
