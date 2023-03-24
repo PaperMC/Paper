@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RyGuy <TheRealRyGuy@users.noreply.github.com>
+Date: Fri, 24 Mar 2023 14:31:57 -0400
+Subject: [PATCH] Implement LivingEntity#playHurtEffect
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 5a5ff40df37db9cbd53c584ed26a3ce4888b29c0..4ad24c64587ccf4f2ce5a897724c2404c30713c4 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -51,17 +51,7 @@ import net.minecraft.core.registries.Registries;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.MutableComponent;
+ import net.minecraft.network.protocol.Packet;
+-import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
+-import net.minecraft.network.protocol.game.ClientboundBlockEventPacket;
+-import net.minecraft.network.protocol.game.ClientboundDamageEventPacket;
+-import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
+-import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+-import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
+-import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+-import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
+-import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
+-import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+-import net.minecraft.network.protocol.game.DebugPackets;
++import net.minecraft.network.protocol.game.*;
+ import net.minecraft.resources.ResourceKey;
+ import io.papermc.paper.util.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+@@ -1723,6 +1713,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         this.getChunkSource().broadcastAndSend(entity, new ClientboundEntityEventPacket(entity, status));
+     }
+ 
++    @Override
++    public void broadcastEntityHurt(LivingEntity entity, float yaw) {
++        this.getChunkSource().broadcastAndSend(entity, new ClientboundHurtAnimationPacket(entity.getId(), yaw));
++    }
++
+     @Override
+     public void broadcastDamageEvent(Entity entity, DamageSource damageSource) {
+         this.getChunkSource().broadcastAndSend(entity, new ClientboundDamageEventPacket(entity, damageSource));
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 973ecd50f9cb6b86c353586e84d15dcb118ccb60..a91af2fce4b09714e06c30df89e4704a80118be3 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -44,6 +44,7 @@ import net.minecraft.world.DifficultyInstance;
+ import net.minecraft.world.damagesource.DamageSource;
+ import net.minecraft.world.damagesource.DamageSources;
+ import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.boss.EnderDragonPart;
+ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+ import net.minecraft.world.entity.item.ItemEntity;
+@@ -1248,6 +1249,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     public void broadcastEntityEvent(Entity entity, byte status) {}
+ 
++    public void broadcastEntityHurt(LivingEntity entity, float yaw) {}
++
+     public void broadcastDamageEvent(Entity entity, DamageSource damageSource) {}
+ 
+     public void blockEvent(BlockPos pos, Block block, int type, int data) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index aec588b41f19b2147a4e7267bafa417fbcf7abc0..851b79228ea3f6854ef203534dcd72a992796a5d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -204,6 +204,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return blocks.get(0);
+     }
+ 
++    @Override
++    public void playHurtEffect(float yaw) {
++        this.getHandle().level.broadcastEntityHurt(this.getHandle(), yaw);
++    }
++
+     // Paper start
+     @Override
+     public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
