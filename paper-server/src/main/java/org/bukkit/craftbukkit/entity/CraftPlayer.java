@@ -1340,6 +1340,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     void resetAndHideEntity(org.bukkit.entity.Entity entity) {
+        // SPIGOT-7312: Can't show/hide self
+        if (equals(entity)) {
+            return;
+        }
+
         if (invertedVisibilityEntities.remove(entity.getUniqueId()) == null) {
             untrackAndHideEntity(entity);
         }
@@ -1413,6 +1418,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     void resetAndShowEntity(org.bukkit.entity.Entity entity) {
+        // SPIGOT-7312: Can't show/hide self
+        if (equals(entity)) {
+            return;
+        }
+
         if (invertedVisibilityEntities.remove(entity.getUniqueId()) == null) {
             trackAndShowEntity(entity);
         }
@@ -1429,7 +1439,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean canSee(org.bukkit.entity.Entity entity) {
-        return entity.isVisibleByDefault() ^ invertedVisibilityEntities.containsKey(entity.getUniqueId());
+        return equals(entity) || entity.isVisibleByDefault() ^ invertedVisibilityEntities.containsKey(entity.getUniqueId()); // SPIGOT-7312: Can always see self
     }
 
     public boolean canSee(UUID uuid) {
