@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RyGuy <TheRealRyGuy@users.noreply.github.com>
+Date: Fri, 24 Mar 2023 17:29:01 -0400
+Subject: [PATCH] Reimpl AntiXray and Structure gen timings
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
+index cab91880a08c6fdc545804911d295e0f24f4d983..b2495379bfdb9dd3a202878e102bc25bd4c26248 100644
+--- a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
++++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
+@@ -1,5 +1,6 @@
+ package com.destroystokyo.paper.antixray;
+ 
++import co.aikar.timings.MinecraftTimings;
+ import io.papermc.paper.configuration.WorldConfiguration;
+ import io.papermc.paper.configuration.type.EngineMode;
+ import net.minecraft.core.BlockPos;
+@@ -204,6 +205,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
+     private static final ThreadLocal<boolean[][]> NEXT_NEXT = ThreadLocal.withInitial(() -> new boolean[16][16]);
+ 
+     public void obfuscate(ChunkPacketInfoAntiXray chunkPacketInfoAntiXray) {
++        MinecraftTimings.antiXrayObfuscateTimer.startTiming();
+         int[] presetBlockStateBits = this.presetBlockStateBits.get();
+         boolean[] solid = SOLID.get();
+         boolean[] obfuscate = OBFUSCATE.get();
+@@ -376,6 +378,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
+         }
+ 
+         chunkPacketInfoAntiXray.getChunkPacket().setReady(true);
++        MinecraftTimings.antiXrayObfuscateTimer.stopTiming();
+     }
+ 
+     private void obfuscateLayer(int y, BitStorageReader bitStorageReader, BitStorageWriter bitStorageWriter, boolean[] solid, boolean[] obfuscate, int[] presetBlockStateBits, boolean[][] current, boolean[][] next, boolean[][] nextNext, LevelChunkSection[] nearbyChunkSections, IntSupplier random) {
+@@ -616,6 +619,7 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
+ 
+     private void updateNearbyBlocks(Level level, BlockPos blockPos) {
+         if (updateRadius >= 2) {
++            MinecraftTimings.antiXrayUpdateTimer.startTiming();
+             BlockPos temp = blockPos.west();
+             updateBlock(level, temp);
+             updateBlock(level, temp.west());
+@@ -641,13 +645,16 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
+             updateBlock(level, temp.north());
+             updateBlock(level, temp = blockPos.south());
+             updateBlock(level, temp.south());
++            MinecraftTimings.antiXrayUpdateTimer.stopTiming();
+         } else if (updateRadius == 1) {
++            MinecraftTimings.antiXrayUpdateTimer.startTiming();
+             updateBlock(level, blockPos.west());
+             updateBlock(level, blockPos.east());
+             updateBlock(level, blockPos.below());
+             updateBlock(level, blockPos.above());
+             updateBlock(level, blockPos.north());
+             updateBlock(level, blockPos.south());
++            MinecraftTimings.antiXrayUpdateTimer.stopTiming();
+         } else {
+             // Do nothing if updateRadius <= 0 (test mode)
+         }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index 42ecfc1237bfc724dc9134a6a8bae3670251449e..0e9e91cf82dc5300bb0f2a5afb071718144177e2 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.level.chunk;
+ 
++import co.aikar.timings.MinecraftTimings;
+ import com.google.common.base.Suppliers;
+ import com.mojang.datafixers.util.Pair;
+ import com.mojang.serialization.Codec;
+@@ -367,6 +368,7 @@ public abstract class ChunkGenerator {
+                     CrashReportCategory crashreportsystemdetails;
+ 
+                     if (structuremanager.shouldGenerateStructures()) {
++                        MinecraftTimings.structureGenerationTimer.startTiming(); //Paper - timings
+                         List<Structure> list1 = (List) map.getOrDefault(l, Collections.emptyList());
+ 
+                         for (iterator = list1.iterator(); iterator.hasNext(); ++i1) {
+@@ -394,6 +396,7 @@ public abstract class ChunkGenerator {
+                                 throw new ReportedException(crashreport);
+                             }
+                         }
++                        MinecraftTimings.structureGenerationTimer.stopTiming(); //Paper - timings
+                     }
+ 
+                     if (l < j) {
