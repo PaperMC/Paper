@@ -8,6 +8,7 @@ Subject: [PATCH] Test changes
 - Ignore package-private methods for nullability annotations
 - Add excludes for classes which don't pass
 
+Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
@@ -143,10 +144,25 @@ index 0000000000000000000000000000000000000000..756acf231b1b076b08046d86992ba7ce
 +
 +}
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c84891b8b0fd 100644
+index 4ac3dd977e75cd8464163351d306e037ee32cb48..c26ea217927ba77611e6ae93f8df50a83bceb3dd 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
-@@ -40,7 +40,17 @@ public class AnnotationTest {
+@@ -29,7 +29,13 @@ public class AnnotationTest {
+         "Lorg/jetbrains/annotations/Nullable;",
+         "Lorg/jetbrains/annotations/NotNull;",
+         "Lorg/jetbrains/annotations/Contract;",
+-        "Lorg/bukkit/UndefinedNullability;"
++        "Lorg/bukkit/UndefinedNullability;",
++        // Paper start
++        "Lorg/checkerframework/checker/nullness/qual/MonotonicNonNull;",
++        "Lorg/checkerframework/checker/nullness/qual/NonNull;",
++        "Lorg/checkerframework/checker/nullness/qual/Nullable;",
++        "Lorg/checkerframework/checker/nullness/qual/PolyNull;",
++        // Paper end
+     };
+ 
+     private static final String[] EXCLUDED_CLASSES = {
+@@ -40,7 +46,17 @@ public class AnnotationTest {
          "org/bukkit/util/io/Wrapper",
          "org/bukkit/plugin/java/PluginClassLoader",
          // Generic functional interface
@@ -165,7 +181,7 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c848
      };
  
      @Test
-@@ -67,14 +77,40 @@ public class AnnotationTest {
+@@ -67,14 +83,40 @@ public class AnnotationTest {
                  }
  
                  if (mustBeAnnotated(Type.getReturnType(method.desc)) && !isWellAnnotated(method.invisibleAnnotations)) {
@@ -176,7 +192,7 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c848
 +                    } else if (method.invisibleTypeAnnotations != null) {
 +                        dance: for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
 +                            final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
-+                            if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_RETURN && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                            if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_RETURN && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
 +                                warn = false;
 +                                break dance; // cha cha real smooth
 +                            }
@@ -197,7 +213,7 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c848
 +                        if (method.invisibleTypeAnnotations != null) {
 +                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
 +                                final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
-+                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
 +                                    continue dancing;
 +                                }
 +                            }
@@ -206,7 +222,7 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c848
                          ParameterNode paramNode = parameters == null ? null : parameters.get(i);
                          String paramName = paramNode == null ? null : paramNode.name;
  
-@@ -91,13 +127,18 @@ public class AnnotationTest {
+@@ -91,13 +133,18 @@ public class AnnotationTest {
  
          Collections.sort(errors);
  
@@ -229,7 +245,7 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c848
      }
  
      private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
-@@ -140,6 +181,11 @@ public class AnnotationTest {
+@@ -140,6 +187,11 @@ public class AnnotationTest {
              // Exceptions are excluded
              return false;
          }
@@ -241,7 +257,7 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c848
  
          for (String excludedClass : EXCLUDED_CLASSES) {
              if (excludedClass.equals(clazz.name)) {
-@@ -152,7 +198,7 @@ public class AnnotationTest {
+@@ -152,7 +204,7 @@ public class AnnotationTest {
  
      private static boolean isMethodIncluded(@NotNull ClassNode clazz, @NotNull MethodNode method, @NotNull Map<String, ClassNode> allClasses) {
          // Exclude private, synthetic and deprecated methods
@@ -250,7 +266,7 @@ index 4ac3dd977e75cd8464163351d306e037ee32cb48..8f35cda0d67ec66646c6096a5bf1c848
              return false;
          }
  
-@@ -170,11 +216,30 @@ public class AnnotationTest {
+@@ -170,11 +222,30 @@ public class AnnotationTest {
          if ("<init>".equals(method.name) && isAnonymous(clazz)) {
              return false;
          }
