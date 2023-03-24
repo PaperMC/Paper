@@ -10,7 +10,7 @@ list is only used in the tick and tickPassenger methods, so we can safely not ad
 markers to it. When the config option is set to true, markers are ticked as normal.
 
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
-index ff99336e0b8131ae161cfa5c4fc83c6905e3dbc8..899913840dd9b6bd67c55da7bb03bf896e9b7903 100644
+index ff99336e0b8131ae161cfa5c4fc83c6905e3dbc8..788b081fdab208769bb8ccc24dbe943a48504f32 100644
 --- a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
 +++ b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
 @@ -109,7 +109,7 @@ public final class EntityCommand implements PaperSubcommand {
@@ -18,24 +18,24 @@ index ff99336e0b8131ae161cfa5c4fc83c6905e3dbc8..899913840dd9b6bd67c55da7bb03bf89
                  info.left++;
                  info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
 -                if (!chunkProviderServer.isPositionTicking(e)) {
-+                if (!chunkProviderServer.isPositionTicking(e) || (e instanceof net.minecraft.world.entity.Marker && !world.paperConfig().misc.tickMarkerEntities)) { // Markers aren't ticked by default.
++                if (!chunkProviderServer.isPositionTicking(e) || (e instanceof net.minecraft.world.entity.Marker && !world.paperConfig().entities.markers.tick)) { // Markers aren't ticked by default.
                      nonEntityTicking.merge(key, 1, Integer::sum);
                  }
              });
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 66b1ef69fe48340b5ccebd845b39f898515ff117..51298751528a807bfac2ce8c362bfbb644cd68a3 100644
+index 66b1ef69fe48340b5ccebd845b39f898515ff117..5051aea4f71c992d1884e4462435775af8beee4f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2497,6 +2497,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
          }
  
          public void onTickingStart(Entity entity) {
-+            if (entity instanceof net.minecraft.world.entity.Marker && !paperConfig().misc.tickMarkerEntities) return; // Paper - Don't tick markers by default
++            if (entity instanceof net.minecraft.world.entity.Marker && !paperConfig().entities.markers.tick) return; // Paper - Don't tick markers by default
              ServerLevel.this.entityTickList.add(entity);
          }
  
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index f158fc8a151272428a33dc5f6e1742876edc80d5..2613abbab50e118460f2d994e0798ce60e6355c8 100644
+index f158fc8a151272428a33dc5f6e1742876edc80d5..f8b04e88510e79defe96217c60bcc68f42db03d4 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -212,7 +212,7 @@ public class ActivationRange
@@ -43,7 +43,7 @@ index f158fc8a151272428a33dc5f6e1742876edc80d5..2613abbab50e118460f2d994e0798ce6
  
              // Paper start
 -            java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, null);
-+            java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, (e) -> !(e instanceof net.minecraft.world.entity.Marker) || world.paperConfig().misc.tickMarkerEntities); // Don't tick markers by default
++            java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, (e) -> !(e instanceof net.minecraft.world.entity.Marker) || world.paperConfig().entities.markers.tick); // Don't tick markers by default
              for (int i = 0; i < entities.size(); i++) {
                  Entity entity = entities.get(i);
                  ActivationRange.activateEntity(entity);
