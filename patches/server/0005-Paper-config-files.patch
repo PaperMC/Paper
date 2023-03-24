@@ -1448,10 +1448,10 @@ index 0000000000000000000000000000000000000000..1bb16fc7598cd53e822d84b69d6a9727
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b6381996810130
+index 0000000000000000000000000000000000000000..6cd292e67783f64085ff8d857a041229285f394e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,475 @@
+@@ -0,0 +1,501 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1500,13 +1500,15 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +import org.spongepowered.configurate.objectmapping.meta.Required;
 +import org.spongepowered.configurate.objectmapping.meta.Setting;
 +
-+@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
++@SuppressWarnings({ "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic" })
 +public class WorldConfiguration extends ConfigurationPart {
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
-+    static final int CURRENT_VERSION = 30; // (when you change the version, change the comment, so it conflicts on rebases): rename filter bad nbt from spawn eggs
++    static final int CURRENT_VERSION = 30; // (when you change the version, change the comment, so it conflicts on
++                                           // rebases): rename filter bad nbt from spawn eggs
 +
 +    private transient final SpigotWorldConfig spigotConfig;
 +    private transient final ResourceLocation worldKey;
++
 +    WorldConfiguration(SpigotWorldConfig spigotConfig, ResourceLocation worldKey) {
 +        this.spigotConfig = spigotConfig;
 +        this.worldKey = worldKey;
@@ -1527,6 +1529,7 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +
 +        public class Obfuscation extends ConfigurationPart {
 +            public Items items = new Items();
++
 +            public class Items extends ConfigurationPart {
 +                public boolean hideItemmeta = false;
 +                public boolean hideDurability = false;
@@ -1543,10 +1546,14 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +            public int updateRadius = 2;
 +            public boolean lavaObscures = false;
 +            public boolean usePermission = false;
-+            public List<String> hiddenBlocks = List.of("copper_ore", "deepslate_copper_ore", "gold_ore", "deepslate_gold_ore", "iron_ore", "deepslate_iron_ore",
-+                "coal_ore", "deepslate_coal_ore", "lapis_ore", "deepslate_lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "deepslate_diamond_ore",
-+                "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore", "deepslate_emerald_ore", "ender_chest"); // TODO update type to List<Block>
-+            public List<String> replacementBlocks = List.of("stone", "oak_planks", "deepslate"); // TODO update type to List<Block>
++            public List<String> hiddenBlocks = List.of("copper_ore", "deepslate_copper_ore", "gold_ore",
++                    "deepslate_gold_ore", "iron_ore", "deepslate_iron_ore",
++                    "coal_ore", "deepslate_coal_ore", "lapis_ore", "deepslate_lapis_ore", "mossy_cobblestone",
++                    "obsidian", "chest", "diamond_ore", "deepslate_diamond_ore",
++                    "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore", "deepslate_emerald_ore",
++                    "ender_chest"); // TODO update type to List<Block>
++            public List<String> replacementBlocks = List.of("stone", "oak_planks", "deepslate"); // TODO update type to
++                                                                                                 // List<Block>
 +        }
 +    }
 +
@@ -1577,17 +1584,25 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +        public Spawning spawning;
 +
 +        public class Spawning extends ConfigurationPart {
-+            public ArrowDespawnRate nonPlayerArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
-+            public ArrowDespawnRate creativeArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
++            public ArrowDespawnRate nonPlayerArrowDespawnRate = ArrowDespawnRate
++                    .def(WorldConfiguration.this.spigotConfig);
++            public ArrowDespawnRate creativeArrowDespawnRate = ArrowDespawnRate
++                    .def(WorldConfiguration.this.spigotConfig);
 +            public boolean filterBadTileEntityNbtFromFallingBlocks = true;
-+            public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer.fromString(List.of("Pos", "Motion", "SleepingX", "SleepingY", "SleepingZ"));
++            public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer
++                    .fromString(List.of("Pos", "Motion", "SleepingX", "SleepingY", "SleepingZ"));
 +            public boolean disableMobSpawnerSpawnEggTransformation = false;
 +            public boolean perPlayerMobSpawns = true;
 +            public boolean scanForLegacyEnderDragon = true;
 +            @MergeMap
-+            public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
++            public Reference2IntMap<MobCategory> spawnLimits = Util.make(
++                    new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length),
++                    map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES)
++                            .forEach(mobCategory -> map.put(mobCategory, -1)));
 +            @MergeMap
-+            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), category.getDespawnDistance())));
++            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(
++                    Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(),
++                            category.getDespawnDistance())));
 +
 +            @ConfigSerializable
 +            public record DespawnRange(@Required int soft, @Required int hard) {
@@ -1644,6 +1659,7 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +                    SAFE_REGEN, DELETE, NOTHING, WARN;
 +                }
 +            }
++
 +            public AltItemDespawnRate altItemDespawnRate;
 +
 +            public class AltItemDespawnRate extends ConfigurationPart {
@@ -1666,13 +1682,18 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +            public DoorBreakingDifficulty doorBreakingDifficulty;
 +
 +            public class DoorBreakingDifficulty extends ConfigurationPart { // TODO convert to map at some point
-+                public List<Difficulty> zombie = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                public List<Difficulty> husk = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
++                public List<Difficulty> zombie = Arrays.stream(Difficulty.values())
++                        .filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
++                public List<Difficulty> husk = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE)
++                        .toList();
 +                @Setting("zombie_villager")
-+                public List<Difficulty> zombieVillager = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
++                public List<Difficulty> zombieVillager = Arrays.stream(Difficulty.values())
++                        .filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
 +                @Setting("zombified_piglin")
-+                public List<Difficulty> zombified_piglin = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                public List<Difficulty> vindicator = Arrays.stream(Difficulty.values()).filter(Vindicator.DOOR_BREAKING_PREDICATE).toList();
++                public List<Difficulty> zombified_piglin = Arrays.stream(Difficulty.values())
++                        .filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
++                public List<Difficulty> vindicator = Arrays.stream(Difficulty.values())
++                        .filter(Vindicator.DOOR_BREAKING_PREDICATE).toList();
 +
 +                // TODO remove when this becomes a proper map
 +                public List<Difficulty> get(EntityType<?> type) {
@@ -1787,11 +1808,12 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +        }
 +
 +        public TreasureMaps treasureMaps;
++
 +        public class TreasureMaps extends ConfigurationPart {
 +            public boolean enabled = true;
-+            @NestedSetting({"find-already-discovered", "villager-trade"})
++            @NestedSetting({ "find-already-discovered", "villager-trade" })
 +            public boolean findAlreadyDiscoveredVillager = false;
-+            @NestedSetting({"find-already-discovered", "loot-tables"})
++            @NestedSetting({ "find-already-discovered", "loot-tables" })
 +            public BooleanOrDefault findAlreadyDiscoveredLootTable = BooleanOrDefault.USE_DEFAULT;
 +        }
 +
@@ -1865,15 +1887,16 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +        public int fixedChunkInhabitedTime = -1;
 +        public boolean preventMovingIntoUnloadedChunks = false;
 +        public Duration delayChunkUnloadsBy = Duration.of("10s");
-+        public Reference2IntMap<EntityType<?>> entityPerChunkSaveLimit = Util.make(new Reference2IntOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
-+            map.defaultReturnValue(-1);
-+            map.put(EntityType.EXPERIENCE_ORB, -1);
-+            map.put(EntityType.SNOWBALL, -1);
-+            map.put(EntityType.ENDER_PEARL, -1);
-+            map.put(EntityType.ARROW, -1);
-+            map.put(EntityType.FIREBALL, -1);
-+            map.put(EntityType.SMALL_FIREBALL, -1);
-+        });
++        public Reference2IntMap<EntityType<?>> entityPerChunkSaveLimit = Util
++                .make(new Reference2IntOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
++                    map.defaultReturnValue(-1);
++                    map.put(EntityType.EXPERIENCE_ORB, -1);
++                    map.put(EntityType.SNOWBALL, -1);
++                    map.put(EntityType.ENDER_PEARL, -1);
++                    map.put(EntityType.ARROW, -1);
++                    map.put(EntityType.FIREBALL, -1);
++                    map.put(EntityType.SMALL_FIREBALL, -1);
++                });
 +    }
 +
 +    public FishingTimeRange fishingTimeRange;
@@ -1889,8 +1912,10 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +        public int grassSpread = 1;
 +        public int containerUpdate = 1;
 +        public int mobSpawner = 1;
-+        public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
-+        public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
++        public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(),
++                table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
++        public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(),
++                table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
 +    }
 +
 +    @Setting(FeatureSeedsGeneration.FEATURE_SEEDS_KEY)
@@ -1920,6 +1945,7 @@ index 0000000000000000000000000000000000000000..51cf0014c4229fc8671804d885b63819
 +        public boolean disableSprintInterruptionOnAttack = false;
 +        public int shieldBlockingDelay = 5;
 +        public boolean disableRelativeProjectileVelocity = false;
++        public boolean tickMarkerEntities = false;
 +
 +        public enum RedstoneImplementation {
 +            VANILLA, EIGENCRAFT, ALTERNATE_CURRENT
@@ -4575,7 +4601,7 @@ index ca2d2f44d722d2bf14f50670ac6192830b72c7f0..2cd8fc55056596731b34731a5fdf975f
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index ad6d25b26454c3ec8c11f54e921df8914c3c62d9..7fc066ee281662192aad826840573e4181f5ceff 100644
+index f19755a6096b72d6ca302a4ea2d386fadfe2b122..fe726771b76cabcb58bf624969490d9595965082 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -141,6 +141,19 @@ public class Main {
