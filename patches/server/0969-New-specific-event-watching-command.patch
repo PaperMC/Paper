@@ -4,18 +4,6 @@ Date: Tue, 21 Mar 2023 20:38:44 -0400
 Subject: [PATCH] New specific event watching command
 
 
-diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index 652c7df2c783de56b947535ff25781b0af47fbf0..5fa3874a33a0899cb124ccabe01382ef3ac14187 100644
---- a/src/main/java/io/papermc/paper/command/PaperCommand.java
-+++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -46,6 +46,7 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
-         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
-         commands.put(Set.of("dumpevents"), new EventVerboseCommand());
-+        commands.put(Set.of("watchevent"), EventWatcherCommand.get());
- 
-         return commands.entrySet().stream()
-             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EventWatcherCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EventWatcherCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..6e7d5d6f45e624471cc5cbe29067b6b576b7ff6e
@@ -168,7 +156,7 @@ index 0000000000000000000000000000000000000000..6e7d5d6f45e624471cc5cbe29067b6b5
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-index dfb91cb8e19e0159e0eba9367ca7396125da6d1c..6134ed19397adbdc4f78253a99809aa4fc51401f 100644
+index 1c225d3ba392fffdc9b6f5ddf2b1f24954c6987e..8c7916368b4097a5744428279d9d229ed377a4d9 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 @@ -5,6 +5,7 @@ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
@@ -179,15 +167,15 @@ index dfb91cb8e19e0159e0eba9367ca7396125da6d1c..6134ed19397adbdc4f78253a99809aa4
  import org.bukkit.Server;
  import org.bukkit.Warning;
  import org.bukkit.event.Event;
-@@ -43,6 +44,7 @@ class PaperEventManager {
+@@ -42,6 +43,7 @@ class PaperEventManager {
+         } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
              throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
-         EventVerboseCommand.tryLogEvent(event);
-+        EventWatcherCommand.get().tryLog(event, null, null);
++        
+         EventVerboseCommand.get().tryLogEvent(event);
+         EventWatcherCommand.get().tryLog(event, null, null);
  
-         HandlerList handlers = event.getHandlers();
-         RegisteredListener[] listeners = handlers.getRegisteredListeners();
-@@ -54,6 +56,7 @@ class PaperEventManager {
+@@ -55,6 +57,7 @@ class PaperEventManager {
  
              try {
                  registration.callEvent(event);

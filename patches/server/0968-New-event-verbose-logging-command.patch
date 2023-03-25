@@ -5,23 +5,24 @@ Subject: [PATCH] New event verbose logging command
 
 
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index 7ba60b4b4f29a42c58d98aafc5ea0fa3214f554c..652c7df2c783de56b947535ff25781b0af47fbf0 100644
+index 7ba60b4b4f29a42c58d98aafc5ea0fa3214f554c..fbcd308074020bd8249725e236b447bd149d2931 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -45,6 +45,7 @@ public final class PaperCommand extends Command {
+@@ -45,6 +45,8 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("dumpitem"), new DumpItemCommand());
          commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
          commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
-+        commands.put(Set.of("dumpevents"), new EventVerboseCommand());
++        commands.put(Set.of("dumpevents"), EventVerboseCommand.get());
++        commands.put(Set.of("watchevent"), EventWatcherCommand.get());
  
          return commands.entrySet().stream()
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EventVerboseCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EventVerboseCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bb429f9a6e41cec2f6fbd1928b386ad2c3703152
+index 0000000000000000000000000000000000000000..1b6efa0454c4504c92048ddfaa20fc727105a8bd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/EventVerboseCommand.java
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,148 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.destroystokyo.paper.event.server.ServerTickEndEvent;
@@ -51,9 +52,9 @@ index 0000000000000000000000000000000000000000..bb429f9a6e41cec2f6fbd1928b386ad2
 +import java.time.LocalDateTime;
 +import java.time.format.DateTimeFormatter;
 +import java.util.ArrayList;
-+import java.util.Collection;
 +import java.util.List;
 +import java.util.Map;
++import java.util.Collection;
 +
 +import static net.kyori.adventure.text.Component.text;
 +import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
@@ -62,21 +63,33 @@ index 0000000000000000000000000000000000000000..bb429f9a6e41cec2f6fbd1928b386ad2
 +@DefaultQualifier(NonNull.class)
 +public class EventVerboseCommand implements PaperSubcommand {
 +
-+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
-+    private static final List<Wrapper> WRAPPERS = new ArrayList<>();
-+    private static final Path PARENT = Path.of("event-debug");
++    @Nullable
++    private static EventVerboseCommand instance; //instance is declared registering in PaperCommand
++    private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
++
++    private final List<Wrapper> WRAPPERS = new ArrayList<>();
++    private final Path PARENT = Path.of("event-debug");
 +    //ignore unnecessary events
-+    private static final List<Class<? extends Event>> EXCLUDE = List.of(ServerTickStartEvent.class,
++    private final List<Class<? extends Event>> EXCLUDE = List.of(ServerTickStartEvent.class,
 +        ServerTickEndEvent.class);
 +    //have to be static to static call from paperpluginmanagerimpl
-+    private static boolean isRunning = false;
++    private boolean isRunning = false;
 +    @Nullable
 +    private Path currentFile;
++
++    private EventVerboseCommand() {
++    }
++
++    public static synchronized EventVerboseCommand get() {
++        if (instance == null)
++            instance = new EventVerboseCommand();
++        return instance;
++    }
 +
 +    /**
 +     * Called in {@link io.papermc.paper.plugin.manager.PaperPluginManagerImpl#callEvent(Event)} to save in {@link #WRAPPERS}
 +     */
-+    public static void tryLogEvent(Event ev) {
++    public void tryLogEvent(Event ev) {
 +        if (!isRunning)
 +            return;
 +        if (EXCLUDE.contains(ev.getClass()))
@@ -115,7 +128,7 @@ index 0000000000000000000000000000000000000000..bb429f9a6e41cec2f6fbd1928b386ad2
 +    }
 +
 +    /**
-+     * Dumps all currently stored {@link Wrapper}'s to our {@link #currentFile}
++     * Dumps all currently stored {@link EventWrapper}'s to our {@link #currentFile}
 +     *
 +     * @throws IOException If something broke writing it
 +     */
@@ -159,7 +172,7 @@ index 0000000000000000000000000000000000000000..bb429f9a6e41cec2f6fbd1928b386ad2
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..dfb91cb8e19e0159e0eba9367ca7396125da6d1c 100644
+index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..1c225d3ba392fffdc9b6f5ddf2b1f24954c6987e 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 @@ -4,6 +4,7 @@ import co.aikar.timings.TimedEventExecutor;
@@ -170,17 +183,18 @@ index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..dfb91cb8e19e0159e0eba9367ca73961
  import org.bukkit.Server;
  import org.bukkit.Warning;
  import org.bukkit.event.Event;
-@@ -41,6 +42,7 @@ class PaperEventManager {
+@@ -41,6 +42,8 @@ class PaperEventManager {
          } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
              throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
-+        EventVerboseCommand.tryLogEvent(event);
++        EventVerboseCommand.get().tryLogEvent(event);
++        EventWatcherCommand.get().tryLog(event, null, null);
  
          HandlerList handlers = event.getHandlers();
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
 diff --git a/src/main/java/io/papermc/paper/util/misc/EventWrapper.java b/src/main/java/io/papermc/paper/util/misc/EventWrapper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..63c022811e3b409ddbb14bd84dfbdc669121ea1c
+index 0000000000000000000000000000000000000000..9ad6f1ec5f8e9799d9dfb6e2d73420163e735f08
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/misc/EventWrapper.java
 @@ -0,0 +1,66 @@
@@ -226,12 +240,12 @@ index 0000000000000000000000000000000000000000..63c022811e3b409ddbb14bd84dfbdc66
 +        obj.addProperty("event", event.getEventName());
 +        try {
 +            List<Field> fields = new ArrayList<>(Arrays.asList(event.getClass().getDeclaredFields()));
-+            if (!shouldSerialize(fields)) return null; //check current event class fields if we should serialize
 +            Class<?> clazz = event.getClass().getSuperclass();
 +            while (clazz != null) {
 +                fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
 +                clazz = clazz.getSuperclass();
 +            }
++            if (!shouldSerialize(fields)) return null; //check current event class fields if we should serialize
 +            for (Field f : fields) {
 +                if (Modifier.isStatic(f.getModifiers())) continue;
 +                f.setAccessible(true);
