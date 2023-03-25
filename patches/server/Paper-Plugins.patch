@@ -609,18 +609,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.nio.file.Path;
 +
 +public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
-+                                        ComponentLogger logger) implements PluginProviderContext {
++                                        ComponentLogger logger, Path pluginSource) implements PluginProviderContext {
 +
-+    public static PluginProviderContextImpl of(PluginMeta config, ComponentLogger logger) {
++    public static PluginProviderContextImpl of(PluginMeta config, ComponentLogger logger, Path pluginSource) {
 +        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getDisplayName());
 +
-+        return new PluginProviderContextImpl(config, dataFolder, logger);
++        return new PluginProviderContextImpl(config, dataFolder, logger, pluginSource);
 +    }
 +
 +    public static PluginProviderContextImpl of(PluginProvider<?> provider, Path pluginFolder) {
 +        Path dataFolder = pluginFolder.resolve(provider.getMeta().getDisplayName());
 +
-+        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger());
++        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger(), provider.getSource());
 +    }
 +
 +    @Override
@@ -636,6 +636,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public @NotNull ComponentLogger getLogger() {
 +        return this.logger;
++    }
++
++    @Override
++    public @NotNull Path getPluginSource() {
++        return this.pluginSource;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/Entrypoint.java b/src/main/java/io/papermc/paper/plugin/entrypoint/Entrypoint.java
@@ -5741,7 +5746,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public PaperPluginParent build(JarFile file, PaperPluginMeta configuration, Path source) throws Exception {
 +        Logger jul = PaperPluginLogger.getLogger(configuration);
 +        ComponentLogger logger = ComponentLogger.logger(jul.getName());
-+        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger);
++        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger, source);
 +
 +        PaperClasspathBuilder builder = new PaperClasspathBuilder(context);
 +
