@@ -5,23 +5,23 @@ Subject: [PATCH] New specific event watching command
 
 
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index 652c7df2c783de56b947535ff25781b0af47fbf0..179378bc8ed71aa5590788d310ee04d02cad5649 100644
+index 652c7df2c783de56b947535ff25781b0af47fbf0..5fa3874a33a0899cb124ccabe01382ef3ac14187 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
 @@ -46,6 +46,7 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
          commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
          commands.put(Set.of("dumpevents"), new EventVerboseCommand());
-+        commands.put(Set.of("watchevent"), new EventWatcherCommand());
++        commands.put(Set.of("watchevent"), EventWatcherCommand.get());
  
          return commands.entrySet().stream()
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EventWatcherCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EventWatcherCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a063e467daa91178adf85f2351faf64692d5055
+index 0000000000000000000000000000000000000000..6e7d5d6f45e624471cc5cbe29067b6b576b7ff6e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/EventWatcherCommand.java
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,145 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import com.google.gson.JsonArray;
@@ -34,6 +34,7 @@ index 0000000000000000000000000000000000000000..1a063e467daa91178adf85f2351faf64
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.Listener;
++import org.bukkit.plugin.EventExecutor;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -60,25 +61,32 @@ index 0000000000000000000000000000000000000000..1a063e467daa91178adf85f2351faf64
 +@DefaultQualifier(NonNull.class)
 +public class EventWatcherCommand implements PaperSubcommand {
 +
++    private static EventWatcherCommand instance; //will be null if called before command reg
 +    /**
-+     * The key is the equivalent of {@link Class#getName()} on the class.
-+     * The left side of the pair value is what file we're going to write to, and
++     * The key is the equivalent of {@link Class#getName()} of your event class, and the value is our list of {@link Wrapper}'s
 +     */
-+    private static final Map<String, List<Wrapper>> watching = new ConcurrentHashMap<>(); //only concurrent in the rare case that multiple people are debugging, should be unnecessary
-+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
-+    private static final Path PARENT = Path.of("event-debug");
++    private final Map<String, List<Wrapper>> watching = new ConcurrentHashMap<>(); //only concurrent in the rare case that multiple people are debugging, should be unnecessary
++    private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
++    private final Path PARENT = Path.of("event-debug");
++    private EventWatcherCommand() {
++    }
 +
++    public static synchronized EventWatcherCommand get() {
++        if (instance == null)
++            instance = new EventWatcherCommand();
++        return instance;
++    }
 +
-+    public static void tryLog(Event event, @Nullable Listener listener) { //listener should only be null on the initial event call
++    public void tryLog(Event event, @Nullable Listener listener, @Nullable EventExecutor executor) { //listener should only be null on the initial event call
 +        List<Wrapper> wrappers = watching.get(event.getClass().getName());
 +        if (wrappers != null)
-+            wrappers.add(new Wrapper(event, listener));
++            wrappers.add(new Wrapper(event, listener, executor));
 +    }
 +
 +    @Override
 +    public boolean execute(CommandSender sender, String subCommand, String[] args) {
 +        if (args.length < 1) {
-+            sender.sendMessage(text("Invalid Usage! /paper watchevent [event name]", RED));
++            sender.sendMessage(text("Invalid Usage! /paper watchevent <event name>", RED));
 +            return true;
 +        }
 +        List<Wrapper> wrappers = watching.get(args[0]);
@@ -136,25 +144,31 @@ index 0000000000000000000000000000000000000000..1a063e467daa91178adf85f2351faf64
 +    /**
 +     * EventWrapper subclass to apply listener information to our Json object
 +     */
++    @DefaultQualifier(Nullable.class)
 +    private static final class Wrapper extends EventWrapper {
 +        private final Listener listener;
++        private final EventExecutor executor;
 +
-+        public Wrapper(Event event, @Nullable Listener listener) {
++        public Wrapper(Event event, @Nullable Listener listener, EventExecutor executor) {
 +            super(event);
 +            this.listener = listener;
++            this.executor = executor;
 +        }
 +
 +        public JsonObject serialize() {
 +            JsonObject obj = super.serialize();
 +            if (obj == null)
 +                return null;
-+            obj.addProperty("listener", listener == null ? "Initial Call" : listener.getClass().getCanonicalName());
++            if (listener != null)
++                obj.addProperty("listener", listener.getClass().getCanonicalName());
++            if (executor != null)
++                obj.addProperty("executor", executor.getClass().getCanonicalName());
 +            return obj;
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-index dfb91cb8e19e0159e0eba9367ca7396125da6d1c..48dd9149110a3e7548a610eb80d6d301ba6121e2 100644
+index dfb91cb8e19e0159e0eba9367ca7396125da6d1c..6134ed19397adbdc4f78253a99809aa4fc51401f 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 @@ -5,6 +5,7 @@ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
@@ -169,7 +183,7 @@ index dfb91cb8e19e0159e0eba9367ca7396125da6d1c..48dd9149110a3e7548a610eb80d6d301
              throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
          EventVerboseCommand.tryLogEvent(event);
-+        EventWatcherCommand.tryLog(event, null);
++        EventWatcherCommand.get().tryLog(event, null, null);
  
          HandlerList handlers = event.getHandlers();
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
@@ -177,7 +191,7 @@ index dfb91cb8e19e0159e0eba9367ca7396125da6d1c..48dd9149110a3e7548a610eb80d6d301
  
              try {
                  registration.callEvent(event);
-+                EventWatcherCommand.tryLog(event, registration.getListener());
++                EventWatcherCommand.get().tryLog(event, registration.getListener(), registration.getExecutor());
              } catch (AuthorNagException ex) {
                  Plugin plugin = registration.getPlugin();
  
