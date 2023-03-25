@@ -5,22 +5,29 @@ Subject: [PATCH] Add Raw Byte ItemStack Serialization
 
 Serializes using NBT which is safer for server data migrations than bukkits format.
 
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 24fad8e59a3a5a174d24505cedda2a3fd52115b1..ee9ed5f0e2936c740903784b01b9e2fff75b92f8 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -121,5 +121,9 @@ public interface UnsafeValues {
-     default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
-         return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
+diff --git a/src/main/java/io/papermc/paper/APIBridge.java b/src/main/java/io/papermc/paper/APIBridge.java
+index 55f69f262b4c3b4c5d9e60683a52218976108822..afa9664911825ac0b03055074014236a1b522b6a 100644
+--- a/src/main/java/io/papermc/paper/APIBridge.java
++++ b/src/main/java/io/papermc/paper/APIBridge.java
+@@ -7,6 +7,7 @@ import net.kyori.adventure.text.flattener.ComponentFlattener;
+ import net.kyori.adventure.util.Services;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.entity.Entity;
++import org.bukkit.inventory.ItemStack;
+ import org.checkerframework.checker.nullness.qual.NonNull;
+ import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.checkerframework.framework.qual.DefaultQualifier;
+@@ -28,4 +29,8 @@ public interface APIBridge {
+     default VersionFetcher getVersionFetcher() {
+         return new VersionFetcher.DummyVersionFetcher();
      }
 +
 +    byte[] serializeItem(ItemStack item);
 +
 +    ItemStack deserializeItem(byte[] data);
-     // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index b15645cd56c245214bb5b87b36395fbc8e86e3d3..7c280d7beeb42dca52e36e77bbd41742b2572710 100644
+index 3edb648e056c1434d6ecf8466dd21728a71b1314..1b83c240889ef02759c2550786331d607f3ace8d 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -639,6 +639,30 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
@@ -38,7 +45,7 @@ index b15645cd56c245214bb5b87b36395fbc8e86e3d3..7c280d7beeb42dca52e36e77bbd41742
 +     */
 +    @NotNull
 +    public static ItemStack deserializeBytes(@NotNull byte[] bytes) {
-+        return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
++        return io.papermc.paper.APIBridge.INSTANCE.deserializeItem(bytes);
 +    }
 +
 +    /**
@@ -48,7 +55,7 @@ index b15645cd56c245214bb5b87b36395fbc8e86e3d3..7c280d7beeb42dca52e36e77bbd41742
 +     */
 +    @NotNull
 +    public byte[] serializeAsBytes() {
-+        return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
++        return io.papermc.paper.APIBridge.INSTANCE.serializeItem(this);
 +    }
 +
      /**

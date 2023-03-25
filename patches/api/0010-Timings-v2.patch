@@ -2790,6 +2790,17 @@ index 0000000000000000000000000000000000000000..5989ee21297935651b0edd44b8239e65
 +        return new MRUMapCache<K, V>(map);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/APIBridge.java b/src/main/java/io/papermc/paper/APIBridge.java
+index 53094557454adfc80bed45ae02e49dcf372ce3a3..c695fbe99126f53915e09b7e6df9d16c4498d127 100644
+--- a/src/main/java/io/papermc/paper/APIBridge.java
++++ b/src/main/java/io/papermc/paper/APIBridge.java
+@@ -21,4 +21,6 @@ public interface APIBridge {
+     ComponentFlattener componentFlattener();
+ 
+     Component resolveWithContext(Component component, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException;
++
++    String getTimingsServerName();
+ }
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index 16ec0cd908659d6d53e565281b8db9f81951277d..92b3c40959eac827ed8861fec8658e57f2910628 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
@@ -2834,30 +2845,17 @@ index 0a333c1439b3623d38029b88ce6d5ff159ae1ddd..bce277cd3a452769cd86dc017a2e548a
           * Sends the component to the player
           *
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index dc9a4f12d9f05a3ae7c9f1c7648123e4b3dfd115..daf3ac72cae4d19c0273058dc6a1e1afe9a47f77 100644
+index 8f50b31ae2da4ec4e3ae871fd3062d7e8f857898..49f49bd83b8e9dfa62df59ea90e0155fad6202d0 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -33,6 +33,7 @@ public interface UnsafeValues {
-     net.kyori.adventure.text.Component resolveWithContext(net.kyori.adventure.text.Component component, org.bukkit.command.CommandSender context, org.bukkit.entity.Entity scoreboardSubject, boolean bypassPermissions) throws java.io.IOException;
+@@ -27,6 +27,7 @@ public interface UnsafeValues {
+     @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
      // Paper end
  
 +    void reportTimings(); // Paper
      Material toLegacy(Material material);
  
      Material fromLegacy(Material material);
-@@ -106,4 +107,12 @@ public interface UnsafeValues {
-         return !Bukkit.getUnsafe().isSupportedApiVersion(plugin.getDescription().getAPIVersion());
-     }
-     // Paper end
-+
-+    // Paper start
-+    /**
-+     * Server name to report to timings v2
-+     * @return name
-+     */
-+    String getTimingsServerName();
-+    // Paper end
- }
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..f9a00aecca5ec41b460bf41dfe1c69694768cf98

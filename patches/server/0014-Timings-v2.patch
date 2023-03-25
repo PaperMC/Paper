@@ -180,10 +180,10 @@ index 0000000000000000000000000000000000000000..3f540dc05315103ef97fd53628f681c6
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..46297ac0a19fd2398ab777a381eff4d0a256161e
+index 0000000000000000000000000000000000000000..8ad1851f814574570216506cbfc9ddfbbbc1ba2a
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,385 @@
+@@ -0,0 +1,386 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -210,6 +210,7 @@ index 0000000000000000000000000000000000000000..46297ac0a19fd2398ab777a381eff4d0
 +package co.aikar.timings;
 +
 +import com.google.common.collect.Sets;
++import io.papermc.paper.APIBridge;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import net.kyori.adventure.text.event.ClickEvent;
 +import net.kyori.adventure.text.format.NamedTextColor;
@@ -306,7 +307,7 @@ index 0000000000000000000000000000000000000000..46297ac0a19fd2398ab777a381eff4d0
 +        );
 +        if (!TimingsManager.privacy) {
 +            appendObjectData(parent,
-+                pair("server", Bukkit.getUnsafe().getTimingsServerName()),
++                pair("server", APIBridge.INSTANCE.getTimingsServerName()),
 +                pair("motd", Bukkit.getServer().getMotd()),
 +                pair("icon", Bukkit.getServer().getServerIcon().getData())
 +            );
@@ -506,7 +507,7 @@ index 0000000000000000000000000000000000000000..46297ac0a19fd2398ab777a381eff4d0
 +            try {
 +                hostName = InetAddress.getLocalHost().getHostName();
 +            } catch (Exception ignored) {}
-+            con.setRequestProperty("User-Agent", "Paper/" + Bukkit.getUnsafe().getTimingsServerName() + "/" + hostName);
++            con.setRequestProperty("User-Agent", "Paper/" + APIBridge.INSTANCE.getTimingsServerName() + "/" + hostName);
 +            con.setRequestMethod("POST");
 +            con.setInstanceFollowRedirects(false);
 +
@@ -694,6 +695,28 @@ index 0000000000000000000000000000000000000000..0fda52841b5e1643efeda92106124998
 +        return Timings.ofSafe(((PrimaryLevelData) worldserver.getLevelData()).getLevelName() + " - Scheduled " + timingsType);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/APIBridgeImpl.java b/src/main/java/io/papermc/paper/APIBridgeImpl.java
+index 3cd2ef8d43f7cc32346cf205332a25d6a85d9fd5..c264815d7215cb5f2c04ab031d4121e2ccb3af97 100644
+--- a/src/main/java/io/papermc/paper/APIBridgeImpl.java
++++ b/src/main/java/io/papermc/paper/APIBridgeImpl.java
+@@ -1,6 +1,7 @@
+ package io.papermc.paper;
+ 
+ import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.configuration.GlobalConfiguration;
+ import java.io.IOException;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.flattener.ComponentFlattener;
+@@ -22,4 +23,9 @@ public final class APIBridgeImpl implements APIBridge {
+     public Component resolveWithContext(final Component component, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
+         return PaperAdventure.resolveWithContext(component, context, scoreboardSubject, bypassPermissions);
+     }
++
++    @Override
++    public String getTimingsServerName() {
++        return GlobalConfiguration.get().timings.serverName;
++    }
+ }
 diff --git a/src/main/java/net/minecraft/commands/CommandFunction.java b/src/main/java/net/minecraft/commands/CommandFunction.java
 index 3ceeddf4c2898172d24db9ee1bab8d6b17e36128..8273ee1c5e513f02c9743ee38c9b7cf700e2ecad 100644
 --- a/src/main/java/net/minecraft/commands/CommandFunction.java
@@ -1338,7 +1361,7 @@ index d19d1f1595a226ce0472be5e2efafbc0e3e1729f..470e752234813d1031721be95d0bf117
  
      public UserWhiteList getWhiteList() {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 35125c029abbdab4c7043842b6042ea44b00a2c3..f215204e1dd6fb3b805a60a268dae10f786b5171 100644
+index 4cd1cfbf91ea232756de16120eec4339d8144885..9171dfb7443d42a5f6d854b2abea55d2671c1177 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -134,7 +134,6 @@ import org.bukkit.craftbukkit.event.CraftPortalEvent;
@@ -1834,7 +1857,7 @@ index b0ffa23faf62629043dfd613315eaf9c5fcc2cfe..00000000000000000000000000000000
 -    }
 -}
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 27cf140f8a7715caec5637d7b487720c2cc5742e..12e7a0a24fe2aa6e7af97ad7d50d81e5c7b26663 100644
+index ac56f49ab0736c3176918379f5ac1fdd7fcadfe4..7c9f1b998ea5447d6ff29cdbb9e3cee0ba1c7c99 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -2482,6 +2482,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2034,10 +2057,10 @@ index f97eccb6a17c7876e1e002d798eb67bbe80571a0..76effc345d362047e64d064eb64a5222
 +    } // Paper
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index ec9877840fafa14adcfc04eacae1786111990a27..98083486bddf60074fc8e47e63e780703a792a7c 100644
+index 00a35f05dbda73a7c86215e6247dcbede812516a..c1e60e6b079ad03a883da9e33c1976b6205d08c9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -222,6 +222,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -192,6 +192,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
      }
      // Paper end
      // ========================================================================
@@ -2050,20 +2073,6 @@ index ec9877840fafa14adcfc04eacae1786111990a27..98083486bddf60074fc8e47e63e78070
  
      public static byte toLegacyData(BlockState data) {
          return CraftLegacy.toLegacyData(data);
-@@ -444,6 +450,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
-     }
-     // Paper end
- 
-+    // Paper start
-+    @Override
-+    public String getTimingsServerName() {
-+        return io.papermc.paper.configuration.GlobalConfiguration.get().timings.serverName;
-+    }
-+    // Paper end
-+
-     /**
-      * This helper class represents the different NBT Tags.
-      * <p>
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
 index a7675df12d509ae0ff585566b395165f55f8a8cf..38cf408899cef72bc9d2888109a7ac7ce0aec638 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java

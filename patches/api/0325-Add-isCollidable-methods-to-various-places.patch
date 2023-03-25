@@ -4,11 +4,22 @@ Date: Thu, 4 Nov 2021 11:50:35 -0700
 Subject: [PATCH] Add isCollidable methods to various places
 
 
+diff --git a/src/main/java/io/papermc/paper/APIBridge.java b/src/main/java/io/papermc/paper/APIBridge.java
+index 5b8c1facc261c4f20c70bc712e4a7a37a178cf1c..698fd70ac961216b29834ada409d96caa3c0ba56 100644
+--- a/src/main/java/io/papermc/paper/APIBridge.java
++++ b/src/main/java/io/papermc/paper/APIBridge.java
+@@ -49,4 +49,6 @@ public interface APIBridge {
+     boolean hasDefaultEntityAttributes(Key entityTypeKey);
+ 
+     Attributable getDefaultEntityAttributes(Key entityTypeKey);
++
++    boolean isCollidable(Material block);
+ }
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 31ec16d134fd8eb5607d18e17f93225eef402d7e..842a9dd6f92737699529721ec4e06fbc225fa3e6 100644
+index 88e2bd069e8e994ad54aa703cebbb608f3c36d31..d65ec88d5ae472fcc0bf8985f3cfcb4fffdb4542 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -4440,6 +4440,16 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+@@ -4439,6 +4439,16 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      public Multimap<Attribute, AttributeModifier> getItemAttributes(@NotNull EquipmentSlot equipmentSlot) {
          return Bukkit.getUnsafe().getItemAttributes(this, equipmentSlot);
      }
@@ -20,30 +31,11 @@ index 31ec16d134fd8eb5607d18e17f93225eef402d7e..842a9dd6f92737699529721ec4e06fbc
 +     * @throws IllegalArgumentException if {@link #isBlock()} is false
 +     */
 +    public boolean isCollidable() {
-+        return Bukkit.getUnsafe().isCollidable(this);
++        return io.papermc.paper.APIBridge.INSTANCE.isCollidable(this);
 +    }
      // Paper end
  
      /**
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 29ccd90e2733b528ef0866f93053adf66dd9ddf3..2a23e93d9e308c5eba0a2b658f11f571a0c01e26 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -200,5 +200,14 @@ public interface UnsafeValues {
-      * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultEntityAttributes(NamespacedKey)} first)
-      */
-     @org.jetbrains.annotations.NotNull org.bukkit.attribute.Attributable getDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
-+
-+    /**
-+     * Checks if this material is collidable.
-+     *
-+     * @param material the material to check
-+     * @return true if collidable
-+     * @throws IllegalArgumentException if {@link Material#isBlock()} is false
-+     */
-+    boolean isCollidable(@org.jetbrains.annotations.NotNull Material material);
-     // Paper end
- }
 diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
 index 96a3466181a6829e1868b5f5249349e8fd2cdd09..cda6e7d8e032b3edc919995141dc260b1ea82810 100644
 --- a/src/main/java/org/bukkit/block/Block.java

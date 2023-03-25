@@ -4,34 +4,24 @@ Date: Sat, 15 May 2021 22:10:50 -0700
 Subject: [PATCH] ItemStack repair check API
 
 
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 906f313d8c91e65ce934143208ed281ce02f5354..29a91ec8e97ce66383a1dd1fc3dcbcdcca7cfc41 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -155,6 +155,16 @@ public interface UnsafeValues {
-      */
-     public io.papermc.paper.inventory.ItemRarity getItemStackRarity(ItemStack itemStack);
+diff --git a/src/main/java/io/papermc/paper/APIBridge.java b/src/main/java/io/papermc/paper/APIBridge.java
+index 66c2841b12e765f0b45bcfdbca6c4b58d3eef218..88b18a32682c8ea26c283a1830a265a414ff501e 100644
+--- a/src/main/java/io/papermc/paper/APIBridge.java
++++ b/src/main/java/io/papermc/paper/APIBridge.java
+@@ -41,4 +41,6 @@ public interface APIBridge {
+     ItemRarity getItemRarity(Material material);
  
-+    /**
-+     * Checks if an itemstack can be repaired with another itemstack.
-+     * Returns false if either argument's type is not an item ({@link Material#isItem()}).
-+     *
-+     * @param itemToBeRepaired the itemstack to be repaired
-+     * @param repairMaterial the repair material
-+     * @return true if valid repair, false if not
-+     */
-+    public boolean isValidRepairItemStack(@org.jetbrains.annotations.NotNull ItemStack itemToBeRepaired, @org.jetbrains.annotations.NotNull ItemStack repairMaterial);
+     ItemRarity getItemStackRarity(ItemStack itemStack);
 +
-     /**
-      * Returns the server's protocol version.
-      *
++    boolean isValidRepairItemStack(ItemStack itemToBeRepaired, ItemStack repairMaterial);
+ }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index c6378a880eac9f444c66f640260e8d410efd015b..b731ac4f6cd82d8476e4040a2204f58b0f63a0d3 100644
+index 8d741448282f3467b54d5eb64d7a4d7b8971f054..3f8634cc9b2ca82739b97b35fd5d48b45a941026 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -887,5 +887,27 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-     public io.papermc.paper.inventory.ItemRarity getRarity() {
-         return Bukkit.getUnsafe().getItemStackRarity(this);
+@@ -886,5 +886,27 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     public @NotNull io.papermc.paper.inventory.ItemRarity getRarity() {
+         return io.papermc.paper.APIBridge.INSTANCE.getItemStackRarity(this);
      }
 +
 +    /**
@@ -42,7 +32,7 @@ index c6378a880eac9f444c66f640260e8d410efd015b..b731ac4f6cd82d8476e4040a2204f58b
 +     * @return true if it is repairable by, false if not
 +     */
 +    public boolean isRepairableBy(@NotNull ItemStack repairMaterial) {
-+        return Bukkit.getUnsafe().isValidRepairItemStack(this, repairMaterial);
++        return io.papermc.paper.APIBridge.INSTANCE.isValidRepairItemStack(this, repairMaterial);
 +    }
 +
 +    /**
@@ -53,7 +43,7 @@ index c6378a880eac9f444c66f640260e8d410efd015b..b731ac4f6cd82d8476e4040a2204f58b
 +     * @return true if it can repair, false if not
 +     */
 +    public boolean canRepair(@NotNull ItemStack toBeRepaired) {
-+        return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
++        return io.papermc.paper.APIBridge.INSTANCE.isValidRepairItemStack(toBeRepaired, this);
 +    }
      // Paper end
  }

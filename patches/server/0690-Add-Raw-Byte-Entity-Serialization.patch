@@ -5,7 +5,7 @@ Subject: [PATCH] Add Raw Byte Entity Serialization
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index de50f1aa6b7cebf877e18bc3e2ae3ba707edcd4c..3a388ead677be73b0ae4425a05a45cd34e95d586 100644
+index cfe232364abd407d5ce117428f78fa98a9d305f2..b172f0733491ca6cde6b962f03e15e6e949ebf52 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2018,6 +2018,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
@@ -45,13 +45,13 @@ index 38165a364dfeca6d0fb35e7b3ada92d728ec295b..0c65652866de257d2a9019f910506a6f
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 30dfdbace0f60074d0cb056d2916331882ade295..7e9b2497f4b8b0f5e55acd6c83593fb42bb4a52d 100644
+index 75c19f58c37a46321badd2ac86ec5df10d342639..c7a4f179a4bd4ee8871f1dd84b56e7ef4dc51e6a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -485,6 +485,29 @@ public final class CraftMagicNumbers implements UnsafeValues {
-         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of(ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ITEM_STACK, compound, dataVersion, getDataVersion())));
-     }
+@@ -427,6 +427,57 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     // Paper end
  
+     // Paper start
 +    @Override
 +    public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
 +        Preconditions.checkNotNull(entity, "null cannot be serialized");
@@ -75,6 +75,34 @@ index 30dfdbace0f60074d0cb056d2916331882ade295..7e9b2497f4b8b0f5e55acd6c83593fb4
 +            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
 +    }
 +
-     private byte[] serializeNbtToBytes(CompoundTag compound) {
-         compound.putInt("DataVersion", getDataVersion());
-         java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
++    private byte[] serializeNbtToBytes(CompoundTag compound) {
++        compound.putInt("DataVersion", getDataVersion());
++        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
++        try {
++            net.minecraft.nbt.NbtIo.writeCompressed(
++                compound,
++                outputStream
++            );
++        } catch (IOException ex) {
++            throw new RuntimeException(ex);
++        }
++        return outputStream.toByteArray();
++    }
++
++    private CompoundTag deserializeNbtFromBytes(byte[] data) {
++        CompoundTag compound;
++        try {
++            compound = net.minecraft.nbt.NbtIo.readCompressed(
++                new java.io.ByteArrayInputStream(data)
++            );
++        } catch (IOException ex) {
++            throw new RuntimeException(ex);
++        }
++        int dataVersion = compound.getInt("DataVersion");
++        Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
++        return compound;
++    }
++
+     @Override
+     public int nextEntityId() {
+         return net.minecraft.world.entity.Entity.nextEntityId();

@@ -4,35 +4,34 @@ Date: Fri, 20 Aug 2021 13:03:55 -0700
 Subject: [PATCH] Get entity default attributes
 
 
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 0d47278d68cdf015cb980721c234a3abee39646a..29ccd90e2733b528ef0866f93053adf66dd9ddf3 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -183,5 +183,22 @@ public interface UnsafeValues {
-      * @return the server's protocol version
-      */
-     int getProtocolVersion();
+diff --git a/src/main/java/io/papermc/paper/APIBridge.java b/src/main/java/io/papermc/paper/APIBridge.java
+index 88b18a32682c8ea26c283a1830a265a414ff501e..5b8c1facc261c4f20c70bc712e4a7a37a178cf1c 100644
+--- a/src/main/java/io/papermc/paper/APIBridge.java
++++ b/src/main/java/io/papermc/paper/APIBridge.java
+@@ -3,10 +3,12 @@ package io.papermc.paper;
+ import com.destroystokyo.paper.util.VersionFetcher;
+ import io.papermc.paper.inventory.ItemRarity;
+ import java.io.IOException;
++import net.kyori.adventure.key.Key;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.flattener.ComponentFlattener;
+ import net.kyori.adventure.util.Services;
+ import org.bukkit.Material;
++import org.bukkit.attribute.Attributable;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.inventory.ItemStack;
+@@ -43,4 +45,8 @@ public interface APIBridge {
+     ItemRarity getItemStackRarity(ItemStack itemStack);
+ 
+     boolean isValidRepairItemStack(ItemStack itemToBeRepaired, ItemStack repairMaterial);
 +
-+    /**
-+     * Checks if the entity represented by the namespaced key has default attributes.
-+     *
-+     * @param entityKey the entity's key
-+     * @return true if it has default attributes
-+     */
-+    boolean hasDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
++    boolean hasDefaultEntityAttributes(Key entityTypeKey);
 +
-+    /**
-+     * Gets the default attributes for the entity represented by the namespaced key.
-+     *
-+     * @param entityKey the entity's key
-+     * @return an unmodifiable instance of Attributable for reading default attributes.
-+     * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultEntityAttributes(NamespacedKey)} first)
-+     */
-+    @org.jetbrains.annotations.NotNull org.bukkit.attribute.Attributable getDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
-     // Paper end
++    Attributable getDefaultEntityAttributes(Key entityTypeKey);
  }
 diff --git a/src/main/java/org/bukkit/entity/EntityType.java b/src/main/java/org/bukkit/entity/EntityType.java
-index 5f78a801d6fd10a0e0fa3ccf13bb1456eed12c13..9f935266f51f4ea5d1193031f52e5327350cc06f 100644
+index 5f78a801d6fd10a0e0fa3ccf13bb1456eed12c13..4b420d2c2abce2b6e140402c742529e79f18ddc3 100644
 --- a/src/main/java/org/bukkit/entity/EntityType.java
 +++ b/src/main/java/org/bukkit/entity/EntityType.java
 @@ -449,5 +449,24 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
@@ -46,7 +45,7 @@ index 5f78a801d6fd10a0e0fa3ccf13bb1456eed12c13..9f935266f51f4ea5d1193031f52e5327
 +     * @return true if it has default attributes
 +     */
 +    public boolean hasDefaultAttributes() {
-+        return org.bukkit.Bukkit.getUnsafe().hasDefaultEntityAttributes(this.key);
++        return io.papermc.paper.APIBridge.INSTANCE.hasDefaultEntityAttributes(this.key);
 +    }
 +
 +    /**
@@ -56,7 +55,7 @@ index 5f78a801d6fd10a0e0fa3ccf13bb1456eed12c13..9f935266f51f4ea5d1193031f52e5327
 +     * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultAttributes()} first)
 +     */
 +    public @NotNull org.bukkit.attribute.Attributable getDefaultAttributes() {
-+        return org.bukkit.Bukkit.getUnsafe().getDefaultEntityAttributes(this.key);
++        return io.papermc.paper.APIBridge.INSTANCE.getDefaultEntityAttributes(this.key);
 +    }
      // Paper end
  }

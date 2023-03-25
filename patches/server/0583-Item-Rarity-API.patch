@@ -6,31 +6,49 @@ Subject: [PATCH] Item Rarity API
 == AT ==
 public net.minecraft.world.item.Item rarity
 
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 12358f5147172d3a3a4159f2c1c8b650f45e87dd..2b262a9dc58f1c7b79f10c44aae016088a34c06f 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -522,6 +522,20 @@ public final class CraftMagicNumbers implements UnsafeValues {
+diff --git a/src/main/java/io/papermc/paper/APIBridgeImpl.java b/src/main/java/io/papermc/paper/APIBridgeImpl.java
+index fa249d4f6934a45313244d2cac302fa9b4219a2b..36acb5ffe30ecec1e104a44e9bbb824d9c8ddfbe 100644
+--- a/src/main/java/io/papermc/paper/APIBridgeImpl.java
++++ b/src/main/java/io/papermc/paper/APIBridgeImpl.java
+@@ -7,6 +7,7 @@ import com.destroystokyo.paper.util.VersionFetcher;
+ import com.google.common.base.Preconditions;
+ import io.papermc.paper.adventure.PaperAdventure;
+ import io.papermc.paper.configuration.GlobalConfiguration;
++import io.papermc.paper.inventory.ItemRarity;
+ import java.io.ByteArrayInputStream;
+ import java.io.ByteArrayOutputStream;
+ import java.io.IOException;
+@@ -17,9 +18,11 @@ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.NbtIo;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.dedicated.DedicatedServer;
++import net.minecraft.world.item.Item;
+ import org.bukkit.Material;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.inventory.ItemStack;
+ import org.checkerframework.checker.nullness.qual.NonNull;
+@@ -98,4 +101,18 @@ public final class APIBridgeImpl implements APIBridge {
      public String getMainLevelName() {
-         return ((net.minecraft.server.dedicated.DedicatedServer) net.minecraft.server.MinecraftServer.getServer()).getProperties().levelName;
+         return ((DedicatedServer) MinecraftServer.getServer()).getProperties().levelName;
      }
 +
 +    @Override
-+    public io.papermc.paper.inventory.ItemRarity getItemRarity(org.bukkit.Material material) {
-+        Item item = getItem(material);
++    public ItemRarity getItemRarity(final Material material) {
++        Item item = CraftMagicNumbers.getItem(material);
 +        if (item == null) {
 +            throw new IllegalArgumentException(material + " is not an item, and rarity does not apply to blocks");
 +        }
-+        return io.papermc.paper.inventory.ItemRarity.values()[item.rarity.ordinal()];
++        return ItemRarity.values()[item.rarity.ordinal()];
 +    }
 +
 +    @Override
-+    public io.papermc.paper.inventory.ItemRarity getItemStackRarity(org.bukkit.inventory.ItemStack itemStack) {
-+        return io.papermc.paper.inventory.ItemRarity.values()[getItem(itemStack.getType()).getRarity(CraftItemStack.asNMSCopy(itemStack)).ordinal()];
++    public ItemRarity getItemStackRarity(final ItemStack itemStack) {
++        return ItemRarity.values()[CraftMagicNumbers.getItem(itemStack.getType()).getRarity(CraftItemStack.asNMSCopy(itemStack)).ordinal()];
 +    }
-     // Paper end
- 
-     /**
+ }
 diff --git a/src/test/java/io/papermc/paper/inventory/ItemRarityTest.java b/src/test/java/io/papermc/paper/inventory/ItemRarityTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..38e6d42098f216b1d24f50386e7be98181122d8d

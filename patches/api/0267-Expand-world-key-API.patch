@@ -4,6 +4,17 @@ Date: Wed, 6 Jan 2021 00:34:10 -0800
 Subject: [PATCH] Expand world key API
 
 
+diff --git a/src/main/java/io/papermc/paper/APIBridge.java b/src/main/java/io/papermc/paper/APIBridge.java
+index afa9664911825ac0b03055074014236a1b522b6a..672cb1cae3a2a4a09a79cfe83b9e393ffe283502 100644
+--- a/src/main/java/io/papermc/paper/APIBridge.java
++++ b/src/main/java/io/papermc/paper/APIBridge.java
+@@ -33,4 +33,6 @@ public interface APIBridge {
+     byte[] serializeItem(ItemStack item);
+ 
+     ItemStack deserializeItem(byte[] data);
++
++    String getMainLevelName();
+ }
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index 95a981218615b9ed167a317aaa5224e9613aa42a..244c836dd24cb49f6219634e3f323befcd68d9da 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
@@ -77,23 +88,8 @@ index 3327810c2ae80b47f6ccbc5b2034b880a774879f..8390b1d4718a4c67d222e19609462d20
      /**
       * Create a new virtual {@link WorldBorder}.
       * <p>
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 1f89a3c1c3b73a939c2653102fc1dc8b630672a8..6c45841538f2f073691331f975741a62b03a6637 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -132,5 +132,10 @@ public interface UnsafeValues {
-      * Use this when sending custom packets, so that there are no collisions on the client or server.
-      */
-     public int nextEntityId();
-+
-+    /**
-+     * Just don't use it.
-+     */
-+    @org.jetbrains.annotations.NotNull String getMainLevelName();
-     // Paper end
- }
 diff --git a/src/main/java/org/bukkit/WorldCreator.java b/src/main/java/org/bukkit/WorldCreator.java
-index cbe6b3a1ba7b04826d97c3558e8eb4e5ba11f92f..cbdcac688afb7c13dd7058fa522bbd2c5adc445e 100644
+index cbe6b3a1ba7b04826d97c3558e8eb4e5ba11f92f..9a14f36da0c1c35110b2bd8763bc8139801c138d 100644
 --- a/src/main/java/org/bukkit/WorldCreator.java
 +++ b/src/main/java/org/bukkit/WorldCreator.java
 @@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
@@ -115,7 +111,7 @@ index cbe6b3a1ba7b04826d97c3558e8eb4e5ba11f92f..cbdcac688afb7c13dd7058fa522bbd2c
 +    }
 +
 +    private static NamespacedKey getWorldKey(String name) {
-+        final String mainLevelName = Bukkit.getUnsafe().getMainLevelName();
++        final String mainLevelName = io.papermc.paper.APIBridge.INSTANCE.getMainLevelName();
 +        if (name.equals(mainLevelName)) {
 +            return NamespacedKey.minecraft("overworld");
 +        } else if (name.equals(mainLevelName + "_nether")) {

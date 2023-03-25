@@ -76,6 +76,33 @@ index 464a209dbf52ebdfa287a553778a37c382a5405c..b7aa72ae9a8b1f39e7bb355d4c6b3bf4
      // workaround for https://github.com/gradle/gradle/issues/4046
      inputs.dir("src/main/javadoc").withPropertyName("javadoc-sourceset")
      doLast {
+diff --git a/src/main/java/io/papermc/paper/APIBridge.java b/src/main/java/io/papermc/paper/APIBridge.java
+index 3ee5a8ce663d19b39666efb759c35139cb6cce7e..53094557454adfc80bed45ae02e49dcf372ce3a3 100644
+--- a/src/main/java/io/papermc/paper/APIBridge.java
++++ b/src/main/java/io/papermc/paper/APIBridge.java
+@@ -1,7 +1,13 @@
+ package io.papermc.paper;
+ 
++import java.io.IOException;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.flattener.ComponentFlattener;
+ import net.kyori.adventure.util.Services;
++import org.bukkit.command.CommandSender;
++import org.bukkit.entity.Entity;
+ import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.checkerframework.framework.qual.DefaultQualifier;
+ import org.jetbrains.annotations.ApiStatus;
+ 
+@@ -11,4 +17,8 @@ public interface APIBridge {
+ 
+     @ApiStatus.Internal
+     APIBridge INSTANCE = Services.service(APIBridge.class).orElseThrow();
++
++    ComponentFlattener componentFlattener();
++
++    Component resolveWithContext(Component component, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException;
+ }
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af85e287a6
@@ -567,12 +594,13 @@ index 0000000000000000000000000000000000000000..46c209f61135c7d37ccfbbc7bb1d74e6
 +}
 diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6e94562d79206d88b74b53814f9423f12a2e6e06
+index 0000000000000000000000000000000000000000..829750046f376e893cb81868472f310335c47d07
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,178 @@
 +package io.papermc.paper.text;
 +
++import io.papermc.paper.APIBridge;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.flattener.ComponentFlattener;
 +import net.kyori.adventure.text.format.NamedTextColor;
@@ -653,7 +681,7 @@ index 0000000000000000000000000000000000000000..6e94562d79206d88b74b53814f9423f1
 +     * @throws IOException if a syntax error tripped during resolving
 +     */
 +    public static @NotNull Component resolveWithContext(@NotNull Component input, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException {
-+        return Bukkit.getUnsafe().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
++        return APIBridge.INSTANCE.resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
 +    }
 +
 +    /**
@@ -662,7 +690,7 @@ index 0000000000000000000000000000000000000000..6e94562d79206d88b74b53814f9423f1
 +     * @return a component flattener
 +     */
 +    public static @NotNull ComponentFlattener flattener() {
-+        return Bukkit.getUnsafe().componentFlattener();
++        return APIBridge.INSTANCE.componentFlattener();
 +    }
 +
 +    /**
@@ -692,7 +720,7 @@ index 0000000000000000000000000000000000000000..6e94562d79206d88b74b53814f9423f1
 +     */
 +    @Deprecated(forRemoval = true)
 +    public static @NotNull PlainTextComponentSerializer plainTextSerializer() {
-+        return Bukkit.getUnsafe().plainTextSerializer();
++        return PlainTextComponentSerializer.plainText();
 +    }
 +
 +    /**
@@ -708,7 +736,7 @@ index 0000000000000000000000000000000000000000..6e94562d79206d88b74b53814f9423f1
 +     */
 +    @Deprecated(forRemoval = true)
 +    public static @NotNull GsonComponentSerializer gsonSerializer() {
-+        return Bukkit.getUnsafe().gsonComponentSerializer();
++        return GsonComponentSerializer.gson();
 +    }
 +
 +    /**
@@ -725,7 +753,7 @@ index 0000000000000000000000000000000000000000..6e94562d79206d88b74b53814f9423f1
 +     */
 +    @Deprecated(forRemoval = true)
 +    public static @NotNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
-+        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
++        return GsonComponentSerializer.colorDownsamplingGson();
 +    }
 +
 +    /**
@@ -745,7 +773,7 @@ index 0000000000000000000000000000000000000000..6e94562d79206d88b74b53814f9423f1
 +     */
 +    @Deprecated(forRemoval = true)
 +    public static @NotNull LegacyComponentSerializer legacySectionSerializer() {
-+        return Bukkit.getUnsafe().legacyComponentSerializer();
++        return LegacyComponentSerializer.legacySection();
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
@@ -1413,21 +1441,15 @@ index ac5e263d737973af077e3406a84a84baca4370db..2d91924b7f5ef16a91d40cdc1bfc3d68
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index ba69db36a2a7640fc2a63a1d9fd1b204e00d7ce7..876072a6c91bd02c9c7de53556419b8e1ac48f27 100644
+index ba69db36a2a7640fc2a63a1d9fd1b204e00d7ce7..704c568e234578f39e8d6ceb6dd3115e50d98234 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -23,6 +23,15 @@ import org.bukkit.plugin.PluginDescriptionFile;
+@@ -23,6 +23,9 @@ import org.bukkit.plugin.PluginDescriptionFile;
   */
  @Deprecated
  public interface UnsafeValues {
 +    // Paper start
-+    net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
 +    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
-+    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer();
-+    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
-+    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
-+    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
-+    net.kyori.adventure.text.Component resolveWithContext(net.kyori.adventure.text.Component component, org.bukkit.command.CommandSender context, org.bukkit.entity.Entity scoreboardSubject, boolean bypassPermissions) throws java.io.IOException;
 +    // Paper end
  
      Material toLegacy(Material material);

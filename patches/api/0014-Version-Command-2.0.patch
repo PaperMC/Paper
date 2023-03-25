@@ -55,25 +55,28 @@ index 0000000000000000000000000000000000000000..a736d7bcdc5861a01b66ba36158db1c7
 +        }
 +    }
 +}
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index daf3ac72cae4d19c0273058dc6a1e1afe9a47f77..24fad8e59a3a5a174d24505cedda2a3fd52115b1 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -114,5 +114,12 @@ public interface UnsafeValues {
-      * @return name
-      */
+diff --git a/src/main/java/io/papermc/paper/APIBridge.java b/src/main/java/io/papermc/paper/APIBridge.java
+index c695fbe99126f53915e09b7e6df9d16c4498d127..55f69f262b4c3b4c5d9e60683a52218976108822 100644
+--- a/src/main/java/io/papermc/paper/APIBridge.java
++++ b/src/main/java/io/papermc/paper/APIBridge.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper;
+ 
++import com.destroystokyo.paper.util.VersionFetcher;
+ import java.io.IOException;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.flattener.ComponentFlattener;
+@@ -23,4 +24,8 @@ public interface APIBridge {
+     Component resolveWithContext(Component component, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException;
+ 
      String getTimingsServerName();
 +
-+    /**
-+     * Called once by the version command on first use, then cached.
-+     */
-+    default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
-+        return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
++    default VersionFetcher getVersionFetcher() {
++        return new VersionFetcher.DummyVersionFetcher();
 +    }
-     // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c2f46935f 100644
+index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..fe74e8bc5fa694ceb1d2275a3db67c7e4783e31f 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 @@ -1,5 +1,6 @@
@@ -90,7 +93,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..b50f614806f4634960d383e8a33f094c
 +    private VersionFetcher versionFetcher;
 +    private VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration
 +        if (versionFetcher == null) {
-+            versionFetcher = Bukkit.getUnsafe().getVersionFetcher();
++            versionFetcher = io.papermc.paper.APIBridge.INSTANCE.getVersionFetcher();
 +        }
 +
 +        return versionFetcher;

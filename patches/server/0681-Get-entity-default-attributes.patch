@@ -6,6 +6,51 @@ Subject: [PATCH] Get entity default attributes
 == AT ==
 public net.minecraft.world.entity.ai.attributes.AttributeSupplier getAttributeInstance(Lnet/minecraft/world/entity/ai/attributes/Attribute;)Lnet/minecraft/world/entity/ai/attributes/AttributeInstance;
 
+diff --git a/src/main/java/io/papermc/paper/APIBridgeImpl.java b/src/main/java/io/papermc/paper/APIBridgeImpl.java
+index 7cf4cf9e1687acd72845e530b56f8d9d1517b8d4..642c66ad2a5563b52826ae8ce1417179330fffcc 100644
+--- a/src/main/java/io/papermc/paper/APIBridgeImpl.java
++++ b/src/main/java/io/papermc/paper/APIBridgeImpl.java
+@@ -11,15 +11,22 @@ import io.papermc.paper.inventory.ItemRarity;
+ import java.io.ByteArrayInputStream;
+ import java.io.ByteArrayOutputStream;
+ import java.io.IOException;
++import net.kyori.adventure.key.Key;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.flattener.ComponentFlattener;
+ import net.minecraft.SharedConstants;
++import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.NbtIo;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.dedicated.DedicatedServer;
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
++import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
+ import net.minecraft.world.item.Item;
+ import org.bukkit.Material;
++import org.bukkit.attribute.Attributable;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+@@ -123,4 +130,17 @@ public final class APIBridgeImpl implements APIBridge {
+         }
+         return CraftMagicNumbers.getItem(itemToBeRepaired.getType()).isValidRepairItem(CraftItemStack.asNMSCopy(itemToBeRepaired), CraftItemStack.asNMSCopy(repairMaterial));
+     }
++
++    @Override
++    public boolean hasDefaultEntityAttributes(final Key entityTypeKey) {
++        return DefaultAttributes.hasSupplier(BuiltInRegistries.ENTITY_TYPE.get(PaperAdventure.asVanilla(entityTypeKey)));
++    }
++
++    @SuppressWarnings("unchecked")
++    @Override
++    public Attributable getDefaultEntityAttributes(final Key entityTypeKey) {
++        Preconditions.checkArgument(this.hasDefaultEntityAttributes(entityTypeKey), entityTypeKey + " doesn't have default attributes");
++        AttributeSupplier supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((EntityType<? extends LivingEntity>) BuiltInRegistries.ENTITY_TYPE.get(PaperAdventure.asVanilla(entityTypeKey)));
++        return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
++    }
+ }
 diff --git a/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..12135ffeacd648f6bc4d7d327059ea1a7e8c79c4
@@ -80,29 +125,6 @@ index 0000000000000000000000000000000000000000..cf9d28ea97d93cec05c9fb768d59e283
 +        throw new UnsupportedOperationException("Cannot register new attributes here");
 +    }
 +}
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index aa79564d415af3a61978ba72c95a97cc1de05458..bac01b70eadcf76121e6e2f20bd57edaa78fd0f8 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -562,6 +562,18 @@ public final class CraftMagicNumbers implements UnsafeValues {
-     public int getProtocolVersion() {
-         return net.minecraft.SharedConstants.getCurrentVersion().getProtocolVersion();
-     }
-+
-+    @Override
-+    public boolean hasDefaultEntityAttributes(NamespacedKey bukkitEntityKey) {
-+        return net.minecraft.world.entity.ai.attributes.DefaultAttributes.hasSupplier(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
-+    }
-+
-+    @Override
-+    public org.bukkit.attribute.Attributable getDefaultEntityAttributes(NamespacedKey bukkitEntityKey) {
-+        Preconditions.checkArgument(hasDefaultEntityAttributes(bukkitEntityKey), bukkitEntityKey + " doesn't have default attributes");
-+        var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
-+        return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
-+    }
-     // Paper end
- 
-     /**
 diff --git a/src/test/java/io/papermc/paper/attribute/EntityTypeAttributesTest.java b/src/test/java/io/papermc/paper/attribute/EntityTypeAttributesTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..7b999deba66aa6d22cd7520f6c13550a44ca327d
