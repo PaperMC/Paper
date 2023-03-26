@@ -5,15 +5,14 @@ Subject: [PATCH] New event verbose logging command
 
 
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index 7ba60b4b4f29a42c58d98aafc5ea0fa3214f554c..fbcd308074020bd8249725e236b447bd149d2931 100644
+index 7ba60b4b4f29a42c58d98aafc5ea0fa3214f554c..4aaa903c390593507f46d2a5b25d581e446a791b 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -45,6 +45,8 @@ public final class PaperCommand extends Command {
+@@ -45,6 +45,7 @@ public final class PaperCommand extends Command {
          commands.put(Set.of("dumpitem"), new DumpItemCommand());
          commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
          commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
 +        commands.put(Set.of("dumpevents"), EventVerboseCommand.get());
-+        commands.put(Set.of("watchevent"), EventWatcherCommand.get());
  
          return commands.entrySet().stream()
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
@@ -172,7 +171,7 @@ index 0000000000000000000000000000000000000000..1b6efa0454c4504c92048ddfaa20fc72
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..1c225d3ba392fffdc9b6f5ddf2b1f24954c6987e 100644
+index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..17258e1e46e7ad15db546f105f8b08b021a3edc1 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 @@ -4,6 +4,7 @@ import co.aikar.timings.TimedEventExecutor;
@@ -183,12 +182,11 @@ index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..1c225d3ba392fffdc9b6f5ddf2b1f249
  import org.bukkit.Server;
  import org.bukkit.Warning;
  import org.bukkit.event.Event;
-@@ -41,6 +42,8 @@ class PaperEventManager {
+@@ -41,6 +42,7 @@ class PaperEventManager {
          } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
              throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
 +        EventVerboseCommand.get().tryLogEvent(event);
-+        EventWatcherCommand.get().tryLog(event, null, null);
  
          HandlerList handlers = event.getHandlers();
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
