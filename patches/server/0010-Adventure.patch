@@ -2114,10 +2114,18 @@ index 5f051cb22ae77f4d8994b07ac5b963bd0ff05673..7952635a963e28cb670c8f4869664103
          list.forEach((loader) -> {
              Registry<?> registry = loader.getFirst();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 5725631835ea68802c75934cd85d5c1b1a78d358..0b859ebcc2c53e74615feca5c864136586c1523b 100644
+index 5725631835ea68802c75934cd85d5c1b1a78d358..b130edcdc4a91e6d1cfc59d80223edf937673ba4 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -244,6 +244,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -194,6 +194,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements CommandSource, AutoCloseable {
+ 
+     public static final Logger LOGGER = LogUtils.getLogger();
++    public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
+     public static final String VANILLA_BRAND = "vanilla";
+     private static final float AVERAGE_TICK_TIME_SMOOTHING = 0.8F;
+     private static final int TICK_STATS_SPAN = 100;
+@@ -244,6 +245,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private boolean allowFlight;
      @Nullable
      private String motd;
@@ -2125,7 +2133,7 @@ index 5725631835ea68802c75934cd85d5c1b1a78d358..0b859ebcc2c53e74615feca5c8641365
      private int playerIdleTimeout;
      public final long[] tickTimes;
      @Nullable
-@@ -1263,6 +1264,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1263,6 +1265,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          SpigotTimings.schedulerTimer.startTiming(); // Spigot
          this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
          SpigotTimings.schedulerTimer.stopTiming(); // Spigot
@@ -2133,7 +2141,7 @@ index 5725631835ea68802c75934cd85d5c1b1a78d358..0b859ebcc2c53e74615feca5c8641365
          this.profiler.push("commandFunctions");
          SpigotTimings.commandFunctionsTimer.startTiming(); // Spigot
          this.getFunctions().tick();
-@@ -1631,8 +1633,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1631,8 +1634,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.motd;
      }
  
@@ -2152,7 +2160,24 @@ index 5725631835ea68802c75934cd85d5c1b1a78d358..0b859ebcc2c53e74615feca5c8641365
      }
  
      public boolean isStopped() {
-@@ -2363,27 +2375,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2351,39 +2364,29 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
+-        String s1 = params.decorate(message).getString();
++        // Paper start
++        net.kyori.adventure.text.Component s1 = io.papermc.paper.adventure.PaperAdventure.asAdventure(params.decorate(message));
+ 
+         if (prefix != null) {
+-            MinecraftServer.LOGGER.info("[{}] {}", prefix, s1);
++            MinecraftServer.COMPONENT_LOGGER.info("[{}] {}", prefix, s1);
+         } else {
+-            MinecraftServer.LOGGER.info("{}", s1);
++            MinecraftServer.COMPONENT_LOGGER.info("{}", s1);
++            // Paper end
+         }
+ 
+     }
  
      // CraftBukkit start
      public final java.util.concurrent.ExecutorService chatExecutor = java.util.concurrent.Executors.newCachedThreadPool(
