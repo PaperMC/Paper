@@ -339,14 +339,16 @@ index 0000000000000000000000000000000000000000..03034495818a32889a7266f2844e12cc
 +}
 diff --git a/src/main/java/io/papermc/paper/item/PaperMetaSerialization.java b/src/main/java/io/papermc/paper/item/PaperMetaSerialization.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3b842ca96040e9d2b6754e740d8696b58f0f9ce7
+index 0000000000000000000000000000000000000000..e3c37b89481bcff88280a17a74f0f4963b8f17aa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/PaperMetaSerialization.java
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.item.meta.PaperMeta;
 +import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.SnbtPrinterTagVisitor;
++import net.minecraft.nbt.TagParser;
 +import net.minecraft.world.item.Items;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Material;
@@ -376,9 +378,9 @@ index 0000000000000000000000000000000000000000..3b842ca96040e9d2b6754e740d8696b5
 +    public static ItemMeta deserialize(String type, Constructor<? extends CraftMetaItem> constructor, Map<String, Object> map) throws Throwable {
 +        if (type.equals("PAPER_META")) {
 +            // Represents our custom paper meta type
-+            String blob = (String) map.get("blob");
++            String snbt = (String) map.get("snbt");
 +            // Decode the meta
-+            return Bukkit.getUnsafe().deserializeItem(Base64.getDecoder().decode(blob)).getItemMeta();
++            return CraftItemStack.getItemMeta(net.minecraft.world.item.ItemStack.of(TagParser.parseTag(snbt)));
 +        }
 +
 +        if (constructor == null) {
@@ -407,7 +409,9 @@ index 0000000000000000000000000000000000000000..3b842ca96040e9d2b6754e740d8696b5
 +        // Serialze the itemstack.
 +        // We really don't care about the type/count, we just want to be able to serialize the main data in order to use the
 +        // datafixer system
-+        meta.put("blob", Base64.getEncoder().encodeToString(Bukkit.getUnsafe().serializeItem(itemStack)));
++        CompoundTag tag = new CompoundTag();
++        itemStack.handle.save(tag);
++        meta.put("snbt", new SnbtPrinterTagVisitor().visit(tag));
 +
 +        return meta;
 +    }
@@ -426,10 +430,10 @@ index 0000000000000000000000000000000000000000..3b842ca96040e9d2b6754e740d8696b5
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ec0d6aa18c5a7ec45b29bc491902105655360ea
+index 0000000000000000000000000000000000000000..a4fa68af979b3e27155dc885a6f420064e672dbe
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
-@@ -0,0 +1,741 @@
+@@ -0,0 +1,742 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -614,13 +618,14 @@ index 0000000000000000000000000000000000000000..9ec0d6aa18c5a7ec45b29bc491902105
 +        return this.hasInPropertyPath(DISPLAY, LORE);
 +    }
 +
++    @SuppressWarnings("unchecked")
 +    @Override
 +    public @Nullable List<Component> lore() {
-+        return this.getFromPropertyPath(DISPLAY, LORE);
++        return (List<Component>) this.getFromPropertyPath(DISPLAY, LORE);
 +    }
 +
 +    @Override
-+    public void lore(@Nullable List<Component> lore) {
++    public void lore(@Nullable List<? extends Component> lore) {
 +        this.setFromPropertyPath(DISPLAY, LORE, lore);
 +    }
 +
@@ -1210,10 +1215,10 @@ index 0000000000000000000000000000000000000000..6526eb8766d186c9617c59cc95693e98
 +}
 diff --git a/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9e09f71b67e3ced942f03f1b5d21127d5984cc20
+index 0000000000000000000000000000000000000000..338c2a6654cdf82de64486f77761d8a55802d53a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,107 @@
 +package io.papermc.paper.item.property;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -1241,6 +1246,7 @@ index 0000000000000000000000000000000000000000..9e09f71b67e3ced942f03f1b5d21127d
 +import io.papermc.paper.property.nbt.types.StewEffectsListNbt;
 +import io.papermc.paper.property.nbt.types.TropicalFishVariantNbt;
 +import io.papermc.paper.property.nbt.types.WrappedListNbt;
++import net.kyori.adventure.text.Component;
 +import org.bukkit.MusicInstrument;
 +
 +public class ItemPropertyRegistration {
@@ -1249,8 +1255,8 @@ index 0000000000000000000000000000000000000000..9e09f71b67e3ced942f03f1b5d21127d
 +    static  {
 +        ITEM_CONTEXT.register(ItemProperties.ENCHANTMENTS, new EnchantmentList());
 +        ITEM_CONTEXT.register(ItemProperties.UNBREAKABLE, new BooleanPrimitive());
-+        ITEM_CONTEXT.register(ItemProperties.CAN_PLACE_ON_BLOCK_LIST, new WrappedListNbt(new BlockStateConditionNamespaceHackNbt()));
-+        ITEM_CONTEXT.register(ItemProperties.CAN_DESTROY_BLOCK_LIST, new WrappedListNbt(new BlockStateConditionNamespaceHackNbt()));
++        ITEM_CONTEXT.register(ItemProperties.CAN_PLACE_ON_BLOCK_LIST, new WrappedListNbt<>(new BlockStateConditionNamespaceHackNbt()));
++        ITEM_CONTEXT.register(ItemProperties.CAN_DESTROY_BLOCK_LIST, new WrappedListNbt<>(new BlockStateConditionNamespaceHackNbt()));
 +        ITEM_CONTEXT.register(ItemProperties.HIDE_FLAGS, new ItemFlagBitset());
 +        ITEM_CONTEXT.register(ItemProperties.REPAIR_COST, new IntegerPrimitive());
 +        ITEM_CONTEXT.register(ItemProperties.CUSTOM_MODEL_DATA, new IntegerPrimitive());
@@ -1261,6 +1267,7 @@ index 0000000000000000000000000000000000000000..9e09f71b67e3ced942f03f1b5d21127d
 +
 +        ITEM_CONTEXT.register(ItemProperties.DISPLAY, new CompoundTagNbt(ITEM_CONTEXT));
 +        ITEM_CONTEXT.register(ItemProperties.DISPLAY_NAME, new ComponentNbtPrimitive());
++        ITEM_CONTEXT.register(ItemProperties.LORE, new WrappedListNbt(new ComponentNbtPrimitive()));
 +        ITEM_CONTEXT.register(ItemProperties.COLOR, new ColorNbtPrimitive());
 +        ITEM_CONTEXT.register(ItemProperties.MAP_COLOR, new ColorNbtPrimitive());
 +
@@ -1759,16 +1766,13 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/AbstractListNbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/primitives/AbstractListNbtPlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..440e2b3019363aaa6079932a3e12717311c21515
+index 0000000000000000000000000000000000000000..d00f0702c23029185f96212f02b9a560e8584121
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/AbstractListNbtPlatformAdapter.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,43 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
-+import io.papermc.paper.property.PropertyKey;
-+import io.papermc.paper.property.nbt.NbtPropertyHolder;
 +import io.papermc.paper.util.TransformingRandomAccessList;
-+import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.ListTag;
 +import net.minecraft.nbt.Tag;
 +
@@ -1800,22 +1804,21 @@ index 0000000000000000000000000000000000000000..440e2b3019363aaa6079932a3e127173
 +    public abstract Tag serialize(T value);
 +
 +    @Override
-+    public List<T> getNewValue(NbtPropertyHolder holder, PropertyKey<List<T>> propertyKey) {
-+        holder.getCompoundTag().put(propertyKey.getKey(), new ListTag());
-+        return this.getValue(holder, propertyKey);
++    public int getTagType() {
++        return Tag.TAG_LIST;
 +    }
 +
 +    @Override
-+    public int getTagType() {
-+        return Tag.TAG_LIST;
++    public Tag emptyTag() {
++        return new ListTag();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BlockPositionNbtPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BlockPositionNbtPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7eed7ce505090bb1f455976aec256c0f051612f4
+index 0000000000000000000000000000000000000000..7031bdc1c541b85762743ab39e82c330bab84cc8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/BlockPositionNbtPrimitive.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,31 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import io.papermc.paper.math.Position;
@@ -1841,13 +1844,18 @@ index 0000000000000000000000000000000000000000..7eed7ce505090bb1f455976aec256c0f
 +    public Tag write(Position type) {
 +        return NbtUtils.writeBlockPos(new BlockPos(type.blockZ(), type.blockY(), type.blockZ()));
 +    }
++
++    @Override
++    public Tag emptyTag() {
++        return new CompoundTag();
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b192a7cb4196ad94c8ebbe4590280c103b8de84
+index 0000000000000000000000000000000000000000..569727fdfe309fafa4a857a358a600ffc5fd9995
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import net.minecraft.nbt.ByteTag;
@@ -1871,13 +1879,18 @@ index 0000000000000000000000000000000000000000..1b192a7cb4196ad94c8ebbe4590280c1
 +        return ByteTag.valueOf(type);
 +    }
 +
++    @Override
++    public Tag emptyTag() {
++        return ByteTag.valueOf(false);
++    }
++
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BytePrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BytePrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..70d6603f2d28d93e4b7ae87079199e3160c1d849
+index 0000000000000000000000000000000000000000..891b3cf8f787db85a062a54bfe24fb09f68854ee
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/BytePrimitive.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import net.minecraft.nbt.ByteTag;
@@ -1899,6 +1912,11 @@ index 0000000000000000000000000000000000000000..70d6603f2d28d93e4b7ae87079199e31
 +    @Override
 +    public Tag write(Byte type) {
 +        return ByteTag.valueOf(type);
++    }
++
++    @Override
++    public Tag emptyTag() {
++        return ByteTag.valueOf((byte) 0);
 +    }
 +
 +}
@@ -1957,10 +1975,10 @@ index 0000000000000000000000000000000000000000..fd501ae1b53eacfd1a83d5c826870933
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/CompoundTagPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/CompoundTagPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..309327df89e33f021762affb2484fffbf953fac0
+index 0000000000000000000000000000000000000000..ab1104d0ce3c72ef33f01587c3e7f7455404b1ed
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/CompoundTagPrimitive.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import net.minecraft.nbt.CompoundTag;
@@ -1983,13 +2001,18 @@ index 0000000000000000000000000000000000000000..309327df89e33f021762affb2484fffb
 +    public Tag write(CompoundTag type) {
 +        return type;
 +    }
++
++    @Override
++    public Tag emptyTag() {
++        return new CompoundTag();
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/IntArrayPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/IntArrayPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a66284228f7d15af7b95fe84577c4a9d120b2eb8
+index 0000000000000000000000000000000000000000..5d05e6379e55df478394a912a4c052d93bce52cb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/IntArrayPrimitive.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import net.minecraft.nbt.IntArrayTag;
@@ -2013,13 +2036,18 @@ index 0000000000000000000000000000000000000000..a66284228f7d15af7b95fe84577c4a9d
 +        return new IntArrayTag(type);
 +    }
 +
++    @Override
++    public Tag emptyTag() {
++        return new IntArrayTag(new int[0]);
++    }
++
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/IntegerPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/IntegerPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ca3d8e62c6cf7d16fa6af95a2e37a04550e2f0f2
+index 0000000000000000000000000000000000000000..2f461602b56efc274703b1630a260377ec8c1bda
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/IntegerPrimitive.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import net.minecraft.nbt.IntTag;
@@ -2042,34 +2070,37 @@ index 0000000000000000000000000000000000000000..ca3d8e62c6cf7d16fa6af95a2e37a045
 +        return IntTag.valueOf(type);
 +    }
 +
++    @Override
++    public Tag emptyTag() {
++        return IntTag.valueOf(0);
++    }
++
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/ItemStackNbtPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/ItemStackNbtPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a2f422db63ca15889d66c70072dd7da87a4a2f83
+index 0000000000000000000000000000000000000000..0a80d73c714c22434d228ff2339ed51492e666de
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/ItemStackNbtPrimitive.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,22 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.Tag;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.inventory.ItemStack;
 +
-+public class ItemStackNbtPrimitive extends SinglePrimitiveNbtPlatformAdapter<ItemStack> {
++public class ItemStackNbtPrimitive extends NbtPrimitiveWrapper<ItemStack, CompoundTag> {
 +
-+    @Override
-+    public int getTagType() {
-+        return Tag.TAG_COMPOUND;
++    public ItemStackNbtPrimitive() {
++        super(new CompoundTagPrimitive());
 +    }
 +
 +    @Override
-+    public ItemStack getType(Tag tag) {
-+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of((CompoundTag) tag));
++    public ItemStack fromPrimitive(CompoundTag primitive) {
++        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of((CompoundTag) primitive));
 +    }
 +
 +    @Override
-+    public Tag write(ItemStack type) {
++    public CompoundTag toPrimitive(ItemStack type) {
 +        return (type instanceof CraftItemStack ? ((CraftItemStack) type).handle : CraftItemStack.asNMSCopy(type)).save(new CompoundTag());
 +    }
 +}
@@ -2109,10 +2140,10 @@ index 0000000000000000000000000000000000000000..6ba22dfca32d26a32838b3fa42c18b4e
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/ListTagPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/ListTagPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a090b21fd707f3941f89ffa2657685f268245c9e
+index 0000000000000000000000000000000000000000..559e6cf587f4a18d062684bd9cd16b7b678c3bed
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/ListTagPrimitive.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import net.minecraft.nbt.IntTag;
@@ -2134,6 +2165,11 @@ index 0000000000000000000000000000000000000000..a090b21fd707f3941f89ffa2657685f2
 +    @Override
 +    public Tag write(ListTag type) {
 +        return type;
++    }
++
++    @Override
++    public Tag emptyTag() {
++        return new ListTag();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/NamespaceKeyNbtPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/NamespaceKeyNbtPrimitive.java
@@ -2164,15 +2200,14 @@ index 0000000000000000000000000000000000000000..c1fe17fd099b09655c36ee1d42385764
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/NbtPrimitiveWrapper.java b/src/main/java/io/papermc/paper/property/nbt/primitives/NbtPrimitiveWrapper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..434601041bb94248902f82d9409e6ab1162f9e9f
+index 0000000000000000000000000000000000000000..e51c6f83e6312b564f21213af074b7a9d7211562
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/NbtPrimitiveWrapper.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import io.papermc.paper.property.PropertyKey;
 +import io.papermc.paper.property.nbt.NbtPropertyHolder;
-+import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.Tag;
 +
 +public abstract class NbtPrimitiveWrapper<T, P> extends SinglePrimitiveNbtPlatformAdapter<T> {
@@ -2198,23 +2233,21 @@ index 0000000000000000000000000000000000000000..434601041bb94248902f82d9409e6ab1
 +        return this.primitive.write(this.toPrimitive(type));
 +    }
 +
-+    @Override
-+    public T getNewValue(NbtPropertyHolder holder, PropertyKey<T> propertyKey) {
-+        holder.getCompoundTag().put(propertyKey.getKey(), new CompoundTag());
-+        return this.getValue(holder, propertyKey);
-+    }
-+
 +    public abstract T fromPrimitive(P primitive);
 +
 +    public abstract P toPrimitive(T type);
 +
++    @Override
++    public Tag emptyTag() {
++        return this.primitive.emptyTag();
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7d1e2484459d4ce2ef41df67f8b2ac0113d4e962
+index 0000000000000000000000000000000000000000..71c26e051f5ecf78ed64224b24d3155c656ff600
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,47 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import io.papermc.paper.property.PropertyKey;
@@ -2238,7 +2271,8 @@ index 0000000000000000000000000000000000000000..7d1e2484459d4ce2ef41df67f8b2ac01
 +
 +    @Override
 +    public T getNewValue(NbtPropertyHolder holder, PropertyKey<T> propertyKey) {
-+        return null;
++        holder.getCompoundTag().put(propertyKey.getKey(), this.emptyTag());
++        return this.getValue(holder, propertyKey);
 +    }
 +
 +    public T getDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey) {
@@ -2258,13 +2292,15 @@ index 0000000000000000000000000000000000000000..7d1e2484459d4ce2ef41df67f8b2ac01
 +    public abstract T getType(Tag tag);
 +
 +    public abstract Tag write(T type);
++
++    public abstract Tag emptyTag();
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/StringPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/StringPrimitive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9e4dfed6ac406391ac3205b0e9028ff1607a7f54
+index 0000000000000000000000000000000000000000..cc6250488bb63108f486ad7b32d946129ae8f80e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/StringPrimitive.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import net.minecraft.nbt.IntTag;
@@ -2286,6 +2322,11 @@ index 0000000000000000000000000000000000000000..9e4dfed6ac406391ac3205b0e9028ff1
 +    @Override
 +    public Tag write(String type) {
 +        return StringTag.valueOf(type);
++    }
++
++    @Override
++    public Tag emptyTag() {
++        return StringTag.valueOf("");
 +    }
 +
 +}
@@ -2749,45 +2790,72 @@ index 0000000000000000000000000000000000000000..f4b7b0dbfa13aabde5ba75cad31a70de
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java b/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e1cbd547995e543f6221c53d95d4fa1a6b7bfdec
+index 0000000000000000000000000000000000000000..c8755cec158d9d315db07cc4f99a570668a07d1a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.property.nbt.types;
 +
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPlatformAdapter;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
 +import io.papermc.paper.property.nbt.primitives.IntegerPrimitive;
-+import io.papermc.paper.property.nbt.primitives.NbtPrimitiveWrapper;
++import net.minecraft.nbt.Tag;
 +import org.bukkit.inventory.ItemFlag;
 +
-+import java.util.EnumSet;
++import java.util.HashSet;
 +import java.util.Set;
 +
-+public class ItemFlagBitset extends NbtPrimitiveWrapper<Set<ItemFlag>, Integer> {
++public class ItemFlagBitset implements NbtPlatformAdapter<Set<ItemFlag>> {
 +
-+    public ItemFlagBitset() {
-+        super(new IntegerPrimitive());
-+    }
++    private final IntegerPrimitive backing = new IntegerPrimitive();
 +
 +    @Override
-+    public Set<ItemFlag> fromPrimitive(Integer primitive) {
-+        Set<ItemFlag> currentFlags = EnumSet.noneOf(ItemFlag.class);
++    public Set<ItemFlag> getValue(NbtPropertyHolder nbtPropertyHolder, PropertyKey<Set<ItemFlag>> propertyKey) {
++        // TODO: Lazy
++        Set<ItemFlag> flag = new HashSet<>() {
 +
-+        for (ItemFlag f : ItemFlag.values()) {
-+            if (this.contains(f, primitive)) {
-+                currentFlags.add(f);
++            @Override
++            public boolean add(ItemFlag itemFlag) {
++                boolean add = super.add(itemFlag);
++                if (add) {
++                    ItemFlagBitset.this.writeDirect(nbtPropertyHolder, propertyKey, this);
++                }
++                return add;
 +            }
-+        }
 +
-+        return currentFlags;
++            @Override
++            public boolean remove(Object o) {
++                boolean remove = super.remove(o);
++                if (remove) {
++                    ItemFlagBitset.this.writeDirect(nbtPropertyHolder, propertyKey, this);
++                }
++                return remove;
++            }
++        };
++
++        return flag;
 +    }
 +
 +    @Override
-+    public Integer toPrimitive(Set<ItemFlag> type) {
++    public void writeDirect(NbtPropertyHolder nbtPropertyHolder, PropertyKey<?> propertyKey, Set<ItemFlag> direct) {
 +        int flags = 0;
-+        for (ItemFlag itemFlag : type) {
++        for (ItemFlag itemFlag : direct) {
 +            flags |= this.getBitModifier(itemFlag);
 +        }
-+        return flags;
++
++        nbtPropertyHolder.getCompoundTag().put(propertyKey.getKey(), this.backing.write(flags));
++    }
++
++    @Override
++    public Set<ItemFlag> getNewValue(NbtPropertyHolder nbtPropertyHolder, PropertyKey<Set<ItemFlag>> propertyKey) {
++        nbtPropertyHolder.getCompoundTag().put(propertyKey.getKey(), this.backing.emptyTag());
++        return this.getValue(nbtPropertyHolder, propertyKey);
++    }
++
++    @Override
++    public int getTagType() {
++        return Tag.TAG_INT;
 +    }
 +
 +    private boolean contains(ItemFlag itemFlag, int flags) {
@@ -3136,7 +3204,7 @@ index f45e4acee69bd95ff2e41feaf44f5414d2e40df0..881d79b9d4f7749d89a3af2b4fd5c47f
  
      static boolean hasItemMeta(net.minecraft.world.item.ItemStack item) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 58c1d07f41fc382b23df17739090f5031fd41aad..e29f3c978ecf9b00aee694bb7c08e289c70c7246 100644
+index 7a4acbb32fbd600e629d0ec2e90868785320d822..88fca536e88e270ae63f8fd25a4d3a234b381c2c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -40,6 +40,8 @@ import java.util.logging.Level;
