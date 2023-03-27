@@ -243,6 +243,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         };
     }
     // Paper end
+    // Paper start - structure check API
+    @Override
+    public boolean hasStructureAt(final io.papermc.paper.math.Position position, final Structure structure) {
+        return this.world.structureManager().getStructureWithPieceAt(
+            io.papermc.paper.util.MCUtil.toBlockPos(position),
+            CraftStructure.bukkitToMinecraft(structure)
+        ).isValid();
+    }
+    // Paper end
 
     private static final Random rand = new Random();
 
