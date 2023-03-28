@@ -6,12 +6,14 @@ Subject: [PATCH] PlayerReadyArrowEvent
 Called when a player is firing a bow and the server is choosing an arrow to use.
 Plugins can skip selection of certain arrows and control which is used.
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5d04a22fd6964d8d44a2aa069c9629722893b1f4
+index 0000000000000000000000000000000000000000..31f90e1c5ac11c9e1cf54f536e4d3eb42c9a09f3
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,112 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + *
@@ -39,69 +41,88 @@ index 0000000000000000000000000000000000000000..5d04a22fd6964d8d44a2aa069c962972
 +
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
-+import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * Called when a player is firing a bow and the server is choosing an arrow to use.
++ * Called when a player is firing a bow and the server is choosing an arrow to use. This
++ * event is fired twice for a single "launch", once when the server is checking if the launcher
++ * item, like a bow or crossbow, is valid to be used. The selected projectile doesn't matter in
++ * this case, just that it's not an empty stack. The second fire is when the actual projectile is
++ * being selected.
 + */
 +public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {
-+    @NotNull private final ItemStack bow;
-+    @NotNull private final ItemStack arrow;
 +
-+    public PlayerReadyArrowEvent(@NotNull Player player, @NotNull ItemStack bow, @NotNull ItemStack arrow) {
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final ItemStack bow;
++    private final ItemStack arrow;
++    private final boolean isUseCheck;
++    private boolean cancelled = false;
++
++    @ApiStatus.Internal
++    public PlayerReadyArrowEvent(final @NotNull Player player, final @NotNull ItemStack bow, final @NotNull ItemStack arrow, final boolean isUseCheck) {
 +        super(player);
 +        this.bow = bow;
 +        this.arrow = arrow;
++        this.isUseCheck = isUseCheck;
 +    }
 +
 +    /**
-+     * @return the player is using to fire the arrow
++     * Gets the launcher stack like a bow or crossbow that
++     * is being used.
++     *
++     * @return the launcher stack
 +     */
-+    @NotNull
-+    public ItemStack getBow() {
-+        return bow;
++    public @NotNull ItemStack getBow() {
++        return this.bow;
 +    }
 +
 +    /**
-+     * @return the arrow that is attempting to be used
++     * Gets the projectile stack attempting to be used.
++     *
++     * @return the projectile stack
 +     */
-+    @NotNull
-+    public ItemStack getArrow() {
-+        return arrow;
++    public @NotNull ItemStack getArrow() {
++        return this.arrow;
 +    }
-+
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
 +
 +    /**
-+     * Whether or not use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
++     * Gets if this event is being fired as a result
++     * of checking if the launcher can be used.
++     *
++     * @return true if this is a "use" check, false if this is selecting the actual projectile
++     */
++    public boolean isUseCheck() {
++        return this.isUseCheck;
++    }
++
++    /**
++     * Whether the use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
 +     */
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return this.cancelled;
 +    }
 +
 +    /**
 +     * Cancel use of this arrow. On cancel, the server will try the next arrow available and fire another event.
++     *
 +     * @param cancel true if you wish to cancel this event
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        this.cancelled = cancel;
++    }
++
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
 +    }
 +}

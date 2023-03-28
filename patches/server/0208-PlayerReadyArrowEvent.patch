@@ -6,39 +6,122 @@ Subject: [PATCH] PlayerReadyArrowEvent
 Called when a player is firing a bow and the server is choosing an arrow to use.
 Plugins can skip selection of certain arrows and control which is used.
 
+== AT ==
+public net/minecraft/world/entity/LivingEntity LIVING_ENTITY_FLAG_IS_USING
+public net/minecraft/world/entity/LivingEntity DATA_LIVING_ENTITY_FLAGS
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index f1bdc09a493208b6b96873318b047f70dbdfaa40..b2ba8d4e897cc1bdbcd5679c9f4b652e88ce37ef 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3999,6 +3999,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     public ItemStack getProjectile(ItemStack stack) {
+         return ItemStack.EMPTY;
+     }
++    // Paper start
++    public ItemStack getProjectile(ItemStack stack, boolean isUseCheck) {
++        return this.getProjectile(stack);
++    }
++    // Paper end
+ 
+     public ItemStack eat(Level world, ItemStack stack) {
+         if (stack.isEdible()) {
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 10dd06a23b34b7c8515c9ccc3988a9e8182c460d..48ba8f67b93bed0cfa540d7cb94199b633a349e6 100644
+index 10dd06a23b34b7c8515c9ccc3988a9e8182c460d..ade0a56ecfeb04e1383e18f391c909154f98ea62 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -2260,18 +2260,29 @@ public abstract class Player extends LivingEntity {
+@@ -2260,18 +2260,35 @@ public abstract class Player extends LivingEntity {
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
 +    // Paper start
-+    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
++    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack, boolean isUseCheck) {
 +        return !(this instanceof ServerPlayer) ||
 +                new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
 +                    ((ServerPlayer) this).getBukkitEntity(),
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
-+                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
-+                ).callEvent();
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack),
++                    isUseCheck).callEvent();
 +        // Paper end
 +    }
 +
      @Override
      public ItemStack getProjectile(ItemStack stack) {
++        // Paper start
++        return this.getProjectile(stack, false);
++    }
++    @Override
++    public ItemStack getProjectile(final ItemStack stack, final boolean isUseCheck) {
++        // Paper end
          if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
              return ItemStack.EMPTY;
          } else {
 -            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles();
-+            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper
++            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles().and(item -> this.tryReadyArrow(stack, item, isUseCheck)); // Paper
              ItemStack itemstack1 = ProjectileWeaponItem.getHeldProjectile(this, predicate);
  
              if (!itemstack1.isEmpty()) {
                  return itemstack1;
              } else {
 -                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles();
-+                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper
++                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles().and(item -> this.tryReadyArrow(stack, item, isUseCheck)); // Paper
  
                  for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
                      ItemStack itemstack2 = this.inventory.getItem(i);
+diff --git a/src/main/java/net/minecraft/world/item/BowItem.java b/src/main/java/net/minecraft/world/item/BowItem.java
+index 08d597db1a5345a343777a01427655e6bf2c926b..3cfd4813e2fcd1d5cacd910abbefe8bdb5e99109 100644
+--- a/src/main/java/net/minecraft/world/item/BowItem.java
++++ b/src/main/java/net/minecraft/world/item/BowItem.java
+@@ -27,7 +27,7 @@ public class BowItem extends ProjectileWeaponItem implements Vanishable {
+         if (user instanceof Player) {
+             Player entityhuman = (Player) user;
+             boolean flag = entityhuman.getAbilities().instabuild || EnchantmentHelper.getItemEnchantmentLevel(Enchantments.INFINITY_ARROWS, stack) > 0;
+-            ItemStack itemstack1 = entityhuman.getProjectile(stack);
++            ItemStack itemstack1 = entityhuman.getProjectile(stack, false); // Paper
+ 
+             if (!itemstack1.isEmpty() || flag) {
+                 if (itemstack1.isEmpty()) {
+@@ -130,9 +130,10 @@ public class BowItem extends ProjectileWeaponItem implements Vanishable {
+     @Override
+     public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
+         ItemStack itemstack = user.getItemInHand(hand);
+-        boolean flag = !user.getProjectile(itemstack).isEmpty();
++        boolean flag = !user.getProjectile(itemstack, true).isEmpty(); // Paper
+ 
+         if (!user.getAbilities().instabuild && !flag) {
++            ((net.minecraft.server.level.ServerPlayer) user).connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(user.getId(), java.util.List.of(new net.minecraft.network.syncher.SynchedEntityData.DataValue<>(LivingEntity.DATA_LIVING_ENTITY_FLAGS.getId(), net.minecraft.network.syncher.EntityDataSerializers.BYTE, (byte) (user.getEntityData().get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & ~LivingEntity.LIVING_ENTITY_FLAG_IS_USING))))); // Paper
+             return InteractionResultHolder.fail(itemstack);
+         } else {
+             user.startUsingItem(hand);
+diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+index 9bea5e94c246d843f3d67680ffb57075bd9d3467..b77f95bc50e19a5030ece7f69f8f3f0279e688fe 100644
+--- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
++++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+@@ -67,7 +67,7 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+             CrossbowItem.performShooting(world, user, hand, itemstack, CrossbowItem.getShootingPower(itemstack), 1.0F);
+             CrossbowItem.setCharged(itemstack, false);
+             return InteractionResultHolder.consume(itemstack);
+-        } else if (!user.getProjectile(itemstack).isEmpty()) {
++        } else if (!user.getProjectile(itemstack, true).isEmpty()) { // Paper
+             if (!CrossbowItem.isCharged(itemstack)) {
+                 this.startSoundPlayed = false;
+                 this.midLoadSoundPlayed = false;
+@@ -76,6 +76,7 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+ 
+             return InteractionResultHolder.consume(itemstack);
+         } else {
++            ((ServerPlayer) user).connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(user.getId(), List.of(new net.minecraft.network.syncher.SynchedEntityData.DataValue<>(LivingEntity.DATA_LIVING_ENTITY_FLAGS.getId(), net.minecraft.network.syncher.EntityDataSerializers.BYTE, (byte) (user.getEntityData().get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & ~LivingEntity.LIVING_ENTITY_FLAG_IS_USING))))); // Paper
+             return InteractionResultHolder.fail(itemstack);
+         }
+     }
+@@ -102,7 +103,7 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+         int i = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MULTISHOT, crossbow);
+         int j = i == 0 ? 1 : 3;
+         boolean flag = shooter instanceof Player && ((Player) shooter).getAbilities().instabuild;
+-        ItemStack itemstack1 = shooter.getProjectile(crossbow);
++        ItemStack itemstack1 = shooter.getProjectile(crossbow, false); // Paper
+         ItemStack itemstack2 = itemstack1.copy();
+ 
+         for (int k = 0; k < j; ++k) {
