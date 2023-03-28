@@ -2893,12 +2893,14 @@ index 0000000000000000000000000000000000000000..5fcce65009f715d46dd3013f1f92ec83
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java b/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd64351370f
+index 0000000000000000000000000000000000000000..aef19b44075a3b2e8696315baa89117dd8ebb513
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,82 @@
 +package io.papermc.paper.plugin.manager;
 +
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.type.PluginFileType;
 +import org.bukkit.Bukkit;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.Listener;
@@ -2913,8 +2915,11 @@ index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd6
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.IOException;
 +import java.util.Map;
 +import java.util.Set;
++import java.util.jar.JarFile;
 +import java.util.regex.Pattern;
 +
 +/**
@@ -2924,19 +2929,39 @@ index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd6
 +@ApiStatus.Internal
 +public class DummyBukkitPluginLoader implements PluginLoader {
 +
++    private static final Pattern[] PATTERNS = new Pattern[0];
++
 +    @Override
 +    public @NotNull Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException {
-+        throw new UnsupportedOperationException();
++        try {
++            return PaperPluginManagerImpl.getInstance().loadPlugin(file);
++        } catch (InvalidDescriptionException e) {
++            throw new InvalidPluginException(e);
++        }
 +    }
 +
 +    @Override
 +    public @NotNull PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException {
-+        throw new UnsupportedOperationException();
++        try (JarFile jar = new JarFile(file)) {
++            PluginFileType<?, ?> type = PluginFileType.guessType(jar);
++            if (type == null) {
++                throw new InvalidDescriptionException(new FileNotFoundException("Jar does not contain plugin.yml"));
++            }
++
++            PluginMeta meta = type.getConfig(jar);
++            if (meta instanceof PluginDescriptionFile pluginDescriptionFile) {
++                return pluginDescriptionFile;
++            } else {
++                throw new InvalidDescriptionException("Plugin type does not use plugin.yml. Cannot read file description.");
++            }
++        } catch (Exception e) {
++            throw new InvalidDescriptionException(e);
++        }
 +    }
 +
 +    @Override
 +    public @NotNull Pattern[] getPluginFileFilters() {
-+        throw new UnsupportedOperationException();
++        return PATTERNS;
 +    }
 +
 +    @Override
