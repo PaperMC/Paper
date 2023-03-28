@@ -1985,7 +1985,7 @@ index 669a70faa95d0d6525a731d73499ed6fb0b48320..c9cf9d361a1289aba383718733a2098b
              throw new IllegalStateException("Cannot get plugin for " + clazz + " from a static initializer");
          }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 047c0304fd617cec990f80815b43916c6ef5a94c..d0ad072c832b8fc8a1cfdcafdd42c724531a2e29 100644
+index 047c0304fd617cec990f80815b43916c6ef5a94c..ab04ffe4cd05315a2ee0f64c553b4c674740eb7f 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -49,6 +49,7 @@ import org.yaml.snakeyaml.error.YAMLException;
@@ -2009,7 +2009,7 @@ index 047c0304fd617cec990f80815b43916c6ef5a94c..d0ad072c832b8fc8a1cfdcafdd42c724
          final PluginClassLoader loader;
          try {
 -            loader = new PluginClassLoader(this, getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null);
-+            loader = new PluginClassLoader(getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null, null); // Paper
++            loader = new PluginClassLoader(getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null, null, null); // Paper
          } catch (InvalidPluginException ex) {
              throw ex;
          } catch (Throwable ex) {
@@ -2048,7 +2048,7 @@ index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..e4b6f278a811acbb0070e311c5c3bdaf
          }
  
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b04122466b69 100644
+index 2f74ec96ece706de23156ebabfe493211bc05391..302319acbc257a075adfb78d9f5c49fdadf45bdc 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -29,7 +29,8 @@ import org.jetbrains.annotations.Nullable;
@@ -2061,12 +2061,13 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b041
      private final JavaPluginLoader loader;
      private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
      private final PluginDescriptionFile description;
-@@ -43,24 +44,30 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -43,24 +44,32 @@ final class PluginClassLoader extends URLClassLoader {
      private JavaPlugin pluginInit;
      private IllegalStateException pluginState;
      private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
 +    private java.util.logging.Logger logger; // Paper - add field
 +    private io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup classLoaderGroup; // Paper
++    public io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext; // Paper
  
      static {
          ClassLoader.registerAsParallelCapable();
@@ -2091,12 +2092,13 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b041
  
 +
 +        // Paper start
++        this.dependencyContext = dependencyContext;
 +        this.classLoaderGroup = io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage.instance().registerSpigotGroup(this);
 +        // Paper end
          try {
              Class<?> jarClass;
              try {
-@@ -94,6 +101,27 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -94,6 +103,27 @@ final class PluginClassLoader extends URLClassLoader {
          return findResources(name);
      }
  
@@ -2124,7 +2126,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b041
      @Override
      protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
          return loadClass0(name, resolve, true, true);
-@@ -119,26 +147,11 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -119,26 +149,11 @@ final class PluginClassLoader extends URLClassLoader {
  
          if (checkGlobal) {
              // This ignores the libraries of other plugins, unless they are transitive dependencies.
@@ -2153,7 +2155,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b041
  
                  return result;
              }
-@@ -167,7 +180,7 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -167,7 +182,7 @@ final class PluginClassLoader extends URLClassLoader {
                      throw new ClassNotFoundException(name, ex);
                  }
  
@@ -2162,7 +2164,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b041
  
                  int dot = name.lastIndexOf('.');
                  if (dot != -1) {
-@@ -197,8 +210,8 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -197,8 +212,8 @@ final class PluginClassLoader extends URLClassLoader {
                  result = super.findClass(name);
              }
  
@@ -2172,7 +2174,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b041
          }
  
          return result;
-@@ -207,6 +220,12 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -207,6 +222,12 @@ final class PluginClassLoader extends URLClassLoader {
      @Override
      public void close() throws IOException {
          try {
@@ -2185,7 +2187,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b041
              super.close();
          } finally {
              jar.close();
-@@ -218,7 +237,7 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -218,7 +239,7 @@ final class PluginClassLoader extends URLClassLoader {
          return classes.values();
      }
  
@@ -2194,7 +2196,7 @@ index 2f74ec96ece706de23156ebabfe493211bc05391..ea8d2e1048d7aa0aaa91c16e43d0b041
          Preconditions.checkArgument(javaPlugin != null, "Initializing plugin cannot be null");
          Preconditions.checkArgument(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
          if (this.plugin != null || this.pluginInit != null) {
-@@ -228,6 +247,38 @@ final class PluginClassLoader extends URLClassLoader {
+@@ -228,6 +249,38 @@ final class PluginClassLoader extends URLClassLoader {
          pluginState = new IllegalStateException("Initial initialization");
          this.pluginInit = javaPlugin;
  
