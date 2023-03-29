@@ -1264,10 +1264,10 @@ index 0000000000000000000000000000000000000000..df142a89b8c43acb81eb383eac0ef048
 +}
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..852f5673fb3f9c7d7ad44b01d04b3dcdf7352e50
+index 0000000000000000000000000000000000000000..c5ae86919e7ad8cc902405e34ddca633d6354e6b
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timings.java
-@@ -0,0 +1,300 @@
+@@ -0,0 +1,314 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1320,6 +1320,7 @@ index 0000000000000000000000000000000000000000..852f5673fb3f9c7d7ad44b01d04b3dcd
 +    static boolean verboseEnabled = false;
 +    private static int historyInterval = -1;
 +    private static int historyLength = -1;
++    private static boolean warnedAboutDeprecationOnEnable;
 +
 +    private Timings() {}
 +
@@ -1354,6 +1355,7 @@ index 0000000000000000000000000000000000000000..852f5673fb3f9c7d7ad44b01d04b3dcd
 +    @NotNull
 +    public static Timing of(@NotNull Plugin plugin, @NotNull String name, @Nullable Timing groupHandler) {
 +        Preconditions.checkNotNull(plugin, "Plugin can not be null");
++        Bukkit.getLogger().warning(String.format("Plugin '%s' is creating timing '%s' - this is deprecated behavior, please report it to the authors: %s", plugin.getName(), name, String.join(", ", plugin.getDescription().getAuthors())));
 +        return TimingsManager.getHandler(plugin.getName(), name, groupHandler);
 +    }
 +
@@ -1410,7 +1412,19 @@ index 0000000000000000000000000000000000000000..852f5673fb3f9c7d7ad44b01d04b3dcd
 +     */
 +    public static void setTimingsEnabled(boolean enabled) {
 +        timingsEnabled = enabled;
++        warnAboutDeprecationOnEnable();
 +        reset();
++    }
++
++    private static void warnAboutDeprecationOnEnable() {
++        if (timingsEnabled && !warnedAboutDeprecationOnEnable) {
++            Bukkit.getLogger().warning(String.join("\n",
++                "[!] The timings system has been enabled but has been scheduled for removal from Paper in the future.",
++                "    We recommend installing the spark profiler as a replacement: https://spark.lucko.me/",
++                "    For more information please visit: https://github.com/PaperMC/Paper/issues/8948"
++            ));
++            warnedAboutDeprecationOnEnable = true;
++        }
 +    }
 +
 +    /**
