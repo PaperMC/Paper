@@ -456,7 +456,7 @@ index 0000000000000000000000000000000000000000..7159c72408f556d676eded668057a4c5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f7e43c693140b7a820b2432db312df8f7b099d4d
+index 0000000000000000000000000000000000000000..89bf48fd581ee6580b91e2eb31dd532cb622df5e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
 @@ -0,0 +1,132 @@
@@ -483,7 +483,7 @@ index 0000000000000000000000000000000000000000..f7e43c693140b7a820b2432db312df8f
 +
 +public class PluginInitializerManager {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +    private static PluginInitializerManager impl;
 +    private final Path pluginDirectory;
 +    private final Path updateDirectory;
@@ -594,10 +594,10 @@ index 0000000000000000000000000000000000000000..f7e43c693140b7a820b2432db312df8f
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7bf5daaeec4e4e3911741fa482def13b6044ce97
+index 0000000000000000000000000000000000000000..2e450a9fce66e63ec94ee3d2579265eda28a1c3f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.plugin.bootstrap;
 +
 +import io.papermc.paper.plugin.PluginInitializerManager;
@@ -609,18 +609,18 @@ index 0000000000000000000000000000000000000000..7bf5daaeec4e4e3911741fa482def13b
 +import java.nio.file.Path;
 +
 +public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
-+                                        ComponentLogger logger) implements PluginProviderContext {
++                                        ComponentLogger logger, Path pluginSource) implements PluginProviderContext {
 +
-+    public static PluginProviderContextImpl of(PluginMeta config, ComponentLogger logger) {
++    public static PluginProviderContextImpl of(PluginMeta config, ComponentLogger logger, Path pluginSource) {
 +        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getDisplayName());
 +
-+        return new PluginProviderContextImpl(config, dataFolder, logger);
++        return new PluginProviderContextImpl(config, dataFolder, logger, pluginSource);
 +    }
 +
 +    public static PluginProviderContextImpl of(PluginProvider<?> provider, Path pluginFolder) {
 +        Path dataFolder = pluginFolder.resolve(provider.getMeta().getDisplayName());
 +
-+        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger());
++        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger(), provider.getSource());
 +    }
 +
 +    @Override
@@ -636,6 +636,11 @@ index 0000000000000000000000000000000000000000..7bf5daaeec4e4e3911741fa482def13b
 +    @Override
 +    public @NotNull ComponentLogger getLogger() {
 +        return this.logger;
++    }
++
++    @Override
++    public @NotNull Path getPluginSource() {
++        return this.pluginSource;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/Entrypoint.java b/src/main/java/io/papermc/paper/plugin/entrypoint/Entrypoint.java
@@ -808,7 +813,7 @@ index 0000000000000000000000000000000000000000..f9a2c55a354c877749db3f92956de802
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ecd11d3bd6c7e80a9b33cb8c2d7ed8a582857533
+index 0000000000000000000000000000000000000000..79995ab1b624d7c7aaaa467a86255ad97385cf72
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 @@ -0,0 +1,207 @@
@@ -961,7 +966,7 @@ index 0000000000000000000000000000000000000000..ecd11d3bd6c7e80a9b33cb8c2d7ed8a5
 +        PluginMeta config = this.configuration;
 +        PluginDescriptionFile pluginDescriptionFile = new PluginDescriptionFile(
 +            config.getName(),
-+            config.getDisplayName(),
++            config.getName().replace('_', ' '),
 +            config.getProvidedPlugins(),
 +            config.getMainClass(),
 +            "", // Classloader load order api
@@ -2951,7 +2956,7 @@ index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..365aa894c77b095bfe23bdaab354591df32bcda2
+index 0000000000000000000000000000000000000000..48696ee62cfaef27ea512464d33ac502f5ec3ccd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 @@ -0,0 +1,49 @@
@@ -2971,7 +2976,7 @@ index 0000000000000000000000000000000000000000..365aa894c77b095bfe23bdaab354591d
 +
 +public class MultiRuntimePluginProviderStorage extends ServerPluginProviderStorage {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +    private final List<JavaPlugin> provided = new ArrayList<>();
 +
 +    @Override
@@ -4382,7 +4387,7 @@ index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3808f5a9abc9f084cbabfc4cb95394cc37aaf4bb
+index 0000000000000000000000000000000000000000..7605efe37ac4a63cb95c8c64c576e93c0e676cc0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 @@ -0,0 +1,227 @@
@@ -4495,7 +4500,7 @@ index 0000000000000000000000000000000000000000..3808f5a9abc9f084cbabfc4cb95394cc
 +                .build();
 +        }
 +
-+        pluginConfiguration.displayName = pluginConfiguration.name.replace('_', ' ');
++        pluginConfiguration.displayName = pluginConfiguration.name.replace('_', ' ') + " v" + pluginConfiguration.version;
 +
 +        return pluginConfiguration;
 +    }
@@ -4969,7 +4974,7 @@ index 0000000000000000000000000000000000000000..a180612a1ec395202dbae1ca5b97ec01
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed00c412f1703b38674bbd0d483fcb100aa99f9d
+index 0000000000000000000000000000000000000000..1572c3942c850eb36df38cf06395bcafa24e18e0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
 @@ -0,0 +1,40 @@
@@ -4989,7 +4994,7 @@ index 0000000000000000000000000000000000000000..ed00c412f1703b38674bbd0d483fcb10
 +public class DirectoryProviderSource extends FileProviderSource {
 +
 +    public static final DirectoryProviderSource INSTANCE = new DirectoryProviderSource();
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    public DirectoryProviderSource() {
 +        super("File '%s'"::formatted);
@@ -5178,7 +5183,7 @@ index 0000000000000000000000000000000000000000..3b1215fcfa1b9de42d8f946c4e2b4572
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/PluginFlagProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/PluginFlagProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e62b476ddbce2bdc66061c116aa0228622f6fd16
+index 0000000000000000000000000000000000000000..205aec4017df65ab268835a8db1687438fba4e1a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/PluginFlagProviderSource.java
 @@ -0,0 +1,29 @@
@@ -5197,7 +5202,7 @@ index 0000000000000000000000000000000000000000..e62b476ddbce2bdc66061c116aa02286
 +public class PluginFlagProviderSource implements ProviderSource<List<File>> {
 +
 +    public static final PluginFlagProviderSource INSTANCE = new PluginFlagProviderSource();
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +    private final FileProviderSource providerSource = new FileProviderSource("File '%s' specified through 'add-plugin' argument"::formatted);
 +
 +    @Override
@@ -5709,7 +5714,7 @@ index 0000000000000000000000000000000000000000..016c5af192948a3908f77aa6e3e6db1c
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb0464a52d99a916bca8f93cd9294cdc30893671
+index 0000000000000000000000000000000000000000..1ba051931d3ce6ac0bef559911e4453044266aab
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginProviderFactory.java
 @@ -0,0 +1,56 @@
@@ -5741,7 +5746,7 @@ index 0000000000000000000000000000000000000000..eb0464a52d99a916bca8f93cd9294cdc
 +    public PaperPluginParent build(JarFile file, PaperPluginMeta configuration, Path source) throws Exception {
 +        Logger jul = PaperPluginLogger.getLogger(configuration);
 +        ComponentLogger logger = ComponentLogger.logger(jul.getName());
-+        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger);
++        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger, source);
 +
 +        PaperClasspathBuilder builder = new PaperClasspathBuilder(context);
 +
@@ -6096,7 +6101,7 @@ index 0000000000000000000000000000000000000000..14ed05945ba5bfeb2b539d4786278b0e
 +
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e5b70ff297febd936e64055b79f48712d65dbed9
+index 0000000000000000000000000000000000000000..2851c22ed74792bf7b60139c46776407e5163463
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 @@ -0,0 +1,57 @@
@@ -6124,7 +6129,7 @@ index 0000000000000000000000000000000000000000..e5b70ff297febd936e64055b79f48712
 +
 +public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootstrap> {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    public BootstrapProviderStorage() {
 +        super(new ModernPluginLoadingStrategy<>(new ProviderConfiguration<>() {
@@ -6206,7 +6211,7 @@ index 0000000000000000000000000000000000000000..374e7d3d69fc8603ecf54999f173123d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fbe76a678f45bd3c55f25f2b6a4366efc0521cb8
+index 0000000000000000000000000000000000000000..cb9b13522a976b82bcb71cef486f11f4172e3e99
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
 @@ -0,0 +1,70 @@
@@ -6229,7 +6234,7 @@ index 0000000000000000000000000000000000000000..fbe76a678f45bd3c55f25f2b6a4366ef
 +
 +public class ServerPluginProviderStorage extends ConfiguredProviderStorage<JavaPlugin> {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    public ServerPluginProviderStorage() {
 +        super(new ProviderConfiguration<>() {
@@ -6282,7 +6287,7 @@ index 0000000000000000000000000000000000000000..fbe76a678f45bd3c55f25f2b6a4366ef
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a7085dbf2c5ace9b6887d024c0785fa529e0f1da
+index 0000000000000000000000000000000000000000..9abfc8778614f7bc4da32a27c7f4964caff05c63
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 @@ -0,0 +1,85 @@
@@ -6300,7 +6305,7 @@ index 0000000000000000000000000000000000000000..a7085dbf2c5ace9b6887d024c0785fa5
 +
 +public abstract class SimpleProviderStorage<T> implements ProviderStorage<T> {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    protected final List<PluginProvider<T>> providers = new ArrayList<>();
 +    protected ProviderLoadingStrategy<T> strategy;
@@ -6384,7 +6389,7 @@ index 0000000000000000000000000000000000000000..c1114675137e862ac9682b635bfdbfbc
 +package io.papermc.paper.plugin.storage;
 diff --git a/src/main/java/io/papermc/paper/plugin/util/EntrypointUtil.java b/src/main/java/io/papermc/paper/plugin/util/EntrypointUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..98518351e616e536315cd89790b327d3bad33d0e
+index 0000000000000000000000000000000000000000..6507e0103c6afde2bed31e25b70e7402fa3af823
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/util/EntrypointUtil.java
 @@ -0,0 +1,19 @@
@@ -6397,7 +6402,7 @@ index 0000000000000000000000000000000000000000..98518351e616e536315cd89790b327d3
 +
 +public class EntrypointUtil {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    public static <C> void registerProvidersFromSource(ProviderSource<C> source, C context) {
 +        try {
