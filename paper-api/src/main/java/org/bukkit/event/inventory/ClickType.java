@@ -114,6 +114,6 @@ public enum ClickType {
      * @return true if the action uses Shift.
      */
     public boolean isShiftClick() {
-        return (this == ClickType.SHIFT_LEFT) || (this == ClickType.SHIFT_RIGHT) || (this == ClickType.CONTROL_DROP);
+        return (this == ClickType.SHIFT_LEFT) || (this == ClickType.SHIFT_RIGHT);
     }
 }
