@@ -14,7 +14,7 @@ How To (Server Admins)
 ------
 Paperclip is a jar file that you can download and run just like a normal jar file.
 
-Download Paper from our [downloads page](https://papermc.io/downloads).
+Download Paper from our [downloads page](https://papermc.io/downloads/paper).
 
 Run the Paperclip jar directly from your server. Just like old times
 
