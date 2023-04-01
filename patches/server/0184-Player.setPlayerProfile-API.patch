@@ -55,7 +55,7 @@ index e7442952ef1f03969949014492a7ddc6d0796ba5..69a1852905dd4724c30ac8ab88c14251
  
      public Server getServer() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index f19b8258e30133f3111ca27e9082b7f3a4ce3877..53074702d0d606ce0e26c4cf435c3b71b4336f5e 100644
+index f19b8258e30133f3111ca27e9082b7f3a4ce3877..dd1e5b2ec23b90dff11fce2de0caea10342d3168 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -82,6 +82,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -144,7 +144,7 @@ index f19b8258e30133f3111ca27e9082b7f3a4ce3877..53074702d0d606ce0e26c4cf435c3b71
      }
  
      void resetAndShowEntity(org.bukkit.entity.Entity entity) {
-@@ -1749,6 +1780,30 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1749,6 +1780,40 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              this.trackAndShowEntity(entity);
          }
      }
@@ -165,6 +165,16 @@ index f19b8258e30133f3111ca27e9082b7f3a4ce3877..53074702d0d606ce0e26c4cf435c3b71
 +        handle.onUpdateAbilities();
 +        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet());
 +        net.minecraft.server.MinecraftServer.getServer().getPlayerList().sendAllPlayerInfo(handle);
++
++        // Resend their XP and effects because the respawn packet resets it
++        connection.send(new net.minecraft.network.protocol.game.ClientboundSetExperiencePacket(handle.experienceProgress, handle.totalExperience, handle.experienceLevel));
++        for (net.minecraft.world.effect.MobEffectInstance mobEffect : handle.getActiveEffects()) {
++            connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(handle.getId(), mobEffect));
++        }
++
++        // Resend other player information
++        handle.onUpdateAbilities();
++        updateScaledHealth();
 +
 +        if (this.isOp()) {
 +            this.setOp(false);
