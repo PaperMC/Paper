@@ -7059,7 +7059,7 @@ index db6a64ae4437b76c39e7ddb02adbea27c95fde78..3fdbb777d4722596cc4df79b2d4d7b9c
          this.levelHeightAccessor = heightLimitView;
          this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 802a927de07b5ebcdd41bf3dc75c53eca582f1df..0307083079c0a257ecb82b8cb4fb8f91af3816bc 100644
+index 876d52861880d405bfc718a38113cd2bdfb1d447..bedafac1c29f4b2a820822b01814b871f88528d4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -25,6 +25,7 @@ import net.minecraft.nbt.CompoundTag;
@@ -7070,8 +7070,8 @@ index 802a927de07b5ebcdd41bf3dc75c53eca582f1df..0307083079c0a257ecb82b8cb4fb8f91
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.util.profiling.ProfilerFiller;
  import net.minecraft.world.entity.Entity;
-@@ -124,6 +125,109 @@ public class LevelChunk extends ChunkAccess {
- 
+@@ -117,6 +118,109 @@ public class LevelChunk extends ChunkAccess {
+     public boolean needsDecoration;
      // CraftBukkit end
  
 +    // Paper start
@@ -7180,7 +7180,7 @@ index 802a927de07b5ebcdd41bf3dc75c53eca582f1df..0307083079c0a257ecb82b8cb4fb8f91
      public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
          this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
          Iterator iterator = protoChunk.getBlockEntities().values().iterator();
-@@ -233,6 +337,18 @@ public class LevelChunk extends ChunkAccess {
+@@ -226,6 +330,18 @@ public class LevelChunk extends ChunkAccess {
          }
      }
  
@@ -7199,7 +7199,7 @@ index 802a927de07b5ebcdd41bf3dc75c53eca582f1df..0307083079c0a257ecb82b8cb4fb8f91
      @Override
      public FluidState getFluidState(BlockPos pos) {
          return this.getFluidState(pos.getX(), pos.getY(), pos.getZ());
-@@ -354,6 +470,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -347,6 +463,7 @@ public class LevelChunk extends ChunkAccess {
          return this.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
      }
  
@@ -7207,7 +7207,7 @@ index 802a927de07b5ebcdd41bf3dc75c53eca582f1df..0307083079c0a257ecb82b8cb4fb8f91
      @Nullable
      public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
          // CraftBukkit start
-@@ -535,7 +652,25 @@ public class LevelChunk extends ChunkAccess {
+@@ -528,7 +645,25 @@ public class LevelChunk extends ChunkAccess {
  
      // CraftBukkit start
      public void loadCallback() {
@@ -7233,7 +7233,7 @@ index 802a927de07b5ebcdd41bf3dc75c53eca582f1df..0307083079c0a257ecb82b8cb4fb8f91
          if (server != null) {
              /*
               * If it's a new world, the first few chunks are generated inside
-@@ -574,6 +709,22 @@ public class LevelChunk extends ChunkAccess {
+@@ -569,6 +704,22 @@ public class LevelChunk extends ChunkAccess {
          server.getPluginManager().callEvent(unloadEvent);
          // note: saving can be prevented, but not forced if no saving is actually required
          this.mustNotSave = !unloadEvent.isSaveChunk();
@@ -7303,21 +7303,21 @@ index f66369ddaeab5c5ac643c0979dac3ed21337ff71..038abf2ac104ceecaab11b10d466ea69
              return false;
          } else {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b685b6064a32884e5617f2debb7ea10159d9ce0d..3b9e42adb657d0feb99de4b55dc0c628e9cd5afd 100644
+index 5e36e5af2f6e5a705f36105d4ffed8d142886f6f..9a033c136062c43e6db8107fdff059a6807aed02 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -233,8 +233,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -245,8 +245,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public Chunk[] getLoadedChunks() {
 -        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = this.world.getChunkSource().chunkMap.visibleChunkMap;
--        return chunks.values().stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.LevelChunk::getBukkitChunk).toArray(Chunk[]::new);
+-        return chunks.values().stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
 +        List<ChunkHolder> chunks = io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.world); // Paper
-+        return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.LevelChunk::getBukkitChunk).toArray(Chunk[]::new);
++        return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
      }
  
      @Override
-@@ -309,7 +309,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -321,7 +321,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public boolean refreshChunk(int x, int z) {
@@ -7326,7 +7326,7 @@ index b685b6064a32884e5617f2debb7ea10159d9ce0d..3b9e42adb657d0feb99de4b55dc0c628
          if (playerChunk == null) return false;
  
          playerChunk.getTickingChunkFuture().thenAccept(either -> {
-@@ -1959,4 +1959,32 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1970,4 +1970,32 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          return this.spigot;
      }
      // Spigot end
@@ -7335,7 +7335,7 @@ index b685b6064a32884e5617f2debb7ea10159d9ce0d..3b9e42adb657d0feb99de4b55dc0c628
 +        if (Bukkit.isPrimaryThread()) {
 +            net.minecraft.world.level.chunk.LevelChunk immediate = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
 +            if (immediate != null) {
-+                return java.util.concurrent.CompletableFuture.completedFuture(immediate.getBukkitChunk());
++                return java.util.concurrent.CompletableFuture.completedFuture(new CraftChunk(immediate));
 +            }
 +        }
 +
@@ -7351,7 +7351,7 @@ index b685b6064a32884e5617f2debb7ea10159d9ce0d..3b9e42adb657d0feb99de4b55dc0c628
 +        io.papermc.paper.chunk.system.ChunkSystem.scheduleChunkLoad(this.getHandle(), x, z, gen, ChunkStatus.FULL, true, priority, (c) -> {
 +            net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
 +                net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk)c;
-+                ret.complete(chunk == null ? null : chunk.getBukkitChunk());
++                ret.complete(chunk == null ? null : new CraftChunk(chunk));
 +            });
 +        });
 +
