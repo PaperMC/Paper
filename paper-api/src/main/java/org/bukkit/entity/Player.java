@@ -638,6 +638,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void sendMap(@NotNull MapView map);
 
     /**
+     * Send a hurt animation. This fakes incoming damage towards the player from
+     * the given yaw relative to the player's direction.
+     *
+     * @param yaw the yaw in degrees relative to the player's direction where 0
+     * is in front of the player, 90 is to the right, 180 is behind, and 270 is
+     * to the left
+     */
+    public void sendHurtAnimation(float yaw);
+
+    /**
      * Add custom chat completion suggestions shown to the player while typing a
      * message.
      *
