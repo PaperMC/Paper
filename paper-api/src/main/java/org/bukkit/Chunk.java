@@ -11,7 +11,11 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a chunk of blocks
+ * Represents a chunk of blocks.
+ *
+ * If the chunk is not yet fully generated and data is requested from the chunk,
+ * then the chunk will only be generated as far as it needs to provide the
+ * requested data.
  */
 public interface Chunk extends PersistentDataHolder {
 
@@ -93,6 +97,13 @@ public interface Chunk extends PersistentDataHolder {
      */
     @NotNull
     BlockState[] getTileEntities();
+
+    /**
+     * Checks if the chunk is fully generated.
+     *
+     * @return True if it is fully generated.
+     */
+    boolean isGenerated();
 
     /**
      * Checks if the chunk is loaded.

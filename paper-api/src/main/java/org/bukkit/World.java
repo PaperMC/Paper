@@ -165,6 +165,17 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public Chunk getChunkAt(int x, int z);
 
     /**
+     * Gets the {@link Chunk} at the given coordinates
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @param generate Whether the chunk should be fully generated or not
+     * @return Chunk at the given coordinates
+     */
+    @NotNull
+    public Chunk getChunkAt(int x, int z, boolean generate);
+
+    /**
      * Gets the {@link Chunk} at the given {@link Location}
      *
      * @param location Location of the chunk
