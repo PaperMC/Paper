@@ -677,13 +677,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendBlockDamage(Location loc, float progress) {
+        this.sendBlockDamage(loc, progress, getEntityId());
+    }
+
+    @Override
+    public void sendBlockDamage(Location loc, float progress, org.bukkit.entity.Entity source) {
+        Preconditions.checkArgument(source != null, "source must not be null");
+        this.sendBlockDamage(loc, progress, source.getEntityId());
+    }
+
+    @Override
+    public void sendBlockDamage(Location loc, float progress, int sourceId) {
         Preconditions.checkArgument(loc != null, "loc must not be null");
         Preconditions.checkArgument(progress >= 0.0 && progress <= 1.0, "progress must be between 0.0 and 1.0 (inclusive)");
 
         if (getHandle().connection == null) return;
 
         int stage = (int) (9 * progress); // There are 0 - 9 damage states
-        PacketPlayOutBlockBreakAnimation packet = new PacketPlayOutBlockBreakAnimation(getHandle().getId(), new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), stage);
+        if (progress == 0.0F) {
+            stage = -1; // The protocol states that any other value will reset the damage, which this API promises
+        }
+
+        PacketPlayOutBlockBreakAnimation packet = new PacketPlayOutBlockBreakAnimation(sourceId, new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), stage);
         getHandle().connection.send(packet);
     }
 
