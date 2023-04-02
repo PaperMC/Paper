@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MarkusTieger <markustieger@gmail.com>
+Date: Sun, 2 Apr 2023 22:08:32 +0200
+Subject: [PATCH] Added Support for Unix Domain Socket
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 2ff578e4a953ffcf5176815ba8e3f06f73499989..5349fa51c4265ddc0c9b437e0e67614c4e81d4f0 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -382,7 +382,13 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+                         // Paper end
+                         String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
+                         java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
+-                        java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) connection.channel.remoteAddress()).getAddress(); // Paper
++                        // Paper start
++                        java.net.SocketAddress rawSocketAddress = connection.channel.remoteAddress();
++                        java.net.InetAddress rawAddress = InetAddress.getLoopbackAddress();
++                        if(rawSocketAddress != null && rawSocketAddress instanceof InetSocketAddress rawInetSocketAddress) {
++                    	    rawAddress = rawInetSocketAddress.getAddress();
++                        }
++                        // Paper end
+                         java.util.UUID uniqueId = ServerLoginPacketListenerImpl.this.gameProfile.getId();
+                         final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index a1096ea424c0724af93a2dc65512ee71f4a0bf72..51b4c186592a95a52588bd5f781a852bdaae2355 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -11,6 +11,8 @@ import com.mojang.serialization.Dynamic;
+ import io.netty.buffer.Unpooled;
+ import io.papermc.paper.adventure.PaperAdventure;
+ import java.io.File;
++import java.net.InetAddress;
++import java.net.InetSocketAddress;
+ import java.net.SocketAddress;
+ import java.nio.file.Path;
+ import java.text.SimpleDateFormat;
+@@ -699,7 +701,14 @@ public abstract class PlayerList {
+ 
+         ServerPlayer entity = new ServerPlayer(this.server, this.server.getLevel(Level.OVERWORLD), gameprofile);
+         Player player = entity.getBukkitEntity();
+-        PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
++        
++        InetAddress rawAddress = InetAddress.getLoopbackAddress();
++        SocketAddress rawSocketAddress = loginlistener.connection.channel.remoteAddress();
++        if(rawSocketAddress != null && rawSocketAddress instanceof InetSocketAddress rawInetSocketAddress) {
++     	   rawAddress = rawInetSocketAddress.getAddress();
++        }
++        
++        PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), rawAddress);
+ 
+         // Paper start - Fix MC-158900
+         UserBanListEntry gameprofilebanentry;
