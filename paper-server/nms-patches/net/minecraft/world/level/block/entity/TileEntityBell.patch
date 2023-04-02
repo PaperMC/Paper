@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/level/block/entity/TileEntityBell.java
++++ b/net/minecraft/world/level/block/entity/TileEntityBell.java
+@@ -35,8 +35,8 @@
+     public boolean shaking;
+     public EnumDirection clickDirection;
+     private List<EntityLiving> nearbyEntities;
+-    private boolean resonating;
+-    private int resonationTicks;
++    public boolean resonating;
++    public int resonationTicks;
+ 
+     public TileEntityBell(BlockPosition blockposition, IBlockData iblockdata) {
+         super(TileEntityTypes.BELL, blockposition, iblockdata);
+@@ -120,7 +120,7 @@
+                 EntityLiving entityliving = (EntityLiving) iterator.next();
+ 
+                 if (entityliving.isAlive() && !entityliving.isRemoved() && blockposition.closerToCenterThan(entityliving.position(), 32.0D)) {
+-                    entityliving.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, (Object) this.level.getGameTime());
++                    entityliving.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, this.level.getGameTime()); // CraftBukkit - decompile error
+                 }
+             }
+         }
+@@ -144,9 +144,13 @@
+     }
+ 
+     private static void makeRaidersGlow(World world, BlockPosition blockposition, List<EntityLiving> list) {
++        List<org.bukkit.entity.LivingEntity> entities = // CraftBukkit
+         list.stream().filter((entityliving) -> {
+             return isRaiderWithinRange(blockposition, entityliving);
+-        }).forEach(TileEntityBell::glow);
++        }).map((entity) -> (org.bukkit.entity.LivingEntity) entity.getBukkitEntity()).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new)); // CraftBukkit
++
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBellResonateEvent(world, blockposition, entities).forEach(TileEntityBell::glow);
++        // CraftBukkit end
+     }
+ 
+     private static void showBellParticles(World world, BlockPosition blockposition, List<EntityLiving> list) {
