@@ -18,28 +18,19 @@
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap();
          HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
          int j = aheightmap_type.length;
-@@ -110,8 +110,20 @@
-         this.postLoad = chunk_c;
-         this.blockTicks = levelchunkticks;
+@@ -112,6 +112,11 @@
          this.fluidTicks = levelchunkticks1;
-+        // CraftBukkit start
-+        this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
      }
  
-+    public org.bukkit.Chunk bukkitChunk;
-+    public org.bukkit.Chunk getBukkitChunk() {
-+        return bukkitChunk;
-+    }
-+
++    // CraftBukkit start
 +    public boolean mustNotSave;
 +    public boolean needsDecoration;
-+
 +    // CraftBukkit end
 +
      public Chunk(WorldServer worldserver, ProtoChunk protochunk, @Nullable Chunk.c chunk_c) {
          this(worldserver, protochunk.getPos(), protochunk.getUpgradeData(), protochunk.unpackBlockTicks(), protochunk.unpackFluidTicks(), protochunk.getInhabitedTime(), protochunk.getSections(), chunk_c, protochunk.getBlendingData());
          Iterator iterator = protochunk.getBlockEntities().values().iterator();
-@@ -142,6 +154,10 @@
+@@ -142,6 +147,10 @@
  
          this.setLightCorrect(protochunk.isLightCorrect());
          this.unsaved = true;
@@ -50,7 +41,7 @@
      }
  
      @Override
-@@ -246,9 +262,16 @@
+@@ -246,9 +255,16 @@
          }
      }
  
@@ -67,7 +58,7 @@
          int i = blockposition.getY();
          ChunkSection chunksection = this.getSection(this.getSectionIndex(i));
          boolean flag1 = chunksection.hasOnlyAir();
-@@ -287,7 +310,8 @@
+@@ -287,7 +303,8 @@
                  if (!chunksection.getBlockState(j, k, l).is(block)) {
                      return null;
                  } else {
@@ -77,7 +68,7 @@
                          iblockdata.onPlace(this.level, blockposition, iblockdata1, flag);
                      }
  
-@@ -332,7 +356,12 @@
+@@ -332,7 +349,12 @@
  
      @Nullable
      public TileEntity getBlockEntity(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -91,7 +82,7 @@
  
          if (tileentity == null) {
              NBTTagCompound nbttagcompound = (NBTTagCompound) this.pendingBlockEntities.remove(blockposition);
-@@ -410,6 +439,13 @@
+@@ -410,6 +432,13 @@
                  tileentity1.setRemoved();
              }
  
@@ -105,7 +96,7 @@
          }
      }
  
-@@ -439,6 +475,12 @@
+@@ -439,6 +468,12 @@
          if (this.isInLevel()) {
              TileEntity tileentity = (TileEntity) this.blockEntities.remove(blockposition);
  
@@ -118,7 +109,7 @@
              if (tileentity != null) {
                  World world = this.level;
  
-@@ -491,6 +533,55 @@
+@@ -491,6 +526,57 @@
  
      }
  
@@ -131,7 +122,8 @@
 +             * the World constructor. We can't reliably alter that, so we have
 +             * no way of creating a CraftWorld/CraftServer at that point.
 +             */
-+            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(this.bukkitChunk, this.needsDecoration));
++            org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
++            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, this.needsDecoration));
 +
 +            if (this.needsDecoration) {
 +                this.needsDecoration = false;
@@ -159,7 +151,8 @@
 +
 +    public void unloadCallback() {
 +        org.bukkit.Server server = this.level.getCraftServer();
-+        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
++        org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
++        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(bukkitChunk, this.isUnsaved());
 +        server.getPluginManager().callEvent(unloadEvent);
 +        // note: saving can be prevented, but not forced if no saving is actually required
 +        this.mustNotSave = !unloadEvent.isSaveChunk();
@@ -174,7 +167,7 @@
      public boolean isEmpty() {
          return false;
      }
-@@ -694,7 +785,7 @@
+@@ -694,7 +780,7 @@
  
      private <T extends TileEntity> void updateBlockEntityTicker(T t0) {
          IBlockData iblockdata = t0.getBlockState();
@@ -183,7 +176,7 @@
  
          if (blockentityticker == null) {
              this.removeBlockEntityTicker(t0.getBlockPos());
-@@ -787,7 +878,7 @@
+@@ -787,7 +873,7 @@
          private boolean loggedInvalidBlockState;
  
          a(TileEntity tileentity, BlockEntityTicker blockentityticker) {

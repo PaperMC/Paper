@@ -139,6 +139,7 @@ import org.bukkit.util.Consumer;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftWorld extends CraftRegionAccessor implements World {
     public static final int CUSTOM_DIMENSION_OFFSET = 10;
@@ -212,7 +213,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Chunk getChunkAt(int x, int z) {
-        return this.world.getChunkSource().getChunk(x, z, true).bukkitChunk;
+        net.minecraft.world.level.chunk.Chunk chunk = (net.minecraft.world.level.chunk.Chunk) this.world.getChunk(x, z, ChunkStatus.FULL, true);
+        return new CraftChunk(chunk);
+    }
+
+    @NotNull
+    @Override
+    public Chunk getChunkAt(int x, int z, boolean generate) {
+        if (generate) {
+            return getChunkAt(x, z);
+        }
+
+        return new CraftChunk(getHandle(), x, z);
     }
 
     @Override
@@ -239,7 +251,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public Chunk[] getLoadedChunks() {
         Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkSource().chunkMap.visibleChunkMap;
-        return chunks.values().stream().map(PlayerChunk::getFullChunkNow).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.Chunk::getBukkitChunk).toArray(Chunk[]::new);
+        return chunks.values().stream().map(PlayerChunk::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
     }
 
     @Override
@@ -277,7 +289,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
         net.minecraft.world.level.chunk.Chunk chunk = world.getChunk(x, z);
 
-        chunk.mustNotSave = !save;
+        chunk.setUnsaved(!save); // Use method call to account for persistentDataContainer
         unloadChunkRequest(x, z);
 
         world.getChunkSource().purgeUnload();
@@ -366,7 +378,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(chunk != null, "null chunk");
 
         loadChunk(chunk.getX(), chunk.getZ());
-        ((CraftChunk) getChunkAt(chunk.getX(), chunk.getZ())).getHandle().bukkitChunk = chunk;
     }
 
     @Override
