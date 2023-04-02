@@ -39,6 +39,7 @@ import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
 import net.minecraft.network.protocol.game.ClientboundCustomChatCompletionsPacket;
+import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket;
@@ -838,6 +839,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         PacketPlayOutMap packet = new PacketPlayOutMap(map.getId(), map.getScale().getValue(), map.isLocked(), icons, new WorldMap.b(0, 0, 128, 128, data.buffer));
         getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void sendHurtAnimation(float yaw) {
+        if (getHandle().connection == null) {
+            return;
+        }
+
+        /*
+         * Vanilla degrees state that 0 = left, 90 = front, 180 = right, and 270 = behind.
+         * This makes no sense. We'll add 90 to it so that 0 = front, clockwise from there.
+         */
+        float actualYaw = yaw + 90;
+        getHandle().connection.send(new ClientboundHurtAnimationPacket(getEntityId(), actualYaw));
     }
 
     @Override
