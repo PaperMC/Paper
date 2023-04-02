@@ -167,10 +167,23 @@ index fbc62e2b07a430dea8a827790bda5fbf6f19d05b..07536b696f734fb9e8d0abe1f414ae53
      private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
      {
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..9bede6a26c08ede063c7a38f1149c811df14b258 100644
+index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..b1a72aa3634405f3fce64c66677a75d8f77cb6f6 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-@@ -24,22 +24,30 @@ public class TicksPerSecondCommand extends Command
+@@ -15,6 +15,12 @@ public class TicksPerSecondCommand extends Command
+         this.usageMessage = "/tps";
+         this.setPermission( "bukkit.command.tps" );
+     }
++    // Paper start
++    private static final net.kyori.adventure.text.Component WARN_MSG = net.kyori.adventure.text.Component.text()
++        .append(net.kyori.adventure.text.Component.text("Warning: ", net.kyori.adventure.text.format.NamedTextColor.RED))
++        .append(net.kyori.adventure.text.Component.text("Memory usage on modern garbage collectors is not a stable value and it is perfectly normal to see it reach max. Please do not pay it much attention.", net.kyori.adventure.text.format.NamedTextColor.GOLD))
++        .build();
++    // Paper end
+ 
+     @Override
+     public boolean execute(CommandSender sender, String currentAlias, String[] args)
+@@ -24,22 +30,33 @@ public class TicksPerSecondCommand extends Command
              return true;
          }
  
@@ -186,12 +199,15 @@ index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..9bede6a26c08ede063c7a38f1149c811
 +        for ( int i = 0; i < tps.length; i++) {
 +            tpsAvg[i] = TicksPerSecondCommand.format( tps[i] );
 +        }
-+        sender.sendMessage(ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "));
++        sender.sendMessage(net.kyori.adventure.text.Component.text("TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "), net.kyori.adventure.text.format.NamedTextColor.GOLD));
 +        if (args.length > 0 && args[0].equals("mem") && sender.hasPermission("bukkit.command.tpsmemory")) {
-+            sender.sendMessage(ChatColor.GOLD + "Current Memory Usage: " + ChatColor.GREEN + ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024)) + "/" + (Runtime.getRuntime().totalMemory() / (1024 * 1024)) + " mb (Max: " + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " mb)");
-+            if (!hasShownMemoryWarning) {
-+                sender.sendMessage(ChatColor.RED + "Warning: " + ChatColor.GOLD + " Memory usage on modern garbage collectors is not a stable value and it is perfectly normal to see it reach max. Please do not pay it much attention.");
-+                hasShownMemoryWarning = true;
++            sender.sendMessage(net.kyori.adventure.text.Component.text()
++                .append(net.kyori.adventure.text.Component.text("Current Memory Usage: ", net.kyori.adventure.text.format.NamedTextColor.GOLD))
++                .append(net.kyori.adventure.text.Component.text(((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024)) + "/" + (Runtime.getRuntime().totalMemory() / (1024 * 1024)) + " mb (Max: " + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " mb)", net.kyori.adventure.text.format.NamedTextColor.GREEN))
++            );
++            if (!this.hasShownMemoryWarning) {
++                sender.sendMessage(WARN_MSG);
++                this.hasShownMemoryWarning = true;
 +            }
          }
 -        sender.sendMessage( sb.substring( 0, sb.length() - 2 ) );
