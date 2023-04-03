@@ -131,7 +131,13 @@
      private double firstGoodX;
      private double firstGoodY;
      private double firstGoodZ;
-@@ -245,9 +312,10 @@
+@@ -240,14 +307,16 @@
+     private boolean receivedMovementThisTick;
+     @Nullable
+     private RemoteChatSession chatSession;
++    private boolean hasLoggedExpiry = false; // Paper - Prevent causing expired keys from impacting new joins
+     private SignedMessageChain.Decoder signedMessageDecoder;
+     private final LastSeenMessagesValidator lastSeenMessages = new LastSeenMessagesValidator(20);
      private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
      private final FutureChain chatMessageChain;
      private boolean waitingForSwitchToConfig;
@@ -143,7 +149,7 @@
          this.chunkSender = new PlayerChunkSender(connection.isMemoryConnection());
          this.player = player;
          player.connection = this;
-@@ -256,9 +324,25 @@
+@@ -256,9 +325,25 @@
  
          Objects.requireNonNull(server);
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(uuid, server::enforceSecureProfile);
@@ -170,7 +176,7 @@
      @Override
      public void tick() {
          if (this.ackBlockChangesUpTo > -1) {
-@@ -277,7 +361,7 @@
+@@ -277,7 +362,7 @@
          if (this.clientIsFloating && !this.player.isSleeping() && !this.player.isPassenger() && !this.player.isDeadOrDying()) {
              if (++this.aboveGroundTickCount > this.getMaximumFlyingTicks(this.player)) {
                  ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked for floating too long!", this.player.getName().getString());
@@ -179,7 +185,7 @@
                  return;
              }
          } else {
-@@ -296,7 +380,7 @@
+@@ -296,7 +381,7 @@
              if (this.clientVehicleIsFloating && this.lastVehicle.getControllingPassenger() == this.player) {
                  if (++this.aboveGroundVehicleTickCount > this.getMaximumFlyingTicks(this.lastVehicle)) {
                      ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked for floating a vehicle too long!", this.player.getName().getString());
@@ -188,7 +194,7 @@
                      return;
                  }
              } else {
-@@ -311,9 +395,12 @@
+@@ -311,10 +396,20 @@
  
          this.keepConnectionAlive();
          this.chatSpamThrottler.tick();
@@ -200,10 +206,18 @@
 +        if (this.player.getLastActionTime() > 0L && this.server.getPlayerIdleTimeout() > 0 && Util.getMillis() - this.player.getLastActionTime() > (long) this.server.getPlayerIdleTimeout() * 1000L * 60L && !this.player.wonGame) { // Paper - Prevent AFK kick while watching end credits
 +            this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
 +            this.disconnect((Component) Component.translatable("multiplayer.disconnect.idling"), org.bukkit.event.player.PlayerKickEvent.Cause.IDLING); // Paper - kick event cause
++        }
++
++        // Paper start - Prevent causing expired keys from impacting new joins
++        if (!hasLoggedExpiry && this.chatSession != null && this.chatSession.profilePublicKey().data().hasExpired()) {
++            LOGGER.info("Player profile key for {} has expired!", this.player.getName().getString());
++            hasLoggedExpiry = true;
          }
++        // Paper end - Prevent causing expired keys from impacting new joins
  
      }
-@@ -376,6 +463,12 @@
+ 
+@@ -376,6 +471,12 @@
      @Override
      public void handlePlayerInput(ServerboundPlayerInputPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -216,7 +230,7 @@
          this.player.setLastClientInput(packet.input());
      }
  
-@@ -395,27 +488,84 @@
+@@ -395,27 +496,84 @@
      public void handleMoveVehicle(ServerboundMoveVehiclePacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (ServerGamePacketListenerImpl.containsInvalidValues(packet.position().x(), packet.position().y(), packet.position().z(), packet.yRot(), packet.xRot())) {
@@ -310,7 +324,7 @@
                      ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-@@ -423,9 +573,9 @@
+@@ -423,9 +581,9 @@
  
                  boolean flag = worldserver.noCollision(entity, entity.getBoundingBox().deflate(0.0625D));
  
@@ -323,7 +337,7 @@
                  boolean flag1 = entity.verticalCollisionBelow;
  
                  if (entity instanceof LivingEntity) {
-@@ -449,19 +599,72 @@
+@@ -449,20 +607,73 @@
                  d10 = d6 * d6 + d7 * d7 + d8 * d8;
                  boolean flag2 = false;
  
@@ -342,8 +356,8 @@
 +                    this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-+                }
-+
+                 }
+ 
 +                // CraftBukkit start - fire PlayerMoveEvent
 +                Player player = this.getCraftPlayer();
 +                if (!this.hasMoved) {
@@ -392,12 +406,13 @@
 +                        this.justTeleported = false;
 +                        return;
 +                    }
-                 }
++                }
 +                // CraftBukkit end
- 
++
                  this.player.serverLevel().getChunkSource().move(this.player);
                  entity.recordMovementThroughBlocks(new Vec3(d0, d1, d2), entity.position());
-@@ -489,16 +692,17 @@
+                 Vec3 vec3d = new Vec3(entity.getX() - d0, entity.getY() - d1, entity.getZ() - d2);
+@@ -489,16 +700,17 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (packet.getId() == this.awaitingTeleport) {
              if (this.awaitingPositionFromClient == null) {
@@ -417,7 +432,7 @@
          }
  
      }
-@@ -528,6 +732,7 @@
+@@ -528,6 +740,7 @@
      @Override
      public void handleRecipeBookChangeSettingsPacket(ServerboundRecipeBookChangeSettingsPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -425,7 +440,7 @@
          this.player.getRecipeBook().setBookSetting(packet.getBookType(), packet.isOpen(), packet.isFiltering());
      }
  
-@@ -545,21 +750,85 @@
+@@ -545,21 +758,85 @@
  
      }
  
@@ -515,7 +530,7 @@
          });
      }
  
-@@ -568,7 +837,7 @@
+@@ -568,7 +845,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (!this.server.isCommandBlockEnabled()) {
              this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
@@ -524,7 +539,7 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandblocklistenerabstract = null;
-@@ -635,7 +904,7 @@
+@@ -635,7 +912,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (!this.server.isCommandBlockEnabled()) {
              this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
@@ -533,7 +548,7 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandblocklistenerabstract = packet.getCommandBlock(this.player.level());
-@@ -668,7 +937,7 @@
+@@ -668,7 +945,7 @@
                  ItemStack itemstack = iblockdata.getCloneItemStack(worldserver, blockposition, flag);
  
                  if (!itemstack.isEmpty()) {
@@ -542,7 +557,7 @@
                          ServerGamePacketListenerImpl.addBlockDataToItem(iblockdata, worldserver, blockposition, itemstack);
                      }
  
-@@ -866,6 +1135,13 @@
+@@ -866,6 +1143,13 @@
          AbstractContainerMenu container = this.player.containerMenu;
  
          if (container instanceof MerchantMenu containermerchant) {
@@ -556,7 +571,7 @@
              if (!containermerchant.stillValid(this.player)) {
                  ServerGamePacketListenerImpl.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, containermerchant);
                  return;
-@@ -879,6 +1155,51 @@
+@@ -879,6 +1163,51 @@
  
      @Override
      public void handleEditBook(ServerboundEditBookPacket packet) {
@@ -608,7 +623,7 @@
          int i = packet.slot();
  
          if (Inventory.isHotbarSlot(i) || i == 40) {
-@@ -899,12 +1220,16 @@
+@@ -899,12 +1228,16 @@
      }
  
      private void updateBookContents(List<FilteredText> pages, int slotId) {
@@ -626,7 +641,7 @@
          }
      }
  
-@@ -915,12 +1240,13 @@
+@@ -915,12 +1248,13 @@
              ItemStack itemstack1 = itemstack.transmuteCopy(Items.WRITTEN_BOOK);
  
              itemstack1.remove(DataComponents.WRITABLE_BOOK_CONTENT);
@@ -642,7 +657,7 @@
          }
      }
  
-@@ -978,26 +1304,34 @@
+@@ -978,26 +1312,34 @@
      public void handleMovePlayer(ServerboundMovePlayerPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (ServerGamePacketListenerImpl.containsInvalidValues(packet.getX(0.0D), packet.getY(0.0D), packet.getZ(0.0D), packet.getYRot(0.0F), packet.getXRot(0.0F))) {
@@ -682,7 +697,7 @@
                          double d3 = this.player.getX();
                          double d4 = this.player.getY();
                          double d5 = this.player.getZ();
-@@ -1005,7 +1339,16 @@
+@@ -1005,7 +1347,16 @@
                          double d7 = d1 - this.firstGoodY;
                          double d8 = d2 - this.firstGoodZ;
                          double d9 = this.player.getDeltaMovement().lengthSqr();
@@ -700,7 +715,7 @@
  
                          if (this.player.isSleeping()) {
                              if (d10 > 1.0D) {
-@@ -1019,15 +1362,39 @@
+@@ -1019,15 +1370,39 @@
                                  ++this.receivedMovePacketCount;
                                  int i = this.receivedMovePacketCount - this.knownMovePacketCount;
  
@@ -742,7 +757,7 @@
                                          ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d6, d7, d8});
                                          this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
                                          return;
-@@ -1037,18 +1404,51 @@
+@@ -1037,18 +1412,51 @@
  
                              AABB axisalignedbb = this.player.getBoundingBox();
  
@@ -798,7 +813,7 @@
                              double d11 = d7;
  
                              d6 = d0 - this.player.getX();
-@@ -1061,15 +1461,81 @@
+@@ -1061,15 +1469,81 @@
                              d10 = d6 * d6 + d7 * d7 + d8 * d8;
                              boolean flag3 = false;
  
@@ -882,7 +897,7 @@
                                  this.player.absMoveTo(d0, d1, d2, f, f1);
                                  boolean flag4 = this.player.isAutoSpinAttack();
  
-@@ -1119,6 +1585,7 @@
+@@ -1119,6 +1593,7 @@
                  this.awaitingTeleportTime = this.tickCount;
                  this.teleport(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
              }
@@ -890,7 +905,7 @@
  
              return true;
          } else {
-@@ -1147,23 +1614,98 @@
+@@ -1147,23 +1622,98 @@
      }
  
      public void teleport(double x, double y, double z, float yaw, float pitch) {
@@ -992,7 +1007,7 @@
          if (this.player.hasClientLoaded()) {
              BlockPos blockposition = packet.getPos();
  
-@@ -1175,14 +1717,46 @@
+@@ -1175,14 +1725,46 @@
                      if (!this.player.isSpectator()) {
                          ItemStack itemstack = this.player.getItemInHand(InteractionHand.OFF_HAND);
  
@@ -1041,7 +1056,7 @@
                          this.player.drop(false);
                      }
  
-@@ -1199,8 +1773,34 @@
+@@ -1199,8 +1781,34 @@
                  case START_DESTROY_BLOCK:
                  case ABORT_DESTROY_BLOCK:
                  case STOP_DESTROY_BLOCK:
@@ -1076,7 +1091,7 @@
                      return;
                  default:
                      throw new IllegalArgumentException("Invalid player action");
-@@ -1218,9 +1818,31 @@
+@@ -1218,9 +1826,31 @@
          }
      }
  
@@ -1108,7 +1123,7 @@
          if (this.player.hasClientLoaded()) {
              this.player.connection.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel worldserver = this.player.serverLevel();
-@@ -1230,6 +1852,11 @@
+@@ -1230,6 +1860,11 @@
              if (itemstack.isItemEnabled(worldserver.enabledFeatures())) {
                  BlockHitResult movingobjectpositionblock = packet.getHitResult();
                  Vec3 vec3d = movingobjectpositionblock.getLocation();
@@ -1120,7 +1135,7 @@
                  BlockPos blockposition = movingobjectpositionblock.getBlockPos();
  
                  if (this.player.canInteractWithBlock(blockposition, 1.0D)) {
-@@ -1243,7 +1870,8 @@
+@@ -1243,7 +1878,8 @@
                          int i = this.player.level().getMaxY();
  
                          if (blockposition.getY() <= i) {
@@ -1130,7 +1145,7 @@
                                  InteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
  
                                  if (enuminteractionresult.consumesAction()) {
-@@ -1257,11 +1885,11 @@
+@@ -1257,11 +1893,11 @@
                                  } else if (enuminteractionresult instanceof InteractionResult.Success) {
                                      InteractionResult.Success enuminteractionresult_d = (InteractionResult.Success) enuminteractionresult;
  
@@ -1144,7 +1159,7 @@
                          } else {
                              MutableComponent ichatmutablecomponent1 = Component.translatable("build.tooHigh", i).withStyle(ChatFormatting.RED);
  
-@@ -1281,6 +1909,8 @@
+@@ -1281,6 +1917,8 @@
      @Override
      public void handleUseItem(ServerboundUseItemPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1153,7 +1168,7 @@
          if (this.player.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel worldserver = this.player.serverLevel();
-@@ -1296,6 +1926,47 @@
+@@ -1296,6 +1934,47 @@
                      this.player.absRotateTo(f, f1);
                  }
  
@@ -1201,7 +1216,7 @@
                  InteractionResult enuminteractionresult = this.player.gameMode.useItem(this.player, worldserver, itemstack, enumhand);
  
                  if (enuminteractionresult instanceof InteractionResult.Success) {
-@@ -1321,7 +1992,7 @@
+@@ -1321,7 +2000,7 @@
                  Entity entity = packet.getEntity(worldserver);
  
                  if (entity != null) {
@@ -1210,7 +1225,7 @@
                      return;
                  }
              }
-@@ -1342,22 +2013,52 @@
+@@ -1342,22 +2021,52 @@
  
      @Override
      public void onDisconnect(DisconnectionDetails info) {
@@ -1267,7 +1282,7 @@
              throw new IllegalArgumentException("Expected packet sequence nr >= 0");
          } else {
              this.ackBlockChangesUpTo = Math.max(sequence, this.ackBlockChangesUpTo);
-@@ -1367,7 +2068,17 @@
+@@ -1367,7 +2076,17 @@
      @Override
      public void handleSetCarriedItem(ServerboundSetCarriedItemPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1285,7 +1300,7 @@
              if (this.player.getInventory().selected != packet.getSlot() && this.player.getUsedItemHand() == InteractionHand.MAIN_HAND) {
                  this.player.stopUsingItem();
              }
-@@ -1376,11 +2087,18 @@
+@@ -1376,11 +2095,18 @@
              this.player.resetLastActionTime();
          } else {
              ServerGamePacketListenerImpl.LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
@@ -1304,7 +1319,7 @@
          Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
  
          if (!optional.isEmpty()) {
-@@ -1394,27 +2112,46 @@
+@@ -1394,27 +2120,46 @@
                      return;
                  }
  
@@ -1358,7 +1373,7 @@
          ParseResults<CommandSourceStack> parseresults = this.parseCommand(command);
  
          if (this.server.enforceSecureProfile() && SignableCommand.hasSignableArguments(parseresults)) {
-@@ -1431,19 +2168,39 @@
+@@ -1431,19 +2176,39 @@
  
          if (!optional.isEmpty()) {
              this.tryHandleChat(packet.command(), () -> {
@@ -1402,7 +1417,7 @@
          } catch (SignedMessageChain.DecodeException signedmessagechain_a) {
              this.handleMessageDecodeFailure(signedmessagechain_a);
              return;
-@@ -1451,10 +2208,10 @@
+@@ -1451,10 +2216,10 @@
  
          CommandSigningContext.SignedArguments commandsigningcontext_a = new CommandSigningContext.SignedArguments(map);
  
@@ -1415,7 +1430,7 @@
      }
  
      private void handleMessageDecodeFailure(SignedMessageChain.DecodeException exception) {
-@@ -1530,14 +2287,20 @@
+@@ -1530,14 +2295,20 @@
          return com_mojang_brigadier_commanddispatcher.parse(command, this.player.createCommandSourceStack());
      }
  
@@ -1441,7 +1456,7 @@
          }
      }
  
-@@ -1549,7 +2312,7 @@
+@@ -1549,7 +2320,7 @@
  
              if (optional.isEmpty()) {
                  ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
@@ -1450,10 +1465,12 @@
              }
  
              return optional;
-@@ -1566,6 +2329,127 @@
-         return false;
-     }
+@@ -1564,8 +2335,129 @@
+         }
  
+         return false;
++    }
++
 +    // CraftBukkit start - add method
 +    public void chat(String s, PlayerChatMessage original, boolean async) {
 +        if (s.isEmpty() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
@@ -1546,8 +1563,8 @@
 +                this.server.console.sendMessage(s);
 +            }
 +        }
-+    }
-+
+     }
+ 
 +    private void handleCommand(String s) {
 +        org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + s); // Paper - Add async catcher
 +        if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
@@ -1578,7 +1595,7 @@
      private PlayerChatMessage getSignedMessage(ServerboundChatPacket packet, LastSeenMessages lastSeenMessages) throws SignedMessageChain.DecodeException {
          SignedMessageBody signedmessagebody = new SignedMessageBody(packet.message(), packet.timeStamp(), packet.salt(), lastSeenMessages);
  
-@@ -1573,15 +2457,44 @@
+@@ -1573,15 +2465,44 @@
      }
  
      private void broadcastChatMessage(PlayerChatMessage message) {
@@ -1629,7 +1646,7 @@
  
      }
  
-@@ -1592,7 +2505,7 @@
+@@ -1592,7 +2513,7 @@
          synchronized (this.lastSeenMessages) {
              if (!this.lastSeenMessages.applyOffset(packet.offset())) {
                  ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
@@ -1638,7 +1655,7 @@
              }
  
          }
-@@ -1601,7 +2514,40 @@
+@@ -1601,7 +2522,40 @@
      @Override
      public void handleAnimate(ServerboundSwingPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1679,7 +1696,7 @@
          this.player.swing(packet.getHand());
      }
  
-@@ -1609,6 +2555,29 @@
+@@ -1609,6 +2563,29 @@
      public void handlePlayerCommand(ServerboundPlayerCommandPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (this.player.hasClientLoaded()) {
@@ -1709,7 +1726,7 @@
              this.player.resetLastActionTime();
              Entity entity;
              PlayerRideableJumping ijumpable;
-@@ -1616,6 +2585,11 @@
+@@ -1616,6 +2593,11 @@
              switch (packet.getAction()) {
                  case PRESS_SHIFT_KEY:
                      this.player.setShiftKeyDown(true);
@@ -1721,7 +1738,7 @@
                      break;
                  case RELEASE_SHIFT_KEY:
                      this.player.setShiftKeyDown(false);
-@@ -1684,13 +2658,19 @@
+@@ -1684,13 +2666,19 @@
              }
  
              if (i > 4096) {
@@ -1742,12 +1759,10 @@
          this.send(new ClientboundPlayerChatPacket(message.link().sender(), message.link().index(), message.signature(), message.signedBody().pack(this.messageSignatureCache), message.unsignedContent(), message.filterMask(), params));
          this.addPendingMessage(message);
      }
-@@ -1701,7 +2681,19 @@
- 
-     public SocketAddress getRemoteAddress() {
+@@ -1703,6 +2691,18 @@
          return this.connection.getRemoteAddress();
-+    }
-+
+     }
+ 
 +    // Spigot Start
 +    public SocketAddress getRawAddress()
 +    {
@@ -1757,12 +1772,13 @@
 +        }
 +        // Paper end - Unix domain socket support
 +        return this.connection.channel.remoteAddress();
-     }
++    }
 +    // Spigot End
- 
++
      public void switchToConfig() {
          this.waitingForSwitchToConfig = true;
-@@ -1718,9 +2710,17 @@
+         this.removePlayerFromWorld();
+@@ -1718,9 +2718,17 @@
      @Override
      public void handleInteract(ServerboundInteractPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1780,7 +1796,7 @@
  
              this.player.resetLastActionTime();
              this.player.setShiftKeyDown(packet.isUsingSecondaryAction());
-@@ -1733,20 +2733,58 @@
+@@ -1733,20 +2741,58 @@
  
                  if (this.player.canInteractWithEntity(axisalignedbb, 3.0D)) {
                      packet.dispatch(new ServerboundInteractPacket.Handler() {
@@ -1843,7 +1859,7 @@
                                      }
                                  }
  
-@@ -1755,19 +2793,20 @@
+@@ -1755,19 +2801,20 @@
  
                          @Override
                          public void onInteraction(InteractionHand hand) {
@@ -1867,7 +1883,7 @@
                                  label23:
                                  {
                                      if (entity instanceof AbstractArrow) {
-@@ -1785,17 +2824,41 @@
+@@ -1785,17 +2832,41 @@
                                      }
  
                                      ServerGamePacketListenerImpl.this.player.attack(entity);
@@ -1910,7 +1926,7 @@
          }
      }
  
-@@ -1809,7 +2872,7 @@
+@@ -1809,7 +2880,7 @@
              case PERFORM_RESPAWN:
                  if (this.player.wonGame) {
                      this.player.wonGame = false;
@@ -1919,7 +1935,7 @@
                      this.resetPosition();
                      CriteriaTriggers.CHANGED_DIMENSION.trigger(this.player, Level.END, Level.OVERWORLD);
                  } else {
-@@ -1817,11 +2880,11 @@
+@@ -1817,11 +2888,11 @@
                          return;
                      }
  
@@ -1934,7 +1950,7 @@
                      }
                  }
                  break;
-@@ -1833,16 +2896,27 @@
+@@ -1833,16 +2904,27 @@
  
      @Override
      public void handleContainerClose(ServerboundContainerClosePacket packet) {
@@ -1964,7 +1980,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  ServerGamePacketListenerImpl.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1855,7 +2929,284 @@
+@@ -1855,7 +2937,284 @@
                      boolean flag = packet.getStateId() != this.player.containerMenu.getStateId();
  
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2250,7 +2266,7 @@
                      ObjectIterator objectiterator = Int2ObjectMaps.fastIterable(packet.getChangedSlots()).iterator();
  
                      while (objectiterator.hasNext()) {
-@@ -1879,6 +3230,14 @@
+@@ -1879,6 +3238,14 @@
  
      @Override
      public void handlePlaceRecipe(ServerboundPlaceRecipePacket packet) {
@@ -2265,7 +2281,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          this.player.resetLastActionTime();
          if (!this.player.isSpectator() && this.player.containerMenu.containerId == packet.containerId()) {
-@@ -1900,9 +3259,43 @@
+@@ -1900,9 +3267,43 @@
                                  ServerGamePacketListenerImpl.LOGGER.debug("Player {} tried to place impossible recipe {}", this.player, recipeholder.id().location());
                                  return;
                              }
@@ -2310,7 +2326,7 @@
                              if (containerrecipebook_a == RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE) {
                                  this.player.connection.send(new ClientboundPlaceGhostRecipePacket(this.player.containerMenu.containerId, craftingmanager_d.display().display()));
                              }
-@@ -1917,6 +3310,7 @@
+@@ -1917,6 +3318,7 @@
      @Override
      public void handleContainerButtonClick(ServerboundContainerButtonClickPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -2318,7 +2334,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packet.containerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -1945,7 +3339,44 @@
+@@ -1945,7 +3347,44 @@
  
              boolean flag1 = packet.slotNum() >= 1 && packet.slotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getCount() <= itemstack.getMaxStackSize();
@@ -2363,7 +2379,7 @@
              if (flag1 && flag2) {
                  this.player.inventoryMenu.getSlot(packet.slotNum()).setByPlayer(itemstack);
                  this.player.inventoryMenu.setRemoteSlot(packet.slotNum(), itemstack);
-@@ -1964,7 +3395,19 @@
+@@ -1964,7 +3403,19 @@
  
      @Override
      public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
@@ -2384,7 +2400,7 @@
  
          this.filterTextPacket(list).thenAcceptAsync((list1) -> {
              this.updateSignText(packet, list1);
-@@ -1972,6 +3415,7 @@
+@@ -1972,6 +3423,7 @@
      }
  
      private void updateSignText(ServerboundSignUpdatePacket packet, List<FilteredText> signText) {
@@ -2392,7 +2408,7 @@
          this.player.resetLastActionTime();
          ServerLevel worldserver = this.player.serverLevel();
          BlockPos blockposition = packet.getPos();
-@@ -1993,15 +3437,33 @@
+@@ -1993,15 +3445,33 @@
      @Override
      public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -2427,7 +2443,7 @@
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != flag) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }
-@@ -2012,7 +3474,7 @@
+@@ -2012,7 +3482,7 @@
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
@@ -2436,7 +2452,7 @@
          }
      }
  
-@@ -2033,7 +3495,7 @@
+@@ -2033,7 +3503,7 @@
  
          if (!Objects.equals(profilepublickey_a, profilepublickey_a1)) {
              if (profilepublickey_a != null && profilepublickey_a1.expiresAt().isBefore(profilepublickey_a.expiresAt())) {
@@ -2445,7 +2461,7 @@
              } else {
                  try {
                      SignatureValidator signaturevalidator = this.server.getProfileKeySignatureValidator();
-@@ -2045,8 +3507,8 @@
+@@ -2045,8 +3515,8 @@
  
                      this.resetPlayerChatState(remotechatsession_a.validate(this.player.getGameProfile(), signaturevalidator));
                  } catch (ProfilePublicKey.ValidationException profilepublickey_b) {
@@ -2456,7 +2472,7 @@
                  }
  
              }
-@@ -2058,7 +3520,7 @@
+@@ -2058,7 +3528,7 @@
          if (!this.waitingForSwitchToConfig) {
              throw new IllegalStateException("Client acknowledged config, but none was requested");
          } else {
@@ -2465,7 +2481,11 @@
          }
      }
  
-@@ -2079,12 +3541,14 @@
+@@ -2076,15 +3546,18 @@
+ 
+     private void resetPlayerChatState(RemoteChatSession session) {
+         this.chatSession = session;
++        this.hasLoggedExpiry = false; // Paper - Prevent causing expired keys from impacting new joins
          this.signedMessageDecoder = session.createMessageDecoder(this.player.getUUID());
          this.chatMessageChain.append(() -> {
              this.player.setChatSession(session);
