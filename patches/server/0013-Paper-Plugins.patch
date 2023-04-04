@@ -29,7 +29,7 @@ index 6a00f3d38da8107825ab1d405f337fd077b09f72..d44d0074446c1c54e87dc8078dff7fef
  }
 diff --git a/src/main/java/io/papermc/paper/command/PaperPluginsCommand.java b/src/main/java/io/papermc/paper/command/PaperPluginsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f0fce4113fb07c64adbec029d177c236cbdcbae8
+index 0000000000000000000000000000000000000000..a1adbfca5115f31c1aefacf44ad64fe433c3c9e7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/PaperPluginsCommand.java
 @@ -0,0 +1,215 @@
@@ -150,7 +150,7 @@ index 0000000000000000000000000000000000000000..f0fce4113fb07c64adbec029d177c236
 +            builder.append(LEGACY_PLUGIN_STAR);
 +        }
 +
-+        String name = provider.getMeta().getName();
++        String name = provider.getMeta().getDisplayName();
 +        Component pluginName = Component.text(name, fromStatus(provider))
 +            .clickEvent(ClickEvent.runCommand("/version " + name));
 +
@@ -594,7 +594,7 @@ index 0000000000000000000000000000000000000000..89bf48fd581ee6580b91e2eb31dd532c
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e450a9fce66e63ec94ee3d2579265eda28a1c3f
+index 0000000000000000000000000000000000000000..deffde92350f7c74694c2aa69799de446a3c3e0a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 @@ -0,0 +1,45 @@
@@ -612,13 +612,13 @@ index 0000000000000000000000000000000000000000..2e450a9fce66e63ec94ee3d2579265ed
 +                                        ComponentLogger logger, Path pluginSource) implements PluginProviderContext {
 +
 +    public static PluginProviderContextImpl of(PluginMeta config, ComponentLogger logger, Path pluginSource) {
-+        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getDisplayName());
++        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getName());
 +
 +        return new PluginProviderContextImpl(config, dataFolder, logger, pluginSource);
 +    }
 +
 +    public static PluginProviderContextImpl of(PluginProvider<?> provider, Path pluginFolder) {
-+        Path dataFolder = pluginFolder.resolve(provider.getMeta().getDisplayName());
++        Path dataFolder = pluginFolder.resolve(provider.getMeta().getName());
 +
 +        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger(), provider.getSource());
 +    }
@@ -813,10 +813,10 @@ index 0000000000000000000000000000000000000000..f9a2c55a354c877749db3f92956de802
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..79995ab1b624d7c7aaaa467a86255ad97385cf72
+index 0000000000000000000000000000000000000000..c40ed0c531c3e211d26d4dd26e2e24be5d799d34
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
-@@ -0,0 +1,207 @@
+@@ -0,0 +1,208 @@
 +package io.papermc.paper.plugin.entrypoint.classloader;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -966,7 +966,8 @@ index 0000000000000000000000000000000000000000..79995ab1b624d7c7aaaa467a86255ad9
 +        PluginMeta config = this.configuration;
 +        PluginDescriptionFile pluginDescriptionFile = new PluginDescriptionFile(
 +            config.getName(),
-+            config.getName().replace('_', ' '),
++            config.getName(),
++            config.getDisplayName(),
 +            config.getProvidedPlugins(),
 +            config.getMainClass(),
 +            "", // Classloader load order api
@@ -3060,7 +3061,7 @@ index 0000000000000000000000000000000000000000..6f6aaab295018017565ba27d6958a1f5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b
+index 0000000000000000000000000000000000000000..024dcfbcf64a423d4fc9facae90ebb1740e4bdd4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 @@ -0,0 +1,194 @@
@@ -3127,12 +3128,12 @@ index 0000000000000000000000000000000000000000..7ce9ebba8ce304d1f3f21d4f15ee5f35
 +                    this.server.getLogger().log(Level.SEVERE, String.format(
 +                        "Nag author(s): '%s' of '%s' about the following: %s",
 +                        plugin.getPluginMeta().getAuthors(),
-+                        plugin.getPluginMeta().getDisplayName(),
++                        plugin.getPluginMeta().getDisplayNameWithVersion(),
 +                        ex.getMessage()
 +                    ));
 +                }
 +            } catch (Throwable ex) {
-+                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getPluginMeta().getDisplayName();
++                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getPluginMeta().getDisplayNameWithVersion();
 +                this.server.getLogger().log(Level.SEVERE, msg, ex);
 +                if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
 +                    this.callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
@@ -3219,7 +3220,7 @@ index 0000000000000000000000000000000000000000..7ce9ebba8ce304d1f3f21d4f15ee5f35
 +            }
 +            final Class<?> checkClass;
 +            if (method.getParameterTypes().length != 1 || !Event.class.isAssignableFrom(checkClass = method.getParameterTypes()[0])) {
-+                plugin.getLogger().severe(plugin.getPluginMeta().getDisplayName() + " attempted to register an invalid EventHandler method signature \"" + method.toGenericString() + "\" in " + listener.getClass());
++                plugin.getLogger().severe(plugin.getPluginMeta().getDisplayNameWithVersion() + " attempted to register an invalid EventHandler method signature \"" + method.toGenericString() + "\" in " + listener.getClass());
 +                continue;
 +            }
 +            final Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
@@ -3238,7 +3239,7 @@ index 0000000000000000000000000000000000000000..7ce9ebba8ce304d1f3f21d4f15ee5f35
 +                        Level.WARNING,
 +                        String.format(
 +                            "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated. \"%s\"; please notify the authors %s.",
-+                            plugin.getPluginMeta().getDisplayName(),
++                            plugin.getPluginMeta().getDisplayNameWithVersion(),
 +                            clazz.getName(),
 +                            method.toGenericString(),
 +                            (warning != null && warning.reason().length() != 0) ? warning.reason() : "Server performance will be affected",
@@ -3467,7 +3468,7 @@ index 0000000000000000000000000000000000000000..92a69677f21b2c1c035119d8e5a6af63
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e274f5d44
+index 0000000000000000000000000000000000000000..dd5e11e4e1c9308ce726dd5ca12052548ae55aba
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 @@ -0,0 +1,304 @@
@@ -3647,7 +3648,7 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +        }
 +
 +        try {
-+            String enableMsg = "Enabling " + plugin.getPluginMeta().getDisplayName();
++            String enableMsg = "Enabling " + plugin.getPluginMeta().getDisplayNameWithVersion();
 +            if (plugin.getPluginMeta() instanceof PluginDescriptionFile descriptionFile && CraftMagicNumbers.isLegacy(descriptionFile)) {
 +                enableMsg += "*";
 +            }
@@ -3657,14 +3658,14 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +
 +            if (jPlugin.getClass().getClassLoader() instanceof ConfiguredPluginClassLoader classLoader) { // Paper
 +                if (PaperClassLoaderStorage.instance().registerUnsafePlugin(classLoader)) {
-+                    this.server.getLogger().log(Level.WARNING, "Enabled plugin with unregistered ConfiguredPluginClassLoader " + plugin.getPluginMeta().getDisplayName());
++                    this.server.getLogger().log(Level.WARNING, "Enabled plugin with unregistered ConfiguredPluginClassLoader " + plugin.getPluginMeta().getDisplayNameWithVersion());
 +                }
 +            } // Paper
 +
 +            try {
 +                jPlugin.setEnabled(true);
 +            } catch (Throwable ex) {
-+                this.server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getPluginMeta().getDisplayName() + " (Is it up to date?)", ex);
++                this.server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getPluginMeta().getDisplayNameWithVersion() + " (Is it up to date?)", ex);
 +                // Paper start - Disable plugins that fail to load
 +                this.server.getPluginManager().disablePlugin(jPlugin);
 +                return;
@@ -3676,7 +3677,7 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +            this.server.getPluginManager().callEvent(new PluginEnableEvent(plugin));
 +        } catch (Throwable ex) {
 +            this.handlePluginException("Error occurred (in the plugin loader) while enabling "
-+                + plugin.getPluginMeta().getDisplayName() + " (Is it up to date?)", ex, plugin);
++                + plugin.getPluginMeta().getDisplayNameWithVersion() + " (Is it up to date?)", ex, plugin);
 +        }
 +
 +        HandlerList.bakeAll();
@@ -3690,7 +3691,7 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +            return;
 +        }
 +
-+        String pluginName = plugin.getPluginMeta().getDisplayName();
++        String pluginName = plugin.getPluginMeta().getDisplayNameWithVersion();
 +
 +        try {
 +            plugin.getLogger().info("Disabling %s".formatted(pluginName));
@@ -4387,7 +4388,7 @@ index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7605efe37ac4a63cb95c8c64c576e93c0e676cc0
+index 0000000000000000000000000000000000000000..3808f5a9abc9f084cbabfc4cb95394cc37aaf4bb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 @@ -0,0 +1,227 @@
@@ -4500,7 +4501,7 @@ index 0000000000000000000000000000000000000000..7605efe37ac4a63cb95c8c64c576e93c
 +                .build();
 +        }
 +
-+        pluginConfiguration.displayName = pluginConfiguration.name.replace('_', ' ') + " v" + pluginConfiguration.version;
++        pluginConfiguration.displayName = pluginConfiguration.name.replace('_', ' ');
 +
 +        return pluginConfiguration;
 +    }
@@ -6211,10 +6212,10 @@ index 0000000000000000000000000000000000000000..374e7d3d69fc8603ecf54999f173123d
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cb9b13522a976b82bcb71cef486f11f4172e3e99
+index 0000000000000000000000000000000000000000..451aded531906d9b7ff802d2d093b7fe02bdf0e5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ServerPluginProviderStorage.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,68 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -6223,8 +6224,6 @@ index 0000000000000000000000000000000000000000..cb9b13522a976b82bcb71cef486f11f4
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.PluginProvider;
-+import io.papermc.paper.plugin.provider.ProviderStatus;
-+import io.papermc.paper.plugin.provider.ProviderStatusHolder;
 +import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.java.JavaPlugin;
@@ -6272,7 +6271,7 @@ index 0000000000000000000000000000000000000000..cb9b13522a976b82bcb71cef486f11f4
 +    @Override
 +    public void processProvided(PluginProvider<JavaPlugin> provider, JavaPlugin provided) {
 +        try {
-+            provided.getLogger().info(String.format("Loading server plugin %s", provided.getPluginMeta().getDisplayName()));
++            provided.getLogger().info(String.format("Loading server plugin %s", provided.getPluginMeta().getDisplayNameWithVersion()));
 +            provided.onLoad();
 +        } catch (Throwable ex) {
 +            // Don't mark that provider as ERRORED, as this apparently still needs to run the onEnable logic.
