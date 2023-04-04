@@ -5,7 +5,7 @@ Subject: [PATCH] Paper Plugins
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index bb1f3b3d5a22ca391f4362e5d4cf016e7e9be0e3..f900b73c52971fe682171e7f99246afdb8b080f3 100644
+index cff3eb363b17c2a8245b3b2ceb02cbdc1efe3896..03b2fc4c6dd9cbc9f28add7da9420c816f8faa2b 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -45,7 +45,7 @@ dependencies {
@@ -301,10 +301,10 @@ index 0000000000000000000000000000000000000000..a9208254142d270da7bd4815a01b9627
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java b/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e448979f17566bed8ef45fa3cd7d04098c36c6e
+index 0000000000000000000000000000000000000000..ef393f1f93ca48264fc1b6e3a27787f6a9152e1b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/configuration/PluginMeta.java
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,203 @@
 +package io.papermc.paper.plugin.configuration;
 +
 +import org.bukkit.permissions.Permission;
@@ -345,23 +345,13 @@ index 0000000000000000000000000000000000000000..2e448979f17566bed8ef45fa3cd7d040
 +    String getName();
 +
 +    /**
-+     * Provides a human-friendly name for the plugin, suitable for display.
++     * Returns the display name of the plugin, including the version.
 +     *
-+     * @return a human-friendly name for the plugin
++     * @return a descriptive name of the plugin and respective version
 +     */
 +    @NotNull
 +    default String getDisplayName() {
-+        return this.getName();
-+    }
-+
-+    /**
-+     * Provides a human-friendly name for the plugin, including its version, suitable for display.
-+     *
-+     * @return a human-friendly name and respective version for the plugin
-+     */
-+    @NotNull
-+    default String getDisplayNameWithVersion() {
-+        return this.getDisplayName() + " v" + this.getVersion();
++        return this.getName() + " v" + this.getVersion();
 +    }
 +
 +    /**
@@ -1431,7 +1421,7 @@ index 94f8ceb965cecb5669a84a0ec61c0f706c2a2673..e773db6da357ad210eb24d4c389af2dc
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
-index 77a380537b338fdd0aa2f6777ff775056cc6b221..43a0dec949e9f2ba6619670dcade64e3613c1487 100644
+index 77a380537b338fdd0aa2f6777ff775056cc6b221..028805bcdb1d2bb0d11387db165b7376579e5f60 100644
 --- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
 +++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
 @@ -195,7 +195,7 @@ import org.yaml.snakeyaml.nodes.Tag;
@@ -1443,15 +1433,7 @@ index 77a380537b338fdd0aa2f6777ff775056cc6b221..43a0dec949e9f2ba6619670dcade64e3
      private static final Pattern VALID_NAME = Pattern.compile("^[A-Za-z0-9 _.-]+$");
      private static final ThreadLocal<Yaml> YAML = new ThreadLocal<Yaml>() {
          @Override
-@@ -235,6 +235,7 @@ public final class PluginDescriptionFile {
-     };
-     String rawName = null;
-     private String name = null;
-+    private String displayName = null; // Paper
-     private List<String> provides = ImmutableList.of();
-     private String main = null;
-     private String classLoaderOf = null;
-@@ -255,6 +256,79 @@ public final class PluginDescriptionFile {
+@@ -255,6 +255,70 @@ public final class PluginDescriptionFile {
      private Set<PluginAwareness> awareness = ImmutableSet.of();
      private String apiVersion = null;
      private List<String> libraries = ImmutableList.of();
@@ -1460,10 +1442,9 @@ index 77a380537b338fdd0aa2f6777ff775056cc6b221..43a0dec949e9f2ba6619670dcade64e3
 +     * Don't use this.
 +     */
 +    @org.jetbrains.annotations.ApiStatus.Internal
-+    public PluginDescriptionFile(String rawName, String name, String displayName, List<String> provides, String main, String classLoaderOf, List<String> depend, List<String> softDepend, List<String> loadBefore, String version, Map<String, Map<String, Object>> commands, String description, List<String> authors, List<String> contributors, String website, String prefix, PluginLoadOrder order, List<Permission> permissions, PermissionDefault defaultPerm, Set<PluginAwareness> awareness, String apiVersion, List<String> libraries) {
++    public PluginDescriptionFile(String rawName, String name, List<String> provides, String main, String classLoaderOf, List<String> depend, List<String> softDepend, List<String> loadBefore, String version, Map<String, Map<String, Object>> commands, String description, List<String> authors, List<String> contributors, String website, String prefix, PluginLoadOrder order, List<Permission> permissions, PermissionDefault defaultPerm, Set<PluginAwareness> awareness, String apiVersion, List<String> libraries) {
 +        this.rawName = rawName;
 +        this.name = name;
-+        this.displayName = displayName;
 +        this.provides = provides;
 +        this.main = main;
 +        this.classLoaderOf = classLoaderOf;
@@ -1483,14 +1464,6 @@ index 77a380537b338fdd0aa2f6777ff775056cc6b221..43a0dec949e9f2ba6619670dcade64e3
 +        this.awareness = awareness;
 +        this.apiVersion = apiVersion;
 +        this.libraries = libraries;
-+    }
-+
-+    @Override
-+    public @NotNull String getDisplayName() {
-+        if (this.displayName != null) {
-+            return this.displayName;
-+        }
-+        return io.papermc.paper.plugin.configuration.PluginMeta.super.getDisplayName();
 +    }
 +
 +    @Override
@@ -1531,23 +1504,6 @@ index 77a380537b338fdd0aa2f6777ff775056cc6b221..43a0dec949e9f2ba6619670dcade64e3
  
      public PluginDescriptionFile(@NotNull final InputStream stream) throws InvalidDescriptionException {
          loadMap(asMap(YAML.get().load(stream)));
-@@ -937,14 +1011,14 @@ public final class PluginDescriptionFile {
- 
-     /**
-      * Returns the name of a plugin, including the version. This method is
--     * provided for convenience; it uses the {@link #getName()} and {@link
-+     * provided for convenience; it uses the {@link #getDisplayName()} and {@link
-      * #getVersion()} entries.
-      *
-      * @return a descriptive name of the plugin and respective version
-      */
-     @NotNull
-     public String getFullName() {
--        return name + " v" + version;
-+        return getDisplayNameWithVersion(); // Paper
-     }
- 
-     /**
 diff --git a/src/main/java/org/bukkit/plugin/PluginLoader.java b/src/main/java/org/bukkit/plugin/PluginLoader.java
 index a88733f1cd1ddb5d85ab1b0e6af4fd5b80bbc1c6..cb530369e667c426c842da356c31304bb5c3ecfa 100644
 --- a/src/main/java/org/bukkit/plugin/PluginLoader.java
