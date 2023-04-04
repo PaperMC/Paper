@@ -29,26 +29,13 @@ https://bugs.mojang.com/browse/MC-191591
 https://bugs.mojang.com/browse/MC-258360
   Fix items equipped on AbstractHorse losing NBT
 
-https://bugs.mojang.com/browse/MC-121048
-  by: MelnCat <melncatuwu@gmail.com>
-  This moves the setHealth call to below the recordDamage call to prevent
-  recordDamage from clearing the CombatTracker, since recordDamage will
-  clear the CombatTracker if the entity is dead. This fixes death messages
-  such as the "doomed to fall" messages.
-
-https://bugs.mojang.com/browse/MC-257875
-  by: Jake Potrebic <jake.m.potrebic@gmail.com>
-  Fixes server not consuming fire charges when igniting a creeper
-
-https://bugs.mojang.com/browse/MC-258535
-  by: Jake Potrebic <jake.m.potrebic@gmail.com>
-  Fixes certain explosion damage not scaling with difficulty
-
 https://bugs.mojang.com/browse/MC-259571
   Fix changeGameModeForPlayer to use gameModeForPlayer
 
+https://bugs.mojang.com/browse/MC-260219
+  Play sniffer eat sound for the last item
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
-Co-authored-by: MelnCat <melncatuwu@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
 index 1023f91b6a23fc974ba709ec09834d9faae8003a..6fedf7381762ae3d76c4801ed6d5c0844c6c857b 100644
@@ -90,7 +77,7 @@ index 43e77cef0fce75f59aeb05e161668bebb8fca229..ef50fbf8cb3f008827850b5ed3342200
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 13031576c20bda3bb12c926f6cd938fa5fb105f2..f14c4ec49e7206b8192050f1bd20a18e78f392fa 100644
+index 45b48da09eafa8482836e49768426069b0a73cca..16a1416cb2ce01071a033c5049edfb60b614d56a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -91,7 +91,7 @@ public class ServerPlayerGameMode {
@@ -180,6 +167,22 @@ index d38ac1f3ef105474df1294541041c2607ca53244..f9496f757bcf7000fab1f16386e775d5
              if (!player.getAbilities().instabuild) {
                  stack.shrink(1);
              }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index 89f761871a84f8ab95f2a16aba8340bb8726da30..f6e2348b280eaefc0eb05bf5d962593caa654357 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -347,9 +347,10 @@ public class Sniffer extends Animal {
+     @Override
+     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+         ItemStack itemstack = player.getItemInHand(hand);
++        boolean wasFood = this.isFood(itemstack); // Paper - Fix MC-260219
+         InteractionResult enuminteractionresult = super.mobInteract(player, hand);
+ 
+-        if (enuminteractionresult.consumesAction() && this.isFood(itemstack)) {
++        if (enuminteractionresult.consumesAction() && wasFood) { // Paper - Fix MC-260219
+             this.level.playSound((Player) null, (Entity) this, this.getEatingSound(itemstack), SoundSource.NEUTRAL, 1.0F, Mth.randomBetween(this.level.random, 0.8F, 1.2F));
+         }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index f174094febfdfdc309f1b50877be60bae8a98156..5f407535298a31a34cfe114dd863fd6a9b977707 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
