@@ -22,7 +22,7 @@ if (!file(".git").exists()) {
          zip from GitHub.
          
          Built Paper jars are available for download at
-         https://papermc.io/downloads
+         https://papermc.io/downloads/paper
          
          See https://github.com/PaperMC/Paper/blob/master/CONTRIBUTING.md
          for further information on building and modifying Paper.
