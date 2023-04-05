@@ -5135,19 +5135,19 @@ index 0000000000000000000000000000000000000000..a180612a1ec395202dbae1ca5b97ec01
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1572c3942c850eb36df38cf06395bcafa24e18e0
+index 0000000000000000000000000000000000000000..2f2e183cdee865448ca90d2da9e3db7135b741f5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,47 @@
 +package io.papermc.paper.plugin.provider.source;
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
 +import org.slf4j.Logger;
 +
++import java.nio.file.FileVisitOption;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
-+import java.util.logging.Level;
 +
 +/**
 + * Loads all plugin providers in the given directory.
@@ -5158,7 +5158,7 @@ index 0000000000000000000000000000000000000000..1572c3942c850eb36df38cf06395bcaf
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    public DirectoryProviderSource() {
-+        super("File '%s'"::formatted);
++        super("Directory '%s'"::formatted);
 +    }
 +
 +    @Override
@@ -5168,15 +5168,22 @@ index 0000000000000000000000000000000000000000..1572c3942c850eb36df38cf06395bcaf
 +            Files.createDirectories(context);
 +        }
 +
-+        Files.walk(context, 1).filter(Files::isRegularFile).forEach((path) -> {
-+            try {
-+                super.registerProviders(entrypointHandler, path);
-+            } catch (IllegalArgumentException ignored) {
-+                // Ignore initial argument exceptions
-+            } catch (Exception e) {
-+                LOGGER.error("Error loading plugin: " + e.getMessage(), e);
-+            }
-+        });
++        Files.walk(context, 1, FileVisitOption.FOLLOW_LINKS)
++            .filter(this::isValidFile)
++            .forEach((path) -> {
++                try {
++                    super.registerProviders(entrypointHandler, path);
++                } catch (IllegalArgumentException ignored) {
++                    // Ignore initial argument exceptions
++                } catch (Exception e) {
++                    LOGGER.error("Error loading plugin: " + e.getMessage(), e);
++                }
++            });
++    }
++
++    public boolean isValidFile(Path path) {
++        // Avoid loading plugins that start with a dot
++        return Files.isRegularFile(path) && !path.startsWith(".");
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
@@ -6984,12 +6991,14 @@ index 0000000000000000000000000000000000000000..1d14f530ef888102e47eeeaf0d1a6076
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..61a65898f4d5823ba9da57a812de6d243bfa71ce
+index 0000000000000000000000000000000000000000..9d393aca5e2de4d046dc1a1232d57318432e4742
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,148 @@
 +package io.papermc.paper.plugin;
 +
++import com.google.common.graph.GraphBuilder;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
@@ -7093,7 +7102,7 @@ index 0000000000000000000000000000000000000000..61a65898f4d5823ba9da57a812de6d24
 +
 +        });
 +
-+        modernPluginLoadingStrategy.loadProviders(REGISTERED_PROVIDERS, );
++        modernPluginLoadingStrategy.loadProviders(REGISTERED_PROVIDERS, new MetaDependencyTree(GraphBuilder.directed().build()));
 +    }
 +
 +    @Test
