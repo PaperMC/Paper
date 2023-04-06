@@ -145,7 +145,7 @@ index d3cd196e1a6f707ed5e0008123cc65df80422859..a7f9a3e57c7736b065b8dc4dba6e018c
                  this.startMetricsRecordingTick();
                  this.profiler.push("tick");
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index fbc62e2b07a430dea8a827790bda5fbf6f19d05b..07536b696f734fb9e8d0abe1f414ae536610f9ce 100644
+index 5e79baa09e3ae468a58b0f2e5f9e08c67fcd7ff8..77b8b4d56883dcf672af82189da75ddef7c935a2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2416,6 +2416,17 @@ public final class CraftServer implements Server {
@@ -167,7 +167,7 @@ index fbc62e2b07a430dea8a827790bda5fbf6f19d05b..07536b696f734fb9e8d0abe1f414ae53
      private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
      {
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..b1a72aa3634405f3fce64c66677a75d8f77cb6f6 100644
+index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..bf970bf3356a914459c2d6db93537ce2d32c7e18 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 @@ -15,6 +15,12 @@ public class TicksPerSecondCommand extends Command
@@ -183,7 +183,7 @@ index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..b1a72aa3634405f3fce64c66677a75d8
  
      @Override
      public boolean execute(CommandSender sender, String currentAlias, String[] args)
-@@ -24,22 +30,33 @@ public class TicksPerSecondCommand extends Command
+@@ -24,22 +30,40 @@ public class TicksPerSecondCommand extends Command
              return true;
          }
  
@@ -194,12 +194,16 @@ index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..b1a72aa3634405f3fce64c66677a75d8
 -            sb.append( ", " );
 +        // Paper start - Further improve tick handling
 +        double[] tps = org.bukkit.Bukkit.getTPS();
-+        String[] tpsAvg = new String[tps.length];
++        net.kyori.adventure.text.Component[] tpsAvg = new net.kyori.adventure.text.Component[tps.length];
 +
 +        for ( int i = 0; i < tps.length; i++) {
 +            tpsAvg[i] = TicksPerSecondCommand.format( tps[i] );
 +        }
-+        sender.sendMessage(net.kyori.adventure.text.Component.text("TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "), net.kyori.adventure.text.format.NamedTextColor.GOLD));
++
++        net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
++        builder.append(net.kyori.adventure.text.Component.text("TPS from last 1m, 5m, 15m: ", net.kyori.adventure.text.format.NamedTextColor.GOLD));
++        builder.append(net.kyori.adventure.text.Component.join(net.kyori.adventure.text.JoinConfiguration.commas(true), tpsAvg));
++        sender.sendMessage(builder.asComponent());
 +        if (args.length > 0 && args[0].equals("mem") && sender.hasPermission("bukkit.command.tpsmemory")) {
 +            sender.sendMessage(net.kyori.adventure.text.Component.text()
 +                .append(net.kyori.adventure.text.Component.text("Current Memory Usage: ", net.kyori.adventure.text.format.NamedTextColor.GOLD))
@@ -220,10 +224,14 @@ index 4ab81a99f906e3f28e026d0e50b5b943c1bdcfb5..b1a72aa3634405f3fce64c66677a75d8
  
 -    private String format(double tps)
 +    private boolean hasShownMemoryWarning; // Paper
-+    private static String format(double tps) // Paper - Made static
++    private static net.kyori.adventure.text.Component format(double tps) // Paper - Made static
      {
-         return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
+-        return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
 -                + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
-+                + ( ( tps > 21.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 ); // Paper - only print * at 21, we commonly peak to 20.02 as the tick sleep is not accurate enough, stop the noise
++        // Paper
++        net.kyori.adventure.text.format.TextColor color = ( ( tps > 18.0 ) ? net.kyori.adventure.text.format.NamedTextColor.GREEN : ( tps > 16.0 ) ? net.kyori.adventure.text.format.NamedTextColor.YELLOW : net.kyori.adventure.text.format.NamedTextColor.RED );
++        String amount = Math.min(Math.round(tps * 100.0) / 100.0, 20.0) + (tps > 21.0  ? "*" : ""); // Paper - only print * at 21, we commonly peak to 20.02 as the tick sleep is not accurate enough, stop the noise
++        return net.kyori.adventure.text.Component.text(amount, color);
++        // Paper end
      }
  }
