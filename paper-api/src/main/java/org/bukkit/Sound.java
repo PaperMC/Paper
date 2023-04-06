@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -84,10 +85,20 @@ public enum Sound implements Keyed {
     BLOCK_BAMBOO_WOOD_FALL("block.bamboo_wood.fall"),
     BLOCK_BAMBOO_WOOD_FENCE_GATE_CLOSE("block.bamboo_wood_fence_gate.close"),
     BLOCK_BAMBOO_WOOD_FENCE_GATE_OPEN("block.bamboo_wood_fence_gate.open"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_BAMBOO_WOOD_HANGING_SIGN_BREAK("block.bamboo_wood_hanging_sign.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_BAMBOO_WOOD_HANGING_SIGN_FALL("block.bamboo_wood_hanging_sign.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_BAMBOO_WOOD_HANGING_SIGN_HIT("block.bamboo_wood_hanging_sign.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_BAMBOO_WOOD_HANGING_SIGN_PLACE("block.bamboo_wood_hanging_sign.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_BAMBOO_WOOD_HANGING_SIGN_STEP("block.bamboo_wood_hanging_sign.step"),
     BLOCK_BAMBOO_WOOD_HIT("block.bamboo_wood.hit"),
     BLOCK_BAMBOO_WOOD_PLACE("block.bamboo_wood.place"),
@@ -158,47 +169,125 @@ public enum Sound implements Keyed {
     BLOCK_CHAIN_HIT("block.chain.hit"),
     BLOCK_CHAIN_PLACE("block.chain.place"),
     BLOCK_CHAIN_STEP("block.chain.step"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_LEAVES_BREAK("block.cherry_leaves.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_LEAVES_FALL("block.cherry_leaves.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_LEAVES_HIT("block.cherry_leaves.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_LEAVES_PLACE("block.cherry_leaves.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_LEAVES_STEP("block.cherry_leaves.step"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_SAPLING_BREAK("block.cherry_sapling.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_SAPLING_FALL("block.cherry_sapling.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_SAPLING_HIT("block.cherry_sapling.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_SAPLING_PLACE("block.cherry_sapling.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_SAPLING_STEP("block.cherry_sapling.step"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_BREAK("block.cherry_wood.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_BUTTON_CLICK_OFF("block.cherry_wood_button.click_off"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_BUTTON_CLICK_ON("block.cherry_wood_button.click_on"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_DOOR_CLOSE("block.cherry_wood_door.close"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_DOOR_OPEN("block.cherry_wood_door.open"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_FALL("block.cherry_wood.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_FENCE_GATE_CLOSE("block.cherry_wood_fence_gate.close"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_FENCE_GATE_OPEN("block.cherry_wood_fence_gate.open"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_HANGING_SIGN_BREAK("block.cherry_wood_hanging_sign.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_HANGING_SIGN_FALL("block.cherry_wood_hanging_sign.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_HANGING_SIGN_HIT("block.cherry_wood_hanging_sign.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_HANGING_SIGN_PLACE("block.cherry_wood_hanging_sign.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_HANGING_SIGN_STEP("block.cherry_wood_hanging_sign.step"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_HIT("block.cherry_wood.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_PLACE("block.cherry_wood.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_PRESSURE_PLATE_CLICK_OFF("block.cherry_wood_pressure_plate.click_off"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_PRESSURE_PLATE_CLICK_ON("block.cherry_wood_pressure_plate.click_on"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_STEP("block.cherry_wood.step"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_TRAPDOOR_CLOSE("block.cherry_wood_trapdoor.close"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHERRY_WOOD_TRAPDOOR_OPEN("block.cherry_wood_trapdoor.open"),
     BLOCK_CHEST_CLOSE("block.chest.close"),
     BLOCK_CHEST_LOCKED("block.chest.locked"),
     BLOCK_CHEST_OPEN("block.chest.open"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_BREAK("block.chiseled_bookshelf.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_FALL("block.chiseled_bookshelf.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_HIT("block.chiseled_bookshelf.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_INSERT("block.chiseled_bookshelf.insert"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_INSERT_ENCHANTED("block.chiseled_bookshelf.insert.enchanted"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_PICKUP("block.chiseled_bookshelf.pickup"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_PICKUP_ENCHANTED("block.chiseled_bookshelf.pickup.enchanted"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_PLACE("block.chiseled_bookshelf.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_CHISELED_BOOKSHELF_STEP("block.chiseled_bookshelf.step"),
     BLOCK_CHORUS_FLOWER_DEATH("block.chorus_flower.death"),
     BLOCK_CHORUS_FLOWER_GROW("block.chorus_flower.grow"),
@@ -223,11 +312,23 @@ public enum Sound implements Keyed {
     BLOCK_CORAL_BLOCK_PLACE("block.coral_block.place"),
     BLOCK_CORAL_BLOCK_STEP("block.coral_block.step"),
     BLOCK_CROP_BREAK("block.crop.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_DECORATED_POT_BREAK("block.decorated_pot.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_DECORATED_POT_FALL("block.decorated_pot.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_DECORATED_POT_HIT("block.decorated_pot.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_DECORATED_POT_PLACE("block.decorated_pot.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_DECORATED_POT_SHATTER("block.decorated_pot.shatter"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_DECORATED_POT_STEP("block.decorated_pot.step"),
     BLOCK_DEEPSLATE_BREAK("block.deepslate.break"),
     BLOCK_DEEPSLATE_BRICKS_BREAK("block.deepslate_bricks.break"),
@@ -470,10 +571,20 @@ public enum Sound implements Keyed {
     BLOCK_PACKED_MUD_HIT("block.packed_mud.hit"),
     BLOCK_PACKED_MUD_PLACE("block.packed_mud.place"),
     BLOCK_PACKED_MUD_STEP("block.packed_mud.step"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_PINK_PETALS_BREAK("block.pink_petals.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_PINK_PETALS_FALL("block.pink_petals.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_PINK_PETALS_HIT("block.pink_petals.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_PINK_PETALS_PLACE("block.pink_petals.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_PINK_PETALS_STEP("block.pink_petals.step"),
     BLOCK_PISTON_CONTRACT("block.piston.contract"),
     BLOCK_PISTON_EXTEND("block.piston.extend"),
@@ -612,10 +723,20 @@ public enum Sound implements Keyed {
     BLOCK_STONE_PRESSURE_PLATE_CLICK_OFF("block.stone_pressure_plate.click_off"),
     BLOCK_STONE_PRESSURE_PLATE_CLICK_ON("block.stone_pressure_plate.click_on"),
     BLOCK_STONE_STEP("block.stone.step"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_SUSPICIOUS_SAND_BREAK("block.suspicious_sand.break"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_SUSPICIOUS_SAND_FALL("block.suspicious_sand.fall"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_SUSPICIOUS_SAND_HIT("block.suspicious_sand.hit"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_SUSPICIOUS_SAND_PLACE("block.suspicious_sand.place"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     BLOCK_SUSPICIOUS_SAND_STEP("block.suspicious_sand.step"),
     BLOCK_SWEET_BERRY_BUSH_BREAK("block.sweet_berry_bush.break"),
     BLOCK_SWEET_BERRY_BUSH_PICK_BERRIES("block.sweet_berry_bush.pick_berries"),
@@ -708,16 +829,27 @@ public enum Sound implements Keyed {
     ENTITY_BLAZE_SHOOT("entity.blaze.shoot"),
     ENTITY_BOAT_PADDLE_LAND("entity.boat.paddle_land"),
     ENTITY_BOAT_PADDLE_WATER("entity.boat.paddle_water"),
+    @MinecraftExperimental
     ENTITY_CAMEL_AMBIENT("entity.camel.ambient"),
+    @MinecraftExperimental
     ENTITY_CAMEL_DASH("entity.camel.dash"),
+    @MinecraftExperimental
     ENTITY_CAMEL_DASH_READY("entity.camel.dash_ready"),
+    @MinecraftExperimental
     ENTITY_CAMEL_DEATH("entity.camel.death"),
+    @MinecraftExperimental
     ENTITY_CAMEL_EAT("entity.camel.eat"),
+    @MinecraftExperimental
     ENTITY_CAMEL_HURT("entity.camel.hurt"),
+    @MinecraftExperimental
     ENTITY_CAMEL_SADDLE("entity.camel.saddle"),
+    @MinecraftExperimental
     ENTITY_CAMEL_SIT("entity.camel.sit"),
+    @MinecraftExperimental
     ENTITY_CAMEL_STAND("entity.camel.stand"),
+    @MinecraftExperimental
     ENTITY_CAMEL_STEP("entity.camel.step"),
+    @MinecraftExperimental
     ENTITY_CAMEL_STEP_SAND("entity.camel.step_sand"),
     ENTITY_CAT_AMBIENT("entity.cat.ambient"),
     ENTITY_CAT_BEG_FOR_FOOD("entity.cat.beg_for_food"),
@@ -1159,17 +1291,41 @@ public enum Sound implements Keyed {
     ENTITY_SLIME_JUMP_SMALL("entity.slime.jump_small"),
     ENTITY_SLIME_SQUISH("entity.slime.squish"),
     ENTITY_SLIME_SQUISH_SMALL("entity.slime.squish_small"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_DEATH("entity.sniffer.death"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_DIGGING("entity.sniffer.digging"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_DIGGING_STOP("entity.sniffer.digging_stop"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_DROP_SEED("entity.sniffer.drop_seed"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_EAT("entity.sniffer.eat"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_HAPPY("entity.sniffer.happy"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_HURT("entity.sniffer.hurt"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_IDLE("entity.sniffer.idle"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_SCENTING("entity.sniffer.scenting"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_SEARCHING("entity.sniffer.searching"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_SNIFFING("entity.sniffer.sniffing"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ENTITY_SNIFFER_STEP("entity.sniffer.step"),
     ENTITY_SNOWBALL_THROW("entity.snowball.throw"),
     ENTITY_SNOW_GOLEM_AMBIENT("entity.snow_golem.ambient"),
@@ -1353,7 +1509,11 @@ public enum Sound implements Keyed {
     ITEM_BOTTLE_EMPTY("item.bottle.empty"),
     ITEM_BOTTLE_FILL("item.bottle.fill"),
     ITEM_BOTTLE_FILL_DRAGONBREATH("item.bottle.fill_dragonbreath"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ITEM_BRUSH_BRUSHING("item.brush.brushing"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     ITEM_BRUSH_BRUSH_SAND_COMPLETED("item.brush.brush_sand_completed"),
     ITEM_BUCKET_EMPTY("item.bucket.empty"),
     ITEM_BUCKET_EMPTY_AXOLOTL("item.bucket.empty_axolotl"),
@@ -1440,6 +1600,8 @@ public enum Sound implements Keyed {
     MUSIC_NETHER_NETHER_WASTES("music.nether.nether_wastes"),
     MUSIC_NETHER_SOUL_SAND_VALLEY("music.nether.soul_sand_valley"),
     MUSIC_NETHER_WARPED_FOREST("music.nether.warped_forest"),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     MUSIC_OVERWORLD_CHERRY_GROVE("music.overworld.cherry_grove"),
     MUSIC_OVERWORLD_DEEP_DARK("music.overworld.deep_dark"),
     MUSIC_OVERWORLD_DRIPSTONE_CAVES("music.overworld.dripstone_caves"),

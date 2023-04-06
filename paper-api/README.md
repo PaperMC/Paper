@@ -83,6 +83,10 @@ Code Requirements
 * Do not attempt to fix multiple problems with a single patch or pull request.
 * Avoid moving or renaming classes.
 * All non-private methods and constructors must have specified nullability through [annotations](https://github.com/JetBrains/java-annotations)
+* All classes/methods/fields related to a [Minecraft Experimental Feature](https://minecraft.fandom.com/wiki/Experimental_Gameplay) must be marked with [`@MinecraftExperimental`](https://hub.spigotmc.org/javadocs/spigot/org/bukkit/MinecraftExperimental.html)
+* If necessary, you may consider the use of one of the following [ApiStatus Annotations](https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/org/jetbrains/annotations/ApiStatus.html):
+  * [`@ApiStatus.Experimental`](https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/org/jetbrains/annotations/ApiStatus.Experimental.html) for API that is subject to change
+  * [`@ApiStatus.Internal`](https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/org/jetbrains/annotations/ApiStatus.Internal.html) for API that is intended only for internal use in the Bukkit project and will not adhere to Bukkit's API contract
 
 Bukkit/CraftBukkit employs [JUnit 4](https://www.vogella.com/tutorials/JUnit4/article.html) for testing. Pull Requests(PR) should attempt to integrate within that framework as appropriate.
 Bukkit is a large project and what seems simple to a PR author at the time of writing may easily be overlooked by other authors and updates. Including unit tests with your PR
@@ -93,4 +97,4 @@ will help to ensure the PR can be easily maintained over time and encourage the 
     * Do not group packages
     * __Absolutely no wildcard imports outside of tests.__
 
-Any questions about these requirements can be asked in #help-development in Discord.
+Any questions about these requirements can be asked in [#help-development](https://www.spigotmc.org/go/discord) in Discord.

@@ -2,6 +2,7 @@ package org.bukkit;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Annotation for types, whose nullability is not well defined, so
@@ -13,6 +14,7 @@ import java.lang.annotation.RetentionPolicy;
  * suggests a bad API design.
  */
 @Retention(RetentionPolicy.CLASS)
+@ApiStatus.Internal
 @Deprecated
 public @interface UndefinedNullability {
 

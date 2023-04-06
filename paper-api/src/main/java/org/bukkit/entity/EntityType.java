@@ -6,6 +6,7 @@ import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Translatable;
 import org.bukkit.World;
@@ -18,6 +19,7 @@ import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -278,10 +280,14 @@ public enum EntityType implements Keyed, Translatable {
     FROG("frog", Frog.class, -1),
     TADPOLE("tadpole", Tadpole.class, -1),
     WARDEN("warden", Warden.class, -1),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     CAMEL("camel", Camel.class, -1),
     BLOCK_DISPLAY("block_display", BlockDisplay.class, -1),
     INTERACTION("interaction", Interaction.class, -1),
     ITEM_DISPLAY("item_display", ItemDisplay.class, -1),
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     SNIFFER("sniffer", Sniffer.class, -1),
     TEXT_DISPLAY("text_display", TextDisplay.class, -1),
     /**

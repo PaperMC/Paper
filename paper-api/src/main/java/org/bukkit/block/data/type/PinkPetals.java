@@ -1,10 +1,14 @@
 package org.bukkit.block.data.type;
 
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.data.Directional;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 'flower_amount' represents the number of petals.
  */
+@MinecraftExperimental
+@ApiStatus.Experimental
 public interface PinkPetals extends Directional {
 
     /**

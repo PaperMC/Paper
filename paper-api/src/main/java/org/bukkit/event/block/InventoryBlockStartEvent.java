@@ -1,10 +1,10 @@
 package org.bukkit.event.block;
 
-import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.FurnaceStartSmeltEvent;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,10 +15,9 @@ import org.jetbrains.annotations.NotNull;
  * <li>A Campfire starts cooking {@link CampfireStartEvent}</li>
  * </ul>
  *
- * @deprecated draft API
+ * @apiNote draft API
  */
-@Deprecated
-@Warning(false)
+@ApiStatus.Experimental
 public class InventoryBlockStartEvent extends BlockEvent {
 
     private static final HandlerList handlers = new HandlerList();

@@ -19,6 +19,7 @@ import org.bukkit.metadata.Metadatable;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -528,9 +529,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * will need to be called before the entity is visible to a given player.
      *
      * @param visible default visibility status
-     * @deprecated draft API
+     * @apiNote draft API
      */
-    @Deprecated
+    @ApiStatus.Experimental
     public void setVisibleByDefault(boolean visible);
 
     /**
@@ -541,9 +542,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * will need to be called before the entity is visible to a given player.
      *
      * @return default visibility status
-     * @deprecated draft API
+     * @apiNote draft API
      */
-    @Deprecated
+    @ApiStatus.Experimental
     public boolean isVisibleByDefault();
 
     /**

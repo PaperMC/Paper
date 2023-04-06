@@ -1,5 +1,6 @@
 package org.bukkit.event.inventory;
 
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.NotNull;
 
@@ -145,9 +146,9 @@ public enum InventoryType {
     /**
      * The new smithing inventory, with 3 CRAFTING slots and 1 RESULT slot.
      *
-     * @deprecated draft, experimental 1.20 API
+     * @apiNote draft, experimental 1.20 API
      */
-    @Deprecated
+    @MinecraftExperimental
     SMITHING_NEW(4, "Upgrade Gear"),
     ;
 

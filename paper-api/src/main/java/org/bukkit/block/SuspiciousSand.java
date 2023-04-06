@@ -1,12 +1,16 @@
 package org.bukkit.block;
 
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.Lootable;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of suspicious sand.
  */
+@MinecraftExperimental
+@ApiStatus.Experimental
 public interface SuspiciousSand extends Lootable, TileState {
 
     /**

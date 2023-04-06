@@ -1,12 +1,16 @@
 package org.bukkit.block;
 
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.inventory.ChiseledBookshelfInventory;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a chiseled bookshelf.
  */
+@MinecraftExperimental
+@ApiStatus.Experimental
 public interface ChiseledBookshelf extends TileState, BlockInventoryHolder {
 
     /**

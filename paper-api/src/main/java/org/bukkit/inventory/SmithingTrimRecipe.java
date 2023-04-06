@@ -1,12 +1,19 @@
 package org.bukkit.inventory;
 
 import org.bukkit.Material;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a smithing trim recipe.
+ *
+ * @apiNote This recipe is part of an experimental feature of Minecraft and
+ * hence subject to change.
  */
+@MinecraftExperimental
+@ApiStatus.Experimental
 public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe {
 
     private final RecipeChoice template;

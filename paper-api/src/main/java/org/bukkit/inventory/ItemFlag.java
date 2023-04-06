@@ -1,5 +1,8 @@
 package org.bukkit.inventory;
 
+import org.bukkit.MinecraftExperimental;
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * A ItemFlag can hide some Attributes from ItemStacks
  */
@@ -37,5 +40,7 @@ public enum ItemFlag {
     /**
      * Setting to show/hide armor trim from leather armor.
      */
+    @MinecraftExperimental
+    @ApiStatus.Experimental
     HIDE_ARMOR_TRIM;
 }

@@ -1,25 +1,24 @@
 package org.bukkit.event.player;
 
-import org.bukkit.Warning;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a hidden entity is shown to a player.
- *
+ * <br>
  * This event is only called when the entity's visibility status is actually
  * changed.
- *
+ * <br>
  * This event is called regardless of whether the entity was within tracking
  * range.
  *
  * @see Player#showEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
- * @deprecated draft API
+ * @apiNote draft API
  */
-@Deprecated
-@Warning(false)
+@ApiStatus.Experimental
 public class PlayerShowEntityEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();
