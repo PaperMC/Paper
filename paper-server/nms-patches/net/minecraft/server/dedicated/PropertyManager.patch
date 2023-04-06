@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/PropertyManager.java
 +++ b/net/minecraft/server/dedicated/PropertyManager.java
-@@ -17,15 +17,30 @@
+@@ -17,13 +17,28 @@
  import net.minecraft.core.IRegistryCustom;
  import org.slf4j.Logger;
  
@@ -18,20 +18,18 @@
          this.properties = properties;
 +
 +        this.options = options;
-     }
- 
++    }
++
 +    private String getOverride(String name, String value) {
 +        if ((this.options != null) && (this.options.has(name))) {
 +            return String.valueOf(this.options.valueOf(name));
 +        }
 +
 +        return value;
-+    }
-+    // CraftBukkit end
-+
-     public static Properties loadFromFile(Path path) {
-         Properties properties = new Properties();
++        // CraftBukkit end
+     }
  
+     public static Properties loadFromFile(Path path) {
 @@ -58,6 +73,11 @@
  
      public void store(Path path) {
@@ -62,7 +60,24 @@
      }
  
      @Nullable
-@@ -133,7 +153,7 @@
+@@ -121,6 +141,16 @@
+     }
+ 
+     protected <V> V get(String s, Function<String, V> function, Function<V, String> function1, V v0) {
++        // CraftBukkit start
++        try {
++            return get0(s, function, function1, v0);
++        } catch (Exception ex) {
++            throw new RuntimeException("Could not load invalidly configured property '" + s + "'", ex);
++        }
++    }
++
++    private <V> V get0(String s, Function<String, V> function, Function<V, String> function1, V v0) {
++        // CraftBukkit end
+         String s1 = this.getStringRaw(s);
+         V v1 = MoreObjects.firstNonNull(s1 != null ? function.apply(s1) : null, v0);
+ 
+@@ -133,7 +163,7 @@
          V v1 = MoreObjects.firstNonNull(s1 != null ? function.apply(s1) : null, v0);
  
          this.properties.put(s, function1.apply(v1));
@@ -71,7 +86,7 @@
      }
  
      protected <V> V get(String s, Function<String, V> function, UnaryOperator<V> unaryoperator, Function<V, String> function1, V v0) {
-@@ -197,7 +217,7 @@
+@@ -197,7 +227,7 @@
          return properties;
      }
  
@@ -80,7 +95,7 @@
  
      public class EditableProperty<V> implements Supplier<V> {
  
-@@ -205,7 +225,7 @@
+@@ -205,7 +235,7 @@
          private final V value;
          private final Function<V, String> serializer;
  
@@ -89,7 +104,7 @@
              this.key = s;
              this.value = object;
              this.serializer = function;
-@@ -219,7 +239,7 @@
+@@ -219,7 +249,7 @@
              Properties properties = PropertyManager.this.cloneProperties();
  
              properties.put(this.key, this.serializer.apply(v0));
