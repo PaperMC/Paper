@@ -79,11 +79,34 @@ public final class CraftItemFactory implements ItemFactory {
         case ZOMBIE_HEAD:
         case ZOMBIE_WALL_HEAD:
             return meta instanceof CraftMetaSkull ? meta : new CraftMetaSkull(meta);
+        case CHAINMAIL_HELMET:
+        case CHAINMAIL_CHESTPLATE:
+        case CHAINMAIL_LEGGINGS:
+        case CHAINMAIL_BOOTS:
+        case DIAMOND_HELMET:
+        case DIAMOND_CHESTPLATE:
+        case DIAMOND_LEGGINGS:
+        case DIAMOND_BOOTS:
+        case GOLDEN_HELMET:
+        case GOLDEN_CHESTPLATE:
+        case GOLDEN_LEGGINGS:
+        case GOLDEN_BOOTS:
+        case IRON_HELMET:
+        case IRON_CHESTPLATE:
+        case IRON_LEGGINGS:
+        case IRON_BOOTS:
+        case NETHERITE_HELMET:
+        case NETHERITE_CHESTPLATE:
+        case NETHERITE_LEGGINGS:
+        case NETHERITE_BOOTS:
+        case TURTLE_HELMET:
+            return meta != null && meta.getClass().equals(CraftMetaArmor.class) ? meta : new CraftMetaArmor(meta);
         case LEATHER_HELMET:
-        case LEATHER_HORSE_ARMOR:
         case LEATHER_CHESTPLATE:
         case LEATHER_LEGGINGS:
         case LEATHER_BOOTS:
+            return meta instanceof CraftMetaColorableArmor ? meta : new CraftMetaColorableArmor(meta);
+        case LEATHER_HORSE_ARMOR:
             return meta instanceof CraftMetaLeatherArmor ? meta : new CraftMetaLeatherArmor(meta);
         case POTION:
         case SPLASH_POTION:

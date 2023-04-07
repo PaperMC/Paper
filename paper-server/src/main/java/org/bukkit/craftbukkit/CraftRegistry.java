@@ -14,9 +14,13 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.generator.strucutre.CraftStructure;
 import org.bukkit.craftbukkit.generator.strucutre.CraftStructureType;
+import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
+import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
+import org.bukkit.inventory.meta.trim.TrimMaterial;
+import org.bukkit.inventory.meta.trim.TrimPattern;
 
 public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
@@ -26,6 +30,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         }
         if (bukkitClass == StructureType.class) {
             return new CraftRegistry<>(BuiltInRegistries.STRUCTURE_TYPE, CraftStructureType::new);
+        }
+        if (bukkitClass == TrimMaterial.class) {
+            return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.TRIM_MATERIAL), CraftTrimMaterial::new);
+        }
+        if (bukkitClass == TrimPattern.class) {
+            return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.TRIM_PATTERN), CraftTrimPattern::new);
         }
 
         return null;

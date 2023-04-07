@@ -35,12 +35,14 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.BundleMeta;
+import org.bukkit.inventory.meta.ColorableArmorMeta;
 import org.bukkit.inventory.meta.CrossbowMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
@@ -52,6 +54,9 @@ import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
+import org.bukkit.inventory.meta.trim.ArmorTrim;
+import org.bukkit.inventory.meta.trim.TrimMaterial;
+import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -243,10 +248,27 @@ public class ItemMetaTest extends AbstractTestingBase {
                     return cleanStack;
                 }
             },
-            new StackProvider(Material.LEATHER_BOOTS) {
+            new StackProvider(Material.DIAMOND_CHESTPLATE) {
+                @Override ItemStack operate(final ItemStack cleanStack) {
+                    final ArmorMeta meta = (ArmorMeta) cleanStack.getItemMeta();
+                    meta.setTrim(new ArmorTrim(TrimMaterial.AMETHYST, TrimPattern.COAST));
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
+            new StackProvider(Material.LEATHER_HORSE_ARMOR) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final LeatherArmorMeta meta = (LeatherArmorMeta) cleanStack.getItemMeta();
                     meta.setColor(Color.FUCHSIA);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
+            new StackProvider(Material.LEATHER_CHESTPLATE) {
+                @Override ItemStack operate(final ItemStack cleanStack) {
+                    final ColorableArmorMeta meta = (ColorableArmorMeta) cleanStack.getItemMeta();
+                    meta.setTrim(new ArmorTrim(TrimMaterial.COPPER, TrimPattern.DUNE));
+                    meta.setColor(Color.MAROON);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }

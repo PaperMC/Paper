@@ -137,6 +137,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         static {
             classMap = ImmutableMap.<Class<? extends CraftMetaItem>, String>builder()
+                    .put(CraftMetaArmor.class, "ARMOR")
                     .put(CraftMetaArmorStand.class, "ARMOR_STAND")
                     .put(CraftMetaBanner.class, "BANNER")
                     .put(CraftMetaBlockState.class, "TILE_ENTITY")
@@ -144,6 +145,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     .put(CraftMetaBookSigned.class, "BOOK_SIGNED")
                     .put(CraftMetaSkull.class, "SKULL")
                     .put(CraftMetaLeatherArmor.class, "LEATHER_ARMOR")
+                    .put(CraftMetaColorableArmor.class, "COLORABLE_ARMOR")
                     .put(CraftMetaMap.class, "MAP")
                     .put(CraftMetaPotion.class, "POTION")
                     .put(CraftMetaSpawnEgg.class, "SPAWN_EGG")
@@ -1391,6 +1393,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                         ATTRIBUTES_UUID_HIGH.NBT,
                         ATTRIBUTES_UUID_LOW.NBT,
                         ATTRIBUTES_SLOT.NBT,
+                        CraftMetaArmor.TRIM.NBT,
+                        CraftMetaArmor.TRIM_MATERIAL.NBT,
+                        CraftMetaArmor.TRIM_PATTERN.NBT,
                         CraftMetaMap.MAP_SCALING.NBT,
                         CraftMetaMap.MAP_COLOR.NBT,
                         CraftMetaMap.MAP_ID.NBT,

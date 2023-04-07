@@ -30,40 +30,23 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
 
     CraftMetaLeatherArmor(CraftMetaItem meta) {
         super(meta);
-        if (!(meta instanceof CraftMetaLeatherArmor)) {
-            return;
-        }
-
-        CraftMetaLeatherArmor armorMeta = (CraftMetaLeatherArmor) meta;
-        this.color = armorMeta.color;
+        readColor(this, meta);
     }
 
     CraftMetaLeatherArmor(NBTTagCompound tag) {
         super(tag);
-        if (tag.contains(DISPLAY.NBT)) {
-            NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
-            if (display.contains(COLOR.NBT)) {
-                try {
-                    color = Color.fromRGB(display.getInt(COLOR.NBT));
-                } catch (IllegalArgumentException ex) {
-                    // Invalid colour
-                }
-            }
-        }
+        readColor(this, tag);
     }
 
     CraftMetaLeatherArmor(Map<String, Object> map) {
         super(map);
-        setColor(SerializableMeta.getObject(Color.class, map, COLOR.BUKKIT, true));
+        readColor(this, map);
     }
 
     @Override
     void applyToItem(NBTTagCompound itemTag) {
         super.applyToItem(itemTag);
-
-        if (hasColor()) {
-            setDisplayTag(itemTag, COLOR.NBT, NBTTagInt.valueOf(color.asRGB()));
-        }
+        applyColor(this, itemTag);
     }
 
     @Override
@@ -96,16 +79,14 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
     }
 
     boolean hasColor() {
-        return !DEFAULT_LEATHER_COLOR.equals(color);
+        return hasColor(this);
     }
 
     @Override
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (hasColor()) {
-            builder.put(COLOR.BUKKIT, color);
-        }
+        serialize(this, builder);
 
         return builder;
     }
@@ -135,6 +116,47 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         if (hasColor()) {
             hash ^= color.hashCode();
         }
-        return original != hash ? CraftMetaSkull.class.hashCode() ^ hash : hash;
+        return original != hash ? CraftMetaLeatherArmor.class.hashCode() ^ hash : hash;
+    }
+
+    static void readColor(LeatherArmorMeta meta, CraftMetaItem other) {
+        if (!(other instanceof CraftMetaLeatherArmor armorMeta)) {
+            return;
+        }
+
+        meta.setColor(armorMeta.color);
+    }
+
+    static void readColor(LeatherArmorMeta meta, NBTTagCompound tag) {
+        if (tag.contains(DISPLAY.NBT)) {
+            NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
+            if (display.contains(COLOR.NBT)) {
+                try {
+                    meta.setColor(Color.fromRGB(display.getInt(COLOR.NBT)));
+                } catch (IllegalArgumentException ex) {
+                    // Invalid colour
+                }
+            }
+        }
+    }
+
+    static void readColor(LeatherArmorMeta meta, Map<String, Object> map) {
+        meta.setColor(SerializableMeta.getObject(Color.class, map, COLOR.BUKKIT, true));
+    }
+
+    static boolean hasColor(LeatherArmorMeta meta) {
+        return !DEFAULT_LEATHER_COLOR.equals(meta.getColor());
+    }
+
+    static void applyColor(LeatherArmorMeta meta, NBTTagCompound tag) {
+        if (hasColor(meta)) {
+            ((CraftMetaItem) meta).setDisplayTag(tag, COLOR.NBT, NBTTagInt.valueOf(meta.getColor().asRGB()));
+        }
+    }
+
+    static void serialize(LeatherArmorMeta meta, Builder<String, Object> builder) {
+        if (hasColor(meta)) {
+            builder.put(COLOR.BUKKIT, meta.getColor());
+        }
     }
 }
