@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -75,6 +75,40 @@
+@@ -75,6 +75,42 @@
  import net.minecraft.world.level.block.state.pattern.ShapeDetectorBlock;
  import org.slf4j.Logger;
  
@@ -16,6 +16,8 @@
 +import net.minecraft.server.level.WorldServer;
 +import net.minecraft.sounds.SoundCategory;
 +import net.minecraft.util.datafix.fixes.DataConverterTypes;
++import net.minecraft.world.level.block.BlockBed;
++import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.BlockSapling;
 +import net.minecraft.world.level.block.BlockTileEntity;
 +import net.minecraft.world.level.block.BlockWitherSkull;
@@ -41,7 +43,7 @@
  public final class ItemStack {
  
      public static final Codec<ItemStack> CODEC = RecordCodecBuilder.create((instance) -> {
-@@ -151,16 +185,30 @@
+@@ -151,16 +187,30 @@
          this.updateEmptyCacheFlag();
      }
  
@@ -74,7 +76,7 @@
              this.getItem().verifyTagAfterLoad(this.tag);
          }
  
-@@ -168,6 +216,11 @@
+@@ -168,6 +218,11 @@
              this.setDamageValue(this.getDamageValue());
          }
  
@@ -86,7 +88,7 @@
          this.updateEmptyCacheFlag();
      }
  
-@@ -225,7 +278,7 @@
+@@ -225,7 +280,7 @@
          return this.getItem().builtInRegistryHolder().tags();
      }
  
@@ -95,7 +97,7 @@
          EntityHuman entityhuman = itemactioncontext.getPlayer();
          BlockPosition blockposition = itemactioncontext.getClickedPos();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getLevel(), blockposition, false);
-@@ -233,12 +286,171 @@
+@@ -233,12 +288,182 @@
          if (entityhuman != null && !entityhuman.getAbilities().mayBuild && !this.hasAdventureModePlaceTagForBlock(itemactioncontext.getLevel().registryAccess().registryOrThrow(Registries.BLOCK), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -253,6 +255,17 @@
 +                        }
 +                    }
 +
++                    // SPIGOT-7315: Moved from BlockBed#setPlacedBy
++                    if (placeEvent != null && this.item instanceof ItemBed) {
++                        BlockPosition position = ((CraftBlock) placeEvent.getBlock()).getPosition();
++                        IBlockData blockData =  world.getBlockState(position);
++
++                        if (blockData.getBlock() instanceof BlockBed) {
++                            world.blockUpdated(position, Blocks.AIR);
++                            blockData.updateNeighbourShapes(world, position, 3);
++                        }
++                    }
++
 +                    // SPIGOT-1288 - play sound stripped from ItemBlock
 +                    if (this.item instanceof ItemBlock) {
 +                        SoundEffectType soundeffecttype = ((ItemBlock) this.item).getBlock().getSoundType(null);
@@ -268,7 +281,7 @@
  
              return enuminteractionresult;
          }
-@@ -319,6 +531,21 @@
+@@ -319,6 +544,21 @@
                  }
  
                  i -= k;
@@ -290,7 +303,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -340,6 +567,11 @@
+@@ -340,6 +580,11 @@
                  if (this.hurt(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -302,7 +315,7 @@
  
                      this.shrink(1);
                      if (t0 instanceof EntityHuman) {
-@@ -494,6 +726,17 @@
+@@ -494,6 +739,17 @@
          return this.tag;
      }
  
@@ -320,7 +333,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -864,6 +1107,12 @@
+@@ -864,6 +1120,12 @@
      }
  
      public void setRepairCost(int i) {
@@ -333,7 +346,7 @@
          this.getOrCreateTag().putInt("RepairCost", i);
      }
  
-@@ -913,6 +1162,13 @@
+@@ -913,6 +1175,13 @@
          nbttaglist.add(nbttagcompound);
      }
  
