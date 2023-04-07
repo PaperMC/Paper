@@ -7071,7 +7071,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.util.profiling.ProfilerFiller;
  import net.minecraft.world.entity.Entity;
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
- 
+     public boolean needsDecoration;
      // CraftBukkit end
  
 +    // Paper start
@@ -7311,9 +7311,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public Chunk[] getLoadedChunks() {
 -        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = this.world.getChunkSource().chunkMap.visibleChunkMap;
--        return chunks.values().stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.LevelChunk::getBukkitChunk).toArray(Chunk[]::new);
+-        return chunks.values().stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
 +        List<ChunkHolder> chunks = io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.world); // Paper
-+        return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.LevelChunk::getBukkitChunk).toArray(Chunk[]::new);
++        return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
      }
  
      @Override
@@ -7335,7 +7335,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (Bukkit.isPrimaryThread()) {
 +            net.minecraft.world.level.chunk.LevelChunk immediate = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
 +            if (immediate != null) {
-+                return java.util.concurrent.CompletableFuture.completedFuture(immediate.getBukkitChunk());
++                return java.util.concurrent.CompletableFuture.completedFuture(new CraftChunk(immediate));
 +            }
 +        }
 +
@@ -7351,7 +7351,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        io.papermc.paper.chunk.system.ChunkSystem.scheduleChunkLoad(this.getHandle(), x, z, gen, ChunkStatus.FULL, true, priority, (c) -> {
 +            net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
 +                net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk)c;
-+                ret.complete(chunk == null ? null : chunk.getBukkitChunk());
++                ret.complete(chunk == null ? null : new CraftChunk(chunk));
 +            });
 +        });
 +

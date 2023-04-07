@@ -51,25 +51,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public Chunk getChunkAt(int x, int z) {
--        return this.world.getChunkSource().getChunk(x, z, true).bukkitChunk;
+-        net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) this.world.getChunk(x, z, ChunkStatus.FULL, true);
 +        // Paper start - add ticket to hold chunk for a little while longer if plugin accesses it
-+        net.minecraft.world.level.chunk.LevelChunk chunk = world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
++        net.minecraft.world.level.chunk.LevelChunk chunk = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
 +        if (chunk == null) {
-+            addTicket(x, z);
++            this.addTicket(x, z);
 +            chunk = this.world.getChunkSource().getChunk(x, z, true);
 +        }
-+        return chunk.bukkitChunk;
 +        // Paper end
-+    }
-+
+         return new CraftChunk(chunk);
+     }
+ 
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return new CraftChunk(this.getHandle(), x, z);
+     }
+ 
 +    // Paper start
 +    private void addTicket(int x, int z) {
-+        io.papermc.paper.util.MCUtil.MAIN_EXECUTOR.execute(() -> world.getChunkSource().addRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 0, Unit.INSTANCE)); // Paper
-     }
++        io.papermc.paper.util.MCUtil.MAIN_EXECUTOR.execute(() -> this.world.getChunkSource().addRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 0, Unit.INSTANCE)); // Paper
++    }
 +    // Paper end
- 
++
      @Override
      public Chunk getChunkAt(Block block) {
+         Preconditions.checkArgument(block != null, "null block");
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public boolean unloadChunkRequest(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk unload"); // Spigot
@@ -115,7 +120,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          io.papermc.paper.chunk.system.ChunkSystem.scheduleChunkLoad(this.getHandle(), x, z, gen, ChunkStatus.FULL, true, priority, (c) -> {
              net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
                  net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk)c;
-+                if (chunk != null) addTicket(x, z); // Paper
-                 ret.complete(chunk == null ? null : chunk.getBukkitChunk());
++                if (chunk != null) this.addTicket(x, z); // Paper
+                 ret.complete(chunk == null ? null : new CraftChunk(chunk));
              });
          });
