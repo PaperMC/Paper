@@ -25,9 +25,6 @@ public interface ArmorMeta extends ItemMeta {
 
     /**
      * Set the {@link ArmorTrim}.
-     * <p>
-     * While vanilla only allows for armor to be trimmed, trims may be applied
-     * to any item whether or not the client will actually render a trim.
      *
      * @param trim the trim to set, or null to remove it
      */
