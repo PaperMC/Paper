@@ -18,7 +18,10 @@ import org.bukkit.entity.Villager;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
+import org.bukkit.inventory.meta.trim.TrimMaterial;
+import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.loot.LootTables;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -149,6 +152,22 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Sound
      */
     Registry<Sound> SOUNDS = new SimpleRegistry<>(Sound.class);
+    /**
+     * Trim materials.
+     *
+     * @see TrimMaterial
+     */
+    @MinecraftExperimental
+    @ApiStatus.Experimental
+    Registry<TrimMaterial> TRIM_MATERIAL = Bukkit.getRegistry(TrimMaterial.class);
+    /**
+     * Trim patterns.
+     *
+     * @see TrimPattern
+     */
+    @MinecraftExperimental
+    @ApiStatus.Experimental
+    Registry<TrimPattern> TRIM_PATTERN = Bukkit.getRegistry(TrimPattern.class);
     /**
      * Villager profession.
      *
