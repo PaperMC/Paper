@@ -5,26 +5,30 @@ Subject: [PATCH] Add mob spawner ranges changes and API
 
 
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 8d442c5a498ecf288a0cc0c54889c6e2fda849ce..dfd8f1186d01bff7169f687c5771224fbbf138be 100644
+index 019d3bbd78fb0b06861979d223915fedb6c99442..daf1747955e175d1e37d631fcbd574575a667433 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -276,6 +276,14 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -307,6 +307,18 @@ public class GlobalConfiguration extends ConfigurationPart {
                  executor.setMaximumPoolSize(_chatExecutorMaxSize);
              }
          }
 +
-+        public DefaultMobSpawnerRange defaultMobSpawnerRange;
++        public DefaultMobSpawnerValues defaultMobSpawnerValues;
 +
-+        public class DefaultMobSpawnerRange extends ConfigurationPart {
-+            public int horizontal = 4;
-+            public int vertical = 1;
++        public class DefaultMobSpawnerValues extends ConfigurationPart {
++            public Range range;
++            
++            public class Range extends ConfigurationPart {
++                public int horizontal = 4;
++                public int vertical = 1;
++            }
 +        }
 +
          public int maxJoinsPerTick = 5;
          public boolean fixEntityPositionDesync = true;
          public boolean loadPermissionsYmlBeforePlugins = true;
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index 31ac0e5ca26c7bdfa9b710d0bb78d846ddf6863e..27111500ef1d92e0da239d658a91171cb3196cee 100644
+index 633500aefd515df5dadda3802b94079f75a03fa0..c557a0d51699c9ecfeee3fa2b3564910f0483032 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
@@ -48,8 +52,8 @@ index 31ac0e5ca26c7bdfa9b710d0bb78d846ddf6863e..27111500ef1d92e0da239d658a91171c
      public int maxNearbyEntities = 6;
      public int requiredPlayerRange = 16;
 -    public int spawnRange = 4;
-+    public int spawnRange = io.papermc.paper.configuration.GlobalConfiguration.get().misc.defaultMobSpawnerRange.horizontal; // Paper
-+    public int verticalSpawnRange = io.papermc.paper.configuration.GlobalConfiguration.get().misc.defaultMobSpawnerRange.vertical; // Paper
++    public int spawnRange = io.papermc.paper.configuration.GlobalConfiguration.get().misc.defaultMobSpawnerValues.range.horizontal; // Paper
++    public int verticalSpawnRange = io.papermc.paper.configuration.GlobalConfiguration.get().misc.defaultMobSpawnerValues.range.vertical; // Paper
      private int tickDelay = 0; // Paper
  
      public BaseSpawner() {}
@@ -71,7 +75,7 @@ index 31ac0e5ca26c7bdfa9b710d0bb78d846ddf6863e..27111500ef1d92e0da239d658a91171c
  
                          if (k >= this.maxNearbyEntities) {
                              this.delay(world, pos);
-@@ -290,6 +293,12 @@ public abstract class BaseSpawner {
+@@ -284,6 +287,12 @@ public abstract class BaseSpawner {
          if (nbt.contains("SpawnRange", 99)) {
              this.spawnRange = nbt.getShort("SpawnRange");
          }
@@ -84,7 +88,7 @@ index 31ac0e5ca26c7bdfa9b710d0bb78d846ddf6863e..27111500ef1d92e0da239d658a91171c
  
          this.displayEntity = null;
      }
-@@ -313,6 +322,7 @@ public abstract class BaseSpawner {
+@@ -307,6 +316,7 @@ public abstract class BaseSpawner {
          nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
          nbt.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
          nbt.putShort("SpawnRange", (short) this.spawnRange);
@@ -93,10 +97,10 @@ index 31ac0e5ca26c7bdfa9b710d0bb78d846ddf6863e..27111500ef1d92e0da239d658a91171c
              nbt.put("SpawnData", (Tag) SpawnData.CODEC.encodeStart(NbtOps.INSTANCE, this.nextSpawnData).result().orElseThrow(() -> {
                  return new IllegalStateException("Invalid SpawnData");
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-index 95b01ddddb1ba90da495927099147e775fb4f7aa..d3fec33f5fe2e8317340eaca6356c91f8dd5a50f 100644
+index e2d0937f8609c1f65eff94a1cdae8c80b6347cc3..c2b47d6f9ee58e12b1d5003c2b599ab668079ae7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-@@ -131,6 +131,16 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+@@ -136,6 +136,16 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
      }
  
      // Paper start
