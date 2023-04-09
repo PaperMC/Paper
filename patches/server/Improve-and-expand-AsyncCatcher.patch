@@ -1,12 +1,46 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
-Date: Sun, 31 Oct 2021 21:34:00 -0700
-Subject: [PATCH] Async catch modifications to critical entity state
+Date: Wed, 25 Aug 2021 20:17:12 -0700
+Subject: [PATCH] Improve and expand AsyncCatcher
 
-These used to be here from Spigot, but were dropped with 1.17.
-Now in 1.17, this state is _even more_ critical than it was before,
-so these must exist to catch stupid plugins.
+Log when the async catcher is tripped
+  The chunk system can swallow the exception given it's all
+  built with completablefuture, so ensure it is at least printed.
 
+Add/move several async catchers
+
+Async catch modifications to critical entity state
+  These used to be here from Spigot, but were dropped with 1.17.
+  Now in 1.17, this state is _even more_ critical than it was before,
+  so these must exist to catch stupid plugins.
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     }
+ 
+     public void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set) { // Paper
++        org.spigotmc.AsyncCatcher.catchOp("teleport"); // Paper
+         // Paper start
+         if (player.isRemoved()) {
+             LOGGER.info("Attempt to teleport removed player {} restricted", player.getScoreboardName());
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause) {
+-        org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot
++        // org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot // Paper - move to API
+         if (this.isTickingEffects) {
+             this.effectsToProcess.add(new ProcessableEffect(mobeffect, cause));
+             return true;
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
@@ -131,3 +165,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!this.currentSection.remove(this.entity)) {
                  PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (destroying due to {})", new Object[]{this.entity, SectionPos.of(this.currentSectionKey), reason});
              }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -0,0 +0,0 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+ 
+     @Override
+     public boolean addPotionEffect(PotionEffect effect, boolean force) {
++        org.spigotmc.AsyncCatcher.catchOp("effect add"); // Paper
+         this.getHandle().addEffect(new MobEffectInstance(MobEffect.byId(effect.getType().getId()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles(), effect.hasIcon()), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
+         return true;
+     }
+diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/spigotmc/AsyncCatcher.java
++++ b/src/main/java/org/spigotmc/AsyncCatcher.java
+@@ -0,0 +0,0 @@ public class AsyncCatcher
+     {
+         if ( !io.papermc.paper.util.TickThread.isTickThread() ) // Paper // Paper - rewrite chunk system
+         {
++            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable()); // Paper
+             throw new IllegalStateException( "Asynchronous " + reason + "!" );
+         }
+     }
