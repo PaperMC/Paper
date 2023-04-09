@@ -250,12 +250,13 @@ index 0000000000000000000000000000000000000000..f0fce4113fb07c64adbec029d177c236
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..615902ac9fd341d6624d8fdb1c2ae6cc9abf9554
+index 0000000000000000000000000000000000000000..8ade7eb97aa899ddd4bb8274b8f588a4d7265868
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/DumpPluginsCommand.java
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,203 @@
 +package io.papermc.paper.command.subcommands;
 +
++import com.google.common.graph.GraphBuilder;
 +import com.google.gson.JsonArray;
 +import com.google.gson.JsonElement;
 +import com.google.gson.JsonObject;
@@ -270,8 +271,10 @@ index 0000000000000000000000000000000000000000..615902ac9fd341d6624d8fdb1c2ae6cc
 +import io.papermc.paper.plugin.entrypoint.classloader.group.SimpleListPluginClassLoaderGroup;
 +import io.papermc.paper.plugin.entrypoint.classloader.group.SpigotPluginClassLoaderGroup;
 +import io.papermc.paper.plugin.entrypoint.classloader.group.StaticPluginClassLoaderGroup;
++import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
-+import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
++import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.PluginProvider;
@@ -394,7 +397,7 @@ index 0000000000000000000000000000000000000000..615902ac9fd341d6624d8fdb1c2ae6cc
 +                    return false;
 +                }
 +            });
-+            modernPluginLoadingStrategy.loadProviders(pluginProviders);
++            modernPluginLoadingStrategy.loadProviders(pluginProviders, new MetaDependencyTree(GraphBuilder.directed().build()));
 +
 +            rootProviders.add(entry.getKey().getDebugName(), entrypoint);
 +        }
@@ -1672,78 +1675,25 @@ index 0000000000000000000000000000000000000000..f43295fdeaa587cf30c35a1d54516707
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bfa258faf17ca6118aeddfa4e95bbd082bcd1390
+index 0000000000000000000000000000000000000000..ef8653a6c6e0653716887d47bac4ab43e3b6c788
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,22 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
-+import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.provider.PluginProvider;
-+import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
-+import org.bukkit.plugin.PluginDescriptionFile;
-+import org.jetbrains.annotations.NotNull;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +
 +import java.util.ArrayList;
 +import java.util.List;
-+import java.util.Map;
-+import java.util.function.Predicate;
 +
 +@SuppressWarnings("UnstableApiUsage")
 +public class DependencyUtil {
 +
-+    @NotNull
-+    public static MutableGraph<String> buildDependencyGraph(@NotNull MutableGraph<String> dependencyGraph, @NotNull PluginMeta configuration) {
-+        List<String> dependencies = new ArrayList<>();
-+        dependencies.addAll(configuration.getPluginDependencies());
-+        dependencies.addAll(configuration.getPluginSoftDependencies());
-+
-+        return buildDependencyGraph(dependencyGraph, configuration.getName(), dependencies);
-+    }
-+
-+    @NotNull
-+    public static MutableGraph<String> buildDependencyGraph(@NotNull MutableGraph<String> dependencyGraph, String identifier, @NotNull Iterable<String> depends) {
-+        for (String dependency : depends) {
-+            dependencyGraph.putEdge(identifier, dependency);
-+        }
-+
-+        dependencyGraph.addNode(identifier); // Make sure dependencies at least have a node
-+        return dependencyGraph;
-+    }
-+
-+    @NotNull
-+    public static MutableGraph<String> buildLoadGraph(@NotNull MutableGraph<String> dependencyGraph, @NotNull LoadOrderConfiguration configuration, Predicate<String> validator) {
-+        String identifier = configuration.getMeta().getName();
-+        for (String dependency : configuration.getLoadAfter()) {
-+            if (validator.test(dependency)) {
-+                dependencyGraph.putEdge(identifier, dependency);
-+            }
-+        }
-+
-+        for (String loadBeforeTarget : configuration.getLoadBefore()) {
-+            if (validator.test(loadBeforeTarget)) {
-+                dependencyGraph.putEdge(loadBeforeTarget, identifier);
-+            }
-+        }
-+
-+        dependencyGraph.addNode(identifier); // Make sure dependencies at least have a node
-+        return dependencyGraph;
-+    }
-+
-+    // This adds a provided plugin to another plugin, basically making it seem like a "dependency"
-+    // in order to have plugins that need the provided plugin to load after the specified plugin name
-+    @NotNull
-+    public static MutableGraph<String> addProvidedPlugin(@NotNull MutableGraph<String> dependencyGraph, @NotNull String pluginName, @NotNull String providedName) {
-+        dependencyGraph.putEdge(pluginName, providedName);
-+
-+        return dependencyGraph;
-+    }
-+
-+    public static List<String> validateSimple(PluginMeta meta, Map<String, PluginProvider<?>> toLoad) {
++    public static List<String> validateSimple(PluginMeta meta, DependencyContext dependencyContext) {
 +        List<String> missingDependencies = new ArrayList<>();
 +        for (String hardDependency : meta.getPluginDependencies()) {
-+            if (!toLoad.containsKey(hardDependency)) {
++            if (!dependencyContext.hasDependency(hardDependency)) {
 +                missingDependencies.add(hardDependency);
 +            }
 +        }
@@ -1753,14 +1703,15 @@ index 0000000000000000000000000000000000000000..bfa258faf17ca6118aeddfa4e95bbd08
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6f201a8131ca9631ac4af62c75e6f2e889cb5eae
+index 0000000000000000000000000000000000000000..a2fa8406bc3f0dcab6805633ae984d031d24692a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,54 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
 +import com.google.common.graph.Graph;
 +import com.google.common.graph.Graphs;
++import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +
@@ -1769,9 +1720,9 @@ index 0000000000000000000000000000000000000000..6f201a8131ca9631ac4af62c75e6f2e8
 +@SuppressWarnings("UnstableApiUsage")
 +public class GraphDependencyContext implements DependencyContext {
 +
-+    private final Graph<String> dependencyGraph;
++    private final MutableGraph<String> dependencyGraph;
 +
-+    public GraphDependencyContext(Graph<String> dependencyGraph) {
++    public GraphDependencyContext(MutableGraph<String> dependencyGraph) {
 +        this.dependencyGraph = dependencyGraph;
 +    }
 +
@@ -1799,6 +1750,123 @@ index 0000000000000000000000000000000000000000..6f201a8131ca9631ac4af62c75e6f2e8
 +        return this.dependencyGraph.nodes().contains(pluginIdentifier);
 +    }
 +
++    public MutableGraph<String> getDependencyGraph() {
++        return dependencyGraph;
++    }
++
++    @Override
++    public String toString() {
++        return "GraphDependencyContext{" +
++            "dependencyGraph=" + this.dependencyGraph +
++            '}';
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..82bed7241cc096aec4bf362078356c25b5ef0205
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java
+@@ -0,0 +1,101 @@
++package io.papermc.paper.plugin.entrypoint.dependency;
++
++import com.google.common.graph.Graphs;
++import com.google.common.graph.MutableGraph;
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.HashSet;
++import java.util.Set;
++
++public class MetaDependencyTree implements DependencyContext {
++
++    private final MutableGraph<String> graph;
++
++    // We need to upkeep a separate collection since when populating
++    // a graph it adds nodes even if they are not present
++    private final Set<String> dependencies = new HashSet<>();
++
++    public MetaDependencyTree(MutableGraph<String> graph) {
++        this.graph = graph;
++    }
++
++    public void add(PluginProvider<?> provider) {
++        add(provider.getMeta());
++    }
++
++    public void remove(PluginProvider<?> provider) {
++        remove(provider.getMeta());
++    }
++
++    public void add(PluginMeta configuration) {
++        String identifier = configuration.getName();
++        // Build a validated provider's dependencies into the graph
++        for (String dependency : configuration.getPluginDependencies()) {
++            this.graph.putEdge(identifier, dependency);
++        }
++
++        this.graph.addNode(identifier); // Make sure dependencies at least have a node
++
++        // Add the provided plugins to the graph as well
++        for (String provides : configuration.getProvidedPlugins()) {
++            this.graph.putEdge(identifier, provides);
++            this.dependencies.add(provides);
++        }
++        this.dependencies.add(identifier);
++    }
++
++    public void remove(PluginMeta configuration) {
++        String identifier = configuration.getName();
++        // Remove a validated provider's dependencies into the graph
++        for (String dependency : configuration.getPluginDependencies()) {
++            this.graph.removeEdge(identifier, dependency);
++        }
++
++        this.graph.removeNode(identifier); // Remove root node
++
++        // Remove the provided plugins to the graph as well
++        for (String provides : configuration.getProvidedPlugins()) {
++            this.graph.removeEdge(identifier, provides);
++            this.dependencies.remove(provides);
++        }
++        this.dependencies.remove(identifier);
++    }
++
++    @Override
++    public boolean isTransitiveDependency(@NotNull PluginMeta plugin, @NotNull PluginMeta depend) {
++        String pluginIdentifier = plugin.getName();
++
++        if (this.graph.nodes().contains(pluginIdentifier)) {
++            Set<String> reachableNodes = Graphs.reachableNodes(this.graph, pluginIdentifier);
++            if (reachableNodes.contains(depend.getName())) {
++                return true;
++            }
++            for (String provided : depend.getProvidedPlugins()) {
++                if (reachableNodes.contains(provided)) {
++                    return true;
++                }
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    public boolean hasDependency(@NotNull String pluginIdentifier) {
++        return this.dependencies.contains(pluginIdentifier);
++    }
++
++    @Override
++    public String toString() {
++        return "ProviderDependencyTree{" +
++            "graph=" + this.graph +
++            '}';
++    }
++
++    public MutableGraph<String> getGraph() {
++        return graph;
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/JohnsonSimpleCycles.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/JohnsonSimpleCycles.java
 new file mode 100644
@@ -2162,7 +2230,7 @@ index 0000000000000000000000000000000000000000..a9bca905eba67972e4d1b07b1d243272
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2f4d0e04676d000afacd7e5354551e77922b2dcf
+index 0000000000000000000000000000000000000000..ebd193e7d9736021756223d565c8a16a7b1770d2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 @@ -0,0 +1,269 @@
@@ -2172,6 +2240,7 @@ index 0000000000000000000000000000000000000000..2f4d0e04676d000afacd7e5354551e77
 +import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
 +import org.bukkit.plugin.UnknownDependencyException;
@@ -2199,10 +2268,9 @@ index 0000000000000000000000000000000000000000..2f4d0e04676d000afacd7e5354551e77
 +    }
 +
 +    @Override
-+    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> providers) {
++    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> providers, MetaDependencyTree dependencyTree) {
 +        List<ProviderPair<T>> javapluginsLoaded = new ArrayList<>();
-+        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
-+        GraphDependencyContext dependencyContext = new GraphDependencyContext(dependencyGraph);
++        MutableGraph<String> dependencyGraph = dependencyTree.getGraph();
 +
 +        Map<String, PluginProvider<T>> providersToLoad = new HashMap<>();
 +        Set<String> loadedPlugins = new HashSet<>();
@@ -2364,7 +2432,7 @@ index 0000000000000000000000000000000000000000..2f4d0e04676d000afacd7e5354551e77
 +                    missingDependency = false;
 +
 +                    try {
-+                        this.configuration.applyContext(file, dependencyContext);
++                        this.configuration.applyContext(file, dependencyTree);
 +                        T loadedPlugin = file.createInstance();
 +                        this.warnIfPaperPlugin(file);
 +
@@ -2396,7 +2464,7 @@ index 0000000000000000000000000000000000000000..2f4d0e04676d000afacd7e5354551e77
 +                        providerIterator.remove();
 +
 +                        try {
-+                            this.configuration.applyContext(file, dependencyContext);
++                            this.configuration.applyContext(file, dependencyTree);
 +                            T loadedPlugin = file.createInstance();
 +                            this.warnIfPaperPlugin(file);
 +
@@ -2432,223 +2500,6 @@ index 0000000000000000000000000000000000000000..2f4d0e04676d000afacd7e5354551e77
 +    private void warnIfPaperPlugin(PluginProvider<T> provider) {
 +        if (provider instanceof PaperPluginParent.PaperServerPluginProvider) {
 +            provider.getLogger().warn("Loading Paper plugin in the legacy plugin loading logic. This is not recommended and may introduce some differences into load order. It's highly recommended you move away from this if you are wanting to use Paper plugins.");
-+        }
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..1d58f3a438d5be423c84b2f61e496d938fdc2995
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ModernPluginLoadingStrategy.java
-@@ -0,0 +1,211 @@
-+package io.papermc.paper.plugin.entrypoint.strategy;
-+
-+import com.google.common.collect.Lists;
-+import com.google.common.collect.Maps;
-+import com.google.common.graph.GraphBuilder;
-+import com.google.common.graph.MutableGraph;
-+import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
-+import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
-+import io.papermc.paper.plugin.provider.PluginProvider;
-+import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
-+import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
-+import io.papermc.paper.plugin.provider.type.spigot.SpigotPluginProvider;
-+import java.util.HashSet;
-+import java.util.Set;
-+import org.bukkit.plugin.UnknownDependencyException;
-+import org.slf4j.Logger;
-+
-+import java.util.ArrayList;
-+import java.util.HashMap;
-+import java.util.List;
-+import java.util.Map;
-+
-+@SuppressWarnings("UnstableApiUsage")
-+public class ModernPluginLoadingStrategy<T> implements ProviderLoadingStrategy<T> {
-+
-+    private static final Logger LOGGER = LogUtils.getClassLogger();
-+    private final ProviderConfiguration<T> configuration;
-+
-+    public ModernPluginLoadingStrategy(ProviderConfiguration<T> onLoad) {
-+        this.configuration = onLoad;
-+    }
-+
-+    @Override
-+    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> pluginProviders) {
-+        Map<String, PluginProviderEntry<T>> providerMap = new HashMap<>();
-+        Map<String, PluginProvider<?>> providerMapMirror = Maps.transformValues(providerMap, (entry) -> entry.provider);
-+        List<PluginProvider<T>> validatedProviders = new ArrayList<>();
-+
-+        // Populate provider map
-+        for (PluginProvider<T> provider : pluginProviders) {
-+            PluginMeta providerConfig = provider.getMeta();
-+            PluginProviderEntry<T> entry = new PluginProviderEntry<>(provider);
-+
-+            PluginProviderEntry<T> replacedProvider = providerMap.put(providerConfig.getName(), entry);
-+            if (replacedProvider != null) {
-+                LOGGER.error(String.format(
-+                    "Ambiguous plugin name '%s' for files '%s' and '%s' in '%s'",
-+                    providerConfig.getName(),
-+                    provider.getSource(),
-+                    replacedProvider.provider.getSource(),
-+                    replacedProvider.provider.getParentSource()
-+                ));
-+            }
-+
-+            for (String extra : providerConfig.getProvidedPlugins()) {
-+                PluginProviderEntry<T> replacedExtraProvider = providerMap.putIfAbsent(extra, entry);
-+                if (replacedExtraProvider != null) {
-+                    LOGGER.warn(String.format(
-+                        "`%s' is provided by both `%s' and `%s'",
-+                        extra,
-+                        providerConfig.getName(),
-+                        replacedExtraProvider.provider.getMeta().getName()
-+                    ));
-+                }
-+            }
-+        }
-+
-+        // Validate providers, ensuring all of them have valid dependencies. Removing those who are invalid
-+        for (PluginProvider<T> provider : pluginProviders) {
-+            PluginMeta configuration = provider.getMeta();
-+
-+            // Populate missing dependencies to capture if there are multiple missing ones.
-+            List<String> missingDependencies = provider.validateDependencies(providerMapMirror);
-+
-+            if (missingDependencies.isEmpty()) {
-+                validatedProviders.add(provider);
-+            } else {
-+                LOGGER.error("Could not load '%s' in '%s'".formatted(provider.getSource(), provider.getParentSource()), new UnknownDependencyException(missingDependencies, configuration.getName())); // Paper
-+                // Because the validator is invalid, remove it from the provider map
-+                providerMap.remove(configuration.getName());
-+            }
-+        }
-+
-+        MutableGraph<String> loadOrderGraph = GraphBuilder.directed().build();
-+        MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
-+        for (PluginProvider<?> validated : validatedProviders) {
-+            PluginMeta configuration = validated.getMeta();
-+            LoadOrderConfiguration loadOrderConfiguration = validated.createConfiguration(providerMapMirror);
-+
-+            // Build a validated provider's load order changes
-+            DependencyUtil.buildLoadGraph(loadOrderGraph, loadOrderConfiguration, providerMap::containsKey);
-+
-+            // Build a validated provider's dependencies into the graph
-+            DependencyUtil.buildDependencyGraph(dependencyGraph, configuration);
-+
-+            // Add the provided plugins to the graph as well
-+            for (String provides : configuration.getProvidedPlugins()) {
-+                String name = configuration.getName();
-+                DependencyUtil.addProvidedPlugin(loadOrderGraph, name, provides);
-+                DependencyUtil.addProvidedPlugin(dependencyGraph, name, provides);
-+            }
-+        }
-+
-+        // Reverse the topographic search to let us see which providers we can load first.
-+        List<String> reversedTopographicSort;
-+        try {
-+            reversedTopographicSort = Lists.reverse(TopographicGraphSorter.sortGraph(loadOrderGraph));
-+        } catch (TopographicGraphSorter.GraphCycleException exception) {
-+            List<List<String>> cycles = new JohnsonSimpleCycles<>(loadOrderGraph).findAndRemoveSimpleCycles();
-+
-+            // Only log an error if at least non-Spigot plugin is present in the cycle
-+            // Due to Spigot plugin metadata making no distinction between load order and dependencies (= class loader access), cycles are an unfortunate reality we have to deal with
-+            Set<String> cyclingPlugins = new HashSet<>();
-+            cycles.forEach(cyclingPlugins::addAll);
-+            if (cyclingPlugins.stream().anyMatch(plugin -> {
-+                PluginProvider<?> pluginProvider = providerMapMirror.get(plugin);
-+                return pluginProvider != null && !(pluginProvider instanceof SpigotPluginProvider);
-+            })) {
-+                logCycleError(cycles, providerMapMirror);
-+            }
-+
-+            // Try again after hopefully having removed all cycles
-+            try {
-+                reversedTopographicSort = Lists.reverse(TopographicGraphSorter.sortGraph(loadOrderGraph));
-+            } catch (TopographicGraphSorter.GraphCycleException e) {
-+                throw new PluginGraphCycleException(cycles);
-+            }
-+        }
-+
-+        GraphDependencyContext graphDependencyContext = new GraphDependencyContext(dependencyGraph);
-+        List<ProviderPair<T>> loadedPlugins = new ArrayList<>();
-+        for (String providerIdentifier : reversedTopographicSort) {
-+            // It's possible that this will be null because the above dependencies for soft/load before aren't validated if they exist.
-+            // The graph could be MutableGraph<PluginProvider<T>>, but we would have to check if each dependency exists there... just
-+            // nicer to do it here TBH.
-+            PluginProviderEntry<T> retrievedProviderEntry = providerMap.get(providerIdentifier);
-+            if (retrievedProviderEntry == null || retrievedProviderEntry.provided) {
-+                // OR if this was already provided (most likely from a plugin that already "provides" that dependency)
-+                // This won't matter since the provided plugin is loaded as a dependency, meaning it should have been loaded correctly anyways
-+                continue; // Skip provider that doesn't exist....
-+            }
-+            retrievedProviderEntry.provided = true;
-+            PluginProvider<T> retrievedProvider = retrievedProviderEntry.provider;
-+            try {
-+                this.configuration.applyContext(retrievedProvider, graphDependencyContext);
-+
-+                if (this.configuration.preloadProvider(retrievedProvider)) {
-+                    T instance = retrievedProvider.createInstance();
-+                    if (this.configuration.load(retrievedProvider, instance)) {
-+                        loadedPlugins.add(new ProviderPair<>(retrievedProvider, instance));
-+                    }
-+                }
-+            } catch (Throwable ex) {
-+                LOGGER.error("Could not load plugin '%s' in folder '%s'".formatted(retrievedProvider.getFileName(), retrievedProvider.getParentSource()), ex); // Paper
-+            }
-+        }
-+
-+        return loadedPlugins;
-+    }
-+
-+    private void logCycleError(List<List<String>> cycles, Map<String, PluginProvider<?>> providerMapMirror) {
-+        LOGGER.error("=================================");
-+        LOGGER.error("Circular plugin loading detected:");
-+        for (int i = 0; i < cycles.size(); i++) {
-+            List<String> cycle = cycles.get(i);
-+            LOGGER.error("{}) {} -> {}", i + 1, String.join(" -> ", cycle), cycle.get(0));
-+            for (String pluginName : cycle) {
-+                PluginProvider<?> pluginProvider = providerMapMirror.get(pluginName);
-+                if (pluginProvider == null) {
-+                    return;
-+                }
-+
-+                logPluginInfo(pluginProvider.getMeta());
-+            }
-+        }
-+
-+        LOGGER.error("Please report this to the plugin authors of the first plugin of each loop or join the PaperMC Discord server for further help.");
-+        LOGGER.error("=================================");
-+    }
-+
-+    private void logPluginInfo(PluginMeta meta) {
-+        if (!meta.getLoadBeforePlugins().isEmpty()) {
-+            LOGGER.error("   {} loadbefore: {}", meta.getName(), meta.getLoadBeforePlugins());
-+        }
-+
-+        if (meta instanceof PaperPluginMeta paperPluginMeta) {
-+            if (!paperPluginMeta.getLoadAfterPlugins().isEmpty()) {
-+                LOGGER.error("   {} loadafter: {}", meta.getName(), paperPluginMeta.getLoadAfterPlugins());
-+            }
-+        } else {
-+            List<String> dependencies = new ArrayList<>();
-+            dependencies.addAll(meta.getPluginDependencies());
-+            dependencies.addAll(meta.getPluginSoftDependencies());
-+            if (!dependencies.isEmpty()) {
-+                LOGGER.error("   {} depend/softdepend: {}", meta.getName(), dependencies);
-+            }
-+        }
-+    }
-+
-+    private static class PluginProviderEntry<T> {
-+
-+        private final PluginProvider<T> provider;
-+        private boolean provided;
-+
-+        private PluginProviderEntry(PluginProvider<T> provider) {
-+            this.provider = provider;
 +        }
 +    }
 +}
@@ -2706,12 +2557,13 @@ index 0000000000000000000000000000000000000000..2c7a0751e5c8d0d1e42f7e245ba09815
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dee83e821dcc9baf3a3e5ca8325b03ed2d5eb81c
+index 0000000000000000000000000000000000000000..a79eb9e2c8c42ecf823aecbd859576415e9981dc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderLoadingStrategy.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,22 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +
 +import java.util.List;
@@ -2720,11 +2572,12 @@ index 0000000000000000000000000000000000000000..dee83e821dcc9baf3a3e5ca8325b03ed
 + * Used by a {@link io.papermc.paper.plugin.storage.SimpleProviderStorage} to load plugin providers in a certain order.
 + * <p>
 + * Returns providers loaded.
++ *
 + * @param <P> provider type
 + */
 +public interface ProviderLoadingStrategy<P> {
 +
-+    List<ProviderPair<P>> loadProviders(List<PluginProvider<P>> providers);
++    List<ProviderPair<P>> loadProviders(List<PluginProvider<P>> providers, MetaDependencyTree dependencyTree);
 +
 +    record ProviderPair<P>(PluginProvider<P> provider, P provided) {
 +
@@ -2792,6 +2645,276 @@ index 0000000000000000000000000000000000000000..52a110044611c8a0ace6d49549e8acc1
 +
 +    public static final class GraphCycleException extends RuntimeException {
 +
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/LoadOrderTree.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/LoadOrderTree.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..862c2d9f195fe325d5e5d4aacbdf4051fa1feacd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/LoadOrderTree.java
+@@ -0,0 +1,122 @@
++package io.papermc.paper.plugin.entrypoint.strategy.modern;
++
++import com.google.common.collect.Lists;
++import com.google.common.graph.MutableGraph;
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
++import io.papermc.paper.plugin.entrypoint.strategy.JohnsonSimpleCycles;
++import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
++import io.papermc.paper.plugin.entrypoint.strategy.TopographicGraphSorter;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
++import io.papermc.paper.plugin.provider.type.spigot.SpigotPluginProvider;
++import org.slf4j.Logger;
++
++import java.util.ArrayList;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++
++class LoadOrderTree {
++
++    private static final Logger LOGGER = LogUtils.getClassLogger();
++
++    private final Map<String, PluginProvider<?>> providerMap;
++    private final MutableGraph<String> graph;
++
++    public LoadOrderTree(Map<String, PluginProvider<?>> providerMapMirror, MutableGraph<String> graph) {
++        this.providerMap = providerMapMirror;
++        this.graph = graph;
++    }
++
++    public void add(PluginProvider<?> provider) {
++        LoadOrderConfiguration configuration = provider.createConfiguration(this.providerMap);
++
++        // Build a validated provider's load order changes
++        String identifier = configuration.getMeta().getName();
++        for (String dependency : configuration.getLoadAfter()) {
++            if (this.providerMap.containsKey(dependency)) {
++                this.graph.putEdge(identifier, dependency);
++            }
++        }
++
++        for (String loadBeforeTarget : configuration.getLoadBefore()) {
++            if (this.providerMap.containsKey(loadBeforeTarget)) {
++                this.graph.putEdge(loadBeforeTarget, identifier);
++            }
++        }
++
++        this.graph.addNode(identifier); // Make sure load order has at least one node
++    }
++
++    public List<String> getLoadOrder() throws PluginGraphCycleException {
++        List<String> reversedTopographicSort;
++        try {
++            reversedTopographicSort = Lists.reverse(TopographicGraphSorter.sortGraph(this.graph));
++        } catch (TopographicGraphSorter.GraphCycleException exception) {
++            List<List<String>> cycles = new JohnsonSimpleCycles<>(this.graph).findAndRemoveSimpleCycles();
++
++            // Only log an error if at least non-Spigot plugin is present in the cycle
++            // Due to Spigot plugin metadata making no distinction between load order and dependencies (= class loader access), cycles are an unfortunate reality we have to deal with
++            Set<String> cyclingPlugins = new HashSet<>();
++            cycles.forEach(cyclingPlugins::addAll);
++            if (cyclingPlugins.stream().anyMatch(plugin -> {
++                PluginProvider<?> pluginProvider = this.providerMap.get(plugin);
++                return pluginProvider != null && !(pluginProvider instanceof SpigotPluginProvider);
++            })) {
++                logCycleError(cycles, this.providerMap);
++            }
++
++            // Try again after hopefully having removed all cycles
++            try {
++                reversedTopographicSort = Lists.reverse(TopographicGraphSorter.sortGraph(this.graph));
++            } catch (TopographicGraphSorter.GraphCycleException e) {
++                throw new PluginGraphCycleException(cycles);
++            }
++        }
++
++        return reversedTopographicSort;
++    }
++
++    private void logCycleError(List<List<String>> cycles, Map<String, PluginProvider<?>> providerMapMirror) {
++        LOGGER.error("=================================");
++        LOGGER.error("Circular plugin loading detected:");
++        for (int i = 0; i < cycles.size(); i++) {
++            List<String> cycle = cycles.get(i);
++            LOGGER.error("{}) {} -> {}", i + 1, String.join(" -> ", cycle), cycle.get(0));
++            for (String pluginName : cycle) {
++                PluginProvider<?> pluginProvider = providerMapMirror.get(pluginName);
++                if (pluginProvider == null) {
++                    return;
++                }
++
++                logPluginInfo(pluginProvider.getMeta());
++            }
++        }
++
++        LOGGER.error("Please report this to the plugin authors of the first plugin of each loop or join the PaperMC Discord server for further help.");
++        LOGGER.error("=================================");
++    }
++
++    private void logPluginInfo(PluginMeta meta) {
++        if (!meta.getLoadBeforePlugins().isEmpty()) {
++            LOGGER.error("   {} loadbefore: {}", meta.getName(), meta.getLoadBeforePlugins());
++        }
++
++        if (meta instanceof PaperPluginMeta paperPluginMeta) {
++            if (!paperPluginMeta.getLoadAfterPlugins().isEmpty()) {
++                LOGGER.error("   {} loadafter: {}", meta.getName(), paperPluginMeta.getLoadAfterPlugins());
++            }
++        } else {
++            List<String> dependencies = new ArrayList<>();
++            dependencies.addAll(meta.getPluginDependencies());
++            dependencies.addAll(meta.getPluginSoftDependencies());
++            if (!dependencies.isEmpty()) {
++                LOGGER.error("   {} depend/softdepend: {}", meta.getName(), dependencies);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/ModernPluginLoadingStrategy.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..82ea31dfcb86f5b887f1a80022e19d934d586282
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/ModernPluginLoadingStrategy.java
+@@ -0,0 +1,136 @@
++package io.papermc.paper.plugin.entrypoint.strategy.modern;
++
++import com.google.common.collect.Maps;
++import com.google.common.graph.GraphBuilder;
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
++import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
++import io.papermc.paper.plugin.entrypoint.strategy.ProviderLoadingStrategy;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import org.bukkit.plugin.UnknownDependencyException;
++import org.slf4j.Logger;
++
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++
++@SuppressWarnings("UnstableApiUsage")
++public class ModernPluginLoadingStrategy<T> implements ProviderLoadingStrategy<T> {
++
++    private static final Logger LOGGER = LogUtils.getClassLogger();
++    private final ProviderConfiguration<T> configuration;
++
++    public ModernPluginLoadingStrategy(ProviderConfiguration<T> onLoad) {
++        this.configuration = onLoad;
++    }
++
++    @Override
++    public List<ProviderPair<T>> loadProviders(List<PluginProvider<T>> pluginProviders, MetaDependencyTree dependencyTree) {
++        Map<String, PluginProviderEntry<T>> providerMap = new HashMap<>();
++        Map<String, PluginProvider<?>> providerMapMirror = Maps.transformValues(providerMap, (entry) -> entry.provider);
++        List<PluginProvider<T>> validatedProviders = new ArrayList<>();
++
++        // Populate provider map
++        for (PluginProvider<T> provider : pluginProviders) {
++            PluginMeta providerConfig = provider.getMeta();
++            PluginProviderEntry<T> entry = new PluginProviderEntry<>(provider);
++
++            PluginProviderEntry<T> replacedProvider = providerMap.put(providerConfig.getName(), entry);
++            if (replacedProvider != null) {
++                LOGGER.error(String.format(
++                    "Ambiguous plugin name '%s' for files '%s' and '%s' in '%s'",
++                    providerConfig.getName(),
++                    provider.getSource(),
++                    replacedProvider.provider.getSource(),
++                    replacedProvider.provider.getParentSource()
++                ));
++            }
++
++            for (String extra : providerConfig.getProvidedPlugins()) {
++                PluginProviderEntry<T> replacedExtraProvider = providerMap.putIfAbsent(extra, entry);
++                if (replacedExtraProvider != null) {
++                    LOGGER.warn(String.format(
++                        "`%s' is provided by both `%s' and `%s'",
++                        extra,
++                        providerConfig.getName(),
++                        replacedExtraProvider.provider.getMeta().getName()
++                    ));
++                }
++            }
++        }
++
++        // Populate dependency tree
++        for (PluginProvider<?> validated : pluginProviders) {
++            dependencyTree.add(validated);
++        }
++
++        // Validate providers, ensuring all of them have valid dependencies. Removing those who are invalid
++        for (PluginProvider<T> provider : pluginProviders) {
++            PluginMeta configuration = provider.getMeta();
++
++            // Populate missing dependencies to capture if there are multiple missing ones.
++            List<String> missingDependencies = provider.validateDependencies(dependencyTree);
++
++            if (missingDependencies.isEmpty()) {
++                validatedProviders.add(provider);
++            } else {
++                LOGGER.error("Could not load '%s' in '%s'".formatted(provider.getSource(), provider.getParentSource()), new UnknownDependencyException(missingDependencies, configuration.getName())); // Paper
++                // Because the validator is invalid, remove it from the provider map
++                providerMap.remove(configuration.getName());
++                // Cleanup plugins that failed to load
++                dependencyTree.remove(provider);
++            }
++        }
++
++        LoadOrderTree loadOrderTree = new LoadOrderTree(providerMapMirror, GraphBuilder.directed().build());
++        // Populate load order tree
++        for (PluginProvider<?> validated : validatedProviders) {
++            loadOrderTree.add(validated);
++        }
++
++        // Reverse the topographic search to let us see which providers we can load first.
++        List<String> reversedTopographicSort = loadOrderTree.getLoadOrder();
++        List<ProviderPair<T>> loadedPlugins = new ArrayList<>();
++        for (String providerIdentifier : reversedTopographicSort) {
++            // It's possible that this will be null because the above dependencies for soft/load before aren't validated if they exist.
++            // The graph could be MutableGraph<PluginProvider<T>>, but we would have to check if each dependency exists there... just
++            // nicer to do it here TBH.
++            PluginProviderEntry<T> retrievedProviderEntry = providerMap.get(providerIdentifier);
++            if (retrievedProviderEntry == null || retrievedProviderEntry.provided) {
++                // OR if this was already provided (most likely from a plugin that already "provides" that dependency)
++                // This won't matter since the provided plugin is loaded as a dependency, meaning it should have been loaded correctly anyways
++                continue; // Skip provider that doesn't exist....
++            }
++            retrievedProviderEntry.provided = true;
++            PluginProvider<T> retrievedProvider = retrievedProviderEntry.provider;
++            try {
++                this.configuration.applyContext(retrievedProvider, dependencyTree);
++
++                if (this.configuration.preloadProvider(retrievedProvider)) {
++                    T instance = retrievedProvider.createInstance();
++                    if (this.configuration.load(retrievedProvider, instance)) {
++                        loadedPlugins.add(new ProviderPair<>(retrievedProvider, instance));
++                    }
++                }
++            } catch (Throwable ex) {
++                LOGGER.error("Could not load plugin '%s' in folder '%s'".formatted(retrievedProvider.getFileName(), retrievedProvider.getParentSource()), ex); // Paper
++            }
++        }
++
++        return loadedPlugins;
++    }
++
++    private static class PluginProviderEntry<T> {
++
++        private final PluginProvider<T> provider;
++        private boolean provided;
++
++        private PluginProviderEntry(PluginProvider<T> provider) {
++            this.provider = provider;
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
@@ -2893,12 +3016,14 @@ index 0000000000000000000000000000000000000000..5fcce65009f715d46dd3013f1f92ec83
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java b/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd64351370f
+index 0000000000000000000000000000000000000000..aef19b44075a3b2e8696315baa89117dd8ebb513
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/DummyBukkitPluginLoader.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,82 @@
 +package io.papermc.paper.plugin.manager;
 +
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.type.PluginFileType;
 +import org.bukkit.Bukkit;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.Listener;
@@ -2913,8 +3038,11 @@ index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd6
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.IOException;
 +import java.util.Map;
 +import java.util.Set;
++import java.util.jar.JarFile;
 +import java.util.regex.Pattern;
 +
 +/**
@@ -2924,19 +3052,39 @@ index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd6
 +@ApiStatus.Internal
 +public class DummyBukkitPluginLoader implements PluginLoader {
 +
++    private static final Pattern[] PATTERNS = new Pattern[0];
++
 +    @Override
 +    public @NotNull Plugin loadPlugin(@NotNull File file) throws InvalidPluginException, UnknownDependencyException {
-+        throw new UnsupportedOperationException();
++        try {
++            return PaperPluginManagerImpl.getInstance().loadPlugin(file);
++        } catch (InvalidDescriptionException e) {
++            throw new InvalidPluginException(e);
++        }
 +    }
 +
 +    @Override
 +    public @NotNull PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException {
-+        throw new UnsupportedOperationException();
++        try (JarFile jar = new JarFile(file)) {
++            PluginFileType<?, ?> type = PluginFileType.guessType(jar);
++            if (type == null) {
++                throw new InvalidDescriptionException(new FileNotFoundException("Jar does not contain plugin.yml"));
++            }
++
++            PluginMeta meta = type.getConfig(jar);
++            if (meta instanceof PluginDescriptionFile pluginDescriptionFile) {
++                return pluginDescriptionFile;
++            } else {
++                throw new InvalidDescriptionException("Plugin type does not use plugin.yml. Cannot read file description.");
++            }
++        } catch (Exception e) {
++            throw new InvalidDescriptionException(e);
++        }
 +    }
 +
 +    @Override
 +    public @NotNull Pattern[] getPluginFileFilters() {
-+        throw new UnsupportedOperationException();
++        return PATTERNS;
 +    }
 +
 +    @Override
@@ -2956,15 +3104,17 @@ index 0000000000000000000000000000000000000000..ea37ace14849ef4589a4f97287e6dcd6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..48696ee62cfaef27ea512464d33ac502f5ec3ccd
+index 0000000000000000000000000000000000000000..49bcce79139797649c775af65c7310c149611a56
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/MultiRuntimePluginProviderStorage.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,61 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.entrypoint.Entrypoint;
 +import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
++import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
 +import io.papermc.paper.plugin.storage.ServerPluginProviderStorage;
@@ -2978,6 +3128,12 @@ index 0000000000000000000000000000000000000000..48696ee62cfaef27ea512464d33ac502
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +    private final List<JavaPlugin> provided = new ArrayList<>();
++
++    private final MetaDependencyTree dependencyTree;
++
++    MultiRuntimePluginProviderStorage(MetaDependencyTree dependencyTree) {
++        this.dependencyTree = dependencyTree;
++    }
 +
 +    @Override
 +    public void register(PluginProvider<JavaPlugin> provider) {
@@ -3008,6 +3164,10 @@ index 0000000000000000000000000000000000000000..48696ee62cfaef27ea512464d33ac502
 +        return this.provided;
 +    }
 +
++    @Override
++    public MetaDependencyTree getDependencyTree() {
++        return this.dependencyTree;
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/NormalPaperPermissionManager.java b/src/main/java/io/papermc/paper/plugin/manager/NormalPaperPermissionManager.java
 new file mode 100644
@@ -3467,10 +3627,10 @@ index 0000000000000000000000000000000000000000..92a69677f21b2c1c035119d8e5a6af63
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e274f5d44
+index 0000000000000000000000000000000000000000..9c7552968b8c017c71a7a77557a66a03ed89f125
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -0,0 +1,304 @@
+@@ -0,0 +1,301 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.google.common.base.Preconditions;
@@ -3478,12 +3638,10 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.entrypoint.Entrypoint;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
-+import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
 +import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
 +import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
-+import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.provider.source.DirectoryProviderSource;
 +import io.papermc.paper.plugin.provider.source.FileProviderSource;
 +import org.bukkit.Bukkit;
@@ -3530,8 +3688,7 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +    private final CommandMap commandMap;
 +    private final Server server;
 +
-+    private final MutableGraph<String> dependencyGraph = GraphBuilder.directed().build();
-+    private final DependencyContext context = new GraphDependencyContext(this.dependencyGraph);
++    private final MetaDependencyTree dependencyTree = new MetaDependencyTree(GraphBuilder.directed().build());
 +
 +    public PaperPluginInstanceManager(PluginManager pluginManager, CommandMap commandMap, Server server) {
 +        this.commandMap = commandMap;
@@ -3570,12 +3727,12 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +            this.lookupNames.putIfAbsent(providedPlugin.toLowerCase(java.util.Locale.ENGLISH), provided);
 +        }
 +
-+        DependencyUtil.buildDependencyGraph(this.dependencyGraph, configuration);
++        this.dependencyTree.add(configuration);
 +    }
 +
 +    // InvalidDescriptionException is never used, because the old JavaPluginLoader would wrap the exception.
 +    public @Nullable Plugin loadPlugin(@NotNull Path path) throws InvalidPluginException, UnknownDependencyException {
-+        RuntimePluginEntrypointHandler<SingularRuntimePluginProviderStorage> runtimePluginEntrypointHandler = new RuntimePluginEntrypointHandler<>(new SingularRuntimePluginProviderStorage());
++        RuntimePluginEntrypointHandler<SingularRuntimePluginProviderStorage> runtimePluginEntrypointHandler = new RuntimePluginEntrypointHandler<>(new SingularRuntimePluginProviderStorage(this.dependencyTree));
 +
 +        try {
 +            FILE_PROVIDER_SOURCE.registerProviders(runtimePluginEntrypointHandler, path);
@@ -3604,7 +3761,7 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +    public @NotNull Plugin[] loadPlugins(@NotNull Path directory) {
 +        Preconditions.checkArgument(Files.isDirectory(directory), "Directory must be a directory"); // Avoid creating a directory if it doesn't exist
 +
-+        RuntimePluginEntrypointHandler<MultiRuntimePluginProviderStorage> runtimePluginEntrypointHandler = new RuntimePluginEntrypointHandler<>(new MultiRuntimePluginProviderStorage());
++        RuntimePluginEntrypointHandler<MultiRuntimePluginProviderStorage> runtimePluginEntrypointHandler = new RuntimePluginEntrypointHandler<>(new MultiRuntimePluginProviderStorage(this.dependencyTree));
 +        try {
 +            DIRECTORY_PROVIDER_SOURCE.registerProviders(runtimePluginEntrypointHandler, directory);
 +            runtimePluginEntrypointHandler.enter(Entrypoint.PLUGIN);
@@ -3762,7 +3919,7 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +    }
 +
 +    public boolean isTransitiveDepend(@NotNull PluginMeta plugin, @NotNull PluginMeta depend) {
-+        return this.context.isTransitiveDependency(plugin, depend);
++        return this.dependencyTree.isTransitiveDependency(plugin, depend);
 +    }
 +
 +    public boolean hasDependency(String pluginIdentifier) {
@@ -3772,7 +3929,7 @@ index 0000000000000000000000000000000000000000..c0e896343c22badd97c774c4ed1daa4e
 +    // Debug only
 +    @ApiStatus.Internal
 +    public MutableGraph<String> getDependencyGraph() {
-+        return this.dependencyGraph;
++        return this.dependencyTree.getGraph();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
@@ -4077,15 +4234,17 @@ index 0000000000000000000000000000000000000000..5d50d1d312388e979c0e1cd53a6bf597
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3d1b60e0427b1da1965fe81fe02176a70a8d56a2
+index 0000000000000000000000000000000000000000..3872f5a9287fc348d57812847ab18eb2d3e4b362
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/manager/SingularRuntimePluginProviderStorage.java
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,79 @@
 +package io.papermc.paper.plugin.manager;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import io.papermc.paper.plugin.entrypoint.Entrypoint;
 +import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
++import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
 +import io.papermc.paper.plugin.storage.ServerPluginProviderStorage;
@@ -4104,8 +4263,13 @@ index 0000000000000000000000000000000000000000..3d1b60e0427b1da1965fe81fe02176a7
 + */
 +class SingularRuntimePluginProviderStorage extends ServerPluginProviderStorage {
 +
++    private final MetaDependencyTree dependencyTree;
 +    private PluginProvider<JavaPlugin> lastProvider;
 +    private JavaPlugin singleLoaded;
++
++    SingularRuntimePluginProviderStorage(MetaDependencyTree dependencyTree) {
++        this.dependencyTree = dependencyTree;
++    }
 +
 +    @Override
 +    public void register(PluginProvider<JavaPlugin> provider) {
@@ -4129,19 +4293,6 @@ index 0000000000000000000000000000000000000000..3d1b60e0427b1da1965fe81fe02176a7
 +            return;
 +        }
 +
-+        // Manually validate dependencies, LEGACY BEHAVIOR.
-+        // Normally it is logged, but manually adding one plugin will cause it to actually throw exceptions.
-+        PluginDescriptionFile descriptionFile = (PluginDescriptionFile) provider.getMeta();
-+        List<String> missingDependencies = new ArrayList<>();
-+        for (String dependency : descriptionFile.getDepend()) {
-+            if (!PaperPluginManagerImpl.getInstance().isPluginEnabled(dependency)) {
-+                missingDependencies.add(dependency);
-+            }
-+        }
-+        if (!missingDependencies.isEmpty()) {
-+            throw new UnknownDependencyException(missingDependencies, provider.getFileName().toString());
-+        }
-+
 +        // Go through normal plugin loading logic
 +        super.enter();
 +    }
@@ -4159,6 +4310,11 @@ index 0000000000000000000000000000000000000000..3d1b60e0427b1da1965fe81fe02176a7
 +
 +    public Optional<JavaPlugin> getSingleLoaded() {
 +        return Optional.ofNullable(this.singleLoaded);
++    }
++
++    @Override
++    public MetaDependencyTree getDependencyTree() {
++        return this.dependencyTree;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/StupidSPMPermissionManagerWrapper.java b/src/main/java/io/papermc/paper/plugin/manager/StupidSPMPermissionManagerWrapper.java
@@ -4211,14 +4367,15 @@ index 0000000000000000000000000000000000000000..ea8cf22c35242eb9f3914b95df00e205
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3fc9246c111f862438f2cebda7d429c1c0b9582e
+index 0000000000000000000000000000000000000000..fd9748c693a029c0d75f6ad813ea46a2b528d140
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/PluginProvider.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.plugin.provider;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
@@ -4267,7 +4424,7 @@ index 0000000000000000000000000000000000000000..3fc9246c111f862438f2cebda7d429c1
 +    LoadOrderConfiguration createConfiguration(@NotNull Map<String, PluginProvider<?>> toLoad);
 +
 +    // Returns a list of missing dependencies
-+    List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad);
++    List<String> validateDependencies(@NotNull DependencyContext context);
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/ProviderStatus.java b/src/main/java/io/papermc/paper/plugin/provider/ProviderStatus.java
@@ -4974,19 +5131,19 @@ index 0000000000000000000000000000000000000000..a180612a1ec395202dbae1ca5b97ec01
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1572c3942c850eb36df38cf06395bcafa24e18e0
+index 0000000000000000000000000000000000000000..2f2e183cdee865448ca90d2da9e3db7135b741f5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,47 @@
 +package io.papermc.paper.plugin.provider.source;
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
 +import org.slf4j.Logger;
 +
++import java.nio.file.FileVisitOption;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
-+import java.util.logging.Level;
 +
 +/**
 + * Loads all plugin providers in the given directory.
@@ -4997,7 +5154,7 @@ index 0000000000000000000000000000000000000000..1572c3942c850eb36df38cf06395bcaf
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    public DirectoryProviderSource() {
-+        super("File '%s'"::formatted);
++        super("Directory '%s'"::formatted);
 +    }
 +
 +    @Override
@@ -5007,15 +5164,22 @@ index 0000000000000000000000000000000000000000..1572c3942c850eb36df38cf06395bcaf
 +            Files.createDirectories(context);
 +        }
 +
-+        Files.walk(context, 1).filter(Files::isRegularFile).forEach((path) -> {
-+            try {
-+                super.registerProviders(entrypointHandler, path);
-+            } catch (IllegalArgumentException ignored) {
-+                // Ignore initial argument exceptions
-+            } catch (Exception e) {
-+                LOGGER.error("Error loading plugin: " + e.getMessage(), e);
-+            }
-+        });
++        Files.walk(context, 1, FileVisitOption.FOLLOW_LINKS)
++            .filter(this::isValidFile)
++            .forEach((path) -> {
++                try {
++                    super.registerProviders(entrypointHandler, path);
++                } catch (IllegalArgumentException ignored) {
++                    // Ignore initial argument exceptions
++                } catch (Exception e) {
++                    LOGGER.error("Error loading plugin: " + e.getMessage(), e);
++                }
++            });
++    }
++
++    public boolean isValidFile(Path path) {
++        // Avoid loading plugins that start with a dot
++        return Files.isRegularFile(path) && !path.startsWith(".");
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
@@ -5451,7 +5615,7 @@ index 0000000000000000000000000000000000000000..b7e8a5ba375a558e0442aa9facf96954
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..016c5af192948a3908f77aa6e3e6db1ce31c78ad
+index 0000000000000000000000000000000000000000..009a055c36378353b1b156e04b230519a577bd50
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 @@ -0,0 +1,257 @@
@@ -5553,11 +5717,11 @@ index 0000000000000000000000000000000000000000..016c5af192948a3908f77aa6e3e6db1c
 +        }
 +
 +        @Override
-+        public List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad) {
++        public List<String> validateDependencies(@NotNull DependencyContext context) {
 +            List<String> missingDependencies = new ArrayList<>();
 +            for (DependencyConfiguration configuration : this.getMeta().getDependencies()) {
 +                String dependency = configuration.name();
-+                if (configuration.required() && configuration.bootstrap() && !toLoad.containsKey(dependency)) {
++                if (configuration.required() && configuration.bootstrap() && !context.hasDependency(dependency)) {
 +                    missingDependencies.add(dependency);
 +                }
 +            }
@@ -5659,8 +5823,8 @@ index 0000000000000000000000000000000000000000..016c5af192948a3908f77aa6e3e6db1c
 +        }
 +
 +        @Override
-+        public List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad) {
-+            return DependencyUtil.validateSimple(this.getMeta(), toLoad);
++        public List<String> validateDependencies(@NotNull DependencyContext context) {
++            return DependencyUtil.validateSimple(this.getMeta(), context);
 +        }
 +
 +        @Override
@@ -5854,7 +6018,7 @@ index 0000000000000000000000000000000000000000..b2a6544e321fa61c58bdf5684231de10
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d5db789074ca5a9e005c26a221ee3879252b3d6c
+index 0000000000000000000000000000000000000000..96b252b33047705f6c48917cc1e4e1edec3cf03a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 @@ -0,0 +1,190 @@
@@ -6018,8 +6182,8 @@ index 0000000000000000000000000000000000000000..d5db789074ca5a9e005c26a221ee3879
 +    }
 +
 +    @Override
-+    public List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad) {
-+        return DependencyUtil.validateSimple(this.getMeta(), toLoad);
++    public List<String> validateDependencies(@NotNull DependencyContext context) {
++        return DependencyUtil.validateSimple(this.getMeta(), context);
 +    }
 +
 +    @Override
@@ -6101,10 +6265,10 @@ index 0000000000000000000000000000000000000000..14ed05945ba5bfeb2b539d4786278b0e
 +
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2851c22ed74792bf7b60139c46776407e5163463
+index 0000000000000000000000000000000000000000..fbe3f8266398b213570d5008532d550d3c89ef16
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -6114,18 +6278,12 @@ index 0000000000000000000000000000000000000000..2851c22ed74792bf7b60139c46776407
 +import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
-+import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
-+import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
++import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.ProviderStatus;
 +import io.papermc.paper.plugin.provider.ProviderStatusHolder;
-+import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
-+import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
 +import org.slf4j.Logger;
-+
-+import java.util.ArrayList;
-+import java.util.List;
 +
 +public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootstrap> {
 +
@@ -6164,14 +6322,14 @@ index 0000000000000000000000000000000000000000..2851c22ed74792bf7b60139c46776407
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/ConfiguredProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/ConfiguredProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c49fd0d21f5c591fb2076ac87f158bca1a8e12b1
+index 0000000000000000000000000000000000000000..8ef4806cadabe56264dd861f1a1854b2354b3b5c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/ConfiguredProviderStorage.java
 @@ -0,0 +1,17 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import io.papermc.paper.plugin.entrypoint.strategy.LegacyPluginLoadingStrategy;
-+import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
++import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +
 +public abstract class ConfiguredProviderStorage<T> extends SimpleProviderStorage<T> {
@@ -6287,13 +6445,17 @@ index 0000000000000000000000000000000000000000..cb9b13522a976b82bcb71cef486f11f4
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9abfc8778614f7bc4da32a27c7f4964caff05c63
+index 0000000000000000000000000000000000000000..861c245290696eef0fca846c3026b407593fdce1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/SimpleProviderStorage.java
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,93 @@
 +package io.papermc.paper.plugin.storage;
 +
++import com.google.common.graph.GraphBuilder;
++import com.google.common.graph.MutableGraph;
 +import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.entrypoint.dependency.GraphDependencyContext;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderLoadingStrategy;
 +import io.papermc.paper.plugin.provider.PluginProvider;
@@ -6325,12 +6487,16 @@ index 0000000000000000000000000000000000000000..9abfc8778614f7bc4da32a27c7f4964c
 +        this.filterLoadingProviders(providerList);
 +
 +        try {
-+            for (ProviderLoadingStrategy.ProviderPair<T> providerPair : this.strategy.loadProviders(providerList)) {
++            for (ProviderLoadingStrategy.ProviderPair<T> providerPair : this.strategy.loadProviders(providerList, this.getDependencyTree())) {
 +                this.processProvided(providerPair.provider(), providerPair.provided());
 +            }
 +        } catch (PluginGraphCycleException exception) {
 +            this.handleCycle(exception);
 +        }
++    }
++
++    public MetaDependencyTree getDependencyTree() {
++        return new MetaDependencyTree(GraphBuilder.directed().build());
 +    }
 +
 +    @Override
@@ -6821,14 +6987,16 @@ index 0000000000000000000000000000000000000000..1d14f530ef888102e47eeeaf0d1a6076
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d137461a3a1896a367c5245a99a9b30afd9f6ad5
+index 0000000000000000000000000000000000000000..9d393aca5e2de4d046dc1a1232d57318432e4742
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,148 @@
 +package io.papermc.paper.plugin;
 +
++import com.google.common.graph.GraphBuilder;
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
-+import io.papermc.paper.plugin.entrypoint.strategy.ModernPluginLoadingStrategy;
++import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import org.junit.Assert;
@@ -6930,7 +7098,7 @@ index 0000000000000000000000000000000000000000..d137461a3a1896a367c5245a99a9b30a
 +
 +        });
 +
-+        modernPluginLoadingStrategy.loadProviders(REGISTERED_PROVIDERS);
++        modernPluginLoadingStrategy.loadProviders(REGISTERED_PROVIDERS, new MetaDependencyTree(GraphBuilder.directed().build()));
 +    }
 +
 +    @Test
@@ -7130,16 +7298,17 @@ index 0000000000000000000000000000000000000000..04903794a8ee4dd73162ae240862ff6d
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java b/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e3871de8a5e1c04b915927d852157c48b0f6612f
+index 0000000000000000000000000000000000000000..a4ef50027e4411f13ed840919136ca9ee4c58c41
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,77 @@
 +package io.papermc.paper.plugin;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -7206,8 +7375,8 @@ index 0000000000000000000000000000000000000000..e3871de8a5e1c04b915927d852157c48
 +    }
 +
 +    @Override
-+    public List<String> validateDependencies(@NotNull Map<String, PluginProvider<?>> toLoad) {
-+        return DependencyUtil.validateSimple(this.getMeta(), toLoad);
++    public List<String> validateDependencies(@NotNull DependencyContext context) {
++        return DependencyUtil.validateSimple(this.getMeta(), context);
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java b/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java
