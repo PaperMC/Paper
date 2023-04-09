@@ -30,6 +30,7 @@ import net.minecraft.world.level.chunk.DataPaletteBlock;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.NibbleArray;
 import net.minecraft.world.level.chunk.PalettedContainerRO;
+import net.minecraft.world.level.chunk.ProtoChunkExtension;
 import net.minecraft.world.level.chunk.storage.ChunkRegionLoader;
 import net.minecraft.world.level.chunk.storage.EntityStorage;
 import net.minecraft.world.level.entity.PersistentEntitySectionManager;
@@ -78,7 +79,14 @@ public class CraftChunk implements Chunk {
     }
 
     public IChunkAccess getHandle(ChunkStatus chunkStatus) {
-        return worldServer.getChunk(x, z, chunkStatus);
+        IChunkAccess chunkAccess = worldServer.getChunk(x, z, chunkStatus);
+
+        // SPIGOT-7332: Get unwrapped extension
+        if (chunkAccess instanceof ProtoChunkExtension extension) {
+            return extension.getWrapped();
+        }
+
+        return chunkAccess;
     }
 
     @Override
