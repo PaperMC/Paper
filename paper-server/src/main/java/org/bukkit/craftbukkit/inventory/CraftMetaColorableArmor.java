@@ -72,7 +72,7 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
 
     @Override
     public void setColor(Color color) {
-        this.color = color;
+        this.color = color == null ? DEFAULT_LEATHER_COLOR : color;
     }
 
     boolean hasColor() {
