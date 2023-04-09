@@ -27,15 +27,19 @@ public interface Ocelot extends Animals {
      * Gets the current type of this cat.
      *
      * @return Type of the cat.
+     * @deprecated Cats are now a separate entity.
      */
     @NotNull
+    @Deprecated
     public Type getCatType();
 
     /**
      * Sets the current type of this cat.
      *
      * @param type New type of this cat.
+     * @deprecated Cats are now a separate entity.
      */
+    @Deprecated
     public void setCatType(@NotNull Type type);
 
     /**
