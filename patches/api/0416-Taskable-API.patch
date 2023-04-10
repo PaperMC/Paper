@@ -1,0 +1,153 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheRealRyGuy <git@ryguy.me>
+Date: Mon, 10 Apr 2023 15:45:15 -0400
+Subject: [PATCH] Taskable API
+
+
+diff --git a/src/main/java/io/papermc/paper/util/Taskable.java b/src/main/java/io/papermc/paper/util/Taskable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..87587bafbf6985c94cabd983d702560c0d7b8d19
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/Taskable.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.util;
++
++import org.bukkit.Bukkit;
++import org.bukkit.plugin.Plugin;
++
++public interface Taskable {
++
++    default void runTask(Plugin plugin, Runnable runnable) {
++        this.scheduleSyncDelayedTask(plugin, runnable, 0);
++    }
++
++    default void scheduleSyncDelayedTask(Plugin plugin, Runnable runnable, int delay) {
++        this.scheduleSyncRepeatingTask(plugin, runnable, delay, -1);
++    }
++
++    default void scheduleSyncRepeatingTask(Plugin plugin, Runnable task, long delay, long interval) {
++        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, task, delay, interval);
++    }
++
++    default void runTaskAsynchronously(Plugin plugin, Runnable runnable) {
++        this.runTaskLaterAsynchronously(plugin, runnable, 0);
++    }
++
++    default void runTaskLaterAsynchronously(Plugin plugin, Runnable runnable, long delay) {
++        this.runTaskTimerAsynchronously(plugin, runnable, delay, -1);
++    }
++
++    default void runTaskTimerAsynchronously(Plugin plugin, Runnable runnable, long delay, long interval) {
++        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, runnable, delay, interval);
++    }
++}
+diff --git a/src/main/java/org/bukkit/Chunk.java b/src/main/java/org/bukkit/Chunk.java
+index 2f6142b6bfaa3b523478eccd6ad13ce922e81da9..a6d657662bd98f82063770419dbb92269e6f797e 100644
+--- a/src/main/java/org/bukkit/Chunk.java
++++ b/src/main/java/org/bukkit/Chunk.java
+@@ -1,6 +1,8 @@
+ package org.bukkit;
+ 
+ import java.util.Collection;
++
++import io.papermc.paper.util.Taskable;
+ import org.bukkit.block.Biome;
+ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockState;
+@@ -17,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
+  * then the chunk will only be generated as far as it needs to provide the
+  * requested data.
+  */
+-public interface Chunk extends PersistentDataHolder {
++public interface Chunk extends PersistentDataHolder, Taskable {
+ 
+     /**
+      * Gets the X-coordinate of this chunk
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 0b8776355f724927ada826735d5e73f3fb6897d5..dde6d4f9a9ff5a20ab00e12834fb20f3314f1f64 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -1,6 +1,8 @@
+ package org.bukkit;
+ 
+ import java.io.File;
++
++import io.papermc.paper.util.Taskable;
+ import org.bukkit.generator.ChunkGenerator;
+ 
+ import java.util.ArrayList;
+@@ -46,7 +48,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a world, which may contain entities, chunks and blocks
+  */
+-public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience { // Paper
++public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience, Taskable { // Paper
+ 
+     // Paper start
+     /**
+diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
+index 390a2a2611df35a9ea6f1eb996b47e2aa4597ff0..21dccf62358ccf97fbb4288ad68a3da5f2717c38 100644
+--- a/src/main/java/org/bukkit/block/Block.java
++++ b/src/main/java/org/bukkit/block/Block.java
+@@ -1,6 +1,8 @@
+ package org.bukkit.block;
+ 
+ import java.util.Collection;
++
++import io.papermc.paper.util.Taskable;
+ import org.bukkit.Chunk;
+ import org.bukkit.FluidCollisionMode;
+ import org.bukkit.Location;
+@@ -32,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
+  * (i.e. lighting and power) may not be able to be safely accessed during world
+  * generation when used in cases like BlockPhysicsEvent!!!!
+  */
+-public interface Block extends Metadatable, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
++public interface Block extends Metadatable, Translatable, net.kyori.adventure.translation.Translatable, Taskable { // Paper - translatable
+ 
+     /**
+      * Gets the metadata for this block
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index b791358f90fe92bc2264d9a26492245763813af3..1df42c27f7ef99409e01cc5751a128b85caf2ad1 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -6,6 +6,8 @@ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.List;
+ import java.util.Set;
++
++import io.papermc.paper.util.Taskable;
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.GameRule;
+@@ -22,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a Command, which executes various tasks upon user input
+  */
+-public abstract class Command {
++public abstract class Command implements Taskable {
+     private String name;
+     private String nextLabel;
+     private String label;
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index a2a423d4e4c2702ba5967223cab0432dd7d04732..5d99aac948fcd724bc2b46844ab0e9e6071f78db 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -3,6 +3,8 @@ package org.bukkit.entity;
+ import java.util.List;
+ import java.util.Set;
+ import java.util.UUID;
++
++import io.papermc.paper.util.Taskable;
+ import org.bukkit.Chunk; // Paper
+ import org.bukkit.EntityEffect;
+ import org.bukkit.Location;
+@@ -28,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a base entity in the world
+  */
+-public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter { // Paper
++public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter, Taskable { // Paper
+ 
+     /**
+      * Gets the entity's current position
