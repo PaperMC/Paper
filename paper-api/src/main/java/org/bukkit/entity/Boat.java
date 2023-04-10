@@ -175,6 +175,7 @@ public interface Boat extends Vehicle {
      */
     public enum Status {
 
+        NOT_IN_WORLD, // Paper
         IN_WATER,
         UNDER_WATER,
         UNDER_FLOWING_WATER,
