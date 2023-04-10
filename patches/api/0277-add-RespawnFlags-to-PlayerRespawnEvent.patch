@@ -5,32 +5,34 @@ Subject: [PATCH] add RespawnFlags to PlayerRespawnEvent
 
 
 diff --git a/src/main/java/org/bukkit/event/player/PlayerRespawnEvent.java b/src/main/java/org/bukkit/event/player/PlayerRespawnEvent.java
-index f5bdb5244c8d993c624f938c8fb7ccff74655d75..3715584a8289200ffb968e384e359ab574aaec5c 100644
+index 03225d2b4c91caa58c2995d9cf0e7fb4663749ab..b45f265ec7819b06a9a8361e8c1e43fd88b3138b 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerRespawnEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerRespawnEvent.java
-@@ -17,17 +17,30 @@ public class PlayerRespawnEvent extends PlayerEvent {
-     private Location respawnLocation;
+@@ -18,6 +18,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
      private final boolean isBedSpawn;
      private final boolean isAnchorSpawn;
+     private final RespawnReason respawnReason;
 +    private final java.util.Set<RespawnFlag> respawnFlags; // Paper
  
      @Deprecated
      public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn) {
-         this(respawnPlayer, respawnLocation, isBedSpawn, false);
+@@ -29,12 +30,24 @@ public class PlayerRespawnEvent extends PlayerEvent {
+         this(respawnPlayer, respawnLocation, isBedSpawn, false, RespawnReason.PLUGIN);
      }
  
 +    @Deprecated // Paper
-     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn) {
+     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason) {
 +        // Paper start
-+        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, com.google.common.collect.ImmutableSet.builder());
++        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, respawnReason, com.google.common.collect.ImmutableSet.builder());
 +    }
 +
-+    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> respawnFlags) {
++    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason, @NotNull final com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> respawnFlags) {
 +        // Paper end
          super(respawnPlayer);
          this.respawnLocation = respawnLocation;
          this.isBedSpawn = isBedSpawn;
          this.isAnchorSpawn = isAnchorSpawn;
+         this.respawnReason = respawnReason;
 +        // Paper start
 +        if (this.isBedSpawn) { respawnFlags.add(RespawnFlag.BED_SPAWN); }
 +        if (this.isAnchorSpawn) { respawnFlags.add(RespawnFlag.ANCHOR_SPAWN); }
@@ -39,9 +41,9 @@ index f5bdb5244c8d993c624f938c8fb7ccff74655d75..3715584a8289200ffb968e384e359ab5
      }
  
      /**
-@@ -80,4 +93,31 @@ public class PlayerRespawnEvent extends PlayerEvent {
-     public static HandlerList getHandlerList() {
-         return handlers;
+@@ -116,4 +129,31 @@ public class PlayerRespawnEvent extends PlayerEvent {
+          */
+         PLUGIN;
      }
 +
 +    // Paper start
