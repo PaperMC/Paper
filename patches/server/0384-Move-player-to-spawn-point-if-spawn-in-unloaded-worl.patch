@@ -6,8 +6,46 @@ Subject: [PATCH] Move player to spawn point if spawn in unloaded world
 The code following this has better support for null worlds to move
 them back to the world spawn.
 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index a0832d8e8b9e91073c15e5a87953d6ccee544ae0..89dd1b7d3687df12d84b82666ac5c0201cb11ff8 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -202,13 +202,19 @@ public abstract class PlayerList {
+             s = bukkit.contains("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
+         }
+         // CraftBukkit end
++        boolean needResetSpawnPos = false; // Paper
+ 
+         if (nbttagcompound != null) {
+             DataResult<ResourceKey<Level>> dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, nbttagcompound.get("Dimension"))); // CraftBukkit - decompile error
+             Logger logger = PlayerList.LOGGER;
+ 
+             Objects.requireNonNull(logger);
+-            resourcekey = (ResourceKey) dataresult.resultOrPartial(logger::error).orElse(Level.OVERWORLD);
++            // Paper start - detect when cannot find the dimension
++            //resourcekey = (ResourceKey) dataresult.resultOrPartial(logger::error).orElse(Level.OVERWORLD);
++            Optional<ResourceKey<Level>> optionalResourceKey = dataresult.resultOrPartial(logger::error);
++            needResetSpawnPos = optionalResourceKey.isEmpty();
++            resourcekey = optionalResourceKey.orElse(Level.OVERWORLD);
++            // Paper stop
+         } else {
+             resourcekey = Level.OVERWORLD;
+         }
+@@ -225,9 +231,9 @@ public abstract class PlayerList {
+         }
+ 
+         // Paper start
+-        if (nbttagcompound == null) {
+-            player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
+-            player.fudgeSpawnLocation(worldserver1); // only move to spawn on first login, otherwise, stay where you are....
++        if (nbttagcompound == null || needResetSpawnPos) {
++            if (nbttagcompound == null) player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
++            player.fudgeSpawnLocation(worldserver1); // only move to spawn on first login or when world spawn was change, otherwise, stay where you are....
+         }
+         // Paper end
+         player.setLevel(worldserver1);
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 8cfa823940b0fada04022034023f5372f1ca8b9f..d3f9954bda58b459e2f64b5d949807ab60905d48 100644
+index 8c922e29ae57f781d4f27d53b04ed90a24d81ca4..d04c5cd4afd09fbe511811a198135c19ee99c036 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2199,9 +2199,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
