@@ -202,6 +202,13 @@ public class Commodore
                             }
                         }
 
+                        // SPIGOT-7335
+                        if ( owner.equals( "org/bukkit/entity/TextDisplay$TextAligment" ) )
+                        {
+                            super.visitFieldInsn( opcode, "org/bukkit/entity/TextDisplay$TextAlignment", name, desc );
+                            return;
+                        }
+
                         if ( modern )
                         {
                             if ( owner.equals( "org/bukkit/Material" ) )
@@ -303,6 +310,22 @@ public class Commodore
                         {
                             // Should be same size on stack so just call other method
                             super.visitMethodInsn( opcode, owner, name, "(I)Lorg/bukkit/map/MapView;", itf );
+                            return;
+                        }
+                        // SPIGOT-7335
+                        if ( owner.equals( "org/bukkit/entity/TextDisplay$TextAligment" ) )
+                        {
+                            super.visitMethodInsn( opcode, "org/bukkit/entity/TextDisplay$TextAlignment", name, desc, itf );
+                            return;
+                        }
+                        if ( desc.equals( "(Lorg/bukkit/entity/TextDisplay$TextAligment;)V" ) )
+                        {
+                            super.visitMethodInsn( opcode, owner, name, "(Lorg/bukkit/entity/TextDisplay$TextAlignment;)V", itf );
+                            return;
+                        }
+                        if ( desc.equals( "()Lorg/bukkit/entity/TextDisplay$TextAligment;" ) )
+                        {
+                            super.visitMethodInsn( opcode, owner, name, "()Lorg/bukkit/entity/TextDisplay$TextAlignment;", itf );
                             return;
                         }
 

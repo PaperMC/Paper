@@ -106,13 +106,13 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
     }
 
     @Override
-    public TextAligment getAlignment() {
+    public TextAlignment getAlignment() {
         Display.TextDisplay.Align nms = Display.TextDisplay.getAlign(getHandle().getFlags());
-        return TextAligment.valueOf(nms.name());
+        return TextAlignment.valueOf(nms.name());
     }
 
     @Override
-    public void setAlignment(TextAligment alignment) {
+    public void setAlignment(TextAlignment alignment) {
         Preconditions.checkArgument(alignment != null, "Alignment cannot be null");
 
         switch (alignment) {
