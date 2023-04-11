@@ -119,19 +119,19 @@ public interface TextDisplay extends Display {
      * @return text alignment
      */
     @NotNull
-    TextAligment getAlignment();
+    TextAlignment getAlignment();
 
     /**
      * Sets the text alignment for this display.
      *
      * @param alignment new alignment
      */
-    void setAlignment(@NotNull TextAligment alignment);
+    void setAlignment(@NotNull TextAlignment alignment);
 
     /**
      * Represents possible text alignments for this display.
      */
-    public enum TextAligment {
+    public enum TextAlignment {
 
         /**
          * Center aligned text (default).
