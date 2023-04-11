@@ -14,7 +14,6 @@ import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1328,7 +1327,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (entity.isVisibleByDefault()) {
             shouldHide = addInvertedVisibility(plugin, entity);
         } else {
-            shouldHide = removeInvertedVisiblity(plugin, entity);
+            shouldHide = removeInvertedVisibility(plugin, entity);
         }
 
         if (shouldHide) {
@@ -1408,7 +1407,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         boolean shouldShow;
         if (entity.isVisibleByDefault()) {
-            shouldShow = removeInvertedVisiblity(plugin, entity);
+            shouldShow = removeInvertedVisibility(plugin, entity);
         } else {
             shouldShow = addInvertedVisibility(plugin, entity);
         }
@@ -1418,7 +1417,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
-    private boolean removeInvertedVisiblity(@Nullable Plugin plugin, org.bukkit.entity.Entity entity) {
+    private boolean removeInvertedVisibility(@Nullable Plugin plugin, org.bukkit.entity.Entity entity) {
         Set<WeakReference<Plugin>> invertedPlugins = invertedVisibilityEntities.get(entity.getUniqueId());
         if (invertedPlugins == null) {
             return false; // Entity isn't inverted
