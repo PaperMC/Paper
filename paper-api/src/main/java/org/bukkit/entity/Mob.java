@@ -220,4 +220,13 @@ public interface Mob extends LivingEntity, Lootable {
       */
     public void setLeftHanded(boolean leftHanded);
     // Paper end - left-handed API
+
+    // Paper start - mob xp reward API
+    /**
+     * Gets the amount of experience the mob will possibly drop. This value is randomized and it can give different results
+     *
+     * @return the amount of experience the mob will possibly drop
+     */
+    public int getPossibleExperienceReward();
+    // Paper end - mob xp reward API
 }
