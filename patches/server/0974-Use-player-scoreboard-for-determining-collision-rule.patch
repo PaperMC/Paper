@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Redned <redned235@gmail.com>
+Date: Tue, 11 Apr 2023 22:43:42 -0500
+Subject: [PATCH] Use player scoreboard for determining collision rule when
+ pushing entities
+
+The vanilla code in EntitySelector#pushable uses the Entity#getTeam method which returns the Level scoreboard. This means the wrong collision option is returned here  when an API scoreboard is being used. Although no actual pushing occurs here as the client takes authority for that, the server still emits footstep sounds and treats it as if collision should be happening when it should not be.
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index 72abebff2018cde2922e97ad6478f93da9aed3ec..6884e21e587e7c81be3e1596400141f97ecc7665 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -62,7 +62,7 @@ public final class EntitySelector {
+ 
+     public static Predicate<Entity> pushable(Entity entity, boolean ignoreClimbing) {
+         // Paper end
+-        Team scoreboardteambase = entity.getTeam();
++        Team scoreboardteambase = entity instanceof net.minecraft.world.entity.player.Player player ? player.getScoreboard().getPlayersTeam(player.getScoreboardName()) : entity.getTeam(); // Paper - use player scoreboard team for collision rule
+         Team.CollisionRule scoreboardteambase_enumteampush = scoreboardteambase == null ? Team.CollisionRule.ALWAYS : scoreboardteambase.getCollisionRule();
+ 
+         return (Predicate) (scoreboardteambase_enumteampush == Team.CollisionRule.NEVER ? Predicates.alwaysFalse() : EntitySelector.NO_SPECTATORS.and((entity1) -> {
+@@ -71,7 +71,7 @@ public final class EntitySelector {
+             } else if (entity.level.isClientSide && (!(entity1 instanceof Player) || !((Player) entity1).isLocalPlayer())) {
+                 return false;
+             } else {
+-                Team scoreboardteambase1 = entity1.getTeam();
++                Team scoreboardteambase1 = entity1 instanceof net.minecraft.world.entity.player.Player player ? player.getScoreboard().getPlayersTeam(player.getScoreboardName()) : entity1.getTeam(); // Paper - use player scoreboard team for collision rule
+                 Team.CollisionRule scoreboardteambase_enumteampush1 = scoreboardteambase1 == null ? Team.CollisionRule.ALWAYS : scoreboardteambase1.getCollisionRule();
+ 
+                 if (scoreboardteambase_enumteampush1 == Team.CollisionRule.NEVER) {
