@@ -54,4 +54,42 @@ public interface FallingBlock extends Entity {
      * @param hurtEntities whether entities will be damaged by this block.
      */
     void setHurtEntities(boolean hurtEntities);
+
+    /**
+     * Get the amount of damage inflicted upon entities multiplied by the distance
+     * that the block had fallen when this falling block lands on them.
+     *
+     * @return the damage per block
+     */
+    float getDamagePerBlock();
+
+    /**
+     * Set the amount of damage inflicted upon entities multiplied by the distance
+     * that the block had fallen when this falling block lands on them.
+     * <p>
+     * If {@code damage} is non-zero, this method will automatically call
+     * {@link #setHurtEntities(boolean) setHurtEntities(true)}.
+     *
+     * @param damage the damage per block to set. Must be >= 0.0
+     */
+    void setDamagePerBlock(float damage);
+
+    /**
+     * Get the maximum amount of damage that can be inflicted upon entities when
+     * this falling block lands on them.
+     *
+     * @return the max damage
+     */
+    int getMaxDamage();
+
+    /**
+     * Set the maximum amount of damage that can be inflicted upon entities when
+     * this falling block lands on them.
+     * <p>
+     * If {@code damage} is non-zero, this method will automatically call
+     * {@link #setHurtEntities(boolean) setHurtEntities(true)}.
+     *
+     * @param damage the max damage to set. Must be >= 0
+     */
+    void setMaxDamage(int damage);
 }
