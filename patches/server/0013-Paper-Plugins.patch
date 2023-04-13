@@ -1762,12 +1762,13 @@ index 0000000000000000000000000000000000000000..a2fa8406bc3f0dcab6805633ae984d03
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3d1cd0f23bb33dd53a8177cbdbe49e50dcfea57c
+index 0000000000000000000000000000000000000000..1523cbb1801b937c3d40080df7d52e6cff8fc49c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,112 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
++import com.google.common.graph.GraphBuilder;
 +import com.google.common.graph.Graphs;
 +import com.google.common.graph.MutableGraph;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -1785,6 +1786,10 @@ index 0000000000000000000000000000000000000000..3d1cd0f23bb33dd53a8177cbdbe49e50
 +    // We need to upkeep a separate collection since when populating
 +    // a graph it adds nodes even if they are not present
 +    private final Set<String> dependencies = new HashSet<>();
++
++    public MetaDependencyTree() {
++        this(GraphBuilder.directed().build());
++    }
 +
 +    public MetaDependencyTree(MutableGraph<String> graph) {
 +        this.graph = graph;
@@ -6993,6 +6998,71 @@ index 0000000000000000000000000000000000000000..1d14f530ef888102e47eeeaf0d1a6076
 +    @Override
 +    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
 +        throw new UnsupportedOperationException("Not supported.");
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/plugin/PluginDependencyValidationTest.java b/src/test/java/io/papermc/paper/plugin/PluginDependencyValidationTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e08a22a753aba0c83894db7216a50724a9393dfa
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/plugin/PluginDependencyValidationTest.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper.plugin;
++
++import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
++import org.junit.Test;
++
++import java.util.List;
++
++import static org.hamcrest.MatcherAssert.assertThat;
++
++public class PluginDependencyValidationTest {
++
++    private static final TestPluginMeta MAIN;
++    private static final TestPluginMeta HARD_DEPENDENCY_1;
++    private static final TestPluginMeta SOFT_DEPENDENCY_1;
++
++    public static final String ROOT_NAME = "main";
++
++    public static final String REGISTERED_HARD_DEPEND = "hard1";
++    public static final String REGISTERED_SOFT_DEPEND = "soft1";
++    public static final String UNREGISTERED_HARD_DEPEND = "hard2";
++    public static final String UNREGISTERED_SOFT_DEPEND = "soft2";
++
++    static {
++        MAIN = new TestPluginMeta(ROOT_NAME);
++        MAIN.setSoftDependencies(List.of(REGISTERED_SOFT_DEPEND, UNREGISTERED_SOFT_DEPEND));
++        MAIN.setHardDependencies(List.of(REGISTERED_HARD_DEPEND, UNREGISTERED_HARD_DEPEND));
++
++        HARD_DEPENDENCY_1 = new TestPluginMeta(REGISTERED_HARD_DEPEND);
++        SOFT_DEPENDENCY_1 = new TestPluginMeta(REGISTERED_SOFT_DEPEND);
++    }
++
++    @Test
++    public void testDependencyTree() {
++        MetaDependencyTree tree = new MetaDependencyTree();
++        tree.add(MAIN);
++        tree.add(HARD_DEPENDENCY_1);
++        tree.add(SOFT_DEPENDENCY_1);
++
++        // Test simple transitive dependencies
++        assertThat("%s was not a transitive dependency of %s".formatted(ROOT_NAME, REGISTERED_SOFT_DEPEND), tree.isTransitiveDependency(MAIN, SOFT_DEPENDENCY_1));
++        assertThat("%s was not a transitive dependency of %s".formatted(ROOT_NAME, REGISTERED_HARD_DEPEND), tree.isTransitiveDependency(MAIN, HARD_DEPENDENCY_1));
++
++        assertThat("%s was a transitive dependency of %s".formatted(REGISTERED_SOFT_DEPEND, ROOT_NAME), !tree.isTransitiveDependency(SOFT_DEPENDENCY_1, MAIN));
++        assertThat("%s was a transitive dependency of %s".formatted(REGISTERED_HARD_DEPEND, ROOT_NAME), !tree.isTransitiveDependency(HARD_DEPENDENCY_1, MAIN));
++
++        // Test to ensure that registered dependencies exist
++        assertThat("tree did not contain dependency %s".formatted(ROOT_NAME), tree.hasDependency(ROOT_NAME));
++        assertThat("tree did not contain dependency %s".formatted(REGISTERED_HARD_DEPEND), tree.hasDependency(REGISTERED_HARD_DEPEND));
++        assertThat("tree did not contain dependency %s".formatted(REGISTERED_SOFT_DEPEND), tree.hasDependency(REGISTERED_SOFT_DEPEND));
++
++        // Test to ensure unregistered dependencies don't exist
++        assertThat("tree contained dependency %s".formatted(UNREGISTERED_HARD_DEPEND), !tree.hasDependency(UNREGISTERED_HARD_DEPEND));
++        assertThat("tree contained dependency %s".formatted(UNREGISTERED_SOFT_DEPEND), !tree.hasDependency(UNREGISTERED_SOFT_DEPEND));
++
++        // Test removal
++        tree.remove(HARD_DEPENDENCY_1);
++        assertThat("tree contained dependency %s".formatted(REGISTERED_HARD_DEPEND), !tree.hasDependency(REGISTERED_HARD_DEPEND));
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java b/src/test/java/io/papermc/paper/plugin/PluginLoadOrderTest.java
