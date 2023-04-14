@@ -3120,7 +3120,7 @@ index 9215297d5f7856ef3f03ebcbf866c5b59048ba30..850c7d42e18e440617c726bb11160fb1
          @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..c857f83218d05a82e7733277924d9289e6510994 100644
+index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..bbb1b3a68e887df78843d6f796e3e37db4e934f1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.inventory;
@@ -3200,7 +3200,7 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..c857f83218d05a82e7733277924d9289
          /*
           * This couldn't be done inside of the objects themselves, else force recursion.
           * This is a fairly clean way of implementing it, by dividing the methods into purposes and letting each method perform its own function.
-@@ -406,10 +415,14 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -406,10 +415,19 @@ public final class CraftItemFactory implements ItemFactory {
      @Override
      public ItemMeta asMetaFor(ItemMeta meta, Material material) {
          Validate.notNull(material, "Material cannot be null");
@@ -3211,13 +3211,18 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..c857f83218d05a82e7733277924d9289
 -        return this.getItemMeta(material, (CraftMetaItem) meta);
 +        // Paper start
 +        io.papermc.paper.property.MutablePropertyView holder = paperMeta.getPropertyHolder().clone();
-+        paperMeta.migrateFrom(holder);
-+        return CraftItemStack.getItemMeta(holder, material);
++        ItemMeta returned = CraftItemStack.getItemMeta(holder, material);
++        
++        // Migrate the meta instance only if they are not the same
++        if (returned != null && meta.getClass() != returned.getClass()) {
++            paperMeta.migrateFrom(holder);
++        }
++        return paperMeta;
 +        // Paper end
      }
  
      @Override
-@@ -438,7 +451,7 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -438,7 +456,7 @@ public final class CraftItemFactory implements ItemFactory {
  
      @Override
      public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {
