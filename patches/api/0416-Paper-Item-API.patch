@@ -5,7 +5,7 @@ Subject: [PATCH] Paper Item API
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index cad12a2632b9ebb569280441c42869685db1f31a..0d0950622c3792091836b8081aec05c43e1a311a 100644
+index 279a666e8ea2c07f41ee3f28b768e95dca5f0a10..fcecbf156b2308bc94bac19951de4377f6b281df 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -32,6 +32,7 @@ dependencies {
@@ -122,10 +122,10 @@ index 0000000000000000000000000000000000000000..9733d750bfc0bcabf995fe54ba8c9d2c
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2df4b9b89f4e3dd426ab7dd77c5511abd2a07134
+index 0000000000000000000000000000000000000000..754d9b2f76002c2d8fe7fc9e1492850ab5cdc973
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/item/properties/ItemProperties.java
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,131 @@
 +package io.papermc.paper.inventory.item.properties;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -136,12 +136,15 @@ index 0000000000000000000000000000000000000000..2df4b9b89f4e3dd426ab7dd77c5511ab
 +import io.papermc.paper.property.PropertyKey;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.Color;
++import org.bukkit.DyeColor;
 +import org.bukkit.FireworkEffect;
 +import org.bukkit.MusicInstrument;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.entity.Axolotl;
 +import org.bukkit.inventory.ItemFlag;
 +import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.BookMeta;
++import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.potion.PotionData;
 +import org.bukkit.potion.PotionEffect;
 +import org.jetbrains.annotations.ApiStatus;
@@ -160,7 +163,7 @@ index 0000000000000000000000000000000000000000..2df4b9b89f4e3dd426ab7dd77c5511ab
 +    PropertyKey<Set<ItemFlag>> HIDE_FLAGS = PropertyKey.of("HideFlags", TypeFactory.parameterizedClass(Set.class, ItemFlag.class));
 +    PropertyKey<Integer> REPAIR_COST = PropertyKey.of("RepairCost", Integer.class);
 +    PropertyKey<Integer> CUSTOM_MODEL_DATA = PropertyKey.of("CustomModelData", Integer.class);
-+    PropertyKey<Integer> DAMAGE = PropertyKey.of("damage", Integer.class);
++    PropertyKey<Integer> DAMAGE = PropertyKey.of("Damage", Integer.class);
 +    PropertyKey<List<AttributePair>> ATTRIBUTES = PropertyKey.of("AttributeModifiers", TypeFactory.parameterizedClass(List.class, AttributePair.class));
 +    PropertyKey<MutablePropertyView> BLOCK_STATE = PropertyKey.of("BlockStateTag", MutablePropertyView.class);
 +    PropertyKey<MutablePropertyView> ENTITY_TAG = PropertyKey.of("EntityTag", MutablePropertyView.class);
@@ -175,9 +178,9 @@ index 0000000000000000000000000000000000000000..2df4b9b89f4e3dd426ab7dd77c5511ab
 +
 +    // CUSTOM
 +    PropertyKey<MutablePropertyView> PUBLIC_BUKKIT_VALUES = PropertyKey.of("PublicBukkitValues", MutablePropertyView.class);
-+    @Deprecated(forRemoval = true)
-+    PropertyKey<String> LOC_NAME = PropertyKey.of("LocName", String.class);
 +
++    // Armor Meta
++    PropertyKey<ArmorTrim> ARMOR_TRIM = PropertyKey.of("Trim", ArmorTrim.class);
 +
 +    // TropicalFishBucketMeta
 +    PropertyKey<TropicalFishVariant> TROPICAL_FISH_BUCKET_VARIANT = PropertyKey.of("BucketVariantTag", TropicalFishVariant.class);
@@ -232,7 +235,7 @@ index 0000000000000000000000000000000000000000..2df4b9b89f4e3dd426ab7dd77c5511ab
 +    PropertyKey<String> AUTHOR = PropertyKey.of("author", String.class);
 +    PropertyKey<List<Component>> PAGES = PropertyKey.of("pages", TypeFactory.parameterizedClass(List.class, Component.class));
 +    PropertyKey<List<Component>> PAGES_FILTERED = PropertyKey.of("filtered_pages", TypeFactory.parameterizedClass(List.class, Component.class));
-+    PropertyKey<Integer> GENERATION = PropertyKey.of("generation", Integer.class);
++    PropertyKey<BookMeta.Generation> GENERATION = PropertyKey.of("generation", BookMeta.Generation.class);
 +    PropertyKey<Boolean> RESOLVED = PropertyKey.of("resolved", Boolean.class);
 +
 +    // UnsignedBookMeta
@@ -248,6 +251,10 @@ index 0000000000000000000000000000000000000000..2df4b9b89f4e3dd426ab7dd77c5511ab
 +
 +    // MusicInstrumentMeta
 +    PropertyKey<MusicInstrument> INSTRUMENT = PropertyKey.of("instrument", MusicInstrument.class);
++
++    // BannerMeta
++
++    PropertyKey<DyeColor> SHIELD_BANNER_BASE = PropertyKey.of("Base", DyeColor.class);
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java b/src/main/java/io/papermc/paper/inventory/item/properties/StewEffect.java
@@ -558,7 +565,7 @@ index b92255a9c87620f46adb140689b1cd328a476d61..bf91c5e84186a4124ef0e7665af36ac5
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 9d68ad599a037748d033239f54cf95941b87766a..71d37b4e6c0e79e2ddce663d370434ac40ac4fdd 100644
+index d15a74c38576c49df61cfab02c70fc5d8c0dd5f7..c14d7b79bfefa602c6f37d7b419840ef7fd685db 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -985,5 +985,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat

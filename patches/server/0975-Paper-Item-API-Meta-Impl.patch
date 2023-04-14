@@ -4,9 +4,210 @@ Date: Sat, 18 Mar 2023 01:08:20 -0400
 Subject: [PATCH] Paper Item API Meta Impl
 
 
+diff --git a/src/main/java/io/papermc/paper/item/meta/EnchantmentMap.java b/src/main/java/io/papermc/paper/item/meta/EnchantmentMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..991841eaa8e722ce95b9fcaf395138bef555eabe
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/EnchantmentMap.java
+@@ -0,0 +1,115 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.EnchantmentPair;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.types.EnchantmentPairImpl;
++import org.bukkit.enchantments.Enchantment;
++
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++
++public class EnchantmentMap {
++
++    private final MutablePropertyView propertyHolder;
++    private final PropertyKey<List<EnchantmentPair>> key;
++
++    public EnchantmentMap(MutablePropertyView propertyView, PropertyKey<List<EnchantmentPair>> propertyKey) {
++        this.propertyHolder = propertyView;
++        this.key = propertyKey;
++    }
++
++    public boolean hasEnchant(Enchantment ench) {
++        List<EnchantmentPair> enchantments = this.propertyHolder.getOrDefault(this.key, List.of());
++        for (EnchantmentPair next : enchantments) {
++            if (next.enchantment().equals(ench)) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    public int getEnchantLevel(Enchantment ench) {
++        List<EnchantmentPair> enchantmentPairs = this.propertyHolder.getOrDefault(this.key, List.of());
++        for (EnchantmentPair pair : enchantmentPairs) {
++            if (pair.enchantment().equals(ench)) {
++                return pair.level();
++            }
++        }
++
++        return 0;
++    }
++
++    public Map<Enchantment, Integer> getEnchants() {
++        List<EnchantmentPair> pairs = this.propertyHolder.getOrDefault(this.key, List.of());
++        Map<Enchantment, Integer> map = new HashMap<>();
++        for (EnchantmentPair enchantmentPair : pairs) {
++            map.put(enchantmentPair.enchantment(), enchantmentPair.level());
++        }
++
++        return map;
++    }
++
++    public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
++        if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
++            List<EnchantmentPair> enchantments = this.propertyHolder.getOrCreate(this.key);
++
++            EnchantmentPair oldValue = null;
++            int oldIndex = 0;
++            for (int i = 0; i < enchantments.size(); i++) {
++                EnchantmentPair value = enchantments.get(i);
++                if (value.enchantment().equals(ench)) {
++                    oldValue = value;
++                    oldIndex = i;
++                    break;
++                }
++            }
++
++            if (oldValue == null) {
++                enchantments.add(new EnchantmentPairImpl(ench, level));
++                return true;
++            } else {
++                enchantments.set(oldIndex, new EnchantmentPairImpl(ench, level));
++                return oldValue.level() != level;
++            }
++        }
++
++        return false;
++    }
++
++    public boolean removeEnchant(Enchantment ench) {
++        List<EnchantmentPair> enchantmentMap = this.propertyHolder.getOrDefault(this.key, List.of());
++
++        Iterator<EnchantmentPair> iterator = enchantmentMap.listIterator();
++        while (iterator.hasNext()) {
++            EnchantmentPair next = iterator.next();
++            if (next.enchantment().equals(ench)) {
++                iterator.remove();
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    public boolean hasEnchants() {
++        return !this.propertyHolder.getOrDefault(this.key, List.of()).isEmpty();
++    }
++
++    public boolean hasConflictingEnchant(Enchantment ench) {
++        if (!hasEnchants()) {
++            return false;
++        }
++
++        for (EnchantmentPair enchant : this.propertyHolder.getOrDefault(this.key, List.of())) {
++            if (enchant.enchantment().conflictsWith(ench)) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaArmor.java b/src/main/java/io/papermc/paper/item/meta/MetaArmor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f839fa3a23b8074535d93e27320307c3f77b8422
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaArmor.java
+@@ -0,0 +1,74 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaArmor;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.ArmorMeta;
++import org.bukkit.inventory.meta.trim.ArmorTrim;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Objects;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaArmor extends PaperMeta implements ArmorMeta {
++
++    public MetaArmor(MutablePropertyView mutable) {
++        super(mutable);
++    }
++
++    @Override
++    public boolean hasTrim() {
++        return this.propertyHolder.hasProperty(ItemProperties.ARMOR_TRIM);
++    }
++
++    @Override
++    public void setTrim(@Nullable ArmorTrim trim) {
++        this.propertyHolder.set(ItemProperties.ARMOR_TRIM, trim);
++    }
++
++    @Override
++    public @Nullable ArmorTrim getTrim() {
++        return this.propertyHolder.get(ItemProperties.ARMOR_TRIM);
++    }
++
++    @Override
++    public @NotNull MetaArmor clone() {
++        return new MetaArmor(this.propertyHolder.clone());
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.unsetInPropertyPath(ItemProperties.DISPLAY, ItemProperties.ARMOR_TRIM);
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaArmor || this.isArmorEmpty());
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta that) {
++        if (!super.equalsCommon(that)) {
++            return false;
++        }
++
++        if (that instanceof MetaArmor armorMeta) {
++            return Objects.equals(this.getTrim(), armorMeta.getTrim());
++        }
++
++        return true;
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isArmorEmpty();
++    }
++
++    private boolean isArmorEmpty() {
++        return !this.hasTrim();
++    }
++
++}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java b/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..396d651a9c45042c58bf64586e67f8cd8069c239
+index 0000000000000000000000000000000000000000..f123012dea906902cf3b1d7bd5042583ce08ac5a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaAxolotlBucket.java
 @@ -0,0 +1,70 @@
@@ -24,8 +225,8 @@ index 0000000000000000000000000000000000000000..396d651a9c45042c58bf64586e67f8cd
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaAxolotlBucket extends PaperMeta implements AxolotlBucketMeta {
 +
-+    public MetaAxolotlBucket(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaAxolotlBucket(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -45,7 +246,7 @@ index 0000000000000000000000000000000000000000..396d651a9c45042c58bf64586e67f8cd
 +
 +    @Override
 +    public @NotNull MetaAxolotlBucket clone() {
-+        return new MetaAxolotlBucket(this.propertyHolder.clone(), material);
++        return new MetaAxolotlBucket(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -82,31 +283,41 @@ index 0000000000000000000000000000000000000000..396d651a9c45042c58bf64586e67f8cd
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBanner.java b/src/main/java/io/papermc/paper/item/meta/MetaBanner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c7cf2b32e5dae65e05516dd9629bff3fea1cc63f
+index 0000000000000000000000000000000000000000..06c735f8d8322b9a10220982e16d94df24d4e139
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaBanner.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,155 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.nbt.AdapterContext;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import net.minecraft.nbt.CompoundTag;
 +import org.bukkit.DyeColor;
 +import org.bukkit.Material;
++import org.bukkit.block.Banner;
 +import org.bukkit.block.banner.Pattern;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.block.CraftBlockEntityState;
++import org.bukkit.craftbukkit.block.CraftBlockStates;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.inventory.meta.BannerMeta;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
-+import java.util.ArrayList;
 +import java.util.List;
 +
++// It's rather strange that this is just random duplicate api.
++// So, wrap it in a banner and just pass it through the blockstate api
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaBanner extends PaperMeta implements BannerMeta {
 +
++    private final Material material;
++
 +    public MetaBanner(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++        super(mutable);
++        this.material = material;
 +    }
 +
 +    @Override
@@ -119,63 +330,83 @@ index 0000000000000000000000000000000000000000..c7cf2b32e5dae65e05516dd9629bff3f
 +        this.propertyHolder.unset(ItemProperties.BLOCK_ENTITY_TAG);
 +    }
 +
++    // Hack, but oh well.
 +    @Override
 +    public @Nullable DyeColor getBaseColor() {
-+        return this.getFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.BASE);
++        return switch (this.material) {
++            case WHITE_BANNER -> DyeColor.WHITE;
++            case ORANGE_BANNER -> DyeColor.ORANGE;
++            case MAGENTA_BANNER -> DyeColor.MAGENTA;
++            case LIGHT_BLUE_BANNER -> DyeColor.LIGHT_BLUE;
++            case YELLOW_BANNER -> DyeColor.YELLOW;
++            case LIME_BANNER -> DyeColor.LIME;
++            case PINK_BANNER -> DyeColor.PINK;
++            case GRAY_BANNER -> DyeColor.GRAY;
++            case LIGHT_GRAY_BANNER -> DyeColor.LIGHT_GRAY;
++            case CYAN_BANNER -> DyeColor.CYAN;
++            case PURPLE_BANNER -> DyeColor.PURPLE;
++            case BLUE_BANNER -> DyeColor.BLUE;
++            case BROWN_BANNER -> DyeColor.BROWN;
++            case GREEN_BANNER -> DyeColor.GREEN;
++            case RED_BANNER -> DyeColor.RED;
++            case BLACK_BANNER -> DyeColor.BLACK;
++            default -> throw new UnsupportedOperationException();
++        };
 +    }
 +
 +    @Override
 +    public void setBaseColor(@Nullable DyeColor color) {
-+        this.setFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.BASE, color);
++        // This doesn't actually do anything....
++        // Base color depends on the block type...
 +    }
 +
 +    @Override
 +    public @NotNull List<Pattern> getPatterns() {
-+        return this.getFromPropertyPathOrElse(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.PATTERNS, List.of());
++        return this.getBanner().getPatterns();
 +    }
 +
 +    @Override
 +    public void setPatterns(@NotNull List<Pattern> patterns) {
-+        this.setFromPropertyPath(ItemProperties.BLOCK_ENTITY_TAG, PaperMetaProperties.PATTERNS, patterns);
++        Banner banner = this.getBanner();
++        banner.setPatterns(patterns);
++        this.writeBanner(banner);
 +    }
 +
 +    @Override
 +    public void addPattern(@NotNull Pattern pattern) {
-+        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
-+        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
-+        patterns.add(pattern);
++        Banner banner = this.getBanner();
++        banner.addPattern(pattern);
++        this.writeBanner(banner);
 +    }
 +
 +    @Override
 +    public @NotNull Pattern getPattern(int i) {
-+        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
-+        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
-+        return patterns.get(i);
++        return this.getBanner().getPattern(i);
 +    }
 +
 +    @Override
 +    public @NotNull Pattern removePattern(int i) {
-+        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
-+        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
++        Banner banner = this.getBanner();
++        Pattern removed = banner.removePattern(i);
++        this.writeBanner(banner);
 +
-+        return patterns.remove(i);
++        return removed;
 +    }
 +
 +    @Override
 +    public void setPattern(int i, @NotNull Pattern pattern) {
-+        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
-+        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
-+
-+        patterns.set(i, pattern);
++        Banner banner = this.getBanner();
++        banner.setPattern(i, pattern);
++        this.writeBanner(banner);
 +    }
 +
 +    @Override
 +    public int numberOfPatterns() {
-+        MutablePropertyView holder = this.propertyHolder.getOrCreate(ItemProperties.BLOCK_ENTITY_TAG);
-+        List<Pattern> patterns = holder.getOrCreate(PaperMetaProperties.PATTERNS);
-+
-+        return patterns.size();
++        return this.getBanner().numberOfPatterns();
 +    }
++
++    // Unlike craft impl, don't include base color...
++    // it's part of the BLOCK
 +
 +    // Equality logic
 +    @Override
@@ -184,41 +415,50 @@ index 0000000000000000000000000000000000000000..c7cf2b32e5dae65e05516dd9629bff3f
 +            return false;
 +        }
 +        if (meta instanceof MetaBanner that) {
-+            return this.getBaseColor() == that.getBaseColor() && this.getPatterns().equals(that.getPatterns());
++            return this.getPatterns().equals(that.getPatterns());
 +        }
 +        return true;
 +    }
 +
 +    @Override
 +    public boolean notUncommon(PaperMeta meta) {
-+        return super.notUncommon(meta) && (meta instanceof MetaBanner || (this.getPatterns().isEmpty() && this.getBaseColor() == null));
++        return super.notUncommon(meta) && (meta instanceof MetaBanner || !this.propertyHolder.hasProperty(ItemProperties.BLOCK_ENTITY_TAG));
 +    }
 +
 +    @Override
 +    public boolean isEmpty() {
-+        return super.isEmpty() && this.getPatterns().isEmpty() && this.getBaseColor() == null;
++        return super.isEmpty() && !this.propertyHolder.hasProperty(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    private Banner getBanner() {
++        NbtPropertyHolder nbtPropertyHolder = (NbtPropertyHolder) this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG);
++
++        CompoundTag tag = nbtPropertyHolder == null ? null : nbtPropertyHolder.getCompoundTag();
++        return (Banner) CraftBlockStates.getBlockState(this.material, tag);
++    }
++
++    private void writeBanner(Banner banner) {
++        MutablePropertyView mutable = NbtPropertyHolder.simpleBlob(((CraftBlockEntityState<?>) banner).getSnapshotNBT(), AdapterContext.empty());
++        this.propertyHolder.set(ItemProperties.BLOCK_ENTITY_TAG, mutable);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java b/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..72386ae8e0f85a3abc05709fbeabf2c55aa2fb0b
+index 0000000000000000000000000000000000000000..fc92ac9fc46b84746309c2678c167687ef6df900
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaBlockState.java
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,83 @@
 +package io.papermc.paper.item.meta;
 +
-+import com.destroystokyo.paper.MaterialSetTag;
 +import com.google.common.base.Objects;
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.property.MutablePropertyView;
 +import io.papermc.paper.property.nbt.AdapterContext;
 +import io.papermc.paper.property.nbt.NbtPropertyHolder;
 +import org.apache.commons.lang.Validate;
-+import org.bukkit.DyeColor;
 +import org.bukkit.Material;
 +import org.bukkit.block.BlockState;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
-+import org.bukkit.craftbukkit.block.CraftBanner;
 +import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 +import org.bukkit.craftbukkit.block.CraftBlockStates;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
@@ -228,8 +468,11 @@ index 0000000000000000000000000000000000000000..72386ae8e0f85a3abc05709fbeabf2c5
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaBlockState extends PaperMeta implements BlockStateMeta {
 +
++    private final Material material;
++
 +    public MetaBlockState(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++        super(mutable);
++        this.material = material;
 +    }
 +
 +    @Override
@@ -241,70 +484,24 @@ index 0000000000000000000000000000000000000000..72386ae8e0f85a3abc05709fbeabf2c5
 +    public BlockState getBlockState() {
 +        MutablePropertyView holder = this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG);
 +
-+        Material stateMaterial = (this.material != Material.SHIELD) ? this.material : shieldToBannerHack(holder); // Only actually used for jigsaws
-+        if (holder != null) {
-+            if (this.material == Material.SHIELD) {
-+                holder.set(PaperMetaProperties.IDENTIFIER, "minecraft:banner");
-+            } else if (this.material == Material.BEE_NEST || this.material == Material.BEEHIVE) {
-+                holder.set(PaperMetaProperties.IDENTIFIER, "minecraft:beehive");
-+            } else if (MaterialSetTag.SHULKER_BOXES.isTagged(this.material)) {
-+                holder.set(PaperMetaProperties.IDENTIFIER, "minecraft:shulker_box");
-+            }
-+        }
-+
 +        // This is expected to always return a CraftBlockEntityState for the passed material:
-+        return CraftBlockStates.getBlockState(stateMaterial, null); // TODO
++        return CraftBlockStates.getBlockState(this.material, holder == null ? null : ((NbtPropertyHolder) holder).getCompoundTag());
 +    }
 +
 +    @Override
 +    public void setBlockState(BlockState blockState) {
 +        Validate.notNull(blockState, "blockState must not be null");
 +
-+        Material stateMaterial = (this.material != Material.SHIELD) ? this.material : shieldToBannerHack(this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG));
-+        Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
++        Class<?> blockStateType = CraftBlockStates.getBlockStateType(this.material);
 +        Validate.isTrue(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + this.material);
 +
 +        MutablePropertyView mutable = NbtPropertyHolder.simpleBlob(((CraftBlockEntityState) blockState).getSnapshotNBT(), AdapterContext.empty());
 +        this.propertyHolder.set(ItemProperties.BLOCK_ENTITY_TAG, mutable);
-+        // Set shield base
-+        if (this.material == Material.SHIELD) {
-+            mutable.set(PaperMetaProperties.BASE, ((CraftBanner) blockState).getBaseColor());
-+        }
-+    }
-+
-+    private static Material shieldToBannerHack(MutablePropertyView tag) {
-+        if (tag == null) {
-+            return Material.WHITE_BANNER;
-+        }
-+
-+        DyeColor colorValue = tag.get(PaperMetaProperties.BASE);
-+        if (colorValue == null) {
-+            return Material.WHITE_BANNER;
-+        }
-+
-+        return switch (colorValue) {
-+            case WHITE -> Material.WHITE_BANNER;
-+            case ORANGE -> Material.ORANGE_BANNER;
-+            case MAGENTA -> Material.MAGENTA_BANNER;
-+            case LIGHT_BLUE -> Material.LIGHT_BLUE_BANNER;
-+            case YELLOW -> Material.YELLOW_BANNER;
-+            case LIME -> Material.LIME_BANNER;
-+            case PINK -> Material.PINK_BANNER;
-+            case GRAY -> Material.GRAY_BANNER;
-+            case LIGHT_GRAY -> Material.LIGHT_GRAY_BANNER;
-+            case CYAN -> Material.CYAN_BANNER;
-+            case PURPLE -> Material.PURPLE_BANNER;
-+            case BLUE -> Material.BLUE_BANNER;
-+            case BROWN -> Material.BROWN_BANNER;
-+            case GREEN -> Material.GREEN_BANNER;
-+            case RED -> Material.RED_BANNER;
-+            case BLACK -> Material.BLACK_BANNER;
-+        };
 +    }
 +
 +    @Override
 +    public @NotNull MetaBlockState clone() {
-+        return new MetaBlockState(this.propertyHolder.clone(), material);
++        return new MetaBlockState(this.propertyHolder.clone(), this.material);
 +    }
 +
 +    @Override
@@ -336,52 +533,48 @@ index 0000000000000000000000000000000000000000..72386ae8e0f85a3abc05709fbeabf2c5
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBook.java b/src/main/java/io/papermc/paper/item/meta/MetaBook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fab5e9f674
+index 0000000000000000000000000000000000000000..dce63f80dbe07ff6d0b6b17da310b022a8484c44
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaBook.java
-@@ -0,0 +1,507 @@
+@@ -0,0 +1,434 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.google.common.collect.ImmutableList;
-+import io.leangen.geantyref.TypeFactory;
++import io.papermc.paper.configuration.GlobalConfiguration;
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
-+import io.papermc.paper.item.property.ItemPropertyRegistration;
 +import io.papermc.paper.property.MutablePropertyView;
-+import io.papermc.paper.property.PropertyKey;
-+import io.papermc.paper.property.nbt.NbtPropertyHolder;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.md_5.bungee.api.chat.BaseComponent;
 +import net.md_5.bungee.chat.ComponentSerializer;
-+import net.minecraft.nbt.CompoundTag;
 +import org.apache.commons.lang.Validate;
-+import org.bukkit.Material;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
-+import org.bukkit.craftbukkit.util.CraftChatMessage;
 +import org.bukkit.inventory.meta.BookMeta;
 +import org.jetbrains.annotations.NotNull;
 +import org.spigotmc.ValidateUtils;
 +
 +import java.util.AbstractList;
++import java.util.ArrayList;
 +import java.util.Arrays;
++import java.util.Collections;
 +import java.util.List;
 +import java.util.Objects;
 +
 +// TODO: Cleanup, I hate all of this
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
-+public class MetaBook extends PaperMeta implements BookMeta {
-+
++public abstract class MetaBook extends PaperMeta implements BookMeta {
 +
 +    static final int MAX_PAGES = 100;
 +    static final int MAX_PAGE_LENGTH = 320; // 256 limit + 64 characters to allow for psuedo colour codes
 +    static final int MAX_TITLE_LENGTH = 32;
 +
-+
-+    public MetaBook(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaBook(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
++    // Simple "raw" implementations
 +    @Override
 +    public boolean hasAuthor() {
 +        return MetaBook.this.propertyHolder.hasProperty(ItemProperties.AUTHOR);
@@ -394,8 +587,7 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +
 +    @Override
 +    public boolean hasPages() {
-+        List<Component> pages = this.propertyHolder.get(ItemProperties.PAGES);
-+        return pages != null && !pages.isEmpty();
++        return !this.getPageList().isEmpty();
 +    }
 +
 +    @Override
@@ -405,69 +597,47 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +
 +    @Override
 +    public String getTitle() {
-+        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
-+        if (author != null) {
-+            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
-+        }
-+
-+        return author;
++        return limit(MetaBook.this.propertyHolder.get(ItemProperties.TITLE), GlobalConfiguration.get().itemValidation.book.title);
 +    }
 +
 +    @Override
 +    public boolean setTitle(final String title) {
 +        if (title == null) {
-+            MetaBook.this.propertyHolder.unset(ItemProperties.AUTHOR);
++            MetaBook.this.propertyHolder.unset(ItemProperties.TITLE);
 +            return true;
 +        } else if (title.length() > MAX_TITLE_LENGTH) {
 +            return false;
 +        }
 +
-+        MetaBook.this.propertyHolder.set(ItemProperties.AUTHOR, title);
++        MetaBook.this.propertyHolder.set(ItemProperties.TITLE, title);
 +        return true;
 +    }
 +
 +    @Override
 +    public String getAuthor() {
-+        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
-+        if (author != null) {
-+            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
-+        }
-+
-+        return author;
++        return limit(MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR), GlobalConfiguration.get().itemValidation.book.author);
 +    }
 +
 +    @Override
 +    public void setAuthor(String author) {
-+        if (author != null) {
-+            author = ValidateUtils.limit(author, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.book.author);
-+        }
-+
-+        MetaBook.this.propertyHolder.set(ItemProperties.AUTHOR, author);
++        MetaBook.this.propertyHolder.set(ItemProperties.AUTHOR, limit(author, GlobalConfiguration.get().itemValidation.book.author));
 +    }
 +
 +    @Override
 +    public Generation getGeneration() {
-+        if (!MetaBook.this.propertyHolder.hasProperty(ItemProperties.GENERATION)) {
-+            return null;
-+        }
-+
-+        int generation = MetaBook.this.propertyHolder.get(ItemProperties.GENERATION);
-+        return Generation.values()[generation];
++        return MetaBook.this.propertyHolder.get(ItemProperties.GENERATION);
 +    }
 +
 +    @Override
 +    public void setGeneration(Generation generation) {
-+        if (generation == null) {
-+            MetaBook.this.propertyHolder.unset(ItemProperties.GENERATION);
-+        } else {
-+            MetaBook.this.propertyHolder.set(ItemProperties.GENERATION, generation.ordinal());
-+        }
++        MetaBook.this.propertyHolder.set(ItemProperties.GENERATION, generation);
 +    }
 +
++    // Adventure Implementations
 +    @Override
 +    public net.kyori.adventure.text.Component title() {
-+        String title = MetaBook.this.propertyHolder.get(ItemProperties.TITLE);
-+        return title == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title);
++        String title = this.getTitle();
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(title);
 +    }
 +
 +    @Override
@@ -478,65 +648,63 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +
 +    @Override
 +    public net.kyori.adventure.text.Component author() {
-+        String author = MetaBook.this.propertyHolder.get(ItemProperties.AUTHOR);
-+        return author == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(author);
++        String author = this.getAuthor();
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(author);
 +    }
 +
 +    @Override
 +    public org.bukkit.inventory.meta.BookMeta author(net.kyori.adventure.text.Component author) {
-+        this.setAuthor(author == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(author));
++        this.setAuthor(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serializeOrNull(author));
 +        return this;
 +    }
 +
 +    @Override
 +    public net.kyori.adventure.text.Component page(final int page) {
-+        Validate.isTrue(isValidPage(page), "Invalid page number");
-+        return MetaBook.this.propertyHolder.get(this.getPageProperty()).get(page);
++        Validate.isTrue(this.isValidPage(page), "Invalid page number " + page + "/" + this.getPageCount());
++        return this.getPageList().get(page);
 +    }
 +
 +    @Override
 +    public void page(final int page, net.kyori.adventure.text.Component data) {
-+        if (!isValidPage(page)) {
-+            throw new IllegalArgumentException("Invalid page number " + page + "/" + this.getPageCount());
-+        }
-+        List<Component> pages = MetaBook.this.propertyHolder.get(this.getPageProperty());
++        Validate.isTrue(this.isValidPage(page), "Invalid page number " + page + "/" + this.getPageCount());
 +
++        List<Component> pages = this.getPageList();
 +        if (data == null) {
 +            data = net.kyori.adventure.text.Component.empty();
 +        }
++
 +        pages.set(page - 1, data);
 +    }
 +
 +    @Override
 +    public List<net.kyori.adventure.text.Component> pages() {
-+        List<Component> pages = MetaBook.this.propertyHolder.get(this.getPageProperty());
-+        if (pages == null) {
-+            return List.of();
-+        }
-+
-+        return pages;
++        return Collections.unmodifiableList(this.getPageList());
 +    }
 +
 +    @Override
 +    public BookMeta pages(List<net.kyori.adventure.text.Component> pages) {
-+        MetaBook.this.propertyHolder.unset(this.getPageProperty());
-+        for (net.kyori.adventure.text.Component page : pages) {
++        List<Component> pagesPropertyValue = this.getPageListOrCreate();
++        pagesPropertyValue.clear();
++
++        for (Component page : pages) {
 +            addPages(page);
 +        }
++        this.clearPagesPropertyIfEmpty();
 +        return this;
 +    }
 +
 +    @Override
 +    public BookMeta pages(net.kyori.adventure.text.Component... pages) {
-+        MetaBook.this.propertyHolder.unset(this.getPageProperty());
++        this.getPageListOrCreate().clear();
 +        addPages(pages);
++        this.clearPagesPropertyIfEmpty();
 +        return this;
 +    }
 +
 +    @Override
 +    public void addPages(net.kyori.adventure.text.Component... pages) {
-+        List<Component> pageList = MetaBook.this.propertyHolder.get(this.getPageProperty());
-+        for (net.kyori.adventure.text.Component page : pages) {
++        List<Component> pageList = this.getPageListOrCreate();
++        for (Component page : pages) {
 +            if (pageList.size() >= MAX_PAGES) {
 +                return;
 +            }
@@ -547,13 +715,10 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +
 +            pageList.add(page);
 +        }
++        this.clearPagesPropertyIfEmpty();
 +    }
 +
-+    public PropertyKey<List<Component>> getPageProperty() {
-+        return ItemProperties.PAGES;
-+    }
-+
-+    class CraftMetaBookBuilder implements BookMetaBuilder {
++    class PaperMetaBookAdventureBuilder implements BookMetaBuilder {
 +        private net.kyori.adventure.text.Component title = null;
 +        private net.kyori.adventure.text.Component author = null;
 +        private final List<net.kyori.adventure.text.Component> pages = new java.util.ArrayList<>();
@@ -590,40 +755,29 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +
 +        @Override
 +        public BookMeta build() {
-+            return this.build(title, author, pages);
-+        }
-+
-+        protected BookMeta build(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
-+            MetaBook metaBook = new MetaBook(NbtPropertyHolder.simpleBlob(new CompoundTag(), ItemPropertyRegistration.ITEM_CONTEXT), Material.WRITTEN_BOOK);
-+            metaBook.propertyHolder.set(ItemProperties.TITLE, LegacyComponentSerializer.legacySection().serialize(title));
-+            metaBook.propertyHolder.set(ItemProperties.AUTHOR, LegacyComponentSerializer.legacySection().serialize(author));
-+            metaBook.propertyHolder.set(ItemProperties.PAGES, pages);
-+
-+            return metaBook;
++            return MetaBook.this.build(title, author, pages);
 +        }
 +    }
 +
 +    @Override
 +    public BookMetaBuilder toBuilder() {
-+        return new MetaBook.CraftMetaBookBuilder();
++        return new PaperMetaBookAdventureBuilder();
 +    }
 +
++    // Legacy implementation
 +    @Override
 +    public String getPage(final int page) {
 +        Validate.isTrue(this.isValidPage(page), "Invalid page number");
-+        // assert: pages != null
-+        return this.convertDataToPlainPage(MetaBook.this.propertyHolder.get(PAGES_LEGACY).get(page - 1));
++
++        return LegacyComponentSerializer.legacySection().serialize(this.getPageList().get(page - 1));
 +    }
 +
 +    @Override
 +    public void setPage(final int page, final String text) {
-+        if (!this.isValidPage(page)) {
-+            throw new IllegalArgumentException("Invalid page number " + page + "/" + this.getPageCount());
-+        }
-+        // assert: pages != null
++        Validate.isTrue(this.isValidPage(page), "Invalid page number " + page + "/" + this.getPageCount());
 +
 +        String newText = this.validatePage(text);
-+        MetaBook.this.propertyHolder.get(PAGES_LEGACY).set(page - 1, this.convertPlainPageToData(newText));
++        this.getPageListOrCreate().set(page - 1, LegacyComponentSerializer.legacySection().deserialize(newText));
 +    }
 +
 +    @Override
@@ -635,36 +789,28 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +    public void addPage(final String... pages) {
 +        for (String page : pages) {
 +            page = this.validatePage(page);
-+            this.internalAddPage(this.convertPlainPageToData(page));
++            this.addPages(LegacyComponentSerializer.legacySection().deserializeOr(page, Component.empty()));
 +        }
-+    }
-+
-+    String validatePage(String page) {
-+        if (page == null) {
-+            page = "";
-+        } else if (page.length() > MAX_PAGE_LENGTH) {
-+            page = page.substring(0, MAX_PAGE_LENGTH);
-+        }
-+        return page;
 +    }
 +
 +    @Override
 +    public int getPageCount() {
-+        List<String> pages = MetaBook.this.propertyHolder.get(PAGES_LEGACY);
-+        return (pages == null) ? 0 : pages.size();
++        return this.getPageList().size();
 +    }
 +
 +    @Override
 +    public List<String> getPages() {
-+        List<String> pages = MetaBook.this.propertyHolder.getOrDefault(PAGES_LEGACY, List.of());
++        List<Component> pages = this.getPageList();
 +
-+        return pages.stream().map(this::convertDataToPlainPage).collect(ImmutableList.toImmutableList());
++        return pages.stream().map((element) -> LegacyComponentSerializer.legacySection().serialize(element)).collect(ImmutableList.toImmutableList());
 +    }
 +
 +    @Override
 +    public void setPages(List<String> pages) {
-+        MetaBook.this.propertyHolder.unset(PAGES_LEGACY);
++        List<Component> pagesInternal = this.getPageListOrCreate();
++        pagesInternal.clear();
 +        if (pages.isEmpty()) {
++            this.clearPagesPropertyIfEmpty();
 +            return;
 +        }
 +
@@ -673,60 +819,24 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +        }
 +    }
 +
-+    protected String convertPlainPageToData(String page) {
-+        // Writable books store their data as plain Strings, so we don't need to convert anything.
-+        return page;
-+    }
-+
-+    protected String convertDataToPlainPage(String pageData) {
-+        // pageData is expected to already be a plain String.
-+        return pageData;
-+    }
-+
-+
 +    // Legacy Spigot IMPL
-+    private static final PropertyKey<List<String>> PAGES_LEGACY = PropertyKey.of("pages", TypeFactory.parameterizedClass(List.class, String.class));
-+
 +    private final BookMeta.Spigot spigot = new SpigotMeta();
 +
 +    private class SpigotMeta extends BookMeta.Spigot {
 +
-+        private String pageToJSON(String page) {
-+            if (MetaBook.this instanceof MetaBookSigned) {
-+                // Page data is already in JSON format:
-+                return page;
-+            } else {
-+                // Convert from plain String to JSON (similar to conversion between writable books and written books):
-+                net.minecraft.network.chat.Component component = CraftChatMessage.fromString(page, true, true)[0];
-+                return CraftChatMessage.toJSON(component);
-+            }
-+        }
-+
-+        private String componentsToPage(BaseComponent[] components) {
-+            // asserted: components != null
-+            if (MetaBook.this instanceof MetaBookSigned) {
-+                // Pages are in JSON format:
-+                return ComponentSerializer.toString(components);
-+            } else {
-+                // Convert component to plain String:
-+                return CraftChatMessage.fromJSONComponent(ComponentSerializer.toString(components));
-+            }
++        private String pageToJSON(Component page) {
++            return GsonComponentSerializer.gson().serialize(page);
 +        }
 +
 +        @Override
 +        public BaseComponent[] getPage(final int page) {
-+            Validate.isTrue(MetaBook.this.isValidPage(page), "Invalid page number");
-+            return ComponentSerializer.parse(this.pageToJSON(MetaBook.this.propertyHolder.get(PAGES_LEGACY).get(page - 1)));
++            return ComponentSerializer.parse(this.pageToJSON(MetaBook.this.page(page)));
 +        }
 +
 +        @Override
 +        public void setPage(final int page, final BaseComponent... text) {
-+            if (!MetaBook.this.isValidPage(page)) {
-+                throw new IllegalArgumentException("Invalid page number " + page + "/" + MetaBook.this.getPageCount());
-+            }
-+
 +            BaseComponent[] newText = text == null ? new BaseComponent[0] : text;
-+            MetaBook.this.propertyHolder.get(PAGES_LEGACY).set(page - 1, this.componentsToPage(newText));
++            MetaBook.this.page(page, GsonComponentSerializer.gson().deserialize(ComponentSerializer.toString(newText)));
 +        }
 +
 +        @Override
@@ -741,14 +851,14 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +                    page = new BaseComponent[0];
 +                }
 +
-+                MetaBook.this.internalAddPage(this.componentsToPage(page));
++                MetaBook.this.addPages(GsonComponentSerializer.gson().deserialize(ComponentSerializer.toString(page)));
 +            }
 +        }
 +
 +        @Override
 +        public List<BaseComponent[]> getPages() {
-+            List<String> pages = MetaBook.this.propertyHolder.get(PAGES_LEGACY);
-+            if (pages == null || pages.isEmpty()) {
++            List<Component> pagesInternal = MetaBook.this.getPageList();
++            if (pagesInternal.isEmpty()) {
 +                return List.of();
 +            }
 +
@@ -756,20 +866,22 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +
 +                @Override
 +                public BaseComponent[] get(int index) {
-+                    return ComponentSerializer.parse(MetaBook.SpigotMeta.this.pageToJSON(pages.get(index)));
++                    return ComponentSerializer.parse(MetaBook.SpigotMeta.this.pageToJSON(pagesInternal.get(index)));
 +                }
 +
 +                @Override
 +                public int size() {
-+                    return pages.size();
++                    return pagesInternal.size();
 +                }
 +            };
 +        }
 +
 +        @Override
 +        public void setPages(List<BaseComponent[]> pages) {
-+            MetaBook.this.propertyHolder.unset(PAGES_LEGACY);
++            List<Component> pagesInternal = MetaBook.this.getPageListOrCreate();
++            pagesInternal.clear();
 +            if (pages.isEmpty()) {
++                MetaBook.this.clearPagesPropertyIfEmpty();
 +                return;
 +            }
 +
@@ -779,31 +891,9 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +        }
 +    }
 +
-+    // Utilities
-+    private boolean isValidPage(int page) {
-+        return page > 0 && page <= this.getPageCount();
-+    }
-+
-+    private void internalAddPage(String page) {
-+        // asserted: page != null
-+        List<String> pages = MetaBook.this.propertyHolder.get(PAGES_LEGACY);
-+        if (pages != null && pages.size() >= MAX_PAGES) {
-+            return;
-+        } else if (pages == null) {
-+            pages = MetaBook.this.propertyHolder.create(PAGES_LEGACY);
-+        }
-+
-+        pages.add(page);
-+    }
-+
 +    @Override
 +    public BookMeta.Spigot spigot() {
 +        return this.spigot;
-+    }
-+
-+    @Override
-+    public @NotNull MetaBook clone() {
-+        return new MetaBook(this.propertyHolder.clone(), material);
 +    }
 +
 +    @Override
@@ -832,7 +922,6 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +        }
 +        return true;
 +    }
-+
 +    @Override
 +    public boolean notUncommon(PaperMeta meta) {
 +        return super.notUncommon(meta) && (meta instanceof MetaBook || this.isBookEmpty());
@@ -846,23 +935,58 @@ index 0000000000000000000000000000000000000000..afdebf0d96e8f3f2b83da2707dce71fa
 +    boolean isBookEmpty() {
 +        return !((!this.getPages().isEmpty()) || this.hasAuthor() || this.hasTitle() || this.hasGeneration() || (this.propertyHolder.get(ItemProperties.RESOLVED) != null));
 +    }
++
++    // To override
++    @NotNull
++    public abstract List<Component> getPageListOrCreate();
++
++    @NotNull
++    public abstract List<Component> getPageList();
++
++    public abstract void clearPagesPropertyIfEmpty();
++
++    public abstract BookMeta build(Component title, Component author, List<net.kyori.adventure.text.Component> pages);
++
++    public abstract @NotNull MetaBook clone();
++
++    // Utilities
++    private boolean isValidPage(int page) {
++        return page > 0 && page <= this.getPageCount();
++    }
++
++    private static String limit(String str, int limit) {
++        if (str == null) {
++            return null;
++        }
++
++        return ValidateUtils.limit(str, limit);
++    }
++
++    String validatePage(String page) {
++        if (page == null) {
++            page = "";
++        } else if (page.length() > MAX_PAGE_LENGTH) {
++            page = page.substring(0, MAX_PAGE_LENGTH);
++        }
++        return page;
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java b/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2b4f7c053e4cb3a52b96596a734c676d87323c2f
+index 0000000000000000000000000000000000000000..488d86a24046bdad9743ac9acc00afffea75fc77
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaBookSigned.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,70 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.item.property.ItemPropertyRegistration;
 +import io.papermc.paper.property.MutablePropertyView;
-+import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
 +import net.kyori.adventure.text.Component;
-+import org.bukkit.Material;
++import net.minecraft.nbt.CompoundTag;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
-+import org.bukkit.craftbukkit.util.CraftChatMessage;
 +import org.bukkit.inventory.meta.BookMeta;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -871,30 +995,41 @@ index 0000000000000000000000000000000000000000..2b4f7c053e4cb3a52b96596a734c676d
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaBookSigned extends MetaBook implements BookMeta {
 +
-+    public MetaBookSigned(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaBookSigned(MutablePropertyView mutable) {
++        super(mutable);
++    }
++
++    @NotNull
++    public List<Component> getPageListOrCreate() {
++        return this.propertyHolder.getOrCreate(ItemProperties.PAGES);
++    }
++
++    @NotNull
++    public List<Component> getPageList() {
++        return this.propertyHolder.getOrDefault(ItemProperties.PAGES, List.of());
 +    }
 +
 +    @Override
-+    protected String convertPlainPageToData(String page) {
-+        return CraftChatMessage.fromStringToJSON(page, true);
++    public BookMeta build(Component title, Component author, List<Component> pages) {
++        MetaBook metaBook = new MetaBookSigned(NbtPropertyHolder.simpleBlob(new CompoundTag(), ItemPropertyRegistration.ITEM_CONTEXT));
++        metaBook.title(title);
++        metaBook.author(author);
++        metaBook.pages(pages);
++
++        return metaBook;
 +    }
 +
-+    @Override
-+    protected String convertDataToPlainPage(String pageData) {
-+        return CraftChatMessage.fromJSONComponent(pageData);
-+    }
-+
-+    @Override
-+    public PropertyKey<List<Component>> getPageProperty() {
-+        return ItemProperties.PAGES;
++    // Don't save pages if empty
++    public void clearPagesPropertyIfEmpty() {
++        if (this.getPageList().isEmpty()) {
++            this.propertyHolder.unset(ItemProperties.PAGES);
++        }
 +    }
 +
 +    @Override
 +    public @NotNull MetaBookSigned clone() {
-+        return new MetaBookSigned(this.propertyHolder.clone(), material);
++        return new MetaBookSigned(this.propertyHolder.clone());
 +    }
-+
 +
 +    @Override
 +    public boolean equalsCommon(PaperMeta meta) {
@@ -912,17 +1047,108 @@ index 0000000000000000000000000000000000000000..2b4f7c053e4cb3a52b96596a734c676d
 +    }
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBookWriteable.java b/src/main/java/io/papermc/paper/item/meta/MetaBookWriteable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e7b0fca142169be0820e8877eba17105f60862ab
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaBookWriteable.java
+@@ -0,0 +1,86 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.item.property.ItemPropertyRegistration;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.util.TransformingRandomAccessList;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.minecraft.nbt.CompoundTag;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.BookMeta;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaBookWriteable extends MetaBook implements BookMeta {
++
++    public MetaBookWriteable(MutablePropertyView mutable) {
++        super(mutable);
++    }
++
++    @Override
++    public @NotNull MetaBookWriteable clone() {
++        return new MetaBookWriteable(this.propertyHolder.clone());
++    }
++
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        return super.equalsCommon(meta);
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaBookWriteable || isBookEmpty());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty();
++    }
++
++    @NotNull
++    public List<Component> getPageListOrCreate() {
++        return this.toComponentList(this.propertyHolder.getOrCreate(ItemProperties.PAGES_WRITTEN));
++    }
++
++    @NotNull
++    public List<Component> getPageList() {
++        List<String> writtenPages = this.propertyHolder.get(ItemProperties.PAGES_WRITTEN);
++        if (writtenPages == null) {
++            return List.of();
++        }
++
++        return this.toComponentList(writtenPages);
++    }
++
++    // Don't save pages if empty
++    public void clearPagesPropertyIfEmpty() {
++        if (this.getPageList().isEmpty()) {
++            this.propertyHolder.unset(ItemProperties.PAGES_WRITTEN);
++        }
++    }
++
++    @Override
++    public BookMeta build(Component title, Component author, List<Component> pages) {
++        MetaBook metaBook = new MetaBookWriteable(NbtPropertyHolder.simpleBlob(new CompoundTag(), ItemPropertyRegistration.ITEM_CONTEXT));
++        metaBook.title(title);
++        metaBook.author(author);
++        metaBook.pages(pages);
++
++        return metaBook;
++    }
++
++    // Convert pages supporting the legacy format
++    private List<Component> toComponentList(List<String> strings) {
++        return new TransformingRandomAccessList<>(strings,
++            s -> LegacyComponentSerializer.legacySection().deserialize(s),
++            c -> LegacyComponentSerializer.legacySection().serialize(c)
++        );
++    }
++
++}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBundle.java b/src/main/java/io/papermc/paper/item/meta/MetaBundle.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..64a4a5d7a5f51abf1fae984a870a2409d9e87e10
+index 0000000000000000000000000000000000000000..d2030dfb6fb4ca9bdd0e00db2376a00462d9c356
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaBundle.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,78 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.property.MutablePropertyView;
-+import org.bukkit.Material;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.inventory.ItemStack;
@@ -936,25 +1162,18 @@ index 0000000000000000000000000000000000000000..64a4a5d7a5f51abf1fae984a870a2409
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaBundle extends PaperMeta implements BundleMeta {
 +
-+    public MetaBundle(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaBundle(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
 +    public boolean hasItems() {
-+        List<ItemStack> items = this.propertyHolder.get(ItemProperties.ITEMS);
-+        return items != null && !items.isEmpty();
++        return !this.propertyHolder.getOrDefault(ItemProperties.ITEMS, List.of()).isEmpty();
 +    }
 +
 +    @Override
 +    public @NotNull List<ItemStack> getItems() {
-+        List<ItemStack> items = this.propertyHolder.get(ItemProperties.ITEMS);
-+        if (items == null) {
-+            return List.of();
-+        }
-+
-+
-+        return Collections.unmodifiableList(items);
++        return Collections.unmodifiableList(this.propertyHolder.getOrDefault(ItemProperties.ITEMS, List.of()));
 +    }
 +
 +    @Override
@@ -970,7 +1189,7 @@ index 0000000000000000000000000000000000000000..64a4a5d7a5f51abf1fae984a870a2409
 +
 +    @Override
 +    public @NotNull MetaBundle clone() {
-+        return new MetaBundle(this.propertyHolder.clone(), this.material);
++        return new MetaBundle(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -990,7 +1209,6 @@ index 0000000000000000000000000000000000000000..64a4a5d7a5f51abf1fae984a870a2409
 +            return false;
 +        }
 +        if (meta instanceof MetaBundle that) {
-+
 +            return (this.hasItems() ? that.hasItems() && this.getItems().equals(that.getItems()) : !that.hasItems());
 +        }
 +        return true;
@@ -1005,12 +1223,84 @@ index 0000000000000000000000000000000000000000..64a4a5d7a5f51abf1fae984a870a2409
 +        return !(this.hasItems());
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaColorableArmor.java b/src/main/java/io/papermc/paper/item/meta/MetaColorableArmor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3152b395bd889baa9ee817707d434afe44c1e167
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaColorableArmor.java
+@@ -0,0 +1,66 @@
++package io.papermc.paper.item.meta;
++
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Color;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaColorableArmor;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.ColorableArmorMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaColorableArmor extends MetaArmor implements ColorableArmorMeta {
++
++    // Use a leather armor meta for the color setting logic
++    private final MetaLeatherArmor leatherArmor;
++
++    public MetaColorableArmor(MutablePropertyView mutable) {
++        super(mutable);
++        this.leatherArmor = new MetaLeatherArmor(mutable);
++    }
++
++    @Override
++    public @NotNull Color getColor() {
++        return this.leatherArmor.getColor();
++    }
++
++    @Override
++    public void setColor(@Nullable Color color) {
++        this.leatherArmor.setColor(color);
++    }
++
++    @Override
++    public @NotNull MetaColorableArmor clone() {
++        return new MetaColorableArmor(this.propertyHolder.clone());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isLeatherArmorEmpty();
++    }
++
++    boolean isLeatherArmorEmpty() {
++        return !(this.hasColor());
++    }
++
++    boolean hasColor() {
++        return this.leatherArmor.hasColor();
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaColorableArmor || this.isLeatherArmorEmpty());
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaColorableArmor that) {
++            return this.getColor().equals(that.getColor());
++        }
++        return true;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaCompass.java b/src/main/java/io/papermc/paper/item/meta/MetaCompass.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b4933e3e9b79d2f4a6f361293f73da733b67d839
+index 0000000000000000000000000000000000000000..97f8decaf7ac5c1e5d6e3ae362448bc2dfa1d465
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaCompass.java
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,105 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -1018,7 +1308,6 @@ index 0000000000000000000000000000000000000000..b4933e3e9b79d2f4a6f361293f73da73
 +import io.papermc.paper.property.MutablePropertyView;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Location;
-+import org.bukkit.Material;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.World;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -1032,8 +1321,8 @@ index 0000000000000000000000000000000000000000..b4933e3e9b79d2f4a6f361293f73da73
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaCompass extends PaperMeta implements CompassMeta {
 +
-+    public MetaCompass(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaCompass(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -1049,7 +1338,6 @@ index 0000000000000000000000000000000000000000..b4933e3e9b79d2f4a6f361293f73da73
 +        }
 +
 +        World world = Bukkit.getWorld(dimension);
-+
 +        Position position = this.propertyHolder.get(ItemProperties.LODESTONE_POS);
 +        if (position == null) {
 +            return null;
@@ -1076,7 +1364,7 @@ index 0000000000000000000000000000000000000000..b4933e3e9b79d2f4a6f361293f73da73
 +
 +    @Override
 +    public @NotNull MetaCompass clone() {
-+        return new MetaCompass(this.propertyHolder.clone(), this.material);
++        return new MetaCompass(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -1087,15 +1375,13 @@ index 0000000000000000000000000000000000000000..b4933e3e9b79d2f4a6f361293f73da73
 +    }
 +
 +    // Equality
-+
 +    @Override
 +    public boolean equalsCommon(PaperMeta meta) {
 +        if (!super.equalsCommon(meta)) {
 +            return false;
 +        }
 +        if (meta instanceof MetaCompass that) {
-+
-+            return (this.hasLodestone() ? that.hasLodestone() && Objects.equals( this.propertyHolder.get(ItemProperties.LODESTONE_DIMENSION), that.propertyHolder.get(ItemProperties.LODESTONE_DIMENSION))
++            return (this.hasLodestone() ? that.hasLodestone() && Objects.equals(this.propertyHolder.get(ItemProperties.LODESTONE_DIMENSION), that.propertyHolder.get(ItemProperties.LODESTONE_DIMENSION))
 +                && this.getLodestone().equals(that.getLodestone()) : !that.hasLodestone())
 +                && this.isLodestoneTracked() == that.isLodestoneTracked();
 +        }
@@ -1121,263 +1407,90 @@ index 0000000000000000000000000000000000000000..b4933e3e9b79d2f4a6f361293f73da73
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java b/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..20c28152a56ac682b32d273c6b676dbafd9b9b8e
---- /dev/null
+index 87c37b30467a0f7d93a55e5735b1d19491822ad6..e7956ecc8caef213560cc343bd72bec5d03bd455 100644
+--- a/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java
-@@ -0,0 +1,102 @@
-+package io.papermc.paper.item.meta;
-+
-+import com.google.common.base.Preconditions;
-+import io.papermc.paper.inventory.item.properties.ItemProperties;
-+import io.papermc.paper.property.MutablePropertyView;
-+import net.minecraft.world.item.ArrowItem;
-+import org.bukkit.Material;
-+import org.bukkit.configuration.serialization.DelegateDeserialization;
-+import org.bukkit.craftbukkit.inventory.CraftMetaItem;
-+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-+import org.bukkit.inventory.ItemStack;
-+import org.bukkit.inventory.meta.CrossbowMeta;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+import java.util.List;
-+
-+@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
-+public class MetaCrossbow extends PaperMeta implements CrossbowMeta {
-+
-+    public MetaCrossbow(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
-+    }
-+
-+    @Override
-+    public boolean hasChargedProjectiles() {
-+        List<ItemStack> effects = this.propertyHolder.get(ItemProperties.CHARGED_PROJECTILES);
-+        return effects != null && !effects.isEmpty();
-+    }
-+
-+    @Override
-+    public @NotNull List<ItemStack> getChargedProjectiles() {
-+        return this.propertyHolder.getOrDefault(ItemProperties.CHARGED_PROJECTILES, List.of());
-+    }
-+
-+    @Override
-+    public void setChargedProjectiles(@Nullable List<ItemStack> projectiles) {
-+        this.propertyHolder.unset(ItemProperties.CHARGED_PROJECTILES);
-+        this.propertyHolder.set(ItemProperties.CHARGED, false);
-+
-+        if (projectiles == null) {
-+            return;
-+        }
-+
-+        for (ItemStack i : projectiles) {
-+            this.addChargedProjectile(i);
-+        }
-+    }
-+
-+    @Override
-+    public void addChargedProjectile(@NotNull ItemStack item) {
-+        Preconditions.checkArgument(item != null, "item");
-+        Preconditions.checkArgument(item.getType() == Material.FIREWORK_ROCKET || CraftMagicNumbers.getItem(item.getType()) instanceof ArrowItem, "Item %s is not an arrow or firework rocket", item);
-+
-+        this.propertyHolder.set(ItemProperties.CHARGED, true);
-+        this.propertyHolder.getOrCreate(ItemProperties.CHARGED_PROJECTILES).add(item);
-+    }
-+
-+    @Override
-+    public @NotNull MetaCrossbow clone() {
-+        return new MetaCrossbow(this.propertyHolder.clone(), this.material);
-+    }
-+
-+    @Override
-+    public void migrateFrom(MutablePropertyView mutable) {
-+        this.propertyHolder.unset(ItemProperties.CHARGED);
-+        this.propertyHolder.unset(ItemProperties.CHARGED_PROJECTILES);
-+    }
-+
-+    // Equality
-+    @Override
-+    public boolean isEmpty() {
-+        return super.isEmpty() && this.isCrossbowEmpty();
-+    }
-+
-+    boolean isCrossbowEmpty() {
-+        return !(this.hasChargedProjectiles());
-+    }
-+
-+    @Override
-+    public boolean equalsCommon(PaperMeta meta) {
-+        if (!super.equalsCommon(meta)) {
-+            return false;
-+        }
-+        if (meta instanceof MetaCrossbow that) {
-+
-+            return this.hasChargedProjectiles() == that.hasChargedProjectiles()
-+                && (this.charged() ? that.charged() && this.getChargedProjectiles().equals(that.getChargedProjectiles()) : !that.hasChargedProjectiles());
-+        }
-+        return true;
-+    }
-+
-+    @Override
-+    public boolean notUncommon(PaperMeta meta) {
-+        return super.notUncommon(meta) && (meta instanceof MetaCrossbow || this.isCrossbowEmpty());
-+    }
-+
-+    public boolean charged() {
-+        return this.propertyHolder.getOrDefault(ItemProperties.CHARGED, false);
-+    }
-+
-+}
+@@ -25,7 +25,7 @@ public class MetaCrossbow extends PaperMeta implements CrossbowMeta {
+ 
+     @Override
+     public boolean hasChargedProjectiles() {
+-        return !this.propertyHolder.getOrDefault(ItemProperties.CHARGED_PROJECTILES, List.of()).isEmpty();rvo
++        return !this.propertyHolder.getOrDefault(ItemProperties.CHARGED_PROJECTILES, List.of()).isEmpty();
+     }
+ 
+     @Override
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaEnchantmentStorage.java b/src/main/java/io/papermc/paper/item/meta/MetaEnchantmentStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..665bb85331faeb8a9612fc0c13b5fc1232432208
+index 0000000000000000000000000000000000000000..0dbf13a4bd10f3df234dbe6ca95cab984184117b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaEnchantmentStorage.java
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.item.meta;
 +
-+import io.papermc.paper.inventory.item.properties.EnchantmentPair;
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.property.MutablePropertyView;
-+import io.papermc.paper.property.types.EnchantmentPairImpl;
-+import org.bukkit.Material;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.enchantments.Enchantment;
 +import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 +import org.jetbrains.annotations.NotNull;
 +
-+import java.util.HashMap;
-+import java.util.Iterator;
-+import java.util.List;
 +import java.util.Map;
 +
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaEnchantmentStorage extends PaperMeta implements EnchantmentStorageMeta {
 +
-+    public MetaEnchantmentStorage(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    private final EnchantmentMap enchantmentMap;
++
++    public MetaEnchantmentStorage(MutablePropertyView mutable) {
++        super(mutable);
++        this.enchantmentMap = new EnchantmentMap(mutable, ItemProperties.STORED_ENCHANTMENTS);
 +    }
 +
 +    @Override
 +    public boolean hasStoredEnchant(Enchantment ench) {
-+        List<EnchantmentPair> enchantments = this.propertyHolder.get(ItemProperties.STORED_ENCHANTMENTS);
-+        if (enchantments == null) {
-+            return false;
-+        }
-+
-+        for (EnchantmentPair next : enchantments) {
-+            if (next.enchantment() == ench) {
-+                return true;
-+            }
-+        }
-+
-+        return false;
++        return this.enchantmentMap.hasEnchant(ench);
 +    }
 +
 +    @Override
 +    public int getStoredEnchantLevel(Enchantment ench) {
-+        List<EnchantmentPair> enchantmentPairs = this.propertyHolder.get(ItemProperties.STORED_ENCHANTMENTS);
-+        if (enchantmentPairs == null) {
-+            return 0;
-+        }
-+        for (EnchantmentPair pair : enchantmentPairs) {
-+            if (pair.enchantment() == ench) {
-+                return pair.level();
-+            }
-+        }
-+
-+        return 0;
++        return this.enchantmentMap.getEnchantLevel(ench);
 +    }
 +
 +    @Override
 +    public Map<Enchantment, Integer> getStoredEnchants() {
-+        List<EnchantmentPair> pairs = this.propertyHolder.getOrCreate(ItemProperties.STORED_ENCHANTMENTS);
-+        Map<Enchantment, Integer> map = new HashMap<>();
-+        for (EnchantmentPair enchantmentPair : pairs) {
-+            map.put(enchantmentPair.enchantment(), enchantmentPair.level());
-+        }
-+
-+        return map;
++        return this.enchantmentMap.getEnchants();
 +    }
 +
 +    @Override
 +    public boolean addStoredEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
-+        if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
-+            List<EnchantmentPair> enchantments = this.propertyHolder.getOrCreate(ItemProperties.STORED_ENCHANTMENTS);
-+
-+            EnchantmentPair oldValue = null;
-+            int oldIndex = 0;
-+            for (int i = 0; i < enchantments.size(); i++) {
-+                EnchantmentPair value = enchantments.get(i);
-+                if (value.enchantment() == ench) {
-+                    oldValue = value;
-+                    oldIndex = i;
-+                    break;
-+                }
-+            }
-+
-+            if (oldValue == null) {
-+                enchantments.add(new EnchantmentPairImpl(ench, level));
-+                return true;
-+            } else {
-+                enchantments.set(oldIndex, new EnchantmentPairImpl(ench, level));
-+                return oldValue.level() != level;
-+            }
-+        }
-+
-+        return false;
++        return this.enchantmentMap.addEnchant(ench, level, ignoreRestrictions);
 +    }
 +
 +    @Override
 +    public boolean removeStoredEnchant(Enchantment ench) {
-+        List<EnchantmentPair> enchantmentMap = this.propertyHolder.get(ItemProperties.STORED_ENCHANTMENTS);
-+        if (enchantmentMap == null) {
-+            return false;
-+        }
-+
-+        Iterator<EnchantmentPair> iterator = enchantmentMap.listIterator();
-+        while (iterator.hasNext()) {
-+            EnchantmentPair next = iterator.next();
-+            if (next.enchantment() == ench) {
-+                iterator.remove();
-+                return true;
-+            }
-+        }
-+
-+        return false;
++        return this.enchantmentMap.removeEnchant(ench);
 +    }
 +
 +    @Override
 +    public boolean hasStoredEnchants() {
-+        return this.propertyHolder.hasProperty(ItemProperties.STORED_ENCHANTMENTS) && !this.propertyHolder.get(ItemProperties.STORED_ENCHANTMENTS).isEmpty();
++        return this.enchantmentMap.hasEnchants();
 +    }
 +
 +    @Override
 +    public boolean hasConflictingStoredEnchant(Enchantment ench) {
-+        if (!hasStoredEnchants()) {
-+            return false;
-+        }
-+
-+        for (EnchantmentPair enchant : this.propertyHolder.getOrDefault(ItemProperties.STORED_ENCHANTMENTS, List.of())) {
-+            if (enchant.enchantment().conflictsWith(ench)) {
-+                return true;
-+            }
-+        }
-+
-+        return false;
++        return this.enchantmentMap.hasConflictingEnchant(ench);
 +    }
 +
 +    @Override
 +    public @NotNull MetaEnchantmentStorage clone() {
-+        return new MetaEnchantmentStorage(this.propertyHolder.clone(), this.material);
++        return new MetaEnchantmentStorage(this.propertyHolder.clone());
 +    }
 +
 +    @Override
 +    public void migrateFrom(MutablePropertyView mutable) {
 +        this.propertyHolder.unset(ItemProperties.STORED_ENCHANTMENTS);
 +    }
-+
 +
 +    @Override
 +    public boolean isEmpty() {
@@ -1406,29 +1519,29 @@ index 0000000000000000000000000000000000000000..665bb85331faeb8a9612fc0c13b5fc12
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaFirework.java b/src/main/java/io/papermc/paper/item/meta/MetaFirework.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e97ff75858de7192f4a2b06c85a4f188d2a97fe4
+index 0000000000000000000000000000000000000000..ab8cd9dfdf671f59e96f5b60b1597423eb6a5ab7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaFirework.java
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,131 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.property.MutablePropertyView;
 +import org.apache.commons.lang.Validate;
 +import org.bukkit.FireworkEffect;
-+import org.bukkit.Material;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.inventory.meta.FireworkMeta;
 +import org.jetbrains.annotations.NotNull;
 +
++import java.util.Collections;
 +import java.util.List;
 +
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaFirework extends PaperMeta implements FireworkMeta {
 +
-+    public MetaFirework(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaFirework(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -1461,7 +1574,7 @@ index 0000000000000000000000000000000000000000..e97ff75858de7192f4a2b06c85a4f188
 +
 +    @Override
 +    public List<FireworkEffect> getEffects() {
-+        return this.propertyHolder.get(ItemProperties.EXPLOSIONS);
++        return Collections.unmodifiableList(this.propertyHolder.getOrDefault(ItemProperties.EXPLOSIONS, List.of()));
 +    }
 +
 +    @Override
@@ -1497,10 +1610,9 @@ index 0000000000000000000000000000000000000000..e97ff75858de7192f4a2b06c85a4f188
 +        this.propertyHolder.set(ItemProperties.FLIGHT, (byte) power);
 +    }
 +
-+
 +    @Override
 +    public @NotNull MetaFirework clone() {
-+        return new MetaFirework(this.propertyHolder.clone(), this.material);
++        return new MetaFirework(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -1530,7 +1642,6 @@ index 0000000000000000000000000000000000000000..e97ff75858de7192f4a2b06c85a4f188
 +        }
 +
 +        if (meta instanceof MetaFirework that) {
-+
 +            return (this.hasPower() ? that.hasPower() && this.getPower() == that.getPower() : !that.hasPower())
 +                && (this.hasEffects() ? that.hasEffects() && this.getEffects().equals(that.getEffects()) : !that.hasEffects());
 +        }
@@ -1545,7 +1656,7 @@ index 0000000000000000000000000000000000000000..e97ff75858de7192f4a2b06c85a4f188
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaFireworkEffect.java b/src/main/java/io/papermc/paper/item/meta/MetaFireworkEffect.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..354ffdddecb50a1acf26d281154cfeea4cd29788
+index 0000000000000000000000000000000000000000..0d2070ede3c456a2ea048b1259f01e218d54ed87
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaFireworkEffect.java
 @@ -0,0 +1,71 @@
@@ -1564,8 +1675,8 @@ index 0000000000000000000000000000000000000000..354ffdddecb50a1acf26d281154cfeea
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaFireworkEffect extends PaperMeta implements FireworkEffectMeta {
 +
-+    public MetaFireworkEffect(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaFireworkEffect(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -1585,7 +1696,7 @@ index 0000000000000000000000000000000000000000..354ffdddecb50a1acf26d281154cfeea
 +
 +    @Override
 +    public @NotNull MetaFireworkEffect clone() {
-+        return new MetaFireworkEffect(this.propertyHolder.clone(), this.material);
++        return new MetaFireworkEffect(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -1622,7 +1733,7 @@ index 0000000000000000000000000000000000000000..354ffdddecb50a1acf26d281154cfeea
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaKnowledgeBook.java b/src/main/java/io/papermc/paper/item/meta/MetaKnowledgeBook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6a4f1b788fb02f6d5255bc48d6c8e9fc61d7503b
+index 0000000000000000000000000000000000000000..74194e9a082ebeb295a427eef747fb0069f9b5c7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaKnowledgeBook.java
 @@ -0,0 +1,86 @@
@@ -1637,6 +1748,7 @@ index 0000000000000000000000000000000000000000..6a4f1b788fb02f6d5255bc48d6c8e9fc
 +import org.bukkit.inventory.meta.KnowledgeBookMeta;
 +import org.jetbrains.annotations.NotNull;
 +
++import java.util.Collections;
 +import java.util.List;
 +
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
@@ -1644,19 +1756,18 @@ index 0000000000000000000000000000000000000000..6a4f1b788fb02f6d5255bc48d6c8e9fc
 +
 +    static final int MAX_RECIPES = Short.MAX_VALUE;
 +
-+    public MetaKnowledgeBook(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaKnowledgeBook(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
 +    public boolean hasRecipes() {
-+        List<NamespacedKey> effects = this.propertyHolder.get(ItemProperties.RECIPES);
-+        return effects != null && !effects.isEmpty();
++       return !this.propertyHolder.getOrDefault(ItemProperties.RECIPES, List.of()).isEmpty();
 +    }
 +
 +    @Override
 +    public @NotNull List<NamespacedKey> getRecipes() {
-+        return this.propertyHolder.getOrDefault(ItemProperties.RECIPES, List.of());
++        return Collections.unmodifiableList(this.propertyHolder.getOrDefault(ItemProperties.RECIPES, List.of()));
 +    }
 +
 +    @Override
@@ -1678,7 +1789,7 @@ index 0000000000000000000000000000000000000000..6a4f1b788fb02f6d5255bc48d6c8e9fc
 +
 +    @Override
 +    public @NotNull MetaKnowledgeBook clone() {
-+        return new MetaKnowledgeBook(this.propertyHolder.clone(), this.material);
++        return new MetaKnowledgeBook(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -1714,10 +1825,10 @@ index 0000000000000000000000000000000000000000..6a4f1b788fb02f6d5255bc48d6c8e9fc
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaLeatherArmor.java b/src/main/java/io/papermc/paper/item/meta/MetaLeatherArmor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..601de48cb795475282783c8d7e5edf7a7bc4b529
+index 0000000000000000000000000000000000000000..d3a9d943f354b5c0adf13d9a4996d13e8e110f26
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaLeatherArmor.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,72 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -1735,8 +1846,8 @@ index 0000000000000000000000000000000000000000..601de48cb795475282783c8d7e5edf7a
 +
 +    private static final Color DEFAULT_LEATHER_COLOR = Color.fromRGB(0xA06540);
 +
-+    public MetaLeatherArmor(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaLeatherArmor(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -1751,7 +1862,7 @@ index 0000000000000000000000000000000000000000..601de48cb795475282783c8d7e5edf7a
 +
 +    @Override
 +    public @NotNull MetaLeatherArmor clone() {
-+        return new MetaLeatherArmor(this.propertyHolder.clone(), this.material);
++        return new MetaLeatherArmor(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -1786,20 +1897,16 @@ index 0000000000000000000000000000000000000000..601de48cb795475282783c8d7e5edf7a
 +
 +    boolean hasColor() {
 +        Color color = this.getColor();
-+        if (color == null) {
-+            return false;
-+        }
-+
 +        // LEGACY
 +        return !DEFAULT_LEATHER_COLOR.equals(color);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaMap.java b/src/main/java/io/papermc/paper/item/meta/MetaMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..93f4753097e4bc48063cffce7d1a9a3c89389d77
+index 0000000000000000000000000000000000000000..df9400f372f2acdeb4dceb742c40ee1505a5564d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaMap.java
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,141 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.google.common.base.Preconditions;
@@ -1807,7 +1914,6 @@ index 0000000000000000000000000000000000000000..93f4753097e4bc48063cffce7d1a9a3c
 +import io.papermc.paper.property.MutablePropertyView;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Color;
-+import org.bukkit.Material;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.inventory.meta.MapMeta;
@@ -1818,8 +1924,8 @@ index 0000000000000000000000000000000000000000..93f4753097e4bc48063cffce7d1a9a3c
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaMap extends PaperMeta implements MapMeta {
 +
-+    public MetaMap(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaMap(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -1873,17 +1979,17 @@ index 0000000000000000000000000000000000000000..93f4753097e4bc48063cffce7d1a9a3c
 +    // Stupid legacy!
 +    @Override
 +    public boolean hasLocationName() {
-+        return this.propertyHolder.hasProperty(ItemProperties.LOC_NAME);
++        return this.propertyHolder.hasProperty(PaperMeta.LOC_NAME);
 +    }
 +
 +    @Override
 +    public @Nullable String getLocationName() {
-+        return this.propertyHolder.get(ItemProperties.LOC_NAME);
++        return this.propertyHolder.get(PaperMeta.LOC_NAME);
 +    }
 +
 +    @Override
 +    public void setLocationName(@Nullable String name) {
-+        this.propertyHolder.set(ItemProperties.LOC_NAME, name);
++        this.propertyHolder.set(PaperMeta.LOC_NAME, name);
 +    }
 +
 +    @Override
@@ -1903,7 +2009,7 @@ index 0000000000000000000000000000000000000000..93f4753097e4bc48063cffce7d1a9a3c
 +
 +    @Override
 +    public @NotNull MetaMap clone() {
-+        return new MetaMap(this.propertyHolder.clone(), this.material);
++        return new MetaMap(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -1929,7 +2035,6 @@ index 0000000000000000000000000000000000000000..93f4753097e4bc48063cffce7d1a9a3c
 +            return false;
 +        }
 +        if (meta instanceof MetaMap that) {
-+
 +            return (this.isScaling() == that.isScaling())
 +                && (this.hasMapId() ? that.hasMapId() && this.getMapId() == that.getMapId() : !that.hasMapId())
 +                && (this.hasLocationName() ? that.hasLocationName() && this.getLocationName().equals(that.getLocationName()) : !that.hasLocationName())
@@ -1945,7 +2050,7 @@ index 0000000000000000000000000000000000000000..93f4753097e4bc48063cffce7d1a9a3c
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaMusicInstrument.java b/src/main/java/io/papermc/paper/item/meta/MetaMusicInstrument.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5184543b7f42d35241af0e10063da279f9ae3069
+index 0000000000000000000000000000000000000000..4e5ba70ef7e32f0a066a0ee4c879e18dd50c0a6d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaMusicInstrument.java
 @@ -0,0 +1,65 @@
@@ -1964,8 +2069,8 @@ index 0000000000000000000000000000000000000000..5184543b7f42d35241af0e10063da279
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaMusicInstrument extends PaperMeta implements MusicInstrumentMeta {
 +
-+    public MetaMusicInstrument(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaMusicInstrument(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -1980,7 +2085,7 @@ index 0000000000000000000000000000000000000000..5184543b7f42d35241af0e10063da279
 +
 +    @Override
 +    public @NotNull MetaMusicInstrument clone() {
-+        return new MetaMusicInstrument(this.propertyHolder.clone(), this.material);
++        return new MetaMusicInstrument(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -2016,7 +2121,7 @@ index 0000000000000000000000000000000000000000..5184543b7f42d35241af0e10063da279
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java b/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2053e7a7945c1551a13658bdb43b8444ad5075a9
+index 0000000000000000000000000000000000000000..f02f08d66bfdfbecc5067a4c8c39594d60f7910e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java
 @@ -0,0 +1,193 @@
@@ -2046,8 +2151,8 @@ index 0000000000000000000000000000000000000000..2053e7a7945c1551a13658bdb43b8444
 +
 +    static final int MAX_OWNER_LENGTH = 16;
 +
-+    public MetaPlayerHead(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaPlayerHead(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -2166,7 +2271,7 @@ index 0000000000000000000000000000000000000000..2053e7a7945c1551a13658bdb43b8444
 +
 +    @Override
 +    public @NotNull MetaPlayerHead clone() {
-+        return new MetaPlayerHead(this.propertyHolder.clone(), this.material);
++        return new MetaPlayerHead(this.propertyHolder.clone());
 +    }
 +
 +    private void setProfile(org.bukkit.profile.PlayerProfile gameProfile) {
@@ -2215,16 +2320,15 @@ index 0000000000000000000000000000000000000000..2053e7a7945c1551a13658bdb43b8444
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaPotion.java b/src/main/java/io/papermc/paper/item/meta/MetaPotion.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819b9328fca
+index 0000000000000000000000000000000000000000..73631adad3614bb2e90c4abff025e663f7e36467
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaPotion.java
-@@ -0,0 +1,188 @@
+@@ -0,0 +1,183 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.property.MutablePropertyView;
 +import org.bukkit.Color;
-+import org.bukkit.Material;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.inventory.meta.PotionMeta;
@@ -2235,6 +2339,7 @@ index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
++import java.util.Collections;
 +import java.util.Iterator;
 +import java.util.List;
 +
@@ -2243,8 +2348,8 @@ index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819
 +
 +    private static final PotionData DEFAULT_TYPE = new PotionData(PotionType.UNCRAFTABLE, false, false);
 +
-+    public MetaPotion(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaPotion(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -2259,13 +2364,12 @@ index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819
 +
 +    @Override
 +    public boolean hasCustomEffects() {
-+        List<PotionEffect> effects = this.propertyHolder.get(ItemProperties.CUSTOM_POTION_EFFECTS);
-+        return effects != null && !effects.isEmpty();
++        return !this.propertyHolder.getOrDefault(ItemProperties.CUSTOM_POTION_EFFECTS, List.of()).isEmpty();
 +    }
 +
 +    @Override
 +    public @NotNull List<PotionEffect> getCustomEffects() {
-+        return this.propertyHolder.getOrDefault(ItemProperties.CUSTOM_POTION_EFFECTS, List.of());
++        return Collections.unmodifiableList(this.propertyHolder.getOrDefault(ItemProperties.CUSTOM_POTION_EFFECTS, List.of()));
 +    }
 +
 +    @Override
@@ -2292,9 +2396,6 @@ index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819
 +    @Override
 +    public boolean removeCustomEffect(@NotNull PotionEffectType type) {
 +        List<PotionEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.CUSTOM_POTION_EFFECTS);
-+        if (effects == null) {
-+            return false;
-+        }
 +
 +        boolean changed = false;
 +        Iterator<PotionEffect> iterator = effects.iterator();
@@ -2311,7 +2412,7 @@ index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819
 +
 +    @Override
 +    public boolean hasCustomEffect(@NotNull PotionEffectType type) {
-+        List<PotionEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.CUSTOM_POTION_EFFECTS);
++        List<PotionEffect> effects = this.propertyHolder.getOrDefault(ItemProperties.CUSTOM_POTION_EFFECTS, List.of());
 +        for (PotionEffect old : effects) {
 +            if (old.getType() == type) {
 +                return true;
@@ -2369,7 +2470,7 @@ index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819
 +
 +    @Override
 +    public @NotNull MetaPotion clone() {
-+        return new MetaPotion(this.propertyHolder.clone(), this.material);
++        return new MetaPotion(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -2385,7 +2486,6 @@ index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819
 +            return false;
 +        }
 +        if (meta instanceof MetaPotion that) {
-+
 +            return this.getBasePotionData().equals(that.getBasePotionData())
 +                && (this.hasCustomEffects() ? that.hasCustomEffects() && this.getCustomEffects().equals(that.getCustomEffects()) : !that.hasCustomEffects())
 +                && (this.hasColor() ? that.hasColor() && this.getColor().equals(that.getColor()) : !that.hasColor());
@@ -2407,9 +2507,128 @@ index 0000000000000000000000000000000000000000..dde57608537f2f89496aab53c35c4819
 +        return (this.getBasePotionData().getType() == PotionType.UNCRAFTABLE) && !(this.hasCustomEffects() || this.hasColor());
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/item/meta/MetaShield.java b/src/main/java/io/papermc/paper/item/meta/MetaShield.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f95bff00abbc0c1e03ea2f0492756a5b79a6bb4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/MetaShield.java
+@@ -0,0 +1,113 @@
++package io.papermc.paper.item.meta;
++
++import com.google.common.base.Objects;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.nbt.AdapterContext;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import org.apache.commons.lang.Validate;
++import org.bukkit.DyeColor;
++import org.bukkit.Material;
++import org.bukkit.block.BlockState;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.block.CraftBanner;
++import org.bukkit.craftbukkit.block.CraftBlockEntityState;
++import org.bukkit.craftbukkit.block.CraftBlockStates;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.inventory.meta.BlockStateMeta;
++import org.jetbrains.annotations.NotNull;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaShield extends PaperMeta implements BlockStateMeta {
++
++    public MetaShield(MutablePropertyView mutable) {
++        super(mutable);
++    }
++
++    @Override
++    public boolean hasBlockState() {
++        return this.propertyHolder.hasProperty(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    @Override
++    public BlockState getBlockState() {
++        MutablePropertyView holder = this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG);
++        DyeColor colorValue = holder == null ? null : holder.get(ItemProperties.SHIELD_BANNER_BASE);
++        // Convert the base to be used in the banner material type
++        Material stateMaterial = convertBaseToBanner(colorValue);
++
++        return CraftBlockStates.getBlockState(stateMaterial, ((NbtPropertyHolder) holder).getCompoundTag());
++    }
++
++    @Override
++    public void setBlockState(BlockState blockState) {
++        MutablePropertyView holder = this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG);
++        DyeColor colorValue = holder == null ? null : holder.get(ItemProperties.SHIELD_BANNER_BASE);
++        Material stateMaterial = convertBaseToBanner(colorValue);
++        Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
++
++        Validate.isTrue(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for banner");
++
++        MutablePropertyView mutable = NbtPropertyHolder.simpleBlob(((CraftBlockEntityState) blockState).getSnapshotNBT(), AdapterContext.empty());
++        // Set the base banner property of the banner
++        mutable.set(ItemProperties.SHIELD_BANNER_BASE, ((CraftBanner) blockState).getBaseColor());
++        this.propertyHolder.set(ItemProperties.BLOCK_ENTITY_TAG, mutable);
++    }
++
++    private static Material convertBaseToBanner(DyeColor dyeColor) {
++        if (dyeColor == null) {
++            return Material.WHITE_BANNER;
++        }
++
++        return switch (dyeColor) {
++            case WHITE -> Material.WHITE_BANNER;
++            case ORANGE -> Material.ORANGE_BANNER;
++            case MAGENTA -> Material.MAGENTA_BANNER;
++            case LIGHT_BLUE -> Material.LIGHT_BLUE_BANNER;
++            case YELLOW -> Material.YELLOW_BANNER;
++            case LIME -> Material.LIME_BANNER;
++            case PINK -> Material.PINK_BANNER;
++            case GRAY -> Material.GRAY_BANNER;
++            case LIGHT_GRAY -> Material.LIGHT_GRAY_BANNER;
++            case CYAN -> Material.CYAN_BANNER;
++            case PURPLE -> Material.PURPLE_BANNER;
++            case BLUE -> Material.BLUE_BANNER;
++            case BROWN -> Material.BROWN_BANNER;
++            case GREEN -> Material.GREEN_BANNER;
++            case RED -> Material.RED_BANNER;
++            case BLACK -> Material.BLACK_BANNER;
++        };
++    }
++
++    @Override
++    public @NotNull MetaShield clone() {
++        return new MetaShield(this.propertyHolder.clone());
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.BLOCK_ENTITY_TAG);
++    }
++
++    // Equality
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaShield that) {
++            return Objects.equal(this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG), that.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG));
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaShield || this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG) == null);
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.propertyHolder.get(ItemProperties.BLOCK_ENTITY_TAG) == null;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaSpawnEgg.java b/src/main/java/io/papermc/paper/item/meta/MetaSpawnEgg.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..90ce23a498ae08dbbf67e387511b6ebd3052b851
+index 0000000000000000000000000000000000000000..ac9d6711afebd0f3db36ee68716779d94e0e789a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaSpawnEgg.java
 @@ -0,0 +1,82 @@
@@ -2428,8 +2647,8 @@ index 0000000000000000000000000000000000000000..90ce23a498ae08dbbf67e387511b6ebd
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaSpawnEgg extends PaperMeta implements SpawnEggMeta {
 +
-+    public MetaSpawnEgg(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaSpawnEgg(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
@@ -2455,7 +2674,7 @@ index 0000000000000000000000000000000000000000..90ce23a498ae08dbbf67e387511b6ebd
 +
 +    @Override
 +    public @NotNull MetaSpawnEgg clone() {
-+        return new MetaSpawnEgg(this.propertyHolder.clone(), this.material);
++        return new MetaSpawnEgg(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -2497,10 +2716,10 @@ index 0000000000000000000000000000000000000000..90ce23a498ae08dbbf67e387511b6ebd
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java b/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cba72e053c77ee1c37333f21efa555261ecd5ec1
+index 0000000000000000000000000000000000000000..94f0432c882114cb3391331119a05bce4961690b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaSuspiciousStew.java
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,138 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -2522,14 +2741,13 @@ index 0000000000000000000000000000000000000000..cba72e053c77ee1c37333f21efa55526
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
 +public class MetaSuspiciousStew extends PaperMeta implements SuspiciousStewMeta {
 +
-+    public MetaSuspiciousStew(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaSuspiciousStew(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
 +    public boolean hasCustomEffects() {
-+        List<StewEffect> effects = this.propertyHolder.get(ItemProperties.STEW_EFFECTS);
-+        return effects != null && !effects.isEmpty();
++        return !this.propertyHolder.getOrDefault(ItemProperties.STEW_EFFECTS, List.of()).isEmpty();
 +    }
 +
 +    @Override
@@ -2587,7 +2805,7 @@ index 0000000000000000000000000000000000000000..cba72e053c77ee1c37333f21efa55526
 +
 +    @Override
 +    public boolean hasCustomEffect(@NotNull PotionEffectType type) {
-+        List<StewEffect> effects = this.propertyHolder.getOrCreate(ItemProperties.STEW_EFFECTS);
++        List<StewEffect> effects = this.propertyHolder.getOrDefault(ItemProperties.STEW_EFFECTS, List.of());
 +        for (StewEffect old : effects) {
 +            if (old.effect() == type) {
 +                return true;
@@ -2600,13 +2818,13 @@ index 0000000000000000000000000000000000000000..cba72e053c77ee1c37333f21efa55526
 +    @Override
 +    public boolean clearCustomEffects() {
 +        boolean changed = this.hasCustomEffects();
-+        this.propertyHolder.unset(ItemProperties.STEW_EFFECTS);
++        this.propertyHolder.get(ItemProperties.STEW_EFFECTS).isEmpty();
 +        return changed;
 +    }
 +
 +    @Override
 +    public @NotNull MetaSuspiciousStew clone() {
-+        return new MetaSuspiciousStew(this.propertyHolder.clone(), this.material);
++        return new MetaSuspiciousStew(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -2642,10 +2860,10 @@ index 0000000000000000000000000000000000000000..cba72e053c77ee1c37333f21efa55526
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaTropicalFishBucket.java b/src/main/java/io/papermc/paper/item/meta/MetaTropicalFishBucket.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e2f5ebff3b41eb93d1757d299ccdd8db31c110c7
+index 0000000000000000000000000000000000000000..a7cff5c085ebed031e5a9c5314ffd56eb69b2552
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaTropicalFishBucket.java
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,104 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -2665,14 +2883,13 @@ index 0000000000000000000000000000000000000000..e2f5ebff3b41eb93d1757d299ccdd8db
 +
 +    private static final TropicalFishVariant DEFAULT = new TropicalFishVariantNbt.TropicalFishVariantImpl(DyeColor.WHITE, DyeColor.WHITE, TropicalFish.Pattern.KOB);
 +
-+    public MetaTropicalFishBucket(MutablePropertyView mutable, Material material) {
-+        super(mutable, material);
++    public MetaTropicalFishBucket(MutablePropertyView mutable) {
++        super(mutable);
 +    }
 +
 +    @Override
 +    public @NotNull DyeColor getPatternColor() {
-+        TropicalFishVariant variant = this.propertyHolder.getOrDefault(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, DEFAULT);
-+        return variant.patternColor();
++        return this.propertyHolder.getOrDefault(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, DEFAULT).patternColor();
 +    }
 +
 +    @Override
@@ -2710,13 +2927,13 @@ index 0000000000000000000000000000000000000000..e2f5ebff3b41eb93d1757d299ccdd8db
 +        return this.propertyHolder.hasProperty(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT);
 +    }
 +
-+    private void set(TropicalFishVariantNbt.TropicalFishVariantImpl variant) {
++    private void set(TropicalFishVariant variant) {
 +        this.propertyHolder.set(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT, variant);
 +    }
 +
 +    @Override
 +    public @NotNull MetaTropicalFishBucket clone() {
-+        return new MetaTropicalFishBucket(this.propertyHolder.clone(), this.material);
++        return new MetaTropicalFishBucket(this.propertyHolder.clone());
 +    }
 +
 +    @Override
@@ -2731,7 +2948,6 @@ index 0000000000000000000000000000000000000000..e2f5ebff3b41eb93d1757d299ccdd8db
 +            return false;
 +        }
 +        if (meta instanceof MetaTropicalFishBucket that) {
-+
 +            return (this.hasVariant() ? that.hasVariant() && this.propertyHolder.get(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT).equals(that.propertyHolder.get(ItemProperties.TROPICAL_FISH_BUCKET_VARIANT)) : !that.hasVariant())
 +                && (this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null ? that.propertyHolder.get(ItemProperties.ENTITY_TAG) != null && this.propertyHolder.get(ItemProperties.ENTITY_TAG).equals(that.propertyHolder.get(ItemProperties.ENTITY_TAG)) : that.propertyHolder.get(ItemProperties.ENTITY_TAG) == null);
 +        }
@@ -2752,3 +2968,21 @@ index 0000000000000000000000000000000000000000..e2f5ebff3b41eb93d1757d299ccdd8db
 +        return !(this.hasVariant() || this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null);
 +    }
 +}
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
+index 6f4cf8a326f8b5e1cedcf4a55fdbf3dfe009a45a..e92ab80ef66944b46ff6a51ae930eaba69a9a85b 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
+@@ -102,11 +102,11 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
+ //    }
+ 
+     @Test
+-    public void testMapStoring() {
++    public void testMapStoring() throws Throwable { // Paper
+         ItemMeta itemMeta = this.createComplexItemMeta(); // Paper
+ 
+         Map<String, Object> serialize = itemMeta.serialize();
+-        assertEquals(itemMeta, new CraftMetaItem(serialize));
++        assertEquals(itemMeta, CraftMetaItem.SerializableMeta.deserialize(serialize)); // Paper
+     }
+ 
+     @Test
