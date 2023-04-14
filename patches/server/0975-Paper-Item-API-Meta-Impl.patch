@@ -533,7 +533,7 @@ index 0000000000000000000000000000000000000000..fc92ac9fc46b84746309c2678c167687
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaBook.java b/src/main/java/io/papermc/paper/item/meta/MetaBook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dce63f80dbe07ff6d0b6b17da310b022a8484c44
+index 0000000000000000000000000000000000000000..a05c9ee08faf1d033da2da77084179e362d68840
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaBook.java
 @@ -0,0 +1,434 @@
@@ -661,7 +661,7 @@ index 0000000000000000000000000000000000000000..dce63f80dbe07ff6d0b6b17da310b022
 +    @Override
 +    public net.kyori.adventure.text.Component page(final int page) {
 +        Validate.isTrue(this.isValidPage(page), "Invalid page number " + page + "/" + this.getPageCount());
-+        return this.getPageList().get(page);
++        return this.getPageList().get(page - 1);
 +    }
 +
 +    @Override
@@ -866,7 +866,7 @@ index 0000000000000000000000000000000000000000..dce63f80dbe07ff6d0b6b17da310b022
 +
 +                @Override
 +                public BaseComponent[] get(int index) {
-+                    return ComponentSerializer.parse(MetaBook.SpigotMeta.this.pageToJSON(pagesInternal.get(index)));
++                    return ComponentSerializer.parse(MetaBook.SpigotMeta.this.pageToJSON(pagesInternal.get(index - 1)));
 +                }
 +
 +                @Override
@@ -1407,18 +1407,112 @@ index 0000000000000000000000000000000000000000..97f8decaf7ac5c1e5d6e3ae362448bc2
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java b/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java
-index 87c37b30467a0f7d93a55e5735b1d19491822ad6..e7956ecc8caef213560cc343bd72bec5d03bd455 100644
---- a/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e7956ecc8caef213560cc343bd72bec5d03bd455
+--- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaCrossbow.java
-@@ -25,7 +25,7 @@ public class MetaCrossbow extends PaperMeta implements CrossbowMeta {
- 
-     @Override
-     public boolean hasChargedProjectiles() {
--        return !this.propertyHolder.getOrDefault(ItemProperties.CHARGED_PROJECTILES, List.of()).isEmpty();rvo
+@@ -0,0 +1,101 @@
++package io.papermc.paper.item.meta;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import net.minecraft.world.item.ArrowItem;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.inventory.CraftMetaItem;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.CrossbowMeta;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collections;
++import java.util.List;
++
++@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
++public class MetaCrossbow extends PaperMeta implements CrossbowMeta {
++
++    public MetaCrossbow(MutablePropertyView mutable) {
++        super(mutable);
++    }
++
++    @Override
++    public boolean hasChargedProjectiles() {
 +        return !this.propertyHolder.getOrDefault(ItemProperties.CHARGED_PROJECTILES, List.of()).isEmpty();
-     }
- 
-     @Override
++    }
++
++    @Override
++    public @NotNull List<ItemStack> getChargedProjectiles() {
++        return Collections.unmodifiableList(this.propertyHolder.getOrDefault(ItemProperties.CHARGED_PROJECTILES, List.of()));
++    }
++
++    @Override
++    public void setChargedProjectiles(@Nullable List<ItemStack> projectiles) {
++        this.propertyHolder.unset(ItemProperties.CHARGED_PROJECTILES);
++        this.propertyHolder.set(ItemProperties.CHARGED, false);
++
++        if (projectiles == null) {
++            return;
++        }
++
++        for (ItemStack itemStack : projectiles) {
++            this.addChargedProjectile(itemStack);
++        }
++    }
++
++    @Override
++    public void addChargedProjectile(@NotNull ItemStack item) {
++        Preconditions.checkArgument(item != null, "item");
++        Preconditions.checkArgument(item.getType() == Material.FIREWORK_ROCKET || CraftMagicNumbers.getItem(item.getType()) instanceof ArrowItem, "Item %s is not an arrow or firework rocket", item);
++
++        this.propertyHolder.set(ItemProperties.CHARGED, true);
++        this.propertyHolder.getOrCreate(ItemProperties.CHARGED_PROJECTILES).add(item);
++    }
++
++    @Override
++    public @NotNull MetaCrossbow clone() {
++        return new MetaCrossbow(this.propertyHolder.clone());
++    }
++
++    @Override
++    public void migrateFrom(MutablePropertyView mutable) {
++        this.propertyHolder.unset(ItemProperties.CHARGED);
++        this.propertyHolder.unset(ItemProperties.CHARGED_PROJECTILES);
++    }
++
++    // Equality
++    @Override
++    public boolean isEmpty() {
++        return super.isEmpty() && this.isCrossbowEmpty();
++    }
++
++    boolean isCrossbowEmpty() {
++        return !(this.hasChargedProjectiles());
++    }
++
++    @Override
++    public boolean equalsCommon(PaperMeta meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof MetaCrossbow that) {
++            return this.hasChargedProjectiles() == that.hasChargedProjectiles()
++                && (this.charged() ? that.charged() && this.getChargedProjectiles().equals(that.getChargedProjectiles()) : !that.hasChargedProjectiles());
++        }
++        return true;
++    }
++
++    @Override
++    public boolean notUncommon(PaperMeta meta) {
++        return super.notUncommon(meta) && (meta instanceof MetaCrossbow || this.isCrossbowEmpty());
++    }
++
++    public boolean charged() {
++        return this.propertyHolder.getOrDefault(ItemProperties.CHARGED, false);
++    }
++
++}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaEnchantmentStorage.java b/src/main/java/io/papermc/paper/item/meta/MetaEnchantmentStorage.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0dbf13a4bd10f3df234dbe6ca95cab984184117b
@@ -2121,23 +2215,21 @@ index 0000000000000000000000000000000000000000..4e5ba70ef7e32f0a066a0ee4c879e18d
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java b/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f02f08d66bfdfbecc5067a4c8c39594d60f7910e
+index 0000000000000000000000000000000000000000..9a51a8fb6fe36fd9508a12774977c275e5fc2a3a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaPlayerHead.java
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,191 @@
 +package io.papermc.paper.item.meta;
 +
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
 +import com.destroystokyo.paper.profile.PlayerProfile;
-+import com.mojang.authlib.GameProfile;
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
 +import io.papermc.paper.property.MutablePropertyView;
 +import org.bukkit.Bukkit;
-+import org.bukkit.Material;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.OfflinePlayer;
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
-+import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 +import org.bukkit.entity.Player;
 +import org.bukkit.inventory.meta.SkullMeta;
 +import org.jetbrains.annotations.NotNull;
@@ -2249,14 +2341,7 @@ index 0000000000000000000000000000000000000000..f02f08d66bfdfbecc5067a4c8c39594d
 +    @Override
 +    @Deprecated // Paper
 +    public void setOwnerProfile(org.bukkit.profile.PlayerProfile profile) {
-+        if (profile == null) {
-+            this.setProfile(null);
-+        } else {
-+            GameProfile gameProfile = (((com.destroystokyo.paper.profile.SharedPlayerProfile) profile).buildGameProfile());
-+            CraftPlayerProfile.validateSkullProfile(gameProfile);
-+
-+            this.setProfile(profile); // Paper
-+        }
++        this.setProfile(profile);
 +    }
 +
 +    @Override
@@ -2280,8 +2365,15 @@ index 0000000000000000000000000000000000000000..f02f08d66bfdfbecc5067a4c8c39594d
 +            return;
 +        }
 +
++        PlayerProfile paperProfile;
++        if (gameProfile instanceof PlayerProfile paper) {
++            paperProfile = paper;
++        } else {
++            paperProfile = new CraftPlayerProfile(((org.bukkit.craftbukkit.profile.CraftPlayerProfile) gameProfile).buildGameProfile());
++        }
++
 +        // Convert bukkit -> paper
-+        this.propertyHolder.set(ItemProperties.SKULL_OWNER, new com.destroystokyo.paper.profile.CraftPlayerProfile(((CraftPlayerProfile) gameProfile).buildGameProfile()));
++        this.propertyHolder.set(ItemProperties.SKULL_OWNER, paperProfile);
 +    }
 +
 +    @Override
@@ -2968,21 +3060,3 @@ index 0000000000000000000000000000000000000000..a7cff5c085ebed031e5a9c5314ffd56e
 +        return !(this.hasVariant() || this.propertyHolder.get(ItemProperties.ENTITY_TAG) != null);
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
-index 6f4cf8a326f8b5e1cedcf4a55fdbf3dfe009a45a..e92ab80ef66944b46ff6a51ae930eaba69a9a85b 100644
---- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
-+++ b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
-@@ -102,11 +102,11 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
- //    }
- 
-     @Test
--    public void testMapStoring() {
-+    public void testMapStoring() throws Throwable { // Paper
-         ItemMeta itemMeta = this.createComplexItemMeta(); // Paper
- 
-         Map<String, Object> serialize = itemMeta.serialize();
--        assertEquals(itemMeta, new CraftMetaItem(serialize));
-+        assertEquals(itemMeta, CraftMetaItem.SerializableMeta.deserialize(serialize)); // Paper
-     }
- 
-     @Test
