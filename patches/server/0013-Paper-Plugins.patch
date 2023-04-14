@@ -4387,12 +4387,13 @@ index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..15e392438816436be0d3b4289d20b9a122f7f20a
+index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a387754a91
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,232 @@
 +package io.papermc.paper.plugin.provider.configuration;
 +
++import com.google.common.base.Preconditions;
 +import com.google.common.collect.ImmutableList;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
@@ -4411,6 +4412,7 @@ index 0000000000000000000000000000000000000000..15e392438816436be0d3b4289d20b9a1
 +import org.bukkit.plugin.PluginLoadOrder;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.TestOnly;
 +import org.spongepowered.configurate.CommentedConfigurationNode;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.loader.HeaderMode;
@@ -4506,6 +4508,12 @@ index 0000000000000000000000000000000000000000..15e392438816436be0d3b4289d20b9a1
 +        return this.name;
 +    }
 +
++    @TestOnly
++    public void setName(@NotNull String name) {
++        Preconditions.checkNotNull(name, "name");
++        this.name = name;
++    }
++
 +    @Override
 +    public @NotNull String getMainClass() {
 +        return this.main;
@@ -4514,6 +4522,12 @@ index 0000000000000000000000000000000000000000..15e392438816436be0d3b4289d20b9a1
 +    @Override
 +    public @NotNull String getVersion() {
 +        return this.version;
++    }
++
++    @TestOnly
++    public void setVersion(@NotNull String version) {
++        Preconditions.checkNotNull(version, "version");
++        this.version = version;
 +    }
 +
 +    @Override
@@ -7041,6 +7055,40 @@ index 0000000000000000000000000000000000000000..726eba26470e62b0e94a91418512e242
 +    public void tearDown() {
 +        pm.clearPlugins();
 +        assertThat(pm.getPermissions(), is(empty()));
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/plugin/PluginNamingTest.java b/src/test/java/io/papermc/paper/plugin/PluginNamingTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e281caf168677e890e7dafb465a29265edffe18b
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/plugin/PluginNamingTest.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.plugin;
++
++import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
++import org.junit.Assert;
++import org.junit.Test;
++
++public class PluginNamingTest {
++    private static final String TEST_NAME = "Test_Plugin";
++    private static final String TEST_VERSION = "1.0";
++
++    private final PaperPluginMeta pluginMeta;
++
++    public PluginNamingTest() {
++        this.pluginMeta = new PaperPluginMeta();
++        this.pluginMeta.setName(TEST_NAME);
++        this.pluginMeta.setVersion("1.0");
++    }
++
++    @Test
++    public void testName() {
++        Assert.assertEquals(TEST_NAME, this.pluginMeta.getName());
++    }
++
++    @Test
++    public void testDisplayName() {
++        Assert.assertEquals(TEST_NAME + " v" + TEST_VERSION, this.pluginMeta.getDisplayName());
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/SyntheticEventTest.java b/src/test/java/io/papermc/paper/plugin/SyntheticEventTest.java
