@@ -482,10 +482,10 @@ index 0000000000000000000000000000000000000000..f120e9c21be2f623561573ee77d7dd19
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2926446f10d9b71434c93c61a1954404029afae2
+index 0000000000000000000000000000000000000000..39821cff8e2544a59c81be2db07e07122a56c225
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
-@@ -0,0 +1,700 @@
+@@ -0,0 +1,720 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -500,13 +500,14 @@ index 0000000000000000000000000000000000000000..2926446f10d9b71434c93c61a1954404
 +import io.papermc.paper.property.PropertyKey;
 +import io.papermc.paper.property.nbt.AdapterContext;
 +import io.papermc.paper.property.nbt.NbtPropertyHolder;
-+import io.papermc.paper.property.nbt.pdc.LivePersistentDataContainer;
++import io.papermc.paper.property.nbt.pdc.MetaDataContainer;
 +import io.papermc.paper.property.types.AttributePairImpl;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.md_5.bungee.api.chat.BaseComponent;
 +import net.md_5.bungee.chat.ComponentSerializer;
++import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.world.item.BlockItem;
 +import org.bukkit.Material;
 +import org.bukkit.NamespacedKey;
@@ -521,7 +522,6 @@ index 0000000000000000000000000000000000000000..2926446f10d9b71434c93c61a1954404
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.craftbukkit.inventory.tags.DeprecatedCustomTagContainer;
 +import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
-+import org.bukkit.craftbukkit.util.CraftChatMessage;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.enchantments.Enchantment;
 +import org.bukkit.inventory.EquipmentSlot;
@@ -1035,7 +1035,27 @@ index 0000000000000000000000000000000000000000..2926446f10d9b71434c93c61a1954404
 +
 +    @Override
 +    public @NotNull PersistentDataContainer getPersistentDataContainer() {
-+        return new LivePersistentDataContainer(((NbtPropertyHolder) this.propertyHolder.getOrCreate(PUBLIC_BUKKIT_VALUES)).getCompoundTag(), DATA_TYPE_REGISTRY);
++        return new MetaDataContainer(new MetaDataContainer.CompoundAccess() {
++            @Override
++            public @NotNull CompoundTag getOrRegisterNew() {
++                return ((NbtPropertyHolder) PaperMeta.this.propertyHolder.getOrCreate(PUBLIC_BUKKIT_VALUES)).getCompoundTag();
++            }
++
++            @Override
++            public @Nullable CompoundTag get() {
++                MutablePropertyView propertyView = PaperMeta.this.propertyHolder.get(PUBLIC_BUKKIT_VALUES);
++                if (propertyView == null) {
++                    return null;
++                }
++
++                return ((NbtPropertyHolder) propertyView).getCompoundTag();
++            }
++
++            @Override
++            public void purge() {
++                PaperMeta.this.propertyHolder.unset(PUBLIC_BUKKIT_VALUES);
++            }
++        }, DATA_TYPE_REGISTRY);
 +    }
 +
 +    @Override
@@ -1570,12 +1590,12 @@ index 0000000000000000000000000000000000000000..15ebf2de47c4d5d7b831047258eec630
 +            '}';
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/property/nbt/pdc/LivePersistentDataContainer.java b/src/main/java/io/papermc/paper/property/nbt/pdc/LivePersistentDataContainer.java
+diff --git a/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java b/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d33106fe3b
+index 0000000000000000000000000000000000000000..95edfc12fa460d25a4e292f76384d190264f64dd
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/property/nbt/pdc/LivePersistentDataContainer.java
-@@ -0,0 +1,170 @@
++++ b/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java
+@@ -0,0 +1,219 @@
 +package io.papermc.paper.property.nbt.pdc;
 +
 +import net.minecraft.nbt.CompoundTag;
@@ -1587,23 +1607,44 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +import org.bukkit.persistence.PersistentDataAdapterContext;
 +import org.bukkit.persistence.PersistentDataContainer;
 +import org.bukkit.persistence.PersistentDataType;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +import java.util.HashSet;
 +import java.util.Objects;
 +import java.util.Set;
++import java.util.function.Consumer;
++import java.util.function.Function;
 +
-+public class LivePersistentDataContainer implements PersistentDataContainer {
++public class MetaDataContainer implements PersistentDataContainer {
 +
-+    private final CompoundTag compoundTag;
++    private final CompoundAccess access;
 +    private final CraftPersistentDataTypeRegistry registry;
 +    private final CraftPersistentDataAdapterContext adapterContext;
 +
-+    public LivePersistentDataContainer(CompoundTag compoundTag, CraftPersistentDataTypeRegistry registry) {
-+        this.compoundTag = compoundTag;
++    public MetaDataContainer(CompoundAccess access, CraftPersistentDataTypeRegistry registry) {
++        this.access = access;
 +        this.registry = registry;
 +        this.adapterContext = new CraftPersistentDataAdapterContext(this.registry);
 +    }
 +
++    public void mutate(Consumer<CompoundTag> consumer) {
++        CompoundTag compoundTag = this.access.getOrRegisterNew();
++        consumer.accept(compoundTag);
++        // Don't write if empty
++        if (compoundTag.isEmpty()) {
++            this.access.purge();
++        }
++    }
++
++    public <T> T getOrReturnIfNull(Function<CompoundTag, T> consumer, T obj) {
++        CompoundTag compoundTag = this.access.get();
++        if (compoundTag == null) {
++            return obj;
++        }
++
++        return consumer.apply(compoundTag);
++    }
 +
 +    @Override
 +    public <T, Z> void set(NamespacedKey key, PersistentDataType<T, Z> type, Z value) {
@@ -1611,7 +1652,9 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +        Validate.notNull(type, "The provided type for the custom value was null");
 +        Validate.notNull(value, "The provided value for the custom value was null");
 +
-+        this.compoundTag.put(key.toString(), this.registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext)));
++        this.mutate((tag) -> {
++            tag.put(key.toString(), this.registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext)));
++        });
 +    }
 +
 +    @Override
@@ -1619,7 +1662,7 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +        Validate.notNull(key, "The provided key for the custom value was null");
 +        Validate.notNull(type, "The provided type for the custom value was null");
 +
-+        Tag value = this.compoundTag.get(key.toString());
++        Tag value = this.getOrReturnIfNull((tag) -> tag.get(key.toString()), null);
 +        if (value == null) {
 +            return false;
 +        }
@@ -1632,7 +1675,7 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +        Validate.notNull(key, "The provided key for the custom value was null");
 +        Validate.notNull(type, "The provided type for the custom value was null");
 +
-+        Tag value = this.compoundTag.get(key.toString());
++        Tag value = this.getOrReturnIfNull((tag) -> tag.get(key.toString()), null);
 +        if (value == null) {
 +            return null;
 +        }
@@ -1650,7 +1693,12 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +    public Set<NamespacedKey> getKeys() {
 +        Set<NamespacedKey> keys = new HashSet<>();
 +
-+        this.compoundTag.getAllKeys().forEach(key -> {
++        CompoundTag compoundTag = this.access.get();
++        if (compoundTag == null) {
++            return keys;
++        }
++
++        compoundTag.getAllKeys().forEach(key -> {
 +            String[] keyData = key.split(":", 2);
 +            if (keyData.length == 2) {
 +                keys.add(new NamespacedKey(keyData[0], keyData[1]));
@@ -1664,12 +1712,14 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +    public void remove(NamespacedKey key) {
 +        Validate.notNull(key, "The provided key for the custom value was null");
 +
-+        this.compoundTag.remove(key.toString());
++        this.mutate((tag) -> {
++            tag.remove(key.toString());
++        });
 +    }
 +
 +    @Override
 +    public boolean isEmpty() {
-+        return this.compoundTag.isEmpty();
++        return this.getOrReturnIfNull(CompoundTag::isEmpty, true);
 +    }
 +
 +    @Override
@@ -1681,21 +1731,17 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +    public boolean equals(Object o) {
 +        if (this == o) return true;
 +        if (o == null || getClass() != o.getClass()) return false;
-+        LivePersistentDataContainer that = (LivePersistentDataContainer) o;
-+        return Objects.equals(compoundTag, that.compoundTag);
++        MetaDataContainer that = (MetaDataContainer) o;
++        return Objects.equals(this.access.get(), that.access.get());
 +    }
 +
 +    public CompoundTag toTagCompound() {
-+        return compoundTag;
-+    }
-+
-+    public void put(String key, Tag base) {
-+        this.compoundTag.put(key, base);
++        return this.access.getOrCreateEmpty();
 +    }
 +
 +    public void putAll(CompoundTag compound) {
 +        for (String key : compound.getAllKeys()) {
-+            this.compoundTag.put(key, compound.get(key));
++            this.access.getOrRegisterNew().put(key, compound.get(key));
 +        }
 +    }
 +
@@ -1707,21 +1753,23 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +    @Override
 +    public int hashCode() {
 +        int hashCode = 3;
-+        hashCode += this.compoundTag.hashCode(); // We will simply add the maps hashcode
++        hashCode += this.access.getOrCreateEmpty().hashCode(); // We will simply add the maps hashcode
 +        return hashCode;
 +    }
 +
 +
 +    // Paper start
 +    public void clear() {
-+        this.compoundTag.tags.clear();
++        this.mutate((tag) -> {
++            tag.tags.clear();
++        });
 +    }
 +
 +    @Override
 +    public boolean has(NamespacedKey key) {
 +        Validate.notNull(key, "The provided key for the custom value was null");
 +
-+        return this.compoundTag.contains(key.toString());
++        return this.getOrReturnIfNull((tag) -> tag.contains(key.toString()), false);
 +    }
 +
 +    @Override
@@ -1745,6 +1793,27 @@ index 0000000000000000000000000000000000000000..cb596c72d3e141077597b5f35b26a7d3
 +        }
 +    }
 +    // Paper end
++
++    public interface CompoundAccess {
++
++        @NotNull
++        CompoundTag getOrRegisterNew();
++
++        @Nullable
++        CompoundTag get();
++
++        void purge();
++
++        @NotNull
++        default CompoundTag getOrCreateEmpty() {
++            CompoundTag live = this.get();
++            if (live != null) {
++                return live;
++            }
++
++            return new CompoundTag();
++        }
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java
 new file mode 100644
