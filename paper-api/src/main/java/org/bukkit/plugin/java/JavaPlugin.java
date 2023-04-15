@@ -30,7 +30,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents a Java plugin
+ * Represents a Java plugin and its main class. It contains fundamental methods
+ * and fields for a plugin to be loaded and work properly. This is an indirect
+ * implementation of {@link org.bukkit.plugin.Plugin}.
  */
 public abstract class JavaPlugin extends PluginBase {
     private boolean isEnabled = false;

@@ -2,6 +2,9 @@ package org.bukkit;
 
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Represents a block, entity, or other object that may receive a custom name.
+ */
 public interface Nameable {
 
     /**
