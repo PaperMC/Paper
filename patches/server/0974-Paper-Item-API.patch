@@ -482,10 +482,10 @@ index 0000000000000000000000000000000000000000..f120e9c21be2f623561573ee77d7dd19
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..43c65149beceda1c35b3ab016b951970c757a6a8
+index 0000000000000000000000000000000000000000..2926446f10d9b71434c93c61a1954404029afae2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
-@@ -0,0 +1,696 @@
+@@ -0,0 +1,700 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -593,11 +593,15 @@ index 0000000000000000000000000000000000000000..43c65149beceda1c35b3ab016b951970
 +        return defaultValue;
 +    }
 +
-+    protected <T> void unsetInPropertyPath(PropertyKey<MutablePropertyView> outer, PropertyKey<T> inner) {
-+        MutablePropertyView holder = this.propertyHolder.get(outer);
++    protected <T> void unsetInPropertyPath(MutablePropertyView view, PropertyKey<MutablePropertyView> outer, PropertyKey<T> inner) {
++        MutablePropertyView holder = view.get(outer);
 +        if (holder != null) {
 +            holder.unset(inner);
 +        }
++    }
++
++    protected <T> void unsetInPropertyPath(PropertyKey<MutablePropertyView> outer, PropertyKey<T> inner) {
++        unsetInPropertyPath(this.propertyHolder, outer, inner);
 +    }
 +
 +    protected <T> void setFromPropertyPath(PropertyKey<MutablePropertyView> outer, PropertyKey<T> inner, T value) {
@@ -3120,26 +3124,10 @@ index 9215297d5f7856ef3f03ebcbf866c5b59048ba30..850c7d42e18e440617c726bb11160fb1
          @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..bbb1b3a68e887df78843d6f796e3e37db4e934f1 100644
+index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..367c9edd426f108354a4cddd5b0c698641e742e8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.inventory;
- import com.mojang.brigadier.StringReader;
- import com.mojang.brigadier.exceptions.CommandSyntaxException;
- import net.minecraft.commands.arguments.item.ItemParser;
--import net.minecraft.core.HolderLookup;
- import net.minecraft.core.registries.BuiltInRegistries;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.world.item.Item;
-@@ -12,6 +11,7 @@ import org.bukkit.Color;
- import org.bukkit.Material;
- import org.bukkit.configuration.serialization.ConfigurationSerialization;
- import org.bukkit.craftbukkit.util.CraftLegacy;
-+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
- import org.bukkit.inventory.ItemFactory;
- import org.bukkit.inventory.ItemStack;
- import org.bukkit.inventory.meta.ItemMeta;
-@@ -42,11 +42,11 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -42,11 +42,18 @@ public final class CraftItemFactory implements ItemFactory {
          if (type == null || meta == null) {
              return false;
          }
@@ -3149,16 +3137,23 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..bbb1b3a68e887df78843d6f796e3e37d
          }
  
 -        return ((CraftMetaItem) meta).applicableTo(type);
-+        return meta.getClass().isAssignableFrom(CraftItemStack.getItemMeta(paperMeta.getPropertyHolder(), type).getClass()); // Paper
++        // Paper start
++        ItemMeta metaCheck = CraftItemStack.getItemMeta(paperMeta.getPropertyHolder(), type);
++        if (metaCheck == null) {
++            return false;
++        }
++
++        return meta.getClass().isAssignableFrom(metaCheck.getClass());
++        // Paper end
      }
  
      @Override
-@@ -57,6 +57,16 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -57,6 +64,16 @@ public final class CraftItemFactory implements ItemFactory {
  
      private ItemMeta getItemMeta(Material material, CraftMetaItem meta) {
          material = CraftLegacy.fromLegacy(material); // This may be called from legacy item stacks, try to get the right material
 +        // Paper start
-+        net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(material));
++        net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getItem(material));
 +        if (meta != null) {
 +            meta.applyToItem(itemStack.getOrCreateTag());
 +        }
@@ -3170,7 +3165,7 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..bbb1b3a68e887df78843d6f796e3e37d
          switch (material) {
          case AIR:
              return null;
-@@ -364,23 +374,22 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -364,23 +381,22 @@ public final class CraftItemFactory implements ItemFactory {
          if (meta1 == meta2) {
              return true;
          }
@@ -3200,7 +3195,7 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..bbb1b3a68e887df78843d6f796e3e37d
          /*
           * This couldn't be done inside of the objects themselves, else force recursion.
           * This is a fairly clean way of implementing it, by dividing the methods into purposes and letting each method perform its own function.
-@@ -406,10 +415,19 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -406,10 +422,19 @@ public final class CraftItemFactory implements ItemFactory {
      @Override
      public ItemMeta asMetaFor(ItemMeta meta, Material material) {
          Validate.notNull(material, "Material cannot be null");
@@ -3217,12 +3212,12 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..bbb1b3a68e887df78843d6f796e3e37d
 +        if (returned != null && meta.getClass() != returned.getClass()) {
 +            paperMeta.migrateFrom(holder);
 +        }
-+        return paperMeta;
++        return returned;
 +        // Paper end
      }
  
      @Override
-@@ -438,7 +456,7 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -438,7 +463,7 @@ public final class CraftItemFactory implements ItemFactory {
  
      @Override
      public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {
@@ -3273,19 +3268,10 @@ index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..bce096c38c721fcda6fe5c717b367aa9
  
      static boolean hasItemMeta(net.minecraft.world.item.ItemStack item) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..f6367bed6670f2f6b4a2c64b6f34877bc3aa495d 100644
+index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..0a6df8fa365715b7c67e0b38728eeeed996c3a99 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -40,6 +40,8 @@ import java.util.logging.Level;
- import java.util.logging.Logger;
- import javax.annotation.Nonnull;
- import javax.annotation.Nullable;
-+
-+import io.papermc.paper.item.PaperMetaSerialization;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.ListTag;
- import net.minecraft.nbt.NbtIo;
-@@ -112,7 +114,7 @@ import java.util.Collections;
+@@ -112,7 +112,7 @@ import java.util.Collections;
   * <li> SerializableMeta.Deserializers deserializer()
   */
  @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
@@ -3294,7 +3280,7 @@ index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..f6367bed6670f2f6b4a2c64b6f34877b
  
      static class ItemMetaKey {
  
-@@ -195,7 +197,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -195,7 +195,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
              String type = SerializableMeta.getString(map, SerializableMeta.TYPE_FIELD, false);
              Constructor<? extends CraftMetaItem> constructor = SerializableMeta.constructorMap.get(type);
@@ -3303,7 +3289,7 @@ index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..f6367bed6670f2f6b4a2c64b6f34877b
              if (constructor == null) {
                  throw new IllegalArgumentException(type + " is not a valid " + SerializableMeta.TYPE_FIELD);
              }
-@@ -686,6 +688,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -686,6 +686,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
          return result;
      }
@@ -3315,11 +3301,11 @@ index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..f6367bed6670f2f6b4a2c64b6f34877b
  
      @Overridden
      void applyToItem(CompoundTag itemTag) {
-@@ -1409,6 +1416,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1409,6 +1414,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public final Map<String, Object> serialize() {
-+        if (true) return PaperMetaSerialization.serialize(this); // Paper
++        if (true) return io.papermc.paper.item.PaperMetaSerialization.serialize(this); // Paper
          ImmutableMap.Builder<String, Object> map = ImmutableMap.builder();
          map.put(SerializableMeta.TYPE_FIELD, SerializableMeta.classMap.get(getClass()));
          this.serialize(map);
@@ -3371,10 +3357,10 @@ index 2e7f8ef88ae74c7cbfdb7f397951cbc8479a995f..7cb9014eb7049c900c56b0f77a4b9fc5
  public class CraftMetaTropicalFishBucketTest extends AbstractTestingBase {
 diff --git a/src/test/java/io/papermc/paper/item/MetaComparisonTest.java b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..208ec69ed83c8250794974983f8a65b42c402d53
+index 0000000000000000000000000000000000000000..da1bc33a4bb4b198a66947208642d3373e0128e6
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
-@@ -0,0 +1,225 @@
+@@ -0,0 +1,267 @@
 +package io.papermc.paper.item;
 +
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
@@ -3385,8 +3371,10 @@ index 0000000000000000000000000000000000000000..208ec69ed83c8250794974983f8a65b4
 +import org.bukkit.Bukkit;
 +import org.bukkit.ChatColor;
 +import org.bukkit.Material;
++import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.enchantments.Enchantment;
++import org.bukkit.inventory.ItemFactory;
 +import org.bukkit.inventory.ItemStack;
 +import org.bukkit.inventory.meta.BookMeta;
 +import org.bukkit.inventory.meta.ItemMeta;
@@ -3402,6 +3390,46 @@ index 0000000000000000000000000000000000000000..208ec69ed83c8250794974983f8a65b4
 +import java.util.UUID;
 +
 +public class MetaComparisonTest extends AbstractTestingBase {
++
++    private static final ItemFactory FACTORY = CraftItemFactory.instance();
++
++    @Test
++    public void testMetaApplication() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++
++        ItemMeta meta = itemStack.getItemMeta();
++        meta.setCustomModelData(1);
++
++        ItemMeta converted = FACTORY.asMetaFor(meta, Material.GOLD_INGOT);
++        Assert.assertEquals(converted.getCustomModelData(), meta.getCustomModelData());
++
++        ItemMeta convertedAdvanced = FACTORY.asMetaFor(meta, Material.PLAYER_HEAD);
++        Assert.assertEquals(convertedAdvanced.getCustomModelData(), meta.getCustomModelData());
++    }
++
++    @Test
++    public void testMetaApplicationDowngrading() {
++        ItemStack itemStack = new ItemStack(Material.PLAYER_HEAD);
++        PlayerProfile profile = Bukkit.createProfile("Owen1212055");
++
++        SkullMeta meta = (SkullMeta) itemStack.getItemMeta();
++        meta.setPlayerProfile(profile);
++
++        SkullMeta converted = (SkullMeta) FACTORY.asMetaFor(meta, Material.PLAYER_HEAD);
++        Assert.assertEquals(converted.getPlayerProfile(), meta.getPlayerProfile());
++
++        SkullMeta downgraded = (SkullMeta) FACTORY.asMetaFor(FACTORY.asMetaFor(meta, Material.STONE), Material.PLAYER_HEAD);
++        Assert.assertNull(downgraded.getPlayerProfile());
++    }
++
++
++    @Test
++    public void testNullMeta() {
++        ItemStack itemStack = new ItemStack(Material.AIR);
++
++        Assert.assertFalse(itemStack.hasItemMeta());
++        Assert.assertNull(itemStack.getItemMeta());
++    }
 +
 +    @Test
 +    public void testPotionMeta() {
