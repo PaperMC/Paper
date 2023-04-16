@@ -56,4 +56,5 @@ Kieran Wallbanks <kieran.wallbanks@gmail.com>
 Denery <dorofeevij@gmail.com>
 Jakubk15 <jakubk15@protonmail.com>
 Redned <redned235@gmail.com>
+Luke Chambers <consolelogluke@gmail.com>
 ```
