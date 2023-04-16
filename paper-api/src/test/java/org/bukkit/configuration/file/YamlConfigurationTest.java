@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.MemoryConfiguration;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 public class YamlConfigurationTest extends FileConfigurationTest {
@@ -168,6 +169,29 @@ public class YamlConfigurationTest extends FileConfigurationTest {
 
         String result = config.saveToString();
         assertEquals(data, result);
+    }
+
+    // SPIGOT-6885
+    @Test
+    public void testReference() throws InvalidConfigurationException {
+        String okYAML = "dummy: test\n"
+                + "conf:\n"
+                + "  - test #comment ok\n";
+        assertNotNull(toConfig(okYAML, false));
+        assertNotNull(toConfig(okYAML, true));
+
+        String badYAML = "dummy: &a test\n"
+                + "conf:\n"
+                + "  - *a #comment not ok here\n";
+        assertNotNull(toConfig(badYAML, false));
+        assertNotNull(toConfig(badYAML, true));
+    }
+
+    private YamlConfiguration toConfig(@NotNull String contents, boolean parseComments) throws InvalidConfigurationException {
+        YamlConfiguration config = new YamlConfiguration();
+        config.options().parseComments(parseComments);
+        config.loadFromString(contents);
+        return config;
     }
 
     @Test

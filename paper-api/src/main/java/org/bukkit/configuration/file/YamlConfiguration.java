@@ -100,11 +100,14 @@ public class YamlConfiguration extends FileConfiguration {
 
         MappingNode node;
         try (Reader reader = new UnicodeReader(new ByteArrayInputStream(contents.getBytes(StandardCharsets.UTF_8)))) {
-            node = (MappingNode) yaml.compose(reader);
-        } catch (YAMLException | IOException e) {
+            Node rawNode = yaml.compose(reader);
+            try {
+                node = (MappingNode) rawNode;
+            } catch (ClassCastException e) {
+                throw new InvalidConfigurationException("Top level is not a Map.");
+            }
+        } catch (YAMLException | IOException | ClassCastException e) {
             throw new InvalidConfigurationException(e);
-        } catch (ClassCastException e) {
-            throw new InvalidConfigurationException("Top level is not a Map.");
         }
 
         this.map.clear();
