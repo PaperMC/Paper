@@ -13,20 +13,26 @@
  public class EntityFishingHook extends IProjectile {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -67,6 +73,12 @@
+@@ -67,6 +73,18 @@
      private final int luck;
      private final int lureSpeed;
  
 +    // CraftBukkit start - Extra variables to enable modification of fishing wait time, values are minecraft defaults
 +    public int minWaitTime = 100;
 +    public int maxWaitTime = 600;
++    public int minLureTime = 20;
++    public int maxLureTime = 80;
++    public float minLureAngle = 0.0F;
++    public float maxLureAngle = 360.0F;
 +    public boolean applyLure = true;
++    public boolean rainInfluenced = true;
++    public boolean skyInfluenced = true;
 +    // CraftBukkit end
 +
      private EntityFishingHook(EntityTypes<? extends EntityFishingHook> entitytypes, World world, int i, int j) {
          super(entitytypes, world);
          this.syncronizedRandom = RandomSource.create();
-@@ -261,7 +273,7 @@
+@@ -261,7 +279,7 @@
      private void checkCollision() {
          MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResult(this, this::canHitEntity);
  
@@ -35,7 +41,21 @@
      }
  
      @Override
-@@ -308,6 +320,10 @@
+@@ -294,11 +312,11 @@
+         int i = 1;
+         BlockPosition blockposition1 = blockposition.above();
+ 
+-        if (this.random.nextFloat() < 0.25F && this.level.isRainingAt(blockposition1)) {
++        if (this.rainInfluenced && this.random.nextFloat() < 0.25F && this.level.isRainingAt(blockposition1)) { // CraftBukkit
+             ++i;
+         }
+ 
+-        if (this.random.nextFloat() < 0.5F && !this.level.canSeeSky(blockposition1)) {
++        if (this.skyInfluenced && this.random.nextFloat() < 0.5F && !this.level.canSeeSky(blockposition1)) { // CraftBukkit
+             --i;
+         }
+ 
+@@ -308,6 +326,10 @@
                  this.timeUntilLured = 0;
                  this.timeUntilHooked = 0;
                  this.getEntityData().set(EntityFishingHook.DATA_BITING, false);
@@ -46,7 +66,7 @@
              }
          } else {
              float f;
-@@ -341,6 +357,13 @@
+@@ -341,6 +363,13 @@
                          worldserver.sendParticles(Particles.FISHING, d0, d1, d2, 0, (double) (-f4), 0.01D, (double) f3, 1.0D);
                      }
                  } else {
@@ -60,8 +80,16 @@
                      this.playSound(SoundEffects.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                      double d3 = this.getY() + 0.5D;
  
-@@ -377,8 +400,10 @@
-                     this.timeUntilHooked = MathHelper.nextInt(this.random, 20, 80);
+@@ -373,12 +402,16 @@
+                 }
+ 
+                 if (this.timeUntilLured <= 0) {
+-                    this.fishAngle = MathHelper.nextFloat(this.random, 0.0F, 360.0F);
+-                    this.timeUntilHooked = MathHelper.nextInt(this.random, 20, 80);
++                    // CraftBukkit start - logic to modify fishing wait time, lure time, and lure angle
++                    this.fishAngle = MathHelper.nextFloat(this.random, this.minLureAngle, this.maxLureAngle);
++                    this.timeUntilHooked = MathHelper.nextInt(this.random, this.minLureTime, this.maxLureTime);
++                    // CraftBukkit end
                  }
              } else {
 -                this.timeUntilLured = MathHelper.nextInt(this.random, 100, 600);
@@ -73,7 +101,7 @@
              }
          }
  
-@@ -445,6 +470,14 @@
+@@ -445,6 +478,14 @@
              int i = 0;
  
              if (this.hookedIn != null) {
@@ -88,7 +116,7 @@
                  this.pullEntity(this.hookedIn);
                  CriterionTriggers.FISHING_ROD_HOOKED.trigger((EntityPlayer) entityhuman, itemstack, this, Collections.emptyList());
                  this.level.broadcastEntityEvent(this, (byte) 31);
-@@ -460,6 +493,15 @@
+@@ -460,6 +501,15 @@
                  while (iterator.hasNext()) {
                      ItemStack itemstack1 = (ItemStack) iterator.next();
                      EntityItem entityitem = new EntityItem(this.level, this.getX(), this.getY(), this.getZ(), itemstack1);
@@ -104,7 +132,7 @@
                      double d0 = entityhuman.getX() - this.getX();
                      double d1 = entityhuman.getY() - this.getY();
                      double d2 = entityhuman.getZ() - this.getZ();
-@@ -467,7 +509,11 @@
+@@ -467,7 +517,11 @@
  
                      entityitem.setDeltaMovement(d0 * 0.1D, d1 * 0.1D + Math.sqrt(Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2)) * 0.08D, d2 * 0.1D);
                      this.level.addFreshEntity(entityitem);
@@ -117,7 +145,7 @@
                      if (itemstack1.is(TagsItem.FISHES)) {
                          entityhuman.awardStat(StatisticList.FISH_CAUGHT, 1);
                      }
-@@ -477,8 +523,25 @@
+@@ -477,8 +531,25 @@
              }
  
              if (this.onGround) {
