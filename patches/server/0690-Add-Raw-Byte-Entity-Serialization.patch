@@ -5,10 +5,29 @@ Subject: [PATCH] Add Raw Byte Entity Serialization
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index de50f1aa6b7cebf877e18bc3e2ae3ba707edcd4c..3a388ead677be73b0ae4425a05a45cd34e95d586 100644
+index cfe232364abd407d5ce117428f78fa98a9d305f2..ddf02a8cfb0c7fa9ae25e099933686b47b4d3e5d 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2018,6 +2018,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2003,12 +2003,17 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     }
+ 
+     public boolean saveAsPassenger(CompoundTag nbt) {
++        // Paper start - Entity serialization api
++        return saveAsPassenger(nbt, false);
++    }
++    public boolean saveAsPassenger(CompoundTag nbt, boolean force) {
++        // Paper end
+         if (this.removalReason != null && !this.removalReason.shouldSave()) {
+             return false;
+         } else {
+             String s = this.getEncodeId();
+ 
+-            if (!this.persist || s == null) { // CraftBukkit - persist flag
++            if ((!this.persist && !force) || s == null) { // CraftBukkit - persist flag // Paper - Entity serialization api
+                 return false;
+             } else {
+                 nbt.putString("id", s);
+@@ -2018,6 +2023,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          }
      }
  
@@ -16,7 +35,7 @@ index de50f1aa6b7cebf877e18bc3e2ae3ba707edcd4c..3a388ead677be73b0ae4425a05a45cd3
 +    public boolean serializeEntity(CompoundTag compound) {
 +        List<Entity> pass = new java.util.ArrayList<>(this.getPassengers());
 +        this.passengers = ImmutableList.of();
-+        boolean result = save(compound);
++        boolean result = this.isPassenger() ? false : this.saveAsPassenger(compound, true);
 +        this.passengers = ImmutableList.copyOf(pass);
 +        return result;
 +    }
