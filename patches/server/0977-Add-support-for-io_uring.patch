@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aviana Cruz <gwencroft@proton.me>
+Date: Sun, 16 Apr 2023 08:33:35 +0000
+Subject: [PATCH] Add support for io_uring
+
+This only works when not using unix domain socket
+and compression is disabled because
+the netty io_uring transport does not support
+unix domain socket and the client can not decode
+compressed packets sent with io_uring.
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index e60cf86ce31a75497f49f7aff438fb1dcd45c86e..535691c6bdc12e8b03bfbf65a09ddf893331b7f0 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -20,7 +20,7 @@ dependencies {
+      */
+     implementation("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - implementation
+     annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - Needed to generate meta for our Log4j plugins
+-    implementation("io.netty:netty-codec-haproxy:4.1.92.Final") // Paper - Add support for proxy protocol
++    implementation("io.netty:netty-codec-haproxy:4.1.87.Final") // Paper - Add support for proxy protocol
+     // Paper end
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
+     implementation("org.ow2.asm:asm:9.4")
+@@ -47,6 +47,10 @@ dependencies {
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
+ 
+     implementation("io.netty:netty-all:4.1.92.Final"); // Paper - Bump netty
++    // Paper start - Add support for io_uring
++    implementation("io.netty.incubator:netty-incubator-transport-native-io_uring:0.0.21.Final:linux-x86_64")
++    implementation("io.netty.incubator:netty-incubator-transport-native-io_uring:0.0.21.Final:linux-aarch_64")
++    // Paper end - Add support for io_uring
+ }
+ 
+ val craftbukkitPackageVersion = "1_19_R3" // Paper
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index 8d442c5a498ecf288a0cc0c54889c6e2fda849ce..ed6eaf014bb32a9ae0ca9ebecb6aeea6deb61929 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -286,5 +286,6 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public boolean lagCompensateBlockBreaking = true;
+         public boolean useDimensionTypeForCustomSpawners = false;
+         public boolean strictAdvancementDimensionCheck = false;
++        public boolean useIouring = false; // Paper - Add support for io_uring
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 44d99e89226adb6234b9405f25ac9dab9bd84297..a4ac491fbf26224e0c78a674e018114257474f57 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -53,6 +53,11 @@ public class ServerConnectionListener {
+     public static final LazyLoadedValue<NioEventLoopGroup> SERVER_EVENT_GROUP = new LazyLoadedValue<>(() -> {
+         return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
+     });
++    // Paper start - Add support for io_uring
++    public static final LazyLoadedValue<io.netty.incubator.channel.uring.IOUringEventLoopGroup> SERVER_IO_URING_EVENT_GROUP = new LazyLoadedValue<>(() ->
++        new io.netty.incubator.channel.uring.IOUringEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty io_uring Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build())
++    );
++    // Paper end - Add support for io_uring
+     public static final LazyLoadedValue<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = new LazyLoadedValue<>(() -> {
+         return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
+     });
+@@ -89,14 +94,26 @@ public class ServerConnectionListener {
+             Class oclass;
+             LazyLoadedValue lazyinitvar;
+ 
+-            if (Epoll.isAvailable() && this.server.isEpollEnabled()) {
+-                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
+-                    oclass = io.netty.channel.epoll.EpollServerDomainSocketChannel.class;
++            // Paper start - Add support for io_uring
++            if ((io.netty.incubator.channel.uring.IOUring.isAvailable() || Epoll.isAvailable()) && this.server.isEpollEnabled()) {
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.useIouring && io.netty.incubator.channel.uring.IOUring.isAvailable() && !(address instanceof io.netty.channel.unix.DomainSocketAddress) && this.server.getCompressionThreshold() == -1) {
++                    oclass = io.netty.incubator.channel.uring.IOUringServerSocketChannel.class;
++                    lazyinitvar = ServerConnectionListener.SERVER_IO_URING_EVENT_GROUP;
++                    ServerConnectionListener.LOGGER.info("Using io_uring channel type");
++                } else if (Epoll.isAvailable()) {
++                    if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
++                        oclass = io.netty.channel.epoll.EpollServerDomainSocketChannel.class;
++                    } else {
++                        oclass = EpollServerSocketChannel.class;
++                    }
++                    lazyinitvar = ServerConnectionListener.SERVER_EPOLL_EVENT_GROUP;
++                    ServerConnectionListener.LOGGER.info("Using epoll channel type");
+                 } else {
+-                oclass = EpollServerSocketChannel.class;
++                    oclass = NioServerSocketChannel.class;
++                    lazyinitvar = ServerConnectionListener.SERVER_EVENT_GROUP;
++                    ServerConnectionListener.LOGGER.info("Using default channel type");
+                 }
+-                lazyinitvar = ServerConnectionListener.SERVER_EPOLL_EVENT_GROUP;
+-                ServerConnectionListener.LOGGER.info("Using epoll channel type");
++                // Paper end - Add support for io_uring
+             } else {
+                 oclass = NioServerSocketChannel.class;
+                 lazyinitvar = ServerConnectionListener.SERVER_EVENT_GROUP;
