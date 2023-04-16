@@ -104,7 +104,7 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..f0c07965f129c17a3258964b7bf73f9f
      }
  
      void resetAndHideEntity(org.bukkit.entity.Entity entity) {
-@@ -1780,8 +1781,38 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1780,8 +1781,45 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
              entry.updatePlayer(this.getHandle());
          }
@@ -127,11 +127,15 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..f0c07965f129c17a3258964b7bf73f9f
 +                bukkitPlayer.unregisterEntity(self);
 +            }
 +        }
+ 
+-        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
++        // Paper start - fix setPlayerProfile makes players invisible
++        UUID original = self.getUUID();
++        self.setUUID(gameProfile.getId());
 +
 +        // Set the game profile here, we should have unregistered the entity via iterating all player entities above.
 +        self.gameProfile = gameProfile;
- 
--        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
++
 +        // Re-register the game profile for all players
 +        for (ServerPlayer player : players) {
 +            CraftPlayer bukkitPlayer = player.getBukkitEntity();
@@ -139,6 +143,9 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..f0c07965f129c17a3258964b7bf73f9f
 +                bukkitPlayer.trackAndShowEntity(self.getBukkitEntity());
 +            }
 +        }
++        self.setUUID(original);
++        // Paper end
++
 +        // Refresh misc player things AFTER sending game profile
 +        this.refreshPlayer();
      }
