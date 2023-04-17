@@ -107,7 +107,10 @@ public interface MapMeta extends ItemMeta {
      * Checks for existence of a location name.
      *
      * @return true if this has a location name
+     * @deprecated This method does not have the expected effect and is
+     * actually an alias for {@link ItemMeta#hasLocalizedName()}.
      */
+    @Deprecated
     boolean hasLocationName();
 
     /**
@@ -117,16 +120,21 @@ public interface MapMeta extends ItemMeta {
      * before calling this method.
      *
      * @return the location name that is set
+     * @deprecated This method does not have the expected effect and is
+     * actually an alias for {@link ItemMeta#getLocalizedName()}.
      */
+    @Deprecated
     @Nullable
     String getLocationName();
 
     /**
-     * Sets the location name. A custom map color will alter the display of the
-     * map in an inventory slot.
+     * Sets the location name.
      *
      * @param name the name to set
+     * @deprecated This method does not have the expected effect and is
+     * actually an alias for {@link ItemMeta#setLocalizedName(String)}.
      */
+    @Deprecated
     void setLocationName(@Nullable String name);
 
     /**
