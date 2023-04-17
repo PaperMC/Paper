@@ -18,6 +18,7 @@ import org.bukkit.map.MapView;
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaMap extends CraftMetaItem implements MapMeta {
     static final ItemMetaKey MAP_SCALING = new ItemMetaKey("map_is_scaling", "scaling");
+    @Deprecated // SPIGOT-6308
     static final ItemMetaKey MAP_LOC_NAME = new ItemMetaKey("LocName", "display-loc-name");
     static final ItemMetaKey MAP_COLOR = new ItemMetaKey("MapColor", "display-map-color");
     static final ItemMetaKey MAP_ID = new ItemMetaKey("map", "map-id");
@@ -27,7 +28,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     private Integer mapId;
     private byte scaling = SCALING_EMPTY;
-    private String locName;
     private Color color;
 
     CraftMetaMap(CraftMetaItem meta) {
@@ -40,7 +40,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         CraftMetaMap map = (CraftMetaMap) meta;
         this.mapId = map.mapId;
         this.scaling = map.scaling;
-        this.locName = map.locName;
         this.color = map.color;
     }
 
@@ -57,10 +56,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         if (tag.contains(DISPLAY.NBT)) {
             NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
-
-            if (display.contains(MAP_LOC_NAME.NBT)) {
-                locName = display.getString(MAP_LOC_NAME.NBT);
-            }
 
             if (display.contains(MAP_COLOR.NBT)) {
                 try {
@@ -178,17 +173,17 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     public boolean hasLocationName() {
-        return this.locName != null;
+        return this.hasLocalizedName(); // SPIGOT-6308
     }
 
     @Override
     public String getLocationName() {
-        return this.locName;
+        return this.getLocalizedName(); // SPIGOT-6308
     }
 
     @Override
     public void setLocationName(String name) {
-        this.locName = name;
+        this.setLocalizedName(name); // SPIGOT-6308
     }
 
     @Override
@@ -216,7 +211,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
             return (this.scaling == that.scaling)
                     && (hasMapId() ? that.hasMapId() && this.mapId.equals(that.mapId) : !that.hasMapId())
-                    && (hasLocationName() ? that.hasLocationName() && this.locName.equals(that.locName) : !that.hasLocationName())
                     && (hasColor() ? that.hasColor() && this.color.equals(that.color) : !that.hasColor());
         }
         return true;
@@ -237,9 +231,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         }
         if (hasScaling()) {
             hash ^= 0x22222222 << (isScaling() ? 1 : -1);
-        }
-        if (hasLocationName()) {
-            hash = 61 * hash + locName.hashCode();
         }
         if (hasColor()) {
             hash = 61 * hash + color.hashCode();
@@ -264,10 +255,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         if (hasScaling()) {
             builder.put(MAP_SCALING.BUKKIT, isScaling());
-        }
-
-        if (hasLocationName()) {
-            builder.put(MAP_LOC_NAME.BUKKIT, getLocationName());
         }
 
         if (hasColor()) {
