@@ -5,7 +5,7 @@ Subject: [PATCH] Implement event calling for AttemptItemMergeEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index d47b3ac633e7936d30abfda6fc46c2c7412d76fe..2d39763929e0cf6f4009ba629753ae04057a4881 100644
+index d47b3ac633e7936d30abfda6fc46c2c7412d76fe..c34c9bf5ff830b17662ad805af5cb0cc98c24a48 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 @@ -289,7 +289,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
@@ -13,12 +13,12 @@ index d47b3ac633e7936d30abfda6fc46c2c7412d76fe..2d39763929e0cf6f4009ba629753ae04
          ItemStack itemstack = this.getItem();
          ItemStack itemstack1 = other.getItem();
 -
-+        if (org.bukkit.craftbukkit.event.CraftEventFactory.callAttemptItemMergeEvent(other, this).isCancelled()) return; // Paper - AttemptItemMergeEvent
++        org.bukkit.craftbukkit.event.CraftEventFactory.callAttemptItemMergeEvent(other, this); // Paper - AttemptItemMergeEvent
          if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
              if (true || itemstack1.getCount() < itemstack.getCount()) { // Spigot
                  ItemEntity.merge(this, itemstack, other, itemstack1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 819c9c020f4d5a1373f68850134960d24b8fc308..5ef16cc2566f9735bcfe6ceee1031d2e2e61079f 100644
+index 819c9c020f4d5a1373f68850134960d24b8fc308..0049988712cdddd45789cbab2a934264a30a4e65 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -174,6 +174,7 @@ import org.bukkit.event.entity.FoodLevelChangeEvent;
@@ -29,7 +29,7 @@ index 819c9c020f4d5a1373f68850134960d24b8fc308..5ef16cc2566f9735bcfe6ceee1031d2e
  import org.bukkit.event.entity.ItemSpawnEvent;
  import org.bukkit.event.entity.LingeringPotionSplashEvent;
  import org.bukkit.event.entity.PigZapEvent;
-@@ -795,6 +796,20 @@ public class CraftEventFactory {
+@@ -795,6 +796,19 @@ public class CraftEventFactory {
          entity.getServer().getPluginManager().callEvent(event);
          return event;
      }
@@ -37,14 +37,13 @@ index 819c9c020f4d5a1373f68850134960d24b8fc308..5ef16cc2566f9735bcfe6ceee1031d2e
 +    /**
 +     * AttemptItemMergeEvent
 +     */
-+    public static AttemptItemMergeEvent callAttemptItemMergeEvent(ItemEntity merging, ItemEntity mergingWith) {
++    public static void callAttemptItemMergeEvent(ItemEntity merging, ItemEntity mergingWith) {
 +        org.bukkit.entity.Item entityMerging = (org.bukkit.entity.Item) merging.getBukkitEntity();
 +        org.bukkit.entity.Item entityMergingWith = (org.bukkit.entity.Item) mergingWith.getBukkitEntity();
 +
 +        AttemptItemMergeEvent event = new AttemptItemMergeEvent(entityMerging, entityMergingWith);
 +
 +        Bukkit.getPluginManager().callEvent(event);
-+        return event;
 +    }
 +    // Paper end
  
