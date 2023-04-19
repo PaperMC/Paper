@@ -22,6 +22,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -85,7 +86,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         if (random != null) {
             builder = builder.withRandom(new RandomSourceWrapper(random));
         }
-        setMaybe(builder, LootContextParameters.ORIGIN, new Vec3D(loc.getX(), loc.getY(), loc.getZ()));
+        setMaybe(builder, LootContextParameters.ORIGIN, CraftLocation.toVec3D(loc));
         if (getHandle() != LootTable.EMPTY) {
             // builder.luck(context.getLuck());
 
@@ -137,7 +138,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         if (position == null) {
             position = info.getParamOrNull(LootContextParameters.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParameterSets
         }
-        Location location = new Location(info.getLevel().getWorld(), position.x(), position.y(), position.z());
+        Location location = CraftLocation.toBukkit(position, info.getLevel().getWorld());
         LootContext.Builder contextBuilder = new LootContext.Builder(location);
 
         if (info.hasParam(LootContextParameters.KILLER_ENTITY)) {

@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.world.entity.animal.EntityBee;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.EntityType;
 
@@ -32,25 +33,25 @@ public class CraftBee extends CraftAnimals implements Bee {
     @Override
     public Location getHive() {
         BlockPosition hive = getHandle().getHivePos();
-        return (hive == null) ? null : new Location(getWorld(), hive.getX(), hive.getY(), hive.getZ());
+        return (hive == null) ? null : CraftLocation.toBukkit(hive, getWorld());
     }
 
     @Override
     public void setHive(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Hive must be in same world");
-        getHandle().hivePos = (location == null) ? null : new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        getHandle().hivePos = (location == null) ? null : CraftLocation.toBlockPosition(location);
     }
 
     @Override
     public Location getFlower() {
         BlockPosition flower = getHandle().getSavedFlowerPos();
-        return (flower == null) ? null : new Location(getWorld(), flower.getX(), flower.getY(), flower.getZ());
+        return (flower == null) ? null : CraftLocation.toBukkit(flower, getWorld());
     }
 
     @Override
     public void setFlower(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Flower must be in same world");
-        getHandle().setSavedFlowerPos(location == null ? null : new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        getHandle().setSavedFlowerPos(location == null ? null : CraftLocation.toBlockPosition(location));
     }
 
     @Override

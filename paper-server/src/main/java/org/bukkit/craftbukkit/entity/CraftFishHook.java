@@ -156,7 +156,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         EntityFishingHook hook = getHandle();
 
         if (this.biteChance == -1) {
-            if (hook.level.isRainingAt(new BlockPosition(MathHelper.floor(hook.getX()), MathHelper.floor(hook.getY()) + 1, MathHelper.floor(hook.getZ())))) {
+            if (hook.level.isRainingAt(BlockPosition.containing(hook.position()).offset(0, 1, 0))) {
                 return 1 / 300.0;
             }
             return 1 / 500.0;

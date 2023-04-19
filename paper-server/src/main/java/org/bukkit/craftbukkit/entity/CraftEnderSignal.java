@@ -7,6 +7,7 @@ import net.minecraft.world.item.Items;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EnderSignal;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
@@ -39,7 +40,7 @@ public class CraftEnderSignal extends CraftEntity implements EnderSignal {
     @Override
     public void setTargetLocation(Location location) {
         Preconditions.checkArgument(getWorld().equals(location.getWorld()), "Cannot target EnderSignal across worlds");
-        getHandle().signalTo(BlockPosition.containing(location.getX(), location.getY(), location.getZ()));
+        getHandle().signalTo(CraftLocation.toBlockPosition(location));
     }
 
     @Override

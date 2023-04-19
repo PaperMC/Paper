@@ -101,6 +101,7 @@ import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
@@ -180,7 +181,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public Location getSpawnLocation() {
         BlockPosition spawn = world.getSharedSpawnPos();
         float yaw = world.getSharedSpawnAngle();
-        return new Location(this, spawn.getX(), spawn.getY(), spawn.getZ(), yaw, 0);
+        return CraftLocation.toBukkit(spawn, this, yaw, 0);
     }
 
     @Override
@@ -948,8 +949,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         Vector dir = direction.clone().normalize().multiply(maxDistance);
-        Vec3D startPos = new Vec3D(start.getX(), start.getY(), start.getZ());
-        Vec3D endPos = new Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
+        Vec3D startPos = CraftLocation.toVec3D(start);
+        Vec3D endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
         MovingObjectPosition nmsHitResult = this.getHandle().clip(new RayTrace(startPos, endPos, ignorePassableBlocks ? RayTrace.BlockCollisionOption.COLLIDER : RayTrace.BlockCollisionOption.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null));
 
         return CraftRayTraceResult.fromNMS(this, nmsHitResult);
@@ -1142,7 +1143,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Validate.notNull(effect, "Effect cannot be null");
         Validate.notNull(location.getWorld(), "World cannot be null");
         int packetData = effect.getId();
-        PacketPlayOutWorldEvent packet = new PacketPlayOutWorldEvent(packetData, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), data, false);
+        PacketPlayOutWorldEvent packet = new PacketPlayOutWorldEvent(packetData, CraftLocation.toBlockPosition(location), data, false);
         int distance;
         radius *= radius;
 
@@ -1885,7 +1886,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return null;
         }
 
-        return new CraftStructureSearchResult(CraftStructure.minecraftToBukkit(found.getSecond().value(), getHandle().registryAccess()), new Location(this, found.getFirst().getX(), found.getFirst().getY(), found.getFirst().getZ()));
+        return new CraftStructureSearchResult(CraftStructure.minecraftToBukkit(found.getSecond().value(), getHandle().registryAccess()), CraftLocation.toBukkit(found.getFirst(), this));
     }
 
     @Override
@@ -1894,7 +1895,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Validate.isTrue(radius >= 0, "Radius cannot be negative");
 
         PersistentRaid persistentRaid = world.getRaids();
-        net.minecraft.world.entity.raid.Raid raid = persistentRaid.getNearbyRaid(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), radius * radius);
+        net.minecraft.world.entity.raid.Raid raid = persistentRaid.getNearbyRaid(CraftLocation.toBlockPosition(location), radius * radius);
         return (raid == null) ? null : new CraftRaid(raid);
     }
 

@@ -39,6 +39,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockSupport;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
 
@@ -610,7 +611,7 @@ public class CraftBlockData implements BlockData {
         CraftWorld world = (CraftWorld) location.getWorld();
         Preconditions.checkArgument(world != null, "location must not have a null world");
 
-        BlockPosition position = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        BlockPosition position = CraftLocation.toBlockPosition(location);
         return state.canSurvive(world.getHandle(), position);
     }
 

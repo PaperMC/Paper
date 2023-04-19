@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Sniffer;
 
@@ -33,7 +34,7 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
 
     @Override
     public Collection<Location> getExploredLocations() {
-        return this.getHandle().getExploredPositions().map(blockPosition -> new Location(this.getLocation().getWorld(), blockPosition.getX(), blockPosition.getY(), blockPosition.getZ())).collect(Collectors.toList());
+        return this.getHandle().getExploredPositions().map(blockPosition -> CraftLocation.toBukkit(blockPosition, this.getLocation().getWorld())).collect(Collectors.toList());
     }
 
     @Override
@@ -43,7 +44,7 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
             return;
         }
 
-        BlockPosition blockPosition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        BlockPosition blockPosition = CraftLocation.toBlockPosition(location);
         this.getHandle().getBrain().setMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS, this.getHandle().getExploredPositions().filter(blockPositionExplored -> !blockPositionExplored.equals(blockPosition)).collect(Collectors.toList()));
     }
 
@@ -54,7 +55,7 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
             return;
         }
 
-        this.getHandle().storeExploredPosition(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        this.getHandle().storeExploredPosition(CraftLocation.toBlockPosition(location));
     }
 
     @Override
@@ -70,7 +71,7 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
 
     @Override
     public Location findPossibleDigLocation() {
-        return this.getHandle().calculateDigPosition().map(blockPosition -> new Location(this.getLocation().getWorld(), blockPosition.getX(), blockPosition.getY(), blockPosition.getZ())).orElse(null);
+        return this.getHandle().calculateDigPosition().map(blockPosition -> CraftLocation.toBukkit(blockPosition, this.getLocation().getWorld())).orElse(null);
     }
 
     @Override

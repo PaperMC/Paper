@@ -23,6 +23,8 @@ import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.craftbukkit.CraftRegionAccessor;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.util.CraftBlockVector;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -66,7 +68,7 @@ public class CraftStructure implements Structure {
                 .setRandom(randomSource);
         definedstructureinfo.palette = palette;
 
-        BlockPosition blockPosition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        BlockPosition blockPosition = CraftBlockVector.toBlockPosition(location);
         structure.placeInWorld(((CraftRegionAccessor) regionAccessor).getHandle(), blockPosition, blockPosition, definedstructureinfo, randomSource, 2);
     }
 
@@ -92,12 +94,12 @@ public class CraftStructure implements Structure {
             throw new IllegalArgumentException("Size must be at least 1x1x1 but was " + size.getBlockX() + "x" + size.getBlockY() + "x" + size.getBlockZ());
         }
 
-        structure.fillFromWorld(((CraftWorld) world).getHandle(), new BlockPosition(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()), new BlockPosition(size.getBlockX(), size.getBlockY(), size.getBlockZ()), includeEntities, Blocks.STRUCTURE_VOID);
+        structure.fillFromWorld(((CraftWorld) world).getHandle(), CraftLocation.toBlockPosition(origin), CraftBlockVector.toBlockPosition(size), includeEntities, Blocks.STRUCTURE_VOID);
     }
 
     @Override
     public BlockVector getSize() {
-        return new BlockVector(structure.getSize().getX(), structure.getSize().getY(), structure.getSize().getZ());
+        return CraftBlockVector.toBukkit(structure.getSize());
     }
 
     @Override

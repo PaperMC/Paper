@@ -13,6 +13,7 @@ import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.block.structure.UsageMode;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.util.CraftBlockVector;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.BlockVector;
 
@@ -54,7 +55,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
 
     @Override
     public BlockVector getRelativePosition() {
-        return new BlockVector(getSnapshot().structurePos.getX(), getSnapshot().structurePos.getY(), getSnapshot().structurePos.getZ());
+        return CraftBlockVector.toBukkit(getSnapshot().structurePos);
     }
 
     @Override
@@ -62,12 +63,12 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
         Validate.isTrue(isBetween(vector.getBlockX(), -MAX_SIZE, MAX_SIZE), "Structure Size (X) must be between -" + MAX_SIZE + " and " + MAX_SIZE);
         Validate.isTrue(isBetween(vector.getBlockY(), -MAX_SIZE, MAX_SIZE), "Structure Size (Y) must be between -" + MAX_SIZE + " and " + MAX_SIZE);
         Validate.isTrue(isBetween(vector.getBlockZ(), -MAX_SIZE, MAX_SIZE), "Structure Size (Z) must be between -" + MAX_SIZE + " and " + MAX_SIZE);
-        getSnapshot().structurePos = new BlockPosition(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ());
+        getSnapshot().structurePos = CraftBlockVector.toBlockPosition(vector);
     }
 
     @Override
     public BlockVector getStructureSize() {
-        return new BlockVector(getSnapshot().structureSize.getX(), getSnapshot().structureSize.getY(), getSnapshot().structureSize.getZ());
+        return CraftBlockVector.toBukkit(getSnapshot().structureSize);
     }
 
     @Override
@@ -75,7 +76,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
         Validate.isTrue(isBetween(vector.getBlockX(), 0, MAX_SIZE), "Structure Size (X) must be between 0 and " + MAX_SIZE);
         Validate.isTrue(isBetween(vector.getBlockY(), 0, MAX_SIZE), "Structure Size (Y) must be between 0 and " + MAX_SIZE);
         Validate.isTrue(isBetween(vector.getBlockZ(), 0, MAX_SIZE), "Structure Size (Z) must be between 0 and " + MAX_SIZE);
-        getSnapshot().structureSize = new BlockPosition(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ());
+        getSnapshot().structureSize = CraftBlockVector.toBlockPosition(vector);
     }
 
     @Override

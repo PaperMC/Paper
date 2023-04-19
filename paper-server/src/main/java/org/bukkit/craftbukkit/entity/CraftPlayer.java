@@ -137,6 +137,7 @@ import org.bukkit.craftbukkit.map.RenderData;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.EntityType;
@@ -380,7 +381,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().connection == null) return;
 
         // Do not directly assign here, from the packethandler we'll assign it.
-        getHandle().connection.send(new PacketPlayOutSpawnPosition(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), loc.getYaw()));
+        getHandle().connection.send(new PacketPlayOutSpawnPosition(CraftLocation.toBlockPosition(loc), loc.getYaw()));
     }
 
     @Override
@@ -597,7 +598,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().connection == null) return;
 
         int packetData = effect.getId();
-        PacketPlayOutWorldEvent packet = new PacketPlayOutWorldEvent(packetData, new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), data, false);
+        PacketPlayOutWorldEvent packet = new PacketPlayOutWorldEvent(packetData, CraftLocation.toBlockPosition(loc), data, false);
         getHandle().connection.send(packet);
     }
 
@@ -626,7 +627,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void sendBlockChange(Location loc, Material material, byte data) {
         if (getHandle().connection == null) return;
 
-        PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), CraftMagicNumbers.getBlock(material, data));
+        PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(CraftLocation.toBlockPosition(loc), CraftMagicNumbers.getBlock(material, data));
         getHandle().connection.send(packet);
     }
 
@@ -634,7 +635,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void sendBlockChange(Location loc, BlockData block) {
         if (getHandle().connection == null) return;
 
-        PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), ((CraftBlockData) block).getState());
+        PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(CraftLocation.toBlockPosition(loc), ((CraftBlockData) block).getState());
         getHandle().connection.send(packet);
     }
 
@@ -699,7 +700,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             stage = -1; // The protocol states that any other value will reset the damage, which this API promises
         }
 
-        PacketPlayOutBlockBreakAnimation packet = new PacketPlayOutBlockBreakAnimation(sourceId, new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), stage);
+        PacketPlayOutBlockBreakAnimation packet = new PacketPlayOutBlockBreakAnimation(sourceId, CraftLocation.toBlockPosition(loc), stage);
         getHandle().connection.send(packet);
     }
 
@@ -730,7 +731,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
-        TileEntitySign sign = new TileEntitySign(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), Blocks.OAK_SIGN.defaultBlockState());
+        TileEntitySign sign = new TileEntitySign(CraftLocation.toBlockPosition(loc), Blocks.OAK_SIGN.defaultBlockState());
         sign.setColor(EnumColor.byId(dyeColor.getWoolData()));
         sign.setHasGlowingText(hasGlowingText);
         for (int i = 0; i < components.length; i++) {
@@ -1018,7 +1019,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             Optional<Vec3D> spawnLoc = EntityHuman.findRespawnPositionAndUseSpawnBlock(world, bed, getHandle().getRespawnAngle(), getHandle().isRespawnForced(), true);
             if (spawnLoc.isPresent()) {
                 Vec3D vec = spawnLoc.get();
-                return new Location(world.getWorld(), vec.x, vec.y, vec.z, getHandle().getRespawnAngle(), 0);
+                return CraftLocation.toBukkit(vec, world.getWorld(), getHandle().getRespawnAngle(), 0);
             }
         }
         return null;
@@ -1034,7 +1035,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (location == null) {
             getHandle().setRespawnPosition(null, null, 0.0F, override, false, PlayerSpawnChangeEvent.Cause.PLUGIN);
         } else {
-            getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().dimension(), new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), location.getYaw(), override, false, PlayerSpawnChangeEvent.Cause.PLUGIN);
+            getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().dimension(), CraftLocation.toBlockPosition(location), location.getYaw(), override, false, PlayerSpawnChangeEvent.Cause.PLUGIN);
         }
     }
 
@@ -1043,7 +1044,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Preconditions.checkState(isSleeping(), "Not sleeping");
 
         BlockPosition bed = getHandle().getRespawnPosition();
-        return new Location(getWorld(), bed.getX(), bed.getY(), bed.getZ());
+        return CraftLocation.toBukkit(bed, getWorld());
     }
 
     @Override

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/EntityPlayer.java
 +++ b/net/minecraft/server/level/EntityPlayer.java
-@@ -155,6 +155,37 @@
+@@ -155,6 +155,38 @@
  import net.minecraft.world.scores.criteria.IScoreboardCriteria;
  import org.slf4j.Logger;
  
@@ -23,6 +23,7 @@
 +import org.bukkit.craftbukkit.event.CraftPortalEvent;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.CraftDimensionUtil;
++import org.bukkit.craftbukkit.util.CraftLocation;
 +import org.bukkit.event.player.PlayerBedLeaveEvent;
 +import org.bukkit.event.player.PlayerChangedMainHandEvent;
 +import org.bukkit.event.player.PlayerChangedWorldEvent;
@@ -38,7 +39,7 @@
  public class EntityPlayer extends EntityHuman {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -212,6 +243,21 @@
+@@ -212,6 +244,21 @@
      public int latency;
      public boolean wonGame;
  
@@ -60,7 +61,7 @@
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile) {
          super(worldserver, worldserver.getSharedSpawnPos(), worldserver.getSharedSpawnAngle(), gameprofile);
          this.chatVisibility = EnumChatVisibility.FULL;
-@@ -275,12 +321,56 @@
+@@ -275,12 +322,56 @@
          this.advancements = minecraftserver.getPlayerList().getPlayerAdvancements(this);
          this.setMaxUpStep(1.0F);
          this.fudgeSpawnLocation(worldserver);
@@ -118,7 +119,7 @@
              int i = Math.max(0, this.server.getSpawnRadius(worldserver));
              int j = MathHelper.floor(worldserver.getWorldBorder().getDistanceToBorder((double) blockposition.getX(), (double) blockposition.getZ()));
  
-@@ -329,7 +419,7 @@
+@@ -329,7 +420,7 @@
      public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.readAdditionalSaveData(nbttagcompound);
          if (nbttagcompound.contains("warden_spawn_tracker", 10)) {
@@ -127,7 +128,7 @@
              Logger logger = EntityPlayer.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -348,17 +438,26 @@
+@@ -348,17 +439,26 @@
          if (nbttagcompound.contains("recipeBook", 10)) {
              this.recipeBook.fromNbt(nbttagcompound.getCompound("recipeBook"), this.server.getRecipeManager());
          }
@@ -155,7 +156,7 @@
                  Logger logger1 = EntityPlayer.LOGGER;
  
                  Objects.requireNonNull(logger1);
-@@ -371,7 +470,7 @@
+@@ -371,7 +471,7 @@
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
@@ -164,7 +165,7 @@
          Logger logger = EntityPlayer.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -392,7 +491,20 @@
+@@ -392,7 +492,20 @@
          Entity entity = this.getRootVehicle();
          Entity entity1 = this.getVehicle();
  
@@ -186,7 +187,7 @@
              NBTTagCompound nbttagcompound2 = new NBTTagCompound();
              NBTTagCompound nbttagcompound3 = new NBTTagCompound();
  
-@@ -417,8 +529,32 @@
+@@ -417,8 +530,32 @@
                  nbttagcompound.put("SpawnDimension", nbtbase);
              });
          }
@@ -201,17 +202,17 @@
 +            this.unsetRemoved();
 +            Vec3D position = null;
 +            if (this.respawnDimension != null) {
-+                world = this.getLevel().getCraftServer().getHandle().getServer().getLevel(this.respawnDimension);
++                world = this.server.getLevel(this.respawnDimension);
 +                if (world != null && this.getRespawnPosition() != null) {
 +                    position = EntityHuman.findRespawnPositionAndUseSpawnBlock((WorldServer) world, this.getRespawnPosition(), this.getRespawnAngle(), false, false).orElse(null);
 +                }
 +            }
 +            if (world == null || position == null) {
 +                world = ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle();
-+                position = Vec3D.atCenterOf(((WorldServer) world).getSharedSpawnPos());
++                position = Vec3D.atCenterOf(world.getSharedSpawnPos());
 +            }
 +            this.level = world;
-+            this.setPos(position.x(), position.y(), position.z());
++            this.setPos(position);
 +        }
 +        this.gameMode.setLevel((WorldServer) world);
      }
@@ -219,7 +220,7 @@
  
      public void setExperiencePoints(int i) {
          float f = (float) this.getXpNeededForNextLevel();
-@@ -478,6 +614,11 @@
+@@ -478,6 +615,11 @@
  
      @Override
      public void tick() {
@@ -231,7 +232,7 @@
          this.gameMode.tick();
          this.wardenSpawnTracker.tick();
          --this.spawnInvulnerableTime;
-@@ -534,7 +675,7 @@
+@@ -534,7 +676,7 @@
              }
  
              if (this.getHealth() != this.lastSentHealth || this.lastSentFood != this.foodData.getFoodLevel() || this.foodData.getSaturationLevel() == 0.0F != this.lastFoodSaturationZero) {
@@ -240,7 +241,7 @@
                  this.lastSentHealth = this.getHealth();
                  this.lastSentFood = this.foodData.getFoodLevel();
                  this.lastFoodSaturationZero = this.foodData.getSaturationLevel() == 0.0F;
-@@ -565,6 +706,12 @@
+@@ -565,6 +707,12 @@
                  this.updateScoreForCriteria(IScoreboardCriteria.EXPERIENCE, MathHelper.ceil((float) this.lastRecordedExperience));
              }
  
@@ -253,7 +254,7 @@
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(IScoreboardCriteria.LEVEL, MathHelper.ceil((float) this.lastRecordedLevel));
-@@ -579,6 +726,20 @@
+@@ -579,6 +727,20 @@
                  CriterionTriggers.LOCATION.trigger(this);
              }
  
@@ -274,7 +275,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking player");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.addCategory("Player being ticked");
-@@ -621,7 +782,8 @@
+@@ -621,7 +783,8 @@
      }
  
      private void updateScoreForCriteria(IScoreboardCriteria iscoreboardcriteria, int i) {
@@ -284,7 +285,7 @@
              scoreboardscore.setScore(i);
          });
      }
-@@ -630,9 +792,47 @@
+@@ -630,9 +793,47 @@
      public void die(DamageSource damagesource) {
          this.gameEvent(GameEvent.ENTITY_DIE);
          boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
@@ -334,7 +335,7 @@
  
              this.connection.send(new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
                  boolean flag1 = true;
-@@ -663,12 +863,18 @@
+@@ -663,12 +864,18 @@
          if (this.level.getGameRules().getBoolean(GameRules.RULE_FORGIVE_DEAD_PLAYERS)) {
              this.tellNeutralMobsThatIDied();
          }
@@ -357,7 +358,7 @@
          EntityLiving entityliving = this.getKillCredit();
  
          if (entityliving != null) {
-@@ -706,10 +912,12 @@
+@@ -706,10 +913,12 @@
              String s = this.getScoreboardName();
              String s1 = entity.getScoreboardName();
  
@@ -372,7 +373,7 @@
              } else {
                  this.awardStat(StatisticList.MOB_KILLS);
              }
-@@ -727,7 +935,8 @@
+@@ -727,7 +936,8 @@
              int i = scoreboardteam.getColor().getId();
  
              if (i >= 0 && i < aiscoreboardcriteria.length) {
@@ -382,7 +383,7 @@
              }
          }
  
-@@ -777,18 +986,20 @@
+@@ -777,18 +987,20 @@
      }
  
      private boolean isPvpAllowed() {
@@ -406,7 +407,7 @@
          } else {
              return shapedetectorshape;
          }
-@@ -797,11 +1008,20 @@
+@@ -797,11 +1009,20 @@
      @Nullable
      @Override
      public Entity changeDimension(WorldServer worldserver) {
@@ -430,7 +431,7 @@
              this.unRide();
              this.getLevel().removePlayerImmediately(this, Entity.RemovalReason.CHANGED_DIMENSION);
              if (!this.wonGame) {
-@@ -812,6 +1032,8 @@
+@@ -812,6 +1033,8 @@
  
              return this;
          } else {
@@ -439,7 +440,7 @@
              WorldData worlddata = worldserver.getLevelData();
  
              this.connection.send(new PacketPlayOutRespawn(worldserver.dimensionTypeId(), worldserver.dimension(), BiomeManager.obfuscateSeed(worldserver.getSeed()), this.gameMode.getGameModeForPlayer(), this.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), (byte) 3, this.getLastDeathLocation()));
-@@ -821,20 +1043,50 @@
+@@ -821,20 +1044,50 @@
              playerlist.sendPlayerPermissionLevel(this);
              worldserver1.removePlayerImmediately(this, Entity.RemovalReason.CHANGED_DIMENSION);
              this.unsetRemoved();
@@ -463,7 +464,7 @@
 +                return null;
 +            }
 +            Location enter = this.getBukkitEntity().getLocation();
-+            Location exit = (worldserver == null) ? null : new Location(worldserver.getWorld(), shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, shapedetectorshape.xRot);
++            Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(shapedetectorshape.pos, worldserver.getWorld(), shapedetectorshape.yRot, shapedetectorshape.xRot);
 +            PlayerTeleportEvent tpEvent = new PlayerTeleportEvent(this.getBukkitEntity(), enter, exit, cause);
 +            Bukkit.getServer().getPluginManager().callEvent(tpEvent);
 +            if (tpEvent.isCancelled() || tpEvent.getTo() == null) {
@@ -495,7 +496,7 @@
                  this.connection.resetPosition();
                  worldserver.addDuringPortalTeleport(this);
                  worldserver1.getProfiler().pop();
-@@ -854,39 +1106,66 @@
+@@ -854,39 +1107,66 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -514,7 +515,7 @@
 +    @Override
 +    protected CraftPortalEvent callPortalEvent(Entity entity, WorldServer exitWorldServer, Position exitPosition, TeleportCause cause, int searchRadius, int creationRadius) {
 +        Location enter = this.getBukkitEntity().getLocation();
-+        Location exit = new Location(exitWorldServer.getWorld(), exitPosition.x(), exitPosition.y(), exitPosition.z(), getYRot(), getXRot());
++        Location exit = CraftLocation.toBukkit(exitPosition, exitWorldServer.getWorld(), getYRot(), getXRot());
 +        PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius);
 +        Bukkit.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
@@ -568,7 +569,7 @@
              }
  
              return optional1;
-@@ -896,13 +1175,21 @@
+@@ -896,13 +1176,21 @@
      public void triggerDimensionChangeTriggers(WorldServer worldserver) {
          ResourceKey<World> resourcekey = worldserver.dimension();
          ResourceKey<World> resourcekey1 = this.level.dimension();
@@ -593,7 +594,7 @@
              this.enteredNetherPosition = null;
          }
  
-@@ -919,19 +1206,17 @@
+@@ -919,19 +1207,17 @@
          this.containerMenu.broadcastChanges();
      }
  
@@ -617,7 +618,7 @@
                  if (this.level.isDay()) {
                      return Either.left(EntityHuman.EnumBedResult.NOT_POSSIBLE_NOW);
                  } else {
-@@ -948,7 +1233,36 @@
+@@ -948,7 +1234,36 @@
                          }
                      }
  
@@ -655,7 +656,7 @@
                          this.awardStat(StatisticList.SLEEP_IN_BED);
                          CriterionTriggers.SLEPT_IN_BED.trigger(this);
                      });
-@@ -961,9 +1275,8 @@
+@@ -961,9 +1276,8 @@
                      return either;
                  }
              }
@@ -666,7 +667,7 @@
      }
  
      @Override
-@@ -990,6 +1303,24 @@
+@@ -990,6 +1304,24 @@
  
      @Override
      public void stopSleepInBed(boolean flag, boolean flag1) {
@@ -691,7 +692,7 @@
          if (this.isSleeping()) {
              this.getLevel().getChunkSource().broadcastAndSend(this, new PacketPlayOutAnimation(this, 2));
          }
-@@ -1038,8 +1369,9 @@
+@@ -1038,8 +1370,9 @@
          this.connection.send(new PacketPlayOutOpenSignEditor(tileentitysign.getBlockPos()));
      }
  
@@ -702,7 +703,7 @@
      }
  
      @Override
-@@ -1047,13 +1379,35 @@
+@@ -1047,13 +1380,35 @@
          if (itileinventory == null) {
              return OptionalInt.empty();
          } else {
@@ -738,7 +739,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.displayClientMessage(IChatBaseComponent.translatable("container.spectatorCantOpen").withStyle(EnumChatFormat.RED), true);
-@@ -1061,9 +1415,11 @@
+@@ -1061,9 +1416,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -752,7 +753,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -1076,13 +1432,24 @@
+@@ -1076,13 +1433,24 @@
  
      @Override
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
@@ -779,7 +780,7 @@
          this.initMenu(this.containerMenu);
      }
  
-@@ -1105,6 +1472,7 @@
+@@ -1105,6 +1473,7 @@
  
      @Override
      public void closeContainer() {
@@ -787,7 +788,7 @@
          this.connection.send(new PacketPlayOutCloseWindow(this.containerMenu.containerId));
          this.doCloseContainer();
      }
-@@ -1127,6 +1495,16 @@
+@@ -1127,6 +1496,16 @@
              }
  
              this.jumping = flag;
@@ -804,7 +805,7 @@
              this.setShiftKeyDown(flag1);
          }
  
-@@ -1135,7 +1513,7 @@
+@@ -1135,7 +1514,7 @@
      @Override
      public void awardStat(Statistic<?> statistic, int i) {
          this.stats.increment(this, statistic, i);
@@ -813,7 +814,7 @@
              scoreboardscore.add(i);
          });
      }
-@@ -1143,7 +1521,7 @@
+@@ -1143,7 +1522,7 @@
      @Override
      public void resetStat(Statistic<?> statistic) {
          this.stats.setValue(this, statistic, 0);
@@ -822,7 +823,7 @@
      }
  
      @Override
-@@ -1159,7 +1537,7 @@
+@@ -1159,7 +1538,7 @@
  
          for (int j = 0; j < i; ++j) {
              MinecraftKey minecraftkey = aminecraftkey1[j];
@@ -831,7 +832,7 @@
  
              Objects.requireNonNull(list);
              optional.ifPresent(list::add);
-@@ -1194,6 +1572,7 @@
+@@ -1194,6 +1573,7 @@
  
      public void resetSentInfo() {
          this.lastSentHealth = -1.0E8F;
@@ -839,7 +840,7 @@
      }
  
      @Override
-@@ -1252,7 +1631,7 @@
+@@ -1252,7 +1632,7 @@
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
@@ -848,7 +849,7 @@
          this.seenCredits = entityplayer.seenCredits;
          this.enteredNetherPosition = entityplayer.enteredNetherPosition;
          this.setShoulderEntityLeft(entityplayer.getShoulderEntityLeft());
-@@ -1302,6 +1681,12 @@
+@@ -1302,6 +1682,12 @@
  
      @Override
      public boolean teleportTo(WorldServer worldserver, double d0, double d1, double d2, Set<RelativeMovement> set, float f, float f1) {
@@ -861,7 +862,7 @@
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(BlockPosition.containing(d0, d1, d2));
  
          worldserver.getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkcoordintpair, 1, this.getId());
-@@ -1311,9 +1696,9 @@
+@@ -1311,9 +1697,9 @@
          }
  
          if (worldserver == this.level) {
@@ -873,7 +874,7 @@
          }
  
          this.setYHeadRot(f);
-@@ -1417,7 +1802,20 @@
+@@ -1417,7 +1803,20 @@
          }
      }
  
@@ -894,7 +895,7 @@
          this.chatVisibility = packetplayinsettings.chatVisibility();
          this.canChatColor = packetplayinsettings.chatColors();
          this.textFilteringEnabled = packetplayinsettings.textFilteringEnabled();
-@@ -1492,7 +1890,7 @@
+@@ -1492,7 +1891,7 @@
              if (world instanceof WorldServer) {
                  WorldServer worldserver = (WorldServer) world;
  
@@ -903,7 +904,7 @@
              }
  
              if (entity != null) {
-@@ -1529,7 +1927,7 @@
+@@ -1529,7 +1928,7 @@
  
      @Nullable
      public IChatBaseComponent getTabListDisplayName() {
@@ -912,7 +913,7 @@
      }
  
      @Override
-@@ -1550,9 +1948,16 @@
+@@ -1550,9 +1949,16 @@
          return this.advancements;
      }
  
@@ -929,7 +930,7 @@
          if (worldserver == this.level) {
              this.connection.teleport(d0, d1, d2, f, f1);
          } else {
-@@ -1572,6 +1977,9 @@
+@@ -1572,6 +1978,9 @@
              this.server.getPlayerList().sendLevelInfo(this, worldserver);
              this.server.getPlayerList().sendAllPlayerInfo(this);
          }
@@ -939,7 +940,7 @@
  
      }
  
-@@ -1593,6 +2001,32 @@
+@@ -1593,6 +2002,32 @@
      }
  
      public void setRespawnPosition(ResourceKey<World> resourcekey, @Nullable BlockPosition blockposition, float f, boolean flag, boolean flag1) {
@@ -949,7 +950,7 @@
 +
 +    public void setRespawnPosition(ResourceKey<World> resourcekey, @Nullable BlockPosition blockposition, float f, boolean flag, boolean flag1, PlayerSpawnChangeEvent.Cause cause) {
 +        WorldServer newWorld = this.server.getLevel(resourcekey);
-+        Location newSpawn = (blockposition != null) ? new Location(newWorld.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ(), f, 0) : null;
++        Location newSpawn = (blockposition != null) ? CraftLocation.toBukkit(blockposition, newWorld.getWorld(), f, 0) : null;
 +
 +        PlayerSpawnChangeEvent event = new PlayerSpawnChangeEvent(this.getBukkitEntity(), newSpawn, flag, cause);
 +        Bukkit.getServer().getPluginManager().callEvent(event);
@@ -972,7 +973,7 @@
          if (blockposition != null) {
              boolean flag2 = blockposition.equals(this.respawnPosition) && resourcekey.equals(this.respawnDimension);
  
-@@ -1762,4 +2196,146 @@
+@@ -1762,4 +2197,146 @@
          this.hurtDir = (float) (MathHelper.atan2(d1, d0) * 57.2957763671875D - (double) this.getYRot());
          this.connection.send(new ClientboundHurtAnimationPacket(this));
      }

@@ -8,6 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.boss.DragonBattle.RespawnPhase;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EnderDragon;
 
 public class CraftDragonBattle implements DragonBattle {
@@ -35,7 +36,7 @@ public class CraftDragonBattle implements DragonBattle {
             return null;
         }
 
-        return new Location(handle.level.getWorld(), handle.portalLocation.getX(), handle.portalLocation.getY(), handle.portalLocation.getZ());
+        return CraftLocation.toBukkit(this.handle.portalLocation, this.handle.level.getWorld());
     }
 
     @Override

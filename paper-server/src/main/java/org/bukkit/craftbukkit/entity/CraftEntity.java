@@ -175,6 +175,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.Player;
@@ -437,7 +438,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Location getLocation() {
-        return new Location(getWorld(), entity.getX(), entity.getY(), entity.getZ(), entity.getBukkitYaw(), entity.getXRot());
+        return CraftLocation.toBukkit(entity.position(), getWorld(), entity.getBukkitYaw(), entity.getXRot());
     }
 
     @Override
@@ -537,7 +538,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         if (location.getWorld() != null && !location.getWorld().equals(getWorld())) {
             // Prevent teleportation to an other world during world generation
             Preconditions.checkState(!entity.generation, "Cannot teleport entity to an other world during world generation");
-            entity.teleportTo(((CraftWorld) location.getWorld()).getHandle(), new Position(location.getX(), location.getY(), location.getZ()));
+            entity.teleportTo(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toPosition(location));
             return true;
         }
 

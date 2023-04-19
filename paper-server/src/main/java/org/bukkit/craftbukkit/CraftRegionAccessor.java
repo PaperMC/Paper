@@ -65,6 +65,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.AbstractArrow;
@@ -306,7 +307,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType) {
-        BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        BlockPosition pos = CraftLocation.toBlockPosition(location);
         return generateTree(getHandle(), getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
     }
 
@@ -320,7 +321,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType, Predicate<BlockState> predicate) {
-        BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        BlockPosition pos = CraftLocation.toBlockPosition(location);
         BlockStateListPopulator populator = new BlockStateListPopulator(getHandle());
         boolean result = generateTree(populator, getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
         populator.refreshTiles();
