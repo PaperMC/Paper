@@ -27,27 +27,35 @@ index b1a9c75081f7e61212ea9395b35375e067fd7fc6..f70d81e1a779da840b636b36a913a0dc
              Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
          } else {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
-index 42828edf81bd475b673a9d143f79c0d0711f14f5..8f45f2c0af552d2a5114021c66eb76b243887b39 100644
+index 42828edf81bd475b673a9d143f79c0d0711f14f5..6db2a1732df32c1679515705ea73ec1c08c37e16 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
-@@ -40,8 +40,8 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
-                     int j = friendlyByteBuf.writerIndex();
+@@ -41,7 +41,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
                      packet.write(friendlyByteBuf);
                      int k = friendlyByteBuf.writerIndex() - j;
--                    if (k > 8388608) {
+                     if (k > 8388608) {
 -                        throw new IllegalArgumentException("Packet too big (is " + k + ", should be less than 8388608): " + packet);
-+                    if (k > MAX_PACKET_SIZE) { // Paper - refactor to variable
 +                        throw new PacketTooLargeException(packet, k); // Paper - handle large packets correctly
                      } else {
                          int l = channelHandlerContext.channel().attr(Connection.ATTRIBUTE_PROTOCOL).get().getId();
                          JvmProfiler.INSTANCE.onPacketSent(l, i, channelHandlerContext.channel().remoteAddress(), k);
-@@ -57,4 +57,21 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+@@ -54,7 +54,31 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+                         throw var10;
+                     }
+                 }
++
++                // Paper start
++                int packetLength = friendlyByteBuf.readableBytes();
++                if (packetLength > MAX_PACKET_SIZE) {
++                    throw new PacketTooLargeException(packet, packetLength);
++                }
++                // Paper end
              }
          }
      }
 +
 +    // Paper start
-+    private static int MAX_PACKET_SIZE = 8388608;
++    private static int MAX_PACKET_SIZE = 2097152;
 +
 +    public static class PacketTooLargeException extends RuntimeException {
 +        private final Packet<?> packet;
