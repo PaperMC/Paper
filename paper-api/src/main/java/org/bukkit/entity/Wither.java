@@ -40,6 +40,22 @@ public interface Wither extends Monster, Boss {
     LivingEntity getTarget(@NotNull Head head);
 
     /**
+     * Returns the wither's current invulnerability ticks.
+     *
+     * @return amount of invulnerability ticks
+     */
+    int getInvulnerabilityTicks();
+
+    /**
+     * Sets the wither's current invulnerability ticks.
+     *
+     * When invulnerability ticks reach 0, the wither will trigger an explosion.
+     *
+     * @param ticks amount of invulnerability ticks
+     */
+    void setInvulnerabilityTicks(int ticks);
+
+    /**
      * Represents one of the Wither's heads.
      */
     enum Head {
