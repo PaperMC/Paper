@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/EntityExperienceOrb.java
 +++ b/net/minecraft/world/entity/EntityExperienceOrb.java
-@@ -21,6 +21,12 @@
+@@ -21,6 +21,13 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
@@ -8,12 +8,13 @@
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 +import org.bukkit.event.entity.EntityTargetEvent;
++import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 +// CraftBukkit end
 +
  public class EntityExperienceOrb extends Entity {
  
      private static final int LIFETIME = 6000;
-@@ -59,6 +65,7 @@
+@@ -59,6 +66,7 @@
      @Override
      public void tick() {
          super.tick();
@@ -21,7 +22,7 @@
          this.xo = this.getX();
          this.yo = this.getY();
          this.zo = this.getZ();
-@@ -84,7 +91,22 @@
+@@ -84,7 +92,22 @@
              this.followingPlayer = null;
          }
  
@@ -45,7 +46,13 @@
              Vec3D vec3d = new Vec3D(this.followingPlayer.getX() - this.getX(), this.followingPlayer.getY() + (double) this.followingPlayer.getEyeHeight() / 2.0D - this.getY(), this.followingPlayer.getZ() - this.getZ());
              double d0 = vec3d.lengthSqr();
  
-@@ -227,7 +249,7 @@
+@@ -222,12 +245,12 @@
+     public void playerTouch(EntityHuman entityhuman) {
+         if (!this.level.isClientSide) {
+             if (entityhuman.takeXpDelay == 0) {
+-                entityhuman.takeXpDelay = 2;
++                entityhuman.takeXpDelay = CraftEventFactory.callPlayerXpCooldownEvent(entityhuman, 2, PlayerExpCooldownChangeEvent.ChangeReason.PICKUP_ORB).getNewCooldown(); // CraftBukkit - entityhuman.takeXpDelay = 2;
+                 entityhuman.take(this, 1);
                  int i = this.repairPlayerItems(entityhuman, this.value);
  
                  if (i > 0) {
@@ -54,7 +61,7 @@
                  }
  
                  --this.count;
-@@ -245,9 +267,17 @@
+@@ -245,9 +268,17 @@
          if (entry != null) {
              ItemStack itemstack = (ItemStack) entry.getValue();
              int j = Math.min(this.xpToDurability(this.value), itemstack.getDamageValue());
@@ -72,7 +79,7 @@
  
              return k > 0 ? this.repairPlayerItems(entityhuman, k) : 0;
          } else {
-@@ -272,6 +302,24 @@
+@@ -272,6 +303,24 @@
      }
  
      public static int getExperienceValue(int i) {
