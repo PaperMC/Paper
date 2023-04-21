@@ -61,4 +61,16 @@ public class CraftWither extends CraftMonster implements Wither {
         Entity target = getHandle().getLevel().getEntity(entityId);
         return (target != null) ? (LivingEntity) target.getBukkitEntity() : null;
     }
+
+    @Override
+    public int getInvulnerabilityTicks() {
+        return getHandle().getInvulnerableTicks();
+    }
+
+    @Override
+    public void setInvulnerabilityTicks(int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "ticks must be >=0");
+
+        getHandle().setInvulnerableTicks(ticks);
+    }
 }
