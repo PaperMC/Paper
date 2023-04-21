@@ -26,6 +26,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
+import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -801,6 +802,27 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * by server conditions.
      */
     public void resetPlayerWeather();
+
+    /**
+     * Gets the player's cooldown between picking up experience orbs.
+     *
+     * @return The cooldown in ticks
+     */
+    public int getExpCooldown();
+
+    /**
+     * Sets the player's cooldown between picking up experience orbs..
+     *
+     * <strong>Note:</strong> Setting this to 0 allows the player to pick up
+     * instantly, but setting this to a negative value will cause the player to
+     * be unable to pick up xp-orbs.
+     *
+     * Calling this Method will result in {@link PlayerExpCooldownChangeEvent}
+     * being called.
+     *
+     * @param ticks The cooldown in ticks
+     */
+    public void setExpCooldown(int ticks);
 
     /**
      * Gives the player the amount of experience specified.
