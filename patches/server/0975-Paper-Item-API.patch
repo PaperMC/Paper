@@ -479,10 +479,10 @@ index 0000000000000000000000000000000000000000..2404230aff503ee9baa8cf78a3ab1133
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..da2b8425fbecf3651f546cd7939ecb1ba627a710
+index 0000000000000000000000000000000000000000..371ca38b9a23fd9603aee980c1ae0758edee9c6d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
-@@ -0,0 +1,706 @@
+@@ -0,0 +1,713 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -501,6 +501,7 @@ index 0000000000000000000000000000000000000000..da2b8425fbecf3651f546cd7939ecb1b
 +import io.papermc.paper.property.nbt.pdc.MetaDataContainer;
 +import io.papermc.paper.property.types.AttributePairImpl;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.TextDecoration;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.md_5.bungee.api.chat.BaseComponent;
@@ -554,6 +555,7 @@ index 0000000000000000000000000000000000000000..da2b8425fbecf3651f546cd7939ecb1b
 +    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 +
 +    public static final PropertyKey<String> LOC_NAME = PropertyKey.of("LocName", String.class);
++    public static final PropertyKey<MutablePropertyView> PUBLIC_BUKKIT_VALUES = PropertyKey.of("PublicBukkitValues", MutablePropertyView.class);
 +
 +    protected final NbtPropertyHolder propertyHolder;
 +    private final EnchantmentMap enchantmentMap;
@@ -635,7 +637,10 @@ index 0000000000000000000000000000000000000000..da2b8425fbecf3651f546cd7939ecb1b
 +
 +    @Override
 +    public void setDisplayName(@Nullable String name) {
-+        this.displayName(LegacyComponentSerializer.legacySection().deserializeOr(name, Component.empty()));
++        this.displayName(
++            LegacyComponentSerializer.legacySection().deserializeOr(name, Component.empty())
++                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE)
++        );
 +    }
 +
 +    @NotNull
@@ -694,7 +699,8 @@ index 0000000000000000000000000000000000000000..da2b8425fbecf3651f546cd7939ecb1b
 +    @Override
 +    public void setLore(@Nullable List<String> lore) {
 +        List<? extends Component> components = Objects.requireNonNullElse(lore, List.<String>of()).stream().map((string) -> {
-+            return LegacyComponentSerializer.legacySection().deserializeOr(string, Component.empty());
++            return LegacyComponentSerializer.legacySection().deserializeOr(string, Component.empty())
++                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
 +        }).toList();
 +
 +        this.lore(components);
@@ -710,7 +716,8 @@ index 0000000000000000000000000000000000000000..da2b8425fbecf3651f546cd7939ecb1b
 +    @Override
 +    public void setLoreComponents(@Nullable List<BaseComponent[]> lore) {
 +        List<? extends Component> components = Objects.requireNonNullElse(lore, List.<BaseComponent[]>of()).stream().map((string) -> {
-+            return GsonComponentSerializer.gson().deserializeOr(ComponentSerializer.toString(string), Component.empty());
++            return GsonComponentSerializer.gson().deserializeOr(ComponentSerializer.toString(string), Component.empty())
++                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
 +        }).toList();
 +
 +        this.lore(components);
@@ -1191,7 +1198,7 @@ index 0000000000000000000000000000000000000000..da2b8425fbecf3651f546cd7939ecb1b
 +}
 diff --git a/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..32bb8ee7a6d82f9297aa522d753d6282914225ed
+index 0000000000000000000000000000000000000000..ff9dbb232a41af4431e5c5efb7e3cc3ba6848725
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
 @@ -0,0 +1,118 @@
@@ -1252,7 +1259,7 @@ index 0000000000000000000000000000000000000000..32bb8ee7a6d82f9297aa522d753d6282
 +        ITEM_CONTEXT.register(ItemProperties.COLOR, new ColorNbt());
 +        ITEM_CONTEXT.register(ItemProperties.MAP_COLOR, new ColorNbt());
 +
-+        ITEM_CONTEXT.register(ItemProperties.PUBLIC_BUKKIT_VALUES, new CompoundTagNbt(ITEM_CONTEXT));
++        ITEM_CONTEXT.register(PaperMeta.PUBLIC_BUKKIT_VALUES, new CompoundTagNbt(ITEM_CONTEXT));
 +        ITEM_CONTEXT.register(PaperMeta.LOC_NAME, StringPrimitive.INSTANCE);
 +
 +        ITEM_CONTEXT.register(ItemProperties.ARMOR_TRIM, new ArmorTrimNbt());
@@ -3653,6 +3660,44 @@ index 2e7f8ef88ae74c7cbfdb7f397951cbc8479a995f..7cb9014eb7049c900c56b0f77a4b9fc5
  import org.junit.Test;
  
  public class CraftMetaTropicalFishBucketTest extends AbstractTestingBase {
+diff --git a/src/test/java/io/papermc/paper/item/ItemPropertyKeyRegistrationTest.java b/src/test/java/io/papermc/paper/item/ItemPropertyKeyRegistrationTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b8a5835025f2310ead682b3ba27d3c0184cc7f52
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/item/ItemPropertyKeyRegistrationTest.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.item;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.item.property.ItemPropertyRegistration;
++import io.papermc.paper.property.PropertyKey;
++import org.junit.Test;
++
++import java.lang.reflect.Field;
++import java.util.ArrayList;
++import java.util.List;
++
++public class ItemPropertyKeyRegistrationTest {
++
++
++    @Test
++    public void testKeysRegistered() throws IllegalAccessException {
++        List<PropertyKey<?>> failed = new ArrayList<>();
++        for (Field propertyField : ItemProperties.class.getDeclaredFields()) {
++            PropertyKey<?> key = (PropertyKey<?>) propertyField.get(null);
++
++            try {
++                ItemPropertyRegistration.ITEM_CONTEXT.getAdapter(key);
++            } catch (Exception e) {
++                failed.add(key);
++            }
++        }
++
++        if (!failed.isEmpty()) {
++            throw new AssertionError("Following property keys are not registered: " + failed);
++        }
++    }
++}
 diff --git a/src/test/java/io/papermc/paper/item/MetaComparisonTest.java b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..224405183bf793b1d50b2f59aa6a2e05e070d56f
