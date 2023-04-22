@@ -385,10 +385,10 @@ index 0000000000000000000000000000000000000000..67cdea38f18381db61ce1aeaf96cb52b
 +}
 diff --git a/src/main/java/io/papermc/paper/item/PaperMetaSerialization.java b/src/main/java/io/papermc/paper/item/PaperMetaSerialization.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f120e9c21be2f623561573ee77d7dd19e08ed306
+index 0000000000000000000000000000000000000000..2404230aff503ee9baa8cf78a3ab11337b99167c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/PaperMetaSerialization.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,88 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.item.meta.PaperMeta;
@@ -397,15 +397,12 @@ index 0000000000000000000000000000000000000000..f120e9c21be2f623561573ee77d7dd19
 +import net.minecraft.nbt.TagParser;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.Items;
-+import org.bukkit.Bukkit;
-+import org.bukkit.Material;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
 +import org.bukkit.inventory.meta.ItemMeta;
 +
 +import java.lang.reflect.Constructor;
 +import java.lang.reflect.InvocationTargetException;
-+import java.util.Base64;
 +import java.util.HashMap;
 +import java.util.Map;
 +
@@ -476,16 +473,16 @@ index 0000000000000000000000000000000000000000..f120e9c21be2f623561573ee77d7dd19
 +        CompoundTag compoundTag = new CompoundTag();
 +        meta.apply(compoundTag);
 +
-+        return new PaperMeta(io.papermc.paper.property.nbt.NbtPropertyHolder.itemHolder(compoundTag));
++        return new PaperMeta(io.papermc.paper.property.nbt.NbtPropertyHolder.itemTagHolder(compoundTag));
 +    }
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..39821cff8e2544a59c81be2db07e07122a56c225
+index 0000000000000000000000000000000000000000..da2b8425fbecf3651f546cd7939ecb1ba627a710
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
-@@ -0,0 +1,720 @@
+@@ -0,0 +1,706 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -500,6 +497,7 @@ index 0000000000000000000000000000000000000000..39821cff8e2544a59c81be2db07e0712
 +import io.papermc.paper.property.PropertyKey;
 +import io.papermc.paper.property.nbt.AdapterContext;
 +import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import io.papermc.paper.property.nbt.access.CompoundAccess;
 +import io.papermc.paper.property.nbt.pdc.MetaDataContainer;
 +import io.papermc.paper.property.types.AttributePairImpl;
 +import net.kyori.adventure.text.Component;
@@ -581,6 +579,11 @@ index 0000000000000000000000000000000000000000..39821cff8e2544a59c81be2db07e0712
 +        }
 +
 +        return null;
++    }
++
++    protected <T> T getOrCreateFromPropertyPath(PropertyKey<MutablePropertyView> outer, PropertyKey<T> inner) {
++        MutablePropertyView holder = this.propertyHolder.getOrCreate(outer);
++        return holder.getOrCreate(inner);
 +    }
 +
 +    @Contract("_,_m,,!null -> !null")
@@ -1035,27 +1038,7 @@ index 0000000000000000000000000000000000000000..39821cff8e2544a59c81be2db07e0712
 +
 +    @Override
 +    public @NotNull PersistentDataContainer getPersistentDataContainer() {
-+        return new MetaDataContainer(new MetaDataContainer.CompoundAccess() {
-+            @Override
-+            public @NotNull CompoundTag getOrRegisterNew() {
-+                return ((NbtPropertyHolder) PaperMeta.this.propertyHolder.getOrCreate(PUBLIC_BUKKIT_VALUES)).getCompoundTag();
-+            }
-+
-+            @Override
-+            public @Nullable CompoundTag get() {
-+                MutablePropertyView propertyView = PaperMeta.this.propertyHolder.get(PUBLIC_BUKKIT_VALUES);
-+                if (propertyView == null) {
-+                    return null;
-+                }
-+
-+                return ((NbtPropertyHolder) propertyView).getCompoundTag();
-+            }
-+
-+            @Override
-+            public void purge() {
-+                PaperMeta.this.propertyHolder.unset(PUBLIC_BUKKIT_VALUES);
-+            }
-+        }, DATA_TYPE_REGISTRY);
++        return new MetaDataContainer(CompoundAccess.childCompoundAccess(this.propertyHolder, PUBLIC_BUKKIT_VALUES), DATA_TYPE_REGISTRY);
 +    }
 +
 +    @Override
@@ -1208,10 +1191,10 @@ index 0000000000000000000000000000000000000000..39821cff8e2544a59c81be2db07e0712
 +}
 diff --git a/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f297ad23769d3f39aab2c5ef191799d31f74d179
+index 0000000000000000000000000000000000000000..32bb8ee7a6d82f9297aa522d753d6282914225ed
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/property/ItemPropertyRegistration.java
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,118 @@
 +package io.papermc.paper.item.property;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -1294,6 +1277,8 @@ index 0000000000000000000000000000000000000000..f297ad23769d3f39aab2c5ef191799d3
 +        ITEM_CONTEXT.register(ItemProperties.FIREWORKS, new CompoundTagNbt(ITEM_CONTEXT));
 +        ITEM_CONTEXT.register(ItemProperties.FLIGHT, BytePrimitive.INSTANCE);
 +        ITEM_CONTEXT.register(ItemProperties.EXPLOSIONS, new WrappedListNbt<>(new FireworkEffectNbt()));
++
++        ITEM_CONTEXT.register(ItemProperties.EXPLOSION, new FireworkEffectNbt());
 +
 +        ITEM_CONTEXT.register(ItemProperties.STORED_ENCHANTMENTS, new EnchantmentList());
 +
@@ -1434,16 +1419,18 @@ index 0000000000000000000000000000000000000000..661bda75180e9a56ac21ad9b31a7eaca
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..15ebf2de47c4d5d7b831047258eec630d9517c87
+index 0000000000000000000000000000000000000000..3ddc7e07ed6c1999ee52f0c5ff468e3b82f93249
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,161 @@
 +package io.papermc.paper.property.nbt;
 +
 +import io.papermc.paper.item.property.ItemPropertyRegistration;
 +import io.papermc.paper.property.MutablePropertyView;
 +import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.access.CompoundAccess;
 +import net.minecraft.nbt.CompoundTag;
++import net.minecraft.world.item.ItemStack;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -1453,40 +1440,38 @@ index 0000000000000000000000000000000000000000..15ebf2de47c4d5d7b831047258eec630
 +@SuppressWarnings("unchecked")
 +public class NbtPropertyHolder implements MutablePropertyView {
 +
-+    private final AdapterContext adapterContext;
-+    private final CompoundTag compoundTag;
-+
-+    // TODO cleanup.
-+    // Properly pass a context object in places
 +    public static NbtPropertyHolder simpleBlob(CompoundTag compoundTag, AdapterContext context) {
-+        return new NbtPropertyHolder(context, compoundTag);
++        return new NbtPropertyHolder(context, CompoundAccess.staticAccess(compoundTag));
 +    }
 +
-+    NbtPropertyHolder(AdapterContext adapterContext, CompoundTag compoundTag) {
-+        if (compoundTag == null) {
++    public static MutablePropertyView itemTagHolder(CompoundTag compoundTag) {
++        return new NbtPropertyHolder(ItemPropertyRegistration.ITEM_CONTEXT, CompoundAccess.staticAccess(compoundTag));
++    }
++
++    public static MutablePropertyView itemHolder(ItemStack itemStack) {
++        return new NbtPropertyHolder(ItemPropertyRegistration.ITEM_CONTEXT, CompoundAccess.itemStackTagAccess(itemStack));
++    }
++
++    private final AdapterContext adapterContext;
++    private final CompoundAccess compoundAccess;
++
++    NbtPropertyHolder(AdapterContext adapterContext, CompoundAccess compoundAcess) {
++        if (compoundAcess == null) {
 +            throw new IllegalArgumentException("Cannot have null compound tag.");
 +        }
 +
 +        this.adapterContext = adapterContext;
-+        this.compoundTag = compoundTag;
-+    }
-+
-+    public static MutablePropertyView itemHolder(CompoundTag compoundTag) {
-+        return io.papermc.paper.property.nbt.NbtPropertyHolder.simpleBlob(compoundTag, ItemPropertyRegistration.ITEM_CONTEXT);
-+    }
-+
-+    public static MutablePropertyView empty() {
-+        return new NbtPropertyHolder(AdapterContext.empty(), new CompoundTag());
++        this.compoundAccess = compoundAcess;
 +    }
 +
 +    @Override
 +    public void unset(PropertyKey<?> key) {
-+        this.compoundTag.remove(key.getKey());
++        this.compoundAccess.remove(key.getKey());
 +    }
 +
 +    @Override
 +    public <T> void set(@NotNull PropertyKey<T> key, T value) {
-+        NbtPlatformAdapter adapter = this.getAdapter(key);
++        NbtPlatformAdapter<T> adapter = this.getAdapter(key);
 +        if (value != null) {
 +            adapter.writeDirect(this, key, value);
 +        } else {
@@ -1496,40 +1481,40 @@ index 0000000000000000000000000000000000000000..15ebf2de47c4d5d7b831047258eec630
 +
 +    @Override
 +    public <T> @NotNull T create(@NotNull PropertyKey<T> key) {
-+        NbtPlatformAdapter adapter = this.getAdapter(key);
-+        return (T) adapter.getNewValue(this, key);
++        NbtPlatformAdapter<T> adapter = this.getAdapter(key);
++        return adapter.getNewValue(this, key);
 +    }
 +
 +    @Override
 +    public <T> T getOrCreate(@NotNull PropertyKey<T> key) {
-+        NbtPlatformAdapter adapter = this.getAdapter(key);
++        NbtPlatformAdapter<T> adapter = this.getAdapter(key);
++        CompoundTag compoundTag = this.compoundAccess.getOrRegisterNew();
 +
-+        if (!this.compoundTag.contains(key.getKey(), adapter.getTagType())) {
-+            return (T) adapter.getNewValue(this, key);
++        if (!compoundTag.contains(key.getKey(), adapter.getTagType())) {
++            return adapter.getNewValue(this, key);
 +        }
 +
-+        return (T) adapter.getValue(this, key);
++        return adapter.getValue(this, key);
 +    }
 +
 +    @Override
 +    public MutablePropertyView clone() {
-+        CompoundTag cloned = this.compoundTag.copy();
-+        return new NbtPropertyHolder(this.adapterContext, cloned);
++        return new NbtPropertyHolder(this.adapterContext, this.compoundAccess.clone());
 +    }
 +
 +    @Override
 +    public void clear() {
-+        this.compoundTag.tags.clear();
++        this.compoundAccess.purge();
 +    }
 +
 +    @Override
 +    public <T> @Nullable T get(PropertyKey<T> key) {
-+        NbtPlatformAdapter adapter = this.getAdapter(key);
++        NbtPlatformAdapter<T> adapter = this.getAdapter(key);
 +        if (adapter == null) {
 +            throw new UnsupportedOperationException("No adapter for: " + key);
 +        }
 +
-+        return (T) adapter.getValue(this, key);
++        return adapter.getValue(this, key);
 +    }
 +
 +    @Override
@@ -1544,24 +1529,41 @@ index 0000000000000000000000000000000000000000..15ebf2de47c4d5d7b831047258eec630
 +
 +    @Override
 +    public boolean hasProperty(@NotNull PropertyKey<?> propertyKey) {
-+        return this.compoundTag.contains(propertyKey.getKey());
++        CompoundTag tag = this.compoundAccess.getUnderlyingTag();
++        if (tag == null) {
++            return false;
++        }
++
++        return tag.contains(propertyKey.getKey());
 +    }
 +
 +    @Override
 +    public boolean isEmpty() {
-+        return this.compoundTag.isEmpty();
++        CompoundTag tag = this.compoundAccess.getUnderlyingTag();
++        if (tag == null) {
++            return false;
++        }
++
++        // This shouldn't normally be reached, as the underlying state should be purged.
++        // But you never know, plugins are weird.
++        return this.isEmpty();
 +    }
 +
 +    public @NotNull Set<String> keySet() {
-+        return this.compoundTag.getAllKeys();
++        CompoundTag tag = this.compoundAccess.getUnderlyingTag();
++        if (tag == null) {
++            return Set.of();
++        }
++
++        return tag.getAllKeys();
 +    }
 +
 +
 +    public CompoundTag getCompoundTag() {
-+        return compoundTag;
++        return this.compoundAccess.getOrRegisterNew();
 +    }
 +
-+    public NbtPlatformAdapter getAdapter(PropertyKey key) {
++    public <T> NbtPlatformAdapter<T> getAdapter(PropertyKey<T> key) {
 +        return this.adapterContext.getAdapter(key);
 +    }
 +
@@ -1574,30 +1576,279 @@ index 0000000000000000000000000000000000000000..15ebf2de47c4d5d7b831047258eec630
 +        if (this == o) return true;
 +        if (o == null || getClass() != o.getClass()) return false;
 +        NbtPropertyHolder holder = (NbtPropertyHolder) o;
-+        return Objects.equals(compoundTag, holder.compoundTag);
++        return Objects.equals(compoundAccess, holder.compoundAccess);
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(compoundAccess);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/access/ChildCompoundAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/ChildCompoundAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cc1ba8e0a610d9b5800abea7b661a5b8dd59b773
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/access/ChildCompoundAccess.java
+@@ -0,0 +1,58 @@
++package io.papermc.paper.property.nbt.access;
++
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import net.minecraft.nbt.CompoundTag;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Objects;
++
++public class ChildCompoundAccess implements CompoundAccess {
++
++    private final NbtPropertyHolder propertyHolder;
++    private final PropertyKey<MutablePropertyView> childKey;
++
++    public ChildCompoundAccess(NbtPropertyHolder propertyHolder, PropertyKey<MutablePropertyView> childKey) {
++        this.propertyHolder = propertyHolder;
++        this.childKey = childKey;
++    }
++
++    @Override
++    public @NotNull CompoundTag getOrRegisterNew() {
++        return ((NbtPropertyHolder) this.propertyHolder.getOrCreate(this.childKey)).getCompoundTag();
++    }
++
++    @Override
++    public @Nullable CompoundTag getUnderlyingTag() {
++        MutablePropertyView propertyView = this.propertyHolder.get(this.childKey);
++        if (propertyView == null) {
++            return null;
++        }
++
++        return ((NbtPropertyHolder) propertyView).getCompoundTag();
++    }
++
++    @Override
++    public void purge() {
++        this.propertyHolder.unset(this.childKey);
++    }
++
++    @Override
++    public CompoundAccess clone() {
++        return new ChildCompoundAccess((NbtPropertyHolder) this.propertyHolder.clone(), this.childKey);
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (!(o instanceof CompoundAccess that)) return false;
++        return Objects.equals(this.getUnderlyingTag(), that.getUnderlyingTag());
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(this.getUnderlyingTag());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/access/CompoundAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/CompoundAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f5765e06ae04dac4cbeeaf4668e695a5f964e7a9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/access/CompoundAccess.java
+@@ -0,0 +1,71 @@
++package io.papermc.paper.property.nbt.access;
++
++import io.papermc.paper.property.MutablePropertyView;
++import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.PropertyView;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.world.item.ItemStack;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.function.Consumer;
++
++/**
++ * We need this concept of "compound access" in order to allow for compound tags to be lazily populated.
++ */
++public interface CompoundAccess {
++
++    static CompoundAccess itemStackTagAccess(ItemStack itemStack) {
++        return new ItemStackTagAccess(itemStack);
++    }
++
++    static CompoundAccess childCompoundAccess(NbtPropertyHolder parent, PropertyKey<MutablePropertyView> childKey) {
++        return new ChildCompoundAccess(parent, childKey);
++    }
++
++    static CompoundAccess staticAccess(CompoundTag compoundTag) {
++        return new StaticCompoundAccess(compoundTag);
++    }
++
++    @NotNull
++    CompoundTag getOrRegisterNew();
++
++    @Nullable
++    CompoundTag getUnderlyingTag();
++
++    void purge();
++
++    CompoundAccess clone();
++
++    @NotNull
++    default CompoundTag getOrCreateEmpty() {
++        CompoundTag live = this.getUnderlyingTag();
++        if (live != null) {
++            return live;
++        }
++
++        return new CompoundTag();
++    }
++
++    default void remove(String key) {
++        this.mutateIfPresent((tag) -> tag.remove(key));
++    }
++
++    default void mutateIfPresent(Consumer<CompoundTag> compoundTagSupplier) {
++        CompoundTag live = this.getUnderlyingTag();
++        if (live != null) {
++            compoundTagSupplier.accept(live);
++        }
++
++        this.clearIfEmpty();
++    }
++
++    default void clearIfEmpty() {
++        CompoundTag compoundTag = this.getUnderlyingTag();
++        if (compoundTag != null && compoundTag.isEmpty()) {
++            purge();
++        }
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..310fe0ac36f6b9d3128f71951711e24d8649414e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.property.nbt.access;
++
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.world.item.ItemStack;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Objects;
++
++class ItemStackTagAccess implements CompoundAccess {
++
++    private final ItemStack itemStack;
++
++    public ItemStackTagAccess(ItemStack itemStack) {
++        this.itemStack = itemStack;
++    }
++
++    @Override
++    public @NotNull CompoundTag getOrRegisterNew() {
++        return this.itemStack.getOrCreateTag();
++    }
++
++    @Override
++    public @Nullable CompoundTag getUnderlyingTag() {
++        return this.itemStack.getTag();
++    }
++
++    @Override
++    public void purge() {
++        this.itemStack.setTag(null);
++    }
++
++    @Override
++    public CompoundAccess clone() {
++        return new ItemStackTagAccess(this.itemStack.copy());
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (!(o instanceof CompoundAccess that)) return false;
++        return Objects.equals(this.getUnderlyingTag(), that.getUnderlyingTag());
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(this.getUnderlyingTag());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/access/StaticCompoundAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/StaticCompoundAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..aff198bfefadc38a6c82aa87c18ee6bd83a77420
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/access/StaticCompoundAccess.java
+@@ -0,0 +1,54 @@
++package io.papermc.paper.property.nbt.access;
++
++import net.minecraft.nbt.CompoundTag;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Objects;
++
++class StaticCompoundAccess implements CompoundAccess {
++
++    private final CompoundTag compoundTag;
++
++    StaticCompoundAccess(CompoundTag compoundTag) {
++        this.compoundTag = compoundTag;
++    }
++
++    @Override
++    public @NotNull CompoundTag getOrRegisterNew() {
++        return this.compoundTag;
++    }
++
++    @Override
++    public @Nullable CompoundTag getUnderlyingTag() {
++        return this.compoundTag;
++    }
++
++    @Override
++    public void purge() {
++        // Don't purge -- we do not care
++    }
++
++    @Override
++    public void clearIfEmpty() {
++        // Ignore logic
++    }
++
++    @Override
++    public CompoundAccess clone() {
++        return new StaticCompoundAccess(this.compoundTag.copy());
++    }
++
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (!(o instanceof CompoundAccess that)) return false;
++        return Objects.equals(compoundTag, that.getUnderlyingTag());
 +    }
 +
 +    @Override
 +    public int hashCode() {
 +        return Objects.hash(compoundTag);
 +    }
-+
-+    @Override
-+    public String toString() {
-+        return "NbtPropertyHolder{" +
-+            "adapterContext=" + adapterContext +
-+            ", compoundTag=" + compoundTag +
-+            '}';
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java b/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..95edfc12fa460d25a4e292f76384d190264f64dd
+index 0000000000000000000000000000000000000000..fec92c8d20f290a8692b121f6dfc219f2c61e941
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java
-@@ -0,0 +1,219 @@
+@@ -0,0 +1,197 @@
 +package io.papermc.paper.property.nbt.pdc;
 +
++import io.papermc.paper.property.nbt.access.CompoundAccess;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.Tag;
 +import org.apache.commons.lang.Validate;
@@ -1607,8 +1858,6 @@ index 0000000000000000000000000000000000000000..95edfc12fa460d25a4e292f76384d190
 +import org.bukkit.persistence.PersistentDataAdapterContext;
 +import org.bukkit.persistence.PersistentDataContainer;
 +import org.bukkit.persistence.PersistentDataType;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +
 +import java.util.HashSet;
 +import java.util.Objects;
@@ -1638,7 +1887,7 @@ index 0000000000000000000000000000000000000000..95edfc12fa460d25a4e292f76384d190
 +    }
 +
 +    public <T> T getOrReturnIfNull(Function<CompoundTag, T> consumer, T obj) {
-+        CompoundTag compoundTag = this.access.get();
++        CompoundTag compoundTag = this.access.getUnderlyingTag();
 +        if (compoundTag == null) {
 +            return obj;
 +        }
@@ -1693,7 +1942,7 @@ index 0000000000000000000000000000000000000000..95edfc12fa460d25a4e292f76384d190
 +    public Set<NamespacedKey> getKeys() {
 +        Set<NamespacedKey> keys = new HashSet<>();
 +
-+        CompoundTag compoundTag = this.access.get();
++        CompoundTag compoundTag = this.access.getUnderlyingTag();
 +        if (compoundTag == null) {
 +            return keys;
 +        }
@@ -1732,7 +1981,7 @@ index 0000000000000000000000000000000000000000..95edfc12fa460d25a4e292f76384d190
 +        if (this == o) return true;
 +        if (o == null || getClass() != o.getClass()) return false;
 +        MetaDataContainer that = (MetaDataContainer) o;
-+        return Objects.equals(this.access.get(), that.access.get());
++        return Objects.equals(this.access.getUnderlyingTag(), that.access.getUnderlyingTag());
 +    }
 +
 +    public CompoundTag toTagCompound() {
@@ -1793,27 +2042,6 @@ index 0000000000000000000000000000000000000000..95edfc12fa460d25a4e292f76384d190
 +        }
 +    }
 +    // Paper end
-+
-+    public interface CompoundAccess {
-+
-+        @NotNull
-+        CompoundTag getOrRegisterNew();
-+
-+        @Nullable
-+        CompoundTag get();
-+
-+        void purge();
-+
-+        @NotNull
-+        default CompoundTag getOrCreateEmpty() {
-+            CompoundTag live = this.get();
-+            if (live != null) {
-+                return live;
-+            }
-+
-+            return new CompoundTag();
-+        }
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java
 new file mode 100644
@@ -2288,10 +2516,10 @@ index 0000000000000000000000000000000000000000..915dd6af0da3c528145c810f851d0409
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..81082bcd30abe669e2f60816818cf99f647fcb80
+index 0000000000000000000000000000000000000000..0ebd8d03144cb2a61af96640b8d2bc8908bae54b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.inventory.item.properties.AttributePair;
@@ -2304,6 +2532,7 @@ index 0000000000000000000000000000000000000000..81082bcd30abe669e2f60816818cf99f
 +import net.minecraft.nbt.Tag;
 +import net.minecraft.resources.ResourceLocation;
 +import org.bukkit.Registry;
++import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeModifier;
 +import org.bukkit.craftbukkit.CraftEquipmentSlot;
 +import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
@@ -2322,13 +2551,13 @@ index 0000000000000000000000000000000000000000..81082bcd30abe669e2f60816818cf99f
 +        }));
 +
 +        ResourceLocation attributeName = ResourceLocation.tryParse(holder.get(ATTRIBUTE_NAME));
-+
 +        net.minecraft.world.entity.ai.attributes.AttributeModifier modifier = net.minecraft.world.entity.ai.attributes.AttributeModifier.load(compoundTag);
 +        return new AttributePairImpl(attributeName == null ? null : Registry.ATTRIBUTE.get(CraftNamespacedKey.fromMinecraft(attributeName)), CraftAttributeInstance.convert(modifier));
 +    }
 +
 +    @Override
 +    public Tag serialize(AttributePair value) {
++        Attribute attribute = value.attribute();
 +        AttributeModifier attributeModifier = value.modifier();
 +        net.minecraft.world.entity.ai.attributes.AttributeModifier nmsModifier = CraftAttributeInstance.convert(attributeModifier);
 +
@@ -2337,7 +2566,7 @@ index 0000000000000000000000000000000000000000..81082bcd30abe669e2f60816818cf99f
 +            context.register(ATTRIBUTE_SLOT, StringPrimitive.INSTANCE);
 +        }));
 +
-+        attributeHolder.set(ATTRIBUTE_NAME, attributeModifier.getName());
++        attributeHolder.set(ATTRIBUTE_NAME, attribute.getKey().toString());
 +        if (attributeModifier.getSlot() != null) {
 +            attributeHolder.set(ATTRIBUTE_SLOT, CraftEquipmentSlot.getNMS(attributeModifier.getSlot()).name());
 +        }
@@ -3296,15 +3525,15 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..367c9edd426f108354a4cddd5b0c6986
  
      // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..bce096c38c721fcda6fe5c717b367aa931cf97a9 100644
+index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..4ef44b5536e4011ba33441fb37f8fdb6c80beb39 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -287,6 +287,14 @@ public final class CraftItemStack extends ItemStack {
          return getItemMeta(item, CraftItemStack.getType(item));
      }
      public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, Material material) {
-+        CompoundTag component = item == null ? new CompoundTag() : item.getOrCreateTag();
-+        return getItemMeta(io.papermc.paper.property.nbt.NbtPropertyHolder.itemHolder(component), material);
++        net.minecraft.world.item.ItemStack itemStack = item == null ? net.minecraft.world.item.ItemStack.EMPTY : item;
++        return getItemMeta(io.papermc.paper.property.nbt.NbtPropertyHolder.itemHolder(itemStack), material);
 +    }
 +    public static ItemMeta getItemMeta(io.papermc.paper.property.MutablePropertyView propertyHolder, Material material) {
 +        return io.papermc.paper.item.PaperMetaRegistry.getItemMeta(propertyHolder, material);
@@ -3379,7 +3608,7 @@ index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..0a6df8fa365715b7c67e0b38728eeeed
          map.put(SerializableMeta.TYPE_FIELD, SerializableMeta.classMap.get(getClass()));
          this.serialize(map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 64c50c52c11214740de7903e5592b8b6b2c170b3..4a682f62c9f6083f8520decbfc98db121d90ee4b 100644
+index 64c50c52c11214740de7903e5592b8b6b2c170b3..b2364454bad4aefb97fb13134e407ba628e3ef31 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -54,7 +54,6 @@ import org.bukkit.block.data.BlockData;
@@ -3398,7 +3627,7 @@ index 64c50c52c11214740de7903e5592b8b6b2c170b3..4a682f62c9f6083f8520decbfc98db12
 +    @Override
 +    public io.papermc.paper.property.MutablePropertyView getPropertyHolder(ItemStack itemStack) {
 +        if (itemStack instanceof org.bukkit.craftbukkit.inventory.CraftItemStack craftItemStack) {
-+            return io.papermc.paper.property.nbt.NbtPropertyHolder.itemHolder(craftItemStack.handle.getOrCreateTag());
++            return io.papermc.paper.property.nbt.NbtPropertyHolder.itemHolder(craftItemStack.handle);
 +        }
 +
 +        throw new UnsupportedOperationException();

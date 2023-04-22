@@ -1618,10 +1618,10 @@ index 0000000000000000000000000000000000000000..878e3d3ca7123734f67713f23f26105b
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/MetaFirework.java b/src/main/java/io/papermc/paper/item/meta/MetaFirework.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..305f28bffe1cea8b06d7b99f98cac2e2932203f1
+index 0000000000000000000000000000000000000000..87adc67bb81aca484a3df2a1f6c9f0df6fc63819
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/MetaFirework.java
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,130 @@
 +package io.papermc.paper.item.meta;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -1645,8 +1645,8 @@ index 0000000000000000000000000000000000000000..305f28bffe1cea8b06d7b99f98cac2e2
 +
 +    @Override
 +    public boolean hasEffects() {
-+        List<FireworkEffect> effects = this.propertyHolder.get(ItemProperties.EXPLOSIONS);
-+        return effects != null && !effects.isEmpty();
++        List<FireworkEffect> effects = this.getFromPropertyPathOrElse(ItemProperties.FIREWORKS, ItemProperties.EXPLOSIONS, List.of());
++        return !effects.isEmpty();
 +    }
 +
 +    @Override
@@ -1665,7 +1665,7 @@ index 0000000000000000000000000000000000000000..305f28bffe1cea8b06d7b99f98cac2e2
 +
 +    @Override
 +    public void addEffects(Iterable<FireworkEffect> effects) {
-+        List<FireworkEffect> explosions = this.propertyHolder.getOrCreate(ItemProperties.EXPLOSIONS);
++        List<FireworkEffect> explosions = this.getOrCreateFromPropertyPath(ItemProperties.FIREWORKS, ItemProperties.EXPLOSIONS);
 +        for (FireworkEffect fireworkEffect : effects) {
 +            explosions.add(fireworkEffect);
 +        }
@@ -1673,19 +1673,19 @@ index 0000000000000000000000000000000000000000..305f28bffe1cea8b06d7b99f98cac2e2
 +
 +    @Override
 +    public List<FireworkEffect> getEffects() {
-+        return Collections.unmodifiableList(this.propertyHolder.getOrDefault(ItemProperties.EXPLOSIONS, List.of()));
++        return Collections.unmodifiableList(this.getFromPropertyPathOrElse(ItemProperties.FIREWORKS, ItemProperties.EXPLOSIONS, List.of()));
 +    }
 +
 +    @Override
 +    public int getEffectsSize() {
-+        List<FireworkEffect> effects = this.propertyHolder.get(ItemProperties.EXPLOSIONS);
-+        return effects == null ? 0 : effects.size();
++        List<FireworkEffect> effects = this.getFromPropertyPathOrElse(ItemProperties.FIREWORKS, ItemProperties.EXPLOSIONS, List.of());
++        return effects.size();
 +    }
 +
 +    @Override
 +    public void removeEffect(int index) {
-+        List<FireworkEffect> effects = this.propertyHolder.get(ItemProperties.EXPLOSIONS);
-+        if (effects == null) {
++        List<FireworkEffect> effects = this.getFromPropertyPathOrElse(ItemProperties.FIREWORKS, ItemProperties.EXPLOSIONS, List.of());
++        if (effects.isEmpty()) {
 +            throw new IndexOutOfBoundsException("Index: " + index + ", Size: 0");
 +        } else {
 +            effects.remove(index);
@@ -1694,19 +1694,19 @@ index 0000000000000000000000000000000000000000..305f28bffe1cea8b06d7b99f98cac2e2
 +
 +    @Override
 +    public void clearEffects() {
-+        this.propertyHolder.unset(ItemProperties.EXPLOSIONS);
++        this.unsetInPropertyPath(ItemProperties.FIREWORKS, ItemProperties.EXPLOSIONS);
 +    }
 +
 +    @Override
 +    public int getPower() {
-+        return this.propertyHolder.getOrDefault(ItemProperties.FLIGHT, (byte) 0);
++        return this.getFromPropertyPathOrElse(ItemProperties.FIREWORKS, ItemProperties.FLIGHT, (byte) 0);
 +    }
 +
 +    @Override
 +    public void setPower(int power) {
 +        Validate.isTrue(power >= 0, "Power cannot be less than zero: ", power);
 +        Validate.isTrue(power < 0x80, "Power cannot be more than 127: ", power);
-+        this.propertyHolder.set(ItemProperties.FLIGHT, (byte) power);
++        this.setFromPropertyPath(ItemProperties.FIREWORKS, ItemProperties.FLIGHT, (byte) power);
 +    }
 +
 +    @Override
@@ -1716,8 +1716,7 @@ index 0000000000000000000000000000000000000000..305f28bffe1cea8b06d7b99f98cac2e2
 +
 +    @Override
 +    public void migrateFrom(MutablePropertyView mutable) {
-+        mutable.unset(ItemProperties.FLIGHT);
-+        mutable.unset(ItemProperties.EXPLOSIONS);
++        mutable.unset(ItemProperties.FIREWORKS);
 +    }
 +
 +    // Equality
