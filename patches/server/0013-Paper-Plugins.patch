@@ -2540,10 +2540,10 @@ index 0000000000000000000000000000000000000000..2ea978ac957849260e7ca69c9ff56588
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2c7a0751e5c8d0d1e42f7e245ba09815d4f6f8ff
+index 0000000000000000000000000000000000000000..67c4ef672ee509deba2b4bcaac42d9db24d4c89a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/ProviderConfiguration.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import io.papermc.paper.plugin.provider.PluginProvider;
@@ -2562,6 +2562,10 @@ index 0000000000000000000000000000000000000000..2c7a0751e5c8d0d1e42f7e245ba09815
 +
 +    default boolean preloadProvider(PluginProvider<T> provider) {
 +        return true;
++    }
++
++    default void onGenericError(PluginProvider<T> provider) {
++
 +    }
 +
 +}
@@ -2787,10 +2791,10 @@ index 0000000000000000000000000000000000000000..862c2d9f195fe325d5e5d4aacbdf4051
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/ModernPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/ModernPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..82ea31dfcb86f5b887f1a80022e19d934d586282
+index 0000000000000000000000000000000000000000..9af388a8e56806ab44f8c3ef4f97086ce38ef3b4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/ModernPluginLoadingStrategy.java
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,138 @@
 +package io.papermc.paper.plugin.entrypoint.strategy.modern;
 +
 +import com.google.common.collect.Maps;
@@ -2841,6 +2845,7 @@ index 0000000000000000000000000000000000000000..82ea31dfcb86f5b887f1a80022e19d93
 +                    replacedProvider.provider.getSource(),
 +                    replacedProvider.provider.getParentSource()
 +                ));
++                this.configuration.onGenericError(replacedProvider.provider);
 +            }
 +
 +            for (String extra : providerConfig.getProvidedPlugins()) {
@@ -2876,6 +2881,7 @@ index 0000000000000000000000000000000000000000..82ea31dfcb86f5b887f1a80022e19d93
 +                providerMap.remove(configuration.getName());
 +                // Cleanup plugins that failed to load
 +                dependencyTree.remove(provider);
++                this.configuration.onGenericError(provider);
 +            }
 +        }
 +
@@ -6280,10 +6286,10 @@ index 0000000000000000000000000000000000000000..14ed05945ba5bfeb2b539d4786278b0e
 +
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fbe3f8266398b213570d5008532d550d3c89ef16
+index 0000000000000000000000000000000000000000..94207f1489dc024dc660cfacaa107cd0c094b99f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,58 @@
 +package io.papermc.paper.plugin.storage;
 +
 +import com.mojang.logging.LogUtils;
@@ -6319,12 +6325,19 @@ index 0000000000000000000000000000000000000000..fbe3f8266398b213570d5008532d550d
 +                    PluginProviderContext context = PluginProviderContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
 +                    provided.bootstrap(context);
 +                    return true;
-+                } catch (Exception e) {
++                } catch (Throwable e) {
 +                    LOGGER.error("Failed to run bootstrapper for %s. This plugin will not be loaded.".formatted(provider.getSource()), e);
 +                    if (provider instanceof ProviderStatusHolder statusHolder) {
 +                        statusHolder.setStatus(ProviderStatus.ERRORED);
 +                    }
 +                    return false;
++                }
++            }
++
++            @Override
++            public void onGenericError(PluginProvider<PluginBootstrap> provider) {
++                if (provider instanceof ProviderStatusHolder statusHolder) {
++                    statusHolder.setStatus(ProviderStatus.ERRORED);
 +                }
 +            }
 +        }));
