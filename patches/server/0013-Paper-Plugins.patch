@@ -1762,10 +1762,10 @@ index 0000000000000000000000000000000000000000..a2fa8406bc3f0dcab6805633ae984d03
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1523cbb1801b937c3d40080df7d52e6cff8fc49c
+index 0000000000000000000000000000000000000000..e72bec3b0cbc41580f1b4beecae316d1c083d3e3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,117 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
 +import com.google.common.graph.GraphBuilder;
@@ -1865,6 +1865,11 @@ index 0000000000000000000000000000000000000000..1523cbb1801b937c3d40080df7d52e6c
 +    @Override
 +    public boolean hasDependency(@NotNull String pluginIdentifier) {
 +        return this.dependencies.contains(pluginIdentifier);
++    }
++
++    // Used by the legacy loader -- this isn't recommended
++    public void addDirectDependency(String dependency) {
++        this.dependencies.add(dependency);
 +    }
 +
 +    @Override
@@ -2240,10 +2245,10 @@ index 0000000000000000000000000000000000000000..a9bca905eba67972e4d1b07b1d243272
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ebd193e7d9736021756223d565c8a16a7b1770d2
+index 0000000000000000000000000000000000000000..03a80151a28cdb712cf89d909188d9bc806ca3bf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/LegacyPluginLoadingStrategy.java
-@@ -0,0 +1,269 @@
+@@ -0,0 +1,271 @@
 +package io.papermc.paper.plugin.entrypoint.strategy;
 +
 +import com.google.common.graph.GraphBuilder;
@@ -2292,6 +2297,7 @@ index 0000000000000000000000000000000000000000..ebd193e7d9736021756223d565c8a16a
 +            PluginMeta configuration = provider.getMeta();
 +
 +            PluginProvider<T> replacedProvider = providersToLoad.put(configuration.getName(), provider);
++            dependencyTree.addDirectDependency(configuration.getName()); // add to dependency tree
 +            if (replacedProvider != null) {
 +                LOGGER.severe(String.format(
 +                    "Ambiguous plugin name `%s' for files `%s' and `%s' in `%s'",
@@ -2323,6 +2329,7 @@ index 0000000000000000000000000000000000000000..ebd193e7d9736021756223d565c8a16a
 +                        provider.getParentSource()
 +                    ));
 +                } else {
++                    dependencyTree.addDirectDependency(provided); // add to dependency tree
 +                    String replacedPlugin = pluginsProvided.put(provided, configuration.getName());
 +                    if (replacedPlugin != null) {
 +                        LOGGER.warning(String.format(
