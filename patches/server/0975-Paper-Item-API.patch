@@ -479,7 +479,7 @@ index 0000000000000000000000000000000000000000..2404230aff503ee9baa8cf78a3ab1133
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..371ca38b9a23fd9603aee980c1ae0758edee9c6d
+lindex 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675ca9933b4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 @@ -0,0 +1,713 @@
@@ -1132,10 +1132,10 @@ index 0000000000000000000000000000000000000000..371ca38b9a23fd9603aee980c1ae0758
 +        if (object == this) {
 +            return true;
 +        }
-+        if (!(object instanceof PaperMeta)) {
++        if (!(object instanceof PaperMeta otherMeta)) {
 +            return false;
 +        }
-+        return CraftItemFactory.instance().equals(this, (ItemMeta) object);
++        return this.propertyHolder.equals(otherMeta.propertyHolder);
 +    }
 +
 +    @Override
@@ -1734,10 +1734,10 @@ index 0000000000000000000000000000000000000000..f5765e06ae04dac4cbeeaf4668e695a5
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..310fe0ac36f6b9d3128f71951711e24d8649414e
+index 0000000000000000000000000000000000000000..4b58abc4f8f0091873b3df42d3608c6d7659540f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,54 @@
 +package io.papermc.paper.property.nbt.access;
 +
 +import net.minecraft.nbt.CompoundTag;
@@ -1762,7 +1762,12 @@ index 0000000000000000000000000000000000000000..310fe0ac36f6b9d3128f71951711e24d
 +
 +    @Override
 +    public @Nullable CompoundTag getUnderlyingTag() {
-+        return this.itemStack.getTag();
++        CompoundTag compoundTag = this.itemStack.getTag();
++        if (compoundTag == null || compoundTag.isEmpty()) {
++            return null;
++        }
++
++        return compoundTag;
 +    }
 +
 +    @Override
@@ -3532,7 +3537,7 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..367c9edd426f108354a4cddd5b0c6986
  
      // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..4ef44b5536e4011ba33441fb37f8fdb6c80beb39 100644
+index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..cb4fe69c35c5ea87a509a858fdd5e7316af52c94 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -287,6 +287,14 @@ public final class CraftItemStack extends ItemStack {
@@ -3563,7 +3568,7 @@ index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..4ef44b5536e4011ba33441fb37f8fdb6
          // SpigotCraft#463 this is required now by the Vanilla client, so mimic ItemStack constructor in ensuring it
          if (item.getItem() != null && item.getItem().canBeDepleted()) {
              item.setDamageValue(item.getDamageValue());
-@@ -662,7 +666,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -662,10 +666,55 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public boolean hasItemMeta() {
@@ -3572,6 +3577,54 @@ index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..4ef44b5536e4011ba33441fb37f8fdb6
      }
  
      static boolean hasItemMeta(net.minecraft.world.item.ItemStack item) {
+         return !(item == null || item.getTag() == null || item.getTag().isEmpty());
+     }
++    // Paper start - Delegate equality / hashcode to nms handle
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++
++        // If other is instance of craft, assume it's backed by an NBT --- which may be invalid
++        if (o instanceof CraftItemStack other) {
++            return this.isEqual(this.handle, other.handle); // Check underlying tag -- ignore itemmeta equality
++        }
++        // Backed by a bukkit instance... compare the item meta's underlying tag
++        else if (o instanceof ItemStack otherBukkit) {
++            return this.isEqualBukkit(this, otherBukkit); // Use bukkit comparison -- (check the tag stored in meta)
++        }
++
++        return false; // Not any recongnized type
++    }
++
++    boolean isEqualBukkit(ItemStack first, ItemStack second) {
++        if (first == null) {
++            first = new ItemStack(Material.AIR);
++        }
++        if (second == null) {
++            second = new ItemStack(Material.AIR);
++        }
++
++        return
++            java.util.Objects.equals(first.getType(), second.getType()) && // Compare ItemType equality
++                first.getAmount() == second.getAmount() && // Compare count equality
++                java.util.Objects.equals(first.getItemMeta(), second.getItemMeta()); // Compare tag equality
++    }
++
++    boolean isEqual(net.minecraft.world.item.ItemStack first, net.minecraft.world.item.ItemStack second) {
++        if (first == null) {
++            first = net.minecraft.world.item.ItemStack.EMPTY;
++        }
++        if (second == null) {
++            second = net.minecraft.world.item.ItemStack.EMPTY;
++        }
++
++        return
++            java.util.Objects.equals(first.getItem(), second.getItem()) && // Compare ItemType equality
++            first.getCount() == second.getCount() && // Compare count equality
++            java.util.Objects.equals(first.getTag(), second.getTag()); // Compare tag equality
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..0a6df8fa365715b7c67e0b38728eeeed996c3a99 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
