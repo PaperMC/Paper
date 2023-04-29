@@ -253,4 +253,40 @@ public interface Chunk extends PersistentDataHolder {
      * @return if the biome is contained within
      */
     boolean contains(@NotNull Biome biome);
+
+    /**
+     * Gets the load level of this chunk, which determines what game logic is
+     * processed.
+     *
+     * @return the load level
+     */
+    @NotNull
+    LoadLevel getLoadLevel();
+
+    /**
+     * An enum to specify the load level of a chunk.
+     */
+    public enum LoadLevel {
+
+        /**
+         * No game logic is processed, world generation may still occur.
+         */
+        INACCESSIBLE,
+        /**
+         * Most game logic is not processed, including entities and redstone.
+         */
+        BORDER,
+        /**
+         * All game logic except entities is processed.
+         */
+        TICKING,
+        /**
+         * All game logic is processed.
+         */
+        ENTITY_TICKING,
+        /**
+         * This chunk is not loaded.
+         */
+        UNLOADED;
+    }
 }
