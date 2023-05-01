@@ -1,0 +1,102 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cryptite <cryptite@gmail.com>
+Date: Mon, 1 May 2023 15:23:34 -0500
+Subject: [PATCH] Add PlayerGetRespawnLocationEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 4d837c1530a3031a4c2a5a39d87bd013d60e14a6..cbbaebc7515da7d630e575abc7f8a9548b4e070b 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -835,49 +835,57 @@ public abstract class PlayerList {
+ 
+         // CraftBukkit start - fire PlayerRespawnEvent
+         if (location == null) {
+-            // boolean isBedSpawn = false; // Paper - moved up
+-            ServerLevel worldserver1 = this.server.getLevel(entityplayer.getRespawnDimension());
+-            if (worldserver1 != null) {
+-                Optional optional;
++            // Paper start
++            Player respawnPlayer = entityplayer1.getBukkitEntity();
++            org.bukkit.event.player.PlayerGetRespawnLocationEvent preRespawnEvent = new org.bukkit.event.player.PlayerGetRespawnLocationEvent(respawnPlayer);
++            preRespawnEvent.callEvent();
++            location = preRespawnEvent.getRespawnLocation();
+ 
+-                if (blockposition != null) {
+-                    optional = net.minecraft.world.entity.player.Player.findRespawnPositionAndUseSpawnBlock(worldserver1, blockposition, f, flag1, true); // Paper - Fix SPIGOT-5989
+-                } else {
+-                    optional = Optional.empty();
+-                }
++            if (location == null) {
++                // Paper end
++                // boolean isBedSpawn = false; // Paper - moved up
++                ServerLevel worldserver1 = this.server.getLevel(entityplayer.getRespawnDimension());
++                if (worldserver1 != null) {
++                    Optional optional;
++
++                    if (blockposition != null) {
++                        optional = net.minecraft.world.entity.player.Player.findRespawnPositionAndUseSpawnBlock(worldserver1, blockposition, f, flag1, true); // Paper - Fix SPIGOT-5989
++                    } else {
++                        optional = Optional.empty();
++                    }
+ 
+-                if (optional.isPresent()) {
+-                    BlockState iblockdata = worldserver1.getBlockState(blockposition);
+-                    boolean flag3 = iblockdata.is(Blocks.RESPAWN_ANCHOR);
+-                    isAnchorSpawn = flag3; // Paper - Fix anchor respawn acting as a bed respawn from the end portal
+-                    Vec3 vec3d = (Vec3) optional.get();
+-                    float f1;
++                    if (optional.isPresent()) {
++                        BlockState iblockdata = worldserver1.getBlockState(blockposition);
++                        boolean flag3 = iblockdata.is(Blocks.RESPAWN_ANCHOR);
++                        isAnchorSpawn = flag3; // Paper - Fix anchor respawn acting as a bed respawn from the end portal
++                        Vec3 vec3d = (Vec3) optional.get();
++                        float f1;
+ 
+-                    if (!iblockdata.is(BlockTags.BEDS) && !flag3) {
+-                        f1 = f;
+-                    } else {
+-                        Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
++                        if (!iblockdata.is(BlockTags.BEDS) && !flag3) {
++                            f1 = f;
++                        } else {
++                            Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
+ 
+-                        f1 = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
+-                    }
++                            f1 = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
++                        }
+ 
+-                    entityplayer1.setRespawnPosition(worldserver1.dimension(), blockposition, f, flag1, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // Paper - PlayerSetSpawnEvent
+-                    flag2 = !flag && flag3;
+-                    isBedSpawn = true;
+-                    location = new Location(worldserver1.getWorld(), vec3d.x, vec3d.y, vec3d.z, f1, 0.0F);
+-                } else if (blockposition != null) {
+-                    entityplayer1.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
+-                    entityplayer1.setRespawnPosition(null, null, 0f, false, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
++                        entityplayer1.setRespawnPosition(worldserver1.dimension(), blockposition, f, flag1, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // Paper - PlayerSetSpawnEvent
++                        flag2 = !flag && flag3;
++                        isBedSpawn = true;
++                        location = new Location(worldserver1.getWorld(), vec3d.x, vec3d.y, vec3d.z, f1, 0.0F);
++                    } else if (blockposition != null) {
++                        entityplayer1.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
++                        entityplayer1.setRespawnPosition(null, null, 0f, false, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
++                    }
+                 }
+-            }
+ 
+-            if (location == null) {
+-                worldserver1 = this.server.getLevel(Level.OVERWORLD);
+-                blockposition = entityplayer1.getSpawnPoint(worldserver1);
+-                location = new Location(worldserver1.getWorld(), (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.1F), (double) ((float) blockposition.getZ() + 0.5F), worldserver1.levelData.getSpawnAngle(), 0.0F); // Paper - use world spawn angle
++                if (location == null) {
++                    worldserver1 = this.server.getLevel(Level.OVERWORLD);
++                    blockposition = entityplayer1.getSpawnPoint(worldserver1);
++                    location = new Location(worldserver1.getWorld(), (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.1F), (double) ((float) blockposition.getZ() + 0.5F), worldserver1.levelData.getSpawnAngle(), 0.0F); // Paper - use world spawn angle
++                }
+             }
+ 
+-            Player respawnPlayer = entityplayer1.getBukkitEntity();
+             PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn && !isAnchorSpawn, isAnchorSpawn, reason, com.google.common.collect.ImmutableSet.<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag>builder().add(respawnFlags)); // Paper - Fix anchor respawn acting as a bed respawn from the end portal
+             this.cserver.getPluginManager().callEvent(respawnEvent);
+             // Spigot Start
