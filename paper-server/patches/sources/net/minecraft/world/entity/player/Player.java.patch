@@ -210,6 +210,15 @@
              }
          }
      }
+@@ -912,7 +973,7 @@
+         ItemStack itemstack = this.getItemBlockingWith();
+ 
+         if (attacker.canDisableShield() && itemstack != null) {
+-            this.disableShield(itemstack);
++            this.disableShield(itemstack, attacker); // Paper - Add PlayerShieldDisableEvent
+         }
+ 
+     }
 @@ -923,10 +984,29 @@
      }
  
@@ -475,7 +484,30 @@
                      }
                  }
  
-@@ -1351,7 +1490,14 @@
+@@ -1327,8 +1466,21 @@
+         this.attack(target);
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - Add PlayerShieldDisableEvent
+     public void disableShield(ItemStack shield) {
+-        this.getCooldowns().addCooldown(shield, 100);
++        // Paper start - Add PlayerShieldDisableEvent
++        this.disableShield(shield, null);
++    }
++    public void disableShield(ItemStack shield, @Nullable LivingEntity attacker) {
++        final org.bukkit.entity.Entity finalAttacker = attacker != null ? attacker.getBukkitEntity() : null;
++        if (finalAttacker != null) {
++            final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker, 100);
++            if (!shieldDisableEvent.callEvent()) return;
++            this.getCooldowns().addCooldown(shield, shieldDisableEvent.getCooldown());
++        } else {
++            this.getCooldowns().addCooldown(shield, 100);
++        }
++        // Paper end - Add PlayerShieldDisableEvent
+         this.stopUsingItem();
+         this.level().broadcastEntityEvent(this, (byte) 30);
+     }
+@@ -1351,7 +1503,14 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -491,7 +523,7 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1391,7 +1537,13 @@
+@@ -1391,7 +1550,13 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos) {
@@ -506,7 +538,7 @@
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
      }
-@@ -1503,7 +1655,7 @@
+@@ -1503,7 +1668,7 @@
  
      @Override
      public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
@@ -515,7 +547,7 @@
              return false;
          } else {
              if (fallDistance >= 2.0F) {
-@@ -1545,12 +1697,24 @@
+@@ -1545,12 +1710,24 @@
      }
  
      public void startFallFlying() {
@@ -541,20 +573,20 @@
      }
  
      @Override
-@@ -1662,13 +1826,32 @@
+@@ -1662,13 +1839,32 @@
      }
  
      public int getXpNeededForNextLevel() {
 -        return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
 +        return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2); // Paper - diff on change; calculateTotalExperiencePoints
-     }
++    }
 +    // Paper start - send while respecting visibility
 +    private static void sendSoundEffect(Player fromEntity, double x, double y, double z, SoundEvent soundEffect, SoundSource soundCategory, float volume, float pitch) {
 +        fromEntity.level().playSound(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity itself
 +        if (fromEntity instanceof ServerPlayer serverPlayer) {
 +            serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundEffect), soundCategory, x, y, z, volume, pitch, fromEntity.random.nextLong()));
 +        }
-+    }
+     }
 +    // Paper end - send while respecting visibility
  
 +    // CraftBukkit start
@@ -576,7 +608,7 @@
              }
  
          }
-@@ -1748,13 +1931,20 @@
+@@ -1748,13 +1944,20 @@
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -604,7 +636,7 @@
          }
  
      }
-@@ -1798,26 +1988,55 @@
+@@ -1798,26 +2001,55 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
@@ -667,10 +699,12 @@
      }
  
      @Override
-@@ -2005,18 +2224,29 @@
+@@ -2003,20 +2235,31 @@
+     @Override
+     public ImmutableList<Pose> getDismountPoses() {
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
-     }
- 
++    }
++
 +    // Paper start - PlayerReadyArrowEvent
 +    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
 +        return !(this instanceof ServerPlayer) ||
@@ -679,9 +713,9 @@
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
 +                ).callEvent();
-+    }
+     }
 +    // Paper end - PlayerReadyArrowEvent
-+
+ 
      @Override
      public ItemStack getProjectile(ItemStack stack) {
          if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
