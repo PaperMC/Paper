@@ -86,7 +86,7 @@
                          double d14;
  
                          if (entity instanceof EntityLiving) {
-@@ -263,6 +310,51 @@
+@@ -263,11 +310,66 @@
  
              SystemUtils.shuffle(this.toBlow, this.level.random);
              ObjectListIterator objectlistiterator = this.toBlow.iterator();
@@ -138,7 +138,22 @@
  
              while (objectlistiterator.hasNext()) {
                  BlockPosition blockposition = (BlockPosition) objectlistiterator.next();
-@@ -281,8 +373,8 @@
+                 IBlockData iblockdata = this.level.getBlockState(blockposition);
+                 Block block = iblockdata.getBlock();
++                // CraftBukkit start - TNTPrimeEvent
++                if (block instanceof net.minecraft.world.level.block.BlockTNT) {
++                    Entity sourceEntity = source == null ? null : source;
++                    BlockPosition sourceBlock = sourceEntity == null ? BlockPosition.containing(this.x, this.y, this.z) : null;
++                    if (!CraftEventFactory.callTNTPrimeEvent(this.level, blockposition, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.EXPLOSION, sourceEntity, sourceBlock)) {
++                        this.level.sendBlockUpdated(blockposition, Blocks.AIR.defaultBlockState(), iblockdata, 3); // Update the block on the client
++                        continue;
++                    }
++                }
++                // CraftBukkit end
+ 
+                 if (!iblockdata.isAir()) {
+                     BlockPosition blockposition1 = blockposition.immutable();
+@@ -281,8 +383,8 @@
                              TileEntity tileentity = iblockdata.hasBlockEntity() ? this.level.getBlockEntity(blockposition) : null;
                              LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder(worldserver)).withRandom(this.level.random).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(blockposition)).withParameter(LootContextParameters.TOOL, ItemStack.EMPTY).withOptionalParameter(LootContextParameters.BLOCK_ENTITY, tileentity).withOptionalParameter(LootContextParameters.THIS_ENTITY, this.source);
  
@@ -149,7 +164,7 @@
                              }
  
                              iblockdata.spawnAfterBreak(worldserver, blockposition, ItemStack.EMPTY, flag2);
-@@ -314,7 +406,11 @@
+@@ -314,7 +416,11 @@
                  BlockPosition blockposition2 = (BlockPosition) objectlistiterator1.next();
  
                  if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockposition2).isAir() && this.level.getBlockState(blockposition2.below()).isSolidRender(this.level, blockposition2.below())) {
@@ -162,7 +177,7 @@
                  }
              }
          }
-@@ -326,6 +422,7 @@
+@@ -326,6 +432,7 @@
      }
  
      private static void addBlockDrops(ObjectArrayList<Pair<ItemStack, BlockPosition>> objectarraylist, ItemStack itemstack, BlockPosition blockposition) {
