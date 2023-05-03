@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Wed, 3 May 2023 11:56:15 -0500
+Subject: [PATCH] Add PlayerDataEvents
+
+This appears to have some support in the Discord community as developers from time to time express the desire to take control over loading/saving playerdata.
+
+This is the first "take" on the PR. The goal here is to provide events that can optionally provide/overwrite the data that is saved/loaded for players. This does not presently include Statistics.
+
+This PR as a whole introduces a problem in that CompoundTag is NMS and is not normally accessible by API meaning there is some whacky casting/instanceof checking which isn't very nice. As such this is meant to open the discussion on how best to implement this PR
+
+diff --git a/src/main/java/net/minecraft/stats/ServerStatsCounter.java b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
+index 9501e5f25f5c4d3069e554d4dc82b0e094156682..eaed2ab75e460940dc5f7f2323dd65c8139eaa4b 100644
+--- a/src/main/java/net/minecraft/stats/ServerStatsCounter.java
++++ b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
+@@ -198,7 +198,12 @@ public class ServerStatsCounter extends StatsCounter {
+         return nbttagcompound;
+     }
+ 
+-    protected String toJson() {
++    // Paper start - OBFHELPER
++    public String toJson() {
++        return serialize().toString();
++    }
++
++    public JsonObject serialize() { // Paper end
+         Map<StatType<?>, JsonObject> map = Maps.newHashMap();
+         ObjectIterator objectiterator = this.stats.object2IntEntrySet().iterator();
+ 
+@@ -224,7 +229,7 @@ public class ServerStatsCounter extends StatsCounter {
+ 
+         jsonobject1.add("stats", jsonobject);
+         jsonobject1.addProperty("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+-        return jsonobject1.toString();
++        return jsonobject1; // Paper
+     }
+ 
+     private static <T> ResourceLocation getKey(Stat<T> stat) {
+diff --git a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
+index 36af81f0957d17e170d229059c66f4eb4539dfeb..c57480914715194961e19073d7b6630eea6818d1 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
++++ b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
+@@ -33,8 +33,18 @@ public class PlayerDataStorage {
+ 
+     public void save(Player player) {
+         if (org.spigotmc.SpigotConfig.disablePlayerDataSaving) return; // Spigot
++        if (!new com.destroystokyo.paper.event.player.PlayerAttemptSaveDataEvent((org.bukkit.entity.Player) player.getBukkitEntity()).callEvent()) return; // Paper
+         try {
+             CompoundTag nbttagcompound = player.saveWithoutId(new CompoundTag());
++
++            // Paper start
++            com.destroystokyo.paper.event.player.PlayerSaveDataEvent event = new com.destroystokyo.paper.event.player.PlayerSaveDataEvent((org.bukkit.entity.Player) player.getBukkitEntity(), nbttagcompound);
++            if (!event.callEvent()) return; // Paper
++
++            nbttagcompound = (CompoundTag) event.getPlayerData(); // Could fail? Use validate below?
++//            org.apache.commons.lang3.Validate.isInstanceOf(CompoundTag.class, event.getPlayerData());
++            // Paper end
++
+             File file = File.createTempFile(player.getStringUUID() + "-", ".dat", this.playerDir);
+ 
+             NbtIo.writeCompressed(nbttagcompound, file);
+@@ -52,17 +62,24 @@ public class PlayerDataStorage {
+     public CompoundTag load(Player player) {
+         CompoundTag nbttagcompound = null;
+ 
++        // Paper start - If event supplies playerdata, use it. Otherwise just load from disk as usual
++        com.destroystokyo.paper.event.player.PlayerLoadDataEvent event = new com.destroystokyo.paper.event.player.PlayerLoadDataEvent(player.getUUID());
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++
++        Object playerData = event.getPlayerData();
++        if (playerData != null) {
++            nbttagcompound = (CompoundTag) playerData;
++        } else {
+         try {
+             File file = new File(this.playerDir, player.getStringUUID() + ".dat");
+             // Spigot Start
+             boolean usingWrongFile = false;
+-            if ( org.bukkit.Bukkit.getOnlineMode() && !file.exists() ) // Paper - Check online mode first
++            if (org.bukkit.Bukkit.getOnlineMode() && !file.exists()) // Paper - Check online mode first
+             {
+-                file = new File( this.playerDir, java.util.UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + player.getScoreboardName() ).getBytes( "UTF-8" ) ).toString() + ".dat");
+-                if ( file.exists() )
+-                {
++                file = new File(this.playerDir, java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + player.getScoreboardName()).getBytes("UTF-8")).toString() + ".dat");
++                if (file.exists()) {
+                     usingWrongFile = true;
+-                    org.bukkit.Bukkit.getServer().getLogger().warning( "Using offline mode UUID file for player " + player.getScoreboardName() + " as it is the only copy we can find." );
++                    org.bukkit.Bukkit.getServer().getLogger().warning("Using offline mode UUID file for player " + player.getScoreboardName() + " as it is the only copy we can find.");
+                 }
+             }
+             // Spigot End
+@@ -71,14 +88,15 @@ public class PlayerDataStorage {
+                 nbttagcompound = NbtIo.readCompressed(file);
+             }
+             // Spigot Start
+-            if ( usingWrongFile )
+-            {
+-                file.renameTo( new File( file.getPath() + ".offline-read" ) );
++            if (usingWrongFile) {
++                file.renameTo(new File(file.getPath() + ".offline-read"));
+             }
+             // Spigot End
+         } catch (Exception exception) {
+             PlayerDataStorage.LOGGER.warn("Failed to load player data for {}", player.getName().getString());
+         }
++        // Paper end
++        }
+ 
+         if (nbttagcompound != null) {
+             // CraftBukkit start

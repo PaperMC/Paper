@@ -1,0 +1,211 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Wed, 3 May 2023 11:56:15 -0500
+Subject: [PATCH] Add PlayerDataEvents
+
+This appears to have some support in the Discord community as developers from time to time express the desire to take control over loading/saving playerdata.
+
+This is the first "take" on the PR. The goal here is to provide events that can optionally provide/overwrite the data that is saved/loaded for players. This does not presently include Statistics.
+
+This PR as a whole introduces a problem in that CompoundTag is NMS and is not normally accessible by API meaning there is some whacky casting/instanceof checking which isn't very nice. As such this is meant to open the discussion on how best to implement this PR
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerAttemptSaveDataEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerAttemptSaveDataEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5fcc6eeaed2abe79284b2ab56571743a79b18fee
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerAttemptSaveDataEvent.java
+@@ -0,0 +1,52 @@
++package com.destroystokyo.paper.event.player;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called whenever player data is about to be saved.
++ */
++public class PlayerAttemptSaveDataEvent extends Event implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++    private final Player player;
++    private boolean cancel;
++
++    public PlayerAttemptSaveDataEvent(@NotNull Player player) {
++        super();
++        this.player = player;
++    }
++
++    /**
++     * Gets the player
++     *
++     * @return The player
++     */
++    @NotNull
++    public Player getPlayer() {
++        return player;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancel;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancel = cancel;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerLoadDataEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerLoadDataEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..71b2902d4fc42a8355fb646a5e170c1713c6317c
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerLoadDataEvent.java
+@@ -0,0 +1,59 @@
++package com.destroystokyo.paper.event.player;
++
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.UUID;
++
++/**
++ * Calls an event in which {@link PlayerLoadDataEvent#playerData} can be optionally provided. If {@link PlayerLoadDataEvent#playerData} is not provided,
++ * will load from disk, otherwise will use provided data
++ */
++public class PlayerLoadDataEvent extends Event {
++    private static final HandlerList handlers = new HandlerList();
++    private final UUID playerId;
++    private Object playerData;
++
++    public PlayerLoadDataEvent(@NotNull UUID playerId) {
++        super();
++        this.playerId = playerId;
++    }
++
++    /**
++     * Gets the player's unique ID.
++     *
++     * @return The unique ID
++     */
++    @NotNull
++    public UUID getUniqueId() {
++        return playerId;
++    }
++
++    /**
++     * @return Returns the playerData. This is of type net.minecraft.nbt.CompoundTag (needs discussion)
++     */
++    @Nullable
++    public Object getPlayerData() {
++        return playerData;
++    }
++
++    /**
++     * @param playerData Provide the playerdata of type net.minecraft.nbt.CompoundTag to be loaded. If not provided, will load from disk.
++     */
++    public void setPlayerData(@NotNull Object playerData) {
++        this.playerData = playerData;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerSaveDataEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerSaveDataEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..24ab6d26ef44a1732a06650c08f2d1930299525a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerSaveDataEvent.java
+@@ -0,0 +1,71 @@
++package com.destroystokyo.paper.event.player;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called after player data has been serialized and is about to be written to disk
++ */
++public class PlayerSaveDataEvent extends Event implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++    private final Player player;
++    private Object playerData;
++    private boolean cancel;
++
++    public PlayerSaveDataEvent(@NotNull Player player, Object playerData) {
++        super();
++        this.player = player;
++        this.playerData = playerData;
++    }
++
++    /**
++     * Gets the player
++     *
++     * @return The player
++     */
++    @NotNull
++    public Player getPlayer() {
++        return player;
++    }
++
++    /**
++     * @return Returns the playerData. This is of type net.minecraft.nbt.CompoundTag (needs discussion)
++     */
++    public Object getPlayerData() {
++        return playerData;
++    }
++
++    /**
++     * @param playerData Override the net.minecraft.nbt.CompoundTag that will be saved to disk.
++     */
++    public void setPlayerData(Object playerData) {
++        this.playerData = playerData;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancel;
++    }
++
++    /**
++     * @param cancel true if you wish to cancel this event. If cancelled, player data will not save to disk.
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancel = cancel;
++    }
++}
