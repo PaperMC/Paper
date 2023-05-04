@@ -454,4 +454,25 @@ public abstract class InventoryView {
      */
     @NotNull
     public abstract String getTitle();
+
+    /**
+     * Get the original title of this inventory window, before any changes were
+     * made using {@link #setTitle(String)}.
+     *
+     * @return the original title
+     */
+    @NotNull
+    public abstract String getOriginalTitle();
+
+    /**
+     * Sets the title of this inventory window to the specified title if the
+     * inventory window supports it.
+     * <p>
+     * Note if the inventory does not support titles that can be changed (ie, it
+     * is not creatable or viewed by a player), then this method will throw an
+     * exception.
+     *
+     * @param title The new title.
+     */
+    public abstract void setTitle(@NotNull String title);
 }
