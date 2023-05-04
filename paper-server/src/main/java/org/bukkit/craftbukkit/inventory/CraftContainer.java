@@ -49,6 +49,10 @@ public class CraftContainer extends Container {
 
     public CraftContainer(final Inventory inventory, final EntityHuman player, int id) {
         this(new InventoryView() {
+
+            private final String originalTitle = (inventory instanceof CraftInventoryCustom) ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).getTitle() : inventory.getType().getDefaultTitle();
+            private String title = originalTitle;
+
             @Override
             public Inventory getTopInventory() {
                 return inventory;
@@ -71,8 +75,20 @@ public class CraftContainer extends Container {
 
             @Override
             public String getTitle() {
-                return inventory instanceof CraftInventoryCustom ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).getTitle() : inventory.getType().getDefaultTitle();
+                return title;
             }
+
+            @Override
+            public String getOriginalTitle() {
+                return originalTitle;
+            }
+
+            @Override
+            public void setTitle(String title) {
+                CraftInventoryView.sendInventoryTitleChange(this, title);
+                this.title = title;
+            }
+
         }, player, id);
     }
 
