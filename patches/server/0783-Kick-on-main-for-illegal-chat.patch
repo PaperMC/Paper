@@ -7,7 +7,7 @@ Makes the PlayerKickEvent fire on the main thread for
 illegal characters or chat out-of-order errors.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 8552f230b4ec64a6e056198d3edb04395138608a..1371ffc0426ff019c47f30f2cdeea51f72b137c3 100644
+index 8552f230b4ec64a6e056198d3edb04395138608a..c3d4a3d109746866bbade09e0c95d7897c912b4b 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2162,7 +2162,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -20,7 +20,7 @@ index 8552f230b4ec64a6e056198d3edb04395138608a..1371ffc0426ff019c47f30f2cdeea51f
          } else {
              Optional<LastSeenMessages> optional = this.tryHandleChat(packet.message(), packet.timeStamp(), packet.lastSeenMessages());
  
-@@ -2196,7 +2198,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2196,12 +2198,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      @Override
      public void handleChatCommand(ServerboundChatCommandPacket packet) {
          if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.command())) {
@@ -30,7 +30,13 @@ index 8552f230b4ec64a6e056198d3edb04395138608a..1371ffc0426ff019c47f30f2cdeea51f
          } else {
              Optional<LastSeenMessages> optional = this.tryHandleChat(packet.command(), packet.timeStamp(), packet.lastSeenMessages());
  
-@@ -2276,7 +2280,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             if (optional.isPresent()) {
+                 this.server.submit(() -> {
++                    if (player.hasDisconnected()) return; // Paper
+                     this.performChatCommand(packet, (LastSeenMessages) optional.get());
+                     this.detectRateSpam("/" + packet.command()); // Spigot
+                 });
+@@ -2276,7 +2281,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      private Optional<LastSeenMessages> tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
          if (!this.updateChatOrder(timestamp)) {
              ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
