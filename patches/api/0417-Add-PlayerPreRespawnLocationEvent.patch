@@ -6,13 +6,12 @@ Subject: [PATCH] Add PlayerPreRespawnLocationEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/player/PlayerPreRespawnLocationEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerPreRespawnLocationEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cf81752c60fb1cd5a649c50acea759036ba9d094
+index 0000000000000000000000000000000000000000..bae7b9d61a061f9a4cc812c1b9107b2695dd5374
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PlayerPreRespawnLocationEvent.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.event.player;
 +
-+import org.apache.commons.lang3.Validate;
 +import org.bukkit.Location;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
@@ -25,7 +24,7 @@ index 0000000000000000000000000000000000000000..cf81752c60fb1cd5a649c50acea75903
 + * Called when a respawn event tries to determine the location of a respawn. This is called before {@link PlayerRespawnEvent}
 + */
 +public class PlayerPreRespawnLocationEvent extends PlayerEvent {
-+    private static final HandlerList handlers = new HandlerList();
++    private static final HandlerList HANDLER_LIST = new HandlerList();
 +    private final PlayerRespawnEvent.RespawnReason respawnReason;
 +    private Location respawnLocation;
 +
@@ -41,20 +40,17 @@ index 0000000000000000000000000000000000000000..cf81752c60fb1cd5a649c50acea75903
 +     */
 +    @Nullable
 +    public Location getRespawnLocation() {
-+        return this.respawnLocation;
++        return this.respawnLocation != null ? this.respawnLocation.clone() : null;
 +    }
 +
 +    /**
 +     * Sets the new respawn location.
 +     *
-+     * @param respawnLocation The exact location for the respawn.<br/>
++     * @param respawnLocation The exact location for the respawn. Can be set to null to invalidate any previously called/modified events<br/>
 +     * <b>Note:</b> If this is provided, <b>no vanilla logic that calculates "safe" respawn locations will be done.</b> It is up to you to ensure you are
 +     * providing a good respawn location for a Player.
 +     */
-+    public void setRespawnLocation(@NotNull Location respawnLocation) {
-+        Validate.notNull(respawnLocation, "Respawn location can not be null");
-+        Validate.notNull(respawnLocation.getWorld(), "Respawn world can not be null");
-+
++    public void setRespawnLocation(@Nullable Location respawnLocation) {
 +        this.respawnLocation = respawnLocation;
 +    }
 +
@@ -63,6 +59,7 @@ index 0000000000000000000000000000000000000000..cf81752c60fb1cd5a649c50acea75903
 +     *
 +     * @return the reason the event was called.
 +     */
++    @NotNull
 +    public PlayerRespawnEvent.RespawnReason getRespawnReason() {
 +        return respawnReason;
 +    }
@@ -70,11 +67,11 @@ index 0000000000000000000000000000000000000000..cf81752c60fb1cd5a649c50acea75903
 +    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +
 +    @NotNull
 +    public static HandlerList getHandlerList() {
-+        return handlers;
++        return HANDLER_LIST;
 +    }
 +}
