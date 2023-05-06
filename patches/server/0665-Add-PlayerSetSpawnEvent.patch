@@ -34,7 +34,7 @@ index 3072f513c22904f8066e0c37f345df4fdb451f8a..aa701e68ed81562861eba559e61e522b
          String s = resourcekey.location().toString();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index a649d1baa727dd16cb8e786bdf510021e2d16d26..c966f3f2e3176b47063dec03e7aaa4e809fd4de3 100644
+index a649d1baa727dd16cb8e786bdf510021e2d16d26..cdf85898d6ca9f1159b175dbc2760522abd8eb95 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1309,7 +1309,7 @@ public class ServerPlayer extends Player {
@@ -46,7 +46,7 @@ index a649d1baa727dd16cb8e786bdf510021e2d16d26..c966f3f2e3176b47063dec03e7aaa4e8
                  if (this.level.isDay()) {
                      return Either.left(Player.BedSleepingProblem.NOT_POSSIBLE_NOW);
                  } else {
-@@ -2151,44 +2151,44 @@ public class ServerPlayer extends Player {
+@@ -2151,44 +2151,50 @@ public class ServerPlayer extends Player {
          return this.respawnForced;
      }
  
@@ -93,7 +93,13 @@ index a649d1baa727dd16cb8e786bdf510021e2d16d26..c966f3f2e3176b47063dec03e7aaa4e8
 +            spawnLoc.setYaw(angle);
 +            willNotify = sendMessage && !flag2;
 +        }
-+        com.destroystokyo.paper.event.player.PlayerSetSpawnEvent event = new com.destroystokyo.paper.event.player.PlayerSetSpawnEvent(this.getBukkitEntity(), cause, spawnLoc, forced, willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
++
++        PlayerSpawnChangeEvent dumbEvent = new PlayerSpawnChangeEvent(this.getBukkitEntity(), spawnLoc, forced,
++            cause == com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN ? PlayerSpawnChangeEvent.Cause.RESET : PlayerSpawnChangeEvent.Cause.valueOf(cause.name()));
++        dumbEvent.callEvent();
++
++        com.destroystokyo.paper.event.player.PlayerSetSpawnEvent event = new com.destroystokyo.paper.event.player.PlayerSetSpawnEvent(this.getBukkitEntity(), cause, dumbEvent.getNewSpawn(), dumbEvent.isForced(), willNotify, willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null);
++        event.setCancelled(dumbEvent.isCancelled());
 +        if (!event.callEvent()) {
 +            return false;
          }
@@ -124,7 +130,7 @@ index a649d1baa727dd16cb8e786bdf510021e2d16d26..c966f3f2e3176b47063dec03e7aaa4e8
          } else {
              this.respawnPosition = null;
              this.respawnDimension = Level.OVERWORLD;
-@@ -2196,6 +2196,7 @@ public class ServerPlayer extends Player {
+@@ -2196,6 +2202,7 @@ public class ServerPlayer extends Player {
              this.respawnForced = false;
          }
  
