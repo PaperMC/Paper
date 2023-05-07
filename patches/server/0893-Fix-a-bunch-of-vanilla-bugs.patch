@@ -35,6 +35,9 @@ https://bugs.mojang.com/browse/MC-259571
 https://bugs.mojang.com/browse/MC-260219
   Play sniffer eat sound for the last item
 
+https://bugs.mojang.com/browse/MC-262422
+  Fix lightning being able to hit spectators
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -76,6 +79,19 @@ index 43e77cef0fce75f59aeb05e161668bebb8fca229..ef50fbf8cb3f008827850b5ed3342200
              }
          }
  
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 131a7ff0847272b2f9fecf62d0d28ca014689f5b..ed91515947ee049bdb82aa014fe439753f2b7620 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -949,7 +949,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         } else {
+             AABB axisalignedbb = (new AABB(blockposition1, new BlockPos(blockposition1.getX(), this.getMaxBuildHeight(), blockposition1.getZ()))).inflate(3.0D);
+             List<LivingEntity> list = this.getEntitiesOfClass(LivingEntity.class, axisalignedbb, (entityliving) -> {
+-                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition());
++                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition()) && !entityliving.isSpectator(); // Paper - Fix lightning being able to hit spectators (MC-262422)
+             });
+ 
+             if (!list.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 index 45b48da09eafa8482836e49768426069b0a73cca..16a1416cb2ce01071a033c5049edfb60b614d56a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
