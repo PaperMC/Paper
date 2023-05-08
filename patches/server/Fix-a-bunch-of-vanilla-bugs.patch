@@ -35,6 +35,9 @@ https://bugs.mojang.com/browse/MC-259571
 https://bugs.mojang.com/browse/MC-260219
   Play sniffer eat sound for the last item
 
+https://bugs.mojang.com/browse/MC-262422
+  Fix lightning being able to hit spectators
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -76,6 +79,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         } else {
+             AABB axisalignedbb = (new AABB(blockposition1, new BlockPos(blockposition1.getX(), this.getMaxBuildHeight(), blockposition1.getZ()))).inflate(3.0D);
+             List<LivingEntity> list = this.getEntitiesOfClass(LivingEntity.class, axisalignedbb, (entityliving) -> {
+-                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition());
++                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition()) && !entityliving.isSpectator(); // Paper - Fix lightning being able to hit spectators (MC-262422)
+             });
+ 
+             if (!list.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
