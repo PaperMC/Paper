@@ -306,6 +306,26 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
+    public int getHighestBlockYAt(int x, int z) {
+        return getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
+    }
+
+    @Override
+    public int getHighestBlockYAt(Location location) {
+        return getHighestBlockYAt(location.getBlockX(), location.getBlockZ());
+    }
+
+    @Override
+    public int getHighestBlockYAt(int x, int z, org.bukkit.HeightMap heightMap) {
+        return getHandle().getHeight(CraftHeightMap.toNMS(heightMap), x, z);
+    }
+
+    @Override
+    public int getHighestBlockYAt(Location location, org.bukkit.HeightMap heightMap) {
+        return getHighestBlockYAt(location.getBlockX(), location.getBlockZ(), heightMap);
+    }
+
+    @Override
     public boolean generateTree(Location location, Random random, TreeType treeType) {
         BlockPosition pos = CraftLocation.toBlockPosition(location);
         return generateTree(getHandle(), getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);

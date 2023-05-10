@@ -173,11 +173,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public int getHighestBlockYAt(int x, int z) {
-        return getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
-    }
-
-    @Override
     public Location getSpawnLocation() {
         BlockPosition spawn = world.getSharedSpawnPos();
         float yaw = world.getSharedSpawnAngle();
@@ -709,11 +704,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public int getHighestBlockYAt(Location location) {
-        return getHighestBlockYAt(location.getBlockX(), location.getBlockZ());
-    }
-
-    @Override
     public Chunk getChunkAt(Location location) {
         return getChunkAt(location.getBlockX() >> 4, location.getBlockZ() >> 4);
     }
@@ -747,11 +737,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public int getHighestBlockYAt(int x, int z, org.bukkit.HeightMap heightMap) {
         // Transient load for this tick
         return world.getChunk(x >> 4, z >> 4).getHeight(CraftHeightMap.toNMS(heightMap), x, z);
-    }
-
-    @Override
-    public int getHighestBlockYAt(Location location, org.bukkit.HeightMap heightMap) {
-        return getHighestBlockYAt(location.getBlockX(), location.getBlockZ(), heightMap);
     }
 
     @Override

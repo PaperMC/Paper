@@ -16,6 +16,7 @@ import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunk;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.TreeType;
@@ -196,6 +197,30 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     public void setBlockData(int x, int y, int z, BlockData blockData) {
         Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         super.setBlockData(x, y, z, blockData);
+    }
+
+    @Override
+    public int getHighestBlockYAt(int x, int z) {
+        Preconditions.checkArgument(isInRegion(x, region.getCenter().getBlockY(), z), "Coordinates %s, %s are not in the region", x, z);
+        return super.getHighestBlockYAt(x, z);
+    }
+
+    @Override
+    public int getHighestBlockYAt(Location location) {
+        Preconditions.checkArgument(isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return super.getHighestBlockYAt(location);
+    }
+
+    @Override
+    public int getHighestBlockYAt(int x, int z, HeightMap heightMap) {
+        Preconditions.checkArgument(isInRegion(x, region.getCenter().getBlockY(), z), "Coordinates %s, %s are not in the region", x, z);
+        return super.getHighestBlockYAt(x, z, heightMap);
+    }
+
+    @Override
+    public int getHighestBlockYAt(Location location, HeightMap heightMap) {
+        Preconditions.checkArgument(isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return super.getHighestBlockYAt(location, heightMap);
     }
 
     @Override
