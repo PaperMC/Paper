@@ -5,6 +5,7 @@ import org.bukkit.Color;
 import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 /**
  * Represents a display entity which is designed to only have a visual function.
@@ -25,6 +26,13 @@ public interface Display extends Entity {
      * @param transformation the new transformation
      */
     public void setTransformation(@NotNull Transformation transformation);
+
+    /**
+     * Sets the raw transformation matrix applied to this display
+     *
+     * @param transformationMatrix the transformation matrix
+     */
+    public void setTransformationMatrix(@NotNull Matrix4f transformationMatrix);
 
     /**
      * Gets the interpolation duration of this display.
