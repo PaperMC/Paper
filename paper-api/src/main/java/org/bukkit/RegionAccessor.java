@@ -348,4 +348,49 @@ public interface RegionAccessor {
      */
     @NotNull
     public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, boolean randomizeData, @Nullable Consumer<T> function) throws IllegalArgumentException;
+
+    /**
+     * Gets the highest non-empty (impassable) coordinate at the given
+     * coordinates.
+     *
+     * @param x X-coordinate of the blocks
+     * @param z Z-coordinate of the blocks
+     * @return Y-coordinate of the highest non-empty block
+     */
+    public int getHighestBlockYAt(int x, int z);
+
+    /**
+     * Gets the highest non-empty (impassable) coordinate at the given
+     * {@link Location}.
+     *
+     * @param location Location of the blocks
+     * @return Y-coordinate of the highest non-empty block
+     */
+    public int getHighestBlockYAt(@NotNull Location location);
+
+    /**
+     * Gets the highest coordinate corresponding to the {@link HeightMap} at the
+     * given coordinates.
+     *
+     * @param x X-coordinate of the blocks
+     * @param z Z-coordinate of the blocks
+     * @param heightMap the heightMap that is used to determine the highest
+     * point
+     *
+     * @return Y-coordinate of the highest block corresponding to the
+     * {@link HeightMap}
+     */
+    public int getHighestBlockYAt(int x, int z, @NotNull HeightMap heightMap);
+
+    /**
+     * Gets the highest coordinate corresponding to the {@link HeightMap} at the
+     * given {@link Location}.
+     *
+     * @param location Location of the blocks
+     * @param heightMap the heightMap that is used to determine the highest
+     * point
+     * @return Y-coordinate of the highest block corresponding to the
+     * {@link HeightMap}
+     */
+    public int getHighestBlockYAt(@NotNull Location location, @NotNull HeightMap heightMap);
 }
