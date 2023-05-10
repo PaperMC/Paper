@@ -43,6 +43,13 @@ public class CraftDisplay extends CraftEntity implements Display {
     }
 
     @Override
+    public void setTransformationMatrix(org.joml.Matrix4f transformationMatrix) {
+        Preconditions.checkArgument(transformationMatrix != null, "Transformation matrix cannot be null");
+
+        getHandle().setTransformation(new com.mojang.math.Transformation(transformationMatrix));
+    }
+
+    @Override
     public int getInterpolationDuration() {
         return getHandle().getInterpolationDuration();
     }
