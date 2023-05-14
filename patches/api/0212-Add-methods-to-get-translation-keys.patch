@@ -144,35 +144,19 @@ index 753bfcec441533071120d925c83789ef53afa176..c6bc84a8755b2fe5d7d8d3ec857700ec
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 20cc192e89562e1455ec3eacc15593c4eed89907..3da281e454f1f242c57e0174917084557f9c85df 100644
+index 2d66c99e6009cb06d2d0fc8822c2f4adb8ee965b..5fd32ea494f78cdebf4c61d9fa1aafa47db3872e 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -117,7 +117,7 @@ import org.jetbrains.annotations.Nullable;
-  * An enum of all material IDs accepted by the official server and client
+@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
+  * An interface of all material IDs accepted by the official server and client
   */
  @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
--public enum Material implements Keyed, Translatable {
-+public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
+-public interface Material extends Keyed, Comparable<Material>, Translatable {
++public interface Material extends Keyed, Comparable<Material>, Translatable, net.kyori.adventure.translation.Translatable { // Paper
      //<editor-fold desc="Materials" defaultstate="collapsed">
-     AIR(9648, 0),
-     STONE(22948),
-@@ -4563,6 +4563,15 @@ public enum Material implements Keyed, Translatable {
-         }
-         return false;
-     }
-+
-+    @Override
-+    public @NotNull String translationKey() {
-+        if (this.isItem()) {
-+            return Bukkit.getUnsafe().getItemTranslationKey(this);
-+        } else {
-+            return Bukkit.getUnsafe().getBlockTranslationKey(this);
-+        }
-+    }
-     // Paper end
- 
-     /**
-@@ -11046,9 +11055,11 @@ public enum Material implements Keyed, Translatable {
+     Material AIR = getMaterial("air");
+     Material STONE = getMaterial("stone");
+@@ -3030,9 +3030,11 @@ public interface Material extends Keyed, Comparable<Material>, Translatable {
       * material
       * @see #getBlockTranslationKey()
       * @see #getItemTranslationKey()
@@ -181,9 +165,26 @@ index 20cc192e89562e1455ec3eacc15593c4eed89907..3da281e454f1f242c57e017491708455
      @Override
      @NotNull
 +    @Deprecated(forRemoval = true) // Paper
-     public String getTranslationKey() {
-         if (this.isItem()) {
-             return Bukkit.getUnsafe().getItemTranslationKey(this);
+     String getTranslationKey();
+ 
+     /**
+@@ -3046,7 +3048,7 @@ public interface Material extends Keyed, Comparable<Material>, Translatable {
+      * @deprecated Can only get block translation key from BlockType
+      */
+     @Nullable
+-    @Deprecated
++    @Deprecated(forRemoval = true) // Paper
+     String getBlockTranslationKey();
+ 
+     /**
+@@ -3060,6 +3062,6 @@ public interface Material extends Keyed, Comparable<Material>, Translatable {
+      * @deprecated Can only get item translation key from ItemType
+      */
+     @Nullable
+-    @Deprecated
++    @Deprecated(forRemoval = true) // Paper
+     String getItemTranslationKey();
+ }
 diff --git a/src/main/java/org/bukkit/Translatable.java b/src/main/java/org/bukkit/Translatable.java
 index e3faa2c675c85a9cbdbbb1debec0ff81c58a1bbd..fd1629c2d2028a88fb3d56b0aeb833d17235080a 100644
 --- a/src/main/java/org/bukkit/Translatable.java
@@ -208,56 +209,33 @@ index e3faa2c675c85a9cbdbbb1debec0ff81c58a1bbd..fd1629c2d2028a88fb3d56b0aeb833d1
      String getTranslationKey();
  }
 diff --git a/src/main/java/org/bukkit/attribute/Attribute.java b/src/main/java/org/bukkit/attribute/Attribute.java
-index 13eac9ad2c1672051635d1c35cc49239252e7a61..107e36ef02a9481954bd770ce9a55a0b1e84be7a 100644
+index acadbde817d0efe2ec50c5079bdd66088cbce0c9..165f56910169ca2cc6b619151442286837ca9510 100644
 --- a/src/main/java/org/bukkit/attribute/Attribute.java
 +++ b/src/main/java/org/bukkit/attribute/Attribute.java
-@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
+@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  /**
   * Types of attributes which may be present on an {@link Attributable}.
   */
--public enum Attribute implements Keyed {
-+public enum Attribute implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+-public abstract class Attribute extends OldEnum<Attribute> implements Keyed {
++public abstract class Attribute extends OldEnum<Attribute> implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
  
      /**
       * Maximum health of an Entity.
-@@ -73,4 +73,10 @@ public enum Attribute implements Keyed {
-     public NamespacedKey getKey() {
-         return key;
-     }
-+    // Paper start
-+    @Override
-+    public @NotNull String translationKey() {
-+        return "attribute.name." + this.key.getKey();
-+    }
-+    // Paper end
- }
 diff --git a/src/main/java/org/bukkit/block/Biome.java b/src/main/java/org/bukkit/block/Biome.java
-index a5908d0a03801757d1f6184d73c3c89981afa107..d268498c779d6b2ec07812d4d1c0b168fab63c07 100644
+index e9e350d7e1ae572950a8cd7a1ab130362a07d228..17690fe41014b51852f0c76f2dc9ad78b46133a1 100644
 --- a/src/main/java/org/bukkit/block/Biome.java
 +++ b/src/main/java/org/bukkit/block/Biome.java
-@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
- /**
-  * Holds all accepted Biomes in the default server
+@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
+  * Depending on the server there might be additional biomes present (for example biomes created by data packs),
+  * which you can get via {@link Registry#BIOME}.
   */
--public enum Biome implements Keyed {
-+public enum Biome implements Keyed, net.kyori.adventure.translation.Translatable { // Paper
-     OCEAN,
-     PLAINS,
-     DESERT,
-@@ -93,4 +93,11 @@ public enum Biome implements Keyed {
-     public NamespacedKey getKey() {
-         return key;
-     }
-+
-+    // Paper start
-+    @Override
-+    public @NotNull String translationKey() {
-+        return "biome.minecraft." + this.key.getKey();
-+    }
-+    // Paper end
- }
+-public abstract class Biome extends OldEnum<Biome> implements Keyed {
++public abstract class Biome extends OldEnum<Biome> implements Keyed, net.kyori.adventure.translation.Translatable { // Paper
+ 
+     public static final Biome OCEAN = getBiome("ocean");
+     public static final Biome PLAINS = getBiome("plains");
 diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
-index 06ef9e133125d80127e1dbd6ae0eda89fa08a1d7..35ed58bce2589bb097dd0f6bf2a6ebd76dc31fcd 100644
+index 232662f3130ca49156ed8b71acf4495aea33c212..5ae85ddc2cff3145dcba877a7bf55abd818f6881 100644
 --- a/src/main/java/org/bukkit/block/Block.java
 +++ b/src/main/java/org/bukkit/block/Block.java
 @@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
@@ -283,10 +261,10 @@ index 06ef9e133125d80127e1dbd6ae0eda89fa08a1d7..35ed58bce2589bb097dd0f6bf2a6ebd7
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
-index 2dc749936df6168073a5bb9f9051d55f8589ac62..1b6f42ff632b1f3f5034c825e99b72f389a890b4 100644
+index 6765ced946e926ab1f63287908629be66315a1df..9e8af4430c829105fbcd0dea5faeb47fe0b46ef3 100644
 --- a/src/main/java/org/bukkit/enchantments/Enchantment.java
 +++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
-@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * The various type of enchantments that may be added to armour or weapons
   */
@@ -296,10 +274,10 @@ index 2dc749936df6168073a5bb9f9051d55f8589ac62..1b6f42ff632b1f3f5034c825e99b72f3
       * Provides protection against environmental damage
       */
 diff --git a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
-index 4d5f0837bd0e02a30c943d8969fb6b13452322e0..a39f9c078f42451bd122f3e3729d10ca299bee5f 100644
+index 3f432a055d9fc70e6b16bf87c209be50232f2e93..fa6613efcfcee70507c77ee40460d35c3957d91b 100644
 --- a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
 +++ b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
-@@ -69,5 +69,10 @@ public class EnchantmentWrapper extends Enchantment {
+@@ -77,5 +77,10 @@ public class EnchantmentWrapper extends Enchantment {
      public net.kyori.adventure.text.Component displayName(int level) {
          return getEnchantment().displayName(level);
      }
@@ -311,25 +289,21 @@ index 4d5f0837bd0e02a30c943d8969fb6b13452322e0..a39f9c078f42451bd122f3e3729d10ca
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/EntityType.java b/src/main/java/org/bukkit/entity/EntityType.java
-index bed9c519a594f44191c2e13b2f13a0de906e21e5..712db16df7a3b30f844b391321b5acd6ffa5aec5 100644
+index 39252d76fa018385ee4d0a0cee511724f2bfdd0d..07effc83ae6ad4160b0bcb209d117fe8d4022c2d 100644
 --- a/src/main/java/org/bukkit/entity/EntityType.java
 +++ b/src/main/java/org/bukkit/entity/EntityType.java
-@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Contract;
+@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Contract;
  import org.jetbrains.annotations.NotNull;
  import org.jetbrains.annotations.Nullable;
  
--public enum EntityType implements Keyed, Translatable {
-+public enum EntityType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
+-public abstract class EntityType extends OldEnum<EntityType> implements Keyed, Translatable {
++public abstract class EntityType extends OldEnum<EntityType> implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
+     private static final BiMap<Short, EntityType> ID_MAP = HashBiMap.create();
  
      // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
-     /**
-@@ -441,7 +441,19 @@ public enum EntityType implements Keyed, Translatable {
- 
-     @Override
-     @NotNull
-+    @Deprecated(forRemoval = true) // Paper
-     public String getTranslationKey() {
-         return Bukkit.getUnsafe().getTranslationKey(this);
+@@ -416,4 +416,12 @@ public abstract class EntityType extends OldEnum<EntityType> implements Keyed, T
+     public static EntityType[] values() {
+         return Lists.newArrayList(Registry.ENTITY_TYPE).toArray(new EntityType[0]);
      }
 +
 +    // Paper start
@@ -337,39 +311,22 @@ index bed9c519a594f44191c2e13b2f13a0de906e21e5..712db16df7a3b30f844b391321b5acd6
 +     * @throws IllegalArgumentException if the entity does not have a translation key (is probably a custom entity)
 +     */
 +    @Override
-+    public @NotNull String translationKey() {
-+        Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have translation keys");
-+        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
-+    }
++    public abstract @NotNull String translationKey();
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
-index d841d94d46462e0ceb7c6b04cc8fc36792bd9201..8c8176121cafed0ed09239b6a7b392dc846438e2 100644
+index 1588587d91b79aa93a1c240cc72bc83742905303..d1004e85922cad3f5077f6c3d180df56650d4fa9 100644
 --- a/src/main/java/org/bukkit/entity/Villager.java
 +++ b/src/main/java/org/bukkit/entity/Villager.java
-@@ -160,7 +160,7 @@ public interface Villager extends AbstractVillager {
+@@ -181,7 +181,7 @@ public interface Villager extends AbstractVillager {
       * Represents the various different Villager professions there may be.
       * Villagers have different trading options depending on their profession,
       */
--    public enum Profession implements Keyed {
-+    public enum Profession implements Keyed, net.kyori.adventure.translation.Translatable { // Paper
-         NONE,
+-    public abstract class Profession extends OldEnum<Profession> implements Keyed {
++    public abstract class Profession extends OldEnum<Profession> implements Keyed, net.kyori.adventure.translation.Translatable { // Paper
+         public static final Profession NONE = getProfession("none");
          /**
           * Armorer profession. Wears a black apron. Armorers primarily trade for
-@@ -243,6 +243,13 @@ public interface Villager extends AbstractVillager {
-         public NamespacedKey getKey() {
-             return key;
-         }
-+
-+        // Paper start
-+        @Override
-+        public @NotNull String translationKey() {
-+            return "entity.minecraft.villager." + this.key.getKey();
-+        }
-+        // Paper end
-     }
- 
-     // Paper start - Add villager reputation API
 diff --git a/src/main/java/org/bukkit/inventory/CreativeCategory.java b/src/main/java/org/bukkit/inventory/CreativeCategory.java
 index 5bd252c0ae3b09fe141d131360c67bb9bfbf5422..78587d9fabe6371a23a7963917b054dbe7603694 100644
 --- a/src/main/java/org/bukkit/inventory/CreativeCategory.java
@@ -450,7 +407,7 @@ index 5bd252c0ae3b09fe141d131360c67bb9bfbf5422..78587d9fabe6371a23a7963917b054db
 +
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 3da071798b89e1dd1453f4339af87933cdf0105e..e4ad3a550050c4bf9cc7a2a1082bfdf668050efe 100644
+index 398379b65c411dd266fc94047f60c18e1063e1e0..6974f92c8b9c6e604bfc50fb4654afc72897c123 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;

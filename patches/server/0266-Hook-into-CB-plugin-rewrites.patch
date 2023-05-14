@@ -8,44 +8,18 @@ our own relocation. Also lets us rewrite NMS calls for when we're
 debugging in an IDE pre-relocate.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index 48cdd483c25825571043800f3cfa41a4d723f649..fe5d3b60ad740b7f1cce040f9c8d96ac51245ef6 100644
+index 5e336045e9241c056a3c68a71246d290781b8354..8adc31b3e45eff4870c701cfc2b64acaf7a1f413 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -6,7 +6,9 @@ import java.io.FileOutputStream;
- import java.io.InputStream;
- import java.util.Arrays;
- import java.util.Enumeration;
-+import java.util.HashMap;
- import java.util.HashSet;
-+import java.util.Map;
- import java.util.Set;
- import java.util.jar.JarEntry;
- import java.util.jar.JarFile;
-@@ -20,10 +22,15 @@ import org.bukkit.plugin.AuthorNagException;
- import org.objectweb.asm.ClassReader;
- import org.objectweb.asm.ClassVisitor;
- import org.objectweb.asm.ClassWriter;
-+import org.objectweb.asm.FieldVisitor;
-+import org.objectweb.asm.Handle;
-+import org.objectweb.asm.Label;
- import org.objectweb.asm.MethodVisitor;
- import org.objectweb.asm.Opcodes;
- import org.objectweb.asm.Type;
- 
-+import javax.annotation.Nonnull;
-+
- /**
-  * This file is imported from Commodore.
-  *
-@@ -46,6 +53,41 @@ public class Commodore
+@@ -49,6 +49,41 @@ public class Commodore
              "org/bukkit/inventory/ItemStack (I)V setTypeId"
      ) );
  
 +    // Paper start - Plugin rewrites
-+    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
-+    private static Map<String, String> initReplacementsMap()
++    private static final java.util.Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
++    private static java.util.Map<String, String> initReplacementsMap()
 +    {
-+        Map<String, String> getAndRemove = new HashMap<>();
++        java.util.Map<String, String> getAndRemove = new java.util.HashMap<>();
 +        // Be wary of maven shade's relocations
 +
 +        final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
@@ -60,11 +34,11 @@ index 48cdd483c25825571043800f3cfa41a4d723f649..fe5d3b60ad740b7f1cce040f9c8d96ac
 +        return getAndRemove;
 +    }
 +
-+    @Nonnull
-+    private static String getOriginalOrRewrite(@Nonnull String original)
++    @org.jetbrains.annotations.NotNull
++    private static String getOriginalOrRewrite(@org.jetbrains.annotations.NotNull String original)
 +    {
 +        String rewrite = null;
-+        for ( Map.Entry<String, String> entry : SEARCH_AND_REMOVE.entrySet() )
++        for ( java.util.Map.Entry<String, String> entry : SEARCH_AND_REMOVE.entrySet() )
 +        {
 +            if ( original.contains( entry.getKey() ) )
 +            {
@@ -79,13 +53,13 @@ index 48cdd483c25825571043800f3cfa41a4d723f649..fe5d3b60ad740b7f1cce040f9c8d96ac
      public static void main(String[] args)
      {
          OptionParser parser = new OptionParser();
-@@ -130,15 +172,86 @@ public class Commodore
+@@ -133,15 +168,64 @@ public class Commodore
  
          cr.accept( new ClassVisitor( Opcodes.ASM9, cw )
          {
 +            // Paper start - Rewrite plugins
 +            @Override
-+            public FieldVisitor visitField(int access, String name, String desc, String signature, Object value)
++            public org.objectweb.asm.FieldVisitor visitField(int access, String name, String desc, String signature, Object value)
 +            {
 +                desc = getOriginalOrRewrite( desc );
 +                if ( signature != null ) {
@@ -102,28 +76,6 @@ index 48cdd483c25825571043800f3cfa41a4d723f649..fe5d3b60ad740b7f1cce040f9c8d96ac
                  return new MethodVisitor( api, super.visitMethod( access, name, desc, signature, exceptions ) )
                  {
 +                    // Paper start - Plugin rewrites
-+                    @Override
-+                    public void visitInvokeDynamicInsn(String name, String desc, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments)
-+                    {
-+                        // Paper start - Rewrite plugins
-+                        name = getOriginalOrRewrite( name );
-+                        if ( desc != null )
-+                        {
-+                            desc = getOriginalOrRewrite( desc );
-+                        }
-+                        // Paper end
-+
-+                        super.visitInvokeDynamicInsn( name, desc, bootstrapMethodHandle, bootstrapMethodArguments );
-+                    }
-+
-+                    @Override
-+                    public void visitTypeInsn(int opcode, String type)
-+                    {
-+                        type = getOriginalOrRewrite( type );
-+
-+                        super.visitTypeInsn( opcode, type );
-+                    }
-+
 +                    @Override
 +                    public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
 +                        for ( int i = 0; i < local.length; i++ )
@@ -144,7 +96,7 @@ index 48cdd483c25825571043800f3cfa41a4d723f649..fe5d3b60ad740b7f1cce040f9c8d96ac
 +                    }
 +
 +                    @Override
-+                    public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index)
++                    public void visitLocalVariable(String name, String descriptor, String signature, org.objectweb.asm.Label start, org.objectweb.asm.Label end, int index)
 +                    {
 +                        descriptor = getOriginalOrRewrite( descriptor );
 +
@@ -166,19 +118,33 @@ index 48cdd483c25825571043800f3cfa41a4d723f649..fe5d3b60ad740b7f1cce040f9c8d96ac
                          if ( owner.equals( "org/bukkit/block/Biome" ) )
                          {
                              switch ( name )
-@@ -330,6 +443,11 @@ public class Commodore
+@@ -489,6 +573,13 @@ public class Commodore
+                             super.visitMethodInsn( opcode, owner, name, "()Lorg/bukkit/entity/TextDisplay$TextAlignment;", itf );
+                             return;
                          }
- 
-                         // Paper start - Rewrite plugins
++                        // Paper start - rewrite plugins
 +                        owner = getOriginalOrRewrite( owner) ;
 +                        if (desc != null)
 +                        {
 +                            desc = getOriginalOrRewrite(desc);
 +                        }
-                         if ((owner.equals("org/bukkit/OfflinePlayer") || owner.equals("org/bukkit/entity/Player")) && name.equals("getPlayerProfile") && desc.equals("()Lorg/bukkit/profile/PlayerProfile;")) {
-                             super.visitMethodInsn(opcode, owner, name, "()Lcom/destroystokyo/paper/profile/PlayerProfile;", itf);
++                        // Paper end
+ 
+                         // Enums to class
+                         if ( (owner.equals( "org/bukkit/block/Biome" )
+@@ -503,6 +594,11 @@ public class Commodore
+                                 || owner.equals( "org/bukkit/entity/Villager$Profession" ) ) && name.equals( "compareTo" ) && desc.equals( "(Ljava/lang/Enum;)I" ) )
+                         {
+                             super.visitMethodInsn( opcode, owner, name, "(Ljava/lang/Object;)I", itf );
++                        }
++
++                        // Paper start - Rewrite plugins
++                        if ((owner.equals("org/bukkit/OfflinePlayer") || owner.equals("org/bukkit/entity/Player")) && name.equals("getPlayerProfile") && desc.equals("()Lorg/bukkit/profile/PlayerProfile;")) {
++                            super.visitMethodInsn(opcode, owner, name, "()Lcom/destroystokyo/paper/profile/PlayerProfile;", itf);
                              return;
-@@ -424,6 +542,13 @@ public class Commodore
+                         }
+ 
+@@ -673,6 +769,13 @@ public class Commodore
                      @Override
                      public void visitLdcInsn(Object value)
                      {
@@ -192,3 +158,25 @@ index 48cdd483c25825571043800f3cfa41a4d723f649..fe5d3b60ad740b7f1cce040f9c8d96ac
                          if ( value instanceof String && ( (String) value ).equals( "com.mysql.jdbc.Driver" ) )
                          {
                              super.visitLdcInsn( "com.mysql.cj.jdbc.Driver" );
+@@ -685,6 +788,7 @@ public class Commodore
+                     @Override
+                     public void visitTypeInsn( int opcode, String type )
+                     {
++                        type = getOriginalOrRewrite( type );
+                         // Need to also change class type when changing the creation of a new Object
+                         // Fore more info see org.bukkit.craftbukkit.legacy.ImposterEnumMap
+                         if ( enumCompatibility && Opcodes.NEW == opcode && type.equals( "java/util/EnumMap" ) )
+@@ -698,6 +802,13 @@ public class Commodore
+                     @Override
+                     public void visitInvokeDynamicInsn( String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments )
+                     {
++                        // Paper start - Rewrite plugins
++                        name = getOriginalOrRewrite( name );
++                        if ( descriptor != null )
++                        {
++                            descriptor = getOriginalOrRewrite( descriptor );
++                        }
++                        // Paper end
+                         // Handle lambda expression
+                         if ( enumCompatibility )
+                         {

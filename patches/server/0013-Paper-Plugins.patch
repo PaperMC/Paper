@@ -6750,7 +6750,7 @@ index aa054369cef3da4f90ce17788dcb9ca80dc98010..d9f2518a08bc4ae978051be51e467597
              Bootstrap.validate();
              Util.startTimerHackThread();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index df1058c8f3198fee567938b91021e253e9fbbf00..2d112dd2ea808773e364396b26f04bca54a6fa37 100644
+index 5f9559358a73da9ff8a0d4a5c83af6168c889e40..a8426c3de8eba5e0675e5ca647833cdbd7cc1c6d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -264,7 +264,8 @@ public final class CraftServer implements Server {
@@ -6763,7 +6763,7 @@ index df1058c8f3198fee567938b91021e253e9fbbf00..2d112dd2ea808773e364396b26f04bca
      private final StructureManager structureManager;
      protected final DedicatedServer console;
      protected final DedicatedPlayerList playerList;
-@@ -412,24 +413,7 @@ public final class CraftServer implements Server {
+@@ -413,24 +414,7 @@ public final class CraftServer implements Server {
      }
  
      public void loadPlugins() {
@@ -6789,7 +6789,7 @@ index df1058c8f3198fee567938b91021e253e9fbbf00..2d112dd2ea808773e364396b26f04bca
      }
  
      public void enablePlugins(PluginLoadOrder type) {
-@@ -518,15 +502,17 @@ public final class CraftServer implements Server {
+@@ -519,15 +503,17 @@ public final class CraftServer implements Server {
      private void enablePlugin(Plugin plugin) {
          try {
              List<Permission> perms = plugin.getDescription().getPermissions();
@@ -6813,7 +6813,7 @@ index df1058c8f3198fee567938b91021e253e9fbbf00..2d112dd2ea808773e364396b26f04bca
  
              this.pluginManager.enablePlugin(plugin);
          } catch (Throwable ex) {
-@@ -929,6 +915,7 @@ public final class CraftServer implements Server {
+@@ -930,6 +916,7 @@ public final class CraftServer implements Server {
                  "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
              ));
          }
@@ -6839,22 +6839,24 @@ index 909b2c98e7a9117d2f737245e4661792ffafb744..d96399e9bf1a58db5a4a22e58abb99e7
      @Override
      public FileConfiguration getConfig() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 91cf7e26de7d3595e151f7c52683ef82715420ad..ec9877840fafa14adcfc04eacae1786111990a27 100644
+index 86f0660acb765f57843bd081afadb1b717cac66e..ecebeadd8276a64cce3c8eea779a49c8bb82f0be 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -437,6 +437,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -410,6 +410,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
          net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
          return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
      }
++
 +    // Paper start
 +    @Override
 +    public boolean isSupportedApiVersion(String apiVersion) {
 +        return apiVersion != null && SUPPORTED_API.contains(apiVersion);
 +    }
 +    // Paper end
- 
++
      /**
       * This helper class represents the different NBT Tags.
+      * <p>
 diff --git a/src/main/resources/META-INF/services/io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier b/src/main/resources/META-INF/services/io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier
 new file mode 100644
 index 0000000000000000000000000000000000000000..20dbe2775951bfcdb85c5d679ac86c77a93e0847
@@ -7641,16 +7643,16 @@ index 0000000000000000000000000000000000000000..ba271c35eb2804f94cfc893bf94affb9
 +        return "null";
 +    }
 +}
-diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
-index c6503ff76f56bab5f383f0ca17d137155e9be447..f3db8d2875eaef86223da51b30e9dd722d417daa 100644
---- a/src/test/java/io/papermc/paper/testing/DummyServer.java
-+++ b/src/test/java/io/papermc/paper/testing/DummyServer.java
-@@ -58,7 +58,7 @@ public final class DummyServer {
-             return new LazyRegistry(() -> CraftRegistry.createRegistry(invocation.getArgument(0, Class.class), AbstractTestingBase.REGISTRY_CUSTOM));
-         });
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+index eca90ec8669f584943a49f92a2b00e9a2d837835..3dd85803a295d59afb609219a414d5edf8a6fc13 100644
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -121,7 +121,7 @@ public final class DummyServer {
+             final Thread currentThread = Thread.currentThread();
+             Mockito.when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
  
--        final PluginManager pluginManager = new SimplePluginManager(dummyServer, new SimpleCommandMap(dummyServer));
-+        final PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(dummyServer, new SimpleCommandMap(dummyServer), null);
-         when(dummyServer.getPluginManager()).thenReturn(pluginManager);
+-            final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
++            final org.bukkit.plugin.PluginManager pluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance), null); // Paper - paper plugins
+             Mockito.when(instance.getPluginManager()).thenReturn(pluginManager);
+             // Paper end
  
-         Bukkit.setServer(dummyServer);

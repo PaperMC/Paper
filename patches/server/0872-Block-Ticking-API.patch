@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 26 Dec 2021 13:23:46 -0500
+Subject: [PATCH] Block Ticking API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index 39c9e5ffc002195363d8bca055142bbd49067487..6a0e13f4b882b7e224bd3b7e5142b7996aa0e580 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -728,5 +728,21 @@ public class CraftBlock implements Block {
+     public boolean isValidTool(ItemStack itemStack) {
+         return getDrops(itemStack).size() != 0;
+     }
++
++    @Override
++    public void tick() {
++        net.minecraft.world.level.block.state.BlockState blockData = this.getNMS();
++        net.minecraft.server.level.ServerLevel level = this.world.getMinecraftWorld();
++
++        blockData.getBlock().tick(blockData, level, this.position, level.random);
++    }
++
++    @Override
++    public void randomTick() {
++        net.minecraft.world.level.block.state.BlockState blockData = this.getNMS();
++        net.minecraft.server.level.ServerLevel level = this.world.getMinecraftWorld();
++
++        blockData.getBlock().randomTick(blockData, level, this.position, level.random);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index d4be620d1ad13d953f70cf7d6e9d02fca92edd00..490e004339e73470cd1e63bb66dbd29ca9de1ec2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -677,4 +677,11 @@ public class CraftBlockData implements BlockData {
+     public void mirror(Mirror mirror) {
+         this.state = this.state.mirror(net.minecraft.world.level.block.Mirror.valueOf(mirror.name()));
+     }
++
++    // Paper start - Block tick API
++    @Override
++    public boolean isRandomlyTicked() {
++        return this.state.isRandomlyTicking();
++    }
++    // Paper end
+ }

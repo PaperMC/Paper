@@ -13,7 +13,7 @@ function getRef {
 }
 function update {
     cd "$workdir/$1"
-    $gitcmd fetch && $gitcmd clean -fd && $gitcmd reset --hard origin/master
+    $gitcmd fetch && $gitcmd clean -fd && $gitcmd reset --hard origin/next
     refRemote=$(git rev-parse HEAD)
     cd ../
     $gitcmd add --force $1

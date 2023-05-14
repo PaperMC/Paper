@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Fri, 4 Mar 2022 20:35:19 +0100
+Subject: [PATCH] Fix falling block spawn methods
+
+Restores the API behavior from previous versions of the server
+- Do not call API events
+- Do not replace the existing block in the world
+
+== AT ==
+public net.minecraft.world.entity.item.FallingBlockEntity <init>(Lnet/minecraft/world/level/Level;DDDLnet/minecraft/world/level/block/state/BlockState;)V
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index bf403b8c4714f79a3d56c41b37b91a0f4de8cb2d..8b4258608c89500ab3e2653a9b3b6a6cf1b936a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -600,7 +600,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+             // Paper end
+         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
+             BlockPos pos = BlockPos.containing(x, y, z);
+-            entity = FallingBlockEntity.fall(world, pos, this.getHandle().getBlockState(pos));
++            entity = new FallingBlockEntity(world, x, y, z, this.getHandle().getBlockState(pos)); // Paper
+         } else if (Projectile.class.isAssignableFrom(clazz)) {
+             if (Snowball.class.isAssignableFrom(clazz)) {
+                 entity = new net.minecraft.world.entity.projectile.Snowball(world, x, y, z);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 10947dff5a8bf1bbac8042920e922a9c2f8d88d5..1427378314f25d5ca5c8516e01753cc0b5801e93 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1390,7 +1390,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         Validate.notNull(material, "Material cannot be null");
+         Validate.isTrue(material.isBlock(), "Material must be a block");
+ 
+-        FallingBlockEntity entity = FallingBlockEntity.fall(world, BlockPos.containing(location.getX(), location.getY(), location.getZ()), CraftMagicNumbers.getBlock(material).defaultBlockState(), SpawnReason.CUSTOM);
++        // Paper start - restore API behavior for spawning falling blocks
++        FallingBlockEntity entity = new FallingBlockEntity(this.world, location.getX(), location.getY(), location.getZ(), CraftMagicNumbers.getBlock(material).defaultBlockState()); // Paper
++        entity.time = 1;
++
++        this.world.addFreshEntity(entity, SpawnReason.CUSTOM);
++        // Paper end
+         return (FallingBlock) entity.getBukkitEntity();
+     }
+ 
+@@ -1399,7 +1404,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         Validate.notNull(location, "Location cannot be null");
+         Validate.notNull(data, "BlockData cannot be null");
+ 
+-        FallingBlockEntity entity = FallingBlockEntity.fall(world, BlockPos.containing(location.getX(), location.getY(), location.getZ()), ((CraftBlockData) data).getState(), SpawnReason.CUSTOM);
++        // Paper start - restore API behavior for spawning falling blocks
++        FallingBlockEntity entity = new FallingBlockEntity(this.world, location.getX(), location.getY(), location.getZ(), ((CraftBlockData) data).getState());
++        entity.time = 1;
++
++        this.world.addFreshEntity(entity, SpawnReason.CUSTOM);
++        // Paper end
+         return (FallingBlock) entity.getBukkitEntity();
+     }
+ 

@@ -11,20 +11,24 @@ Co-authored by: Lena Kolb <lenakolb2204@gmail.com>
 
 diff --git a/src/main/java/com/destroystokyo/paper/MaterialSetTag.java b/src/main/java/com/destroystokyo/paper/MaterialSetTag.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a02a02aa0c87e0f0ed9e509e4dcab01565b3d92a
+index 0000000000000000000000000000000000000000..cd9475d6e19c35c2faeb80144a94fd3eba9a00e5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/MaterialSetTag.java
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,101 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + */
 +
 +package com.destroystokyo.paper;
 +
++import com.google.common.collect.Iterators;
 +import com.google.common.collect.Lists;
 +import io.papermc.paper.tag.BaseTag;
++import java.util.Iterator;
++import java.util.stream.StreamSupport;
 +import org.bukkit.Material;
 +import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
 +import org.bukkit.block.Block;
 +import org.bukkit.block.BlockState;
 +import org.bukkit.block.data.BlockData;
@@ -45,7 +49,7 @@ index 0000000000000000000000000000000000000000..a02a02aa0c87e0f0ed9e509e4dcab015
 +     */
 +    @Deprecated
 +    public MaterialSetTag(@NotNull Predicate<Material> filter) {
-+        this(null, Stream.of(Material.values()).filter(filter).collect(Collectors.toList()));
++        this(null, StreamSupport.stream(Registry.MATERIAL.spliterator(), false).filter(filter).collect(Collectors.toList()));
 +    }
 +
 +    /**
@@ -65,7 +69,7 @@ index 0000000000000000000000000000000000000000..a02a02aa0c87e0f0ed9e509e4dcab015
 +    }
 +
 +    public MaterialSetTag(@Nullable NamespacedKey key, @NotNull Predicate<Material> filter) {
-+        this(key, Stream.of(Material.values()).filter(filter).collect(Collectors.toList()));
++        this(key, StreamSupport.stream(Registry.MATERIAL.spliterator(), false).filter(filter).collect(Collectors.toList()));
 +    }
 +
 +    public MaterialSetTag(@Nullable NamespacedKey key, @NotNull Material... materials) {
@@ -83,7 +87,7 @@ index 0000000000000000000000000000000000000000..a02a02aa0c87e0f0ed9e509e4dcab015
 +    @NotNull
 +    @Override
 +    protected Set<Material> getAllPossibleValues() {
-+        return Stream.of(Material.values()).collect(Collectors.toSet());
++        return StreamSupport.stream(Registry.MATERIAL.spliterator(), false).collect(Collectors.toSet());
 +    }
 +
 +    @Override
@@ -1135,10 +1139,10 @@ index 2d25228016fc9a9a1ba87f58865ec8ee65115461..28e5691e265b94eb9855f87d05f84e8f
  public interface Tag<T extends Keyed> extends Keyed {
 diff --git a/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java b/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e541f29e983d8dcaca91de9ee1459d587226b4c3
+index 0000000000000000000000000000000000000000..1dd5d4170cd17b8d65ecfe970d85cd5f31b306f6
 --- /dev/null
 +++ b/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,68 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + */
@@ -1147,9 +1151,10 @@ index 0000000000000000000000000000000000000000..e541f29e983d8dcaca91de9ee1459d58
 +
 +import io.papermc.paper.tag.BaseTag;
 +import io.papermc.paper.tag.EntityTags;
-+import io.papermc.paper.testing.TestServer;
 +import org.bukkit.Bukkit;
++import org.bukkit.TestServer;
 +import org.junit.Before;
++import org.junit.Ignore;
 +import org.junit.Test;
 +
 +import java.lang.reflect.Field;
@@ -1168,6 +1173,7 @@ index 0000000000000000000000000000000000000000..e541f29e983d8dcaca91de9ee1459d58
 +    }
 +
 +    @Test
++    @Ignore // Paper - TODO probably move to server
 +    public void testInitialize() {
 +        try {
 +            MaterialTags.SHULKER_BOXES.getValues();
@@ -1179,6 +1185,7 @@ index 0000000000000000000000000000000000000000..e541f29e983d8dcaca91de9ee1459d58
 +    }
 +
 +    @Test
++    @Ignore // Paper - TODO probably move to server
 +    public void testLocked() {
 +        testLocked(MaterialTags.class);
 +        testLocked(EntityTags.class);
@@ -1206,21 +1213,23 @@ index 0000000000000000000000000000000000000000..e541f29e983d8dcaca91de9ee1459d58
 +}
 diff --git a/src/test/java/io/papermc/paper/EntityTagsTest.java b/src/test/java/io/papermc/paper/EntityTagsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3caf03d8e50cd2180e9aac2dddeaa3afd0bf7438
+index 0000000000000000000000000000000000000000..daa1de4113053e1216183c6249a00ac5929cc0d9
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/EntityTagsTest.java
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper;
 +
 +import io.papermc.paper.tag.EntityTags;
-+import io.papermc.paper.testing.TestServer;
 +import java.util.logging.Level;
 +import org.bukkit.Bukkit;
++import org.bukkit.TestServer;
++import org.junit.Ignore;
 +import org.junit.Test;
 +
 +public class EntityTagsTest {
 +
 +    @Test
++    @Ignore // Paper - TODO probably move to server
 +    public void testInitialize() {
 +        try {
 +            TestServer.setup();

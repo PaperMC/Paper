@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 12 Mar 2021 17:09:40 -0800
+Subject: [PATCH] Item Rarity API
+
+
+diff --git a/src/main/java/io/papermc/paper/inventory/ItemRarity.java b/src/main/java/io/papermc/paper/inventory/ItemRarity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..74ef8395cc040ce488c2acaa416db20272cc2734
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/ItemRarity.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.inventory;
++
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextColor;
++import org.jetbrains.annotations.NotNull;
++
++public enum ItemRarity {
++
++    COMMON(NamedTextColor.WHITE),
++    UNCOMMON(NamedTextColor.YELLOW),
++    RARE(NamedTextColor.AQUA),
++    EPIC(NamedTextColor.LIGHT_PURPLE);
++
++    TextColor color;
++
++    ItemRarity(TextColor color) {
++        this.color = color;
++    }
++
++    /**
++     * Gets the color formatting associated with the rarity.
++     * @return
++     */
++    @NotNull
++    public TextColor getColor() {
++        return color;
++    }
++}
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 5fd32ea494f78cdebf4c61d9fa1aafa47db3872e..a117ad770e84784a3b74612faacb15071c8f2b4d 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -2486,6 +2486,17 @@ public interface Material extends Keyed, Comparable<Material>, Translatable, net
+             this == Material.CAVE_AIR ||
+             this == Material.VOID_AIR;
+     }
++
++    /**
++     * Returns the item rarity for the item. The Material <b>MUST</b> be an Item not a block.
++     * Use {@link #isItem()} before this.
++     *
++     * @return the item rarity
++     * @deprecated use {@link ItemType#getItemRarity()}
++     */
++    @NotNull
++    @Deprecated
++    io.papermc.paper.inventory.ItemRarity getItemRarity();
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index a36b4146218f594ff4e9c5031dec7fd782f8bc48..dc93ed49cacad1b30dadab77e364353dea62ab41 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -126,5 +126,13 @@ public interface UnsafeValues {
+      * Just don't use it.
+      */
+     @org.jetbrains.annotations.NotNull String getMainLevelName();
++
++    /**
++     * Gets the item rarity of the itemstack. The rarity can change based on enchantements.
++     *
++     * @param itemStack the itemstack to get the rarity of
++     * @return the itemstack rarity
++     */
++    public io.papermc.paper.inventory.ItemRarity getItemStackRarity(ItemStack itemStack);
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 6974f92c8b9c6e604bfc50fb4654afc72897c123..5ae9456d744458f3c84ff8988a79b6673775bf33 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -877,5 +877,15 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     public @NotNull String translationKey() {
+         return Bukkit.getUnsafe().getTranslationKey(this);
+     }
++
++    /**
++     * Gets the item rarity of the itemstack. The rarity can change based on enchantements.
++     *
++     * @return the itemstack rarity
++     */
++    @NotNull
++    public io.papermc.paper.inventory.ItemRarity getRarity() {
++        return Bukkit.getUnsafe().getItemStackRarity(this);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
+index 60128106f84d92c1336d81a3eea58a28fa28dcd8..ad472de4efcc288174dd6d4e67c5c7ab6f7bcfa1 100644
+--- a/src/main/java/org/bukkit/inventory/ItemType.java
++++ b/src/main/java/org/bukkit/inventory/ItemType.java
+@@ -1463,4 +1463,14 @@ public interface ItemType extends Material {
+      */
+     @Nullable
+     String getItemTranslationKey();
++
++    // Paper start
++    /**
++     * Returns the item rarity for the item.
++     *
++     * @return the item rarity
++     */
++    @NotNull
++    io.papermc.paper.inventory.ItemRarity getItemRarity();
++    // Paper end
+ }

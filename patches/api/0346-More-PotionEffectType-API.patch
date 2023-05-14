@@ -1,0 +1,108 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 27 May 2021 21:58:33 -0700
+Subject: [PATCH] More PotionEffectType API
+
+
+diff --git a/src/main/java/org/bukkit/potion/PotionEffectType.java b/src/main/java/org/bukkit/potion/PotionEffectType.java
+index 7057409620a54f0b8629225292d28370e63215dd..82eb5171172d707d0ad85fdbe6b04fcfa8af43cd 100644
+--- a/src/main/java/org/bukkit/potion/PotionEffectType.java
++++ b/src/main/java/org/bukkit/potion/PotionEffectType.java
+@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a type of potion and its effect on an entity.
+  */
+-public abstract class PotionEffectType implements Keyed {
++public abstract class PotionEffectType implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - implement Translatable
+     protected static final BiMap<Integer, PotionEffectType> ID_MAP = HashBiMap.create();
+ 
+     /**
+@@ -320,4 +320,57 @@ public abstract class PotionEffectType implements Keyed {
+      */
+     @Deprecated
+     public static void stopAcceptingRegistrations() {}
++
++    // Paper start
++    /**
++     * Gets the effect attributes in an immutable map.
++     *
++     * @return the attribute map
++     */
++    public abstract @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes();
++
++    /**
++     * Gets the true modifier amount based on the effect amplifier.
++     *
++     * @param attribute the attribute
++     * @param effectAmplifier the effect amplifier (0 indexed)
++     * @return the modifier amount
++     * @throws IllegalArgumentException if the supplied attribute is not present in the map from {@link #getEffectAttributes()}
++     */
++    public abstract double getAttributeModifierAmount(@NotNull org.bukkit.attribute.Attribute attribute, int effectAmplifier);
++
++    /**
++     * Gets the category of this effect
++     *
++     * @return the category
++     */
++    public abstract @NotNull PotionEffectType.Category getEffectCategory();
++
++    /**
++     * Category of {@link PotionEffectType}s
++     */
++    public enum Category {
++
++        BENEFICIAL(net.kyori.adventure.text.format.NamedTextColor.BLUE),
++        HARMFUL(net.kyori.adventure.text.format.NamedTextColor.RED),
++        NEUTRAL(net.kyori.adventure.text.format.NamedTextColor.BLUE);
++
++        private final net.kyori.adventure.text.format.TextColor color;
++
++        Category(net.kyori.adventure.text.format.TextColor color) {
++            this.color = color;
++        }
++
++        /**
++         * Gets the text color used when displaying potions
++         * of this category.
++         *
++         * @return the text color
++         */
++        @NotNull
++        public net.kyori.adventure.text.format.TextColor getColor() {
++            return color;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java b/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
+index 7a2ee20d32fc39d6fe29c384975c208341552648..08cfe3c8d675fafdd6a38d27bdef2f1f3b68551a 100644
+--- a/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
++++ b/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
+@@ -53,4 +53,26 @@ public class PotionEffectTypeWrapper extends PotionEffectType {
+     public NamespacedKey getKey() {
+         return getType().getKey();
+     }
++
++    // Paper start
++    @Override
++    public @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes() {
++        return this.getType().getEffectAttributes();
++    }
++
++    @Override
++    public double getAttributeModifierAmount(@NotNull org.bukkit.attribute.Attribute attribute, int effectAmplifier) {
++        return this.getType().getAttributeModifierAmount(attribute, effectAmplifier);
++    }
++
++    @Override
++    public @NotNull PotionEffectType.Category getEffectCategory() {
++        return this.getType().getEffectCategory();
++    }
++
++    @Override
++    public @NotNull String translationKey() {
++        return this.getType().translationKey();
++    }
++    // Paper end
+ }

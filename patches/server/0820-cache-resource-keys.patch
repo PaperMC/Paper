@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 20 Mar 2022 22:06:47 -0700
+Subject: [PATCH] cache resource keys
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/tag/CraftEntityTag.java b/src/main/java/org/bukkit/craftbukkit/tag/CraftEntityTag.java
+index e0bf615fb1b99abbab2be55a4ee345204b36e218..6ef72e7353ca21343848d4f7a5bc5ed06b9c904d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/tag/CraftEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/tag/CraftEntityTag.java
+@@ -16,9 +16,10 @@ public class CraftEntityTag extends CraftTag<net.minecraft.world.entity.EntityTy
+         super(registry, tag);
+     }
+ 
++    private static final java.util.Map<org.bukkit.entity.EntityType, net.minecraft.resources.ResourceKey<net.minecraft.world.entity.EntityType<?>>> KEY_CACHE = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
+     @Override
+     public boolean isTagged(EntityType entity) {
+-        return registry.getHolderOrThrow(ResourceKey.create(Registries.ENTITY_TYPE, CraftNamespacedKey.toMinecraft(entity.getKey()))).is(tag);
++        return registry.getHolderOrThrow(KEY_CACHE.computeIfAbsent(entity, type -> ResourceKey.create(Registries.ENTITY_TYPE, CraftNamespacedKey.toMinecraft(type.getKey())))).is(tag); // Paper - cache key
+     }
+ 
+     @Override
