@@ -7,7 +7,7 @@ Subject: [PATCH] Fix NotePlayEvent
 public org.bukkit.craftbukkit.block.data.CraftBlockData toNMS(Ljava/lang/Enum;Ljava/lang/Class;)Ljava/lang/Enum;
 
 diff --git a/src/main/java/net/minecraft/world/level/block/NoteBlock.java b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
-index 1327eb8ff0f044340d6a1c7058dc6d8a191615dc..50ead76879398222a76f26c36e98800d2d1af167 100644
+index 1327eb8ff0f044340d6a1c7058dc6d8a191615dc..a9c2d254bda5686a35ad2393534b85030dd8b136 100644
 --- a/src/main/java/net/minecraft/world/level/block/NoteBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
 @@ -90,11 +90,12 @@ public class NoteBlock extends Block {
@@ -27,15 +27,14 @@ index 1327eb8ff0f044340d6a1c7058dc6d8a191615dc..50ead76879398222a76f26c36e98800d
              world.blockEvent(pos, this, 0, 0);
              world.gameEvent(entity, GameEvent.NOTE_BLOCK_PLAY, pos);
          }
-@@ -132,11 +133,15 @@ public class NoteBlock extends Block {
- 
+@@ -133,10 +134,14 @@ public class NoteBlock extends Block {
      @Override
      public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
+         NoteBlockInstrument blockpropertyinstrument = (NoteBlockInstrument) state.getValue(NoteBlock.INSTRUMENT);
 +        // Paper start - move NotePlayEvent call to fix instrument/note changes
-+        org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, pos, state.getValue(INSTRUMENT), state.getValue(NOTE));
++        org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, pos, blockpropertyinstrument, state.getValue(NOTE));
 +        if (event.isCancelled()) return false;
 +        // Paper end
-         NoteBlockInstrument blockpropertyinstrument = (NoteBlockInstrument) state.getValue(NoteBlock.INSTRUMENT);
          float f;
  
          if (blockpropertyinstrument.isTunable()) {
@@ -44,12 +43,12 @@ index 1327eb8ff0f044340d6a1c7058dc6d8a191615dc..50ead76879398222a76f26c36e98800d
  
              f = (float) Math.pow(2.0D, (double) (k - 12) / 12.0D);
              world.addParticle(ParticleTypes.NOTE, (double) pos.getX() + 0.5D, (double) pos.getY() + 1.2D, (double) pos.getZ() + 0.5D, (double) k / 24.0D, 0.0D, 0.0D);
-@@ -158,7 +163,7 @@ public class NoteBlock extends Block {
-             holder = blockpropertyinstrument.getSoundEvent();
+@@ -155,7 +160,7 @@ public class NoteBlock extends Block {
+ 
+             holder = Holder.direct(SoundEvent.createVariableRangeEvent(minecraftkey));
+         } else {
+-            holder = blockpropertyinstrument.getSoundEvent();
++            holder = org.bukkit.craftbukkit.block.data.CraftBlockData.toNMS(event.getInstrument(), NoteBlockInstrument.class).getSoundEvent(); // Paper
          }
  
--        world.playSeededSound((Player) null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, holder, SoundSource.RECORDS, 3.0F, f, world.random.nextLong());
-+        world.playSeededSound((Player) null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, org.bukkit.craftbukkit.block.data.CraftBlockData.toNMS(event.getInstrument(), NoteBlockInstrument.class).getSoundEvent(), SoundSource.RECORDS, 3.0F, f, world.random.nextLong()); // Paper
-         return true;
-     }
- 
+         world.playSeededSound((Player) null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, holder, SoundSource.RECORDS, 3.0F, f, world.random.nextLong());
