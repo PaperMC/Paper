@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 14 May 2023 00:47:28 -0400
+Subject: [PATCH] Avoid Lazy Initialization for Enum Fields
+
+This patch is meant to get rid of any instances of lazy initialization that Minecraft introduces for enums.
+This has the possibility to create race condition issues, and generally don't make sense to be lazily done anyways.
+
+diff --git a/src/main/java/com/mojang/math/OctahedralGroup.java b/src/main/java/com/mojang/math/OctahedralGroup.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/mojang/math/OctahedralGroup.java
++++ b/src/main/java/com/mojang/math/OctahedralGroup.java
+@@ -0,0 +0,0 @@ public enum OctahedralGroup implements StringRepresentable {
+         this.permutation = axisTransformation;
+         this.transformation = (new Matrix3f()).scaling(flipX ? -1.0F : 1.0F, flipY ? -1.0F : 1.0F, flipZ ? -1.0F : 1.0F);
+         this.transformation.mul(axisTransformation.transformation());
++        this.initializeRotationDirections(); // Paper
+     }
+ 
+     private BooleanList packInversions() {
+@@ -0,0 +0,0 @@ public enum OctahedralGroup implements StringRepresentable {
+         return this.name;
+     }
+ 
+-    public Direction rotate(Direction direction) {
++    public void initializeRotationDirections() { // Paper
+         if (this.rotatedDirections == null) {
+             this.rotatedDirections = Maps.newEnumMap(Direction.class);
+             Direction.Axis[] axiss = Direction.Axis.values();
+@@ -0,0 +0,0 @@ public enum OctahedralGroup implements StringRepresentable {
+             }
+         }
+ 
++    // Paper start - Move lazy initialization to constructor
++    }
++    public Direction rotate(Direction direction) {
++    // Paper end
+         return this.rotatedDirections.get(direction);
+     }
+ 
