@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 18 Jun 2016 23:22:12 -0400
+Subject: [PATCH] Delay Chunk Unloads based on Player Movement
+
+When players are moving in the world, doing things such as building or exploring,
+they will commonly go back and forth in a small area. This causes a ton of chunk load
+and unload activity on the edge chunks of their view distance.
+
+A simple back and forth movement in 6 blocks could spam a chunk to thrash a
+loading and unload cycle over and over again.
+
+This is very wasteful. This system introduces a delay of inactivity on a chunk
+before it actually unloads, which will be handled by the ticket expiry process.
+
+This allows servers with smaller worlds who do less long distance exploring to stop
+wasting cpu cycles on saving/unloading/reloading chunks repeatedly.
+
+Co-Authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+
+diff --git a/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
+index e77972c4c264100ffdd824bfa2dac58dbbc6d678..a6dde335f67f20b4395efacfb962d7fb081c591d 100644
+--- a/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
++++ b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
+@@ -279,7 +279,15 @@ public final class PlayerChunkLoader {
+                         return;
+                     }
+                     ChunkPos chunkPos = new ChunkPos(rangeX, rangeZ);
+-                    PlayerChunkLoader.this.chunkMap.level.getChunkSource().removeTicketAtLevel(TicketType.PLAYER, chunkPos, LOADED_TICKET_LEVEL, chunkPos);
++                    if (PlayerChunkLoader.this.chunkMap.level.paperConfig().chunks.delayChunkUnloadsBy.seconds() > 0) {
++                        PlayerChunkLoader.this.chunkMap.level.chunkTaskScheduler.chunkHolderManager.removeAndAddIfAllOfTypeRemoved(
++                            chunkPos.longKey,
++                            TicketType.PLAYER, LOADED_TICKET_LEVEL, chunkPos,
++                            TicketType.DELAY_UNLOAD, LOADED_TICKET_LEVEL, chunkPos.longKey
++                        );
++                    } else {
++                        PlayerChunkLoader.this.chunkMap.level.chunkTaskScheduler.chunkHolderManager.removeTicketAtLevel(TicketType.PLAYER, chunkPos.longKey, LOADED_TICKET_LEVEL, chunkPos);
++                    }
+                     if (PlayerChunkLoader.this.chunkTicketTracker.remove(chunkPos.toLong())) {
+                         --PlayerChunkLoader.this.concurrentChunkLoads;
+                     }
+diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
+index ad3560284ae79b9c6bbc8752be7d9d14b18e226e..2a27396b77f104e692805ca8fb9e3c9c03f94991 100644
+--- a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
++++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
+@@ -376,7 +376,7 @@ public final class ChunkHolderManager {
+     // supposed to return true if the ticket was added and did not replace another
+     // but, we always return false if the ticket cannot be added
+     public <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier) {
+-        final long removeDelay = Math.max(0, type.timeout);
++        final long removeDelay = type.timeoutFunction == null ? Math.max(0, type.timeout) : type.timeoutFunction.applyAsLong(this.world);
+         if (level > MAX_TICKET_LEVEL) {
+             return false;
+         }
+@@ -500,6 +500,38 @@ public final class ChunkHolderManager {
+         }
+     }
+ 
++    public <T, V> void removeAndAddIfAllOfTypeRemoved(
++        final long chunk, final TicketType<V> removeType, final int removeLevel, final V removeIdentifier,
++        final TicketType<T> addType, final int addLevel, final T addIdentifier
++    ) {
++        this.ticketLock.lock();
++        try {
++            final SortedArraySet<Ticket<?>> tickets = this.tickets.get(chunk);
++            int ofType = 0;
++            if (tickets != null) {
++                for (final Ticket<?> ticket : tickets) {
++                    if (ticket.getType() == removeType) {
++                        ++ofType;
++                        if (ofType > 1) {
++                            break;
++                        }
++                    }
++                }
++            }
++
++            if (ofType <= 1) {
++                // following removal is either of the last ticket of the type, or there was no ticket to remove
++                this.addTicketAtLevel(addType, chunk, addLevel, addIdentifier);
++            }
++            // skip remove call if we know it won't do anything
++            if (ofType > 0) {
++                this.removeTicketAtLevel(removeType, chunk, removeLevel, removeIdentifier);
++            }
++        } finally {
++            this.ticketLock.unlock();
++        }
++    }
++
+     public <T> void removeAllTicketsFor(final TicketType<T> ticketType, final int ticketLevel, final T ticketIdentifier) {
+         if (ticketLevel > MAX_TICKET_LEVEL) {
+             return;
+diff --git a/src/main/java/net/minecraft/server/level/TicketType.java b/src/main/java/net/minecraft/server/level/TicketType.java
+index 97d1ff2af23bac14e67bca5896843325aaa5bfc1..3ea5707c3803c33df7be6f7ffb7c9e38e94df497 100644
+--- a/src/main/java/net/minecraft/server/level/TicketType.java
++++ b/src/main/java/net/minecraft/server/level/TicketType.java
+@@ -13,6 +13,7 @@ public class TicketType<T> {
+     private final String name;
+     private final Comparator<T> comparator;
+     public long timeout;
++    public @org.jetbrains.annotations.Nullable java.util.function.ToLongFunction<ServerLevel> timeoutFunction = null; // Paper
+     public static final TicketType<Unit> START = TicketType.create("start", (unit, unit1) -> {
+         return 0;
+     });
+@@ -34,6 +35,10 @@ public class TicketType<T> {
+     public static final TicketType<Long> ENTITY_LOAD = create("entity_load", Long::compareTo);
+     public static final TicketType<Long> POI_LOAD = create("poi_load", Long::compareTo);
+     public static final TicketType<Unit> UNLOAD_COOLDOWN = create("unload_cooldown", (u1, u2) -> 0, 5 * 20);
++    public static final TicketType<Long> DELAY_UNLOAD = create("delay_unload", Long::compareTo, 15 * 20);
++    static {
++        DELAY_UNLOAD.timeoutFunction = (ServerLevel level) -> Math.max(level.paperConfig().chunks.delayChunkUnloadsBy.ticks(), 1);
++    }
+     // Paper end - rewrite chunk system
+ 
+     public static <T> TicketType<T> create(String name, Comparator<T> argumentComparator) {
