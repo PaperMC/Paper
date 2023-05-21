@@ -7,36 +7,34 @@ Subject: [PATCH] Rewrite the Amethyst logic to throw both BlockSpreadEvent and
 Since Amethyst technically both spreads and grows, it should throw both events.
 This will alow plugin creators more control over how Amethyst blocks work.
 
-Version 2
+Version 3
 Signed-off-by: Jacob Litewski <jacob.litewski@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/level/block/BuddingAmethystBlock.java b/src/main/java/net/minecraft/world/level/block/BuddingAmethystBlock.java
-index bedccb8717d08d5a60058445b04ddff149e7d36c..7f15213cc781c5a2a961021269e4353720f642cb 100644
+index bedccb8717d08d5a60058445b04ddff149e7d36c..1cf30898acd8c908cf72e08eae8d8f040486fb3b 100644
 --- a/src/main/java/net/minecraft/world/level/block/BuddingAmethystBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BuddingAmethystBlock.java
-@@ -29,11 +29,19 @@ public class BuddingAmethystBlock extends AmethystBlock {
+@@ -29,11 +29,18 @@ public class BuddingAmethystBlock extends AmethystBlock {
              Direction enumdirection = BuddingAmethystBlock.DIRECTIONS[random.nextInt(BuddingAmethystBlock.DIRECTIONS.length)];
              BlockPos blockposition1 = pos.relative(enumdirection);
              BlockState iblockdata1 = world.getBlockState(blockposition1);
 +            BlockState iblockdata2 = null; //Paper - move here for reuse
              Block block = null;
  
--            if (BuddingAmethystBlock.canClusterGrowAtState(iblockdata1)) {
-+            // Paper start - Move this into it's own check for BlockSpreadEvent
-+            if (canClusterGrowAtState(iblockdata1)) {
+             if (BuddingAmethystBlock.canClusterGrowAtState(iblockdata1)) {
                  block = Blocks.SMALL_AMETHYST_BUD;
 -            } else if (iblockdata1.is(Blocks.SMALL_AMETHYST_BUD) && iblockdata1.getValue(AmethystClusterBlock.FACING) == enumdirection) {
++                // Paper start - BlockSpreadEvent
 +                iblockdata2 = (BlockState) ((BlockState) block.defaultBlockState().setValue(AmethystClusterBlock.FACING, enumdirection)).setValue(AmethystClusterBlock.WATERLOGGED, iblockdata1.getFluidState().getType() == Fluids.WATER);
 +                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, iblockdata2);
 +                return;
-+            }
-+            // Paper end
++            } // Paper end
 +
 +            if (iblockdata1.is(Blocks.SMALL_AMETHYST_BUD) && iblockdata1.getValue(AmethystClusterBlock.FACING) == enumdirection) { // Paper - remove else
                  block = Blocks.MEDIUM_AMETHYST_BUD;
              } else if (iblockdata1.is(Blocks.MEDIUM_AMETHYST_BUD) && iblockdata1.getValue(AmethystClusterBlock.FACING) == enumdirection) {
                  block = Blocks.LARGE_AMETHYST_BUD;
-@@ -42,9 +50,9 @@ public class BuddingAmethystBlock extends AmethystBlock {
+@@ -42,9 +49,9 @@ public class BuddingAmethystBlock extends AmethystBlock {
              }
  
              if (block != null) {
