@@ -1591,6 +1591,180 @@ index 0000000000000000000000000000000000000000..3ddc7e07ed6c1999ee52f0c5ff468e3b
 +        return Objects.hash(compoundAccess);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/property/nbt/TranformingListTag.java b/src/main/java/io/papermc/paper/property/nbt/TranformingListTag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3138221e1aeebea8d5fa04472a4688f2f3b69a23
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/property/nbt/TranformingListTag.java
+@@ -0,0 +1,168 @@
++package io.papermc.paper.property.nbt;
++
++import net.minecraft.nbt.ListTag;
++import net.minecraft.nbt.Tag;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.*;
++import java.util.function.Function;
++import java.util.function.Predicate;
++
++import static com.google.common.base.Preconditions.checkNotNull;
++
++/**
++ * Modified version of {@link io.papermc.paper.util.TransformingRandomAccessList} to use
++ * a backing ListTag for manipulation. This allows all calls to correctly update the
++ * list type.
++ *
++ * @param <T> transformed list element type
++ */
++public final class TranformingListTag<T> extends AbstractList<T> implements RandomAccess {
++    final ListTag fromList;
++    final Function<Tag, ? extends T> toFunction;
++    final Function<? super T, Tag> fromFunction;
++
++    /**
++     * Create a new {@link TranformingListTag}.
++     *
++     * @param fromList     backing list
++     * @param toFunction   function mapping backing list element type to transformed list element type
++     * @param fromFunction function mapping transformed list element type to backing list element type
++     */
++    public TranformingListTag(
++        final @NonNull ListTag fromList,
++        final @NonNull Function<Tag, ? extends T> toFunction,
++        final @NonNull Function<? super T, Tag> fromFunction
++    ) {
++        this.fromList = checkNotNull(fromList);
++        this.toFunction = checkNotNull(toFunction);
++        this.fromFunction = checkNotNull(fromFunction);
++    }
++
++    @Override
++    public void clear() {
++        this.fromList.clear();
++    }
++
++    @Override
++    public T get(int index) {
++        return this.toFunction.apply(this.fromList.get(index));
++    }
++
++    @Override
++    public @NotNull Iterator<T> iterator() {
++        return this.listIterator();
++    }
++
++    @Override
++    public @NotNull ListIterator<T> listIterator(int index) {
++        return new TransformedListIterator<T>(this.fromList.listIterator(index)) {
++            @Override
++            T transform(Tag from) {
++                return TranformingListTag.this.toFunction.apply(from);
++            }
++
++            @Override
++            Tag transformBack(T from) {
++                return TranformingListTag.this.fromFunction.apply(from);
++            }
++        };
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.fromList.isEmpty();
++    }
++
++    @Override
++    public boolean removeIf(Predicate<? super T> filter) {
++        checkNotNull(filter);
++        return this.fromList.removeIf(element -> filter.test(this.toFunction.apply(element)));
++    }
++
++    @Override
++    public T remove(int index) {
++        return this.toFunction.apply(this.fromList.remove(index));
++    }
++
++    @Override
++    public int size() {
++        return this.fromList.size();
++    }
++
++    @Override
++    public T set(int i, T t) {
++        return this.toFunction.apply(this.fromList.set(i, this.fromFunction.apply(t)));
++    }
++
++    @Override
++    public void add(int i, T t) {
++        this.fromList.add(i, this.fromFunction.apply(t));
++    }
++
++    static abstract class TransformedListIterator<T> implements ListIterator<T>, Iterator<T> {
++        final Iterator<Tag> backingIterator;
++
++        TransformedListIterator(ListIterator<Tag> backingIterator) {
++            this.backingIterator = checkNotNull((Iterator<Tag>) backingIterator);
++        }
++
++        private ListIterator<Tag> backingIterator() {
++            return cast(this.backingIterator);
++        }
++
++        static <A> ListIterator<A> cast(Iterator<A> iterator) {
++            return (ListIterator<A>) iterator;
++        }
++
++        @Override
++        public final boolean hasPrevious() {
++            return this.backingIterator().hasPrevious();
++        }
++
++        @Override
++        public final T previous() {
++            return this.transform(this.backingIterator().previous());
++        }
++
++        @Override
++        public final int nextIndex() {
++            return this.backingIterator().nextIndex();
++        }
++
++        @Override
++        public final int previousIndex() {
++            return this.backingIterator().previousIndex();
++        }
++
++        @Override
++        public void set(T element) {
++            this.backingIterator().set(this.transformBack(element));
++        }
++
++        @Override
++        public void add(T element) {
++            this.backingIterator().add(this.transformBack(element));
++        }
++
++        abstract T transform(Tag from);
++
++        abstract Tag transformBack(T to);
++
++        @Override
++        public final boolean hasNext() {
++            return this.backingIterator.hasNext();
++        }
++
++        @Override
++        public final T next() {
++            return this.transform(this.backingIterator.next());
++        }
++
++        @Override
++        public final void remove() {
++            this.backingIterator.remove();
++        }
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/access/ChildCompoundAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/ChildCompoundAccess.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..cc1ba8e0a610d9b5800abea7b661a5b8dd59b773
@@ -3262,10 +3436,10 @@ index 0000000000000000000000000000000000000000..fc009ba9f87550da8a34735951bef2a3
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cced5fe9c59aefb579e2bd27c06c53007fcf346d
+index 0000000000000000000000000000000000000000..180b287eed2a98597ba38f254f82465fa374ef49
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.inventory.item.properties.StewEffect;
@@ -3292,8 +3466,6 @@ index 0000000000000000000000000000000000000000..cced5fe9c59aefb579e2bd27c06c5300
 +        context.register(EFFECT_DURATION, IntegerPrimitive.INSTANCE);
 +    });
 +
-+    private static final IntegerPrimitive PRIMITIVE = IntegerPrimitive.INSTANCE;
-+
 +    @Override
 +    public StewEffect deserialize(Tag tag) {
 +        NbtPropertyHolder attributeHolder = NbtPropertyHolder.simpleBlob((CompoundTag) tag, CONTEXT);
@@ -3308,9 +3480,8 @@ index 0000000000000000000000000000000000000000..cced5fe9c59aefb579e2bd27c06c5300
 +    @Override
 +    public Tag serialize(StewEffect type) {
 +        NbtPropertyHolder attributeHolder = NbtPropertyHolder.simpleBlob(new CompoundTag(), CONTEXT);
-+
-+        PRIMITIVE.writeDirect(attributeHolder, EFFECT, BuiltInRegistries.MOB_EFFECT.getId(BuiltInRegistries.MOB_EFFECT.get(CraftNamespacedKey.toMinecraft(type.effect().getKey()))));
-+        PRIMITIVE.writeDirect(attributeHolder, EFFECT_DURATION, type.duration());
++        attributeHolder.set(EFFECT, BuiltInRegistries.MOB_EFFECT.getId(BuiltInRegistries.MOB_EFFECT.get(CraftNamespacedKey.toMinecraft(type.effect().getKey()))));
++        attributeHolder.set(EFFECT_DURATION, type.duration());
 +
 +        return attributeHolder.getCompoundTag();
 +    }
