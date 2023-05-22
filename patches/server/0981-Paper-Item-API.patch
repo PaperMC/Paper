@@ -1336,10 +1336,10 @@ index 0000000000000000000000000000000000000000..6f19ef7ac64677b08769c35cd805acb5
 +}
 diff --git a/src/main/java/io/papermc/paper/property/adapter/ValueTypeAdapter.java b/src/main/java/io/papermc/paper/property/adapter/ValueTypeAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..16aea9c70aa79fe0120f23354e6a94974c62aeef
+index 0000000000000000000000000000000000000000..1f7ffe9c4c166886ca21c87080d3ce5ed219b1df
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/adapter/ValueTypeAdapter.java
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,11 @@
 +package io.papermc.paper.property.adapter;
 +
 +import io.papermc.paper.property.PropertyKey;
@@ -1348,8 +1348,6 @@ index 0000000000000000000000000000000000000000..16aea9c70aa79fe0120f23354e6a9497
 +public interface ValueTypeAdapter<RUNTIME_TYPE, HOLDER extends PropertyView> {
 +
 +    RUNTIME_TYPE getValue(HOLDER holder, PropertyKey<RUNTIME_TYPE> propertyKey);
-+
-+    void writeDirect(HOLDER holder, PropertyKey<?> propertyKey, RUNTIME_TYPE direct);
 +
 +    RUNTIME_TYPE getNewValue(HOLDER holder, PropertyKey<RUNTIME_TYPE> propertyKey);
 +}
@@ -1406,10 +1404,10 @@ index 0000000000000000000000000000000000000000..b8f9b584ca86b1348d0980a2ded20a55
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..661bda75180e9a56ac21ad9b31a7eacae1fd50cf
+index 0000000000000000000000000000000000000000..b663fc9812e18e9c93c9145931ade961c0d26089
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/NbtPlatformAdapter.java
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,14 @@
 +package io.papermc.paper.property.nbt;
 +
 +import io.papermc.paper.property.PropertyKey;
@@ -1421,13 +1419,15 @@ index 0000000000000000000000000000000000000000..661bda75180e9a56ac21ad9b31a7eaca
 +    default void removeDirect(NbtPropertyHolder nbtPropertyHolder, PropertyKey<TYPE> propertyKey) {
 +        nbtPropertyHolder.getCompoundTag().remove(propertyKey.getKey());
 +    }
++
++    void writeDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey, TYPE direct);
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3ddc7e07ed6c1999ee52f0c5ff468e3b82f93249
+index 0000000000000000000000000000000000000000..3fc7ab64aed196f3340ae6a2bba38df695bee53e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,167 @@
 +package io.papermc.paper.property.nbt;
 +
 +import io.papermc.paper.item.property.ItemPropertyRegistration;
@@ -1499,7 +1499,13 @@ index 0000000000000000000000000000000000000000..3ddc7e07ed6c1999ee52f0c5ff468e3b
 +            return adapter.getNewValue(this, key);
 +        }
 +
-+        return adapter.getValue(this, key);
++        try {
++            // We have to make sure to catch any exceptions from people putting stupid NBT tags.
++            // So just, if it fails, return a new value.
++            return adapter.getValue(this, key);
++        } catch (Throwable throwable) {
++            return adapter.getNewValue(this, key);
++        }
 +    }
 +
 +    @Override
@@ -2334,10 +2340,10 @@ index 0000000000000000000000000000000000000000..4cd5ef67d8648f803febf19b44a2cf10
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..71c26e051f5ecf78ed64224b24d3155c656ff600
+index 0000000000000000000000000000000000000000..1b8da920bc46c1a5923b8fcba6f836b5ab0588ce
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.property.nbt.primitives;
 +
 +import io.papermc.paper.property.PropertyKey;
@@ -2349,14 +2355,7 @@ index 0000000000000000000000000000000000000000..71c26e051f5ecf78ed64224b24d3155c
 +
 +    @Override
 +    public T getValue(NbtPropertyHolder holder, PropertyKey<T> propertyKey) {
-+
-+        // See get direct
-+        Tag tag = holder.getCompoundTag().get(propertyKey.getKey());
-+        if (tag != null && tag.getId() == SinglePrimitiveNbtPlatformAdapter.this.getTagType()) {
-+            return SinglePrimitiveNbtPlatformAdapter.this.getType(tag);
-+        }
-+
-+        return null;
++        return this.getUnsafe(holder, propertyKey);
 +    }
 +
 +    @Override
@@ -2365,7 +2364,7 @@ index 0000000000000000000000000000000000000000..71c26e051f5ecf78ed64224b24d3155c
 +        return this.getValue(holder, propertyKey);
 +    }
 +
-+    public T getDirect(NbtPropertyHolder holder, PropertyKey<?> propertyKey) {
++    public T getUnsafe(NbtPropertyHolder holder, PropertyKey<?> propertyKey) {
 +        Tag tag = holder.getCompoundTag().get(propertyKey.getKey());
 +        if (tag != null && tag.getId() == SinglePrimitiveNbtPlatformAdapter.this.getTagType()) {
 +            return SinglePrimitiveNbtPlatformAdapter.this.getType(tag);
@@ -2527,10 +2526,10 @@ index 0000000000000000000000000000000000000000..915dd6af0da3c528145c810f851d0409
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0ebd8d03144cb2a61af96640b8d2bc8908bae54b
+index 0000000000000000000000000000000000000000..81bca4831513511f765b6373f73e97d800ca9606
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,55 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.inventory.item.properties.AttributePair;
@@ -2554,6 +2553,11 @@ index 0000000000000000000000000000000000000000..0ebd8d03144cb2a61af96640b8d2bc89
 +    private static final PropertyKey<String> ATTRIBUTE_SLOT = PropertyKey.of("Slot", String.class);
 +    private static final PropertyKey<String> ATTRIBUTE_NAME = PropertyKey.of("AttributeName", String.class);
 +
++    private static final AdapterContext CONTEXT = AdapterContext.of((context) -> {
++        context.register(ATTRIBUTE_NAME, StringPrimitive.INSTANCE);
++        context.register(ATTRIBUTE_SLOT, StringPrimitive.INSTANCE);
++    });
++
 +    @Override
 +    public AttributePair deserialize(Tag tag) {
 +        CompoundTag compoundTag = (CompoundTag) tag;
@@ -2572,11 +2576,7 @@ index 0000000000000000000000000000000000000000..0ebd8d03144cb2a61af96640b8d2bc89
 +        AttributeModifier attributeModifier = value.modifier();
 +        net.minecraft.world.entity.ai.attributes.AttributeModifier nmsModifier = CraftAttributeInstance.convert(attributeModifier);
 +
-+        NbtPropertyHolder attributeHolder = NbtPropertyHolder.simpleBlob(nmsModifier.save(), AdapterContext.of((context) -> {
-+            context.register(ATTRIBUTE_NAME, StringPrimitive.INSTANCE);
-+            context.register(ATTRIBUTE_SLOT, StringPrimitive.INSTANCE);
-+        }));
-+
++        NbtPropertyHolder attributeHolder = NbtPropertyHolder.simpleBlob(nmsModifier.save(), CONTEXT);
 +        attributeHolder.set(ATTRIBUTE_NAME, attribute.getKey().toString());
 +        if (attributeModifier.getSlot() != null) {
 +            attributeHolder.set(ATTRIBUTE_SLOT, CraftEquipmentSlot.getNMS(attributeModifier.getSlot()).name());
@@ -2584,8 +2584,6 @@ index 0000000000000000000000000000000000000000..0ebd8d03144cb2a61af96640b8d2bc89
 +
 +        return attributeHolder.getCompoundTag();
 +    }
-+
-+
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/AxolotlVariantNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/AxolotlVariantNbt.java
 new file mode 100644
@@ -2873,7 +2871,7 @@ index 0000000000000000000000000000000000000000..fa3dcc3af5471ac3f63a39b9160503bb
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/EnumNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/EnumNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..808a6c4391b7e44de12661cb1235fdb73098c307
+index 0000000000000000000000000000000000000000..a1a959457e10db659c4f6c6daffbabbe29e3a2e1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/EnumNbt.java
 @@ -0,0 +1,24 @@
@@ -2884,16 +2882,16 @@ index 0000000000000000000000000000000000000000..808a6c4391b7e44de12661cb1235fdb7
 +
 +public class EnumNbt<E extends Enum<E>> extends NbtPrimitiveWrapper<E, Integer> {
 +
-+    private final Class<E> enumClazz;
++    private final E[] constants;
 +
 +    public EnumNbt(Class<E> enumClazz) {
 +        super(IntegerPrimitive.INSTANCE);
-+        this.enumClazz = enumClazz;
++        this.constants = enumClazz.getEnumConstants();
 +    }
 +
 +    @Override
 +    public E fromPrimitive(Integer primitive) {
-+        return this.enumClazz.getEnumConstants()[primitive];
++        return this.constants[primitive];
 +    }
 +
 +    @Override
@@ -2903,10 +2901,10 @@ index 0000000000000000000000000000000000000000..808a6c4391b7e44de12661cb1235fdb7
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/FireworkEffectNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/FireworkEffectNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9802827852f5a7fd0bcdd4a2cbb09f26e132430e
+index 0000000000000000000000000000000000000000..1766d3cbf5f056c5ac886f436534ac138d66e4d4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/FireworkEffectNbt.java
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,104 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.property.PropertyKey;
@@ -2925,6 +2923,7 @@ index 0000000000000000000000000000000000000000..9802827852f5a7fd0bcdd4a2cbb09f26
 +
 +public class FireworkEffectNbt extends NbtPrimitiveWrapper<FireworkEffect, CompoundTag> {
 +
++    private static final int[] EMPTY_INT_LIST = new int[0];
 +    private static final PropertyKey<Boolean> TRIAL = PropertyKey.of("Trail", Boolean.class);
 +    private static final PropertyKey<Boolean> FLICKER = PropertyKey.of("Flicker", Boolean.class);
 +    private static final PropertyKey<Byte> TYPE = PropertyKey.of("Type", Byte.class);
@@ -2945,25 +2944,18 @@ index 0000000000000000000000000000000000000000..9802827852f5a7fd0bcdd4a2cbb09f26
 +
 +    @Override
 +    public FireworkEffect fromPrimitive(CompoundTag primitive) {
-+        NbtPropertyHolder holder = NbtPropertyHolder.simpleBlob((CompoundTag) primitive, CONTEXT);
++        NbtPropertyHolder holder = NbtPropertyHolder.simpleBlob(primitive, CONTEXT);
++
 +        FireworkEffect.Builder effect = FireworkEffect.builder()
-+            .flicker(holder.get(FLICKER))
-+            .trail(holder.get(TRIAL))
-+            .with(getEffectType(0xff & holder.get(TYPE)));
++            .flicker(holder.getOrDefault(FLICKER, false))
++            .trail(holder.getOrDefault(TRIAL, false))
++            .with(getEffectType(0xff & holder.getOrDefault(TYPE, (byte) 0)));
 +
-+        int[] colors = holder.get(COLORS);
-+        // People using buggy command generators specify a list rather than an int here, so recover with dummy data.
-+        // Wrong: Colors: [1234]
-+        // Right: Colors: [I;1234]
-+        if (colors.length == 0) {
-+            effect.withColor(Color.WHITE);
-+        }
-+
-+        for (int color : colors) {
++        for (int color : holder.getOrDefault(COLORS, EMPTY_INT_LIST)) {
 +            effect.withColor(Color.fromRGB(color));
 +        }
 +
-+        for (int color : holder.get(FADE_COLORS)) {
++        for (int color : holder.getOrDefault(FADE_COLORS, EMPTY_INT_LIST)) {
 +            effect.withFade(Color.fromRGB(color));
 +        }
 +
@@ -2972,18 +2964,11 @@ index 0000000000000000000000000000000000000000..9802827852f5a7fd0bcdd4a2cbb09f26
 +
 +    @Override
 +    public CompoundTag toPrimitive(FireworkEffect type) {
-+        NbtPropertyHolder holder = NbtPropertyHolder.simpleBlob((CompoundTag) new CompoundTag(), CONTEXT);
-+        if (type.hasFlicker()) {
-+            holder.set(FLICKER, true);
-+        }
-+
-+        if (type.hasTrail()) {
-+            holder.set(TRIAL, true);
-+        }
-+
++        NbtPropertyHolder holder = NbtPropertyHolder.simpleBlob(new CompoundTag(), CONTEXT);
++        holder.set(FLICKER, type.hasFlicker());
++        holder.set(TRIAL, type.hasTrail());
 +        addColors(holder, COLORS, type.getColors());
 +        addColors(holder, FADE_COLORS, type.getFadeColors());
-+
 +        holder.set(TYPE, (byte) getNBT(type.getType()));
 +
 +        return holder.getCompoundTag();
@@ -3059,51 +3044,79 @@ index 0000000000000000000000000000000000000000..d43efff46824816f50206a841bfd4bd6
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java b/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..62d528b8545566c5396ed4f83c723bf61168ef75
+index 0000000000000000000000000000000000000000..b91b025a1496a14333d3df2038b06597c903de77
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,97 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.property.PropertyKey;
 +import io.papermc.paper.property.nbt.NbtPlatformAdapter;
 +import io.papermc.paper.property.nbt.NbtPropertyHolder;
 +import io.papermc.paper.property.nbt.primitives.IntegerPrimitive;
-+import net.minecraft.nbt.Tag;
 +import org.bukkit.inventory.ItemFlag;
 +
-+import java.util.HashSet;
++import java.util.AbstractSet;
++import java.util.Iterator;
++import java.util.NoSuchElementException;
 +import java.util.Set;
 +
 +public class ItemFlagBitset implements NbtPlatformAdapter<Set<ItemFlag>> {
 +
++    private final ItemFlag[] universe = ItemFlag.values();
 +    private final IntegerPrimitive backing = IntegerPrimitive.INSTANCE;
 +
 +    @Override
 +    public Set<ItemFlag> getValue(NbtPropertyHolder nbtPropertyHolder, PropertyKey<Set<ItemFlag>> propertyKey) {
-+        // TODO: Lazy
-+        Set<ItemFlag> flag = new HashSet<>() {
++        return new AbstractSet<>() {
++
++            private int storage = IntegerPrimitive.INSTANCE.getUnsafe(nbtPropertyHolder, propertyKey);
++
++            @Override
++            public Iterator<ItemFlag> iterator() {
++                return new Iterator<>() {
++                    private int unseen = storage;
++                    private int lastReturned = 0;
++
++                    @Override
++                    public boolean hasNext() {
++                        return unseen != 0;
++                    }
++
++                    @Override
++                    public ItemFlag next() {
++                        if (unseen == 0) throw new NoSuchElementException();
++                        this.lastReturned = this.unseen & -this.unseen;
++                        this.unseen -= this.lastReturned;
++                        return universe[Integer.numberOfTrailingZeros(this.lastReturned)];
++                    }
++
++                    public void remove() {
++                        if (this.lastReturned == 0) throw new IllegalStateException();
++                        storage &= ~this.lastReturned;
++                        IntegerPrimitive.INSTANCE.writeDirect(nbtPropertyHolder, propertyKey, storage);
++                        this.lastReturned = 0;
++                    }
++                };
++            }
++
++            @Override
++            public int size() {
++                return Integer.bitCount(storage);
++            }
 +
 +            @Override
 +            public boolean add(ItemFlag itemFlag) {
-+                boolean add = super.add(itemFlag);
-+                if (add) {
-+                    ItemFlagBitset.this.writeDirect(nbtPropertyHolder, propertyKey, this);
++                int bitModifier = getBitModifier(itemFlag);
++                if ((storage & bitModifier) == bitModifier) {
++                    return false;
 +                }
-+                return add;
-+            }
 +
-+            @Override
-+            public boolean remove(Object o) {
-+                boolean remove = super.remove(o);
-+                if (remove) {
-+                    ItemFlagBitset.this.writeDirect(nbtPropertyHolder, propertyKey, this);
-+                }
-+                return remove;
++                this.storage |= getBitModifier(itemFlag);
++                IntegerPrimitive.INSTANCE.writeDirect(nbtPropertyHolder, propertyKey, storage);
++                return true;
 +            }
 +        };
-+
-+        return flag;
 +    }
 +
 +    @Override
@@ -3124,12 +3137,7 @@ index 0000000000000000000000000000000000000000..62d528b8545566c5396ed4f83c723bf6
 +
 +    @Override
 +    public int getTagType() {
-+        return Tag.TAG_INT;
-+    }
-+
-+    private boolean contains(ItemFlag itemFlag, int flags) {
-+        int bitModifier = ItemFlagBitset.this.getBitModifier(itemFlag);
-+        return (flags & bitModifier) == bitModifier;
++        return this.backing.getTagType();
 +    }
 +
 +    private byte getBitModifier(ItemFlag hideFlag) {
@@ -3261,10 +3269,10 @@ index 0000000000000000000000000000000000000000..fc009ba9f87550da8a34735951bef2a3
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..180b287eed2a98597ba38f254f82465fa374ef49
+index 0000000000000000000000000000000000000000..8e1f7979efac1add047e80494b08277dd625a806
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/StewEffectsListNbt.java
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,49 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.inventory.item.properties.StewEffect;
@@ -3278,8 +3286,8 @@ index 0000000000000000000000000000000000000000..180b287eed2a98597ba38f254f82465f
 +import net.minecraft.world.effect.MobEffect;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.potion.PotionEffectType;
-+import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +public class StewEffectsListNbt extends AbstractListNbtPlatformAdapter<StewEffect> {
 +
@@ -3295,7 +3303,7 @@ index 0000000000000000000000000000000000000000..180b287eed2a98597ba38f254f82465f
 +    public StewEffect deserialize(Tag tag) {
 +        NbtPropertyHolder attributeHolder = NbtPropertyHolder.simpleBlob((CompoundTag) tag, CONTEXT);
 +
-+        int duration = attributeHolder.get(EFFECT_DURATION);
++        Integer duration = attributeHolder.get(EFFECT_DURATION);
 +        MobEffect mobEffect = MobEffect.byId(attributeHolder.get(EFFECT));
 +        PotionEffectType type = PotionEffectType.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.MOB_EFFECT.getKey(mobEffect)));
 +
@@ -3311,16 +3319,15 @@ index 0000000000000000000000000000000000000000..180b287eed2a98597ba38f254f82465f
 +        return attributeHolder.getCompoundTag();
 +    }
 +
-+    @ApiStatus.Experimental
-+    public static record StewEffectImpl(@NotNull PotionEffectType effect, int duration) implements StewEffect {
++    public record StewEffectImpl(@NotNull PotionEffectType effect, @Nullable Integer duration) implements StewEffect {
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/TropicalFishVariantNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/TropicalFishVariantNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f51ae51de574f859cb87455d1941c43aca2e7bd3
+index 0000000000000000000000000000000000000000..0ed6cf34747f504a62fcf401746bd3da78487bff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/TropicalFishVariantNbt.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.inventory.item.properties.TropicalFishVariant;
@@ -3348,9 +3355,7 @@ index 0000000000000000000000000000000000000000..f51ae51de574f859cb87455d1941c43a
 +        return CraftTropicalFish.getData(type.patternColor(), type.bodyColor(), type.type());
 +    }
 +
-+    @ApiStatus.Experimental
-+    public static record TropicalFishVariantImpl(@NotNull DyeColor patternColor, @NotNull DyeColor bodyColor,
-+                                                 @NotNull TropicalFish.Pattern type) implements io.papermc.paper.inventory.item.properties.TropicalFishVariant {
++    public record TropicalFishVariantImpl(@NotNull DyeColor patternColor, @NotNull DyeColor bodyColor, @NotNull TropicalFish.Pattern type) implements TropicalFishVariant {
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/WrappedListNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/WrappedListNbt.java
@@ -3672,18 +3677,20 @@ index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..0a6df8fa365715b7c67e0b38728eeeed
          map.put(SerializableMeta.TYPE_FIELD, SerializableMeta.classMap.get(getClass()));
          this.serialize(map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 64c50c52c11214740de7903e5592b8b6b2c170b3..b2364454bad4aefb97fb13134e407ba628e3ef31 100644
+index 64c50c52c11214740de7903e5592b8b6b2c170b3..21712d7658f1d5e769b63930d62b7a9861d1a322 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -54,7 +54,6 @@ import org.bukkit.block.data.BlockData;
+@@ -54,8 +54,8 @@ import org.bukkit.block.data.BlockData;
  import org.bukkit.craftbukkit.CraftEquipmentSlot;
  import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
  import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 -import org.bukkit.craftbukkit.block.CraftBlock;
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.block.CraftBlock;
  import org.bukkit.craftbukkit.inventory.CraftItemStack;
  import org.bukkit.craftbukkit.legacy.CraftLegacy;
-@@ -616,6 +615,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
+ import org.bukkit.entity.EntityType;
+@@ -616,6 +616,28 @@ public final class CraftMagicNumbers implements UnsafeValues {
          net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biomeBase = cra.getHandle().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME).getHolderOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BIOME, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(biomeKey)));
          cra.setBiome(x, y, z, biomeBase);
      }
@@ -3692,9 +3699,16 @@ index 64c50c52c11214740de7903e5592b8b6b2c170b3..b2364454bad4aefb97fb13134e407ba6
 +    public io.papermc.paper.property.MutablePropertyView getPropertyHolder(ItemStack itemStack) {
 +        if (itemStack instanceof org.bukkit.craftbukkit.inventory.CraftItemStack craftItemStack) {
 +            return io.papermc.paper.property.nbt.NbtPropertyHolder.itemHolder(craftItemStack.handle);
++        } else {
++            org.bukkit.inventory.meta.ItemMeta meta = itemStack.getItemMeta();
++            if (meta == null) {
++                // Create dummy empty tag
++                return io.papermc.paper.property.nbt.NbtPropertyHolder.itemTagHolder(new net.minecraft.nbt.CompoundTag());
++            }
++
++            return ((io.papermc.paper.item.meta.PaperMeta) meta).getPropertyHolder();
 +        }
 +
-+        throw new UnsupportedOperationException();
 +    }
 +
 +    @Override
@@ -3705,18 +3719,6 @@ index 64c50c52c11214740de7903e5592b8b6b2c170b3..b2364454bad4aefb97fb13134e407ba6
      // Paper end
  
      /**
-diff --git a/src/test/java/io/papermc/paper/inventory/CraftMetaTropicalFishBucketTest.java b/src/test/java/io/papermc/paper/inventory/CraftMetaTropicalFishBucketTest.java
-index 2e7f8ef88ae74c7cbfdb7f397951cbc8479a995f..7cb9014eb7049c900c56b0f77a4b9fc55ae08265 100644
---- a/src/test/java/io/papermc/paper/inventory/CraftMetaTropicalFishBucketTest.java
-+++ b/src/test/java/io/papermc/paper/inventory/CraftMetaTropicalFishBucketTest.java
-@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
- import org.bukkit.inventory.meta.TropicalFishBucketMeta;
- import org.bukkit.support.AbstractTestingBase;
- import org.junit.Assert;
-+import org.junit.Before;
- import org.junit.Test;
- 
- public class CraftMetaTropicalFishBucketTest extends AbstractTestingBase {
 diff --git a/src/test/java/io/papermc/paper/item/ItemPropertyKeyRegistrationTest.java b/src/test/java/io/papermc/paper/item/ItemPropertyKeyRegistrationTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..b8a5835025f2310ead682b3ba27d3c0184cc7f52
@@ -4073,6 +4075,42 @@ index 0000000000000000000000000000000000000000..5a5acb6979b269e0d4560a6fffa216aa
 +        Assert.assertEquals(armorMeta.getColor(), Color.BLUE);
 +    }
 +}
+diff --git a/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java b/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0cd3e315a7ccfb98e8e17161e62ce54e664abc84
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.item;
++
++import io.papermc.paper.inventory.item.properties.ItemProperties;
++import io.papermc.paper.property.MutablePropertyView;
++import org.bukkit.Material;
++import org.bukkit.inventory.ItemFlag;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.Assert;
++import org.junit.Test;
++
++import java.util.Set;
++
++
++public class PropertyMutableCollectionsTest extends AbstractTestingBase {
++
++    @Test
++    public void testItemFlags() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        MutablePropertyView propertyView = itemStack.getPropertyHolder();
++
++        Set<ItemFlag> flags = propertyView.getOrCreate(ItemProperties.HIDE_FLAGS);
++        flags.add(ItemFlag.HIDE_DYE);
++
++        Assert.assertTrue(propertyView.getOrCreate(ItemProperties.HIDE_FLAGS).contains(ItemFlag.HIDE_DYE));
++        flags.remove(ItemFlag.HIDE_DYE);
++        Assert.assertFalse(propertyView.getOrCreate(ItemProperties.HIDE_FLAGS).contains(ItemFlag.HIDE_DYE));
++        Assert.assertTrue(flags.isEmpty());
++    }
++}
 diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
 index f3db8d2875eaef86223da51b30e9dd722d417daa..762e2f00f69419743f1840d103f578f632097b99 100644
 --- a/src/test/java/io/papermc/paper/testing/DummyServer.java
@@ -4192,19 +4230,10 @@ index 13025119b32388f3e50503a355ef7d03837fd232..e92ab80ef66944b46ff6a51ae930eaba
  
          itemMeta.getCustomTagContainer().setCustomTag(this.requestKey("custom-long"), ItemTagType.LONG, 4L); //Add random primitive values
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/FactoryItemMaterialTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/FactoryItemMaterialTest.java
-index e706d547c03f3e07d56fdc7327fadd98f98ccc20..27f95b289538f05c55eb35ce725b467b3682bfb7 100644
+index e706d547c03f3e07d56fdc7327fadd98f98ccc20..9c593a512d0ba416824c202b270024c18e8c5e0d 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/FactoryItemMaterialTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/FactoryItemMaterialTest.java
-@@ -4,6 +4,8 @@ import static org.hamcrest.Matchers.*;
- import static org.junit.Assert.*;
- import java.util.ArrayList;
- import java.util.List;
-+import java.util.logging.Logger;
-+
- import org.bukkit.Material;
- import org.bukkit.inventory.ItemFactory;
- import org.bukkit.inventory.ItemStack;
-@@ -67,22 +69,20 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+@@ -67,22 +67,20 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
  
      @Test
      public void generalCase() {
@@ -4229,7 +4258,7 @@ index e706d547c03f3e07d56fdc7327fadd98f98ccc20..27f95b289538f05c55eb35ce725b467b
          if (baseMeta == null) {
              assertThat(this.material, is(Material.AIR));
              return;
-@@ -91,7 +91,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+@@ -91,7 +89,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
          for (Material other : FactoryItemMaterialTest.materials) {
              final ItemStack bukkitStack = new ItemStack(other);
              final CraftItemStack craftStack = CraftItemStack.asCraftCopy(bukkitStack);
@@ -4238,7 +4267,7 @@ index e706d547c03f3e07d56fdc7327fadd98f98ccc20..27f95b289538f05c55eb35ce725b467b
  
              final String testName = FactoryItemMaterialTest.name(this.material, other);
  
-@@ -103,7 +103,6 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+@@ -103,7 +101,6 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
              assertTrue(testName, FactoryItemMaterialTest.factory.isApplicable(otherMeta, craftStack));
              assertTrue(testName, FactoryItemMaterialTest.factory.isApplicable(otherMeta, bukkitStack));
              assertTrue(testName, FactoryItemMaterialTest.factory.isApplicable(otherMeta, other));
@@ -4246,7 +4275,7 @@ index e706d547c03f3e07d56fdc7327fadd98f98ccc20..27f95b289538f05c55eb35ce725b467b
          }
      }
  
-@@ -112,8 +111,8 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+@@ -112,8 +109,8 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
          if (this.material == Material.AIR) {
              return;
          }
@@ -4257,7 +4286,7 @@ index e706d547c03f3e07d56fdc7327fadd98f98ccc20..27f95b289538f05c55eb35ce725b467b
  
          final ItemStack baseMetaStack = new ItemStack(this.material);
          baseMetaStack.setItemMeta(baseMeta);
-@@ -134,7 +133,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
+@@ -134,7 +131,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
          for (Material other : FactoryItemMaterialTest.materials) {
              final String testName = FactoryItemMaterialTest.name(this.material, other);
  
