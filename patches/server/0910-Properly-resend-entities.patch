@@ -8,6 +8,8 @@ Entities that are interacted with need to be resent to the client, so we resend 
 data to the player whilst making sure not to clear dirty entries from the tracker. This makes
 sure that values will be correctly updated to other players.
 
+This also adds utilities to aid in further preventing entity desyncs.
+
 See: https://github.com/PaperMC/Paper/pull/1896
 
 == AT ==
@@ -59,6 +61,19 @@ index d088479d160dbd2fc90b48a30553be141db8eef2..bf6a70a69bb695ec1a202cd1e863c468
 +        net.minecraft.server.level.ServerEntity serverEntity = this.entity.tracker.serverEntity;
 +        if (player.getBukkitEntity().canSee(entity.getBukkitEntity())) {
 +            serverEntity.sendPairingData(player, player.connection::send);
++        }
++    }
++
++    // This method allows you to specifically resend certain data accessor keys to the client
++    public void resendPossiblyDesyncedDataValues(List<EntityDataAccessor<?>> keys, ServerPlayer to) {
++        List<SynchedEntityData.DataValue<?>> values = new ArrayList<>(keys.size());
++        for (EntityDataAccessor<?> key : keys) {
++            SynchedEntityData.DataItem<?> synchedValue = this.getItem(key);
++            values.add(synchedValue.value());
++        }
++
++        if (to.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
++            to.connection.send(new ClientboundSetEntityDataPacket(this.entity.getId(), values));
 +        }
 +    }
 +    // Paper end
