@@ -112,6 +112,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.sign.Side;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
@@ -162,6 +163,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
+import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2091,6 +2093,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void openSign(Sign sign) {
         CraftSign.openSign(sign, this);
+    }
+
+    @Override
+    public void openSign(@NotNull Sign sign, @NotNull Side side) {
+        openSign(sign); // todo implement per side
     }
 
     @Override
