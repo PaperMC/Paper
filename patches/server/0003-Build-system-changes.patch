@@ -3,9 +3,13 @@ From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 20:40:33 -0600
 Subject: [PATCH] Build system changes
 
+== AT ==
+public net.minecraft.server.packs.VanillaPackResourcesBuilder safeGetPath(Ljava/net/URI;)Ljava/nio/file/Path;
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index f7d5f785f659aa905000d974f573e43f841e7fc0..59579c22db8e028782f284942fb1e4f9791cfe1b 100644
+index f7d5f785f659aa905000d974f573e43f841e7fc0..2fbc68a73575110ded95ca12fa17ab8bb44aae8f 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -9,10 +9,9 @@ plugins {
@@ -78,6 +82,69 @@ index f7d5f785f659aa905000d974f573e43f841e7fc0..59579c22db8e028782f284942fb1e4f9
  tasks.test {
      exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
  }
+@@ -132,7 +153,14 @@ tasks.registerRunTask("runReobf") {
+     classpath(runtimeClasspathWithoutVanillaServer)
+ }
+ 
++val runtimeClasspathForRunDev = sourceSets.main.flatMap { src ->
++    src.runtimeClasspath.elements.map { elements ->
++        elements.filterNot { file -> file.asFile.endsWith("minecraft.jar") }
++    }
++}
+ tasks.registerRunTask("runDev") {
+     description = "Spin up a non-relocated Mojang-mapped test server"
+-    classpath(sourceSets.main.map { it.runtimeClasspath })
++    classpath(tasks.filterProjectDir.flatMap { it.outputJar })
++    classpath(runtimeClasspathForRunDev)
++    jvmArgs("-DPaper.isRunDev=true")
+ }
+diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
+index 6eb213981aeb7e75e1ed75f1483bc98187726f6f..de37a6e2edf36107a04b3707b9c5bbd608fcab20 100644
+--- a/src/main/java/net/minecraft/resources/ResourceLocation.java
++++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
+@@ -26,6 +26,7 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
+     public static final char NAMESPACE_SEPARATOR = ':';
+     public static final String DEFAULT_NAMESPACE = "minecraft";
+     public static final String REALMS_NAMESPACE = "realms";
++    public static final String PAPER_NAMESPACE = "paper"; // Paper
+     private final String namespace;
+     private final String path;
+ 
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index e7240acad17dc9c0d93f2792cc0d90c1855ac436..ba96530f00faa1d113a14242eb8192349c7c944f 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -110,6 +110,17 @@ public class Main {
+             */ // CraftBukkit end
+ 
+         try {
++            // Paper start
++            if (Boolean.getBoolean("Paper.isRunDev")) {
++                net.minecraft.server.packs.VanillaPackResourcesBuilder.developmentConfig = builder -> {
++                    try {
++                        builder.pushAssetPath(net.minecraft.server.packs.PackType.SERVER_DATA, net.minecraft.server.packs.VanillaPackResourcesBuilder.safeGetPath(java.util.Objects.requireNonNull(Main.class.getResource("/data/.paperassetsroot"), "Missing required .paperassetsroot file").toURI()).getParent());
++                    } catch (java.net.URISyntaxException | IOException ex) {
++                        throw new RuntimeException(ex);
++                    }
++                };
++            }
++            // Paper end
+ 
+             Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
+ 
+diff --git a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+index 03bf7dfc289c6a02f19678d3c7041c027154b99d..43ce85977472fd831fa272ff1d81df4586352d72 100644
+--- a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
++++ b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+@@ -28,7 +28,7 @@ public class ServerPacksSource extends BuiltInPackSource {
+     }
+ 
+     private static VanillaPackResources createVanillaPackSource() {
+-        return (new VanillaPackResourcesBuilder()).setMetadata(BUILT_IN_METADATA).exposeNamespace("minecraft").applyDevelopmentConfig().pushJarResources().build();
++        return (new VanillaPackResourcesBuilder()).setMetadata(BUILT_IN_METADATA).exposeNamespace("minecraft", ResourceLocation.PAPER_NAMESPACE).applyDevelopmentConfig().pushJarResources().build(); // Paper
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index 23e88fde465853629c4371d1e1a44d1af493ca3e..5a39201392fefe8da495244fdbc380e882ec938f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
@@ -104,3 +171,6 @@ index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed4
          Properties properties = new Properties();
  
          if (stream != null) {
+diff --git a/src/main/resources/data/.paperassetsroot b/src/main/resources/data/.paperassetsroot
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
