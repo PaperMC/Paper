@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Thu, 14 Jul 2022 16:10:20 +0200
+Subject: [PATCH] Configurable restart and shutdown exit code
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 15a9993c2705e2dcc0366394ded57acffab589c0..dcd6a00d0ecb6e06e58a3bd4eeefc6d38010c934 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1195,12 +1195,32 @@ public final class Bukkit {
+ 
+     /**
+      * Shutdowns the server, stopping everything.
++     * <p>
++     * This method must be called on the main thread and
++     * its usage on the other thread is undefined.
+      */
+     public static void shutdown() {
+         server.shutdown();
+     }
+ 
+     // Paper start
++    /**
++     * Shutdowns the server, stopping everything providing an exit code.
++     * <p>
++     * Generally a non-zero exit code means that an error has happened.
++     * For example, when the server has stopped to respond for X ticks
++     * the watchdog thread will shutdown the server with a 70 exit code.
++     * The plugins shouldn't use that code to avoid potential conflict.
++     * <p>
++     * This method must be called on the main thread and
++     * its usage on the other thread is undefined.
++     *
++     * @param exitCode the exit code explaining why this process has been stopped
++     */
++    public static void abnormalShutdown(int exitCode) {
++        server.abnormalShutdown(exitCode);
++    }
++
+     /**
+      * Broadcast a message to all players.
+      * <p>
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 9f7029d327b55c8b1b9cfef8ea2678b87dad8ddb..2f547db52b11148e80660e36ed08d670767ace96 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -999,9 +999,29 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Shutdowns the server, stopping everything.
++     * <p>
++     * This method must be called on the main thread and
++     * its usage on the other thread is undefined.
+      */
+     public void shutdown();
+ 
++    // Paper start
++    /**
++     * Shutdowns the server, stopping everything providing an exit code.
++     * <p>
++     * Generally a non-zero exit code means that an error has happened.
++     * For example, when the server has stopped to respond for X ticks
++     * the watchdog thread will shutdown the server with a 70 exit code.
++     * The plugins shouldn't use that code to avoid potential conflict.
++     * <p>
++     * This method must be called on the main thread and
++     * its usage on the other thread is undefined.
++     *
++     * @param exitCode the exit code explaining why this process has been stopped
++     */
++    void abnormalShutdown(int exitCode);
++    // Paper end
++
+     /**
+      * Broadcasts the specified message to every user with the given
+      * permission name.
+@@ -1991,10 +2011,28 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+         /**
+          * Restart the server. If the server administrator has not configured restarting, the server will stop.
++         * <p>
++         * This method must be called on the main thread and
++         * its usage on the other thread is undefined.
+          */
+         public void restart() {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
++
++        // Paper start
++        /**
++         * Restart the server. Plugin MUST execute another process during
++         * this shutdown hook via the shell or any other platform.
++         * <p>
++         * This method must be called on the main thread and
++         * its usage on the other thread is undefined.
++         *
++         * @param onRestart the code to run at the end of this process
++         */
++        public void restart(@NotNull Runnable onRestart) {
++            throw new UnsupportedOperationException("Not supported yet.");
++        }
++        // Paper end
+     }
+ 
+     @NotNull

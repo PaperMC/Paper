@@ -1,25 +1,14 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
-Date: Thu, 14 Jul 2022 16:05:30 +0200
+Date: Wed, 24 May 2023 19:39:38 +0200
 Subject: [PATCH] Configurable restart and shutdown exit code
 
 
-diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 456595e4b7e0c7f50617aa2694b0d2dfc368ab81..e45736a393fe146f4807bc36f8efaf7b2549c8e8 100644
---- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-+++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -261,5 +261,6 @@ public class GlobalConfiguration extends ConfigurationPart {
-         public boolean lagCompensateBlockBreaking = true;
-         public boolean useDimensionTypeForCustomSpawners = false;
-         public boolean strictAdvancementDimensionCheck = false;
-+        public boolean predictShellOnRestart = true;
-     }
- }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 081c7160cf727646cdec4cd551dbc2aad56326f6..7329f7bc6e8d5600ddcdd75c45e76b5af68f3589 100644
+index 9f15d9dbdfa74a0640b1a2b4ff695609d4758a4c..4fe64aeb2cc2adbfef8123fee6c079076716dec5 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -296,7 +296,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -311,7 +311,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public static long currentTickLong = 0L; // Paper
  
      public volatile Thread shutdownThread; // Paper
@@ -28,24 +17,25 @@ index 081c7160cf727646cdec4cd551dbc2aad56326f6..7329f7bc6e8d5600ddcdd75c45e76b5a
      public boolean isIteratingOverLevels = false; // Paper
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
-@@ -1042,6 +1042,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1019,6 +1019,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
-     public void halt(boolean flag) {
-+        // Paper start - allow exit code
-+        halt(flag, 0);
+     public void halt(boolean waitForShutdown) {
++        // Paper start - allow passing exit code
++        halt(waitForShutdown, 0);
 +    }
-+    public void halt(boolean flag, int exitCode) {
++
++    public void halt(boolean waitForShutdown, int exitCode) {
 +        this.exitCode = exitCode;
 +        // Paper end
          // Paper start - allow passing of the intent to restart
-         this.safeShutdown(flag, false);
+         this.safeShutdown(waitForShutdown, false);
      }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index bdd6560fe85950b0a857a949cb38c044da44ca6b..feb5c5863e22bce9d6acb3065a893702f22074cc 100644
+index a7e133f3495e9132a5fdae2c24f225e7b026295a..7f136bada3c2379b1c1db95b6addf41a087c4f64 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -438,7 +438,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -439,7 +439,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
  
          hasFullyShutdown = true; // Paper
@@ -55,52 +45,58 @@ index bdd6560fe85950b0a857a949cb38c044da44ca6b..feb5c5863e22bce9d6acb3065a893702
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 964ec590ef5302576ecb3ba2b8ea95dbc2acf103..da3891cc72e8b5a529c9934645576c1f39274f1e 100644
+index e769f7b0904814ee63e2a73dca57e5dc33382fba..1560fba31a4c9bd99e9286a2cfa6bd51ae1ec6b1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1740,7 +1740,12 @@ public final class CraftServer implements Server {
-     public void shutdown() {
+@@ -1752,6 +1752,19 @@ public final class CraftServer implements Server {
          this.console.halt(false);
      }
--
+ 
 +    // Paper start
 +    @Override
 +    public void abnormalShutdown(int exitCode) {
++        if (exitCode == org.spigotmc.WatchdogThread.EXIT_CODE) {
++            Plugin plugin = io.papermc.paper.util.StackWalkerUtil.getFirstPluginCaller();
++            if (plugin != null) {
++                this.getLogger().warning("Plugin %s has decided to trigger an abnormal shutdown with the exit code of the server watchdog (%d). This is not recommended and can cause further conflict!".formatted(plugin.getName(), org.spigotmc.WatchdogThread.EXIT_CODE));
++            }
++        }
 +        this.console.halt(false, exitCode);
 +    }
 +    // Paper end
++
      @Override
      @Deprecated // Paper
      public int broadcast(String message, String permission) {
-@@ -2735,7 +2740,12 @@ public final class CraftServer implements Server {
-         public void restart() {
+@@ -2746,6 +2759,13 @@ public final class CraftServer implements Server {
              org.spigotmc.RestartCommand.restart();
          }
--
+ 
 +        // Paper start
 +        @Override
 +        public void restart(Runnable onRestart) {
 +            org.spigotmc.RestartCommand.restart(onRestart);
 +        }
 +        // Paper end
++
          @Override
          public void broadcast(BaseComponent component) {
              for (Player player : CraftServer.this.getOnlinePlayers()) {
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
-index 160115bf8a153ff981ba308599d22c4c08026fb6..72fc549b187b20c5f3bdf7e7c1fadb7e828d35dc 100644
+index 160115bf8a153ff981ba308599d22c4c08026fb6..820727522dc5e73cf37bceaccf2d8df5a83c65a5 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
 +++ b/src/main/java/org/spigotmc/RestartCommand.java
-@@ -65,6 +65,24 @@ public class RestartCommand extends Command
-             ex.printStackTrace();
-         }
+@@ -138,6 +138,25 @@ public class RestartCommand extends Command
      }
+     // Paper end
+ 
 +    // Paper start - allow a different shutdown hook
-+    public static void restart(final Runnable restartScript) {
++    public static void restart(final Runnable onExit) {
 +        AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
 +        org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
 +        try {
 +            // Paper - extract method and cleanup
-+            addRawShutdownHook(restartScript);
++            addRawShutdownHook(onExit);
 +            System.out.println("Attempting to restart with a plugin custom hook");
 +            // Stop the watchdog
 +            WatchdogThread.doStop();
@@ -112,66 +108,59 @@ index 160115bf8a153ff981ba308599d22c4c08026fb6..72fc549b187b20c5f3bdf7e7c1fadb7e
 +        }
 +    }
 +    // Paper end
- 
-     // Paper start - sync copied from above with minor changes, async added
-     private static void shutdownServer(boolean isRestarting)
-@@ -144,13 +162,10 @@ public class RestartCommand extends Command
-         String[] split = restartScript.split( " " );
-         if ( split.length > 0 && new File( split[0] ).isFile() )
-         {
--            Thread shutdownHook = new Thread()
--            {
--                @Override
--                public void run()
--                {
-+            addRawShutdownHook(() -> {
++
+     // Paper start - copied from above and modified to return if the hook registered
+     public static boolean addShutdownHook(String restartScript)
+     {
+@@ -151,6 +170,7 @@ public class RestartCommand extends Command
+                 {
                      try
                      {
 +                    if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.predictShellOnRestart) {
                          String os = System.getProperty( "os.name" ).toLowerCase(java.util.Locale.ENGLISH);
                          if ( os.contains( "win" ) )
                          {
-@@ -159,21 +174,25 @@ public class RestartCommand extends Command
+@@ -159,6 +179,9 @@ public class RestartCommand extends Command
                          {
                              Runtime.getRuntime().exec( "sh " + restartScript );
                          }
 +                    } else {
-+                        Runtime.getRuntime().exec(restartScript); // Paper - let java choose the right shell
++                        Runtime.getRuntime().exec(restartScript);
 +                    }
                      } catch ( Exception e )
                      {
                          e.printStackTrace();
-                     }
--                }
--            };
--
--            shutdownHook.setDaemon( true );
--            Runtime.getRuntime().addShutdownHook( shutdownHook );
-+            });
-             return true;
-         } else
-         {
+@@ -174,6 +197,12 @@ public class RestartCommand extends Command
              return false;
          }
      }
-+    public static void addRawShutdownHook(Runnable restart) {
-+        Thread shutdownHook = new Thread(restart::run);
-+        shutdownHook.setDaemon(true);
-+        Runtime.getRuntime().addShutdownHook(shutdownHook);
++
++    public static void addRawShutdownHook(Runnable onExit) { // todo merge with other paper patch to reduce diff ?
++        Thread hook = new Thread(onExit::run);
++        hook.setDaemon(true);
++        Runtime.getRuntime().addShutdownHook(hook);
 +    }
      // Paper end
  
  }
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index d568fc92d03c313a782796cc720a1ebb1a5ad8be..acbffc4e5b702d6b0c791fba1c7dd8ded13d7355 100644
+index e9fa7faaa4451e36b3908cbcbbe0baf213abde96..944a7d30e497a0b77b06c2c03d71b89e622fcb92 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -222,7 +222,7 @@ public class WatchdogThread extends Thread
+@@ -21,6 +21,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+     private long lastEarlyWarning; // Paper - Keep track of short dump times to avoid spamming console with short dumps
+     private volatile long lastTick;
+     private volatile boolean stopping;
++    public static final int EXIT_CODE = 70; // Paper
+ 
+     // Paper start - log detailed tick information
+     private void dumpEntity(net.minecraft.world.entity.Entity entity) {
+@@ -222,7 +223,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
                          RestartCommand.addShutdownHook( SpigotConfig.restartScript );
                      }
                      // try one last chance to safe shutdown on main incase it 'comes back'
 -                    server.abnormalExit = true;
-+                    server.exitCode = 70;
++                    server.exitCode = EXIT_CODE;
                      server.safeShutdown(false, restart);
                      try {
                          Thread.sleep(1000);
