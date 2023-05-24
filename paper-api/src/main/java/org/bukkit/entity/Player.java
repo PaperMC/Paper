@@ -23,6 +23,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.sign.Side;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
@@ -1719,6 +1720,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param sign The sign to edit
      */
     public void openSign(@NotNull Sign sign);
+
+    /**
+     * Open a Sign for editing by the Player.
+     *
+     * The Sign must be placed in the same world as the player.
+     *
+     * @param sign The sign to edit
+     * @param side The side to edit
+     */
+    public void openSign(@NotNull Sign sign, @NotNull Side side);
 
     /**
      * Shows the demo screen to the player, this screen is normally only seen in

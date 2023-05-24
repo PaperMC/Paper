@@ -1,6 +1,7 @@
 package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
+import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -17,11 +18,18 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     private boolean cancel = false;
     private final Player player;
     private final String[] lines;
+    private final Side side;
 
+    @Deprecated
     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
+        this(theBlock, thePlayer, theLines, Side.FRONT);
+    }
+
+    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines, @NotNull Side side) {
         super(theBlock);
         this.player = thePlayer;
         this.lines = theLines;
+        this.side = side;
     }
 
     /**
@@ -68,6 +76,16 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      */
     public void setLine(int index, @Nullable String line) throws IndexOutOfBoundsException {
         lines[index] = line;
+    }
+
+    /**
+     * Returns which side is changed.
+     *
+     * @return the affected side of the sign
+     */
+    @NotNull
+    public Side getSide() {
+        return side;
     }
 
     @Override
