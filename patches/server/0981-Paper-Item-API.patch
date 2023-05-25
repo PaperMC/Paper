@@ -1438,10 +1438,10 @@ index 0000000000000000000000000000000000000000..b663fc9812e18e9c93c9145931ade961
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3fc7ab64aed196f3340ae6a2bba38df695bee53e
+index 0000000000000000000000000000000000000000..ff37225899a666eafedf36c7f8fc8c771f85f4b8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
-@@ -0,0 +1,167 @@
+@@ -0,0 +1,178 @@
 +package io.papermc.paper.property.nbt;
 +
 +import io.papermc.paper.item.property.ItemPropertyRegistration;
@@ -1588,6 +1588,10 @@ index 0000000000000000000000000000000000000000..3fc7ab64aed196f3340ae6a2bba38df6
 +        return this.compoundAccess.getOrRegisterNew();
 +    }
 +
++    public CompoundAccess getCompoundAccess() {
++        return compoundAccess;
++    }
++
 +    public <T> NbtPlatformAdapter<T> getAdapter(PropertyKey<T> key) {
 +        return this.adapterContext.getAdapter(key);
 +    }
@@ -1608,13 +1612,20 @@ index 0000000000000000000000000000000000000000..3fc7ab64aed196f3340ae6a2bba38df6
 +    public int hashCode() {
 +        return Objects.hash(compoundAccess);
 +    }
++
++    @Override
++    public String toString() {
++        return "NbtPropertyHolder{" +
++            "compoundAccess=" + compoundAccess +
++            '}';
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/access/ChildCompoundAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/ChildCompoundAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cc1ba8e0a610d9b5800abea7b661a5b8dd59b773
+index 0000000000000000000000000000000000000000..c69d7f0f615c7a3d3f3be5ee2c51268ba0d91448
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/access/ChildCompoundAccess.java
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,66 @@
 +package io.papermc.paper.property.nbt.access;
 +
 +import io.papermc.paper.property.MutablePropertyView;
@@ -1672,18 +1683,25 @@ index 0000000000000000000000000000000000000000..cc1ba8e0a610d9b5800abea7b661a5b8
 +    public int hashCode() {
 +        return Objects.hash(this.getUnderlyingTag());
 +    }
++
++    @Override
++    public String toString() {
++        return "ChildCompoundAccess{" +
++            "propertyHolder=" + propertyHolder +
++            ", childKey=" + childKey +
++            '}';
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/access/CompoundAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/CompoundAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f5765e06ae04dac4cbeeaf4668e695a5f964e7a9
+index 0000000000000000000000000000000000000000..23d65717def8c4146c62e4e9971ecb3fad601679
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/access/CompoundAccess.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,81 @@
 +package io.papermc.paper.property.nbt.access;
 +
 +import io.papermc.paper.property.MutablePropertyView;
 +import io.papermc.paper.property.PropertyKey;
-+import io.papermc.paper.property.PropertyView;
 +import io.papermc.paper.property.nbt.NbtPropertyHolder;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.world.item.ItemStack;
@@ -1691,6 +1709,7 @@ index 0000000000000000000000000000000000000000..f5765e06ae04dac4cbeeaf4668e695a5
 +import org.jetbrains.annotations.Nullable;
 +
 +import java.util.function.Consumer;
++import java.util.function.Function;
 +
 +/**
 + * We need this concept of "compound access" in order to allow for compound tags to be lazily populated.
@@ -1749,13 +1768,23 @@ index 0000000000000000000000000000000000000000..f5765e06ae04dac4cbeeaf4668e695a5
 +        }
 +    }
 +
++    @Nullable
++    default <T> T getIfPresentOrNull(Function<CompoundTag, T> compoundTagSupplier) {
++        CompoundTag live = this.getUnderlyingTag();
++        if (live != null) {
++            return compoundTagSupplier.apply(live);
++        }
++
++        return null;
++    }
++
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4b58abc4f8f0091873b3df42d3608c6d7659540f
+index 0000000000000000000000000000000000000000..a2409a68c97f4cd755b5a2a72b76cb06127d1300
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/access/ItemStackTagAccess.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,61 @@
 +package io.papermc.paper.property.nbt.access;
 +
 +import net.minecraft.nbt.CompoundTag;
@@ -1808,6 +1837,13 @@ index 0000000000000000000000000000000000000000..4b58abc4f8f0091873b3df42d3608c6d
 +    @Override
 +    public int hashCode() {
 +        return Objects.hash(this.getUnderlyingTag());
++    }
++
++    @Override
++    public String toString() {
++        return "ItemStackTagAccess{" +
++            "itemStack=" + itemStack.getTag() +
++            '}';
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/access/StaticCompoundAccess.java b/src/main/java/io/papermc/paper/property/nbt/access/StaticCompoundAccess.java
@@ -1872,10 +1908,10 @@ index 0000000000000000000000000000000000000000..aff198bfefadc38a6c82aa87c18ee6bd
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java b/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fec92c8d20f290a8692b121f6dfc219f2c61e941
+index 0000000000000000000000000000000000000000..3fa142580dacfb86f7f930cef1a023244f01f12c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/pdc/MetaDataContainer.java
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,207 @@
 +package io.papermc.paper.property.nbt.pdc;
 +
 +import io.papermc.paper.property.nbt.access.CompoundAccess;
@@ -2072,6 +2108,16 @@ index 0000000000000000000000000000000000000000..fec92c8d20f290a8692b121f6dfc219f
 +        }
 +    }
 +    // Paper end
++
++
++    @Override
++    public String toString() {
++        return "MetaDataContainer{" +
++            "access=" + access +
++            ", registry=" + registry +
++            ", adapterContext=" + adapterContext +
++            '}';
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java b/src/main/java/io/papermc/paper/property/nbt/primitives/BooleanPrimitive.java
 new file mode 100644
@@ -2354,7 +2400,7 @@ index 0000000000000000000000000000000000000000..4cd5ef67d8648f803febf19b44a2cf10
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java b/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b8da920bc46c1a5923b8fcba6f836b5ab0588ce
+index 0000000000000000000000000000000000000000..8b7baef98d7c27f7a4f072c4807a8f0e1cc29179
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/primitives/SinglePrimitiveNbtPlatformAdapter.java
 @@ -0,0 +1,40 @@
@@ -2379,7 +2425,7 @@ index 0000000000000000000000000000000000000000..1b8da920bc46c1a5923b8fcba6f836b5
 +    }
 +
 +    public T getUnsafe(NbtPropertyHolder holder, PropertyKey<?> propertyKey) {
-+        Tag tag = holder.getCompoundTag().get(propertyKey.getKey());
++        Tag tag = holder.getCompoundAccess().getIfPresentOrNull(compoundTag -> holder.getCompoundTag().get(propertyKey.getKey()));
 +        if (tag != null && tag.getId() == SinglePrimitiveNbtPlatformAdapter.this.getTagType()) {
 +            return SinglePrimitiveNbtPlatformAdapter.this.getType(tag);
 +        }
@@ -3496,10 +3542,10 @@ index 9215297d5f7856ef3f03ebcbf866c5b59048ba30..850c7d42e18e440617c726bb11160fb1
          @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..367c9edd426f108354a4cddd5b0c698641e742e8 100644
+index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..abc41927ea97311d002b3845d4e389132fd91e5a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -42,11 +42,18 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -42,21 +42,36 @@ public final class CraftItemFactory implements ItemFactory {
          if (type == null || meta == null) {
              return false;
          }
@@ -3520,24 +3566,28 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..367c9edd426f108354a4cddd5b0c6986
      }
  
      @Override
-@@ -57,6 +64,16 @@ public final class CraftItemFactory implements ItemFactory {
- 
-     private ItemMeta getItemMeta(Material material, CraftMetaItem meta) {
-         material = CraftLegacy.fromLegacy(material); // This may be called from legacy item stacks, try to get the right material
+     public ItemMeta getItemMeta(Material material) {
+         Validate.notNull(material, "Material cannot be null");
+-        return this.getItemMeta(material, null);
++        // Paper start
++        material = CraftLegacy.fromLegacy(material); // This may be called from legacy item stacks, try to get the right material
 +        // Paper start
 +        net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getItem(material));
-+        if (meta != null) {
-+            meta.applyToItem(itemStack.getOrCreateTag());
-+        }
 +        return CraftItemStack.getItemMeta(itemStack, material);
-+    }
++        // Paper end
+     }
+ 
+-    private ItemMeta getItemMeta(Material material, CraftMetaItem meta) {
+-        material = CraftLegacy.fromLegacy(material); // This may be called from legacy item stacks, try to get the right material
++    // Paper - Remove
++
 +    public ItemMeta getOldItemMeta(Material material, CraftMetaItem meta) {
 +    // Paper end
 +
          switch (material) {
          case AIR:
              return null;
-@@ -364,23 +381,22 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -364,23 +379,22 @@ public final class CraftItemFactory implements ItemFactory {
          if (meta1 == meta2) {
              return true;
          }
@@ -3567,7 +3617,7 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..367c9edd426f108354a4cddd5b0c6986
          /*
           * This couldn't be done inside of the objects themselves, else force recursion.
           * This is a fairly clean way of implementing it, by dividing the methods into purposes and letting each method perform its own function.
-@@ -406,10 +422,19 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -406,10 +420,19 @@ public final class CraftItemFactory implements ItemFactory {
      @Override
      public ItemMeta asMetaFor(ItemMeta meta, Material material) {
          Validate.notNull(material, "Material cannot be null");
@@ -3589,7 +3639,7 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..367c9edd426f108354a4cddd5b0c6986
      }
  
      @Override
-@@ -438,7 +463,7 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -438,7 +461,7 @@ public final class CraftItemFactory implements ItemFactory {
  
      @Override
      public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {
@@ -3599,9 +3649,18 @@ index 9a87b32a4bf0a912b8de267d71e56c8505db0e9f..367c9edd426f108354a4cddd5b0c6986
  
      // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..94319cbd7ab9b945aaa15d73f9bbcafe9081b582 100644
+index 0e7a6a5a83b4630f53e6dba1b5b29f67d91c7240..71a29c75db5fc1aca70ba659a34da808cde3ee05 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -100,7 +100,7 @@ public final class CraftItemStack extends ItemStack {
+     private CraftItemStack(Material type, int amount, short durability, ItemMeta itemMeta) {
+         this.setType(type);
+         this.setAmount(amount);
+-        this.setDurability(durability);
++        if (durability != 0) this.setDurability(durability); // Paper - Only write durability if needed
+         this.setItemMeta(itemMeta);
+     }
+ 
 @@ -280,13 +280,21 @@ public final class CraftItemStack extends ItemStack {
      }
      // Paper start
