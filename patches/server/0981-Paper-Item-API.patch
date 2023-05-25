@@ -477,10 +477,10 @@ index 0000000000000000000000000000000000000000..2404230aff503ee9baa8cf78a3ab1133
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/LegacyMetaImpl.java b/src/main/java/io/papermc/paper/item/meta/LegacyMetaImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7cd01edeee27a963cce63a9406031d674b4c146b
+index 0000000000000000000000000000000000000000..74e0ef051a8a27b3b8ef1f3a4cc48ee59681ef1d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/LegacyMetaImpl.java
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,158 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -540,7 +540,12 @@ index 0000000000000000000000000000000000000000..7cd01edeee27a963cce63a9406031d67
 +
 +    @Override
 +    default @Nullable List<String> getLore() {
-+        return Objects.requireNonNullElse(this.lore(), List.<Component>of()).stream().map(input -> LegacyComponentSerializer.legacySection().serializeOr(input, "")).collect(Collectors.toList());
++        List<Component> lore = this.lore();
++        if (lore == null || lore.isEmpty()) {
++            return null;
++        }
++
++        return lore.stream().map(input -> LegacyComponentSerializer.legacySection().serializeOr(input, "")).collect(Collectors.toList());
 +    }
 +
 +    @Override
@@ -555,7 +560,12 @@ index 0000000000000000000000000000000000000000..7cd01edeee27a963cce63a9406031d67
 +
 +    @Override
 +    default @Nullable List<BaseComponent[]> getLoreComponents() {
-+        return Objects.requireNonNullElse(this.lore(), List.<Component>of()).stream().map(input -> {
++        List<Component> lore = this.lore();
++        if (lore == null || lore.isEmpty()) {
++            return null;
++        }
++
++        return lore.stream().map(input -> {
 +            return ComponentSerializer.parse(GsonComponentSerializer.gson().serialize(input));
 +        }).collect(Collectors.toList());
 +    }
@@ -631,7 +641,7 @@ index 0000000000000000000000000000000000000000..7cd01edeee27a963cce63a9406031d67
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..84ed10eea4a75c5d5b2f40e56dc83abbd6168f72
+index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3c54c9aba
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 @@ -0,0 +1,573 @@
@@ -1064,7 +1074,7 @@ index 0000000000000000000000000000000000000000..84ed10eea4a75c5d5b2f40e56dc83abb
 +
 +    @Override
 +    public @NotNull String getAsString() {
-+        return this.toString();
++        return this.propertyHolder.getCompoundAccess().getOrCreateEmpty().toString();
 +    }
 +
 +    public void migrateFrom(MutablePropertyView mutable) {
@@ -2586,7 +2596,7 @@ index 0000000000000000000000000000000000000000..915dd6af0da3c528145c810f851d0409
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java b/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..81bca4831513511f765b6373f73e97d800ca9606
+index 0000000000000000000000000000000000000000..97e590d0f19dac3f95d2a75f8c216acbc6a8bdfc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/AttributePairNbt.java
 @@ -0,0 +1,55 @@
@@ -2639,7 +2649,7 @@ index 0000000000000000000000000000000000000000..81bca4831513511f765b6373f73e97d8
 +        NbtPropertyHolder attributeHolder = NbtPropertyHolder.simpleBlob(nmsModifier.save(), CONTEXT);
 +        attributeHolder.set(ATTRIBUTE_NAME, attribute.getKey().toString());
 +        if (attributeModifier.getSlot() != null) {
-+            attributeHolder.set(ATTRIBUTE_SLOT, CraftEquipmentSlot.getNMS(attributeModifier.getSlot()).name());
++            attributeHolder.set(ATTRIBUTE_SLOT, CraftEquipmentSlot.getNMS(attributeModifier.getSlot()).getName());
 +        }
 +
 +        return attributeHolder.getCompoundTag();
