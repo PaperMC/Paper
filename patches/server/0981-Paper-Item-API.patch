@@ -641,10 +641,10 @@ index 0000000000000000000000000000000000000000..74e0ef051a8a27b3b8ef1f3a4cc48ee5
 +}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3c54c9aba
+index 0000000000000000000000000000000000000000..f7c6ed02cb0b96064dab81aef845735ccb79265f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
-@@ -0,0 +1,573 @@
+@@ -0,0 +1,595 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -727,6 +727,10 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +
 +    protected <T> T getOrCreateFromPropertyPath(PropertyKey<MutablePropertyView> outer, PropertyKey<T> inner) {
 +        MutablePropertyView holder = this.propertyHolder.getOrCreate(outer);
++        if (holder.isEmpty()) {
++            this.propertyHolder.unset(outer);
++        }
++
 +        return holder.getOrCreate(inner);
 +    }
 +
@@ -744,6 +748,9 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +        MutablePropertyView holder = view.get(outer);
 +        if (holder != null) {
 +            holder.unset(inner);
++            if (holder.isEmpty()) {
++                this.propertyHolder.unset(outer);
++            }
 +        }
 +    }
 +
@@ -752,8 +759,11 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +    }
 +
 +    protected <T> void setFromPropertyPath(PropertyKey<MutablePropertyView> outer, PropertyKey<T> inner, T value) {
-+        MutablePropertyView holder = this.propertyHolder.getOrCreate(outer);
-+        holder.set(inner, value);
++        NbtPropertyHolder holder = (NbtPropertyHolder) this.propertyHolder.getOrCreate(outer);
++        holder.set(inner, value, true);
++        if (holder.isEmpty()) {
++            this.propertyHolder.unset(outer);
++        }
 +    }
 +
 +    @Override
@@ -815,7 +825,7 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +
 +    @Override
 +    public void setCustomModelData(@Nullable Integer data) {
-+        this.propertyHolder.set(CUSTOM_MODEL_DATA, data);
++        this.set(CUSTOM_MODEL_DATA, data);
 +    }
 +
 +    @Override
@@ -857,6 +867,10 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +    public void addItemFlags(@NotNull ItemFlag... itemFlags) {
 +        Set<ItemFlag> flagSetValue = this.propertyHolder.getOrCreate(HIDE_FLAGS);
 +        flagSetValue.addAll(Arrays.asList(itemFlags));
++
++        if (flagSetValue.isEmpty()) {
++            this.propertyHolder.unset(HIDE_FLAGS);
++        }
 +    }
 +
 +    @Override
@@ -868,6 +882,10 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +
 +        for (ItemFlag flag : itemFlags) {
 +            flagSetValue.remove(flag);
++        }
++
++        if (flagSetValue.isEmpty()) {
++            this.propertyHolder.unset(HIDE_FLAGS);
 +        }
 +    }
 +
@@ -888,7 +906,7 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +
 +    @Override
 +    public void setUnbreakable(boolean unbreakable) {
-+        this.propertyHolder.set(UNBREAKABLE, unbreakable);
++        this.set(UNBREAKABLE, unbreakable);
 +    }
 +
 +    @Override
@@ -1036,7 +1054,7 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +        for (Namespaced legacy : canDestroy) {
 +            namespaced.add(legacy);
 +        }
-+        this.propertyHolder.set(CAN_DESTROY_BLOCK_LIST, namespaced);
++        this.set(CAN_DESTROY_BLOCK_LIST, namespaced);
 +    }
 +
 +    @Override
@@ -1054,7 +1072,7 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +        for (Namespaced legacy : canPlaceOn) {
 +            namespaced.add(legacy);
 +        }
-+        this.propertyHolder.set(CAN_PLACE_ON_BLOCK_LIST, namespaced);
++        this.set(CAN_PLACE_ON_BLOCK_LIST, namespaced);
 +    }
 +
 +    @Override
@@ -1110,7 +1128,7 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +
 +    @Override
 +    public void setBlockData(BlockData blockData) {
-+        this.propertyHolder.set(BLOCK_STATE, NbtPropertyHolder.simpleBlob(((CraftBlockData) blockData).toStates(), AdapterContext.empty()));
++        this.set(BLOCK_STATE, NbtPropertyHolder.simpleBlob(((CraftBlockData) blockData).toStates(), AdapterContext.empty()));
 +    }
 +
 +    // Damage meta
@@ -1127,7 +1145,7 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +
 +    @Override
 +    public void setDamage(int damage) {
-+        this.propertyHolder.set(DAMAGE, damage);
++        this.set(DAMAGE, damage);
 +    }
 +
 +    // REpair meta
@@ -1143,7 +1161,7 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +
 +    @Override
 +    public void setRepairCost(int cost) {
-+        this.propertyHolder.set(REPAIR_COST, cost);
++        this.set(REPAIR_COST, cost);
 +    }
 +
 +    @Override
@@ -1215,6 +1233,10 @@ index 0000000000000000000000000000000000000000..54f1c114e2f725632eead13ca44f7df3
 +    @Overridden
 +    public boolean isEmpty() {
 +        return !(this.hasDisplayName() || this.hasLocalizedName() || this.hasEnchants() || !Objects.requireNonNullElse(this.getLore(), List.of()).isEmpty() || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.getPersistentDataContainer().isEmpty() || !this.getItemFlags().isEmpty() || this.isUnbreakable() || this.hasDamage() || this.hasAttributeModifiers() || this.hasPlaceableKeys() || this.hasDestroyableKeys()); // Paper - Implement an API for CanPlaceOn and CanDestroy NBT values
++    }
++    
++    protected <T> void set(PropertyKey<T> key, T value) {
++        this.propertyHolder.set(key, value, true);
 +    }
 +
 +}
@@ -1448,23 +1470,24 @@ index 0000000000000000000000000000000000000000..b663fc9812e18e9c93c9145931ade961
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff37225899a666eafedf36c7f8fc8c771f85f4b8
+index 0000000000000000000000000000000000000000..65c7ff731d66637fc1af8d82914b16117fa4922e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/NbtPropertyHolder.java
-@@ -0,0 +1,178 @@
+@@ -0,0 +1,214 @@
 +package io.papermc.paper.property.nbt;
 +
 +import io.papermc.paper.item.property.ItemPropertyRegistration;
 +import io.papermc.paper.property.MutablePropertyView;
 +import io.papermc.paper.property.PropertyKey;
++import io.papermc.paper.property.PropertyView;
 +import io.papermc.paper.property.nbt.access.CompoundAccess;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.world.item.ItemStack;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
-+import java.util.Objects;
-+import java.util.Set;
++import java.lang.reflect.Array;
++import java.util.*;
 +
 +@SuppressWarnings("unchecked")
 +public class NbtPropertyHolder implements MutablePropertyView {
@@ -1506,6 +1529,41 @@ index 0000000000000000000000000000000000000000..ff37225899a666eafedf36c7f8fc8c77
 +        } else {
 +            adapter.removeDirect(this, key);
 +        }
++    }
++
++    public <T> void set(@NotNull PropertyKey<T> key, T value, boolean removeIfDefault) {
++        NbtPlatformAdapter<T> adapter = this.getAdapter(key);
++        if (value != null) {
++            if (removeIfDefault && isDefault(value)) {
++                adapter.removeDirect(this, key);
++            } else {
++                adapter.writeDirect(this, key, value);
++            }
++        } else {
++            adapter.removeDirect(this, key);
++        }
++    }
++
++    public boolean isDefault(Object object) {
++        if (object instanceof Boolean bool) {
++            return !bool;
++        } else if (object instanceof Number number) {
++            return number.intValue() == 0; // Zeros are default
++        } else if (object instanceof Collection<?> list) {
++            return list.isEmpty(); // Empty list-- special exception for item flags
++        } else if (object instanceof byte[] array) {
++           return array.length == 0;
++        } else if (object instanceof int[] array) {
++           return array.length == 0;
++        } else if (object instanceof long[] array) {
++           return array.length == 0;
++        } else if (object instanceof PropertyView view) {
++            return view.isEmpty();
++        } else if (object instanceof String str) {
++            return str.isEmpty();
++        }
++
++        return false;
 +    }
 +
 +    @Override
@@ -1576,12 +1634,12 @@ index 0000000000000000000000000000000000000000..ff37225899a666eafedf36c7f8fc8c77
 +    public boolean isEmpty() {
 +        CompoundTag tag = this.compoundAccess.getUnderlyingTag();
 +        if (tag == null) {
-+            return false;
++            return true;
 +        }
 +
 +        // This shouldn't normally be reached, as the underlying state should be purged.
 +        // But you never know, plugins are weird.
-+        return this.isEmpty();
++        return tag.isEmpty();
 +    }
 +
 +    public @NotNull Set<String> keySet() {
@@ -4203,6 +4261,44 @@ index 0000000000000000000000000000000000000000..5a5acb6979b269e0d4560a6fffa216aa
 +        ItemStack deserialized = ItemStack.deserialize(itemStack.serialize());
 +        LeatherArmorMeta armorMeta = (LeatherArmorMeta) deserialized.getItemMeta();
 +        Assert.assertEquals(armorMeta.getColor(), Color.BLUE);
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/item/MetaTestIntegrity.java b/src/test/java/io/papermc/paper/item/MetaTestIntegrity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b3543709b77f4399070d3111ce228cf80c007a35
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/item/MetaTestIntegrity.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.item;
++
++import io.papermc.paper.item.meta.PaperMeta;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import org.bukkit.Material;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.Damageable;
++import org.bukkit.inventory.meta.ItemMeta;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.Assert;
++import org.junit.Test;
++
++import java.util.List;
++
++public class MetaTestIntegrity extends AbstractTestingBase {
++
++    @Test
++    public void testDefaultValues() {
++        ItemStack itemStack = new ItemStack(Material.STONE);
++        ItemMeta meta = itemStack.getItemMeta();
++        meta.setCustomModelData(0);
++        ((Damageable) meta).setDamage(0);
++        meta.lore(List.of());
++        meta.setUnbreakable(false);
++        meta.addItemFlags();
++        meta.setDestroyableKeys(List.of());
++
++        NbtPropertyHolder propertyHolder =  ((PaperMeta) meta).getPropertyHolder();
++
++        Assert.assertTrue(propertyHolder.isEmpty());
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java b/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java
