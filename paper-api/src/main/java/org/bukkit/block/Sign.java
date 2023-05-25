@@ -1,23 +1,24 @@
 package org.bukkit.block;
 
+import org.bukkit.DyeColor;
 import org.bukkit.block.sign.Side;
 import org.bukkit.block.sign.SignSide;
+import org.bukkit.material.Colorable;
+import org.jetbrains.annotations.ApiStatus.Experimental;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of either a SignPost or a WallSign.
  */
-public interface Sign extends SignSide, TileState {
+public interface Sign extends TileState, Colorable {
 
     /**
      * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
      *
      * @return Array of Strings containing each line of text
-     * @deprecated  A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#getLines()}.
+     * @see #getSide(Side)
      */
-    @Deprecated
     @NotNull
-    @Override
     public String[] getLines();
 
     /**
@@ -28,11 +29,9 @@ public interface Sign extends SignSide, TileState {
      * @param index Line number to get the text from, starting at 0
      * @return Text on the given line
      * @throws IndexOutOfBoundsException Thrown when the line does not exist
-     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#getLine(int)}.
+     * @see #getSide(Side)
      */
-    @Deprecated
     @NotNull
-    @Override
     public String getLine(int index) throws IndexOutOfBoundsException;
 
     /**
@@ -44,10 +43,8 @@ public interface Sign extends SignSide, TileState {
      * @param index Line number to set the text at, starting from 0
      * @param line New text to set at the specified index
      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
-     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#setLine(int, String)}.
+     * @see #getSide(Side)
      */
-    @Deprecated
-    @Override
     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
 
     /**
@@ -76,21 +73,32 @@ public interface Sign extends SignSide, TileState {
      * Gets whether this sign has glowing text. Only affects the {@link Side#FRONT}.
      *
      * @return if this sign has glowing text
-     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#isGlowingText()}.
+     * @see #getSide(Side)
      */
-    @Deprecated
-    @Override
     public boolean isGlowingText();
 
     /**
      * Sets whether this sign has glowing text. Only affects the {@link Side#FRONT}.
      *
      * @param glowing if this sign has glowing text
-     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#setGlowingText(boolean)}.
+     * @see #getSide(Side)
      */
-    @Deprecated
-    @Override
     public void setGlowingText(boolean glowing);
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see #getSide(Side)
+     */
+    @NotNull
+    public DyeColor getColor();
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see #getSide(Side)
+     */
+    public void setColor(@NotNull DyeColor color);
 
     /**
      * Return the side of the sign.
@@ -98,6 +106,7 @@ public interface Sign extends SignSide, TileState {
      * @param side the side of the sign
      * @return the selected side of the sign
      */
+    @Experimental
     @NotNull
     public SignSide getSide(@NotNull Side side);
 }
