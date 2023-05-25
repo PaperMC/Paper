@@ -475,12 +475,166 @@ index 0000000000000000000000000000000000000000..2404230aff503ee9baa8cf78a3ab1133
 +    }
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/item/meta/LegacyMetaImpl.java b/src/main/java/io/papermc/paper/item/meta/LegacyMetaImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7cd01edeee27a963cce63a9406031d674b4c146b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/meta/LegacyMetaImpl.java
+@@ -0,0 +1,148 @@
++package io.papermc.paper.item.meta;
++
++import com.destroystokyo.paper.Namespaced;
++import com.google.common.collect.Sets;
++import io.papermc.paper.property.nbt.NbtPropertyHolder;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.TextDecoration;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.chat.ComponentSerializer;
++import org.bukkit.Material;
++import org.bukkit.craftbukkit.inventory.tags.DeprecatedCustomTagContainer;
++import org.bukkit.inventory.meta.ItemMeta;
++import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.*;
++import java.util.stream.Collectors;
++
++import static io.papermc.paper.inventory.item.properties.ItemProperties.CAN_DESTROY_BLOCK_LIST;
++import static io.papermc.paper.inventory.item.properties.ItemProperties.CAN_PLACE_ON_BLOCK_LIST;
++
++// Done for readability
++interface LegacyMetaImpl extends ItemMeta {
++
++    @Override
++    default @NotNull String getDisplayName() {
++        return LegacyComponentSerializer.legacySection().serializeOr(this.displayName(), "");
++    }
++
++    @Override
++    default void setDisplayName(@Nullable String name) {
++        this.displayName(
++            LegacyComponentSerializer.legacySection().deserializeOr(name, Component.empty())
++                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE)
++        );
++    }
++
++    @NotNull
++    @Override
++    default BaseComponent[] getDisplayNameComponent() {
++        Component displayName = this.displayName();
++        if (displayName == null) {
++            return new BaseComponent[0];
++        }
++
++        return net.md_5.bungee.chat.ComponentSerializer.parse(GsonComponentSerializer.gson().serialize(displayName));
++    }
++
++    @Override
++    default void setDisplayNameComponent(@Nullable BaseComponent[] component) {
++        String gson = net.md_5.bungee.chat.ComponentSerializer.toString(component);
++        this.displayName(GsonComponentSerializer.gson().deserialize(gson));
++    }
++
++    @Override
++    default @Nullable List<String> getLore() {
++        return Objects.requireNonNullElse(this.lore(), List.<Component>of()).stream().map(input -> LegacyComponentSerializer.legacySection().serializeOr(input, "")).collect(Collectors.toList());
++    }
++
++    @Override
++    default void setLore(@Nullable List<String> lore) {
++        List<? extends Component> components = Objects.requireNonNullElse(lore, List.<String>of()).stream().map((string) -> {
++            return LegacyComponentSerializer.legacySection().deserializeOr(string, Component.empty())
++                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
++        }).toList();
++
++        this.lore(components);
++    }
++
++    @Override
++    default @Nullable List<BaseComponent[]> getLoreComponents() {
++        return Objects.requireNonNullElse(this.lore(), List.<Component>of()).stream().map(input -> {
++            return ComponentSerializer.parse(GsonComponentSerializer.gson().serialize(input));
++        }).collect(Collectors.toList());
++    }
++
++    @Override
++    default void setLoreComponents(@Nullable List<BaseComponent[]> lore) {
++        List<? extends Component> components = Objects.requireNonNullElse(lore, List.<BaseComponent[]>of()).stream().map((string) -> {
++            return GsonComponentSerializer.gson().deserializeOr(ComponentSerializer.toString(string), Component.empty())
++                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
++        }).toList();
++
++        this.lore(components);
++    }
++
++    @Override
++    default @NotNull CustomItemTagContainer getCustomTagContainer() {
++        return new DeprecatedCustomTagContainer(this.getPersistentDataContainer());
++    }
++
++
++    @Override
++    default Set<Material> getCanDestroy() {
++        return !hasDestroyableKeys() ? Collections.emptySet() : legacyGetMatsFromKeys(this.getDestroyableKeys());
++    }
++
++    @Override
++    default void setCanDestroy(Set<Material> canDestroy) {
++        List<Namespaced> namespaced = new ArrayList<>();
++        legacyClearAndReplaceKeys(namespaced, canDestroy);
++        this.getPropertyHolder().set(CAN_DESTROY_BLOCK_LIST, namespaced);
++    }
++
++    @Override
++    default Set<Material> getCanPlaceOn() {
++        return !hasPlaceableKeys() ? Collections.emptySet() : legacyGetMatsFromKeys(this.getPlaceableKeys());
++    }
++
++    @Override
++    default void setCanPlaceOn(Set<Material> canPlaceOn) {
++        List<Namespaced> namespaced = new ArrayList<>();
++        legacyClearAndReplaceKeys(namespaced, canPlaceOn);
++        this.getPropertyHolder().set(CAN_PLACE_ON_BLOCK_LIST, namespaced);
++    }
++
++    @Deprecated
++    private void legacyClearAndReplaceKeys(Collection<Namespaced> toUpdate, Collection<Material> beingSet) {
++        if (beingSet.stream().anyMatch(Material::isLegacy)) {
++            throw new IllegalArgumentException("Set must not contain any legacy materials!");
++        }
++
++        toUpdate.clear();
++        toUpdate.addAll(beingSet.stream().map(Material::getKey).collect(java.util.stream.Collectors.toSet()));
++    }
++
++    @Deprecated
++    private Set<Material> legacyGetMatsFromKeys(Collection<Namespaced> names) {
++        Set<Material> mats = Sets.newHashSet();
++        for (Namespaced key : names) {
++            if (!(key instanceof org.bukkit.NamespacedKey)) {
++                continue;
++            }
++
++            Material material = Material.matchMaterial(key.toString(), false);
++            if (material != null) {
++                mats.add(material);
++            }
++        }
++
++        return mats;
++    }
++
++    NbtPropertyHolder getPropertyHolder();
++}
 diff --git a/src/main/java/io/papermc/paper/item/meta/PaperMeta.java b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675ca9933b4
+index 0000000000000000000000000000000000000000..84ed10eea4a75c5d5b2f40e56dc83abbd6168f72
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/meta/PaperMeta.java
-@@ -0,0 +1,713 @@
+@@ -0,0 +1,573 @@
 +package io.papermc.paper.item.meta;
 +
 +import com.destroystokyo.paper.Namespaced;
@@ -488,7 +642,6 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +import com.google.common.collect.LinkedHashMultimap;
 +import com.google.common.collect.Multimap;
 +import com.google.common.collect.SetMultimap;
-+import com.google.common.collect.Sets;
 +import io.papermc.paper.inventory.item.properties.AttributePair;
 +import io.papermc.paper.item.PaperMetaSerialization;
 +import io.papermc.paper.property.MutablePropertyView;
@@ -499,12 +652,6 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +import io.papermc.paper.property.nbt.pdc.MetaDataContainer;
 +import io.papermc.paper.property.types.AttributePairImpl;
 +import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.format.TextDecoration;
-+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-+import net.md_5.bungee.api.chat.BaseComponent;
-+import net.md_5.bungee.chat.ComponentSerializer;
-+import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.world.item.BlockItem;
 +import org.bukkit.Material;
 +import org.bukkit.NamespacedKey;
@@ -515,9 +662,7 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +import org.bukkit.configuration.serialization.DelegateDeserialization;
 +import org.bukkit.craftbukkit.Overridden;
 +import org.bukkit.craftbukkit.block.data.CraftBlockData;
-+import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 +import org.bukkit.craftbukkit.inventory.CraftMetaItem;
-+import org.bukkit.craftbukkit.inventory.tags.DeprecatedCustomTagContainer;
 +import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.enchantments.Enchantment;
@@ -527,28 +672,17 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +import org.bukkit.inventory.meta.Damageable;
 +import org.bukkit.inventory.meta.ItemMeta;
 +import org.bukkit.inventory.meta.Repairable;
-+import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 +import org.bukkit.persistence.PersistentDataContainer;
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
-+import java.util.ArrayList;
-+import java.util.Arrays;
-+import java.util.Collection;
-+import java.util.Collections;
-+import java.util.HashSet;
-+import java.util.Iterator;
-+import java.util.List;
-+import java.util.Map;
-+import java.util.Objects;
-+import java.util.Set;
-+import java.util.stream.Collectors;
++import java.util.*;
 +
 +import static io.papermc.paper.inventory.item.properties.ItemProperties.*;
 +
 +@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
-+public class PaperMeta implements ItemMeta, Damageable, Repairable, BlockDataMeta, ConfigurationSerializable {
++public class PaperMeta implements ItemMeta, LegacyMetaImpl, Damageable, Repairable, BlockDataMeta, ConfigurationSerializable {
 +
 +    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 +
@@ -629,36 +763,6 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +    }
 +
 +    @Override
-+    public @NotNull String getDisplayName() {
-+        return LegacyComponentSerializer.legacySection().serializeOr(this.displayName(), "");
-+    }
-+
-+    @Override
-+    public void setDisplayName(@Nullable String name) {
-+        this.displayName(
-+            LegacyComponentSerializer.legacySection().deserializeOr(name, Component.empty())
-+                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE)
-+        );
-+    }
-+
-+    @NotNull
-+    @Override
-+    public BaseComponent[] getDisplayNameComponent() {
-+        Component displayName = this.displayName();
-+        if (displayName == null) {
-+            return new BaseComponent[0];
-+        }
-+
-+        return net.md_5.bungee.chat.ComponentSerializer.parse(GsonComponentSerializer.gson().serialize(displayName));
-+    }
-+
-+    @Override
-+    public void setDisplayNameComponent(@Nullable BaseComponent[] component) {
-+        String gson = net.md_5.bungee.chat.ComponentSerializer.toString(component);
-+        this.displayName(GsonComponentSerializer.gson().deserialize(gson));
-+    }
-+
-+    @Override
 +    public boolean hasLocalizedName() {
 +        return this.hasInPropertyPath(DISPLAY, LOC_NAME);
 +    }
@@ -687,38 +791,6 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +    @Override
 +    public void lore(@Nullable List<? extends Component> lore) {
 +        this.setFromPropertyPath(DISPLAY, LORE, lore);
-+    }
-+
-+    @Override
-+    public @Nullable List<String> getLore() {
-+        return Objects.requireNonNullElse(this.lore(), List.<Component>of()).stream().map(input -> LegacyComponentSerializer.legacySection().serializeOr(input, "")).collect(Collectors.toList());
-+    }
-+
-+    @Override
-+    public void setLore(@Nullable List<String> lore) {
-+        List<? extends Component> components = Objects.requireNonNullElse(lore, List.<String>of()).stream().map((string) -> {
-+            return LegacyComponentSerializer.legacySection().deserializeOr(string, Component.empty())
-+                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-+        }).toList();
-+
-+        this.lore(components);
-+    }
-+
-+    @Override
-+    public @Nullable List<BaseComponent[]> getLoreComponents() {
-+        return Objects.requireNonNullElse(this.lore(), List.<Component>of()).stream().map(input -> {
-+            return ComponentSerializer.parse(GsonComponentSerializer.gson().serialize(input));
-+        }).collect(Collectors.toList());
-+    }
-+
-+    @Override
-+    public void setLoreComponents(@Nullable List<BaseComponent[]> lore) {
-+        List<? extends Component> components = Objects.requireNonNullElse(lore, List.<BaseComponent[]>of()).stream().map((string) -> {
-+            return GsonComponentSerializer.gson().deserializeOr(ComponentSerializer.toString(string), Component.empty())
-+                .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-+        }).toList();
-+
-+        this.lore(components);
 +    }
 +
 +    @Override
@@ -796,7 +868,7 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +
 +    @Override
 +    public boolean hasItemFlag(@NotNull ItemFlag flag) {
-+        return this.propertyHolder.hasProperty(HIDE_FLAGS);
++        return this.propertyHolder.getOrDefault(HIDE_FLAGS, Set.of()).contains(flag);
 +    }
 +
 +    @Override
@@ -931,68 +1003,12 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +    }
 +
 +    @Override
-+    public @NotNull CustomItemTagContainer getCustomTagContainer() {
-+        return new DeprecatedCustomTagContainer(this.getPersistentDataContainer());
-+    }
-+
-+    @Override
 +    public void setVersion(int version) {
 +    }
 +
 +    @Override
 +    public @NotNull PaperMeta clone() {
 +        return new PaperMeta(this.propertyHolder.clone());
-+    }
-+
-+    @Override
-+    public Set<Material> getCanDestroy() {
-+        return !hasDestroyableKeys() ? Collections.emptySet() : legacyGetMatsFromKeys(this.getDestroyableKeys());
-+    }
-+
-+    @Override
-+    public void setCanDestroy(Set<Material> canDestroy) {
-+        List<Namespaced> namespaced = new ArrayList<>();
-+        legacyClearAndReplaceKeys(namespaced, canDestroy);
-+        this.propertyHolder.set(CAN_DESTROY_BLOCK_LIST, namespaced);
-+    }
-+
-+    @Override
-+    public Set<Material> getCanPlaceOn() {
-+        return !hasPlaceableKeys() ? Collections.emptySet() : legacyGetMatsFromKeys(this.getPlaceableKeys());
-+    }
-+
-+    @Override
-+    public void setCanPlaceOn(Set<Material> canPlaceOn) {
-+        List<Namespaced> namespaced = new ArrayList<>();
-+        legacyClearAndReplaceKeys(namespaced, canPlaceOn);
-+        this.propertyHolder.set(CAN_PLACE_ON_BLOCK_LIST, namespaced);
-+    }
-+
-+    @Deprecated
-+    private void legacyClearAndReplaceKeys(Collection<Namespaced> toUpdate, Collection<Material> beingSet) {
-+        if (beingSet.stream().anyMatch(Material::isLegacy)) {
-+            throw new IllegalArgumentException("Set must not contain any legacy materials!");
-+        }
-+
-+        toUpdate.clear();
-+        toUpdate.addAll(beingSet.stream().map(Material::getKey).collect(java.util.stream.Collectors.toSet()));
-+    }
-+
-+    @Deprecated
-+    private Set<Material> legacyGetMatsFromKeys(Collection<Namespaced> names) {
-+        Set<Material> mats = Sets.newHashSet();
-+        for (Namespaced key : names) {
-+            if (!(key instanceof org.bukkit.NamespacedKey)) {
-+                continue;
-+            }
-+
-+            Material material = Material.matchMaterial(key.toString(), false);
-+            if (material != null) {
-+                mats.add(material);
-+            }
-+        }
-+
-+        return mats;
 +    }
 +
 +    @Override
@@ -1058,8 +1074,6 @@ index 0000000000000000000000000000000000000000..20e76a9e858f1e93cbb41a2a7955d675
 +    public NbtPropertyHolder getPropertyHolder() {
 +        return propertyHolder;
 +    }
-+
-+    // TODO
 +
 +    @Override
 +    public String toString() {
@@ -3044,10 +3058,10 @@ index 0000000000000000000000000000000000000000..d43efff46824816f50206a841bfd4bd6
 +}
 diff --git a/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java b/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..10d8ad37a8d95cfe9df44015bab5380f432c2e3c
+index 0000000000000000000000000000000000000000..a711d4a5794f36dae9d0862ab713b0616bd3f9c1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/property/nbt/types/ItemFlagBitset.java
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,144 @@
 +package io.papermc.paper.property.nbt.types;
 +
 +import io.papermc.paper.property.PropertyKey;
@@ -3058,60 +3072,110 @@ index 0000000000000000000000000000000000000000..10d8ad37a8d95cfe9df44015bab5380f
 +
 +import java.util.*;
 +
++// TODO: Do we want to still pack item flags into a byte?
 +public class ItemFlagBitset implements NbtPlatformAdapter<Set<ItemFlag>> {
 +
-+    private final ItemFlag[] universe = ItemFlag.values();
 +    private final IntegerPrimitive backing = IntegerPrimitive.INSTANCE;
++    private final ItemFlag[] universe = ItemFlag.values();
++    private final int mask;
++
++    public ItemFlagBitset() {
++        int maskBuilder = 0;
++        for (int i = 0; i < universe.length; ++i) {
++            maskBuilder |= 1 << i;
++        }
++        this.mask = maskBuilder;
++    }
 +
 +    @Override
 +    public Set<ItemFlag> getValue(NbtPropertyHolder nbtPropertyHolder, PropertyKey<Set<ItemFlag>> propertyKey) {
 +        return new AbstractSet<>() {
 +
++            private int modCount = 0;
 +            private int storage = Objects.requireNonNullElse(IntegerPrimitive.INSTANCE.getUnsafe(nbtPropertyHolder, propertyKey), 0);
 +
 +            @Override
 +            public Iterator<ItemFlag> iterator() {
 +                return new Iterator<>() {
-+                    private int unseen = storage;
-+                    private int lastReturned = 0;
++                    private final int expectedModCount = modCount; // People dumb
++                    private int index = 0;
 +
 +                    @Override
 +                    public boolean hasNext() {
-+                        return unseen != 0;
++                        this.checkForComodification();
++                        // Find next present flag in universe
++                        while (this.index < ItemFlagBitset.this.universe.length) {
++                            if ((storage & (1 << index)) != 0) { // Is flag set?
++                                return true;
++                            }
++                            this.index++; // Find next flag
++                        }
++
++                        return false;
 +                    }
 +
 +                    @Override
 +                    public ItemFlag next() {
-+                        if (unseen == 0) throw new NoSuchElementException();
-+                        this.lastReturned = this.unseen & -this.unseen;
-+                        this.unseen -= this.lastReturned;
-+                        return universe[Integer.numberOfTrailingZeros(this.lastReturned)];
++                        this.checkForComodification();
++                        if (!hasNext()) throw new NoSuchElementException();
++                        return ItemFlagBitset.this.universe[this.index++];
 +                    }
 +
++                    @Override
 +                    public void remove() {
-+                        if (this.lastReturned == 0) throw new IllegalStateException();
-+                        storage &= ~this.lastReturned;
++                        this.checkForComodification();
++                        storage &= ~(1 << this.index); // Remove current flag's index
 +                        IntegerPrimitive.INSTANCE.writeDirect(nbtPropertyHolder, propertyKey, storage);
-+                        this.lastReturned = 0;
++                    }
++
++                    private void checkForComodification() {
++                        if (modCount != expectedModCount) {
++                            throw new ConcurrentModificationException();
++                        }
 +                    }
 +                };
 +            }
 +
 +            @Override
 +            public int size() {
-+                return Integer.bitCount(storage);
++                int bitSet = ItemFlagBitset.this.mask & this.storage;
++                return Integer.bitCount(bitSet);
 +            }
 +
 +            @Override
 +            public boolean add(ItemFlag itemFlag) {
-+                int bitModifier = getBitModifier(itemFlag);
-+                if ((storage & bitModifier) == bitModifier) {
++                if (this.contains(itemFlag)) { // Can't add, already present
 +                    return false;
 +                }
 +
-+                this.storage |= getBitModifier(itemFlag);
++                this.storage |= ItemFlagBitset.this.getBitModifier(itemFlag);
 +                IntegerPrimitive.INSTANCE.writeDirect(nbtPropertyHolder, propertyKey, storage);
++                this.modCount++;
 +                return true;
++            }
++
++            @Override
++            public boolean remove(Object o) {
++                boolean contains = this.contains(o);
++                if (contains) {
++                    ItemFlag flag = (ItemFlag) o;
++                    this.storage &= ~(ItemFlagBitset.this.getBitModifier(flag)); // Remove flag
++                    IntegerPrimitive.INSTANCE.writeDirect(nbtPropertyHolder, propertyKey, storage);
++                    this.modCount++;
++                    return true;
++                }
++
++                return false;
++            }
++
++            @Override
++            public boolean contains(Object o) {
++                if (o instanceof ItemFlag itemFlag) {
++                    int bitModifier = ItemFlagBitset.this.getBitModifier(itemFlag);
++                    return (this.storage & bitModifier) == bitModifier;
++                }
++
++                return false;
 +            }
 +        };
 +    }
@@ -4074,10 +4138,10 @@ index 0000000000000000000000000000000000000000..5a5acb6979b269e0d4560a6fffa216aa
 +}
 diff --git a/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java b/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0cd3e315a7ccfb98e8e17161e62ce54e664abc84
+index 0000000000000000000000000000000000000000..88f8ea886872d40b86fc4127cf831e06181c10c1
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/PropertyMutableCollectionsTest.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.inventory.item.properties.ItemProperties;
@@ -4089,6 +4153,7 @@ index 0000000000000000000000000000000000000000..0cd3e315a7ccfb98e8e17161e62ce54e
 +import org.junit.Assert;
 +import org.junit.Test;
 +
++import java.util.Collections;
 +import java.util.Set;
 +
 +
@@ -4106,6 +4171,14 @@ index 0000000000000000000000000000000000000000..0cd3e315a7ccfb98e8e17161e62ce54e
 +        flags.remove(ItemFlag.HIDE_DYE);
 +        Assert.assertFalse(propertyView.getOrCreate(ItemProperties.HIDE_FLAGS).contains(ItemFlag.HIDE_DYE));
 +        Assert.assertTrue(flags.isEmpty());
++
++        Collections.addAll(flags, ItemFlag.values());
++        Assert.assertEquals(flags.size(), ItemFlag.values().length);
++        for (ItemFlag flag : ItemFlag.values()) {
++            Assert.assertTrue(flags.contains(flag));
++        }
++        flags.remove(ItemFlag.HIDE_ARMOR_TRIM);
++        Assert.assertFalse(flags.contains(ItemFlag.HIDE_ARMOR_TRIM));
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
