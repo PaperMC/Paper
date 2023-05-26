@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: jmboy01 <jan-mathijs.pex@student.uhasselt.be>
+Date: Fri, 26 May 2023 19:52:45 +0200
+Subject: [PATCH] Added a hideOnPlayerList variable in the function hidePlayer
+ and all related functions.
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 56c75029a94e8812c9e0ce5375aaa7cbcda90b87..378b09a9b508713cd92bcc708ef8a8f75dada97f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -988,7 +988,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     }
+ 
+     @Override
+-    public void setVisibleByDefault(boolean visible) {
++    public void setVisibleByDefault(boolean visible, boolean hideInPlayerList) {
+         if (this.getHandle().visibleByDefault != visible) {
+             if (visible) {
+                 // Making visible by default, reset and show to all players
+@@ -998,7 +998,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+             } else {
+                 // Hiding by default, reset and hide from all players
+                 for (Player player : this.server.getOnlinePlayers()) {
+-                    ((CraftPlayer) player).resetAndHideEntity(this);
++                    ((CraftPlayer) player).resetAndHideEntity(this, hideInPlayerList);
+                 }
+             }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 3f498543cf0476ff1b184788d93f13b70c476c16..504272da665e1abc1de91813bba713292238b16d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1784,24 +1784,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     @Deprecated
+-    public void hidePlayer(Player player) {
+-        this.hideEntity0(null, player);
++    public void hidePlayer(Player player, boolean hideInPlayerList) {
++        this.hideEntity0(null, player, hideInPlayerList);
+     }
+ 
+     @Override
+-    public void hidePlayer(Plugin plugin, Player player) {
+-        this.hideEntity(plugin, player);
++    public void hidePlayer(Plugin plugin, Player player, boolean hideInPlayerList) {
++        this.hideEntity(plugin, player, hideInPlayerList);
+     }
+ 
+     @Override
+-    public void hideEntity(Plugin plugin, org.bukkit.entity.Entity entity) {
++    public void hideEntity(Plugin plugin, org.bukkit.entity.Entity entity, boolean hideInPlayerList) {
+         Validate.notNull(plugin, "Plugin cannot be null");
+         Validate.isTrue(plugin.isEnabled(), "Plugin attempted to hide player while disabled");
+ 
+-        this.hideEntity0(plugin, entity);
++        this.hideEntity0(plugin, entity, hideInPlayerList);
+     }
+ 
+-    private void hideEntity0(@Nullable Plugin plugin, org.bukkit.entity.Entity entity) {
++    private void hideEntity0(@Nullable Plugin plugin, org.bukkit.entity.Entity entity, boolean hideInPlayerList) {
+         Validate.notNull(entity, "hidden entity cannot be null");
+         if (this.getHandle().connection == null) return;
+         if (this.equals(entity)) return;
+@@ -1814,7 +1814,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+ 
+         if (shouldHide) {
+-            this.untrackAndHideEntity(entity);
++            this.untrackAndHideEntity(entity, hideInPlayerList);
+         }
+     }
+ 
+@@ -1833,15 +1833,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return true;
+     }
+ 
+-    private void untrackAndHideEntity(org.bukkit.entity.Entity entity) {
++    private void untrackAndHideEntity(org.bukkit.entity.Entity entity, boolean hideInPlayerList) {
+         // Remove this entity from the hidden player's EntityTrackerEntry
+         // Paper start
+         Entity other = ((CraftEntity) entity).getHandle();
+-        unregisterEntity(other);
++        unregisterEntity(other, hideInPlayerList);
+ 
+         server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
+     }
+-    private void unregisterEntity(Entity other) {
++    private void unregisterEntity(Entity other, boolean hideInPlayerList) {
+         // Paper end
+         ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
+         ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
+@@ -1850,22 +1850,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+ 
+         // Remove the hidden entity from this player user list, if they're on it
+-        if (other instanceof ServerPlayer) {
+-            ServerPlayer otherPlayer = (ServerPlayer) other;
+-            if (otherPlayer.sentListPacket) {
+-                this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
++        if (hideInPlayerList){
++            if (other instanceof ServerPlayer) {
++                ServerPlayer otherPlayer = (ServerPlayer) other;
++
++                if (otherPlayer.sentListPacket) {
++                    this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
++                }
+             }
+         }
+     }
+ 
+-    void resetAndHideEntity(org.bukkit.entity.Entity entity) {
++    void resetAndHideEntity(org.bukkit.entity.Entity entity, boolean hideInPlayerList) {
+         // SPIGOT-7312: Can't show/hide self
+         if (this.equals(entity)) {
+             return;
+         }
+ 
+         if (this.invertedVisibilityEntities.remove(entity.getUniqueId()) == null) {
+-            this.untrackAndHideEntity(entity);
++            this.untrackAndHideEntity(entity, hideInPlayerList);
+         }
+     }
+ 
+@@ -1948,7 +1951,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         for (ServerPlayer player : players) {
+             CraftPlayer bukkitPlayer = player.getBukkitEntity();
+             if (bukkitPlayer.canSee(this)) {
+-                bukkitPlayer.unregisterEntity(self);
++                bukkitPlayer.unregisterEntity(self, true);
+             }
+         }
+ 
