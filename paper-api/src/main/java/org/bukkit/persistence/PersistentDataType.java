@@ -61,7 +61,7 @@ public interface PersistentDataType<T, Z> {
     /**
      * A convenience implementation to convert between Byte and Boolean as there is
      * no native implementation for booleans. <br>
-     * Any byte value > 0 is considered to be true.
+     * Any byte value not equal to 0 is considered to be true.
      */
     PersistentDataType<Byte, Boolean> BOOLEAN = new BooleanPersistentDataType();
 
@@ -169,7 +169,7 @@ public interface PersistentDataType<T, Z> {
     /**
      * A convenience implementation to convert between Byte and Boolean as there is
      * no native implementation for booleans. <br>
-     * Any byte value > 0 is considered to be true.
+     * Any byte value not equal to 0 is considered to be true.
      */
     class BooleanPersistentDataType implements PersistentDataType<Byte, Boolean> {
 
