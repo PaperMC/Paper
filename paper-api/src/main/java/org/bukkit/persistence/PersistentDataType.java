@@ -56,6 +56,16 @@ public interface PersistentDataType<T, Z> {
     PersistentDataType<Double, Double> DOUBLE = new PrimitivePersistentDataType<>(Double.class);
 
     /*
+        Boolean.
+     */
+    /**
+     * A convenience implementation to convert between Byte and Boolean as there is
+     * no native implementation for booleans. <br>
+     * Any byte value > 0 is considered to be true.
+     */
+    PersistentDataType<Byte, Boolean> BOOLEAN = new BooleanPersistentDataType();
+
+    /*
         String.
      */
     PersistentDataType<String, String> STRING = new PrimitivePersistentDataType<>(String.class);
@@ -153,6 +163,38 @@ public interface PersistentDataType<T, Z> {
         @Override
         public T fromPrimitive(@NotNull T primitive, @NotNull PersistentDataAdapterContext context) {
             return primitive;
+        }
+    }
+
+    /**
+     * A convenience implementation to convert between Byte and Boolean as there is
+     * no native implementation for booleans. <br>
+     * Any byte value > 0 is considered to be true.
+     */
+    class BooleanPersistentDataType implements PersistentDataType<Byte, Boolean> {
+
+        @NotNull
+        @Override
+        public Class<Byte> getPrimitiveType() {
+            return byte.class;
+        }
+
+        @NotNull
+        @Override
+        public Class<Boolean> getComplexType() {
+            return boolean.class;
+        }
+
+        @NotNull
+        @Override
+        public Byte toPrimitive(@NotNull Boolean complex, @NotNull PersistentDataAdapterContext context) {
+            return (byte) (complex ? 1 : 0);
+        }
+
+        @NotNull
+        @Override
+        public Boolean fromPrimitive(@NotNull Byte primitive, @NotNull PersistentDataAdapterContext context) {
+            return primitive != 0;
         }
     }
 }
