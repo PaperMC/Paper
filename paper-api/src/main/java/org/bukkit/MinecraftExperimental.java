@@ -47,5 +47,10 @@ public @interface MinecraftExperimental {
     @ApiStatus.Internal
     public enum Requires {
 
+        // Paper start
+        TRADE_REBALANCE,
+        REDSTONE_EXPERIMENTS,
+        MINECART_IMPROVEMENTS
+        // Paper end
     }
 }

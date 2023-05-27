@@ -1,6 +1,7 @@
 plugins {
     `java-library`
     `maven-publish`
+    idea // Paper
 }
 
 java {
@@ -60,6 +61,22 @@ dependencies {
     testImplementation("org.ow2.asm:asm-tree:9.7.1")
     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
 }
+
+// Paper start
+val generatedApiPath: java.nio.file.Path = rootProject.projectDir.toPath().resolve("paper-api-generator/generated")
+idea {
+    module {
+        generatedSourceDirs.add(generatedApiPath.toFile())
+    }
+}
+sourceSets {
+    main {
+        java {
+            srcDir(generatedApiPath)
+        }
+    }
+}
+// Paper end
 
 configure<PublishingExtension> {
     publications.create<MavenPublication>("maven") {
@@ -141,5 +158,16 @@ val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.
 }
 tasks.check {
     dependsOn(scanJar)
+}
+// Paper end
+// Paper start
+val scanJarForOldGeneratedCode = tasks.register("scanJarForOldGeneratedCode", io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
+    mcVersion.set(providers.gradleProperty("mcVersion"))
+    annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
+    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+    classpath.from(configurations.compileClasspath)
+}
+tasks.check {
+    dependsOn(scanJarForOldGeneratedCode)
 }
 // Paper end
