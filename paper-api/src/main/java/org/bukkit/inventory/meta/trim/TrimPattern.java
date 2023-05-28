@@ -6,7 +6,6 @@ import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a pattern that may be used in an {@link ArmorTrim}.
@@ -63,8 +62,4 @@ public interface TrimPattern extends Keyed {
      * {@link Material#SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE}.
      */
     public static final TrimPattern SPIRE = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft("spire"));
-
-    @NotNull
-    @Override
-    public NamespacedKey getKey(); // Satisfies Checkstyle for now
 }

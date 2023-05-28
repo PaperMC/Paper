@@ -6,7 +6,6 @@ import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a material that may be used in an {@link ArmorTrim}.
@@ -59,8 +58,4 @@ public interface TrimMaterial extends Keyed {
      * {@link Material#AMETHYST_SHARD}.
      */
     public static final TrimMaterial AMETHYST = Registry.TRIM_MATERIAL.get(NamespacedKey.minecraft("amethyst"));
-
-    @NotNull
-    @Override
-    public NamespacedKey getKey(); // Satisfies Checkstyle for now
 }
