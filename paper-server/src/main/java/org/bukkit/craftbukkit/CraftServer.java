@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -180,6 +181,7 @@ import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.metadata.EntityMetadataStore;
 import org.bukkit.craftbukkit.metadata.PlayerMetadataStore;
 import org.bukkit.craftbukkit.metadata.WorldMetadataStore;
+import org.bukkit.craftbukkit.packs.CraftDataPackManager;
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
@@ -233,6 +235,7 @@ import org.bukkit.inventory.StonecuttingRecipe;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
+import org.bukkit.packs.DataPackManager;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.Plugin;
@@ -285,6 +288,7 @@ public final class CraftServer implements Server {
     private WarningState warningState = WarningState.DEFAULT;
     public String minimumAPI;
     public CraftScoreboardManager scoreboardManager;
+    public CraftDataPackManager dataPackManager;
     public boolean playerCommandState;
     private boolean printSaveWarning;
     private CraftIconCache icon;
@@ -310,6 +314,7 @@ public final class CraftServer implements Server {
         }));
         this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
         this.structureManager = new CraftStructureManager(console.getStructureManager());
+        this.dataPackManager = new CraftDataPackManager(this.getServer().getPackRepository());
 
         Bukkit.setServer(this);
 
@@ -679,6 +684,21 @@ public final class CraftServer implements Server {
 
     public boolean getQueryPlugins() {
         return this.configuration.getBoolean("settings.query-plugins");
+    }
+
+    @Override
+    public List<String> getInitialEnabledPacks() {
+        return Collections.unmodifiableList(this.getProperties().initialDataPackConfiguration.getEnabled());
+    }
+
+    @Override
+    public List<String> getInitialDisabledPacks() {
+        return Collections.unmodifiableList(this.getProperties().initialDataPackConfiguration.getDisabled());
+    }
+
+    @Override
+    public DataPackManager getDataPackManager() {
+        return this.dataPackManager;
     }
 
     @Override

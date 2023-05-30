@@ -55,6 +55,7 @@ import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.entity.projectile.EntityArrow;
 import net.minecraft.world.entity.projectile.EntityTippedArrow;
 import net.minecraft.world.entity.raid.PersistentRaid;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.RayTrace;
@@ -73,6 +74,7 @@ import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Difficulty;
 import org.bukkit.Effect;
+import org.bukkit.FeatureFlag;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
@@ -1898,6 +1900,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public PersistentDataContainer getPersistentDataContainer() {
         return persistentDataContainer;
+    }
+
+    @Override
+    public Set<FeatureFlag> getFeatureFlags() {
+        return CraftFeatureFlag.getFromNMS(this.getHandle().enabledFeatures()).stream().map(FeatureFlag.class::cast).collect(Collectors.toUnmodifiableSet());
     }
 
     public void storeBukkitValues(NBTTagCompound c) {

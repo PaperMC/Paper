@@ -45,6 +45,7 @@ import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.material.FluidType;
 import net.minecraft.world.level.storage.SavedFile;
 import org.bukkit.Bukkit;
+import org.bukkit.FeatureFlag;
 import org.bukkit.Fluid;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -55,6 +56,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.CraftFeatureFlag;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -385,6 +387,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public String getTranslationKey(ItemStack itemStack) {
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
+    }
+
+    @Override
+    public FeatureFlag getFeatureFlag(NamespacedKey namespacedKey) {
+        Preconditions.checkArgument(namespacedKey != null, "NamespaceKey cannot be null");
+        return CraftFeatureFlag.getFromNMS(namespacedKey);
     }
 
     /**
