@@ -60,6 +60,7 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
 
     @Override
     public final org.bukkit.projectiles.ProjectileSource getShooter() {
+        this.getHandle().refreshProjectileSource(true); // Paper - Refresh ProjectileSource for projectiles
         return this.getHandle().projectileSource;
     }
 

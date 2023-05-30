@@ -170,7 +170,7 @@
      private static final EntityDataAccessor<Integer> DATA_TICKS_FROZEN = SynchedEntityData.defineId(Entity.class, EntityDataSerializers.INT);
      private EntityInLevelCallback levelCallback;
      private final VecDeltaCodec packetPositionCodec;
-@@ -253,7 +386,66 @@
+@@ -253,7 +386,67 @@
      private final List<Entity.Movement> movementThisTick;
      private final Set<BlockState> blocksInside;
      private final LongSet visitedBlocks;
@@ -182,6 +182,7 @@
 +    public boolean inWorld = false;
 +    public boolean generation;
 +    public int maxAirTicks = this.getDefaultMaxAirSupply(); // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
++    @Nullable // Paper - Refresh ProjectileSource for projectiles
 +    public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
 +    public boolean lastDamageCancelled; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
 +    public boolean persistentInvisibility = false;
@@ -237,7 +238,7 @@
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
          this.passengers = ImmutableList.of();
-@@ -261,7 +453,7 @@
+@@ -261,7 +454,7 @@
          this.bb = Entity.INITIAL_AABB;
          this.stuckSpeedMultiplier = Vec3.ZERO;
          this.nextStep = 1.0F;
@@ -246,7 +247,7 @@
          this.remainingFireTicks = -this.getFireImmuneTicks();
          this.fluidHeight = new Object2DoubleArrayMap(2);
          this.fluidOnEyes = new HashSet();
-@@ -284,6 +476,13 @@
+@@ -284,6 +477,13 @@
          this.position = Vec3.ZERO;
          this.blockPosition = BlockPos.ZERO;
          this.chunkPosition = ChunkPos.ZERO;
@@ -260,7 +261,7 @@
          SynchedEntityData.Builder datawatcher_a = new SynchedEntityData.Builder(this);
  
          datawatcher_a.define(Entity.DATA_SHARED_FLAGS_ID, (byte) 0);
-@@ -292,7 +491,7 @@
+@@ -292,7 +492,7 @@
          datawatcher_a.define(Entity.DATA_CUSTOM_NAME, Optional.empty());
          datawatcher_a.define(Entity.DATA_SILENT, false);
          datawatcher_a.define(Entity.DATA_NO_GRAVITY, false);
@@ -269,7 +270,7 @@
          datawatcher_a.define(Entity.DATA_TICKS_FROZEN, 0);
          this.defineSynchedData(datawatcher_a);
          this.entityData = datawatcher_a.build();
-@@ -362,20 +561,36 @@
+@@ -362,20 +562,36 @@
      }
  
      public void kill(ServerLevel world) {
@@ -308,7 +309,7 @@
      public boolean equals(Object object) {
          return object instanceof Entity ? ((Entity) object).id == this.id : false;
      }
-@@ -385,22 +600,34 @@
+@@ -385,22 +601,34 @@
      }
  
      public void remove(Entity.RemovalReason reason) {
@@ -348,7 +349,7 @@
          return this.getPose() == pose;
      }
  
-@@ -417,6 +644,33 @@
+@@ -417,6 +645,33 @@
      }
  
      public void setRot(float yaw, float pitch) {
@@ -382,7 +383,7 @@
          this.setYRot(yaw % 360.0F);
          this.setXRot(pitch % 360.0F);
      }
-@@ -426,8 +680,8 @@
+@@ -426,8 +681,8 @@
      }
  
      public void setPos(double x, double y, double z) {
@@ -393,21 +394,19 @@
      }
  
      protected final AABB makeBoundingBox() {
-@@ -460,12 +714,22 @@
- 
-     public void tick() {
+@@ -462,10 +717,20 @@
          this.baseTick();
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    public void postTick() {
 +        // No clean way to break out of ticking once the entity has been copied to a new world, so instead we move the portalling later in the tick cycle
 +        if (!(this instanceof ServerPlayer) && this.isAlive()) { // Paper - don't attempt to teleport dead entities
 +            this.handlePortal();
 +        }
-     }
++    }
 +    // CraftBukkit end
- 
++
      public void baseTick() {
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
@@ -416,7 +415,7 @@
          this.inBlockState = null;
          if (this.isPassenger() && this.getVehicle().isRemoved()) {
              this.stopRiding();
-@@ -475,7 +739,7 @@
+@@ -475,7 +740,7 @@
              --this.boardingCooldown;
          }
  
@@ -425,7 +424,7 @@
          if (this.canSpawnSprintParticle()) {
              this.spawnSprintParticle();
          }
-@@ -502,7 +766,7 @@
+@@ -502,7 +767,7 @@
                      this.setRemainingFireTicks(this.remainingFireTicks - 1);
                  }
  
@@ -434,7 +433,7 @@
                      this.setTicksFrozen(0);
                      this.level().levelEvent((Player) null, 1009, this.blockPosition, 1);
                  }
-@@ -514,6 +778,10 @@
+@@ -514,6 +779,10 @@
          if (this.isInLava()) {
              this.lavaHurt();
              this.fallDistance *= 0.5F;
@@ -445,7 +444,7 @@
          }
  
          this.checkBelowWorld();
-@@ -525,7 +793,7 @@
+@@ -525,7 +794,7 @@
          world = this.level();
          if (world instanceof ServerLevel worldserver) {
              if (this instanceof Leashable) {
@@ -454,7 +453,7 @@
              }
          }
  
-@@ -537,7 +805,11 @@
+@@ -537,7 +806,11 @@
      }
  
      public void checkBelowWorld() {
@@ -467,7 +466,7 @@
              this.onBelowWorld();
          }
  
-@@ -568,15 +840,32 @@
+@@ -568,15 +841,32 @@
  
      public void lavaHurt() {
          if (!this.fireImmune()) {
@@ -502,7 +501,7 @@
              }
  
          }
-@@ -587,9 +876,25 @@
+@@ -587,9 +877,25 @@
      }
  
      public final void igniteForSeconds(float seconds) {
@@ -529,7 +528,7 @@
      public void igniteForTicks(int ticks) {
          if (this.remainingFireTicks < ticks) {
              this.setRemainingFireTicks(ticks);
-@@ -610,7 +915,7 @@
+@@ -610,7 +916,7 @@
      }
  
      protected void onBelowWorld() {
@@ -538,7 +537,7 @@
      }
  
      public boolean isFree(double offsetX, double offsetY, double offsetZ) {
-@@ -672,6 +977,7 @@
+@@ -672,6 +978,7 @@
      }
  
      public void move(MoverType type, Vec3 movement) {
@@ -546,10 +545,13 @@
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
-@@ -750,6 +1056,28 @@
-                     }
-                 }
+@@ -747,8 +1054,30 @@
  
+                     if (movement.y != vec3d1.y) {
+                         block.updateEntityMovementAfterFallOn(this.level(), this);
++                    }
++                }
++
 +                // CraftBukkit start
 +                if (this.horizontalCollision && this.getBukkitEntity() instanceof Vehicle) {
 +                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -568,14 +570,13 @@
 +                    if (!bl.getType().isAir()) {
 +                        VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, bl, org.bukkit.craftbukkit.util.CraftVector.toBukkit(originalMovement)); // Paper - Expose pre-collision velocity
 +                        this.level.getCraftServer().getPluginManager().callEvent(event);
-+                    }
-+                }
+                     }
+                 }
 +                // CraftBukkit end
-+
+ 
                  if (!this.level().isClientSide() || this.isControlledByLocalInstance()) {
                      Entity.MovementEmission entity_movementemission = this.getMovementEmission();
- 
-@@ -1131,8 +1459,22 @@
+@@ -1131,8 +1460,22 @@
  
      protected SoundEvent getSwimHighSpeedSplashSound() {
          return SoundEvents.GENERIC_SPLASH;
@@ -598,7 +599,7 @@
      public void recordMovementThroughBlocks(Vec3 oldPos, Vec3 newPos) {
          this.movementThisTick.add(new Entity.Movement(oldPos, newPos));
      }
-@@ -1599,6 +1941,7 @@
+@@ -1599,6 +1942,7 @@
          this.setXRot(Mth.clamp(pitch, -90.0F, 90.0F) % 360.0F);
          this.yRotO = this.getYRot();
          this.xRotO = this.getXRot();
@@ -606,7 +607,7 @@
      }
  
      public void absMoveTo(double x, double y, double z) {
-@@ -1609,6 +1952,7 @@
+@@ -1609,6 +1953,7 @@
          this.yo = y;
          this.zo = d4;
          this.setPos(d3, y, d4);
@@ -614,7 +615,7 @@
      }
  
      public void moveTo(Vec3 pos) {
-@@ -1628,11 +1972,19 @@
+@@ -1628,11 +1973,19 @@
      }
  
      public void moveTo(double x, double y, double z, float yaw, float pitch) {
@@ -634,7 +635,7 @@
      }
  
      public final void setOldPosAndRot() {
-@@ -1701,6 +2053,7 @@
+@@ -1701,6 +2054,7 @@
      public void push(Entity entity) {
          if (!this.isPassengerOfSameVehicle(entity)) {
              if (!entity.noPhysics && !this.noPhysics) {
@@ -642,7 +643,7 @@
                  double d0 = entity.getX() - this.getX();
                  double d1 = entity.getZ() - this.getZ();
                  double d2 = Mth.absMax(d0, d1);
-@@ -1737,7 +2090,21 @@
+@@ -1737,7 +2091,21 @@
      }
  
      public void push(double deltaX, double deltaY, double deltaZ) {
@@ -665,7 +666,7 @@
          this.hasImpulse = true;
      }
  
-@@ -1858,9 +2225,21 @@
+@@ -1858,9 +2226,21 @@
      }
  
      public boolean isPushable() {
@@ -687,7 +688,7 @@
      public void awardKillScore(Entity entityKilled, DamageSource damageSource) {
          if (entityKilled instanceof ServerPlayer) {
              CriteriaTriggers.ENTITY_KILLED_PLAYER.trigger((ServerPlayer) entityKilled, this, damageSource);
-@@ -1889,74 +2268,133 @@
+@@ -1889,74 +2269,133 @@
      }
  
      public boolean saveAsPassenger(CompoundTag nbt) {
@@ -844,7 +845,7 @@
              }
  
              ListTag nbttaglist;
-@@ -1972,10 +2410,10 @@
+@@ -1972,10 +2411,10 @@
                      nbttaglist.add(StringTag.valueOf(s));
                  }
  
@@ -857,7 +858,7 @@
              if (this.isVehicle()) {
                  nbttaglist = new ListTag();
                  iterator = this.getPassengers().iterator();
-@@ -1984,17 +2422,44 @@
+@@ -1984,17 +2423,44 @@
                      Entity entity = (Entity) iterator.next();
                      CompoundTag nbttagcompound1 = new CompoundTag();
  
@@ -905,7 +906,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being saved");
-@@ -2080,6 +2545,71 @@
+@@ -2080,6 +2546,71 @@
              } else {
                  throw new IllegalStateException("Entity has invalid position");
              }
@@ -977,7 +978,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being loaded");
-@@ -2099,7 +2629,13 @@
+@@ -2099,7 +2630,13 @@
          ResourceLocation minecraftkey = EntityType.getKey(entitytypes);
  
          return entitytypes.canSerialize() && minecraftkey != null ? minecraftkey.toString() : null;
@@ -991,7 +992,7 @@
  
      protected abstract void readAdditionalSaveData(CompoundTag nbt);
  
-@@ -2153,9 +2689,31 @@
+@@ -2153,9 +2690,31 @@
          if (stack.isEmpty()) {
              return null;
          } else {
@@ -1024,7 +1025,7 @@
              world.addFreshEntity(entityitem);
              return entityitem;
          }
-@@ -2184,7 +2742,16 @@
+@@ -2184,7 +2743,16 @@
          if (this.isAlive() && this instanceof Leashable leashable) {
              if (leashable.getLeashHolder() == player) {
                  if (!this.level().isClientSide()) {
@@ -1042,7 +1043,7 @@
                          leashable.removeLeash();
                      } else {
                          leashable.dropLeash();
-@@ -2200,6 +2767,13 @@
+@@ -2200,6 +2768,13 @@
  
              if (itemstack.is(Items.LEAD) && leashable.canHaveALeashAttachedToIt()) {
                  if (!this.level().isClientSide()) {
@@ -1056,7 +1057,7 @@
                      leashable.setLeashedTo(player, true);
                  }
  
-@@ -2265,15 +2839,15 @@
+@@ -2265,15 +2840,15 @@
      }
  
      public boolean showVehicleHealth() {
@@ -1075,7 +1076,7 @@
              return false;
          } else {
              for (Entity entity1 = entity; entity1.vehicle != null; entity1 = entity1.vehicle) {
-@@ -2285,11 +2859,32 @@
+@@ -2285,11 +2860,32 @@
              if (!force && (!this.canRide(entity) || !entity.canAddPassenger(this))) {
                  return false;
              } else {
@@ -1109,7 +1110,7 @@
                  this.vehicle = entity;
                  this.vehicle.addPassenger(this);
                  entity.getIndirectPassengersStream().filter((entity2) -> {
-@@ -2314,19 +2909,30 @@
+@@ -2314,19 +2910,30 @@
      }
  
      public void removeVehicle() {
@@ -1142,7 +1143,7 @@
      protected void addPassenger(Entity passenger) {
          if (passenger.getVehicle() != this) {
              throw new IllegalStateException("Use x.startRiding(y), not y.addPassenger(x)");
-@@ -2349,21 +2955,53 @@
+@@ -2349,21 +2956,53 @@
          }
      }
  
@@ -1202,7 +1203,7 @@
      }
  
      protected boolean canAddPassenger(Entity passenger) {
-@@ -2464,7 +3102,7 @@
+@@ -2464,7 +3103,7 @@
                      if (teleporttransition != null) {
                          ServerLevel worldserver1 = teleporttransition.newLevel();
  
@@ -1211,7 +1212,7 @@
                              this.teleport(teleporttransition);
                          }
                      }
-@@ -2547,7 +3185,7 @@
+@@ -2547,7 +3186,7 @@
      }
  
      public boolean isCrouching() {
@@ -1220,7 +1221,7 @@
      }
  
      public boolean isSprinting() {
-@@ -2563,7 +3201,7 @@
+@@ -2563,7 +3202,7 @@
      }
  
      public boolean isVisuallySwimming() {
@@ -1229,7 +1230,7 @@
      }
  
      public boolean isVisuallyCrawling() {
-@@ -2571,6 +3209,13 @@
+@@ -2571,6 +3210,13 @@
      }
  
      public void setSwimming(boolean swimming) {
@@ -1243,7 +1244,7 @@
          this.setSharedFlag(4, swimming);
      }
  
-@@ -2609,6 +3254,7 @@
+@@ -2609,6 +3255,7 @@
  
      @Nullable
      public PlayerTeam getTeam() {
@@ -1251,7 +1252,7 @@
          return this.level().getScoreboard().getPlayersTeam(this.getScoreboardName());
      }
  
-@@ -2624,8 +3270,12 @@
+@@ -2624,8 +3271,12 @@
          return this.getTeam() != null ? this.getTeam().isAlliedTo(team) : false;
      }
  
@@ -1265,7 +1266,7 @@
      }
  
      public boolean getSharedFlag(int index) {
-@@ -2644,7 +3294,7 @@
+@@ -2644,7 +3295,7 @@
      }
  
      public int getMaxAirSupply() {
@@ -1274,7 +1275,7 @@
      }
  
      public int getAirSupply() {
-@@ -2652,7 +3302,18 @@
+@@ -2652,7 +3303,18 @@
      }
  
      public void setAirSupply(int air) {
@@ -1294,7 +1295,7 @@
      }
  
      public int getTicksFrozen() {
-@@ -2679,11 +3340,44 @@
+@@ -2679,11 +3341,44 @@
  
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
@@ -1341,7 +1342,7 @@
      }
  
      public void onAboveBubbleCol(boolean drag) {
-@@ -2713,7 +3407,7 @@
+@@ -2713,7 +3408,7 @@
          this.resetFallDistance();
      }
  
@@ -1350,7 +1351,7 @@
          return true;
      }
  
-@@ -2818,7 +3512,7 @@
+@@ -2818,7 +3513,7 @@
      public String toString() {
          String s = this.level() == null ? "~NULL~" : this.level().toString();
  
@@ -1359,7 +1360,7 @@
      }
  
      public final boolean isInvulnerableToBase(DamageSource damageSource) {
-@@ -2838,6 +3532,13 @@
+@@ -2838,6 +3533,13 @@
      }
  
      public void restoreFrom(Entity original) {
@@ -1373,7 +1374,7 @@
          CompoundTag nbttagcompound = original.saveWithoutId(new CompoundTag());
  
          nbttagcompound.remove("Dimension");
-@@ -2850,8 +3551,57 @@
+@@ -2850,8 +3552,57 @@
      public Entity teleport(TeleportTransition teleportTarget) {
          Level world = this.level();
  
@@ -1431,7 +1432,7 @@
                  ServerLevel worldserver1 = teleportTarget.newLevel();
                  boolean flag = worldserver1.dimension() != worldserver.dimension();
  
-@@ -2918,10 +3668,19 @@
+@@ -2918,10 +3669,19 @@
              gameprofilerfiller.pop();
              return null;
          } else {
@@ -1452,7 +1453,7 @@
              Iterator iterator1 = list1.iterator();
  
              while (iterator1.hasNext()) {
-@@ -2947,7 +3706,7 @@
+@@ -2947,7 +3707,7 @@
      }
  
      private void sendTeleportTransitionToRidingPlayers(TeleportTransition teleportTarget) {
@@ -1461,7 +1462,7 @@
          Iterator iterator = this.getIndirectPassengers().iterator();
  
          while (iterator.hasNext()) {
-@@ -2995,9 +3754,17 @@
+@@ -2995,9 +3755,17 @@
      }
  
      protected void removeAfterChangingDimensions() {
@@ -1482,7 +1483,7 @@
          }
  
      }
-@@ -3006,11 +3773,34 @@
+@@ -3006,11 +3774,34 @@
          return PortalShape.getRelativePosition(portalRect, portalAxis, this.position(), this.getDimensions(this.getPose()));
      }
  
@@ -1517,7 +1518,7 @@
          if (from.dimension() == Level.END && to.dimension() == Level.OVERWORLD) {
              Iterator iterator = this.getPassengers().iterator();
  
-@@ -3134,10 +3924,16 @@
+@@ -3134,10 +3925,16 @@
          return (Boolean) this.entityData.get(Entity.DATA_CUSTOM_NAME_VISIBLE);
      }
  
@@ -1537,7 +1538,7 @@
          return entity != null;
      }
  
-@@ -3187,7 +3983,7 @@
+@@ -3187,7 +3984,7 @@
      /** @deprecated */
      @Deprecated
      protected void fixupDimensions() {
@@ -1546,7 +1547,7 @@
          EntityDimensions entitysize = this.getDimensions(entitypose);
  
          this.dimensions = entitysize;
-@@ -3196,7 +3992,7 @@
+@@ -3196,7 +3993,7 @@
  
      public void refreshDimensions() {
          EntityDimensions entitysize = this.dimensions;
@@ -1555,7 +1556,7 @@
          EntityDimensions entitysize1 = this.getDimensions(entitypose);
  
          this.dimensions = entitysize1;
-@@ -3258,10 +4054,29 @@
+@@ -3258,10 +4055,29 @@
      }
  
      public final void setBoundingBox(AABB boundingBox) {
@@ -1587,7 +1588,7 @@
          return this.getDimensions(pose).eyeHeight();
      }
  
-@@ -3300,7 +4115,14 @@
+@@ -3300,7 +4116,14 @@
  
      public void startSeenByPlayer(ServerPlayer player) {}
  
@@ -1603,7 +1604,7 @@
  
      public float rotate(Rotation rotation) {
          float f = Mth.wrapDegrees(this.getYRot());
-@@ -3335,7 +4157,7 @@
+@@ -3335,7 +4158,7 @@
      }
  
      @Nullable
@@ -1612,7 +1613,7 @@
          return null;
      }
  
-@@ -3373,20 +4195,34 @@
+@@ -3373,20 +4196,34 @@
      }
  
      private Stream<Entity> getIndirectPassengersStream() {
@@ -1647,7 +1648,7 @@
          return () -> {
              return this.getIndirectPassengersStream().iterator();
          };
-@@ -3399,6 +4235,7 @@
+@@ -3399,6 +4236,7 @@
      }
  
      public boolean hasExactlyOnePlayerPassenger() {
@@ -1655,7 +1656,7 @@
          return this.countPlayerPassengers() == 1;
      }
  
-@@ -3435,7 +4272,7 @@
+@@ -3435,7 +4273,7 @@
      }
  
      public boolean isControlledByLocalInstance() {
@@ -1664,7 +1665,7 @@
  
          if (entityliving instanceof Player entityhuman) {
              return entityhuman.isLocalPlayer();
-@@ -3445,7 +4282,7 @@
+@@ -3445,7 +4283,7 @@
      }
  
      public boolean isControlledByClient() {
@@ -1673,7 +1674,7 @@
  
          return entityliving != null && entityliving.isControlledByClient();
      }
-@@ -3463,7 +4300,7 @@
+@@ -3463,7 +4301,7 @@
          return new Vec3((double) f1 * d2 / (double) f3, 0.0D, (double) f2 * d2 / (double) f3);
      }
  
@@ -1682,7 +1683,7 @@
          return new Vec3(this.getX(), this.getBoundingBox().maxY, this.getZ());
      }
  
-@@ -3489,8 +4326,37 @@
+@@ -3489,8 +4327,37 @@
          return 1;
      }
  
@@ -1721,7 +1722,7 @@
      }
  
      public void lookAt(EntityAnchorArgument.Anchor anchorPoint, Vec3 target) {
-@@ -3551,6 +4417,11 @@
+@@ -3551,6 +4418,11 @@
                                      vec3d = vec3d.add(vec3d1);
                                      ++k1;
                                  }
@@ -1733,7 +1734,7 @@
                              }
                          }
                      }
-@@ -3613,7 +4484,7 @@
+@@ -3613,7 +4485,7 @@
          return new ClientboundAddEntityPacket(this, entityTrackerEntry);
      }
  
@@ -1742,7 +1743,7 @@
          return this.type.getDimensions();
      }
  
-@@ -3714,7 +4585,39 @@
+@@ -3714,7 +4586,39 @@
          return this.getZ((2.0D * this.random.nextDouble() - 1.0D) * widthScale);
      }
  
@@ -1782,7 +1783,7 @@
          if (this.position.x != x || this.position.y != y || this.position.z != z) {
              this.position = new Vec3(x, y, z);
              int i = Mth.floor(x);
-@@ -3732,6 +4635,12 @@
+@@ -3732,6 +4636,12 @@
              this.levelCallback.onMove();
          }
  
@@ -1795,7 +1796,7 @@
      }
  
      public void checkDespawn() {}
-@@ -3818,8 +4727,16 @@
+@@ -3818,8 +4728,16 @@
  
      @Override
      public final void setRemoved(Entity.RemovalReason reason) {
@@ -1813,7 +1814,7 @@
          }
  
          if (this.removalReason.shouldDestroy()) {
-@@ -3827,8 +4744,8 @@
+@@ -3827,8 +4745,8 @@
          }
  
          this.getPassengers().forEach(Entity::stopRiding);
@@ -1824,7 +1825,7 @@
      }
  
      public void unsetRemoved() {
-@@ -3887,7 +4804,7 @@
+@@ -3887,7 +4805,7 @@
      }
  
      public Vec3 getKnownMovement() {
@@ -1833,7 +1834,7 @@
  
          if (entityliving instanceof Player entityhuman) {
              if (this.isAlive()) {
-@@ -3962,4 +4879,14 @@
+@@ -3962,4 +4880,14 @@
  
          void accept(Entity entity, double x, double y, double z);
      }

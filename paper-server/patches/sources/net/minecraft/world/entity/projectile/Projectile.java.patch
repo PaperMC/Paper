@@ -21,15 +21,44 @@
      Projectile(EntityType<? extends Projectile> type, Level world) {
          super(type, world);
      }
-@@ -56,6 +63,7 @@
+@@ -56,16 +63,35 @@
              this.ownerUUID = entity.getUUID();
              this.cachedOwner = entity;
          }
-+        this.projectileSource = (entity != null && entity.getBukkitEntity() instanceof ProjectileSource) ? (ProjectileSource) entity.getBukkitEntity() : null; // CraftBukkit
- 
+-
++        // Paper start - Refresh ProjectileSource for projectiles
++        else {
++            this.ownerUUID = null;
++            this.cachedOwner = null;
++            this.projectileSource = null;
++        }
++        // Paper end - Refresh ProjectileSource for projectiles
++        this.refreshProjectileSource(false); // Paper
      }
++    // Paper start - Refresh ProjectileSource for projectiles
++    public void refreshProjectileSource(boolean fillCache) {
++        if (fillCache) {
++            this.getOwner();
++        }
++        if (this.cachedOwner != null && !this.cachedOwner.isRemoved() && this.projectileSource == null && this.cachedOwner.getBukkitEntity() instanceof ProjectileSource projSource) {
++            this.projectileSource = projSource;
++        }
++    }
++    // Paper end - Refresh ProjectileSource for projectiles
  
-@@ -184,12 +192,20 @@
+     @Nullable
+     @Override
+     public Entity getOwner() {
+         if (this.cachedOwner != null && !this.cachedOwner.isRemoved()) {
++            this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
+             return this.cachedOwner;
+         } else if (this.ownerUUID != null) {
+             this.cachedOwner = this.findOwner(this.ownerUUID);
++            this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
+             return this.cachedOwner;
+         } else {
+             return null;
+@@ -184,12 +210,20 @@
  
          this.shoot((double) f5, (double) f6, (double) f7, speed, divergence);
          Vec3 vec3d = shooter.getKnownMovement();
@@ -52,7 +81,7 @@
              iprojectile.shootFromRotation(shooter, shooter.getXRot(), shooter.getYRot(), roll, power, divergence);
          });
      }
-@@ -201,7 +217,12 @@
+@@ -201,7 +235,12 @@
      }
  
      public static <T extends Projectile> T spawnProjectileUsingShoot(T projectile, ServerLevel world, ItemStack projectileStack, double velocityX, double velocityY, double velocityZ, float power, float divergence) {
@@ -66,7 +95,7 @@
              projectile.shoot(velocityX, velocityY, velocityZ, power, divergence);
          });
      }
-@@ -209,13 +230,47 @@
+@@ -209,13 +248,47 @@
      public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack) {
          return Projectile.spawnProjectile(projectile, world, projectileStack, (iprojectile) -> {
          });
@@ -117,7 +146,7 @@
      }
  
      public void applyOnProjectileSpawned(ServerLevel world, ItemStack projectileStack) {
-@@ -232,6 +287,17 @@
+@@ -232,6 +305,17 @@
  
      }
  
@@ -135,7 +164,7 @@
      protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult movingobjectpositionentity = (EntityHitResult) hitResult;
-@@ -309,6 +375,11 @@
+@@ -309,6 +393,11 @@
      protected void onHitEntity(EntityHitResult entityHitResult) {}
  
      protected void onHitBlock(BlockHitResult blockHitResult) {
@@ -147,7 +176,7 @@
          BlockState iblockdata = this.level().getBlockState(blockHitResult.getBlockPos());
  
          iblockdata.onProjectileHit(this.level(), iblockdata, blockHitResult, this);
-@@ -320,6 +391,15 @@
+@@ -320,6 +409,15 @@
          } else {
              Entity entity1 = this.getOwner();
  
@@ -163,7 +192,7 @@
              return entity1 == null || this.leftOwner || !entity1.isPassengerOfSameVehicle(entity);
          }
      }
-@@ -333,14 +413,8 @@
+@@ -333,14 +431,8 @@
      }
  
      protected static float lerpRotation(float prevRot, float newRot) {
