@@ -41,6 +41,7 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapView;
+import org.bukkit.packs.DataPackManager;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
@@ -246,6 +247,26 @@ public final class Bukkit {
      */
     public static boolean getAllowNether() {
         return server.getAllowNether();
+    }
+
+    @NotNull
+    public static List<String> getInitialEnabledPacks() {
+        return server.getInitialEnabledPacks();
+    }
+
+    @NotNull
+    public static List<String> getInitialDisabledPacks() {
+        return server.getInitialDisabledPacks();
+    }
+
+    /**
+     * Get the DataPack Manager.
+     *
+     * @return the manager
+     */
+    @NotNull
+    public static DataPackManager getDataPackManager() {
+        return server.getDataPackManager();
     }
 
     /**

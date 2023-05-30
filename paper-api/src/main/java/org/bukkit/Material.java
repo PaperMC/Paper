@@ -11061,4 +11061,14 @@ public enum Material implements Keyed, Translatable {
     public String getItemTranslationKey() {
         return Bukkit.getUnsafe().getItemTranslationKey(this);
     }
+
+    /**
+     * Gets if the Material is enabled by the features in a world.
+     *
+     * @param world the world to check
+     * @return true if this material can be used in this World.
+     */
+    public boolean isEnabledByFeature(@NotNull World world) {
+        return Bukkit.getDataPackManager().isEnabledByFeature(this, world);
+    }
 }

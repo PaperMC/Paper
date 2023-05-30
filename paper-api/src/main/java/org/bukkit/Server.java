@@ -41,6 +41,7 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapView;
+import org.bukkit.packs.DataPackManager;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
@@ -204,6 +205,30 @@ public interface Server extends PluginMessageRecipient {
      * @return whether this server allows the Nether or not
      */
     public boolean getAllowNether();
+
+    /**
+     * Gets a list of packs to be enabled.
+     *
+     * @return a list of packs names
+     */
+    @NotNull
+    public List<String> getInitialEnabledPacks();
+
+    /**
+     * Gets a list of packs that will not be enabled automatically.
+     *
+     * @return a list of packs names
+     */
+    @NotNull
+    public List<String> getInitialDisabledPacks();
+
+    /**
+     * Get the DataPack Manager.
+     *
+     * @return the manager
+     */
+    @NotNull
+    public DataPackManager getDataPackManager();
 
     /**
      * Gets the server resource pack uri, or empty string if not specified.

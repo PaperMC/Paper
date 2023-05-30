@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -2669,6 +2670,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     public DragonBattle getEnderDragonBattle();
+
+    /**
+     * Get all {@link FeatureFlag} enabled in this world.
+     *
+     * @return all enabled {@link FeatureFlag}
+     */
+    @NotNull
+    public Set<FeatureFlag> getFeatureFlags();
 
     /**
      * Represents various map environment types that a world may be

@@ -12,6 +12,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This interface provides value conversions that may be specific to a
@@ -87,4 +89,7 @@ public interface UnsafeValues {
     String getTranslationKey(EntityType entityType);
 
     String getTranslationKey(ItemStack itemStack);
+
+    @Nullable
+    FeatureFlag getFeatureFlag(@NotNull NamespacedKey key);
 }
