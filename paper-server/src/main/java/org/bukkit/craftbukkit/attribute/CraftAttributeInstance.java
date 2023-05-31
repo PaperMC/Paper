@@ -51,6 +51,14 @@ public class CraftAttributeInstance implements AttributeInstance {
         this.handle.addPermanentModifier(CraftAttributeInstance.convert(modifier));
     }
 
+    // Paper start - Transient modifier API
+    @Override
+    public void addTransientModifier(AttributeModifier modifier) {
+        Preconditions.checkArgument(modifier != null, "modifier");
+        this.handle.addTransientModifier(CraftAttributeInstance.convert(modifier));
+    }
+    // Paper end
+
     @Override
     public void removeModifier(AttributeModifier modifier) {
         Preconditions.checkArgument(modifier != null, "modifier");

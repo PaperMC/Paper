@@ -24,6 +24,11 @@ public class UnmodifiableAttributeInstance extends CraftAttributeInstance {
     }
 
     @Override
+    public void addTransientModifier(AttributeModifier modifier) {
+        throw new UnsupportedOperationException("Cannot modify default attributes");
+    }
+
+    @Override
     public void removeModifier(AttributeModifier modifier) {
         throw new UnsupportedOperationException("Cannot modify default attributes");
     }
