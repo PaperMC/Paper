@@ -5,56 +5,33 @@ Subject: [PATCH] Add CompostItemEvent and EntityCompostItemEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-index e81bda56c58df6c3109382c17e86f4cc0f16cf81..fb4382337fe83f7d00c2212a7a71e0ba5bdd51cc 100644
+index 50fd52905d8f69c693cb1b406b681a6af02787e2..6fab2b69a0af298bd00b309efcd6aa8399e23d1f 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-@@ -232,6 +232,9 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
-                 // Paper start - EntityChangeBlockEvent
-                 double rand = world.getRandom().nextDouble();
-                 BlockState dummyBlockState = ComposterBlock.addItem(player, state, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, pos, itemstack, rand);
-+                if (dummyBlockState == null) {
-+                    return InteractionResult.PASS;
-+                }
-                 if (state != dummyBlockState && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, dummyBlockState).isCancelled()) { // if block state will change and event cancelled
-                     return InteractionResult.sidedSuccess(world.isClientSide);
-                 }
-@@ -261,6 +264,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
-             // CraftBukkit start
-             double rand = world.getRandom().nextDouble();
-             BlockState iblockdata1 = ComposterBlock.addItem(user, state, DummyGeneratorAccess.INSTANCE, pos, stack, rand);
-+            // Paper start
-+            if (iblockdata1 == null) {
-+                return state;
-+            }
-+            // Paper end
-             if (state == iblockdata1 || org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(user, pos, iblockdata1).isCancelled()) {
-                 return state;
-             }
-@@ -315,7 +323,22 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -320,7 +320,21 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          int i = (Integer) iblockdata.getValue(ComposterBlock.LEVEL);
          float f = ComposterBlock.COMPOSTABLES.getFloat(itemstack.getItem());
  
 -        if ((i != 0 || f <= 0.0F) && rand >= (double) f) {
 +        // Paper start
 +        boolean willRaiseLevel = !((i != 0 || f <= 0.0F) && rand >= (double) f);
-+        if (generatoraccess == DummyGeneratorAccess.INSTANCE || entity == null) { // call event on test run or when entity is null (via hopper)
-+            final io.papermc.paper.event.block.CompostItemEvent event;
-+            if (entity == null) {
-+                event = new io.papermc.paper.event.block.CompostItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
-+            } else {
-+                event = new io.papermc.paper.event.entity.EntityCompostItemEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
-+            }
-+            if (!event.callEvent()) {
-+                return null;
-+            }
-+            willRaiseLevel = event.willRaiseLevel();
++        final io.papermc.paper.event.block.CompostItemEvent event;
++        if (entity == null) {
++            event = new io.papermc.paper.event.block.CompostItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++        } else {
++            event = new io.papermc.paper.event.entity.EntityCompostItemEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
 +        }
++        if (!event.callEvent()) { // check for cancellation of entity event (non entity event can't be cancelled cause of hoppers)
++            return null;
++        }
++        willRaiseLevel = event.willRaiseLevel();
++
 +        if (!willRaiseLevel) {
 +            // Paper end
              return iblockdata;
          } else {
              int j = i + 1;
-@@ -460,6 +483,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -470,6 +484,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
                  this.changed = true;
                  BlockState iblockdata = ComposterBlock.addItem((Entity) null, this.state, this.level, this.pos, itemstack);
  

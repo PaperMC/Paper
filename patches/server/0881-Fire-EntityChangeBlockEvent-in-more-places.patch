@@ -199,25 +199,66 @@ index 32995cb5efdad0bc34ecacacb78cccd21220ba8d..c7195f2e12bbd6545f7bffcc2b4ba5cc
                      level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(player, blockState3));
                      if (player != null) {
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-index 53f4a000079f4c056500d03eca71991ae14483a9..e81bda56c58df6c3109382c17e86f4cc0f16cf81 100644
+index 53f4a000079f4c056500d03eca71991ae14483a9..50fd52905d8f69c693cb1b406b681a6af02787e2 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-@@ -229,7 +229,14 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
- 
+@@ -230,6 +230,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(itemstack.getItem())) {
              if (i < 7 && !world.isClientSide) {
--                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
-+                // Paper start - EntityChangeBlockEvent
-+                double rand = world.getRandom().nextDouble();
-+                BlockState dummyBlockState = ComposterBlock.addItem(player, state, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, pos, itemstack, rand);
-+                if (state != dummyBlockState && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, dummyBlockState).isCancelled()) { // if block state will change and event cancelled
-+                    return InteractionResult.sidedSuccess(world.isClientSide);
+                 BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
++                // Paper start - handle cancelled events
++                if (iblockdata1 == null) {
++                    return InteractionResult.PASS;
 +                }
-+                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack, rand);
 +                // Paper end
  
                  world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
                  player.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
+@@ -253,11 +258,16 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         if (i < 7 && ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
+             // CraftBukkit start
+             double rand = world.getRandom().nextDouble();
+-            BlockState iblockdata1 = ComposterBlock.addItem(user, state, DummyGeneratorAccess.INSTANCE, pos, stack, rand);
+-            if (state == iblockdata1 || org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(user, pos, iblockdata1).isCancelled()) {
++            BlockState iblockdata1 = null; // Paper
++            if (false && (state == iblockdata1 || org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(user, pos, iblockdata1).isCancelled())) { // Paper - call it later
+                 return state;
+             }
+             iblockdata1 = ComposterBlock.addItem(user, state, world, pos, stack, rand);
++            // Paper start - handle cancelled events
++            if (iblockdata1 == null) {
++                return state;
++            }
++            // Paper end
+             // CraftBukkit end
+ 
+             stack.shrink(1);
+@@ -298,11 +308,13 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         return iblockdata1;
+     }
+ 
++    @Nullable // Paper
+     static BlockState addItem(@Nullable Entity user, BlockState state, LevelAccessor world, BlockPos pos, ItemStack stack) {
+         // CraftBukkit start
+         return ComposterBlock.addItem(user, state, world, pos, stack, world.getRandom().nextDouble());
+     }
+ 
++    @Nullable // Paper - make it nullable
+     static BlockState addItem(@Nullable Entity entity, BlockState iblockdata, LevelAccessor generatoraccess, BlockPos blockposition, ItemStack itemstack, double rand) {
+         // CraftBukkit end
+         int i = (Integer) iblockdata.getValue(ComposterBlock.LEVEL);
+@@ -313,6 +325,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         } else {
+             int j = i + 1;
+             BlockState iblockdata1 = (BlockState) iblockdata.setValue(ComposterBlock.LEVEL, j);
++            // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
++            if (entity != null && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata1).isCancelled()) {
++                return null;
++            }
++            // Paper end
+ 
+             generatoraccess.setBlock(blockposition, iblockdata1, 3);
+             generatoraccess.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entity, iblockdata1));
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 index 80026dcdb66cc88a080b33ef290a6a7fb7bcbbaa..0b7d882551bcb8be149754209aad5fe4142f0fac 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
