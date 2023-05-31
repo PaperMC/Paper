@@ -3216,101 +3216,30 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
-@@ -0,0 +0,0 @@ import org.bukkit.entity.Player;
- public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<T> implements Sign {
- 
-     // Lazily initialized only if requested:
--    private String[] originalLines = null;
--    private String[] lines = null;
-+    // Paper start
-+    private java.util.ArrayList<net.kyori.adventure.text.Component> originalLines = null; // ArrayList for RandomAccess
-+    private java.util.ArrayList<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
-+    // Paper end
- 
-     public CraftSign(World world, T tileEntity) {
-         super(world, tileEntity);
-     }
- 
-+    // Paper start
-     @Override
--    public String[] getLines() {
--        if (this.lines == null) {
--            // Lazy initialization:
--            SignBlockEntity sign = this.getSnapshot();
--            this.lines = new String[sign.messages.length];
--            System.arraycopy(CraftSign.revertComponents(sign.messages), 0, lines, 0, lines.length);
--            this.originalLines = new String[lines.length];
--            System.arraycopy(lines, 0, originalLines, 0, originalLines.length);
--        }
-+    public java.util.List<net.kyori.adventure.text.Component> lines() {
-+        this.loadLines();
-         return this.lines;
-     }
- 
-+    @Override
-+    public net.kyori.adventure.text.Component line(int index) {
-+        this.loadLines();
-+        return this.lines.get(index);
-+    }
-+
-+    @Override
-+    public void line(int index, net.kyori.adventure.text.Component line) {
-+        this.loadLines();
-+        this.lines.set(index, line);
-+    }
-+
-+    private void loadLines() {
-+        if (lines != null) {
-+            return;
-+        }
-+        // Lazy initialization:
-+        SignBlockEntity sign = this.getSnapshot();
-+        lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(sign.messages));
-+        originalLines = new java.util.ArrayList<>(lines);
-+    }
-+    // Paper end
-+    @Override
-+    public String[] getLines() {
-+        this.loadLines();
-+        return this.lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
-+    }
-+
-     @Override
-     public String getLine(int index) throws IndexOutOfBoundsException {
--        return this.getLines()[index];
-+        this.loadLines();
-+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.lines.get(index)); // Paper
-     }
- 
-     @Override
-     public void setLine(int index, String line) throws IndexOutOfBoundsException {
--        this.getLines()[index] = line;
-+        this.loadLines();
-+        this.lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : net.kyori.adventure.text.Component.empty()); // Paper
-     }
- 
-     @Override
 @@ -0,0 +0,0 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
-         super.applyTo(sign);
- 
-         if (this.lines != null) {
--            for (int i = 0; i < lines.length; i++) {
--                String line = (this.lines[i] == null) ? "" : this.lines[i];
--                if (line.equals(this.originalLines[i])) {
-+            // Paper start
-+            for (int i = 0; i < this.lines.size(); ++i) {
-+                net.kyori.adventure.text.Component component = this.lines.get(i);
-+                net.kyori.adventure.text.Component origComp = this.originalLines.get(i);
-+                if (component.equals(origComp)) {
-                     continue; // The line contents are still the same, skip.
-                 }
--                sign.setMessage(i, CraftChatMessage.fromString(line)[0]);
-+                sign.setMessage(i, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
-             }
-+            // Paper end
-         }
+         this.front = new CraftSignSide(this.getSnapshot());
      }
  
++    // Paper start
++    @Override
++    public java.util.@NotNull List<net.kyori.adventure.text.Component> lines() {
++        return this.front.lines();
++    }
++
++    @Override
++    public net.kyori.adventure.text.@NotNull Component line(int index) {
++        return this.front.line(index);
++    }
++
++    @Override
++    public void line(int index, net.kyori.adventure.text.@NotNull Component line) {
++        this.front.line(index, line);
++    }
++    // Paper end
++
+     @Override
+     public String[] getLines() {
+         return this.front.getLines();
 @@ -0,0 +0,0 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
          ((CraftPlayer) player).getHandle().openTextEdit(handle);
      }
@@ -3332,6 +3261,113 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static Component[] sanitizeLines(String[] lines) {
          Component[] components = new Component[4];
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/sign/CraftSignSide.java b/src/main/java/org/bukkit/craftbukkit/block/sign/CraftSignSide.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/sign/CraftSignSide.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/sign/CraftSignSide.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
+ public class CraftSignSide implements SignSide {
+ 
+     // Lazily initialized only if requested:
+-    private String[] originalLines = null;
+-    private String[] lines = null;
++    // Paper start
++    private java.util.ArrayList<net.kyori.adventure.text.Component> originalLines = null; // ArrayList for RandomAccess
++    private java.util.ArrayList<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
++    // Paper end
+     private final SignBlockEntity signText;
+ 
+     public CraftSignSide(SignBlockEntity signText) {
+         this.signText = signText;
+     }
+ 
++    // Paper start
++    @Override
++    public java.util.@NotNull List<net.kyori.adventure.text.Component> lines() {
++        this.loadLines();
++        return this.lines;
++    }
++
++    @Override
++    public net.kyori.adventure.text.@NotNull Component line(final int index) throws IndexOutOfBoundsException {
++        this.loadLines();
++        return this.lines.get(index);
++    }
++
++    @Override
++    public void line(final int index, final net.kyori.adventure.text.@NotNull Component line) throws IndexOutOfBoundsException {
++        this.loadLines();
++        this.lines.set(index, line);
++    }
++
++    private void loadLines() {
++        if (this.lines != null) {
++            return;
++        }
++        // Lazy initialization:
++        this.lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(this.signText.messages));
++        this.originalLines = new java.util.ArrayList<>(this.lines);
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public String[] getLines() {
+-        if (this.lines == null) {
+-            // Lazy initialization:
+-            this.lines = new String[signText.messages.length];
+-            System.arraycopy(CraftSign.revertComponents(signText.messages), 0, lines, 0, lines.length);
+-            this.originalLines = new String[lines.length];
+-            System.arraycopy(lines, 0, originalLines, 0, originalLines.length);
+-        }
+-        return this.lines;
++        // Paper start
++        this.loadLines();
++        return this.lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
++        // Paper end
+     }
+ 
+     @NotNull
+     @Override
+     public String getLine(int index) throws IndexOutOfBoundsException {
+-        return this.getLines()[index];
++        // Paper start
++        this.loadLines();
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.lines.get(index));
++        // Paper end
+     }
+ 
+     @Override
+     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException {
+-        this.getLines()[index] = line;
++        // Paper start
++        this.loadLines();
++        this.lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : net.kyori.adventure.text.Component.empty());
++        // Paper end
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class CraftSignSide implements SignSide {
+ 
+     public void applyLegacyStringToSignSide() {
+         if (this.lines != null) {
+-            for (int i = 0; i < lines.length; i++) {
+-                String line = (this.lines[i] == null) ? "" : this.lines[i];
+-                if (line.equals(this.originalLines[i])) {
++            // Paper start
++            for (int i = 0; i < this.lines.size(); ++i) {
++                net.kyori.adventure.text.Component component = this.lines.get(i);
++                net.kyori.adventure.text.Component origComp = this.originalLines.get(i);
++                if (component.equals(origComp)) {
+                     continue; // The line contents are still the same, skip.
+                 }
+-                this.signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
++                this.signText.setMessage(i, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
+             }
++            // Paper end
+         }
+     }
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java

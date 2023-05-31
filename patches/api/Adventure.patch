@@ -1538,9 +1538,85 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public interface Sign extends TileState, Colorable {
 +    // Paper start
 +    /**
-+     * Gets all the lines of text currently on this sign.
++     * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
 +     *
-+     * @return Array of Strings containing each line of text
++     * @return List of components containing each line of text
++     * @see #getSide(Side)
++     */
++    @NotNull
++    public java.util.List<net.kyori.adventure.text.Component> lines();
++
++    /**
++     * Gets the line of text at the specified index on the {@link Side#FRONT}.
++     * <p>
++     * For example, getLine(0) will return the first line of text.
++     *
++     * @param index Line number to get the text from, starting at 0
++     * @throws IndexOutOfBoundsException Thrown when the line does not exist
++     * @return Text on the given line
++     * @see #getSide(Side)
++     */
++    @NotNull
++    public net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException;
++
++    /**
++     * Sets the line of text at the specified index on the {@link Side#FRONT}.
++     * <p>
++     * For example, setLine(0, "Line One") will set the first line of text to
++     * "Line One".
++     *
++     * @param index Line number to set the text at, starting from 0
++     * @param line New text to set at the specified index
++     * @throws IndexOutOfBoundsException If the index is out of the range 0..3
++     * @see #getSide(Side)
++     */
++    public void line(int index, net.kyori.adventure.text.@NotNull Component line) throws IndexOutOfBoundsException;
++    // Paper end
+ 
+     /**
+      * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
+@@ -0,0 +0,0 @@ public interface Sign extends TileState, Colorable {
+      * @see #getSide(Side)
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String[] getLines();
+ 
+     /**
+@@ -0,0 +0,0 @@ public interface Sign extends TileState, Colorable {
+      * @return Text on the given line
+      * @throws IndexOutOfBoundsException Thrown when the line does not exist
+      * @see #getSide(Side)
++     * @deprecated in favour of {@link #line(int)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLine(int index) throws IndexOutOfBoundsException;
+ 
+     /**
+@@ -0,0 +0,0 @@ public interface Sign extends TileState, Colorable {
+      * @param line New text to set at the specified index
+      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
+      * @see #getSide(Side)
++     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/block/sign/SignSide.java b/src/main/java/org/bukkit/block/sign/SignSide.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/block/sign/SignSide.java
++++ b/src/main/java/org/bukkit/block/sign/SignSide.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
+  */
+ @Experimental
+ public interface SignSide extends Colorable {
++    // Paper start
++    /**
++     * Gets all the lines of text currently on the sign.
++     *
++     * @return List of components containing each line of text
 +     */
 +    @NotNull
 +    public java.util.List<net.kyori.adventure.text.Component> lines();
@@ -1571,37 +1647,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
  
      /**
-      * Gets all the lines of text currently on this sign.
-      *
-      * @return Array of Strings containing each line of text
-+     * @deprecated in favour of {@link #lines()}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     public String[] getLines();
- 
-     /**
-@@ -0,0 +0,0 @@ public interface Sign extends TileState, Colorable {
-      * @param index Line number to get the text from, starting at 0
-      * @return Text on the given line
-      * @throws IndexOutOfBoundsException Thrown when the line does not exist
-+     * @deprecated in favour of {@link #line(int)}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     public String getLine(int index) throws IndexOutOfBoundsException;
- 
-     /**
-@@ -0,0 +0,0 @@ public interface Sign extends TileState, Colorable {
-      * @param index Line number to set the text at, starting from 0
-      * @param line New text to set at the specified index
-      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
-+     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
-      */
-+    @Deprecated // Paper
-     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
- 
-     /**
+      * Gets all the lines of text currently on this side of the sign.
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/command/Command.java
@@ -2606,17 +2652,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean cancel = false;
      private final Player player;
 -    private final String[] lines;
-+    // Paper start
-+    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines;
++    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines; // Paper
+     private final Side side;
  
-+    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
++    // Paper start
++    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines, @NotNull Side side) {
 +        super(theBlock);
 +        this.player = player;
 +        this.adventure$lines = adventure$lines;
++        this.side = side;
 +    }
 +
-+    @Deprecated // Paper end
++    @Deprecated
++    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
++        this(theBlock, player, adventure$lines, Side.FRONT);
++    }
++    // Paper end
++
+     @Deprecated
      public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
+         this(theBlock, thePlayer, theLines, Side.FRONT);
+     }
+ 
++    @Deprecated // Paper
+     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines, @NotNull Side side) {
          super(theBlock);
          this.player = thePlayer;
 -        this.lines = theLines;
@@ -2626,9 +2685,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.adventure$lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(theLine));
 +        }
 +        // Paper end
+         this.side = side;
      }
  
-     /**
 @@ -0,0 +0,0 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
          return player;
      }
@@ -2709,7 +2768,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        adventure$lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : null); // Paper
      }
  
-     @Override
+     /**
 diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
