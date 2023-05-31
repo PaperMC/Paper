@@ -310,6 +310,9 @@ public class CraftBlock implements Block {
     }
 
     public static EnumDirection blockFaceToNotch(BlockFace face) {
+        if (face == null) {
+            return null;
+        }
         switch (face) {
             case DOWN:
                 return EnumDirection.DOWN;
