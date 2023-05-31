@@ -1529,18 +1529,94 @@ index 372c0bd5a4d7800a11c24c95e39fe376a96232bf..9c88be68b4f403d0500cb607394b3a16
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/block/Sign.java b/src/main/java/org/bukkit/block/Sign.java
-index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..f87bdb2757760d95038d1a1cf6e7f5b2cff91432 100644
+index 1844b7136ddcc1aa267b8fb2159244d04900da36..9a9f4af69fc8adbd0a05e2e7574f83ff9befad85 100644
 --- a/src/main/java/org/bukkit/block/Sign.java
 +++ b/src/main/java/org/bukkit/block/Sign.java
-@@ -7,13 +7,48 @@ import org.jetbrains.annotations.NotNull;
+@@ -11,6 +11,42 @@ import org.jetbrains.annotations.NotNull;
   * Represents a captured state of either a SignPost or a WallSign.
   */
  public interface Sign extends TileState, Colorable {
 +    // Paper start
 +    /**
-+     * Gets all the lines of text currently on this sign.
++     * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
 +     *
-+     * @return Array of Strings containing each line of text
++     * @return List of components containing each line of text
++     * @see #getSide(Side)
++     */
++    @NotNull
++    public java.util.List<net.kyori.adventure.text.Component> lines();
++
++    /**
++     * Gets the line of text at the specified index on the {@link Side#FRONT}.
++     * <p>
++     * For example, getLine(0) will return the first line of text.
++     *
++     * @param index Line number to get the text from, starting at 0
++     * @throws IndexOutOfBoundsException Thrown when the line does not exist
++     * @return Text on the given line
++     * @see #getSide(Side)
++     */
++    @NotNull
++    public net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException;
++
++    /**
++     * Sets the line of text at the specified index on the {@link Side#FRONT}.
++     * <p>
++     * For example, setLine(0, "Line One") will set the first line of text to
++     * "Line One".
++     *
++     * @param index Line number to set the text at, starting from 0
++     * @param line New text to set at the specified index
++     * @throws IndexOutOfBoundsException If the index is out of the range 0..3
++     * @see #getSide(Side)
++     */
++    public void line(int index, net.kyori.adventure.text.@NotNull Component line) throws IndexOutOfBoundsException;
++    // Paper end
+ 
+     /**
+      * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
+@@ -19,6 +55,7 @@ public interface Sign extends TileState, Colorable {
+      * @see #getSide(Side)
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String[] getLines();
+ 
+     /**
+@@ -30,8 +67,10 @@ public interface Sign extends TileState, Colorable {
+      * @return Text on the given line
+      * @throws IndexOutOfBoundsException Thrown when the line does not exist
+      * @see #getSide(Side)
++     * @deprecated in favour of {@link #line(int)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLine(int index) throws IndexOutOfBoundsException;
+ 
+     /**
+@@ -44,7 +83,9 @@ public interface Sign extends TileState, Colorable {
+      * @param line New text to set at the specified index
+      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
+      * @see #getSide(Side)
++     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/block/sign/SignSide.java b/src/main/java/org/bukkit/block/sign/SignSide.java
+index 85be6cfa9ed074073656cd0678600780eb03b47b..e6b9a1b0dbf7cdffafe4a9bb5dd1c3e8afb846e5 100644
+--- a/src/main/java/org/bukkit/block/sign/SignSide.java
++++ b/src/main/java/org/bukkit/block/sign/SignSide.java
+@@ -9,6 +9,39 @@ import org.jetbrains.annotations.NotNull;
+  */
+ @Experimental
+ public interface SignSide extends Colorable {
++    // Paper start
++    /**
++     * Gets all the lines of text currently on the sign.
++     *
++     * @return List of components containing each line of text
 +     */
 +    @NotNull
 +    public java.util.List<net.kyori.adventure.text.Component> lines();
@@ -1571,37 +1647,7 @@ index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..f87bdb2757760d95038d1a1cf6e7f5b2
 +    // Paper end
  
      /**
-      * Gets all the lines of text currently on this sign.
-      *
-      * @return Array of Strings containing each line of text
-+     * @deprecated in favour of {@link #lines()}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     public String[] getLines();
- 
-     /**
-@@ -24,8 +59,10 @@ public interface Sign extends TileState, Colorable {
-      * @param index Line number to get the text from, starting at 0
-      * @return Text on the given line
-      * @throws IndexOutOfBoundsException Thrown when the line does not exist
-+     * @deprecated in favour of {@link #line(int)}
-      */
-     @NotNull
-+    @Deprecated // Paper
-     public String getLine(int index) throws IndexOutOfBoundsException;
- 
-     /**
-@@ -37,7 +74,9 @@ public interface Sign extends TileState, Colorable {
-      * @param index Line number to set the text at, starting from 0
-      * @param line New text to set at the specified index
-      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
-+     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
-      */
-+    @Deprecated // Paper
-     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
- 
-     /**
+      * Gets all the lines of text currently on this side of the sign.
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
 index 80209bb88a0294d4eedc78509533a6257315d856..75759131bd94b672bec4cd8e271ebff1ad391cba 100644
 --- a/src/main/java/org/bukkit/command/Command.java
@@ -1996,10 +2042,10 @@ index f3afe67f0832cb828d25be3654518ff73a80b0e1..598abaa82c634178043a29f6caa6ac52
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf73c6559a 100644
+index 7fffb5cdac7a0fe9baeb7ef09a4615221dca8322..4190d5b3b3d3eb9525ed342179cb827cc5590e3b 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -41,7 +41,28 @@ import org.jetbrains.annotations.Nullable;
+@@ -42,7 +42,28 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a player, connected or not
   */
@@ -2029,7 +2075,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
  
      /**
       * {@inheritDoc}
-@@ -58,7 +79,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -59,7 +80,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * places defined by plugins.
       *
       * @return the friendly name
@@ -2039,7 +2085,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      @NotNull
      public String getDisplayName();
  
-@@ -70,15 +93,50 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -71,15 +94,50 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * places defined by plugins.
       *
       * @param name The new display name.
@@ -2090,7 +2136,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      public String getPlayerListName();
  
      /**
-@@ -87,14 +145,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -88,14 +146,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * If the value is null, the name will be identical to {@link #getName()}.
       *
       * @param name new player list name
@@ -2109,7 +2155,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      @Nullable
      public String getPlayerListHeader();
  
-@@ -102,7 +164,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -103,7 +165,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Gets the currently displayed player list footer for this player.
       *
       * @return player list header or null
@@ -2119,7 +2165,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      @Nullable
      public String getPlayerListFooter();
  
-@@ -110,14 +174,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -111,14 +175,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Sets the currently displayed player list header for this player.
       *
       * @param header player list header, null for empty
@@ -2138,7 +2184,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      public void setPlayerListFooter(@Nullable String footer);
  
      /**
-@@ -126,7 +194,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -127,7 +195,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param header player list header, null for empty
       * @param footer player list footer, null for empty
@@ -2148,7 +2194,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      public void setPlayerListHeaderFooter(@Nullable String header, @Nullable String footer);
  
      /**
-@@ -164,9 +234,25 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -165,9 +235,25 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Kicks player with custom kick message.
       *
       * @param message kick message
@@ -2174,7 +2220,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      /**
       * Says a message (or runs a command).
       *
-@@ -608,6 +694,90 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -609,6 +695,90 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull Map<EquipmentSlot, ItemStack> items);
  
@@ -2265,7 +2311,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      /**
       * Send a sign change. This fakes a sign change packet for a user at
       * a certain location. This will not actually change the world in any way.
-@@ -622,7 +792,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -623,7 +793,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param lines the new text on the sign or null to clear it
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -2275,7 +2321,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
  
      /**
-@@ -641,7 +813,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -642,7 +814,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if dyeColor is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -2285,7 +2331,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
  
      /**
-@@ -661,7 +835,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -662,7 +836,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if dyeColor is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -2295,7 +2341,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
  
      /**
-@@ -1155,6 +1331,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1156,6 +1332,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *     pack correctly.
       * </ul>
       *
@@ -2303,7 +2349,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
       * @param url The URL from which the client will download the resource
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
-@@ -1211,8 +1388,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1212,8 +1389,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -2314,7 +2360,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      /**
       * Request that the player's client download and switch resource packs.
       * <p>
-@@ -1248,6 +1427,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1249,6 +1428,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param hash The sha1 hash sum of the resource pack file which is used
       *     to apply a cached version of the pack directly without downloading
       *     if it is available. Hast to be 20 bytes long!
@@ -2369,7 +2415,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
       * @param force If true, the client will be disconnected from the server
       *     when it declines to use the resource pack.
       * @throws IllegalArgumentException Thrown if the URL is null.
-@@ -1302,8 +1529,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1303,8 +1530,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -2427,7 +2473,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      /**
       * Gets the Scoreboard displayed to this player
       *
-@@ -1419,7 +1695,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1420,7 +1696,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param title Title text
       * @param subtitle Subtitle text
@@ -2436,7 +2482,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
       */
      @Deprecated
      public void sendTitle(@Nullable String title, @Nullable String subtitle);
-@@ -1438,7 +1714,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1439,7 +1715,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
       * @param stay time in ticks for titles to stay. Defaults to 70.
       * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
@@ -2446,7 +2492,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      public void sendTitle(@Nullable String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut);
  
      /**
-@@ -1665,6 +1943,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1666,6 +1944,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public int getClientViewDistance();
  
@@ -2461,7 +2507,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      /**
       * Gets the player's estimated ping in milliseconds.
       *
-@@ -1690,8 +1976,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1691,8 +1977,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * they wish.
       *
       * @return the player's locale
@@ -2472,7 +2518,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      public String getLocale();
  
      /**
-@@ -1733,6 +2021,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1744,6 +2032,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public boolean isAllowingServerListings();
  
@@ -2487,7 +2533,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -1787,11 +2083,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1798,11 +2094,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -2501,7 +2547,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -1802,7 +2100,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1813,7 +2111,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -2511,7 +2557,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1812,7 +2112,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1823,7 +2123,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -2521,7 +2567,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1823,7 +2125,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1834,7 +2136,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -2531,7 +2577,7 @@ index 363567304c9698ffe21eaf0da9aef694c8050eb0..8708ca080bda0f4ec43964db3a4e56cf
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable java.util.UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1834,7 +2138,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1845,7 +2149,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send
@@ -2598,25 +2644,38 @@ index 63c80b4ee1f7adc8a9efc3b607993104b1991f90..91cab8b13d5bba34007f124838b32a1d
  
  }
 diff --git a/src/main/java/org/bukkit/event/block/SignChangeEvent.java b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
-index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..c40536f781393cb39e6a1a4ba6e780713d5dc126 100644
+index f4ac033ff8794a61c82a49dc6c3f863f3291455d..d944d67f544494355f03c5bc9afd8ea7726e6412 100644
 --- a/src/main/java/org/bukkit/event/block/SignChangeEvent.java
 +++ b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
-@@ -16,12 +16,25 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+@@ -17,18 +17,38 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      private static final HandlerList handlers = new HandlerList();
      private boolean cancel = false;
      private final Player player;
 -    private final String[] lines;
-+    // Paper start
-+    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines;
++    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines; // Paper
+     private final Side side;
  
-+    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
++    // Paper start
++    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines, @NotNull Side side) {
 +        super(theBlock);
 +        this.player = player;
 +        this.adventure$lines = adventure$lines;
++        this.side = side;
 +    }
 +
-+    @Deprecated // Paper end
++    @Deprecated
++    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
++        this(theBlock, player, adventure$lines, Side.FRONT);
++    }
++    // Paper end
++
+     @Deprecated
      public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
+         this(theBlock, thePlayer, theLines, Side.FRONT);
+     }
+ 
++    @Deprecated // Paper
+     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines, @NotNull Side side) {
          super(theBlock);
          this.player = thePlayer;
 -        this.lines = theLines;
@@ -2626,10 +2685,10 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..c40536f781393cb39e6a1a4ba6e78071
 +            this.adventure$lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(theLine));
 +        }
 +        // Paper end
+         this.side = side;
      }
  
-     /**
-@@ -34,14 +47,52 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+@@ -42,14 +62,52 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
          return player;
      }
  
@@ -2683,7 +2742,7 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..c40536f781393cb39e6a1a4ba6e78071
      }
  
      /**
-@@ -52,10 +103,12 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+@@ -60,10 +118,12 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
       *     provided index
       * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
       *     or < 0}
@@ -2697,7 +2756,7 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..c40536f781393cb39e6a1a4ba6e78071
      }
  
      /**
-@@ -65,9 +118,11 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+@@ -73,9 +133,11 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
       * @param line text to set
       * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
       *     or < 0}
@@ -2709,7 +2768,7 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..c40536f781393cb39e6a1a4ba6e78071
 +        adventure$lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : null); // Paper
      }
  
-     @Override
+     /**
 diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a803bfea5400b3578bb4cf3261874e873b6467d9 100644
 --- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
