@@ -176,13 +176,13 @@ public interface PersistentDataType<T, Z> {
         @NotNull
         @Override
         public Class<Byte> getPrimitiveType() {
-            return byte.class;
+            return Byte.class;
         }
 
         @NotNull
         @Override
         public Class<Boolean> getComplexType() {
-            return boolean.class;
+            return Boolean.class;
         }
 
         @NotNull
