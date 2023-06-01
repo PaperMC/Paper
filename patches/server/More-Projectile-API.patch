@@ -92,6 +92,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public net.minecraft.world.entity.projectile.Projectile getHandle() {
 +        return (net.minecraft.world.entity.projectile.Projectile) entity;
 +    }
++
++    @Override
++    public final org.bukkit.projectiles.ProjectileSource getShooter() {
++        return this.getHandle().projectileSource;
++    }
++
++    @Override
++    public final void setShooter(org.bukkit.projectiles.ProjectileSource shooter) {
++        if (shooter instanceof CraftEntity craftEntity) {
++            this.getHandle().setOwner(craftEntity.getHandle());
++        } else {
++            this.getHandle().setOwner(null);
++        }
++        this.getHandle().projectileSource = shooter;
++    }
++
++    @Override
++    public java.util.UUID getOwnerUniqueId() {
++        return this.getHandle().ownerUUID;
++    }
 +    // Paper end
  
  }
@@ -99,6 +119,28 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
+@@ -0,0 +0,0 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
+         this.getHandle().setCritArrow(critical);
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return this.getHandle().projectileSource;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource shooter) {
+-        if (shooter instanceof Entity) {
+-            this.getHandle().setOwner(((CraftEntity) shooter).getHandle());
+-        } else {
+-            this.getHandle().setOwner(null);
+-        }
+-        this.getHandle().projectileSource = shooter;
+-    }
++    // Paper - moved to AbstractProjectile
+ 
+     @Override
+     public boolean isInBlock() {
 @@ -0,0 +0,0 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
          return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(getHandle().getPickupItem());
      }
@@ -127,6 +169,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void setNoPhysics(boolean noPhysics) {
          this.getHandle().setNoPhysics(noPhysics);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
+@@ -0,0 +0,0 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
+         this.getHandle().bukkitYield = yield;
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return this.getHandle().projectileSource;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource shooter) {
+-        if (shooter instanceof CraftLivingEntity) {
+-            this.getHandle().setOwner(((CraftLivingEntity) shooter).getHandle());
+-        } else {
+-            this.getHandle().setOwner(null);
+-        }
+-        this.getHandle().projectileSource = shooter;
+-    }
++    // Paper - moved to AbstractProjectile
+ 
+     @Override
+     public Vector getDirection() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
@@ -254,10 +322,77 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java
+@@ -0,0 +0,0 @@ public class CraftLlamaSpit extends AbstractProjectile implements LlamaSpit {
+         return EntityType.LLAMA_SPIT;
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return (this.getHandle().getOwner() != null) ? (ProjectileSource) this.getHandle().getOwner().getBukkitEntity() : null;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource source) {
+-        this.getHandle().setOwner((source != null) ? ((CraftLivingEntity) source).getHandle() : null);
+-    }
++    // Paper - moved to AbstractProjectile
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftProjectile.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftProjectile.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftProjectile.java
+@@ -0,0 +0,0 @@ public abstract class CraftProjectile extends AbstractProjectile implements Proj
+         super(server, entity);
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return this.getHandle().projectileSource;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource shooter) {
+-        if (shooter instanceof CraftLivingEntity) {
+-            this.getHandle().setOwner((LivingEntity) ((CraftLivingEntity) shooter).entity);
+-        } else {
+-            this.getHandle().setOwner(null);
+-        }
+-        this.getHandle().projectileSource = shooter;
+-    }
++    // Paper - moved to AbstractProjectile
+ 
+     @Override
+     public net.minecraft.world.entity.projectile.Projectile getHandle() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftShulkerBullet.java
+@@ -0,0 +0,0 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
+         super(server, entity);
+     }
+ 
+-    @Override
+-    public ProjectileSource getShooter() {
+-        return this.getHandle().projectileSource;
+-    }
+-
+-    @Override
+-    public void setShooter(ProjectileSource shooter) {
+-        if (shooter instanceof Entity) {
+-            this.getHandle().setOwner(((CraftEntity) shooter).getHandle());
+-        } else {
+-            this.getHandle().setOwner(null);
+-        }
+-        this.getHandle().projectileSource = shooter;
+-    }
++    // Paper - moved to AbstractProjectile
+ 
+     @Override
+     public org.bukkit.entity.Entity getTarget() {
 @@ -0,0 +0,0 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
          this.getHandle().setTarget(target == null ? null : ((CraftEntity) target).getHandle());
      }
