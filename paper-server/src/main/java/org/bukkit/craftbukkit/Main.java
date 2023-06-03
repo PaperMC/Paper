@@ -169,6 +169,13 @@ public class Main {
                 System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 20 is supported.");
                 return;
             }
+            String javaVersionName = System.getProperty("java.version");
+            // J2SE SDK/JRE Version String Naming Convention
+            boolean isPreRelease = javaVersionName.contains("-");
+            if (isPreRelease && javaVersion == 61.0) {
+                System.err.println("Unsupported Java detected (" + javaVersionName + "). You are running an outdated, pre-release version. Only general availability versions of Java are supported. Please update your Java version.");
+                return;
+            }
 
             try {
                 // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
