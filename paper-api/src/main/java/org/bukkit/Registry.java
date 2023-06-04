@@ -253,7 +253,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     default T match(@NotNull String input) {
         Preconditions.checkArgument(input != null, "input must not be null");
 
-        String filtered = input.toLowerCase().replaceAll("\\s+", "_").replaceAll("\\W", "");
+        String filtered = input.toLowerCase().replaceAll("\\s+", "_");
         NamespacedKey namespacedKey = NamespacedKey.fromString(filtered);
         return (namespacedKey != null) ? get(namespacedKey) : null;
     }
