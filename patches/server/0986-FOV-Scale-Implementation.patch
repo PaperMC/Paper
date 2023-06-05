@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Moulberry <james.jenour@protonmail.com>
+Date: Tue, 6 Jun 2023 02:08:29 +0800
+Subject: [PATCH] FOV Scale Implementation
+
+Modifies the player's fov by a factor
+The multiplier is affected by the client Accessibility option 'FOV Effects'
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerAbilitiesPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerAbilitiesPacket.java
+index a20bcf5877106ae00c83cf376a0dd16016cd1c7c..f262347fa9de6f3f9d118a1ffa810f7292558509 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerAbilitiesPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerAbilitiesPacket.java
+@@ -14,7 +14,7 @@ public class ClientboundPlayerAbilitiesPacket implements Packet<ClientGamePacket
+     private final boolean canFly;
+     private final boolean instabuild;
+     private final float flyingSpeed;
+-    private final float walkingSpeed;
++    public float walkingSpeed; // Paper - expose for ServerPlayer#onUpdateAbilities
+ 
+     public ClientboundPlayerAbilitiesPacket(Abilities abilities) {
+         this.invulnerable = abilities.invulnerable;
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..d9397ebbc2e34bed77b87d7570f8924230e1965a 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1877,7 +1877,11 @@ public class ServerPlayer extends Player {
+     @Override
+     public void onUpdateAbilities() {
+         if (this.connection != null) {
+-            this.connection.send(new ClientboundPlayerAbilitiesPacket(this.getAbilities()));
++            // Paper start - use fov scale
++            ClientboundPlayerAbilitiesPacket abilitiesPacket = new ClientboundPlayerAbilitiesPacket(this.getAbilities());
++            abilitiesPacket.walkingSpeed = abilitiesPacket.walkingSpeed / (this.getBukkitEntity().getFovScale() * 2 - 1);
++            this.connection.send(abilitiesPacket);
++            // Paper end
+             this.updateInvisibilityStatus();
+         }
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index be64633c8bcee96f2ad5247525cac965b7b031b1..0ee2462e1ed6cc7105fb73bc71a074cbd7111088 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -184,6 +184,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private String resourcePackHash;
+     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+     private long lastSaveTime;
++    private float fovScale = 1.0f;
+     // Paper end
+ 
+     public CraftPlayer(CraftServer server, ServerPlayer entity) {
+@@ -2405,6 +2406,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return this.getHandle().getAbilities().walkingSpeed * 2f;
+     }
+ 
++    // Paper start - Set/get fov scale
++    @Override
++    public void setFovScale(float value) {
++        if (!Float.isFinite(value)) throw new IllegalArgumentException(value + " must be finite");
++        if (this.fovScale != value) {
++            this.fovScale = value;
++            this.getHandle().onUpdateAbilities();
++        }
++    }
++
++    @Override
++    public float getFovScale() {
++        return this.fovScale;
++    }
++    // Paper end
++
+     private void validateSpeed(float value) {
+         if (value < 0) {
+             if (value < -1f) {
