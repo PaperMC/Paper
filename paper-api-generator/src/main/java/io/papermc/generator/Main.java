@@ -48,31 +48,24 @@ public final class Main {
         REGISTRY_ACCESS = layers.compositeAccess().freeze();
     }
 
-    private static final List<SourceGenerator> GENERATORS = List.of(
-        simpleKey("GameEventKeys", GameEvent.class, Registries.GAME_EVENT, RegistryKey.GAME_EVENT, true),
-        simpleKey("BiomeKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME, true),
-        simpleKey("TrimMaterialKeys", TrimMaterial.class, Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL, true),
-        simpleKey("TrimPatternKeys", TrimPattern.class, Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, true),
-        simpleKey("StructureKeys", Structure.class, Registries.STRUCTURE, RegistryKey.STRUCTURE, true),
-        simpleKey("StructureTypeKeys", StructureType.class, Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, false)
-    );
-
-    private static <T, A> SourceGenerator simpleKey(final String className, final Class<A> apiType, final ResourceKey<? extends Registry<T>> registryKey, final RegistryKey<A> apiRegistryKey, final boolean publicCreateKeyMethod) {
-        return new GeneratedKeyType<>(className, apiType, "io.papermc.paper.registry.keys", registryKey, apiRegistryKey, publicCreateKeyMethod);
-    }
-
     private Main() {
     }
 
     public static void main(final String[] args) {
-        final Path output = Paths.get(args[0]);
+        LOGGER.info("Running API generators...");
+        generate(Paths.get(args[0]), Generators.API);
+        // LOGGER.info("Running Server generators...");
+        // generate(Paths.get(args[1]), Generators.SERVER);
+    }
+
+    private static void generate(Path output, SourceGenerator[] generators) {
         try {
             if (Files.exists(output)) {
                 PathUtils.deleteDirectory(output);
             }
             Files.createDirectories(output);
 
-            for (final SourceGenerator generator : GENERATORS) {
+            for (final SourceGenerator generator : generators) {
                 generator.writeToFile(output);
             }
 
@@ -81,6 +74,4 @@ public final class Main {
             throw new RuntimeException(ex);
         }
     }
-
-
 }
