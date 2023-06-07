@@ -102,7 +102,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         Preconditions.checkState(!getHandle().generation, "Cannot sleep during world generation");
 
         BlockPosition position = CraftLocation.toBlockPosition(location);
-        IBlockData iblockdata = getHandle().level.getBlockState(position);
+        IBlockData iblockdata = getHandle().level().getBlockState(position);
         if (!(iblockdata.getBlock() instanceof BlockBed)) {
             return false;
         }
@@ -126,7 +126,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public ZombieVillager zombify() {
-        EntityZombieVillager entityzombievillager = EntityZombie.zombifyVillager(getHandle().level.getMinecraftWorld(), getHandle(), getHandle().blockPosition(), isSilent(), CreatureSpawnEvent.SpawnReason.CUSTOM);
+        EntityZombieVillager entityzombievillager = EntityZombie.zombifyVillager(getHandle().level().getMinecraftWorld(), getHandle(), getHandle().blockPosition(), isSilent(), CreatureSpawnEvent.SpawnReason.CUSTOM);
         return (entityzombievillager != null) ? (ZombieVillager) entityzombievillager.getBukkitEntity() : null;
     }
 

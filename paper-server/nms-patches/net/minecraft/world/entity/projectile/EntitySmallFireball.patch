@@ -15,7 +15,7 @@
          super(EntityTypes.SMALL_FIREBALL, entityliving, d0, d1, d2, world);
 +        // CraftBukkit start
 +        if (this.getOwner() != null && this.getOwner() instanceof EntityInsentient) {
-+            isIncendiary = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
++            isIncendiary = this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
 +        }
 +        // CraftBukkit end
      }
@@ -28,7 +28,7 @@
 -            entity.setSecondsOnFire(5);
 +            // CraftBukkit start - Entity damage by entity event + combust event
 +            EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity.getBukkitEntity(), 5);
-+            entity.level.getCraftServer().getPluginManager().callEvent(event);
++            entity.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
 +                entity.setSecondsOnFire(event.getDuration(), false);
@@ -38,15 +38,15 @@
                  entity.setRemainingFireTicks(i);
              } else if (entity1 instanceof EntityLiving) {
 @@ -51,10 +65,10 @@
-         if (!this.level.isClientSide) {
+         if (!this.level().isClientSide) {
              Entity entity = this.getOwner();
  
--            if (!(entity instanceof EntityInsentient) || this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+-            if (!(entity instanceof EntityInsentient) || this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
 +            if (isIncendiary) { // CraftBukkit
                  BlockPosition blockposition = movingobjectpositionblock.getBlockPos().relative(movingobjectpositionblock.getDirection());
  
--                if (this.level.isEmptyBlock(blockposition)) {
-+                if (this.level.isEmptyBlock(blockposition) && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, blockposition, this).isCancelled()) { // CraftBukkit
-                     this.level.setBlockAndUpdate(blockposition, BlockFireAbstract.getState(this.level, blockposition));
+-                if (this.level().isEmptyBlock(blockposition)) {
++                if (this.level().isEmptyBlock(blockposition) && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition, this).isCancelled()) { // CraftBukkit
+                     this.level().setBlockAndUpdate(blockposition, BlockFireAbstract.getState(this.level(), blockposition));
                  }
              }

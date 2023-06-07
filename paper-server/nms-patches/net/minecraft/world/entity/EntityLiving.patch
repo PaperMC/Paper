@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/EntityLiving.java
 +++ b/net/minecraft/world/entity/EntityLiving.java
-@@ -117,6 +117,30 @@
+@@ -119,6 +119,30 @@
  import net.minecraft.world.scores.ScoreboardTeam;
  import org.slf4j.Logger;
  
@@ -31,7 +31,7 @@
  public abstract class EntityLiving extends Entity implements Attackable {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -224,6 +248,20 @@
+@@ -227,6 +251,20 @@
      private float swimAmountO;
      protected BehaviorController<?> brain;
      private boolean skipDropExperience;
@@ -52,7 +52,7 @@
  
      protected EntityLiving(EntityTypes<? extends EntityLiving> entitytypes, World world) {
          super(entitytypes, world);
-@@ -236,7 +274,9 @@
+@@ -239,7 +277,9 @@
          this.useItem = ItemStack.EMPTY;
          this.lastClimbablePos = Optional.empty();
          this.attributes = new AttributeMapBase(AttributeDefaults.getSupplier(entitytypes));
@@ -63,22 +63,22 @@
          this.blocksBuilding = true;
          this.rotA = (float) ((Math.random() + 1.0D) * 0.009999999776482582D);
          this.reapplyPosition();
-@@ -303,7 +343,13 @@
-                 double d1 = Math.min((double) (0.2F + f / 15.0F), 2.5D);
-                 int i = (int) (150.0D * d1);
+@@ -318,7 +358,13 @@
+             double d7 = Math.min((double) (0.2F + f / 15.0F), 2.5D);
+             int i = (int) (150.0D * d7);
  
--                ((WorldServer) this.level).sendParticles(new ParticleParamBlock(Particles.BLOCK, iblockdata), this.getX(), this.getY(), this.getZ(), i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
-+                // CraftBukkit start - visiblity api
-+                if (this instanceof EntityPlayer) {
-+                    ((WorldServer) this.level).sendParticles((EntityPlayer) this, new ParticleParamBlock(Particles.BLOCK, iblockdata), this.getX(), this.getY(), this.getZ(), i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D, false);
-+                } else {
-+                    ((WorldServer) this.level).sendParticles(new ParticleParamBlock(Particles.BLOCK, iblockdata), this.getX(), this.getY(), this.getZ(), i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
-+                }
-+                // CraftBukkit end
-             }
+-            ((WorldServer) this.level()).sendParticles(new ParticleParamBlock(Particles.BLOCK, iblockdata), d1, d2, d3, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
++            // CraftBukkit start - visiblity api
++            if (this instanceof EntityPlayer) {
++                ((WorldServer) this.level()).sendParticles((EntityPlayer) this, new ParticleParamBlock(Particles.BLOCK, iblockdata), this.getX(), this.getY(), this.getZ(), i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D, false);
++            } else {
++                ((WorldServer) this.level()).sendParticles(new ParticleParamBlock(Particles.BLOCK, iblockdata), d1, d2, d3, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
++            }
++            // CraftBukkit end
          }
  
-@@ -655,13 +701,19 @@
+         super.checkFallDamage(d0, flag, iblockdata, blockposition);
+@@ -673,13 +719,19 @@
      }
  
      public void onEquipItem(EnumItemSlot enumitemslot, ItemStack itemstack, ItemStack itemstack1) {
@@ -94,12 +94,12 @@
              Equipable equipable = Equipable.get(itemstack1);
  
              if (equipable != null && !this.isSpectator() && equipable.getEquipmentSlot() == enumitemslot) {
--                if (!this.level.isClientSide() && !this.isSilent()) {
-+                if (!this.level.isClientSide() && !this.isSilent() && !silent) { // CraftBukkit
-                     this.level.playSound((EntityHuman) null, this.getX(), this.getY(), this.getZ(), equipable.getEquipSound(), this.getSoundSource(), 1.0F, 1.0F);
+-                if (!this.level().isClientSide() && !this.isSilent()) {
++                if (!this.level().isClientSide() && !this.isSilent() && !silent) { // CraftBukkit
+                     this.level().playSound((EntityHuman) null, this.getX(), this.getY(), this.getZ(), equipable.getEquipSound(), this.getSoundSource(), 1.0F, 1.0F);
                  }
  
-@@ -735,6 +787,17 @@
+@@ -753,6 +805,17 @@
              }
          }
  
@@ -117,7 +117,7 @@
          if (nbttagcompound.contains("Health", 99)) {
              this.setHealth(nbttagcompound.getFloat("Health"));
          }
-@@ -772,9 +835,32 @@
+@@ -790,9 +853,32 @@
  
      }
  
@@ -150,10 +150,10 @@
          try {
              while (iterator.hasNext()) {
                  MobEffectList mobeffectlist = (MobEffectList) iterator.next();
-@@ -784,6 +870,12 @@
+@@ -802,6 +888,12 @@
                      this.onEffectUpdated(mobeffect, true, (Entity) null);
                  })) {
-                     if (!this.level.isClientSide) {
+                     if (!this.level().isClientSide) {
 +                        // CraftBukkit start
 +                        EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffect, null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.EXPIRATION);
 +                        if (event.isCancelled()) {
@@ -163,7 +163,7 @@
                          iterator.remove();
                          this.onEffectRemoved(mobeffect);
                      }
-@@ -794,6 +886,17 @@
+@@ -812,6 +904,17 @@
          } catch (ConcurrentModificationException concurrentmodificationexception) {
              ;
          }
@@ -180,8 +180,8 @@
 +        // CraftBukkit end
  
          if (this.effectsDirty) {
-             if (!this.level.isClientSide) {
-@@ -920,7 +1023,13 @@
+             if (!this.level().isClientSide) {
+@@ -938,7 +1041,13 @@
          this.entityData.set(EntityLiving.DATA_EFFECT_COLOR_ID, 0);
      }
  
@@ -192,10 +192,10 @@
 +
 +    public boolean removeAllEffects(EntityPotionEffectEvent.Cause cause) {
 +        // CraftBukkit end
-         if (this.level.isClientSide) {
+         if (this.level().isClientSide) {
              return false;
          } else {
-@@ -929,7 +1038,14 @@
+@@ -947,7 +1056,14 @@
              boolean flag;
  
              for (flag = false; iterator.hasNext(); flag = true) {
@@ -211,7 +211,7 @@
                  iterator.remove();
              }
  
-@@ -958,18 +1074,48 @@
+@@ -976,18 +1092,48 @@
          return this.addEffect(mobeffect, (Entity) null);
      }
  
@@ -261,7 +261,7 @@
                  return true;
              } else {
                  return false;
-@@ -1006,13 +1152,39 @@
+@@ -1024,13 +1170,39 @@
          return this.getMobType() == EnumMonsterType.UNDEAD;
      }
  
@@ -302,7 +302,7 @@
  
          if (mobeffect != null) {
              this.onEffectRemoved(mobeffect);
-@@ -1049,20 +1221,55 @@
+@@ -1098,20 +1270,55 @@
  
      }
  
@@ -319,7 +319,7 @@
 +            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), f, regainReason);
 +            // Suppress during worldgen
 +            if (this.valid) {
-+                this.level.getCraftServer().getPluginManager().callEvent(event);
++                this.level().getCraftServer().getPluginManager().callEvent(event);
 +            }
 +
 +            if (!event.isCancelled()) {
@@ -359,16 +359,16 @@
          this.entityData.set(EntityLiving.DATA_HEALTH_ID, MathHelper.clamp(f, 0.0F, this.getMaxHealth()));
      }
  
-@@ -1076,7 +1283,7 @@
+@@ -1125,7 +1332,7 @@
              return false;
-         } else if (this.level.isClientSide) {
+         } else if (this.level().isClientSide) {
              return false;
 -        } else if (this.isDeadOrDying()) {
 +        } else if (this.isRemoved() || this.dead || this.getHealth() <= 0.0F) { // CraftBukkit - Don't allow entities that got set to dead/killed elsewhere to get damaged and die
              return false;
          } else if (damagesource.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
-@@ -1087,10 +1294,11 @@
+@@ -1136,10 +1343,11 @@
  
              this.noActionTime = 0;
              float f1 = f;
@@ -382,7 +382,7 @@
                  this.hurtCurrentlyUsedShield(f);
                  f2 = f;
                  f = 0.0F;
-@@ -1114,27 +1322,46 @@
+@@ -1163,27 +1371,46 @@
              this.walkAnimation.setSpeed(1.5F);
              boolean flag1 = true;
  
@@ -434,7 +434,7 @@
              Entity entity1 = damagesource.getEntity();
  
              if (entity1 != null) {
-@@ -1248,19 +1475,32 @@
+@@ -1297,19 +1524,32 @@
              EnumHand[] aenumhand = EnumHand.values();
              int i = aenumhand.length;
  
@@ -460,7 +460,7 @@
 +            org.bukkit.inventory.EquipmentSlot handSlot = (hand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand) : null;
 +            EntityResurrectEvent event = new EntityResurrectEvent((LivingEntity) this.getBukkitEntity(), handSlot);
 +            event.setCancelled(itemstack == null);
-+            this.level.getCraftServer().getPluginManager().callEvent(event);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
 +                if (!itemstack1.isEmpty()) {
@@ -471,7 +471,7 @@
                      EntityPlayer entityplayer = (EntityPlayer) this;
  
                      entityplayer.awardStat(StatisticList.ITEM_USED.get(Items.TOTEM_OF_UNDYING));
-@@ -1268,14 +1508,16 @@
+@@ -1317,14 +1557,16 @@
                  }
  
                  this.setHealth(1.0F);
@@ -485,7 +485,7 @@
 +                this.addEffect(new MobEffect(MobEffects.ABSORPTION, 100, 1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.TOTEM);
 +                this.addEffect(new MobEffect(MobEffects.FIRE_RESISTANCE, 800, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.TOTEM);
 +                // CraftBukkit end
-                 this.level.broadcastEntityEvent(this, (byte) 35);
+                 this.level().broadcastEntityEvent(this, (byte) 35);
              }
  
 -            return itemstack != null;
@@ -493,20 +493,20 @@
          }
      }
  
-@@ -1380,14 +1622,22 @@
+@@ -1433,14 +1675,22 @@
                      IBlockData iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
  
-                     if (this.level.getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level, blockposition)) {
--                        this.level.setBlock(blockposition, iblockdata, 3);
+                     if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
+-                        this.level().setBlock(blockposition, iblockdata, 3);
 -                        flag = true;
 +                        // CraftBukkit start - call EntityBlockFormEvent for Wither Rose
-+                        flag = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level, blockposition, iblockdata, 3, this);
++                        flag = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), blockposition, iblockdata, 3, this);
 +                        // CraftBukkit end
                      }
                  }
  
                  if (!flag) {
-                     EntityItem entityitem = new EntityItem(this.level, this.getX(), this.getY(), this.getZ(), new ItemStack(Items.WITHER_ROSE));
+                     EntityItem entityitem = new EntityItem(this.level(), this.getX(), this.getY(), this.getZ(), new ItemStack(Items.WITHER_ROSE));
  
 +                    // CraftBukkit start
 +                    org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
@@ -515,15 +515,15 @@
 +                        return;
 +                    }
 +                    // CraftBukkit end
-                     this.level.addFreshEntity(entityitem);
+                     this.level().addFreshEntity(entityitem);
                  }
              }
-@@ -1407,21 +1657,40 @@
+@@ -1460,21 +1710,40 @@
  
          boolean flag = this.lastHurtByPlayerTime > 0;
  
 +        this.dropEquipment(); // CraftBukkit - from below
-         if (this.shouldDropLoot() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+         if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
              this.dropFromLootTable(damagesource, flag);
              this.dropCustomDeathLoot(damagesource, i, flag);
          }
@@ -542,27 +542,27 @@
 -    protected void dropExperience() {
 +    // CraftBukkit start
 +    public int getExpReward() {
-         if (this.level instanceof WorldServer && !this.wasExperienceConsumed() && (this.isAlwaysExperienceDropper() || this.lastHurtByPlayerTime > 0 && this.shouldDropExperience() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT))) {
--            EntityExperienceOrb.award((WorldServer) this.level, this.position(), this.getExperienceReward());
+         if (this.level() instanceof WorldServer && !this.wasExperienceConsumed() && (this.isAlwaysExperienceDropper() || this.lastHurtByPlayerTime > 0 && this.shouldDropExperience() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT))) {
+-            EntityExperienceOrb.award((WorldServer) this.level(), this.position(), this.getExperienceReward());
 +            int i = this.getExperienceReward();
 +            return i;
 +        } else {
 +            return 0;
-+        }
+         }
 +    }
 +    // CraftBukkit end
 +
 +    protected void dropExperience() {
 +        // CraftBukkit start - Update getExpReward() above if the removed if() changes!
 +        if (true && !(this instanceof net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon)) { // CraftBukkit - SPIGOT-2420: Special case ender dragon will drop the xp over time
-+            EntityExperienceOrb.award((WorldServer) this.level, this.position(), this.expToDrop);
++            EntityExperienceOrb.award((WorldServer) this.level(), this.position(), this.expToDrop);
 +            this.expToDrop = 0;
-         }
++        }
 +        // CraftBukkit end
  
      }
  
-@@ -1512,6 +1781,28 @@
+@@ -1565,6 +1834,28 @@
          return itemstack.getEatingSound();
      }
  
@@ -588,10 +588,10 @@
 +    }
 +    // CraftBukkit end
 +
-     @Override
-     public void setOnGround(boolean flag) {
-         super.setOnGround(flag);
-@@ -1567,9 +1858,14 @@
+     public Optional<BlockPosition> getLastClimbablePos() {
+         return this.lastClimbablePos;
+     }
+@@ -1611,9 +1902,14 @@
          int i = this.calculateFallDamage(f, f1);
  
          if (i > 0) {
@@ -607,7 +607,7 @@
              return true;
          } else {
              return flag;
-@@ -1621,7 +1917,7 @@
+@@ -1665,7 +1961,7 @@
  
      protected float getDamageAfterArmorAbsorb(DamageSource damagesource, float f) {
          if (!damagesource.is(DamageTypeTags.BYPASSES_ARMOR)) {
@@ -616,7 +616,7 @@
              f = CombatMath.getDamageAfterAbsorb(f, (float) this.getArmorValue(), (float) this.getAttributeValue(GenericAttributes.ARMOR_TOUGHNESS));
          }
  
-@@ -1634,7 +1930,8 @@
+@@ -1678,7 +1974,8 @@
          } else {
              int i;
  
@@ -626,7 +626,7 @@
                  i = (this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
                  float f1 = f * (float) j;
-@@ -1667,16 +1964,125 @@
+@@ -1711,16 +2008,125 @@
          }
      }
  
@@ -712,7 +712,10 @@
 +            }
 +
 +            f = (float) event.getFinalDamage();
-+
+ 
+-            f = Math.max(f - this.getAbsorptionAmount(), 0.0F);
+-            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f1 - f));
+-            float f2 = f1 - f;
 +            // Resistance
 +            if (event.getDamage(DamageModifier.RESISTANCE) < 0) {
 +                float f3 = (float) -event.getDamage(DamageModifier.RESISTANCE);
@@ -724,7 +727,7 @@
 +                    }
 +                }
 +            }
-+
+ 
 +            // Apply damage to helmet
 +            if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EnumItemSlot.HEAD).isEmpty()) {
 +                this.hurtHelmet(damagesource, f);
@@ -738,7 +741,7 @@
 +
 +            // Apply blocking code // PAIL: steal from above
 +            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
-+                this.level.broadcastEntityEvent(this, (byte) 29); // SPIGOT-4635 - shield damage sound
++                this.level().broadcastEntityEvent(this, (byte) 29); // SPIGOT-4635 - shield damage sound
 +                this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
 +                Entity entity = damagesource.getDirectEntity();
 +
@@ -746,21 +749,18 @@
 +                    this.blockUsingShield((EntityLiving) entity);
 +                }
 +            }
- 
--            f = Math.max(f - this.getAbsorptionAmount(), 0.0F);
--            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f1 - f));
--            float f2 = f1 - f;
++
 +            absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionAmount(Math.max(this.getAbsorptionAmount() - absorptionModifier, 0.0F));
 +            float f2 = absorptionModifier;
- 
++
 +            if (f2 > 0.0F && f2 < 3.4028235E37F && this instanceof EntityHuman) {
 +                ((EntityHuman) this).awardStat(StatisticList.DAMAGE_ABSORBED, Math.round(f2 * 10.0F));
 +            }
              if (f2 > 0.0F && f2 < 3.4028235E37F) {
                  Entity entity = damagesource.getEntity();
  
-@@ -1687,15 +2093,49 @@
+@@ -1731,13 +2137,47 @@
                  }
              }
  
@@ -774,10 +774,8 @@
 +                    }
 +                }
 +                // CraftBukkit end
-                 float f3 = this.getHealth();
- 
-                 this.getCombatTracker().recordDamage(damagesource, f3, f);
-                 this.setHealth(f3 - f);
+                 this.getCombatTracker().recordDamage(damagesource, f);
+                 this.setHealth(this.getHealth() - f);
 -                this.setAbsorptionAmount(this.getAbsorptionAmount() - f);
 +                // CraftBukkit start
 +                if (!human) {
@@ -812,28 +810,27 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1716,9 +2156,19 @@
+@@ -1758,8 +2198,18 @@
      }
  
      public final void setArrowCount(int i) {
 -        this.entityData.set(EntityLiving.DATA_ARROW_COUNT_ID, i);
 +        // CraftBukkit start
 +        setArrowCount(i, false);
-     }
- 
++    }
++
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(EntityLiving.DATA_ARROW_COUNT_ID, event.getNewAmount());
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public final int getStingerCount() {
          return (Integer) this.entityData.get(EntityLiving.DATA_STINGER_COUNT_ID);
-     }
-@@ -1959,6 +2409,12 @@
+@@ -2001,6 +2451,12 @@
  
      public abstract ItemStack getItemBySlot(EnumItemSlot enumitemslot);
  
@@ -846,23 +843,23 @@
      @Override
      public abstract void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack);
  
-@@ -2198,6 +2654,7 @@
+@@ -2238,6 +2694,7 @@
                  }
  
-                 if (this.onGround && !this.level.isClientSide) {
+                 if (this.onGround() && !this.level().isClientSide) {
 +                    if (getSharedFlag(7) && !CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) // CraftBukkit
                      this.setSharedFlag(7, false);
                  }
              } else {
-@@ -2757,6 +3214,7 @@
+@@ -2809,6 +3266,7 @@
          }
  
-         if (!this.level.isClientSide) {
+         if (!this.level().isClientSide) {
 +            if (flag != this.getSharedFlag(7) && !CraftEventFactory.callToggleGlideEvent(this, flag).isCancelled()) // CraftBukkit
              this.setSharedFlag(7, flag);
          }
  
-@@ -2916,14 +3374,21 @@
+@@ -2968,14 +3426,21 @@
  
      @Override
      public boolean isPickable() {
@@ -886,18 +883,18 @@
      @Override
      public float getYHeadRot() {
          return this.yHeadRot;
-@@ -3118,7 +3583,26 @@
+@@ -3170,7 +3635,26 @@
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
                      this.triggerItemUseEffects(this.useItem, 16);
--                    ItemStack itemstack = this.useItem.finishUsingItem(this.level, this);
+-                    ItemStack itemstack = this.useItem.finishUsingItem(this.level(), this);
 +                    // CraftBukkit start - fire PlayerItemConsumeEvent
 +                    ItemStack itemstack;
 +                    if (this instanceof EntityPlayer) {
 +                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand);
-+                        level.getCraftServer().getPluginManager().callEvent(event);
++                        this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                        if (event.isCancelled()) {
 +                            // Update client
@@ -906,15 +903,15 @@
 +                            return;
 +                        }
 +
-+                        itemstack = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level, this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(level, this);
++                        itemstack = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
 +                    } else {
-+                        itemstack = this.useItem.finishUsingItem(this.level, this);
++                        itemstack = this.useItem.finishUsingItem(this.level(), this);
 +                    }
 +                    // CraftBukkit end
  
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
-@@ -3196,6 +3680,12 @@
+@@ -3248,6 +3732,12 @@
      }
  
      public boolean randomTeleport(double d0, double d1, double d2, boolean flag) {
@@ -927,7 +924,7 @@
          double d3 = this.getX();
          double d4 = this.getY();
          double d5 = this.getZ();
-@@ -3220,16 +3710,41 @@
+@@ -3272,16 +3762,41 @@
              }
  
              if (flag2) {
@@ -945,8 +942,8 @@
 +
 +                if (flag1) {
 +                    if (!(this instanceof EntityPlayer)) {
-+                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level.getWorld(), d3, d4, d5), new Location(this.level.getWorld(), d0, d6, d2));
-+                        this.level.getCraftServer().getPluginManager().callEvent(teleport);
++                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level().getWorld(), d3, d4, d5), new Location(this.level().getWorld(), d0, d6, d2));
++                        this.level().getCraftServer().getPluginManager().callEvent(teleport);
 +                        if (!teleport.isCancelled()) {
 +                            Location to = teleport.getTo();
 +                            this.teleportTo(to.getX(), to.getY(), to.getZ());
@@ -972,7 +969,7 @@
          } else {
              if (flag) {
                  world.broadcastEntityEvent(this, (byte) 46);
-@@ -3239,7 +3754,7 @@
+@@ -3291,7 +3806,7 @@
                  ((EntityCreature) this).getNavigation().stop();
              }
  
@@ -981,25 +978,25 @@
          }
      }
  
-@@ -3322,7 +3837,7 @@
+@@ -3374,7 +3889,7 @@
      }
  
      public void stopSleeping() {
 -        Optional optional = this.getSleepingPos();
 +        Optional<BlockPosition> optional = this.getSleepingPos(); // CraftBukkit - decompile error
-         World world = this.level;
+         World world = this.level();
  
-         java.util.Objects.requireNonNull(this.level);
-@@ -3356,7 +3871,7 @@
+         java.util.Objects.requireNonNull(world);
+@@ -3408,7 +3923,7 @@
  
      @Nullable
      public EnumDirection getBedOrientation() {
 -        BlockPosition blockposition = (BlockPosition) this.getSleepingPos().orElse((Object) null);
 +        BlockPosition blockposition = (BlockPosition) this.getSleepingPos().orElse(null); // CraftBukkit - decompile error
  
-         return blockposition != null ? BlockBed.getBedOrientation(this.level, blockposition) : null;
+         return blockposition != null ? BlockBed.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3404,7 +3919,7 @@
+@@ -3456,7 +3971,7 @@
                  Pair<MobEffect, Float> pair = (Pair) iterator.next();
  
                  if (!world.isClientSide && pair.getFirst() != null && world.random.nextFloat() < (Float) pair.getSecond()) {

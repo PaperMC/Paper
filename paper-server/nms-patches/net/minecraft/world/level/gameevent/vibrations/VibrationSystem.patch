@@ -1,0 +1,52 @@
+--- a/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
++++ b/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
+@@ -29,6 +29,13 @@
+ import net.minecraft.world.phys.MovingObjectPosition;
+ import net.minecraft.world.phys.Vec3D;
+ 
++// CraftBukkit start
++import net.minecraft.core.registries.BuiltInRegistries;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.event.block.BlockReceiveGameEvent;
++// CraftBukkit end
++
+ public interface VibrationSystem {
+ 
+     GameEvent[] RESONANCE_EVENTS = new GameEvent[]{GameEvent.RESONATE_1, GameEvent.RESONATE_2, GameEvent.RESONATE_3, GameEvent.RESONATE_4, GameEvent.RESONATE_5, GameEvent.RESONATE_6, GameEvent.RESONATE_7, GameEvent.RESONATE_8, GameEvent.RESONATE_9, GameEvent.RESONATE_10, GameEvent.RESONATE_11, GameEvent.RESONATE_12, GameEvent.RESONATE_13, GameEvent.RESONATE_14, GameEvent.RESONATE_15};
+@@ -228,7 +235,8 @@
+             if (vibrationsystem_d.requiresAdjacentChunksToBeTicking() && !areAdjacentChunksTicking(worldserver, blockposition1)) {
+                 return false;
+             } else {
+-                vibrationsystem_d.onReceiveVibration(worldserver, blockposition, vibrationinfo.gameEvent(), (Entity) vibrationinfo.getEntity(worldserver).orElse((Object) null), (Entity) vibrationinfo.getProjectileOwner(worldserver).orElse((Object) null), VibrationSystem.b.distanceBetweenInBlocks(blockposition, blockposition1));
++                // CraftBukkit - decompile error
++                vibrationsystem_d.onReceiveVibration(worldserver, blockposition, vibrationinfo.gameEvent(), (Entity) vibrationinfo.getEntity(worldserver).orElse(null), (Entity) vibrationinfo.getProjectileOwner(worldserver).orElse(null), VibrationSystem.b.distanceBetweenInBlocks(blockposition, blockposition1));
+                 vibrationsystem_a.setCurrentVibration((VibrationInfo) null);
+                 return true;
+             }
+@@ -285,8 +293,14 @@
+                     return false;
+                 } else {
+                     Vec3D vec3d1 = (Vec3D) optional.get();
+-
+-                    if (!vibrationsystem_d.canReceiveVibration(worldserver, BlockPosition.containing(vec3d), gameevent, gameevent_a)) {
++                    // CraftBukkit start
++                    boolean defaultCancel = !vibrationsystem_d.canReceiveVibration(worldserver, BlockPosition.containing(vec3d), gameevent, gameevent_a);
++                    Entity entity = gameevent_a.sourceEntity();
++                    BlockReceiveGameEvent event = new BlockReceiveGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(gameevent))), CraftBlock.at(worldserver, BlockPosition.containing(vec3d1)), (entity == null) ? null : entity.getBukkitEntity());
++                    event.setCancelled(defaultCancel);
++                    worldserver.getCraftServer().getPluginManager().callEvent(event);
++                    if (event.isCancelled()) {
++                        // CraftBukkit end
+                         return false;
+                     } else if (isOccluded(worldserver, vec3d, vec3d1)) {
+                         return false;
+@@ -339,7 +353,7 @@
+             return instance.group(VibrationInfo.CODEC.optionalFieldOf("event").forGetter((vibrationsystem_a) -> {
+                 return Optional.ofNullable(vibrationsystem_a.currentVibration);
+             }), VibrationSelector.CODEC.fieldOf("selector").forGetter(VibrationSystem.a::getSelectionStrategy), ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter(VibrationSystem.a::getTravelTimeInTicks)).apply(instance, (optional, vibrationselector, integer) -> {
+-                return new VibrationSystem.a((VibrationInfo) optional.orElse((Object) null), vibrationselector, integer, true);
++                return new VibrationSystem.a((VibrationInfo) optional.orElse(null), vibrationselector, integer, true); // CraftBukkit - decompile error
+             });
+         });
+         public static final String NBT_TAG_KEY = "listener";

@@ -34,7 +34,7 @@
          this.syncronizedRandom = RandomSource.create();
 @@ -261,7 +279,7 @@
      private void checkCollision() {
-         MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResult(this, this::canHitEntity);
+         MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResultOnMoveVector(this, this::canHitEntity);
  
 -        this.onHit(movingobjectposition);
 +        this.preOnHit(movingobjectposition); // CraftBukkit - projectile hit event
@@ -45,13 +45,13 @@
          int i = 1;
          BlockPosition blockposition1 = blockposition.above();
  
--        if (this.random.nextFloat() < 0.25F && this.level.isRainingAt(blockposition1)) {
-+        if (this.rainInfluenced && this.random.nextFloat() < 0.25F && this.level.isRainingAt(blockposition1)) { // CraftBukkit
+-        if (this.random.nextFloat() < 0.25F && this.level().isRainingAt(blockposition1)) {
++        if (this.rainInfluenced && this.random.nextFloat() < 0.25F && this.level().isRainingAt(blockposition1)) { // CraftBukkit
              ++i;
          }
  
--        if (this.random.nextFloat() < 0.5F && !this.level.canSeeSky(blockposition1)) {
-+        if (this.skyInfluenced && this.random.nextFloat() < 0.5F && !this.level.canSeeSky(blockposition1)) { // CraftBukkit
+-        if (this.random.nextFloat() < 0.5F && !this.level().canSeeSky(blockposition1)) {
++        if (this.skyInfluenced && this.random.nextFloat() < 0.5F && !this.level().canSeeSky(blockposition1)) { // CraftBukkit
              --i;
          }
  
@@ -61,7 +61,7 @@
                  this.getEntityData().set(EntityFishingHook.DATA_BITING, false);
 +                // CraftBukkit start
 +                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.getPlayerOwner().getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.FAILED_ATTEMPT);
-+                this.level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
++                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +                // CraftBukkit end
              }
          } else {
@@ -72,7 +72,7 @@
                  } else {
 +                    // CraftBukkit start
 +                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.getPlayerOwner().getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.BITE);
-+                    this.level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
++                    this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +                    if (playerFishEvent.isCancelled()) {
 +                        return;
 +                    }
@@ -107,7 +107,7 @@
              if (this.hookedIn != null) {
 +                // CraftBukkit start
 +                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), this.hookedIn.getBukkitEntity(), (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_ENTITY);
-+                this.level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
++                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +
 +                if (playerFishEvent.isCancelled()) {
 +                    return 0;
@@ -115,15 +115,15 @@
 +                // CraftBukkit end
                  this.pullEntity(this.hookedIn);
                  CriterionTriggers.FISHING_ROD_HOOKED.trigger((EntityPlayer) entityhuman, itemstack, this, Collections.emptyList());
-                 this.level.broadcastEntityEvent(this, (byte) 31);
+                 this.level().broadcastEntityEvent(this, (byte) 31);
 @@ -460,6 +501,15 @@
                  while (iterator.hasNext()) {
                      ItemStack itemstack1 = (ItemStack) iterator.next();
-                     EntityItem entityitem = new EntityItem(this.level, this.getX(), this.getY(), this.getZ(), itemstack1);
+                     EntityItem entityitem = new EntityItem(this.level(), this.getX(), this.getY(), this.getZ(), itemstack1);
 +                    // CraftBukkit start
 +                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem.getBukkitEntity(), (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_FISH);
 +                    playerFishEvent.setExpToDrop(this.random.nextInt(6) + 1);
-+                    this.level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
++                    this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +
 +                    if (playerFishEvent.isCancelled()) {
 +                        return 0;
@@ -135,11 +135,11 @@
 @@ -467,7 +517,11 @@
  
                      entityitem.setDeltaMovement(d0 * 0.1D, d1 * 0.1D + Math.sqrt(Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2)) * 0.08D, d2 * 0.1D);
-                     this.level.addFreshEntity(entityitem);
--                    entityhuman.level.addFreshEntity(new EntityExperienceOrb(entityhuman.level, entityhuman.getX(), entityhuman.getY() + 0.5D, entityhuman.getZ() + 0.5D, this.random.nextInt(6) + 1));
+                     this.level().addFreshEntity(entityitem);
+-                    entityhuman.level().addFreshEntity(new EntityExperienceOrb(entityhuman.level(), entityhuman.getX(), entityhuman.getY() + 0.5D, entityhuman.getZ() + 0.5D, this.random.nextInt(6) + 1));
 +                    // CraftBukkit start - this.random.nextInt(6) + 1 -> playerFishEvent.getExpToDrop()
 +                    if (playerFishEvent.getExpToDrop() > 0) {
-+                        entityhuman.level.addFreshEntity(new EntityExperienceOrb(entityhuman.level, entityhuman.getX(), entityhuman.getY() + 0.5D, entityhuman.getZ() + 0.5D, playerFishEvent.getExpToDrop()));
++                        entityhuman.level().addFreshEntity(new EntityExperienceOrb(entityhuman.level(), entityhuman.getX(), entityhuman.getY() + 0.5D, entityhuman.getZ() + 0.5D, playerFishEvent.getExpToDrop()));
 +                    }
 +                    // CraftBukkit end
                      if (itemstack1.is(TagsItem.FISHES)) {
@@ -148,10 +148,10 @@
 @@ -477,8 +531,25 @@
              }
  
-             if (this.onGround) {
+             if (this.onGround()) {
 +                // CraftBukkit start
 +                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.IN_GROUND);
-+                this.level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
++                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +
 +                if (playerFishEvent.isCancelled()) {
 +                    return 0;
@@ -162,7 +162,7 @@
 +            // CraftBukkit start
 +            if (i == 0) {
 +                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.REEL_IN);
-+                this.level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
++                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +                if (playerFishEvent.isCancelled()) {
 +                    return 0;
 +                }

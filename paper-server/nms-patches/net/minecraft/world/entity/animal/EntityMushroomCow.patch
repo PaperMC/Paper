@@ -16,7 +16,7 @@
      private static final DataWatcherObject<String> DATA_TYPE = DataWatcher.defineId(EntityMushroomCow.class, DataWatcherRegistry.STRING);
 @@ -115,6 +122,11 @@
              this.playSound(soundeffect, 1.0F, 1.0F);
-             return EnumInteractionResult.sidedSuccess(this.level.isClientSide);
+             return EnumInteractionResult.sidedSuccess(this.level().isClientSide);
          } else if (itemstack.is(Items.SHEARS) && this.readyForShearing()) {
 +            // CraftBukkit start
 +            if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
@@ -25,11 +25,11 @@
 +            // CraftBukkit end
              this.shear(SoundCategory.PLAYERS);
              this.gameEvent(GameEvent.SHEAR, entityhuman);
-             if (!this.level.isClientSide) {
+             if (!this.level().isClientSide) {
 @@ -165,7 +177,7 @@
  
              if (entitycow != null) {
-                 ((WorldServer) this.level).sendParticles(Particles.EXPLOSION, this.getX(), this.getY(0.5D), this.getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+                 ((WorldServer) this.level()).sendParticles(Particles.EXPLOSION, this.getX(), this.getY(0.5D), this.getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
 -                this.discard();
 +                // this.discard(); // CraftBukkit - moved down
                  entitycow.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
@@ -39,26 +39,26 @@
                  }
  
                  entitycow.setInvulnerable(this.isInvulnerable());
--                this.level.addFreshEntity(entitycow);
+-                this.level().addFreshEntity(entitycow);
 +                // CraftBukkit start
 +                if (CraftEventFactory.callEntityTransformEvent(this, entitycow, EntityTransformEvent.TransformReason.SHEARED).isCancelled()) {
 +                    return;
 +                }
-+                this.level.addFreshEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
++                this.level().addFreshEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
 +
 +                this.discard(); // CraftBukkit - from above
 +                // CraftBukkit end
  
                  for (int i = 0; i < 5; ++i) {
--                    this.level.addFreshEntity(new EntityItem(this.level, this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getVariant().blockState.getBlock())));
+-                    this.level().addFreshEntity(new EntityItem(this.level(), this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getVariant().blockState.getBlock())));
 +                    // CraftBukkit start
-+                    EntityItem entityitem = new EntityItem(this.level, this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getVariant().blockState.getBlock()));
++                    EntityItem entityitem = new EntityItem(this.level(), this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getVariant().blockState.getBlock()));
 +                    EntityDropItemEvent event = new EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
 +                    Bukkit.getPluginManager().callEvent(event);
 +                    if (event.isCancelled()) {
 +                        continue;
 +                    }
-+                    this.level.addFreshEntity(entityitem);
++                    this.level().addFreshEntity(entityitem);
 +                    // CraftBukkit end
                  }
              }

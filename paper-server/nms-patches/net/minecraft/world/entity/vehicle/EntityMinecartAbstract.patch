@@ -17,7 +17,7 @@
  public abstract class EntityMinecartAbstract extends Entity {
  
      private static final DataWatcherObject<Integer> DATA_ID_HURT = DataWatcher.defineId(EntityMinecartAbstract.class, DataWatcherRegistry.INT);
-@@ -89,6 +99,17 @@
+@@ -90,6 +100,17 @@
      private double lyd;
      private double lzd;
  
@@ -35,7 +35,7 @@
      protected EntityMinecartAbstract(EntityTypes<?> entitytypes, World world) {
          super(entitytypes, world);
          this.blocksBuilding = true;
-@@ -215,6 +236,19 @@
+@@ -216,6 +237,19 @@
              if (this.isInvulnerableTo(damagesource)) {
                  return false;
              } else {
@@ -44,7 +44,7 @@
 +                org.bukkit.entity.Entity passenger = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
 +
 +                VehicleDamageEvent event = new VehicleDamageEvent(vehicle, passenger, f);
-+                this.level.getCraftServer().getPluginManager().callEvent(event);
++                this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (event.isCancelled()) {
 +                    return false;
@@ -55,13 +55,13 @@
                  this.setHurtDir(-this.getHurtDir());
                  this.setHurtTime(10);
                  this.markHurt();
-@@ -223,6 +257,15 @@
+@@ -224,6 +258,15 @@
                  boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).getAbilities().instabuild;
  
                  if (flag || this.getDamage() > 40.0F) {
 +                    // CraftBukkit start
 +                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, passenger);
-+                    this.level.getCraftServer().getPluginManager().callEvent(destroyEvent);
++                    this.level().getCraftServer().getPluginManager().callEvent(destroyEvent);
 +
 +                    if (destroyEvent.isCancelled()) {
 +                        this.setDamage(40); // Maximize damage so this doesn't get triggered again right away
@@ -71,7 +71,7 @@
                      this.ejectPassengers();
                      if (flag && !this.hasCustomName()) {
                          this.discard();
-@@ -284,6 +327,14 @@
+@@ -285,6 +328,14 @@
  
      @Override
      public void tick() {
@@ -86,41 +86,41 @@
          if (this.getHurtTime() > 0) {
              this.setHurtTime(this.getHurtTime() - 1);
          }
-@@ -293,7 +344,7 @@
+@@ -294,7 +345,7 @@
          }
  
-         this.checkOutOfWorld();
+         this.checkBelowWorld();
 -        this.handleNetherPortal();
 +        // this.handleNetherPortal(); // CraftBukkit - handled in postTick
          double d0;
  
-         if (this.level.isClientSide) {
-@@ -359,6 +410,18 @@
+         if (this.level().isClientSide) {
+@@ -361,6 +412,18 @@
              }
  
              this.setRot(this.getYRot(), this.getXRot());
 +            // CraftBukkit start
-+            org.bukkit.World bworld = this.level.getWorld();
++            org.bukkit.World bworld = this.level().getWorld();
 +            Location from = new Location(bworld, prevX, prevY, prevZ, prevYaw, prevPitch);
 +            Location to = CraftLocation.toBukkit(this.position(), bworld, this.getYRot(), this.getXRot());
 +            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +
-+            this.level.getCraftServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
++            this.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
 +
 +            if (!from.equals(to)) {
-+                this.level.getCraftServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, from, to));
++                this.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, from, to));
 +            }
 +            // CraftBukkit end
              if (this.getMinecartType() == EntityMinecartAbstract.EnumMinecartType.RIDEABLE && this.getDeltaMovement().horizontalDistanceSqr() > 0.01D) {
-                 List<Entity> list = this.level.getEntities((Entity) this, this.getBoundingBox().inflate(0.20000000298023224D, 0.0D, 0.20000000298023224D), IEntitySelector.pushableBy(this));
+                 List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox().inflate(0.20000000298023224D, 0.0D, 0.20000000298023224D), IEntitySelector.pushableBy(this));
  
-@@ -367,8 +430,26 @@
+@@ -369,8 +432,26 @@
                          Entity entity = (Entity) list.get(l);
  
                          if (!(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && !(entity instanceof EntityMinecartAbstract) && !this.isVehicle() && !entity.isPassenger()) {
 +                            // CraftBukkit start
 +                            VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent(vehicle, entity.getBukkitEntity());
-+                            this.level.getCraftServer().getPluginManager().callEvent(collisionEvent);
++                            this.level().getCraftServer().getPluginManager().callEvent(collisionEvent);
 +
 +                            if (collisionEvent.isCancelled()) {
 +                                continue;
@@ -131,7 +131,7 @@
 +                            // CraftBukkit start
 +                            if (!this.isPassengerOfSameVehicle(entity)) {
 +                                VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent(vehicle, entity.getBukkitEntity());
-+                                this.level.getCraftServer().getPluginManager().callEvent(collisionEvent);
++                                this.level().getCraftServer().getPluginManager().callEvent(collisionEvent);
 +
 +                                if (collisionEvent.isCancelled()) {
 +                                    continue;
@@ -141,13 +141,13 @@
                              entity.push(this);
                          }
                      }
-@@ -380,6 +461,14 @@
+@@ -382,6 +463,14 @@
                      Entity entity1 = (Entity) iterator.next();
  
                      if (!this.hasPassenger(entity1) && entity1.isPushable() && entity1 instanceof EntityMinecartAbstract) {
 +                        // CraftBukkit start
 +                        VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent(vehicle, entity1.getBukkitEntity());
-+                        this.level.getCraftServer().getPluginManager().callEvent(collisionEvent);
++                        this.level().getCraftServer().getPluginManager().callEvent(collisionEvent);
 +
 +                        if (collisionEvent.isCancelled()) {
 +                            continue;
@@ -156,7 +156,7 @@
                          entity1.push(this);
                      }
                  }
-@@ -396,7 +485,7 @@
+@@ -398,7 +487,7 @@
      }
  
      protected double getMaxSpeed() {
@@ -165,10 +165,10 @@
      }
  
      public void activateMinecart(int i, int j, int k, boolean flag) {}
-@@ -407,12 +496,16 @@
+@@ -409,12 +498,16 @@
  
          this.setDeltaMovement(MathHelper.clamp(vec3d.x, -d0, d0), vec3d.y, MathHelper.clamp(vec3d.z, -d0, d0));
-         if (this.onGround) {
+         if (this.onGround()) {
 -            this.setDeltaMovement(this.getDeltaMovement().scale(0.5D));
 +            // CraftBukkit start - replace magic numbers with our variables
 +            this.setDeltaMovement(new Vec3D(this.getDeltaMovement().x * this.derailedX, this.getDeltaMovement().y * this.derailedY, this.getDeltaMovement().z * this.derailedZ));
@@ -176,7 +176,7 @@
          }
  
          this.move(EnumMoveType.SELF, this.getDeltaMovement());
-         if (!this.onGround) {
+         if (!this.onGround()) {
 -            this.setDeltaMovement(this.getDeltaMovement().scale(0.95D));
 +            // CraftBukkit start - replace magic numbers with our variables
 +            this.setDeltaMovement(new Vec3D(this.getDeltaMovement().x * this.flyingX, this.getDeltaMovement().y * this.flyingY, this.getDeltaMovement().z * this.flyingZ));
@@ -184,7 +184,7 @@
          }
  
      }
-@@ -603,7 +696,7 @@
+@@ -610,7 +703,7 @@
      }
  
      protected void applyNaturalSlowdown() {
@@ -193,13 +193,13 @@
          Vec3D vec3d = this.getDeltaMovement();
  
          vec3d = vec3d.multiply(d0, 0.0D, d0);
-@@ -742,6 +835,14 @@
-         if (!this.level.isClientSide) {
+@@ -749,6 +842,14 @@
+         if (!this.level().isClientSide) {
              if (!entity.noPhysics && !this.noPhysics) {
                  if (!this.hasPassenger(entity)) {
 +                    // CraftBukkit start
 +                    VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
-+                    this.level.getCraftServer().getPluginManager().callEvent(collisionEvent);
++                    this.level().getCraftServer().getPluginManager().callEvent(collisionEvent);
 +
 +                    if (collisionEvent.isCancelled()) {
 +                        return;
@@ -208,7 +208,7 @@
                      double d0 = entity.getX() - this.getX();
                      double d1 = entity.getZ() - this.getZ();
                      double d2 = d0 * d0 + d1 * d1;
-@@ -916,4 +1017,26 @@
+@@ -923,4 +1024,26 @@
  
          private EnumMinecartType() {}
      }

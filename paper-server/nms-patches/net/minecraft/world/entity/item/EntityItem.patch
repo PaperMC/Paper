@@ -48,11 +48,11 @@
 +            // CraftBukkit end */
  
              this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
-             if (!this.level.isClientSide) {
+             if (!this.level().isClientSide) {
 @@ -176,6 +188,12 @@
              }
  
-             if (!this.level.isClientSide && this.age >= 6000) {
+             if (!this.level().isClientSide && this.age >= 6000) {
 +                // CraftBukkit start - fire ItemDespawnEvent
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                    this.age = 0;
@@ -62,7 +62,7 @@
                  this.discard();
              }
  
-@@ -251,10 +269,11 @@
+@@ -255,10 +273,11 @@
      private static void merge(EntityItem entityitem, ItemStack itemstack, ItemStack itemstack1) {
          ItemStack itemstack2 = merge(itemstack, itemstack1, 64);
  
@@ -75,8 +75,8 @@
          merge(entityitem, itemstack, itemstack1);
          entityitem.pickupDelay = Math.max(entityitem.pickupDelay, entityitem1.pickupDelay);
          entityitem.age = Math.min(entityitem.age, entityitem1.age);
-@@ -280,6 +299,11 @@
-         } else if (this.level.isClientSide) {
+@@ -284,6 +303,11 @@
+         } else if (this.level().isClientSide) {
              return true;
          } else {
 +            // CraftBukkit start
@@ -87,7 +87,7 @@
              this.markHurt();
              this.health = (int) ((float) this.health - f);
              this.gameEvent(GameEvent.ENTITY_DAMAGE, damagesource.getEntity());
-@@ -343,6 +367,46 @@
+@@ -347,6 +371,46 @@
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
  
@@ -100,7 +100,7 @@
 +                // Call legacy event
 +                PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
-+                this.level.getCraftServer().getPluginManager().callEvent(playerEvent);
++                this.level().getCraftServer().getPluginManager().callEvent(playerEvent);
 +                if (playerEvent.isCancelled()) {
 +                    itemstack.setCount(i); // SPIGOT-5294 - restore count
 +                    return;
@@ -109,7 +109,7 @@
 +                // Call newer event afterwards
 +                EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                entityEvent.setCancelled(!entityEvent.getEntity().getCanPickupItems());
-+                this.level.getCraftServer().getPluginManager().callEvent(entityEvent);
++                this.level().getCraftServer().getPluginManager().callEvent(entityEvent);
 +                if (entityEvent.isCancelled()) {
 +                    itemstack.setCount(i); // SPIGOT-5294 - restore count
 +                    return;
@@ -134,7 +134,7 @@
              if (this.pickupDelay == 0 && (this.target == null || this.target.equals(entityhuman.getUUID())) && entityhuman.getInventory().add(itemstack)) {
                  entityhuman.take(this, i);
                  if (itemstack.isEmpty()) {
-@@ -386,7 +450,9 @@
+@@ -390,7 +454,9 @@
      }
  
      public void setItem(ItemStack itemstack) {

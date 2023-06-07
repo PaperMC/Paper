@@ -58,7 +58,7 @@ public class CraftWither extends CraftMonster implements Wither {
         if (entityId == 0) {
             return null;
         }
-        Entity target = getHandle().getLevel().getEntity(entityId);
+        Entity target = getHandle().level().getEntity(entityId);
         return (target != null) ? (LivingEntity) target.getBukkitEntity() : null;
     }
 

@@ -17,10 +17,12 @@ import org.jetbrains.annotations.NotNull;
 public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T> implements Sign {
 
     private final CraftSignSide front;
+    private final CraftSignSide back;
 
     public CraftSign(World world, T tileEntity) {
         super(world, tileEntity);
-        this.front = new CraftSignSide(this.getSnapshot());
+        this.front = new CraftSignSide(this.getSnapshot().getFrontText());
+        this.back = new CraftSignSide(this.getSnapshot().getBackText());
     }
 
     @Override
@@ -40,12 +42,12 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
 
     @Override
     public boolean isEditable() {
-        return getSnapshot().isEditable;
+        return !getSnapshot().isWaxed() && getSnapshot().playerWhoMayEdit != null;
     }
 
     @Override
     public void setEditable(boolean editable) {
-        getSnapshot().isEditable = editable;
+        getSnapshot().setWaxed(!editable);
     }
 
     @Override
@@ -63,7 +65,14 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
     public SignSide getSide(Side side) {
         Preconditions.checkArgument(side != null, "side == null");
 
-        return front;
+        switch (side) {
+            case FRONT:
+                return front;
+            case BACK:
+                return back;
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     @Override
@@ -79,6 +88,7 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
     @Override
     public void applyTo(T sign) {
         front.applyLegacyStringToSignSide();
+        back.applyLegacyStringToSignSide();
 
         super.applyTo(sign);
     }
@@ -89,9 +99,8 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
         Preconditions.checkArgument(sign.getWorld() == player.getWorld(), "Sign must be in same world as Player");
 
         TileEntitySign handle = ((CraftSign<?>) sign).getTileEntity();
-        handle.isEditable = true;
 
-        ((CraftPlayer) player).getHandle().openTextEdit(handle);
+        ((CraftPlayer) player).getHandle().openTextEdit(handle, true);
     }
 
     public static IChatBaseComponent[] sanitizeLines(String[] lines) {

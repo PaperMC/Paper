@@ -10,10 +10,12 @@ import net.minecraft.world.IInventory;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.LootTableInfo;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParameter;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParameterSet;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParameterSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
 import net.minecraft.world.phys.Vec3D;
 import org.bukkit.Location;
@@ -45,7 +47,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     @Override
     public Collection<ItemStack> populateLoot(Random random, LootContext context) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
-        LootTableInfo nmsContext = convertContext(context, random);
+        LootParams nmsContext = convertContext(context, random);
         List<net.minecraft.world.item.ItemStack> nmsItems = handle.getRandomItems(nmsContext);
         Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
 
@@ -63,12 +65,12 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     public void fillInventory(Inventory inventory, Random random, LootContext context) {
         Preconditions.checkArgument(inventory != null, "Inventory cannot be null");
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
-        LootTableInfo nmsContext = convertContext(context, random);
+        LootParams nmsContext = convertContext(context, random);
         CraftInventory craftInventory = (CraftInventory) inventory;
         IInventory handle = craftInventory.getInventory();
 
         // TODO: When events are added, call event here w/ custom reason?
-        getHandle().fillInventory(handle, nmsContext, true);
+        getHandle().fillInventory(handle, nmsContext, random.nextLong(), true);
     }
 
     @Override
@@ -76,15 +78,15 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         return key;
     }
 
-    private LootTableInfo convertContext(LootContext context, Random random) {
+    private LootParams convertContext(LootContext context, Random random) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
         Location loc = context.getLocation();
         Preconditions.checkArgument(loc.getWorld() != null, "LootContext.getLocation#getWorld cannot be null");
         WorldServer handle = ((CraftWorld) loc.getWorld()).getHandle();
 
-        LootTableInfo.Builder builder = new LootTableInfo.Builder(handle);
+        LootParams.a builder = new LootParams.a(handle);
         if (random != null) {
-            builder = builder.withRandom(new RandomSourceWrapper(random));
+            // builder = builder.withRandom(new RandomSourceWrapper(random));
         }
         setMaybe(builder, LootContextParameters.ORIGIN, CraftLocation.toVec3D(loc));
         if (getHandle() != LootTable.EMPTY) {
@@ -124,10 +126,10 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         }
         nmsBuilder.optional(LootContextParameters.LOOTING_MOD);
 
-        return builder.create(nmsBuilder.build());
+        return builder.create(getHandle().getParamSet());
     }
 
-    private <T> void setMaybe(LootTableInfo.Builder builder, LootContextParameter<T> param, T value) {
+    private <T> void setMaybe(LootParams.a builder, LootContextParameter<T> param, T value) {
         if (getHandle().getParamSet().getRequired().contains(param) || getHandle().getParamSet().getAllowed().contains(param)) {
             builder.withParameter(param, value);
         }

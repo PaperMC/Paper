@@ -1,67 +1,81 @@
 --- a/net/minecraft/world/level/block/entity/TileEntitySign.java
 +++ b/net/minecraft/world/level/block/entity/TileEntitySign.java
-@@ -25,7 +25,7 @@
- import net.minecraft.world.phys.Vec2F;
+@@ -31,7 +31,17 @@
  import net.minecraft.world.phys.Vec3D;
+ import org.slf4j.Logger;
  
 -public class TileEntitySign extends TileEntity {
++// CraftBukkit start
++import net.minecraft.EnumChatFormat;
++import net.minecraft.nbt.NBTBase;
++import net.minecraft.server.level.EntityPlayer;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.entity.Player;
++import org.bukkit.event.block.SignChangeEvent;
++// CraftBukkit end
++
 +public class TileEntitySign extends TileEntity implements ICommandListener { // CraftBukkit - implements
  
-     public static final int LINES = 4;
+     private static final Logger LOGGER = LogUtils.getLogger();
      private static final int MAX_TEXT_LINE_WIDTH = 90;
-@@ -83,6 +83,12 @@
-             }
-         }
+@@ -100,7 +110,7 @@
+     @Override
+     protected void saveAdditional(NBTTagCompound nbttagcompound) {
+         super.saveAdditional(nbttagcompound);
+-        DataResult dataresult = SignText.DIRECT_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, this.frontText);
++        DataResult<NBTBase> dataresult = SignText.DIRECT_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, this.frontText); // CraftBukkit - decompile error
+         Logger logger = TileEntitySign.LOGGER;
  
-+        // CraftBukkit start
-+        if (Boolean.getBoolean("convertLegacySigns")) {
-+            nbttagcompound.putBoolean("Bukkit.isConverted", true);
-+        }
-+        // CraftBukkit end
-+
-         nbttagcompound.putString("Color", this.color.getName());
-         nbttagcompound.putBoolean("GlowingText", this.hasGlowingText);
-     }
-@@ -93,8 +99,24 @@
+         Objects.requireNonNull(logger);
+@@ -119,7 +129,7 @@
+     @Override
+     public void load(NBTTagCompound nbttagcompound) {
          super.load(nbttagcompound);
-         this.color = EnumColor.byName(nbttagcompound.getString("Color"), EnumColor.BLACK);
+-        DataResult dataresult;
++        DataResult<SignText> dataresult; // CraftBukkit - decompile error
+         Logger logger;
  
-+        // CraftBukkit start - Add an option to convert signs correctly
-+        // This is done with a flag instead of all the time because
-+        // we have no way to tell whether a sign is from 1.7.10 or 1.8
-+        boolean oldSign = Boolean.getBoolean("convertLegacySigns") && !nbttagcompound.getBoolean("Bukkit.isConverted");
-+        // CraftBukkit end
-+
-         for (int i = 0; i < 4; ++i) {
-             String s = nbttagcompound.getString(TileEntitySign.RAW_TEXT_FIELD_NAMES[i]);
-+            // CraftBukkit start
-+            if (s != null && s.length() > 2048) {
-+                s = "\"\"";
-+            }
-+
-+            if (oldSign) {
-+                messages[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
-+                continue;
-+            }
-+            // CraftBukkit end
-             IChatBaseComponent ichatbasecomponent = this.loadLine(s);
- 
-             this.messages[i] = ichatbasecomponent;
-@@ -132,6 +154,10 @@
-             if (ichatmutablecomponent != null) {
-                 return ichatmutablecomponent;
-             }
-+            // CraftBukkit start
-+        } catch (com.google.gson.JsonParseException jsonparseexception) {
-+            return IChatBaseComponent.empty();
-+            // CraftBukkit end
-         } catch (Exception exception) {
-             ;
+         if (nbttagcompound.contains("front_text")) {
+@@ -179,6 +189,7 @@
+             this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
+         } else {
+             TileEntitySign.LOGGER.warn("Player {} just tried to change non-editable sign", entityhuman.getName().getString());
++            ((EntityPlayer) entityhuman).connection.send(this.getUpdatePacket()); // CraftBukkit
          }
-@@ -240,11 +266,37 @@
-         return true;
      }
  
+@@ -198,6 +209,25 @@
+             } else {
+                 signtext = signtext.setMessage(i, IChatBaseComponent.literal(filteredtext.raw()).setStyle(chatmodifier), IChatBaseComponent.literal(filteredtext.filteredOrEmpty()).setStyle(chatmodifier));
+             }
++
++            // CraftBukkit start
++            Player player = ((EntityPlayer) entityhuman).getBukkitEntity();
++            String[] lines = new String[4];
++
++            for (int j = 0; j < list.size(); ++j) {
++                lines[j] = CraftChatMessage.fromComponent(signtext.getMessage(j, entityhuman.isTextFilteringEnabled()));
++            }
++
++            SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player, lines);
++            entityhuman.level().getCraftServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled()) {
++                IChatBaseComponent[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
++                for (int j = 0; j < components.length; j++) {
++                    signtext = signtext.setMessage(j, components[j]);
++                }
++            }
++            // CraftBukkit end
+         }
+ 
+         return signtext;
+@@ -250,11 +280,37 @@
+         return flag1;
+     }
+ 
+-    private static CommandListenerWrapper createCommandSourceStack(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition) {
 +    // CraftBukkit start
 +    @Override
 +    public void sendSystemMessage(IChatBaseComponent ichatbasecomponent) {}
@@ -85,23 +99,24 @@
 +    public boolean shouldInformAdmins() {
 +        return false;
 +    }
-+    // CraftBukkit end
 +
-     public CommandListenerWrapper createCommandSourceStack(@Nullable EntityPlayer entityplayer) {
-         String s = entityplayer == null ? "Sign" : entityplayer.getName().getString();
-         Object object = entityplayer == null ? IChatBaseComponent.literal("Sign") : entityplayer.getDisplayName();
++    private CommandListenerWrapper createCommandSourceStack(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition) {
++        // CraftBukkit end
+         String s = entityhuman == null ? "Sign" : entityhuman.getName().getString();
+         Object object = entityhuman == null ? IChatBaseComponent.literal("Sign") : entityhuman.getDisplayName();
  
--        return new CommandListenerWrapper(ICommandListener.NULL, Vec3D.atCenterOf(this.worldPosition), Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getServer(), entityplayer);
+-        return new CommandListenerWrapper(ICommandListener.NULL, Vec3D.atCenterOf(blockposition), Vec2F.ZERO, (WorldServer) world, 2, s, (IChatBaseComponent) object, world.getServer(), entityhuman);
 +        // CraftBukkit - this
-+        return new CommandListenerWrapper(this, Vec3D.atCenterOf(this.worldPosition), Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getServer(), entityplayer);
++        return new CommandListenerWrapper(this, Vec3D.atCenterOf(blockposition), Vec2F.ZERO, (WorldServer) world, 2, s, (IChatBaseComponent) object, world.getServer(), entityhuman);
      }
  
-     public EnumColor getColor() {
-@@ -277,6 +329,6 @@
+     @Override
+@@ -283,7 +339,7 @@
  
      private void markUpdated() {
          this.setChanged();
 -        this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
 +        if (this.level != null) this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3); // CraftBukkit - skip notify if world is null (SPIGOT-5122)
      }
- }
+ 
+     public boolean isWaxed() {

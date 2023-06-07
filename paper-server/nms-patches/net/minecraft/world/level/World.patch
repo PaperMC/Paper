@@ -32,7 +32,7 @@
  public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public static final Codec<ResourceKey<World>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
-@@ -115,7 +140,43 @@
+@@ -114,7 +139,43 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -77,7 +77,7 @@
          this.profiler = supplier;
          this.levelData = worlddatamutable;
          this.dimensionTypeRegistration = holder;
-@@ -130,12 +191,12 @@
+@@ -129,12 +190,12 @@
              this.worldBorder = new WorldBorder() {
                  @Override
                  public double getCenterX() {
@@ -92,7 +92,7 @@
                  }
              };
          } else {
-@@ -148,6 +209,42 @@
+@@ -147,6 +208,42 @@
          this.neighborUpdater = new CollectingNeighborUpdater(this, j);
          this.registryAccess = iregistrycustom;
          this.damageSources = new DamageSources(iregistrycustom);
@@ -135,7 +135,7 @@
      }
  
      @Override
-@@ -205,6 +302,17 @@
+@@ -204,6 +301,17 @@
  
      @Override
      public boolean setBlock(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
@@ -153,7 +153,7 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -212,9 +320,24 @@
+@@ -211,13 +319,29 @@
          } else {
              Chunk chunk = this.getChunkAt(blockposition);
              Block block = iblockdata.getBlock();
@@ -179,15 +179,12 @@
                  return false;
              } else {
                  IBlockData iblockdata2 = this.getBlockState(blockposition);
-@@ -225,6 +348,7 @@
-                     this.getProfiler().pop();
-                 }
  
 +                /*
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
-@@ -251,12 +375,69 @@
+@@ -244,12 +368,69 @@
  
                      this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
                  }
@@ -215,7 +212,7 @@
 +                this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
 +            }
 +
-+            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(PlayerChunk.State.TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
 +                this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
 +            }
 +
@@ -257,7 +254,7 @@
      public void onBlockStateChange(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
      @Override
-@@ -342,6 +523,14 @@
+@@ -335,6 +516,14 @@
  
      @Override
      public IBlockData getBlockState(BlockPosition blockposition) {
@@ -272,7 +269,7 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
-@@ -533,6 +722,16 @@
+@@ -526,6 +715,16 @@
      @Nullable
      @Override
      public TileEntity getBlockEntity(BlockPosition blockposition) {
@@ -289,7 +286,7 @@
          return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, Chunk.EnumTileEntityState.IMMEDIATE));
      }
  
-@@ -540,6 +739,12 @@
+@@ -533,6 +732,12 @@
          BlockPosition blockposition = tileentity.getBlockPos();
  
          if (!this.isOutsideBuildHeight(blockposition)) {
@@ -302,7 +299,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(tileentity);
          }
      }
-@@ -670,7 +875,7 @@
+@@ -663,7 +868,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EntityComplexPart entitycomplexpart = aentitycomplexpart[k];

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/EntityTrackerEntry.java
 +++ b/net/minecraft/server/level/EntityTrackerEntry.java
-@@ -44,6 +44,12 @@
+@@ -42,6 +42,12 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
@@ -13,7 +13,7 @@
  public class EntityTrackerEntry {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -65,8 +71,12 @@
+@@ -63,8 +69,12 @@
      private boolean wasOnGround;
      @Nullable
      private List<DataWatcher.b<?>> trackedDataValues;
@@ -27,16 +27,16 @@
          this.ap = Vec3D.ZERO;
          this.lastPassengers = Collections.emptyList();
          this.level = worldserver;
-@@ -86,7 +96,7 @@
+@@ -84,7 +94,7 @@
          List<Entity> list = this.entity.getPassengers();
  
          if (!list.equals(this.lastPassengers)) {
 -            this.broadcast.accept(new PacketPlayOutMount(this.entity));
 +            this.broadcastAndSend(new PacketPlayOutMount(this.entity)); // CraftBukkit
-             this.changedPassengers(list, this.lastPassengers).forEach((entity) -> {
+             removedPassengers(list, this.lastPassengers).forEach((entity) -> {
                  if (entity instanceof EntityPlayer) {
                      EntityPlayer entityplayer = (EntityPlayer) entity;
-@@ -105,18 +115,18 @@
+@@ -101,18 +111,18 @@
          if (entity instanceof EntityItemFrame) {
              EntityItemFrame entityitemframe = (EntityItemFrame) entity;
  
@@ -59,7 +59,7 @@
  
                              worldmap.tickCarriedBy(entityplayer, itemstack);
                              Packet<?> packet = worldmap.getUpdatePacket(integer, entityplayer);
-@@ -229,7 +239,27 @@
+@@ -225,7 +235,27 @@
  
          ++this.tickCount;
          if (this.entity.hurtMarked) {
@@ -72,7 +72,7 @@
 +                org.bukkit.util.Vector velocity = player.getVelocity();
 +
 +                PlayerVelocityEvent event = new PlayerVelocityEvent(player, velocity.clone());
-+                this.entity.level.getCraftServer().getPluginManager().callEvent(event);
++                this.entity.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (event.isCancelled()) {
 +                    cancelled = true;
@@ -88,18 +88,9 @@
              this.entity.hurtMarked = false;
          }
  
-@@ -252,14 +282,17 @@
-         List<Packet<PacketListenerPlayOut>> list = new ArrayList();
+@@ -253,7 +283,10 @@
  
-         Objects.requireNonNull(list);
--        this.sendPairingData(list::add);
-+        this.sendPairingData(list::add, entityplayer); // CraftBukkit - add player
-         entityplayer.connection.send(new ClientboundBundlePacket(list));
-         this.entity.startSeenByPlayer(entityplayer);
-     }
- 
--    public void sendPairingData(Consumer<Packet<PacketListenerPlayOut>> consumer) {
-+    public void sendPairingData(Consumer<Packet<PacketListenerPlayOut>> consumer, EntityPlayer entityplayer) { // CraftBukkit - add player
+     public void sendPairingData(EntityPlayer entityplayer, Consumer<Packet<PacketListenerPlayOut>> consumer) {
          if (this.entity.isRemoved()) {
 -            EntityTrackerEntry.LOGGER.warn("Fetching packet for removed entity {}", this.entity);
 +            // CraftBukkit start - Remove useless error spam, just return
@@ -109,7 +100,7 @@
          }
  
          Packet<PacketListenerPlayOut> packet = this.entity.getAddEntityPacket();
-@@ -275,6 +308,12 @@
+@@ -269,6 +302,12 @@
          if (this.entity instanceof EntityLiving) {
              Collection<AttributeModifiable> collection = ((EntityLiving) this.entity).getAttributes().getSyncableAttributes();
  
@@ -122,7 +113,7 @@
              if (!collection.isEmpty()) {
                  consumer.accept(new PacketPlayOutUpdateAttributes(this.entity.getId(), collection));
              }
-@@ -306,8 +345,14 @@
+@@ -300,8 +339,14 @@
              if (!list.isEmpty()) {
                  consumer.accept(new PacketPlayOutEntityEquipment(this.entity.getId(), list));
              }
@@ -134,10 +125,10 @@
 +        consumer.accept(new PacketPlayOutEntityHeadRotation(this.entity, (byte) yHeadRotp));
 +        // CraftBukkit end
 +
-         if (this.entity instanceof EntityLiving) {
-             EntityLiving entityliving = (EntityLiving) this.entity;
-             Iterator iterator = entityliving.getActiveEffects().iterator();
-@@ -350,6 +395,11 @@
+         if (!this.entity.getPassengers().isEmpty()) {
+             consumer.accept(new PacketPlayOutMount(this.entity));
+         }
+@@ -333,6 +378,11 @@
              Set<AttributeModifiable> set = ((EntityLiving) this.entity).getAttributes().getDirtyAttributes();
  
              if (!set.isEmpty()) {

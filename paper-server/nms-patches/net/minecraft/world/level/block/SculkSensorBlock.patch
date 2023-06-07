@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/SculkSensorBlock.java
 +++ b/net/minecraft/world/level/block/SculkSensorBlock.java
-@@ -38,6 +38,11 @@
+@@ -41,6 +41,11 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  
@@ -11,8 +11,8 @@
 +
  public class SculkSensorBlock extends BlockTileEntity implements IBlockWaterlogged {
  
-     public static final int ACTIVE_TICKS = 40;
-@@ -87,6 +92,18 @@
+     public static final int ACTIVE_TICKS = 30;
+@@ -95,6 +100,18 @@
      @Override
      public void stepOn(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
          if (!world.isClientSide() && canActivate(iblockdata) && entity.getType() != EntityTypes.WARDEN) {
@@ -31,7 +31,7 @@
              TileEntity tileentity = world.getBlockEntity(blockposition);
  
              if (tileentity instanceof SculkSensorBlockEntity) {
-@@ -188,6 +205,15 @@
+@@ -198,6 +215,15 @@
      }
  
      public static void deactivate(World world, BlockPosition blockposition, IBlockData iblockdata) {
@@ -45,12 +45,12 @@
 +        }
 +        // CraftBukkit end
          world.setBlock(blockposition, (IBlockData) ((IBlockData) iblockdata.setValue(SculkSensorBlock.PHASE, SculkSensorPhase.COOLDOWN)).setValue(SculkSensorBlock.POWER, 0), 3);
-         world.scheduleTick(blockposition, iblockdata.getBlock(), 1);
-         if (!(Boolean) iblockdata.getValue(SculkSensorBlock.WATERLOGGED)) {
-@@ -198,6 +224,15 @@
+         world.scheduleTick(blockposition, iblockdata.getBlock(), 10);
+         updateNeighbours(world, blockposition, iblockdata);
+@@ -209,6 +235,15 @@
      }
  
-     public static void activate(@Nullable Entity entity, World world, BlockPosition blockposition, IBlockData iblockdata, int i) {
+     public void activate(@Nullable Entity entity, World world, BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
 +        // CraftBukkit start
 +        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(CraftBlock.at(world, blockposition), iblockdata.getValue(SculkSensorBlock.POWER), i);
 +        world.getCraftServer().getPluginManager().callEvent(eventRedstone);
@@ -61,9 +61,9 @@
 +        i = eventRedstone.getNewCurrent();
 +        // CraftBukkit end
          world.setBlock(blockposition, (IBlockData) ((IBlockData) iblockdata.setValue(SculkSensorBlock.PHASE, SculkSensorPhase.ACTIVE)).setValue(SculkSensorBlock.POWER, i), 3);
-         world.scheduleTick(blockposition, iblockdata.getBlock(), 40);
-         updateNeighbours(world, blockposition);
-@@ -260,9 +295,16 @@
+         world.scheduleTick(blockposition, iblockdata.getBlock(), this.getActiveTicks());
+         updateNeighbours(world, blockposition, iblockdata);
+@@ -291,9 +326,16 @@
      @Override
      public void spawnAfterBreak(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, ItemStack itemstack, boolean flag) {
          super.spawnAfterBreak(iblockdata, worldserver, blockposition, itemstack, flag);

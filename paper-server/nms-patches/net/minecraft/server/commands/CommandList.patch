@@ -1,15 +1,18 @@
 --- a/net/minecraft/server/commands/CommandList.java
 +++ b/net/minecraft/server/commands/CommandList.java
-@@ -36,6 +36,12 @@
+@@ -35,7 +35,14 @@
+ 
      private static int format(CommandListenerWrapper commandlistenerwrapper, Function<EntityPlayer, IChatBaseComponent> function) {
          PlayerList playerlist = commandlistenerwrapper.getServer().getPlayerList();
-         List<EntityPlayer> list = playerlist.getPlayers();
+-        List<EntityPlayer> list = playerlist.getPlayers();
 +        // CraftBukkit start
++        List<EntityPlayer> players = playerlist.getPlayers();
 +        if (commandlistenerwrapper.getBukkitSender() instanceof org.bukkit.entity.Player) {
 +            org.bukkit.entity.Player sender = (org.bukkit.entity.Player) commandlistenerwrapper.getBukkitSender();
-+            list = list.stream().filter((ep) -> sender.canSee(ep.getBukkitEntity())).collect(java.util.stream.Collectors.toList());
++            players = players.stream().filter((ep) -> sender.canSee(ep.getBukkitEntity())).collect(java.util.stream.Collectors.toList());
 +        }
++        List<EntityPlayer> list = players;
 +        // CraftBukkit end
          IChatBaseComponent ichatbasecomponent = ChatComponentUtils.formatList(list, function);
  
-         commandlistenerwrapper.sendSuccess(IChatBaseComponent.translatable("commands.list.players", list.size(), playerlist.getMaxPlayers(), ichatbasecomponent), false);
+         commandlistenerwrapper.sendSuccess(() -> {

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
 +++ b/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
-@@ -51,6 +51,18 @@
+@@ -51,6 +51,19 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
@@ -9,6 +9,7 @@
 +import net.minecraft.world.level.Explosion;
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.entity.TileEntity;
++import net.minecraft.world.level.storage.loot.LootParams;
 +import net.minecraft.world.level.storage.loot.LootTableInfo;
 +import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
 +import org.bukkit.craftbukkit.block.CraftBlock;
@@ -19,23 +20,23 @@
  public class EntityEnderDragon extends EntityInsentient implements IMonster {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -87,6 +99,7 @@
-     private final PathPoint[] nodes = new PathPoint[24];
-     private final int[] nodeAdjacency = new int[24];
-     private final Path openSet = new Path();
+@@ -88,6 +101,7 @@
+     private final PathPoint[] nodes;
+     private final int[] nodeAdjacency;
+     private final Path openSet;
 +    private final Explosion explosionSource; // CraftBukkit - reusable source for CraftTNTPrimed.getSource()
  
      public EntityEnderDragon(EntityTypes<? extends EntityEnderDragon> entitytypes, World world) {
          super(EntityTypes.ENDER_DRAGON, world);
-@@ -101,6 +114,7 @@
-         }
- 
+@@ -109,6 +123,7 @@
+         this.noPhysics = true;
+         this.noCulling = true;
          this.phaseManager = new DragonControllerManager(this);
 +        this.explosionSource = new Explosion(world, this, null, null, Double.NaN, Double.NaN, Double.NaN, Float.NaN, true, Explosion.Effect.DESTROY); // CraftBukkit
      }
  
-     public static AttributeProvider.Builder createAttributes() {
-@@ -234,7 +248,7 @@
+     public void setDragonFight(EnderDragonBattle enderdragonbattle) {
+@@ -267,7 +282,7 @@
  
                      Vec3D vec3d1 = idragoncontroller.getFlyTargetLocation();
  
@@ -44,14 +45,14 @@
                          d0 = vec3d1.x - this.getX();
                          d1 = vec3d1.y - this.getY();
                          d2 = vec3d1.z - this.getZ();
-@@ -375,7 +389,14 @@
+@@ -408,7 +423,14 @@
              if (this.nearestCrystal.isRemoved()) {
                  this.nearestCrystal = null;
              } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
 -                this.setHealth(this.getHealth() + 1.0F);
 +                // CraftBukkit start
 +                EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), 1.0F, EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL);
-+                this.level.getCraftServer().getPluginManager().callEvent(event);
++                this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
 +                    this.setHealth((float) (this.getHealth() + event.getAmount()));
@@ -60,7 +61,7 @@
              }
          }
  
-@@ -450,6 +471,9 @@
+@@ -483,6 +505,9 @@
          int j1 = MathHelper.floor(axisalignedbb.maxZ);
          boolean flag = false;
          boolean flag1 = false;
@@ -70,20 +71,20 @@
  
          for (int k1 = i; k1 <= l; ++k1) {
              for (int l1 = j; l1 <= i1; ++l1) {
-@@ -459,7 +483,11 @@
+@@ -492,7 +517,11 @@
  
                      if (!iblockdata.isAir() && !iblockdata.is(TagsBlock.DRAGON_TRANSPARENT)) {
-                         if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.is(TagsBlock.DRAGON_IMMUNE)) {
--                            flag1 = this.level.removeBlock(blockposition, false) || flag1;
+                         if (this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.is(TagsBlock.DRAGON_IMMUNE)) {
+-                            flag1 = this.level().removeBlock(blockposition, false) || flag1;
 +                            // CraftBukkit start - Add blocks to list rather than destroying them
-+                            // flag1 = this.level.removeBlock(blockposition, false) || flag1;
++                            // flag1 = this.level().removeBlock(blockposition, false) || flag1;
 +                            flag1 = true;
-+                            destroyedBlocks.add(CraftBlock.at(level, blockposition));
++                            destroyedBlocks.add(CraftBlock.at(this.level(), blockposition));
 +                            // CraftBukkit end
                          } else {
                              flag = true;
                          }
-@@ -468,6 +496,51 @@
+@@ -501,6 +530,51 @@
              }
          }
  
@@ -103,7 +104,7 @@
 +        } else if (event.getYield() == 0F) {
 +            // Yield zero ==> no drops
 +            for (org.bukkit.block.Block block : event.blockList()) {
-+                this.level.removeBlock(new BlockPosition(block.getX(), block.getY(), block.getZ()), false);
++                this.level().removeBlock(new BlockPosition(block.getX(), block.getY(), block.getZ()), false);
 +            }
 +        } else {
 +            for (org.bukkit.block.Block block : event.blockList()) {
@@ -117,17 +118,17 @@
 +
 +                Block nmsBlock = craftBlock.getNMS().getBlock();
 +                if (nmsBlock.dropFromExplosion(explosionSource)) {
-+                    TileEntity tileentity = craftBlock.getNMS().hasBlockEntity() ? this.level.getBlockEntity(blockposition) : null;
-+                    LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.level)).withRandom(this.level.random).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(blockposition)).withParameter(LootContextParameters.TOOL, ItemStack.EMPTY).withParameter(LootContextParameters.EXPLOSION_RADIUS, 1.0F / event.getYield()).withOptionalParameter(LootContextParameters.BLOCK_ENTITY, tileentity);
++                    TileEntity tileentity = craftBlock.getNMS().hasBlockEntity() ? this.level().getBlockEntity(blockposition) : null;
++                    LootParams.a loottableinfo_builder = (new LootParams.a((WorldServer) this.level())).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(blockposition)).withParameter(LootContextParameters.TOOL, ItemStack.EMPTY).withParameter(LootContextParameters.EXPLOSION_RADIUS, 1.0F / event.getYield()).withOptionalParameter(LootContextParameters.BLOCK_ENTITY, tileentity);
 +
 +                    craftBlock.getNMS().getDrops(loottableinfo_builder).forEach((itemstack) -> {
-+                        Block.popResource(level, blockposition, itemstack);
++                        Block.popResource(this.level(), blockposition, itemstack);
 +                    });
-+                    craftBlock.getNMS().spawnAfterBreak((WorldServer) level, blockposition, ItemStack.EMPTY, false);
++                    craftBlock.getNMS().spawnAfterBreak((WorldServer) this.level(), blockposition, ItemStack.EMPTY, false);
 +                }
-+                nmsBlock.wasExploded(level, blockposition, explosionSource);
++                nmsBlock.wasExploded(this.level(), blockposition, explosionSource);
 +
-+                this.level.removeBlock(blockposition, false);
++                this.level().removeBlock(blockposition, false);
 +            }
 +        }
 +        // CraftBukkit end
@@ -135,7 +136,7 @@
          if (flag1) {
              BlockPosition blockposition1 = new BlockPosition(i + this.random.nextInt(l - i + 1), j + this.random.nextInt(i1 - j + 1), k + this.random.nextInt(j1 - k + 1));
  
-@@ -532,6 +605,21 @@
+@@ -565,6 +639,21 @@
  
      }
  
@@ -143,7 +144,7 @@
 +    @Override
 +    public int getExpReward() {
 +        // CraftBukkit - Moved from #tickDeath method
-+        boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
++        boolean flag = this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
 +        short short0 = 500;
 +
 +        if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
@@ -157,13 +158,13 @@
      @Override
      protected void tickDeath() {
          if (this.dragonFight != null) {
-@@ -547,15 +635,20 @@
-             this.level.addParticle(Particles.EXPLOSION_EMITTER, this.getX() + (double) f, this.getY() + 2.0D + (double) f1, this.getZ() + (double) f2, 0.0D, 0.0D, 0.0D);
+@@ -580,15 +669,20 @@
+             this.level().addParticle(Particles.EXPLOSION_EMITTER, this.getX() + (double) f, this.getY() + 2.0D + (double) f1, this.getZ() + (double) f2, 0.0D, 0.0D, 0.0D);
          }
  
 +        // CraftBukkit start - SPIGOT-2420: Moved up to #getExpReward method
 +        /*
-         boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
+         boolean flag = this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
          short short0 = 500;
  
          if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
@@ -173,22 +174,22 @@
 +        int short0 = expToDrop;
 +        // CraftBukkit end
  
-         if (this.level instanceof WorldServer) {
+         if (this.level() instanceof WorldServer) {
 -            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && flag) {
 +            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && true) {  // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
-                 EntityExperienceOrb.award((WorldServer) this.level, this.position(), MathHelper.floor((float) short0 * 0.08F));
+                 EntityExperienceOrb.award((WorldServer) this.level(), this.position(), MathHelper.floor((float) short0 * 0.08F));
              }
  
-@@ -566,7 +659,7 @@
+@@ -599,7 +693,7 @@
  
          this.move(EnumMoveType.SELF, new Vec3D(0.0D, 0.10000000149011612D, 0.0D));
-         if (this.dragonDeathTime == 200 && this.level instanceof WorldServer) {
+         if (this.dragonDeathTime == 200 && this.level() instanceof WorldServer) {
 -            if (flag) {
 +            if (true) { // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
-                 EntityExperienceOrb.award((WorldServer) this.level, this.position(), MathHelper.floor((float) short0 * 0.2F));
+                 EntityExperienceOrb.award((WorldServer) this.level(), this.position(), MathHelper.floor((float) short0 * 0.2F));
              }
  
-@@ -787,6 +880,7 @@
+@@ -820,6 +914,7 @@
          super.addAdditionalSaveData(nbttagcompound);
          nbttagcompound.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          nbttagcompound.putInt("DragonDeathTime", this.dragonDeathTime);
@@ -196,7 +197,7 @@
      }
  
      @Override
-@@ -800,6 +894,11 @@
+@@ -833,6 +928,11 @@
              this.dragonDeathTime = nbttagcompound.getInt("DragonDeathTime");
          }
  

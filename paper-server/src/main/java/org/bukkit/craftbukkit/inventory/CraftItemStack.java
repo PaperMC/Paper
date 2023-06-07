@@ -592,9 +592,11 @@ public final class CraftItemStack extends ItemStack {
             case SCULK_CATALYST:
             case SCULK_SHRIEKER:
             case SCULK_SENSOR:
+            case CALIBRATED_SCULK_SENSOR:
             case CHISELED_BOOKSHELF:
             case DECORATED_POT:
             case SUSPICIOUS_SAND:
+            case SUSPICIOUS_GRAVEL:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             case TROPICAL_FISH_BUCKET:
                 return new CraftMetaTropicalFishBucket(item.getTag());

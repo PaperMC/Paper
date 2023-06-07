@@ -460,7 +460,7 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean isLiquid() {
-        return getNMS().getMaterial().isLiquid();
+        return getNMS().liquid();
     }
 
     @Override

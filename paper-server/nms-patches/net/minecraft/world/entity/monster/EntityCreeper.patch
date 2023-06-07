@@ -35,19 +35,19 @@
      protected EnumInteractionResult mobInteract(EntityHuman entityhuman, EnumHand enumhand) {
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
 @@ -250,10 +266,18 @@
-         if (!this.level.isClientSide) {
+         if (!this.level().isClientSide) {
              float f = this.isPowered() ? 2.0F : 1.0F;
  
 -            this.dead = true;
--            this.level.explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionRadius * f, World.a.MOB);
+-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionRadius * f, World.a.MOB);
 -            this.discard();
 -            this.spawnLingeringCloud();
 +            // CraftBukkit start
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.explosionRadius * f, false);
-+            this.level.getCraftServer().getPluginManager().callEvent(event);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
 +                this.dead = true;
-+                this.level.explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB);
++                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB);
 +                this.discard();
 +                this.spawnLingeringCloud();
 +            } else {
@@ -59,7 +59,7 @@
      }
 @@ -264,6 +288,7 @@
          if (!collection.isEmpty()) {
-             EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level, this.getX(), this.getY(), this.getZ());
+             EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
  
 +            entityareaeffectcloud.setOwner(this); // CraftBukkit
              entityareaeffectcloud.setRadius(2.5F);
@@ -69,8 +69,8 @@
                  entityareaeffectcloud.addEffect(new MobEffect(mobeffect));
              }
  
--            this.level.addFreshEntity(entityareaeffectcloud);
-+            this.level.addFreshEntity(entityareaeffectcloud, CreatureSpawnEvent.SpawnReason.EXPLOSION); // CraftBukkit
+-            this.level().addFreshEntity(entityareaeffectcloud);
++            this.level().addFreshEntity(entityareaeffectcloud, CreatureSpawnEvent.SpawnReason.EXPLOSION); // CraftBukkit
          }
  
      }

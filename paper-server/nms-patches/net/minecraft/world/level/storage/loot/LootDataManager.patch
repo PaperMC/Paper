@@ -1,0 +1,43 @@
+--- a/net/minecraft/world/level/storage/loot/LootDataManager.java
++++ b/net/minecraft/world/level/storage/loot/LootDataManager.java
+@@ -36,6 +36,7 @@
+     public static final LootDataId<LootTable> EMPTY_LOOT_TABLE_KEY = new LootDataId<>(LootDataType.TABLE, LootTables.EMPTY);
+     private Map<LootDataId<?>, ?> elements = Map.of();
+     private Multimap<LootDataType<?>, MinecraftKey> typeKeys = ImmutableMultimap.of();
++    public Map<?, MinecraftKey> lootTableToKey = ImmutableMap.of(); // CraftBukkit
+ 
+     public LootDataManager() {}
+ 
+@@ -93,7 +94,7 @@
+             @Nullable
+             @Override
+             public <T> T getElement(LootDataId<T> lootdataid) {
+-                return map1.get(lootdataid);
++                return (T) map1.get(lootdataid); // CraftBukkit - decompile error
+             }
+         });
+ 
+@@ -105,16 +106,21 @@
+         });
+         this.elements = map1;
+         this.typeKeys = com_google_common_collect_immutablemultimap_builder.build();
++        // CraftBukkit start - build a reversed registry map
++        ImmutableMap.Builder<Object, MinecraftKey> lootTableToKeyBuilder = ImmutableMap.builder();
++        this.elements.forEach((key, lootTable) -> lootTableToKeyBuilder.put((Object) lootTable, key.location()));
++        this.lootTableToKey = lootTableToKeyBuilder.build();
++        // CraftBukkit end
+     }
+ 
+     private static <T> void castAndValidate(LootCollector lootcollector, LootDataId<T> lootdataid, Object object) {
+-        lootdataid.type().runValidation(lootcollector, lootdataid, object);
++        lootdataid.type().runValidation(lootcollector, lootdataid, (T) object); // CraftBukkit - decompile error
+     }
+ 
+     @Nullable
+     @Override
+     public <T> T getElement(LootDataId<T> lootdataid) {
+-        return this.elements.get(lootdataid);
++        return (T) this.elements.get(lootdataid); // CraftBukkit - decompile error
+     }
+ 
+     public Collection<MinecraftKey> getKeys(LootDataType<?> lootdatatype) {

@@ -7,18 +7,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.properties.Property;
-import com.mojang.authlib.yggdrasil.YggdrasilMinecraftSessionService;
+import com.mojang.authlib.yggdrasil.ServicesKeySet;
+import com.mojang.authlib.yggdrasil.ServicesKeyType;
+import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
+import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.apache.commons.io.IOUtils;
 import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
 
 final class CraftProfileProperty {
@@ -44,19 +43,18 @@ final class CraftProfileProperty {
         public String format(JsonElement jsonElement);
     }
 
-    private static final PublicKey PUBLIC_KEY;
+    private static final ServicesKeySet PUBLIC_KEYS;
 
     static {
         try {
-            X509EncodedKeySpec spec = new X509EncodedKeySpec(IOUtils.toByteArray(YggdrasilMinecraftSessionService.class.getResourceAsStream("/yggdrasil_session_pubkey.der")));
-            PUBLIC_KEY = KeyFactory.getInstance("RSA").generatePublic(spec);
+            PUBLIC_KEYS = new YggdrasilAuthenticationService(Proxy.NO_PROXY).getServicesKeySet();
         } catch (Exception e) {
-            throw new Error("Could not find yggdrasil_session_pubkey.der! This indicates a bug.");
+            throw new Error("Could not load yggdrasil_session_pubkey.der! This indicates a bug.");
         }
     }
 
     public static boolean hasValidSignature(@Nonnull Property property) {
-        return property.hasSignature() && property.isSignatureValid(PUBLIC_KEY);
+        return property.hasSignature() && PUBLIC_KEYS.keys(ServicesKeyType.PROFILE_PROPERTY).stream().anyMatch((key) -> key.validateProperty(property));
     }
 
     @Nullable

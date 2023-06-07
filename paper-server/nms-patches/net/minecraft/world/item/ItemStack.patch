@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -75,6 +75,42 @@
+@@ -76,6 +76,43 @@
  import net.minecraft.world.level.block.state.pattern.ShapeDetectorBlock;
  import org.slf4j.Logger;
  
@@ -18,6 +18,7 @@
 +import net.minecraft.world.level.block.BlockBed;
 +import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.BlockSapling;
++import net.minecraft.world.level.block.BlockSign;
 +import net.minecraft.world.level.block.BlockTileEntity;
 +import net.minecraft.world.level.block.BlockWitherSkull;
 +import net.minecraft.world.level.block.SoundEffectType;
@@ -43,10 +44,11 @@
  public final class ItemStack {
  
      public static final Codec<ItemStack> CODEC = RecordCodecBuilder.create((instance) -> {
-@@ -151,16 +187,30 @@
-         this.updateEmptyCacheFlag();
+@@ -151,11 +188,24 @@
+         this.item = null;
      }
  
+-    private ItemStack(NBTTagCompound nbttagcompound) {
 +    // Called to run this stack through the data converter to handle older storage methods and serialized items
 +    public void convertStack(int version) {
 +        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion()) {
@@ -57,13 +59,6 @@
 +        }
 +    }
 +
-     private void updateEmptyCacheFlag() {
-+        if (this.emptyCacheFlag && this == ItemStack.EMPTY) throw new AssertionError("TRAP"); // CraftBukkit
-         this.emptyCacheFlag = false;
-         this.emptyCacheFlag = this.isEmpty();
-     }
- 
--    private ItemStack(NBTTagCompound nbttagcompound) {
 +    // CraftBukkit - break into own method
 +    private void load(NBTTagCompound nbttagcompound) {
          this.item = (Item) BuiltInRegistries.ITEM.get(new MinecraftKey(nbttagcompound.getString("id")));
@@ -76,19 +71,19 @@
              this.getItem().verifyTagAfterLoad(this.tag);
          }
  
-@@ -168,6 +218,11 @@
-             this.setDamageValue(this.getDamageValue());
-         }
+@@ -165,6 +215,11 @@
  
-+    }
-+
+     }
+ 
 +    private ItemStack(NBTTagCompound nbttagcompound) {
 +        this.load(nbttagcompound);
 +        // CraftBukkit end
-         this.updateEmptyCacheFlag();
-     }
- 
-@@ -225,7 +280,7 @@
++    }
++
+     public static ItemStack of(NBTTagCompound nbttagcompound) {
+         try {
+             return new ItemStack(nbttagcompound);
+@@ -229,7 +284,7 @@
          return this.getItem().builtInRegistryHolder().tags();
      }
  
@@ -97,7 +92,7 @@
          EntityHuman entityhuman = itemactioncontext.getPlayer();
          BlockPosition blockposition = itemactioncontext.getClickedPos();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getLevel(), blockposition, false);
-@@ -233,12 +288,182 @@
+@@ -237,12 +292,186 @@
          if (entityhuman != null && !entityhuman.getAbilities().mayBuild && !this.hasAdventureModePlaceTagForBlock(itemactioncontext.getLevel().registryAccess().registryOrThrow(Registries.BLOCK), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -231,8 +226,8 @@
 +
 +                    if (this.item == Items.WITHER_SKELETON_SKULL) { // Special case skulls to allow wither spawns to be cancelled
 +                        BlockPosition bp = blockposition;
-+                        if (!world.getBlockState(blockposition).getMaterial().isReplaceable()) {
-+                            if (!world.getBlockState(blockposition).getMaterial().isSolid()) {
++                        if (!world.getBlockState(blockposition).canBeReplaced()) {
++                            if (!world.getBlockState(blockposition).isSolid()) {
 +                                bp = null;
 +                            } else {
 +                                bp = bp.relative(itemactioncontext.getClickedFace());
@@ -249,7 +244,11 @@
 +                    // SPIGOT-4678
 +                    if (this.item instanceof ItemSign && ItemSign.openSign != null) {
 +                        try {
-+                            entityhuman.openTextEdit((TileEntitySign) world.getBlockEntity(ItemSign.openSign));
++                            if (world.getBlockEntity(blockposition) instanceof TileEntitySign tileentitysign) {
++                                if (world.getBlockState(blockposition).getBlock() instanceof BlockSign blocksign) {
++                                    blocksign.openTextEdit(entityhuman, tileentitysign, true);
++                                }
++                            }
 +                        } finally {
 +                            ItemSign.openSign = null;
 +                        }
@@ -281,7 +280,7 @@
  
              return enuminteractionresult;
          }
-@@ -319,6 +544,21 @@
+@@ -323,6 +552,21 @@
                  }
  
                  i -= k;
@@ -303,7 +302,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -340,6 +580,11 @@
+@@ -344,6 +588,11 @@
                  if (this.hurt(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -315,7 +314,7 @@
  
                      this.shrink(1);
                      if (t0 instanceof EntityHuman) {
-@@ -494,6 +739,17 @@
+@@ -492,6 +741,17 @@
          return this.tag;
      }
  
@@ -333,7 +332,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -864,6 +1120,12 @@
+@@ -862,6 +1122,12 @@
      }
  
      public void setRepairCost(int i) {
@@ -346,7 +345,7 @@
          this.getOrCreateTag().putInt("RepairCost", i);
      }
  
-@@ -913,6 +1175,13 @@
+@@ -911,6 +1177,13 @@
          nbttaglist.add(nbttagcompound);
      }
  

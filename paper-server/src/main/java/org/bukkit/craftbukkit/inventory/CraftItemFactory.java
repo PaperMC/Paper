@@ -329,9 +329,11 @@ public final class CraftItemFactory implements ItemFactory {
         case SCULK_CATALYST:
         case SCULK_SHRIEKER:
         case SCULK_SENSOR:
+        case CALIBRATED_SCULK_SENSOR:
         case CHISELED_BOOKSHELF:
         case DECORATED_POT:
         case SUSPICIOUS_SAND:
+        case SUSPICIOUS_GRAVEL:
             return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);

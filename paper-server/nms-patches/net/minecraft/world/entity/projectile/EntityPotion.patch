@@ -29,7 +29,7 @@
 @@ -148,6 +158,7 @@
      private void applySplash(List<MobEffect> list, @Nullable Entity entity) {
          AxisAlignedBB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
-         List<EntityLiving> list1 = this.level.getEntitiesOfClass(EntityLiving.class, axisalignedbb);
+         List<EntityLiving> list1 = this.level().getEntitiesOfClass(EntityLiving.class, axisalignedbb);
 +        Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
  
          if (!list1.isEmpty()) {
@@ -64,7 +64,7 @@
 +                    MobEffect mobeffect = (MobEffect) iterator1.next();
 +                    MobEffectList mobeffectlist = mobeffect.getEffect();
 +                    // CraftBukkit start - Abide by PVP settings - for players only!
-+                    if (!this.level.pvpMode && this.getOwner() instanceof EntityPlayer && entityliving instanceof EntityPlayer && entityliving != this.getOwner()) {
++                    if (!this.level().pvpMode && this.getOwner() instanceof EntityPlayer && entityliving instanceof EntityPlayer && entityliving != this.getOwner()) {
 +                        int i = MobEffectList.getId(mobeffectlist);
 +                        // Block SLOWER_MOVEMENT, SLOWER_DIG, HARM, BLINDNESS, HUNGER, WEAKNESS and POISON potions
 +                        if (i == 2 || i == 4 || i == 7 || i == 15 || i == 17 || i == 18 || i == 19) {
@@ -106,11 +106,11 @@
              entityareaeffectcloud.setFixedColor(nbttagcompound.getInt("CustomPotionColor"));
          }
  
--        this.level.addFreshEntity(entityareaeffectcloud);
+-        this.level().addFreshEntity(entityareaeffectcloud);
 +        // CraftBukkit start
 +        org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, entityareaeffectcloud);
 +        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved())) {
-+            this.level.addFreshEntity(entityareaeffectcloud);
++            this.level().addFreshEntity(entityareaeffectcloud);
 +        } else {
 +            entityareaeffectcloud.discard();
 +        }
@@ -119,31 +119,31 @@
  
      public boolean isLingering() {
 @@ -232,13 +276,25 @@
-         IBlockData iblockdata = this.level.getBlockState(blockposition);
+         IBlockData iblockdata = this.level().getBlockState(blockposition);
  
          if (iblockdata.is(TagsBlock.FIRE)) {
--            this.level.removeBlock(blockposition, false);
+-            this.level().removeBlock(blockposition, false);
 +            // CraftBukkit start
 +            if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
-+                this.level.removeBlock(blockposition, false);
++                this.level().removeBlock(blockposition, false);
 +            }
 +            // CraftBukkit end
          } else if (AbstractCandleBlock.isLit(iblockdata)) {
--            AbstractCandleBlock.extinguish((EntityHuman) null, iblockdata, this.level, blockposition);
+-            AbstractCandleBlock.extinguish((EntityHuman) null, iblockdata, this.level(), blockposition);
 +            // CraftBukkit start
 +            if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.setValue(AbstractCandleBlock.LIT, false)).isCancelled()) {
-+                AbstractCandleBlock.extinguish((EntityHuman) null, iblockdata, this.level, blockposition);
++                AbstractCandleBlock.extinguish((EntityHuman) null, iblockdata, this.level(), blockposition);
 +            }
 +            // CraftBukkit end
          } else if (BlockCampfire.isLitCampfire(iblockdata)) {
--            this.level.levelEvent((EntityHuman) null, 1009, blockposition, 0);
--            BlockCampfire.dowse(this.getOwner(), this.level, blockposition, iblockdata);
--            this.level.setBlockAndUpdate(blockposition, (IBlockData) iblockdata.setValue(BlockCampfire.LIT, false));
+-            this.level().levelEvent((EntityHuman) null, 1009, blockposition, 0);
+-            BlockCampfire.dowse(this.getOwner(), this.level(), blockposition, iblockdata);
+-            this.level().setBlockAndUpdate(blockposition, (IBlockData) iblockdata.setValue(BlockCampfire.LIT, false));
 +            // CraftBukkit start
 +            if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.setValue(BlockCampfire.LIT, false)).isCancelled()) {
-+                this.level.levelEvent((EntityHuman) null, 1009, blockposition, 0);
-+                BlockCampfire.dowse(this.getOwner(), this.level, blockposition, iblockdata);
-+                this.level.setBlockAndUpdate(blockposition, (IBlockData) iblockdata.setValue(BlockCampfire.LIT, false));
++                this.level().levelEvent((EntityHuman) null, 1009, blockposition, 0);
++                BlockCampfire.dowse(this.getOwner(), this.level(), blockposition, iblockdata);
++                this.level().setBlockAndUpdate(blockposition, (IBlockData) iblockdata.setValue(BlockCampfire.LIT, false));
 +            }
 +            // CraftBukkit end
          }

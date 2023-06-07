@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.block.data.type;
 
-import org.bukkit.block.data.type.SuspiciousSand;
+import org.bukkit.block.data.Brushable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-public abstract class CraftSuspiciousSand extends CraftBlockData implements SuspiciousSand {
+public abstract class CraftBrushable extends CraftBlockData implements Brushable {
 
     private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DUSTED = getInteger("dusted");
 

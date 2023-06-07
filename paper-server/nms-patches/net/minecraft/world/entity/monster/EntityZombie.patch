@@ -26,7 +26,7 @@
          super(entitytypes, world);
 @@ -202,7 +212,10 @@
      public void tick() {
-         if (!this.level.isClientSide && this.isAlive() && !this.isNoAi()) {
+         if (!this.level().isClientSide && this.isAlive() && !this.isNoAi()) {
              if (this.isUnderWaterConverting()) {
 -                --this.conversionTime;
 +                // CraftBukkit start - Use wall time instead of ticks for conversion
@@ -60,7 +60,7 @@
 +        EntityZombie entityzombie = (EntityZombie) this.convertTo(entitytypes, true, EntityTransformEvent.TransformReason.DROWNED, CreatureSpawnEvent.SpawnReason.DROWNED);
  
          if (entityzombie != null) {
-             entityzombie.handleAttributes(entityzombie.level.getCurrentDifficultyAt(entityzombie.blockPosition()).getSpecialMultiplier());
+             entityzombie.handleAttributes(entityzombie.level().getCurrentDifficultyAt(entityzombie.blockPosition()).getSpecialMultiplier());
              entityzombie.setCanBreakDoors(entityzombie.supportsBreakDoorGoal() && this.canBreakDoors());
 +            // CraftBukkit start - SPIGOT-5208: End conversion to stop event spam
 +        } else {
@@ -70,25 +70,25 @@
  
      }
 @@ -308,9 +327,9 @@
-                     if (SpawnerCreature.isSpawnPositionOk(entitypositiontypes_surface, this.level, blockposition, entitytypes) && EntityPositionTypes.checkSpawnRules(entitytypes, worldserver, EnumMobSpawn.REINFORCEMENT, blockposition, this.level.random)) {
+                     if (SpawnerCreature.isSpawnPositionOk(entitypositiontypes_surface, this.level(), blockposition, entitytypes) && EntityPositionTypes.checkSpawnRules(entitytypes, worldserver, EnumMobSpawn.REINFORCEMENT, blockposition, this.level().random)) {
                          entityzombie.setPos((double) i1, (double) j1, (double) k1);
-                         if (!this.level.hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && this.level.isUnobstructed(entityzombie) && this.level.noCollision((Entity) entityzombie) && !this.level.containsAnyLiquid(entityzombie.getBoundingBox())) {
+                         if (!this.level().hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) {
 -                            entityzombie.setTarget(entityliving);
 +                            entityzombie.setTarget(entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET, true); // CraftBukkit
-                             entityzombie.finalizeSpawn(worldserver, this.level.getCurrentDifficultyAt(entityzombie.blockPosition()), EnumMobSpawn.REINFORCEMENT, (GroupDataEntity) null, (NBTTagCompound) null);
+                             entityzombie.finalizeSpawn(worldserver, this.level().getCurrentDifficultyAt(entityzombie.blockPosition()), EnumMobSpawn.REINFORCEMENT, (GroupDataEntity) null, (NBTTagCompound) null);
 -                            worldserver.addFreshEntityWithPassengers(entityzombie);
 +                            worldserver.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
                              this.getAttribute(GenericAttributes.SPAWN_REINFORCEMENTS_CHANCE).addPermanentModifier(new AttributeModifier("Zombie reinforcement caller charge", -0.05000000074505806D, AttributeModifier.Operation.ADDITION));
                              entityzombie.getAttribute(GenericAttributes.SPAWN_REINFORCEMENTS_CHANCE).addPermanentModifier(new AttributeModifier("Zombie reinforcement callee charge", -0.05000000074505806D, AttributeModifier.Operation.ADDITION));
                              break;
 @@ -331,7 +350,14 @@
-             float f = this.level.getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
+             float f = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
  
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < f * 0.3F) {
 -                entity.setSecondsOnFire(2 * (int) f);
 +                // CraftBukkit start
 +                EntityCombustByEntityEvent event = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 2 * (int) f); // PAIL: fixme
-+                this.level.getCraftServer().getPluginManager().callEvent(event);
++                this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
 +                    entity.setSecondsOnFire(event.getDuration(), false);

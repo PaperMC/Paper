@@ -88,6 +88,7 @@ import net.minecraft.world.inventory.Container;
 import net.minecraft.world.inventory.ContainerWorkbench;
 import net.minecraft.world.inventory.InventoryCraftResult;
 import net.minecraft.world.inventory.InventoryCrafting;
+import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemWorldMap;
 import net.minecraft.world.item.crafting.IRecipe;
@@ -113,7 +114,8 @@ import net.minecraft.world.level.storage.Convertable;
 import net.minecraft.world.level.storage.SaveData;
 import net.minecraft.world.level.storage.WorldDataServer;
 import net.minecraft.world.level.storage.WorldNBTStorage;
-import net.minecraft.world.level.storage.loot.LootTableRegistry;
+import net.minecraft.world.level.storage.loot.LootDataManager;
+import net.minecraft.world.level.validation.ContentValidationException;
 import net.minecraft.world.phys.Vec3D;
 import org.apache.commons.lang.Validate;
 import org.bukkit.BanList;
@@ -169,7 +171,6 @@ import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
-import org.bukkit.craftbukkit.inventory.CraftSmithingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftSmithingTransformRecipe;
 import org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe;
 import org.bukkit.craftbukkit.inventory.CraftSmokingRecipe;
@@ -227,7 +228,6 @@ import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
-import org.bukkit.inventory.SmithingRecipe;
 import org.bukkit.inventory.SmithingTransformRecipe;
 import org.bukkit.inventory.SmithingTrimRecipe;
 import org.bukkit.inventory.SmokingRecipe;
@@ -1061,8 +1061,8 @@ public final class CraftServer implements Server {
 
         Convertable.ConversionSession worldSession;
         try {
-            worldSession = Convertable.createDefault(getWorldContainer().toPath()).createAccess(name, actualDimension);
-        } catch (IOException ex) {
+            worldSession = Convertable.createDefault(getWorldContainer().toPath()).validateAndCreateAccess(name, actualDimension);
+        } catch (IOException | ContentValidationException ex) {
             throw new RuntimeException(ex);
         }
 
@@ -1123,7 +1123,7 @@ public final class CraftServer implements Server {
         }
 
         WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, worlddimension, getServer().progressListenerFactory.create(11),
-                worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator, biomeProvider);
+                worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, console.overworld().getRandomSequences(), creator.environment(), generator, biomeProvider);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
             return null;
@@ -1271,8 +1271,6 @@ public final class CraftServer implements Server {
                 toAdd = CraftSmokingRecipe.fromBukkitRecipe((SmokingRecipe) recipe);
             } else if (recipe instanceof StonecuttingRecipe) {
                 toAdd = CraftStonecuttingRecipe.fromBukkitRecipe((StonecuttingRecipe) recipe);
-            } else if (recipe instanceof SmithingRecipe) {
-                toAdd = CraftSmithingRecipe.fromBukkitRecipe((SmithingRecipe) recipe);
             } else if (recipe instanceof SmithingTransformRecipe) {
                 toAdd = CraftSmithingTransformRecipe.fromBukkitRecipe((SmithingTransformRecipe) recipe);
             } else if (recipe instanceof SmithingTrimRecipe) {
@@ -1332,7 +1330,7 @@ public final class CraftServer implements Server {
                 return net.minecraft.world.item.ItemStack.EMPTY;
             }
         };
-        InventoryCrafting inventoryCrafting = new InventoryCrafting(container, 3, 3);
+        InventoryCrafting inventoryCrafting = new TransientCraftingContainer(container, 3, 3);
 
         return getNMSRecipe(craftingMatrix, inventoryCrafting, (CraftWorld) world).map(IRecipe::toBukkitRecipe).orElse(null);
     }
@@ -2290,8 +2288,8 @@ public final class CraftServer implements Server {
     public LootTable getLootTable(NamespacedKey key) {
         Validate.notNull(key, "NamespacedKey cannot be null");
 
-        LootTableRegistry registry = getServer().getLootTables();
-        return new CraftLootTable(key, registry.get(CraftNamespacedKey.toMinecraft(key)));
+        LootDataManager registry = getServer().getLootData();
+        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
     }
 
     @Override

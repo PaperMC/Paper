@@ -5,9 +5,9 @@ import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
 import org.bukkit.World;
 import org.bukkit.block.SculkSensor;
 
-public class CraftSculkSensor extends CraftBlockEntityState<SculkSensorBlockEntity> implements SculkSensor {
+public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlockEntityState<T> implements SculkSensor {
 
-    public CraftSculkSensor(World world, SculkSensorBlockEntity tileEntity) {
+    public CraftSculkSensor(World world, T tileEntity) {
         super(world, tileEntity);
     }
 

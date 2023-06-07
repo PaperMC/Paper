@@ -912,7 +912,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 final BlockPosition pos = BlockPosition.containing(x, y, z);
                 for (BlockFace dir : faces) {
                     IBlockData nmsBlock = getHandle().getBlockState(pos.relative(CraftBlock.blockFaceToNotch(dir)));
-                    if (nmsBlock.getMaterial().isSolid() || BlockDiodeAbstract.isDiode(nmsBlock)) {
+                    if (nmsBlock.isSolid() || BlockDiodeAbstract.isDiode(nmsBlock)) {
                         boolean taken = false;
                         AxisAlignedBB bb = (ItemFrame.class.isAssignableFrom(clazz))
                                 ? EntityItemFrame.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).getOpposite(), width, height)

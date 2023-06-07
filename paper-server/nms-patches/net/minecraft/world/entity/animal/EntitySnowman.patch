@@ -13,24 +13,24 @@
      private static final DataWatcherObject<Byte> DATA_PUMPKIN_ID = DataWatcher.defineId(EntitySnowman.class, DataWatcherRegistry.BYTE);
 @@ -97,7 +101,7 @@
          super.aiStep();
-         if (!this.level.isClientSide) {
-             if (this.level.getBiome(this.blockPosition()).is(BiomeTags.SNOW_GOLEM_MELTS)) {
+         if (!this.level().isClientSide) {
+             if (this.level().getBiome(this.blockPosition()).is(BiomeTags.SNOW_GOLEM_MELTS)) {
 -                this.hurt(this.damageSources().onFire(), 1.0F);
 +                this.hurt(this.damageSources().melting, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
              }
  
-             if (!this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+             if (!this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
 @@ -113,7 +117,11 @@
                  BlockPosition blockposition = new BlockPosition(j, k, l);
  
-                 if (this.level.getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level, blockposition)) {
--                    this.level.setBlockAndUpdate(blockposition, iblockdata);
+                 if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
+-                    this.level().setBlockAndUpdate(blockposition, iblockdata);
 +                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level, blockposition, iblockdata, this)) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), blockposition, iblockdata, this)) {
 +                        continue;
 +                    }
 +                    // CraftBukkit end
-                     this.level.gameEvent(GameEvent.BLOCK_PLACE, blockposition, GameEvent.a.of(this, iblockdata));
+                     this.level().gameEvent(GameEvent.BLOCK_PLACE, blockposition, GameEvent.a.of(this, iblockdata));
                  }
              }
 @@ -145,6 +153,11 @@
@@ -44,10 +44,10 @@
 +            // CraftBukkit end
              this.shear(SoundCategory.PLAYERS);
              this.gameEvent(GameEvent.SHEAR, entityhuman);
-             if (!this.level.isClientSide) {
+             if (!this.level().isClientSide) {
 @@ -164,7 +177,9 @@
-         this.level.playSound((EntityHuman) null, (Entity) this, SoundEffects.SNOW_GOLEM_SHEAR, soundcategory, 1.0F, 1.0F);
-         if (!this.level.isClientSide()) {
+         this.level().playSound((EntityHuman) null, (Entity) this, SoundEffects.SNOW_GOLEM_SHEAR, soundcategory, 1.0F, 1.0F);
+         if (!this.level().isClientSide()) {
              this.setPumpkin(false);
 +            this.forceDrops = true; // CraftBukkit
              this.spawnAtLocation(new ItemStack(Items.CARVED_PUMPKIN), 1.7F);

@@ -2,7 +2,7 @@
 +++ b/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
 @@ -102,7 +102,7 @@
          ChunkProviderServer chunkproviderserver = worldserver.getChunkSource();
-         LightEngine lightengine = chunkproviderserver.getLightEngine();
+         LevelLightEngine levellightengine = chunkproviderserver.getLightEngine();
          IRegistry<BiomeBase> iregistry = worldserver.registryAccess().registryOrThrow(Registries.BIOME);
 -        Codec<PalettedContainerRO<Holder<BiomeBase>>> codec = makeBiomeCodec(iregistry);
 +        Codec<DataPaletteBlock<Holder<BiomeBase>>> codec = makeBiomeCodecRW(iregistry); // CraftBukkit - read/write
@@ -34,12 +34,12 @@
                      object = new DataPaletteBlock<>(iregistry.asHolderIdMap(), iregistry.getHolderOrThrow(Biomes.PLAINS), DataPaletteBlock.d.SECTION_BIOMES);
                  }
  
--                ChunkSection chunksection = new ChunkSection(b0, datapaletteblock, (PalettedContainerRO) object);
-+                ChunkSection chunksection = new ChunkSection(b0, datapaletteblock, (DataPaletteBlock) object); // CraftBukkit - read/write
+-                ChunkSection chunksection = new ChunkSection(datapaletteblock, (PalettedContainerRO) object);
++                ChunkSection chunksection = new ChunkSection(datapaletteblock, (DataPaletteBlock) object); // CraftBukkit - read/write
  
                  achunksection[k] = chunksection;
-                 villageplace.checkConsistencyWithBlocks(chunkcoordintpair, chunksection);
-@@ -174,7 +174,7 @@
+                 SectionPosition sectionposition = SectionPosition.of(chunkcoordintpair, b0);
+@@ -176,7 +176,7 @@
              dataresult = BlendingData.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("blending_data")));
              logger1 = ChunkRegionLoader.LOGGER;
              Objects.requireNonNull(logger1);
@@ -48,7 +48,7 @@
          } else {
              blendingdata = null;
          }
-@@ -205,7 +205,7 @@
+@@ -207,7 +207,7 @@
                  dataresult = BelowZeroRetrogen.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("below_zero_retrogen")));
                  logger1 = ChunkRegionLoader.LOGGER;
                  Objects.requireNonNull(logger1);
@@ -57,7 +57,7 @@
  
                  Objects.requireNonNull(protochunk);
                  optional.ifPresent(protochunk::setBelowZeroRetrogen);
-@@ -234,6 +234,13 @@
+@@ -221,6 +221,13 @@
              }
          }
  
@@ -71,7 +71,7 @@
          ((IChunkAccess) object1).setLightCorrect(flag);
          NBTTagCompound nbttagcompound2 = nbttagcompound.getCompound("Heightmaps");
          EnumSet<HeightMap.Type> enumset = EnumSet.noneOf(HeightMap.Type.class);
-@@ -328,6 +335,12 @@
+@@ -300,6 +307,12 @@
          return DataPaletteBlock.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.d.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
      }
  
@@ -84,16 +84,16 @@
      public static NBTTagCompound write(WorldServer worldserver, IChunkAccess ichunkaccess) {
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
          NBTTagCompound nbttagcompound = GameProfileSerializer.addCurrentDataVersion(new NBTTagCompound());
-@@ -339,7 +352,7 @@
+@@ -311,7 +324,7 @@
          nbttagcompound.putLong("InhabitedTime", ichunkaccess.getInhabitedTime());
-         nbttagcompound.putString("Status", ichunkaccess.getStatus().getName());
+         nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(ichunkaccess.getStatus()).toString());
          BlendingData blendingdata = ichunkaccess.getBlendingData();
 -        DataResult dataresult;
 +        DataResult<NBTBase> dataresult; // CraftBukkit - decompile error
          Logger logger;
  
          if (blendingdata != null) {
-@@ -386,7 +399,7 @@
+@@ -358,7 +371,7 @@
  
                  if (flag1) {
                      ChunkSection chunksection = achunksection[j];
@@ -102,7 +102,7 @@
                      Logger logger1 = ChunkRegionLoader.LOGGER;
  
                      Objects.requireNonNull(logger1);
-@@ -470,6 +483,11 @@
+@@ -441,6 +454,11 @@
  
          nbttagcompound.put("Heightmaps", nbttagcompound3);
          nbttagcompound.put("structures", packStructureData(StructurePieceSerializationContext.fromLevel(worldserver), chunkcoordintpair, ichunkaccess.getAllStarts(), ichunkaccess.getAllReferences()));

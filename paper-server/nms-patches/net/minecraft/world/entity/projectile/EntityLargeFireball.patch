@@ -12,28 +12,28 @@
  
      public EntityLargeFireball(EntityTypes<? extends EntityLargeFireball> entitytypes, World world) {
          super(entitytypes, world);
-+        isIncendiary = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING); // CraftBukkit
++        isIncendiary = this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING); // CraftBukkit
      }
  
      public EntityLargeFireball(World world, EntityLiving entityliving, double d0, double d1, double d2, int i) {
          super(EntityTypes.FIREBALL, entityliving, d0, d1, d2, world);
          this.explosionPower = i;
-+        isIncendiary = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING); // CraftBukkit
++        isIncendiary = this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING); // CraftBukkit
      }
  
      @Override
 @@ -28,7 +32,15 @@
-         if (!this.level.isClientSide) {
-             boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+         if (!this.level().isClientSide) {
+             boolean flag = this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
  
--            this.level.explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionPower, flag, World.a.MOB);
+-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionPower, flag, World.a.MOB);
 +            // CraftBukkit start - fire ExplosionPrimeEvent
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
-+            this.level.getCraftServer().getPluginManager().callEvent(event);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
 +                // give 'this' instead of (Entity) null so we know what causes the damage
-+                this.level.explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB);
++                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB);
 +            }
 +            // CraftBukkit end
              this.discard();

@@ -70,7 +70,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material == Material.AIR) {
             assertFalse(material.isSolid());
         } else if (material.isBlock()) {
-            assertThat(material.isSolid(), is(CraftMagicNumbers.getBlock(material).defaultBlockState().getMaterial().blocksMotion()));
+            assertThat(material.isSolid(), is(CraftMagicNumbers.getBlock(material).defaultBlockState().blocksMotion()));
         } else {
             assertFalse(material.isSolid());
         }
@@ -134,7 +134,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void isFlammable() {
         if (material != Material.AIR && material.isBlock()) {
-            assertThat(material.isFlammable(), is(CraftMagicNumbers.getBlock(material).defaultBlockState().getMaterial().isFlammable()));
+            assertThat(material.isFlammable(), is(CraftMagicNumbers.getBlock(material).defaultBlockState().ignitedByLava()));
         } else {
             assertFalse(material.isFlammable());
         }
@@ -152,7 +152,11 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @Test
     public void isFuel() {
-        assertThat(material.isFuel(), is(TileEntityFurnace.isFuel(new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(material)))));
+        if (material.isItem()) {
+            assertThat(material.isFuel(), is(TileEntityFurnace.isFuel(new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(material)))));
+        } else {
+            assertFalse(material.isFuel());
+        }
     }
 
     @Test

@@ -1,22 +1,24 @@
 --- a/net/minecraft/world/entity/animal/sniffer/Sniffer.java
 +++ b/net/minecraft/world/entity/animal/sniffer/Sniffer.java
-@@ -75,12 +75,21 @@
+@@ -82,14 +82,23 @@
  
      public Sniffer(EntityTypes<? extends EntityAnimal> entitytypes, World world) {
          super(entitytypes, world);
--        this.entityData.define(Sniffer.DATA_STATE, Sniffer.a.IDLING);
+-        this.entityData.define(Sniffer.DATA_STATE, Sniffer.State.IDLING);
 -        this.entityData.define(Sniffer.DATA_DROP_SEED_AT_TICK, 0);
-+        // this.entityData.define(Sniffer.DATA_STATE, Sniffer.a.IDLING); // CraftBukkit - moved down to appropriate location
++        // this.entityData.define(Sniffer.DATA_STATE, Sniffer.State.IDLING); // CraftBukkit - moved down to appropriate location
 +        // this.entityData.define(Sniffer.DATA_DROP_SEED_AT_TICK, 0); // CraftBukkit - moved down to appropriate location
          this.getNavigation().setCanFloat(true);
-         this.setPathfindingMalus(PathType.WATER, -2.0F);
+         this.setPathfindingMalus(PathType.WATER, -1.0F);
+         this.setPathfindingMalus(PathType.DANGER_POWDER_SNOW, -1.0F);
+         this.setPathfindingMalus(PathType.DAMAGE_CAUTIOUS, -1.0F);
      }
  
 +    // CraftBukkit start - SPIGOT-7295: moved from constructor to appropriate location
 +    @Override
 +    protected void defineSynchedData() {
 +        super.defineSynchedData();
-+        this.entityData.define(Sniffer.DATA_STATE, Sniffer.a.IDLING);
++        this.entityData.define(Sniffer.DATA_STATE, Sniffer.State.IDLING);
 +        this.entityData.define(Sniffer.DATA_DROP_SEED_AT_TICK, 0);
 +    }
 +    // CraftBukkit end
@@ -24,67 +26,30 @@
      @Override
      protected float getStandingEyeHeight(EntityPose entitypose, EntitySize entitysize) {
          return this.getDimensions(entitypose).height * 0.6F;
-@@ -114,7 +123,7 @@
-         return BlockPosition.containing(vec3d.x(), this.getY(), vec3d.z());
-     }
+@@ -270,6 +279,13 @@
+                 ItemStack itemstack = (ItemStack) iterator.next();
+                 EntityItem entityitem = new EntityItem(worldserver, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), itemstack);
  
--    private Sniffer.a getState() {
-+    public Sniffer.a getState() { // PAIL private -> public
-         return (Sniffer.a) this.entityData.get(Sniffer.DATA_STATE);
-     }
++                // CraftBukkit start - handle EntityDropItemEvent
++                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
++                org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                if (event.isCancelled()) {
++                    continue;
++                }
++                // CraftBukkit end
+                 entityitem.setDefaultPickUpDelay();
+                 worldserver.addFreshEntity(entityitem);
+             }
+@@ -309,7 +325,7 @@
+         List<GlobalPos> list = (List) this.getExploredPositions().limit(20L).collect(Collectors.toList());
  
-@@ -207,7 +216,7 @@
-         return this;
-     }
- 
--    Optional<BlockPosition> calculateDigPosition() {
-+    public Optional<BlockPosition> calculateDigPosition() { // PAIL public
-         return IntStream.range(0, 5).mapToObj((i) -> {
-             return LandRandomPos.getPos(this, 10 + 2 * i, 3);
-         }).filter(Objects::nonNull).map(BlockPosition::containing).map(BlockPosition::below).filter(this::canDig).findFirst();
-@@ -218,7 +227,7 @@
-         return false;
-     }
- 
--    boolean canDig() {
-+    public boolean canDig() { // PAIL public
-         return !this.isPanicking() && !this.isBaby() && !this.isInWater() && this.canDig(this.getHeadPosition().below());
-     }
- 
-@@ -245,6 +254,13 @@
-             BlockPosition blockposition = this.getHeadPosition();
-             EntityItem entityitem = new EntityItem(this.level, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), itemstack);
- 
-+            // CraftBukkit start - handle EntityDropItemEvent
-+            org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
-+            org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+            if (event.isCancelled()) {
-+                return;
-+            }
-+            // CraftBukkit end
-             entityitem.setDefaultPickUpDelay();
-             this.level.addFreshEntity(entityitem);
-             this.playSound(SoundEffects.SNIFFER_DROP_SEED, 1.0F, 1.0F);
-@@ -274,15 +290,15 @@
-         return this;
-     }
- 
--    private Sniffer storeExploredPosition(BlockPosition blockposition) {
-+    public Sniffer storeExploredPosition(BlockPosition blockposition) { // PAIL private -> public
-         List<BlockPosition> list = (List) this.getExploredPositions().limit(20L).collect(Collectors.toList());
- 
-         list.add(0, blockposition);
+         list.add(0, GlobalPos.of(this.level().dimension(), blockposition));
 -        this.getBrain().setMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS, (Object) list);
 +        this.getBrain().setMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS, list); // CraftBukkit - decompile error
          return this;
      }
  
--    private Stream<BlockPosition> getExploredPositions() {
-+    public Stream<BlockPosition> getExploredPositions() { // PAIL private -> public
-         return this.getBrain().getMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS).stream().flatMap(Collection::stream);
-     }
- 
-@@ -416,7 +432,7 @@
+@@ -461,7 +477,7 @@
  
      @Override
      public BehaviorController<Sniffer> getBrain() {

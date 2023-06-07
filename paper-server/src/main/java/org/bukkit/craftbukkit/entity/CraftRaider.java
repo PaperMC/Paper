@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.BlockPosition;
 import net.minecraft.world.entity.raid.EntityRaider;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
@@ -28,7 +27,7 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
 
     @Override
     public Block getPatrolTarget() {
-        return getHandle().getPatrolTarget() == null ? null : CraftBlock.at(getHandle().level, getHandle().getPatrolTarget());
+        return getHandle().getPatrolTarget() == null ? null : CraftBlock.at(getHandle().level(), getHandle().getPatrolTarget());
     }
 
     @Override

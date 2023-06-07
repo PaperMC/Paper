@@ -134,8 +134,6 @@ public class CraftContainer extends Container {
                 return Containers.BEACON;
             case ANVIL:
                 return Containers.ANVIL;
-            case SMITHING:
-                return Containers.LEGACY_SMITHING;
             case HOPPER:
                 return Containers.HOPPER;
             case DROPPER:

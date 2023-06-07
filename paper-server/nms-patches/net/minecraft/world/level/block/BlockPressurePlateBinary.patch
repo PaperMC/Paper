@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/block/BlockPressurePlateBinary.java
 +++ b/net/minecraft/world/level/block/BlockPressurePlateBinary.java
-@@ -14,6 +14,11 @@
+@@ -11,6 +11,11 @@
+ import net.minecraft.world.level.block.state.properties.BlockSetType;
  import net.minecraft.world.level.block.state.properties.BlockStateBoolean;
- import net.minecraft.world.phys.AxisAlignedBB;
  
 +// CraftBukkit start
 +import net.minecraft.world.entity.player.EntityHuman;
@@ -12,30 +12,45 @@
  public class BlockPressurePlateBinary extends BlockPressurePlateAbstract {
  
      public static final BlockStateBoolean POWERED = BlockProperties.POWERED;
-@@ -57,6 +62,26 @@
-             while (iterator.hasNext()) {
-                 Entity entity = (Entity) iterator.next();
+@@ -34,7 +39,7 @@
  
-+                // CraftBukkit start - Call interact event when turning on a pressure plate
-+                if (this.getSignalForState(world.getBlockState(blockposition)) == 0) {
-+                    org.bukkit.World bworld = world.getWorld();
-+                    org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
-+                    org.bukkit.event.Cancellable cancellable;
+     @Override
+     protected int getSignalStrength(World world, BlockPosition blockposition) {
+-        Class oclass;
++        Class<? extends Entity> oclass; // CraftBukkit
+ 
+         switch (this.sensitivity) {
+             case EVERYTHING:
+@@ -49,7 +54,31 @@
+ 
+         Class oclass1 = oclass;
+ 
+-        return getEntityCount(world, BlockPressurePlateBinary.TOUCH_AABB.move(blockposition), oclass1) > 0 ? 15 : 0;
++        // CraftBukkit start - Call interact event when turning on a pressure plate
++        for (Entity entity : getEntities(world, BlockPressurePlateBinary.TOUCH_AABB.move(blockposition), oclass)) {
++            if (this.getSignalForState(world.getBlockState(blockposition)) == 0) {
++                org.bukkit.World bworld = world.getWorld();
++                org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
++                org.bukkit.event.Cancellable cancellable;
 +
-+                    if (entity instanceof EntityHuman) {
-+                        cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
-+                    } else {
-+                        cancellable = new EntityInteractEvent(entity.getBukkitEntity(), bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
-+                        manager.callEvent((EntityInteractEvent) cancellable);
-+                    }
-+
-+                    // We only want to block turning the plate on if all events are cancelled
-+                    if (cancellable.isCancelled()) {
-+                        continue;
-+                    }
++                if (entity instanceof EntityHuman) {
++                    cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
++                } else {
++                    cancellable = new EntityInteractEvent(entity.getBukkitEntity(), bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++                    manager.callEvent((EntityInteractEvent) cancellable);
 +                }
-+                // CraftBukkit end
 +
-                 if (!entity.isIgnoringBlockTriggers()) {
-                     return 15;
-                 }
++                // We only want to block turning the plate on if all events are cancelled
++                if (cancellable.isCancelled()) {
++                    continue;
++                }
++            }
++
++            return 15;
++        }
++
++        return 0;
++        // CraftBukkit end
+     }
+ 
+     @Override

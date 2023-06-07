@@ -42,16 +42,16 @@
                      if (ichunkaccess1 != null) {
                          this.storeInCache(k, ichunkaccess1, ChunkStatus.FULL);
 @@ -230,7 +240,15 @@
-         int l = 33 + ChunkStatus.getDistance(chunkstatus);
+         int l = ChunkLevel.byStatus(chunkstatus);
          PlayerChunk playerchunk = this.getVisibleChunkIfPresent(k);
  
 -        if (flag) {
 +        // CraftBukkit start - don't add new ticket for currently unloading chunk
 +        boolean currentlyUnloading = false;
 +        if (playerchunk != null) {
-+            PlayerChunk.State oldChunkState = PlayerChunk.getFullChunkStatus(playerchunk.oldTicketLevel);
-+            PlayerChunk.State currentChunkState = PlayerChunk.getFullChunkStatus(playerchunk.getTicketLevel());
-+            currentlyUnloading = (oldChunkState.isOrAfter(PlayerChunk.State.BORDER) && !currentChunkState.isOrAfter(PlayerChunk.State.BORDER));
++            FullChunkStatus oldChunkState = ChunkLevel.fullStatus(playerchunk.oldTicketLevel);
++            FullChunkStatus currentChunkState = ChunkLevel.fullStatus(playerchunk.getTicketLevel());
++            currentlyUnloading = (oldChunkState.isOrAfter(FullChunkStatus.FULL) && !currentChunkState.isOrAfter(FullChunkStatus.FULL));
 +        }
 +        if (flag && !currentlyUnloading) {
 +            // CraftBukkit end
@@ -67,7 +67,7 @@
      }
  
      @Override
-@@ -316,7 +334,7 @@
+@@ -317,7 +335,7 @@
          } else if (!this.level.shouldTickBlocksAt(i)) {
              return false;
          } else {
@@ -76,7 +76,7 @@
  
              return either != null && either.left().isPresent();
          }
-@@ -329,11 +347,31 @@
+@@ -330,11 +348,31 @@
  
      @Override
      public void close() throws IOException {
@@ -109,7 +109,7 @@
      @Override
      public void tick(BooleanSupplier booleansupplier, boolean flag) {
          this.level.getProfiler().push("purge");
-@@ -365,7 +403,7 @@
+@@ -366,7 +404,7 @@
  
              gameprofilerfiller.push("pollingChunks");
              int k = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
@@ -118,7 +118,7 @@
  
              gameprofilerfiller.push("naturalSpawnCount");
              int l = this.distanceManager.getNaturalSpawnChunkCount();
-@@ -386,7 +424,7 @@
+@@ -387,7 +425,7 @@
              }
  
              gameprofilerfiller.popPush("spawnAndTick");
@@ -127,7 +127,7 @@
  
              Collections.shuffle(list);
              Iterator iterator1 = list.iterator();
-@@ -591,13 +629,19 @@
+@@ -592,13 +630,19 @@
          }
  
          @Override

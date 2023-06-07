@@ -35,13 +35,13 @@
 @@ -162,6 +180,19 @@
          if (this.isInvulnerableTo(damagesource)) {
              return false;
-         } else if (!this.level.isClientSide && !this.isRemoved()) {
+         } else if (!this.level().isClientSide && !this.isRemoved()) {
 +            // CraftBukkit start
 +            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +            org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
 +
 +            VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) f);
-+            this.level.getCraftServer().getPluginManager().callEvent(event);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
 +                return false;
@@ -58,14 +58,14 @@
              if (flag || this.getDamage() > 40.0F) {
 +                // CraftBukkit start
 +                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
-+                this.level.getCraftServer().getPluginManager().callEvent(destroyEvent);
++                this.level().getCraftServer().getPluginManager().callEvent(destroyEvent);
 +
 +                if (destroyEvent.isCancelled()) {
 +                    this.setDamage(40F); // Maximize damage so this doesn't get triggered again right away
 +                    return true;
 +                }
 +                // CraftBukkit end
-                 if (!flag && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                 if (!flag && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                      this.destroy(damagesource);
                  }
 @@ -209,9 +249,29 @@
@@ -75,7 +75,7 @@
 +                // CraftBukkit start
 +                if (!this.isPassengerOfSameVehicle(entity)) {
 +                    VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
-+                    this.level.getCraftServer().getPluginManager().callEvent(event);
++                    this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
 +                        return;
@@ -88,7 +88,7 @@
 +            // CraftBukkit start
 +            if (!this.isPassengerOfSameVehicle(entity)) {
 +                VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
-+                this.level.getCraftServer().getPluginManager().callEvent(event);
++                this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (event.isCancelled()) {
 +                    return;
@@ -111,8 +111,8 @@
          }
  
 +        // CraftBukkit start
-+        org.bukkit.Server server = this.level.getCraftServer();
-+        org.bukkit.World bworld = this.level.getWorld();
++        org.bukkit.Server server = this.level().getCraftServer();
++        org.bukkit.World bworld = this.level().getWorld();
 +
 +        Location to = CraftLocation.toBukkit(this.position(), bworld, this.getYRot(), this.getXRot());
 +        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -132,14 +132,14 @@
 @@ -830,6 +907,11 @@
  
                      this.causeFallDamage(this.fallDistance, 1.0F, this.damageSources().fall());
-                     if (!this.level.isClientSide && !this.isRemoved()) {
+                     if (!this.level().isClientSide && !this.isRemoved()) {
 +                    // CraftBukkit start
 +                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
-+                    this.level.getCraftServer().getPluginManager().callEvent(destroyEvent);
++                    this.level().getCraftServer().getPluginManager().callEvent(destroyEvent);
 +                    if (!destroyEvent.isCancelled()) {
                          this.kill();
-                         if (this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                         if (this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                              int i;
 @@ -843,6 +925,7 @@
                              }

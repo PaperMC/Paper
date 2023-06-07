@@ -177,7 +177,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
         int offset = (y - minHeight) >> 4;
         ChunkSection section = sections[offset];
         if (create && section == null) {
-            sections[offset] = section = new ChunkSection(offset + (minHeight >> 4), biomes);
+            sections[offset] = section = new ChunkSection(biomes);
         }
         return section;
     }

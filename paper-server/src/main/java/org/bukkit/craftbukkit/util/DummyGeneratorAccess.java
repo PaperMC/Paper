@@ -31,7 +31,7 @@ import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.levelgen.HeightMap;
-import net.minecraft.world.level.lighting.LightEngine;
+import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidType;
 import net.minecraft.world.level.material.FluidTypes;
@@ -194,7 +194,7 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
-    public LightEngine getLightEngine() {
+    public LevelLightEngine getLightEngine() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

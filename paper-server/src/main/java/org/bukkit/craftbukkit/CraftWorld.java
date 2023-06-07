@@ -329,7 +329,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                 List<EntityPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
                 if (playersInRange.isEmpty()) return;
 
-                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null, true);
+                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null);
                 for (EntityPlayer player : playersInRange) {
                     if (player.connection == null) continue;
 
@@ -643,7 +643,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             CraftPlayer cp = (CraftPlayer) p;
             if (cp.getHandle().connection == null) continue;
 
-            cp.getHandle().connection.send(new PacketPlayOutUpdateTime(cp.getHandle().level.getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
+            cp.getHandle().connection.send(new PacketPlayOutUpdateTime(cp.getHandle().level().getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
         }
     }
 
@@ -1894,7 +1894,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public DragonBattle getEnderDragonBattle() {
-        return (getHandle().dragonFight() == null) ? null : new CraftDragonBattle(getHandle().dragonFight());
+        return (getHandle().getDragonFight() == null) ? null : new CraftDragonBattle(getHandle().getDragonFight());
     }
 
     @Override

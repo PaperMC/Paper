@@ -9,17 +9,6 @@
  public class EntityFallingBlock extends Entity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -57,8 +59,8 @@
-     public boolean dropItem;
-     private boolean cancelDrop;
-     public boolean hurtEntities;
--    private int fallDamageMax;
--    private float fallDamagePerDistance;
-+    public int fallDamageMax;
-+    public float fallDamagePerDistance;
-     @Nullable
-     public NBTTagCompound blockData;
-     protected static final DataWatcherObject<BlockPosition> DATA_START_POS = DataWatcher.defineId(EntityFallingBlock.class, DataWatcherRegistry.BLOCK_POS);
 @@ -83,10 +85,17 @@
      }
  
@@ -49,24 +38,15 @@
 +                                    return;
 +                                }
 +                                // CraftBukkit end
-                                 if (this.level.setBlock(blockposition, this.blockState, 3)) {
-                                     ((WorldServer) this.level).getChunkSource().chunkMap.broadcast(this, new PacketPlayOutBlockChange(blockposition, this.level.getBlockState(blockposition)));
+                                 if (this.level().setBlock(blockposition, this.blockState, 3)) {
+                                     ((WorldServer) this.level()).getChunkSource().chunkMap.broadcast(this, new PacketPlayOutBlockChange(blockposition, this.level().getBlockState(blockposition)));
                                      this.discard();
-@@ -239,7 +254,7 @@
-             if (i < 0) {
-                 return false;
-             } else {
--                Predicate predicate;
-+                Predicate<Entity> predicate; // CraftBukkit - decompile error
-                 DamageSource damagesource1;
- 
-                 if (this.blockState.getBlock() instanceof Fallable) {
 @@ -255,7 +270,9 @@
                  float f2 = (float) Math.min(MathHelper.floor((float) i * this.fallDamagePerDistance), this.fallDamageMax);
  
-                 this.level.getEntities((Entity) this, this.getBoundingBox(), predicate).forEach((entity) -> {
+                 this.level().getEntities((Entity) this, this.getBoundingBox(), predicate).forEach((entity) -> {
 +                    CraftEventFactory.entityDamage = this; // CraftBukkit
-                     entity.hurt(damagesource1, f2);
+                     entity.hurt(damagesource2, f2);
 +                    CraftEventFactory.entityDamage = null; // CraftBukkit
                  });
                  boolean flag = this.blockState.is(TagsBlock.ANVIL);
