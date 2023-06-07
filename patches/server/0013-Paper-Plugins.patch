@@ -1708,34 +1708,6 @@ index 0000000000000000000000000000000000000000..f43295fdeaa587cf30c35a1d54516707
 +    void setContext(DependencyContext context);
 +
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..ef8653a6c6e0653716887d47bac4ab43e3b6c788
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/DependencyUtil.java
-@@ -0,0 +1,22 @@
-+package io.papermc.paper.plugin.entrypoint.dependency;
-+
-+import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
-+
-+import java.util.ArrayList;
-+import java.util.List;
-+
-+@SuppressWarnings("UnstableApiUsage")
-+public class DependencyUtil {
-+
-+    public static List<String> validateSimple(PluginMeta meta, DependencyContext dependencyContext) {
-+        List<String> missingDependencies = new ArrayList<>();
-+        for (String hardDependency : meta.getPluginDependencies()) {
-+            if (!dependencyContext.hasDependency(hardDependency)) {
-+                missingDependencies.add(hardDependency);
-+            }
-+        }
-+
-+        return missingDependencies;
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/GraphDependencyContext.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..a2fa8406bc3f0dcab6805633ae984d031d24692a
@@ -2706,17 +2678,16 @@ index 0000000000000000000000000000000000000000..52a110044611c8a0ace6d49549e8acc1
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/LoadOrderTree.java b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/LoadOrderTree.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..862c2d9f195fe325d5e5d4aacbdf4051fa1feacd
+index 0000000000000000000000000000000000000000..e3f01ec40a704acb46f7ac31d500e9d0185e3db9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/strategy/modern/LoadOrderTree.java
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,121 @@
 +package io.papermc.paper.plugin.entrypoint.strategy.modern;
 +
 +import com.google.common.collect.Lists;
 +import com.google.common.graph.MutableGraph;
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.entrypoint.strategy.JohnsonSimpleCycles;
 +import io.papermc.paper.plugin.entrypoint.strategy.PluginGraphCycleException;
 +import io.papermc.paper.plugin.entrypoint.strategy.TopographicGraphSorter;
@@ -4557,6 +4528,159 @@ index 0000000000000000000000000000000000000000..6ba3bcc468c0a60c76d6d0f0243bda66
 +
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/LegacyPaperMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/LegacyPaperMeta.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8cd649c977172f6b757d68565fcbb9eb8ae100a3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/LegacyPaperMeta.java
+@@ -0,0 +1,147 @@
++package io.papermc.paper.plugin.provider.configuration;
++
++import com.google.gson.reflect.TypeToken;
++import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
++import io.papermc.paper.plugin.provider.configuration.type.PluginDependencyLifeCycle;
++import org.spongepowered.configurate.CommentedConfigurationNode;
++import org.spongepowered.configurate.ConfigurateException;
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.objectmapping.ConfigSerializable;
++import org.spongepowered.configurate.objectmapping.meta.Required;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++
++import java.util.EnumMap;
++import java.util.EnumSet;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++
++class LegacyPaperMeta {
++
++
++    private static final TypeToken<Map<PluginDependencyLifeCycle, Map<String, DependencyConfiguration>>> TYPE_TOKEN = new TypeToken<>() {
++    };
++
++    public static void migrate(CommentedConfigurationNode node) throws ConfigurateException {
++        ConfigurationTransformation.chain(notVersioned()).apply(node);
++    }
++
++    private static ConfigurationTransformation notVersioned() {
++        return ConfigurationTransformation.builder()
++            .addAction(NodePath.path(), (path, value) -> {
++                boolean bootstrapSubSection = value.hasChild("bootstrap");
++                boolean serverSubSection = value.hasChild("server");
++
++                // Ignore if using newer format
++                if (bootstrapSubSection || serverSubSection) {
++                    return null;
++                }
++
++                // First collect all load before elements
++                LegacyConfiguration legacyConfiguration;
++                try {
++                    legacyConfiguration = value.require(LegacyConfiguration.class);
++                } catch (SerializationException exception) {
++                    // Ignore if not present
++                    return null;
++                }
++
++                Map<PluginDependencyLifeCycle, Map<String, DependencyConfiguration>> dependencies = new EnumMap<>(PluginDependencyLifeCycle.class);
++                dependencies.put(PluginDependencyLifeCycle.BOOTSTRAP, new HashMap<>());
++                dependencies.put(PluginDependencyLifeCycle.SERVER, new HashMap<>());
++
++                Map<PluginDependencyLifeCycle, Map<String, Set<DependencyFlag>>> dependencyConfigurationMap = new HashMap<>();
++                dependencyConfigurationMap.put(PluginDependencyLifeCycle.BOOTSTRAP, new HashMap<>());
++                dependencyConfigurationMap.put(PluginDependencyLifeCycle.SERVER, new HashMap<>());
++
++                // Migrate loadafter
++                for (LegacyLoadConfiguration legacyConfig : legacyConfiguration.loadAfter) {
++                    Set<DependencyFlag> dependencyFlags = dependencyConfigurationMap
++                        .get(legacyConfig.bootstrap ? PluginDependencyLifeCycle.BOOTSTRAP : PluginDependencyLifeCycle.SERVER)
++                        .computeIfAbsent(legacyConfig.name, s -> EnumSet.noneOf(DependencyFlag.class));
++
++                    dependencyFlags.add(DependencyFlag.LOAD_AFTER);
++                }
++
++                // Migrate loadbefore
++                for (LegacyLoadConfiguration legacyConfig : legacyConfiguration.loadBefore) {
++                    Set<DependencyFlag> dependencyFlags = dependencyConfigurationMap
++                        .get(legacyConfig.bootstrap ? PluginDependencyLifeCycle.BOOTSTRAP : PluginDependencyLifeCycle.SERVER)
++                        .computeIfAbsent(legacyConfig.name, s -> EnumSet.noneOf(DependencyFlag.class));
++
++                    dependencyFlags.add(DependencyFlag.LOAD_BEFORE);
++                }
++
++                // Migrate dependencies
++                for (LegacyDependencyConfiguration legacyConfig : legacyConfiguration.dependencies) {
++                    Set<DependencyFlag> dependencyFlags = dependencyConfigurationMap
++                        .get(legacyConfig.bootstrap ? PluginDependencyLifeCycle.BOOTSTRAP : PluginDependencyLifeCycle.SERVER)
++                        .computeIfAbsent(legacyConfig.name, s -> EnumSet.noneOf(DependencyFlag.class));
++
++                    dependencyFlags.add(DependencyFlag.DEPENDENCY);
++                    if (legacyConfig.required) {
++                        dependencyFlags.add(DependencyFlag.REQUIRED);
++                    }
++                }
++                for (Map.Entry<PluginDependencyLifeCycle, Map<String, Set<DependencyFlag>>> legacyTypes : dependencyConfigurationMap.entrySet()) {
++                    Map<String, DependencyConfiguration> flagMap = dependencies.get(legacyTypes.getKey());
++                    for (Map.Entry<String, Set<DependencyFlag>> entry : legacyTypes.getValue().entrySet()) {
++                        Set<DependencyFlag> flags = entry.getValue();
++
++
++                        DependencyConfiguration.LoadOrder loadOrder = DependencyConfiguration.LoadOrder.OMIT;
++                        // These meanings are now swapped
++                        if (flags.contains(DependencyFlag.LOAD_BEFORE)) {
++                            loadOrder = DependencyConfiguration.LoadOrder.AFTER;
++                        } else if (flags.contains(DependencyFlag.LOAD_AFTER)) {
++                            loadOrder = DependencyConfiguration.LoadOrder.BEFORE;
++                        }
++
++                        flagMap.put(entry.getKey(), new DependencyConfiguration(
++                            loadOrder,
++                            flags.contains(DependencyFlag.REQUIRED),
++                            flags.contains(DependencyFlag.DEPENDENCY)
++                        ));
++                    }
++                }
++
++                value.node("dependencies").set(TYPE_TOKEN.getType(), dependencies);
++                return null;
++            })
++            .build();
++    }
++
++    @ConfigSerializable
++    record LegacyLoadConfiguration(
++        @Required String name,
++        boolean bootstrap
++    ) {
++    }
++
++    @ConfigSerializable
++    private static class LegacyConfiguration {
++
++        private List<LegacyLoadConfiguration> loadAfter = List.of();
++        private List<LegacyLoadConfiguration> loadBefore = List.of();
++        private List<LegacyDependencyConfiguration> dependencies = List.of();
++    }
++
++
++    @ConfigSerializable
++    public record LegacyDependencyConfiguration(
++        @Required String name,
++        boolean required,
++        boolean bootstrap
++    ) {
++    }
++
++    enum DependencyFlag {
++        LOAD_AFTER,
++        LOAD_BEFORE,
++        REQUIRED,
++        DEPENDENCY
++    }
++
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/LoadOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/LoadOrderConfiguration.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47e8b14db7
@@ -4603,26 +4727,23 @@ index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a387754a91
+index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940aee49799b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
-@@ -0,0 +1,232 @@
+@@ -0,0 +1,248 @@
 +package io.papermc.paper.plugin.provider.configuration;
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.ImmutableList;
-+import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.serializer.ComponentSerializer;
 +import io.papermc.paper.configuration.serializer.EnumValueSerializer;
-+import io.papermc.paper.configuration.serializer.collections.MapSerializer;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.provider.configuration.serializer.ImmutableListSerializer;
 +import io.papermc.paper.plugin.provider.configuration.serializer.PermissionConfigurationSerializer;
 +import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
 +import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
-+import io.papermc.paper.plugin.provider.configuration.type.LoadConfiguration;
 +import io.papermc.paper.plugin.provider.configuration.type.PermissionConfiguration;
++import io.papermc.paper.plugin.provider.configuration.type.PluginDependencyLifeCycle;
 +import org.bukkit.permissions.Permission;
 +import org.bukkit.permissions.PermissionDefault;
 +import org.bukkit.plugin.PluginLoadOrder;
@@ -4639,7 +4760,9 @@ index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a3
 +import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 +
 +import java.io.BufferedReader;
++import java.util.EnumMap;
 +import java.util.List;
++import java.util.Map;
 +
 +@SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +@ConfigSerializable
@@ -4655,9 +4778,6 @@ index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a3
 +    private String bootstrapper;
 +    @PluginConfigConstraints.PluginNameSpace
 +    private String loader;
-+    private List<DependencyConfiguration> dependencies = List.of();
-+    private List<LoadConfiguration> loadBefore = List.of();
-+    private List<LoadConfiguration> loadAfter = List.of();
 +    private List<String> provides = List.of();
 +    private boolean hasOpenClassloader = false;
 +    @Required
@@ -4674,6 +4794,8 @@ index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a3
 +    @PluginConfigConstraints.PluginVersion
 +    private String apiVersion;
 +
++    private Map<PluginDependencyLifeCycle, Map<String, DependencyConfiguration>> dependencies = new EnumMap<>(PluginDependencyLifeCycle.class);
++
 +    public PaperPluginMeta() {
 +    }
 +
@@ -4688,9 +4810,6 @@ index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a3
 +                return options.serializers((serializers) -> {
 +                    serializers
 +                        .register(new EnumValueSerializer())
-+                        .register(MapSerializer.TYPE, new MapSerializer(false))
-+                        .register(new TypeToken<>() {
-+                        }, new ImmutableListSerializer())
 +                        .register(PermissionConfiguration.class, PermissionConfigurationSerializer.SERIALIZER)
 +                        .register(new ComponentSerializer())
 +                        .registerAnnotatedObjects(
@@ -4707,6 +4826,7 @@ index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a3
 +            })
 +            .build();
 +        CommentedConfigurationNode node = loader.load();
++        LegacyPaperMeta.migrate(node);
 +        PaperPluginMeta pluginConfiguration = node.require(PaperPluginMeta.class);
 +
 +        if (!node.node("author").virtual()) {
@@ -4753,29 +4873,52 @@ index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a3
 +
 +    @Override
 +    public @NotNull List<String> getPluginDependencies() {
-+        return this.dependencies.stream().filter((dependency) -> dependency.required() && !dependency.bootstrap()).map(DependencyConfiguration::name).toList();
++        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of())
++            .entrySet()
++            .stream()
++            .filter((entry) -> entry.getValue().required() && entry.getValue().joinClasspath())
++            .map(Map.Entry::getKey)
++            .toList();
 +    }
 +
 +    @Override
 +    public @NotNull List<String> getPluginSoftDependencies() {
-+        return this.dependencies.stream().filter((dependency) -> !dependency.required() && !dependency.bootstrap()).map(DependencyConfiguration::name).toList();
++        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of())
++            .entrySet()
++            .stream()
++            .filter((entry) -> !entry.getValue().required() && entry.getValue().joinClasspath())
++            .map(Map.Entry::getKey)
++            .toList();
 +    }
 +
 +    @Override
 +    public @NotNull List<String> getLoadBeforePlugins() {
-+        return this.loadBefore.stream().filter((dependency) -> !dependency.bootstrap()).map(LoadConfiguration::name).toList();
++        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of())
++            .entrySet()
++            .stream()
++            // This plugin will load BEFORE all dependencies (so dependencies will load AFTER plugin)
++            .filter((entry) -> entry.getValue().load() == DependencyConfiguration.LoadOrder.AFTER)
++            .map(Map.Entry::getKey)
++            .toList();
 +    }
 +
 +    public @NotNull List<String> getLoadAfterPlugins() {
-+        return this.loadAfter.stream().filter((dependency) -> !dependency.bootstrap()).map(LoadConfiguration::name).toList();
++        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of())
++            .entrySet()
++            .stream()
++            // This plugin will load AFTER all dependencies (so dependencies will load BEFORE plugin)
++            .filter((entry) -> entry.getValue().load() == DependencyConfiguration.LoadOrder.BEFORE)
++            .map(Map.Entry::getKey)
++            .toList();
 +    }
 +
-+    public List<LoadConfiguration> getLoadAfter() {
-+        return this.loadAfter;
++
++    public Map<String, DependencyConfiguration> getServerDependencies() {
++        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of());
 +    }
 +
-+    public List<LoadConfiguration> getLoadBefore() {
-+        return this.loadBefore;
++    public Map<String, DependencyConfiguration> getBoostrapDependencies() {
++        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.BOOTSTRAP, Map.of());
 +    }
 +
 +    @Override
@@ -4835,9 +4978,6 @@ index 0000000000000000000000000000000000000000..95cc4dbe336e37f01d9f478068fd21a3
 +        return this.hasOpenClassloader;
 +    }
 +
-+    public List<DependencyConfiguration> getDependencies() {
-+        return dependencies;
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/serializer/ImmutableCollectionSerializer.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/serializer/ImmutableCollectionSerializer.java
 new file mode 100644
@@ -5140,21 +5280,41 @@ index 0000000000000000000000000000000000000000..a0109a388188b0808900405d334a4031
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/type/DependencyConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/DependencyConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..071bff3f988a4391be424bdf7e98a6c35e6cac67
+index 0000000000000000000000000000000000000000..594357f65813bd6287e982af12e4e5eaf443240e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/DependencyConfiguration.java
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.plugin.provider.configuration.type;
 +
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-+import org.spongepowered.configurate.objectmapping.meta.Required;
 +
 +@ConfigSerializable
 +public record DependencyConfiguration(
-+    @Required String name,
++    LoadOrder load,
 +    boolean required,
-+    boolean bootstrap
++    boolean joinClasspath
 +) {
++
++    public DependencyConfiguration(boolean required, boolean joinClasspath) {
++        this(LoadOrder.OMIT, required, joinClasspath);
++    }
++
++    public DependencyConfiguration(boolean required) {
++        this(required, true);
++    }
++
++    public DependencyConfiguration() {
++        this(true);
++    }
++
++    @ConfigSerializable
++    public enum LoadOrder {
++        // dependency will now load BEFORE your plugin
++        BEFORE,
++        // the dependency will now load AFTER your plugin
++        AFTER,
++        OMIT
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/type/LoadConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/LoadConfiguration.java
 new file mode 100644
@@ -5192,6 +5352,18 @@ index 0000000000000000000000000000000000000000..a180612a1ec395202dbae1ca5b97ec01
 +public record PermissionConfiguration(
 +    PermissionDefault defaultPerm,
 +    List<Permission> permissions) {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/type/PluginDependencyLifeCycle.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/PluginDependencyLifeCycle.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..49a087381307eab263f7dad43aaa25980db33cc2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/PluginDependencyLifeCycle.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.plugin.provider.configuration.type;
++
++public enum PluginDependencyLifeCycle {
++    BOOTSTRAP,
++    SERVER
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/DirectoryProviderSource.java
 new file mode 100644
@@ -5584,20 +5756,21 @@ index 0000000000000000000000000000000000000000..32f230d66f6953520b59ccbf3079c5a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..362feffd88e117c0fb93ffeddafe8334275f0d95
+index 0000000000000000000000000000000000000000..e34656fb0573ff6d826eb4d4dcfd517e01589206
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
-+import io.papermc.paper.plugin.provider.configuration.type.LoadConfiguration;
++import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.Map;
 +
 +public class PaperBootstrapOrderConfiguration implements LoadOrderConfiguration {
 +
@@ -5608,14 +5781,16 @@ index 0000000000000000000000000000000000000000..362feffd88e117c0fb93ffeddafe8334
 +    public PaperBootstrapOrderConfiguration(PaperPluginMeta paperPluginMeta) {
 +        this.paperPluginMeta = paperPluginMeta;
 +
-+        for (LoadConfiguration configuration : paperPluginMeta.getLoadAfter()) {
-+            if (configuration.bootstrap()) {
-+                this.loadAfter.add(configuration.name());
-+            }
-+        }
-+        for (LoadConfiguration configuration : paperPluginMeta.getLoadBefore()) {
-+            if (configuration.bootstrap()) {
-+                this.loadBefore.add(configuration.name());
++        for (Map.Entry<String, DependencyConfiguration> configuration : paperPluginMeta.getBoostrapDependencies().entrySet()) {
++            String name = configuration.getKey();
++            DependencyConfiguration dependencyConfiguration = configuration.getValue();
++
++            if (dependencyConfiguration.load() == DependencyConfiguration.LoadOrder.AFTER) {
++                // This plugin will load BEFORE all dependencies (so dependencies will load AFTER plugin)
++                this.loadBefore.add(name);
++            } else if (dependencyConfiguration.load() == DependencyConfiguration.LoadOrder.BEFORE) {
++                // This plugin will load AFTER all dependencies (so dependencies will load BEFORE plugin)
++                this.loadAfter.add(name);
 +            }
 +        }
 +    }
@@ -5687,15 +5862,14 @@ index 0000000000000000000000000000000000000000..b7e8a5ba375a558e0442aa9facf96954
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..009a055c36378353b1b156e04b230519a577bd50
+index 0000000000000000000000000000000000000000..f2bc4d0b55d4c9877a442529e0b144656497dae6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
-@@ -0,0 +1,257 @@
+@@ -0,0 +1,264 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
@@ -5791,9 +5965,9 @@ index 0000000000000000000000000000000000000000..009a055c36378353b1b156e04b230519
 +        @Override
 +        public List<String> validateDependencies(@NotNull DependencyContext context) {
 +            List<String> missingDependencies = new ArrayList<>();
-+            for (DependencyConfiguration configuration : this.getMeta().getDependencies()) {
-+                String dependency = configuration.name();
-+                if (configuration.required() && configuration.bootstrap() && !context.hasDependency(dependency)) {
++            for (Map.Entry<String, DependencyConfiguration> configuration : this.getMeta().getBoostrapDependencies().entrySet()) {
++                String dependency = configuration.getKey();
++                if (configuration.getValue().required() && !context.hasDependency(dependency)) {
 +                    missingDependencies.add(dependency);
 +                }
 +            }
@@ -5896,7 +6070,15 @@ index 0000000000000000000000000000000000000000..009a055c36378353b1b156e04b230519
 +
 +        @Override
 +        public List<String> validateDependencies(@NotNull DependencyContext context) {
-+            return DependencyUtil.validateSimple(this.getMeta(), context);
++            List<String> missingDependencies = new ArrayList<>();
++            for (Map.Entry<String, DependencyConfiguration> dependency : this.getMeta().getServerDependencies().entrySet()) {
++                String name = dependency.getKey();
++                if (dependency.getValue().required() && !context.hasDependency(name)) {
++                    missingDependencies.add(name);
++                }
++            }
++
++            return missingDependencies;
 +        }
 +
 +        @Override
@@ -6090,15 +6272,14 @@ index 0000000000000000000000000000000000000000..b2a6544e321fa61c58bdf5684231de10
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..96b252b33047705f6c48917cc1e4e1edec3cf03a
+index 0000000000000000000000000000000000000000..75a2b687d58d76b94f8bec111df8613f120ff74b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
-@@ -0,0 +1,190 @@
+@@ -0,0 +1,197 @@
 +package io.papermc.paper.plugin.provider.type.spigot;
 +
 +import com.destroystokyo.paper.util.SneakyThrow;
 +import com.destroystokyo.paper.utils.PaperPluginLogger;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
@@ -6120,6 +6301,7 @@ index 0000000000000000000000000000000000000000..96b252b33047705f6c48917cc1e4e1ed
 +
 +import java.io.File;
 +import java.nio.file.Path;
++import java.util.ArrayList;
 +import java.util.HashSet;
 +import java.util.List;
 +import java.util.Map;
@@ -6255,7 +6437,14 @@ index 0000000000000000000000000000000000000000..96b252b33047705f6c48917cc1e4e1ed
 +
 +    @Override
 +    public List<String> validateDependencies(@NotNull DependencyContext context) {
-+        return DependencyUtil.validateSimple(this.getMeta(), context);
++        List<String> missingDependencies = new ArrayList<>();
++        for (String hardDependency : this.getMeta().getPluginDependencies()) {
++            if (!context.hasDependency(hardDependency)) {
++                missingDependencies.add(hardDependency);
++            }
++        }
++
++        return missingDependencies;
 +    }
 +
 +    @Override
@@ -7476,14 +7665,13 @@ index 0000000000000000000000000000000000000000..04903794a8ee4dd73162ae240862ff6d
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java b/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a4ef50027e4411f13ed840919136ca9ee4c58c41
+index 0000000000000000000000000000000000000000..349932b582349c988f3244552b6e6da5dede3d1d
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/plugin/TestJavaPluginProvider.java
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,83 @@
 +package io.papermc.paper.plugin;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.entrypoint.dependency.DependencyUtil;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
 +import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
@@ -7554,7 +7742,14 @@ index 0000000000000000000000000000000000000000..a4ef50027e4411f13ed840919136ca9e
 +
 +    @Override
 +    public List<String> validateDependencies(@NotNull DependencyContext context) {
-+        return DependencyUtil.validateSimple(this.getMeta(), context);
++        List<String> missingDependencies = new ArrayList<>();
++        for (String hardDependency : this.getMeta().getPluginDependencies()) {
++            if (!context.hasDependency(hardDependency)) {
++                missingDependencies.add(hardDependency);
++            }
++        }
++
++        return missingDependencies;
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java b/src/test/java/io/papermc/paper/plugin/TestPluginMeta.java
