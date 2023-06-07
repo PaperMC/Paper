@@ -13,10 +13,10 @@ By skipping this, we avoid potential for a large spike on server start.
 public net.minecraft.server.level.ServerPlayer fudgeSpawnLocation(Lnet/minecraft/server/level/ServerLevel;)V
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index e6945abd9337af07625793fb893718b00e67168a..7dbf61d79db8a7f08e518c7858142bb0e0f469c4 100644
+index b5ce9a93089ea64286bd33cf3fd6eab60863c66d..b8159a661be0e64a8b1af93c9a7f63d8835b7d03 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -336,7 +336,7 @@ public class ServerPlayer extends Player {
+@@ -335,7 +335,7 @@ public class ServerPlayer extends Player {
          this.stats = server.getPlayerList().getPlayerStats(this);
          this.advancements = server.getPlayerList().getPlayerAdvancements(this);
          this.setMaxUpStep(1.0F);
@@ -25,24 +25,24 @@ index e6945abd9337af07625793fb893718b00e67168a..7dbf61d79db8a7f08e518c7858142bb0
  
          this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
  
-@@ -570,7 +570,7 @@ public class ServerPlayer extends Player {
+@@ -569,7 +569,7 @@ public class ServerPlayer extends Player {
                  position = Vec3.atCenterOf(world.getSharedSpawnPos());
              }
-             this.level = world;
+             this.setLevel(world);
 -            this.setPos(position);
 +            this.setPosRaw(position.x(), position.y(), position.z()); // Paper - don't register to chunks yet
          }
          this.gameMode.setLevel((ServerLevel) world);
      }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 635d803066fa34a13174935ba0b63a0c86c0b1f4..3f5706d4b30b74ba54032ed48d37990ce6ddd715 100644
+index 1bc82045fb5ca6bfce32cfeb3895e4de559153f5..33b0647843d392b3acd54fa0bb7835f1b65bb6ca 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -229,6 +229,7 @@ public abstract class PlayerList {
+@@ -236,6 +236,7 @@ public abstract class PlayerList {
          // Paper start
          if (nbttagcompound == null) {
              player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
 +            player.fudgeSpawnLocation(worldserver1); // only move to spawn on first login, otherwise, stay where you are....
          }
          // Paper end
-         player.setLevel(worldserver1);
+         player.setServerLevel(worldserver1);
