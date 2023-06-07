@@ -15,7 +15,7 @@ public class CraftSignSide implements SignSide {
     // Lazily initialized only if requested:
     private String[] originalLines = null;
     private String[] lines = null;
-    private final SignText signText;
+    private SignText signText;
 
     public CraftSignSide(SignText signText) {
         this.signText = signText;
@@ -53,7 +53,7 @@ public class CraftSignSide implements SignSide {
 
     @Override
     public void setGlowingText(boolean glowing) {
-        signText.setHasGlowingText(glowing);
+        signText = signText.setHasGlowingText(glowing);
     }
 
     @Nullable
@@ -64,18 +64,20 @@ public class CraftSignSide implements SignSide {
 
     @Override
     public void setColor(@NotNull DyeColor color) {
-        signText.setColor(EnumColor.byId(color.getWoolData()));
+        signText = signText.setColor(EnumColor.byId(color.getWoolData()));
     }
 
-    public void applyLegacyStringToSignSide() {
+    public SignText applyLegacyStringToSignSide() {
         if (lines != null) {
             for (int i = 0; i < lines.length; i++) {
                 String line = (lines[i] == null) ? "" : lines[i];
                 if (line.equals(originalLines[i])) {
                     continue; // The line contents are still the same, skip.
                 }
-                signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
+                signText = signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
             }
         }
+
+        return signText;
     }
 }

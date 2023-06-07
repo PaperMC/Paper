@@ -87,8 +87,8 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
 
     @Override
     public void applyTo(T sign) {
-        front.applyLegacyStringToSignSide();
-        back.applyLegacyStringToSignSide();
+        getSnapshot().setText(front.applyLegacyStringToSignSide(), true);
+        getSnapshot().setText(back.applyLegacyStringToSignSide(), false);
 
         super.applyTo(sign);
     }
