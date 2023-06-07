@@ -595,6 +595,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginBootstrapContextImpl.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.plugin.bootstrap;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import java.nio.file.Path;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
++import org.jetbrains.annotations.NotNull;
++
++public record PluginBootstrapContextImpl(PluginMeta config, Path dataFolder,
++                                         ComponentLogger logger, Path pluginSource) implements BootstrapContext {
++
++    public static PluginBootstrapContextImpl of(PluginProvider<?> provider, Path pluginFolder) {
++        Path dataFolder = pluginFolder.resolve(provider.getMeta().getName());
++
++        return new PluginBootstrapContextImpl(provider.getMeta(), dataFolder, provider.getLogger(), provider.getSource());
++    }
++
++    @Override
++    public @NotNull PluginMeta getConfiguration() {
++        return this.config;
++    }
++
++    @Override
++    public @NotNull Path getDataDirectory() {
++        return this.dataFolder;
++    }
++
++    @Override
++    public @NotNull ComponentLogger getLogger() {
++        return this.logger;
++    }
++
++    @Override
++    public @NotNull Path getPluginSource() {
++        return this.pluginSource;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java b/src/main/java/io/papermc/paper/plugin/bootstrap/PluginProviderContextImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -605,7 +648,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.plugin.PluginInitializerManager;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.provider.PluginProvider;
 +import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.NotNull;
 +
@@ -618,12 +660,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getName());
 +
 +        return new PluginProviderContextImpl(config, dataFolder, logger, pluginSource);
-+    }
-+
-+    public static PluginProviderContextImpl of(PluginProvider<?> provider, Path pluginFolder) {
-+        Path dataFolder = pluginFolder.resolve(provider.getMeta().getName());
-+
-+        return new PluginProviderContextImpl(provider.getMeta(), dataFolder, provider.getLogger(), provider.getSource());
 +    }
 +
 +    @Override
@@ -6309,16 +6345,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.plugin.PluginInitializerManager;
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
-+import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
-+import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
-+import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
++import io.papermc.paper.plugin.bootstrap.PluginBootstrapContextImpl;
 +import io.papermc.paper.plugin.entrypoint.dependency.DependencyContextHolder;
-+import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.entrypoint.strategy.ProviderConfiguration;
++import io.papermc.paper.plugin.entrypoint.strategy.modern.ModernPluginLoadingStrategy;
 +import io.papermc.paper.plugin.provider.PluginProvider;
 +import io.papermc.paper.plugin.provider.ProviderStatus;
 +import io.papermc.paper.plugin.provider.ProviderStatusHolder;
++import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
 +import org.slf4j.Logger;
 +
 +public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootstrap> {
@@ -6337,7 +6373,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            @Override
 +            public boolean load(PluginProvider<PluginBootstrap> provider, PluginBootstrap provided) {
 +                try {
-+                    PluginProviderContext context = PluginProviderContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
++                    BootstrapContext context = PluginBootstrapContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
 +                    provided.bootstrap(context);
 +                    return true;
 +                } catch (Throwable e) {
