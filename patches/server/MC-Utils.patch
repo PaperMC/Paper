@@ -5559,7 +5559,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-     private static final int BLOCKS_BEFORE_RESEND_FUDGE = 64;
+     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
      private final AtomicReferenceArray<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> futures;
      private final LevelHeightAccessor levelHeightAccessor;
 -    private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> fullChunkFuture;
@@ -5572,7 +5572,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
      private final DebugBuffer<ChunkHolder.ChunkSaveDebug> chunkToSaveHistory;
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-     private boolean resendLight;
+     private boolean wasAccessibleSinceLastSave;
      private CompletableFuture<Void> pendingFullStateConfirmation;
  
 +    private final ChunkMap chunkMap; // Paper
@@ -5615,7 +5615,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public LevelChunk getFullChunkNow() {
          // Note: We use the oldTicketLevel for isLoaded checks.
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-         return ChunkHolder.getStatus(this.ticketLevel).isOrAfter(leastStatus) ? this.getFutureIfPresentUnchecked(leastStatus) : ChunkHolder.UNLOADED_CHUNK_FUTURE;
+         return ChunkLevel.generationStatus(this.ticketLevel).isOrAfter(leastStatus) ? this.getFutureIfPresentUnchecked(leastStatus) : ChunkHolder.UNLOADED_CHUNK_FUTURE;
      }
  
 -    public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingChunkFuture() {
@@ -5680,7 +5680,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-         return ChunkHolder.getFullChunkStatus(this.ticketLevel);
+         return ChunkLevel.fullStatus(this.ticketLevel);
      }
  
 -    public ChunkPos getPos() {
@@ -5699,7 +5699,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!flag2 && flag3) {
 +            int expectCreateCount = ++this.fullChunkCreateCount; // Paper
              this.fullChunkFuture = chunkStorage.prepareAccessibleChunk(this);
-             this.scheduleFullChunkPromotion(chunkStorage, this.fullChunkFuture, executor, ChunkHolder.FullChunkStatus.BORDER);
+             this.scheduleFullChunkPromotion(chunkStorage, this.fullChunkFuture, executor, FullChunkStatus.FULL);
 +            // Paper start - cache ticking ready status
 +            this.fullChunkFuture.thenAccept(either -> {
 +                final Optional<LevelChunk> left = either.left();
@@ -5724,11 +5724,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.isFullChunkReady = false; // Paper - cache ticking ready status
          }
  
-         boolean flag4 = playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.TICKING);
+         boolean flag4 = fullchunkstatus.isOrAfter(FullChunkStatus.BLOCK_TICKING);
 @@ -0,0 +0,0 @@ public class ChunkHolder {
          if (!flag4 && flag5) {
              this.tickingChunkFuture = chunkStorage.prepareTickingChunk(this);
-             this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, ChunkHolder.FullChunkStatus.TICKING);
+             this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, FullChunkStatus.BLOCK_TICKING);
 +            // Paper start - cache ticking ready status
 +            this.tickingChunkFuture.thenAccept(either -> {
 +                either.ifLeft(chunk -> {
@@ -5754,8 +5754,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public class ChunkHolder {
  
-             this.entityTickingChunkFuture = chunkStorage.prepareEntityTickingChunk(this.pos);
-             this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
+             this.entityTickingChunkFuture = chunkStorage.prepareEntityTickingChunk(this);
+             this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, FullChunkStatus.ENTITY_TICKING);
 +            // Paper start - cache ticking ready status
 +            this.entityTickingChunkFuture.thenAccept(either -> {
 +                either.ifLeft(chunk -> {
@@ -5885,13 +5885,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final int getEffectiveViewDistance() {
 +        // TODO this needs to be checked on update
 +        // Mojang currently sets it to +1 of the configured view distance. So subtract one to get the one we really want.
-+        return this.viewDistance - 1;
++        //TODO check if +0 is correct now
++        return this.viewDistance;
 +    }
 +    // Paper end
 +
-     private CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> getChunkRangeFuture(ChunkPos centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus) {
-         List<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> list = new ArrayList();
-         List<ChunkHolder> list1 = new ArrayList();
+     private CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> getChunkRangeFuture(ChunkHolder centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus) {
+         if (margin == 0) {
+             ChunkStatus chunkstatus = (ChunkStatus) distanceToStatus.apply(0);
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          };
  
@@ -5990,7 +5991,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
              this.viewDistance = j;
-             this.distanceManager.updatePlayerTickets(this.viewDistance + 1);
+             this.distanceManager.updatePlayerTickets(this.viewDistance);
 -            ObjectIterator objectiterator = this.updatingChunkMap.values().iterator();
 +            Iterator objectiterator = io.papermc.paper.chunk.system.ChunkSystem.getUpdatingChunkHolders(this.level).iterator(); // Paper
  
@@ -6525,7 +6526,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
-     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // IRegistryCustom.Dimension iregistrycustom_dimension = minecraftserver.registryAccess(); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -6603,7 +6604,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        player.isRealPlayer = true; // Paper
          GameProfile gameprofile = player.getGameProfile();
          GameProfileCache usercache = this.server.getProfileCache();
-         Optional<GameProfile> optional = usercache.get(gameprofile.getId());
+         String s;
 diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
@@ -6673,7 +6674,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public org.bukkit.craftbukkit.entity.CraftCreature getBukkitCreature() { return (org.bukkit.craftbukkit.entity.CraftCreature) super.getBukkitEntity(); } // Paper
 +
      public float getWalkTargetValue(BlockPos pos) {
-         return this.getWalkTargetValue(pos, this.level);
+         return this.getWalkTargetValue(pos, this.level());
      }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Monster.java b/src/main/java/net/minecraft/world/entity/monster/Monster.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -6921,14 +6922,15 @@ diff --git a/src/main/java/net/minecraft/world/level/LevelReader.java b/src/main
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/LevelReader.java
 +++ b/src/main/java/net/minecraft/world/level/LevelReader.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.levelgen.Heightmap;
- import net.minecraft.world.phys.AABB;
- 
- public interface LevelReader extends BlockAndTintGetter, CollisionGetter, BiomeManager.NoiseBiomeSource {
-+    @Nullable ChunkAccess getChunkIfLoadedImmediately(int x, int z); // Paper - ifLoaded api (we need this since current impl blocks if the chunk is loading)
+@@ -0,0 +0,0 @@ public interface LevelReader extends BlockAndTintGetter, CollisionGetter, Signal
      @Nullable
      ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create);
  
++    @Nullable ChunkAccess getChunkIfLoadedImmediately(int x, int z); // Paper - ifLoaded api (we need this since current impl blocks if the chunk is loading)
++
+     /** @deprecated */
+     @Deprecated
+     boolean hasChunk(int chunkX, int chunkZ);
 diff --git a/src/main/java/net/minecraft/world/level/PathNavigationRegion.java b/src/main/java/net/minecraft/world/level/PathNavigationRegion.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/PathNavigationRegion.java
@@ -6994,8 +6996,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        private final int lightEmission; public final int getEmittedLight() { return this.lightEmission; } // Paper - OBFHELPER
 +        private final boolean useShapeForLightOcclusion; public final boolean isTransparentOnSomeFaces() { return this.useShapeForLightOcclusion; } // Paper - OBFHELPER
          private final boolean isAir;
-         private final Material material;
-         private final MaterialColor materialColor;
+         private final boolean ignitedByLava;
+         /** @deprecated */
+@@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
+         private final MapColor mapColor;
          public final float destroySpeed;
          private final boolean requiresCorrectToolForDrops;
 -        private final boolean canOcclude;
@@ -7004,7 +7008,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          private final BlockBehaviour.StatePredicate isSuffocating;
          private final BlockBehaviour.StatePredicate isViewBlocking;
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
-             this.spawnParticlesOnBreak = blockbase_info.spawnParticlesOnBreak;
+             }
          }
  
 +        // Paper start
@@ -7022,8 +7026,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
 +            this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
  
+             this.legacySolid = this.calculateSolid();
          }
- 
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.getBlock().getOcclusionShape(this.asState(), world, pos);
          }
@@ -7051,7 +7055,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
      // CraftBukkit end
  
-     public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biome, long inhabitedTime, @Nullable LevelChunkSection[] sectionArrayInitializer, @Nullable BlendingData blendingData) {
+     public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biomeRegistry, long inhabitedTime, @Nullable LevelChunkSection[] sectionArray, @Nullable BlendingData blendingData) {
 -        this.chunkPos = pos;
 +        this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
 +        this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
@@ -7062,14 +7066,6 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -0,0 +0,0 @@ import net.minecraft.nbt.CompoundTag;
- import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
- import net.minecraft.server.level.ChunkHolder;
-+import net.minecraft.server.level.ServerChunkCache;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.util.profiling.ProfilerFiller;
- import net.minecraft.world.entity.Entity;
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
      public boolean needsDecoration;
      // CraftBukkit end
@@ -7214,7 +7210,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - neighbour cache
 +        int chunkX = this.chunkPos.x;
 +        int chunkZ = this.chunkPos.z;
-+        ServerChunkCache chunkProvider = this.level.getChunkSource();
++        net.minecraft.server.level.ServerChunkCache chunkProvider = this.level.getChunkSource();
 +        for (int dx = -NEIGHBOUR_CACHE_RADIUS; dx <= NEIGHBOUR_CACHE_RADIUS; ++dx) {
 +            for (int dz = -NEIGHBOUR_CACHE_RADIUS; dz <= NEIGHBOUR_CACHE_RADIUS; ++dz) {
 +                LevelChunk neighbour = chunkProvider.getChunkAtIfLoadedMainThreadNoCache(chunkX + dx, chunkZ + dz);
@@ -7241,7 +7237,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - neighbour cache
 +        int chunkX = this.chunkPos.x;
 +        int chunkZ = this.chunkPos.z;
-+        ServerChunkCache chunkProvider = this.level.getChunkSource();
++        net.minecraft.server.level.ServerChunkCache chunkProvider = this.level.getChunkSource();
 +        for (int dx = -NEIGHBOUR_CACHE_RADIUS; dx <= NEIGHBOUR_CACHE_RADIUS; ++dx) {
 +            for (int dz = -NEIGHBOUR_CACHE_RADIUS; dz <= NEIGHBOUR_CACHE_RADIUS; ++dz) {
 +                LevelChunk neighbour = chunkProvider.getChunkAtIfLoadedMainThreadNoCache(chunkX + dx, chunkZ + dz);

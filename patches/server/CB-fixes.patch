@@ -54,7 +54,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
 -    protected void actuallyHurt(DamageSource source, float amount) {
 +    protected boolean damageEntity0(DamageSource source, float amount) { // Paper - fix CB method rename issue
-         this.standUpPanic();
+         this.standUpInstantly();
 -        super.actuallyHurt(source, amount);
 +        return super.damageEntity0(source, amount); // Paper - fix CB method rename issue
      }
@@ -89,14 +89,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          Validate.notNull(key, "NamespacedKey cannot be null");
  
-         LootTables registry = this.getServer().getLootTables();
--        return new CraftLootTable(key, registry.get(CraftNamespacedKey.toMinecraft(key)));
+         LootDataManager registry = this.getServer().getLootData();
+-        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
 +        // Paper start - honor method contract
 +        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
-+        if (!registry.getIds().contains(lootTableKey)) {
++        if (registry.getLootTable(lootTableKey) == net.minecraft.world.level.storage.loot.LootTable.EMPTY) {
 +            return null;
 +        }
-+        return new CraftLootTable(key, registry.get(lootTableKey));
++        return new CraftLootTable(key, registry.getLootTable(lootTableKey));
 +        // Paper end
      }
  

@@ -27,6 +27,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    extendsFrom(apiAndDocs)
 +}
 +
+ val annotationsVersion = "24.0.1"
+ 
  dependencies {
      // api dependencies are listed transitively to API consumers
      api("com.google.guava:guava:31.1-jre")
@@ -49,11 +51,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    apiAndDocs("net.kyori:adventure-text-logger-slf4j")
      // Paper end
  
-     compileOnly("org.apache.maven:maven-resolver-provider:3.8.5")
+     compileOnly("org.apache.maven:maven-resolver-provider:3.9.2")
 @@ -0,0 +0,0 @@ tasks.withType<Javadoc> {
          "https://guava.dev/releases/31.1-jre/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/1.33/",
-         "https://javadoc.io/doc/org.jetbrains/annotations/23.0.0/", // Paper - we don't want Java 5 annotations
+         "https://javadoc.io/doc/org.jetbrains/annotations/$annotationsVersion/", // Paper - we don't want Java 5 annotations
 -        "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
 +        // Paper start
 +        //"https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/", // don't link to bungee chat
@@ -1542,7 +1544,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
 +     *
 +     * @return List of components containing each line of text
-+     * @see #getSide(Side)
++     * @deprecated  A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#lines()}.
 +     */
 +    @NotNull
 +    public java.util.List<net.kyori.adventure.text.Component> lines();
@@ -1555,9 +1557,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param index Line number to get the text from, starting at 0
 +     * @throws IndexOutOfBoundsException Thrown when the line does not exist
 +     * @return Text on the given line
-+     * @see #getSide(Side)
++     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int)}.
 +     */
 +    @NotNull
++    @Deprecated
 +    public net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException;
 +
 +    /**
@@ -1569,49 +1572,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param index Line number to set the text at, starting from 0
 +     * @param line New text to set at the specified index
 +     * @throws IndexOutOfBoundsException If the index is out of the range 0..3
-+     * @see #getSide(Side)
++     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int, net.kyori.adventure.text.Component)}.
 +     */
++    @Deprecated
 +    public void line(int index, net.kyori.adventure.text.@NotNull Component line) throws IndexOutOfBoundsException;
 +    // Paper end
  
      /**
       * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
-@@ -0,0 +0,0 @@ public interface Sign extends TileState, Colorable {
-      * @see #getSide(Side)
+      *
+      * @return Array of Strings containing each line of text
+-     * @deprecated  A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#getLines()}.
++     * @deprecated  A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#lines()}.
       */
+     @Deprecated
      @NotNull
-+    @Deprecated // Paper
-     public String[] getLines();
- 
-     /**
 @@ -0,0 +0,0 @@ public interface Sign extends TileState, Colorable {
+      * @param index Line number to get the text from, starting at 0
       * @return Text on the given line
       * @throws IndexOutOfBoundsException Thrown when the line does not exist
-      * @see #getSide(Side)
-+     * @deprecated in favour of {@link #line(int)}
+-     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#getLine(int)}.
++     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int)}.
       */
+     @Deprecated
      @NotNull
-+    @Deprecated // Paper
-     public String getLine(int index) throws IndexOutOfBoundsException;
- 
-     /**
 @@ -0,0 +0,0 @@ public interface Sign extends TileState, Colorable {
+      * @param index Line number to set the text at, starting from 0
       * @param line New text to set at the specified index
       * @throws IndexOutOfBoundsException If the index is out of the range 0..3
-      * @see #getSide(Side)
-+     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
+-     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#setLine(int, String)}.
++     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int, net.kyori.adventure.text.Component)}.
       */
-+    @Deprecated // Paper
+     @Deprecated
      public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
- 
-     /**
 diff --git a/src/main/java/org/bukkit/block/sign/SignSide.java b/src/main/java/org/bukkit/block/sign/SignSide.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/block/sign/SignSide.java
 +++ b/src/main/java/org/bukkit/block/sign/SignSide.java
 @@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
+  * Represents a side of a sign.
   */
- @Experimental
  public interface SignSide extends Colorable {
 +    // Paper start
 +    /**
