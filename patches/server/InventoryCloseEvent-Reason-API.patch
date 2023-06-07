@@ -35,7 +35,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
          }
          // Paper end
-         if (!this.level.isClientSide && !this.containerMenu.stillValid(this)) {
+         if (!this.level().isClientSide && !this.containerMenu.stillValid(this)) {
 -            this.closeContainer();
 +            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
              this.containerMenu = this.inventoryMenu;
@@ -91,11 +91,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void handleContainerClose(ServerboundContainerClosePacket packet) {
 +        // Paper start
-+        handleContainerClose(packet, InventoryCloseEvent.Reason.PLAYER);
++        this.handleContainerClose(packet, InventoryCloseEvent.Reason.PLAYER);
 +    }
 +    public void handleContainerClose(ServerboundContainerClosePacket packet, InventoryCloseEvent.Reason reason) {
 +        // Paper end
-         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
  
          if (this.player.isImmobile()) return; // CraftBukkit
 -        CraftEventFactory.handleInventoryCloseEvent(this.player); // CraftBukkit
@@ -123,7 +123,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
          this.updateIsUnderwater();
          super.tick();
-         if (!this.level.isClientSide && this.containerMenu != null && !this.containerMenu.stillValid(this)) {
+         if (!this.level().isClientSide && this.containerMenu != null && !this.containerMenu.stillValid(this)) {
 -            this.closeContainer();
 +            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
              this.containerMenu = this.inventoryMenu;
@@ -197,7 +197,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            player.connection.handleContainerClose(new ServerboundContainerClosePacket(player.containerMenu.containerId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper
          }
  
-         CraftServer server = player.level.getCraftServer();
+         CraftServer server = player.level().getCraftServer();
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
          return event;
      }
@@ -215,6 +215,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static void handleInventoryCloseEvent(net.minecraft.world.entity.player.Player human, org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        // Paper end
 +        InventoryCloseEvent event = new InventoryCloseEvent(human.containerMenu.getBukkitView(), reason); // Paper
-         human.level.getCraftServer().getPluginManager().callEvent(event);
+         human.level().getCraftServer().getPluginManager().callEvent(event);
          human.containerMenu.transferTo(human.inventoryMenu, human.getBukkitEntity());
      }
