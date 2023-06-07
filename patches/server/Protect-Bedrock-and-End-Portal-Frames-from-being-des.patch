@@ -86,17 +86,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return false;
 +        }
 +        // Paper end - prevent retracting when we're facing the wrong way
+         BlockState iblockdata1 = (BlockState) state.setValue(PistonBaseBlock.EXTENDED, true);
  
          if (!world.isClientSide) {
-             boolean flag = this.getNeighborSignal(world, pos, enumdirection);
 @@ -0,0 +0,0 @@ public class PistonBaseBlock extends DirectionalBlock {
-             BlockState iblockdata1 = (BlockState) ((BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, enumdirection)).setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
+             BlockState iblockdata2 = (BlockState) ((BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, enumdirection)).setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
  
-             world.setBlock(pos, iblockdata1, 20);
--            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata1, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true));
-+            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata1, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change
-             world.blockUpdated(pos, iblockdata1.getBlock());
-             iblockdata1.updateNeighbourShapes(world, pos, 2);
+             world.setBlock(pos, iblockdata2, 20);
+-            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata2, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true));
++            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata2, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change
+             world.blockUpdated(pos, iblockdata2.getBlock());
+             iblockdata2.updateNeighbourShapes(world, pos, 2);
              if (this.isSticky) {
 @@ -0,0 +0,0 @@ public class PistonBaseBlock extends DirectionalBlock {
                      }
@@ -122,13 +122,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      /** @deprecated */
      @Deprecated
      public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
--        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
-+        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper
+-        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
++        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper;
      }
  
      /** @deprecated */
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
-             return ((Block) this.owner).builtInRegistryHolder();
+             return this.legacySolid;
          }
  
 +        // Paper start
@@ -137,15 +137,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end
 +
-         public Material getMaterial() {
-             return this.material;
+         public boolean isValidSpawn(BlockGetter world, BlockPos pos, EntityType<?> type) {
+             return this.getBlock().properties.isValidSpawn.test(this.asState(), world, pos, type);
          }
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
          }
  
          public PushReaction getPistonPushReaction() {
--            return this.getBlock().getPistonPushReaction(this.asState());
-+            return !isDestroyable() ? PushReaction.BLOCK : this.getBlock().getPistonPushReaction(this.asState()); // Paper
+-            return this.pushReaction;
++            return !this.isDestroyable() ? PushReaction.BLOCK : this.pushReaction; // Paper
          }
  
          public boolean isSolidRender(BlockGetter world, BlockPos pos) {
@@ -164,6 +164,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +                }
 +                // Paper end - prevent destroying unbreakable blocks
-                 if (k < 0 && !this.level.getBlockState(temp).getMaterial().isSolid()) {
+                 if (k < 0 && !this.level.getBlockState(temp).isSolid()) {
                      return false;
                  }
