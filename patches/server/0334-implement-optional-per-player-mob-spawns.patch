@@ -252,18 +252,18 @@ index 0000000000000000000000000000000000000000..11de56afaf059b00fa5bec293516bcdc
 +    }
 +} 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 40177f2e0206f89b83bbc0b6c80d74785d9d8414..1c39d12a6e72954a24ad51d8d6346341dc1c5d22 100644
+index 459d9007130c9addffd8f65b6d8f9110794f2021..3ab66eb22561971392616c083bae5339e6ddc493 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -152,6 +152,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -156,6 +156,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Long2LongMap chunkSaveCooldowns;
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
  
-     // Paper - rewrite chunk system
- 
-@@ -164,11 +165,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
+     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
+@@ -185,16 +186,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
@@ -275,7 +275,6 @@ index 40177f2e0206f89b83bbc0b6c80d74785d9d8414..1c39d12a6e72954a24ad51d8d6346341
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
-         this.playerChunkManager.removePlayer(player); // Paper - replace chunk loader
  
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
@@ -285,10 +284,9 @@ index 40177f2e0206f89b83bbc0b6c80d74785d9d8414..1c39d12a6e72954a24ad51d8d6346341
      }
  
      void updateMaps(ServerPlayer player) {
-@@ -176,6 +187,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
-         this.playerChunkManager.updatePlayer(player); // Paper - replace chunk loader
 +        // Paper start - per player mob spawning
 +        if (this.playerMobDistanceMap != null) {
 +            this.playerMobDistanceMap.update(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
@@ -297,7 +295,7 @@ index 40177f2e0206f89b83bbc0b6c80d74785d9d8414..1c39d12a6e72954a24ad51d8d6346341
      }
      // Paper end
      // Paper start
-@@ -261,6 +277,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -285,6 +301,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
@@ -305,7 +303,7 @@ index 40177f2e0206f89b83bbc0b6c80d74785d9d8414..1c39d12a6e72954a24ad51d8d6346341
      }
  
      protected ChunkGenerator generator() {
-@@ -286,6 +303,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -310,6 +327,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          });
      }
  
@@ -338,10 +336,10 @@ index 40177f2e0206f89b83bbc0b6c80d74785d9d8414..1c39d12a6e72954a24ad51d8d6346341
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index c021733342c09adb04ce3f675209543f84ac4bda..d137aa95f670aab516e9e08272f33b2125b282c6 100644
+index d0330d1baf89f949c05b2380ce875366802834e3..419da79f773281ffe917b712461d6df81645b19e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -693,7 +693,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -696,7 +696,18 @@ public class ServerChunkCache extends ChunkSource {
              gameprofilerfiller.push("naturalSpawnCount");
              this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
              int l = this.distanceManager.getNaturalSpawnChunkCount();
@@ -362,7 +360,7 @@ index c021733342c09adb04ce3f675209543f84ac4bda..d137aa95f670aab516e9e08272f33b21
  
              this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index c93ede55cdd575f0c928bc9bf90c47480e52f91b..b014f1bd167bad3e1dc613dce5c929f201ef27cc 100644
+index e00a40e8637f0b73aba04b5b47bcb021c3d7e952..50a6f7f6ff5b24053d8f6eba06b0e1e5541be685 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -248,6 +248,11 @@ public class ServerPlayer extends Player {
@@ -377,7 +375,7 @@ index c93ede55cdd575f0c928bc9bf90c47480e52f91b..b014f1bd167bad3e1dc613dce5c929f2
  
      // CraftBukkit start
      public String displayName;
-@@ -339,6 +344,7 @@ public class ServerPlayer extends Player {
+@@ -338,6 +343,7 @@ public class ServerPlayer extends Player {
          this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
          this.bukkitPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
@@ -386,7 +384,7 @@ index c93ede55cdd575f0c928bc9bf90c47480e52f91b..b014f1bd167bad3e1dc613dce5c929f2
  
      // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 05c014c5f0805d50cfd251b043c79ce3355eef16..a1770e5ae4b3014c3538b52d4912c60864e186a8 100644
+index f22e1d76586980edb2dc962b4d55ad7a542b61a7..a3461824fd2162d509facf6f64c5008e3f0fd42b 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -70,6 +70,12 @@ public final class NaturalSpawner {

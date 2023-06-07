@@ -6,7 +6,7 @@ Subject: [PATCH] Implement alternative item-despawn-rate
 Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index 6836288bd380651007f3aa76e608767f612f6644..028fd9c7cb927cde84ee2d078681d122d7d928aa 100644
+index 080b574d28b07e59b234a927a50ba8972d410664..7678199278324cce4ce736197cb8766c134a0f87 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 @@ -53,6 +53,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
@@ -21,8 +21,8 @@ index 6836288bd380651007f3aa76e608767f612f6644..028fd9c7cb927cde84ee2d078681d122
                  }
              }
  
--            if (!this.level.isClientSide && this.age >= level.spigotConfig.itemDespawnRate) { // Spigot
-+            if (!this.level.isClientSide && this.age >= this.despawnRate) { // Spigot // Paper
+-            if (!this.level().isClientSide && this.age >= this.level().spigotConfig.itemDespawnRate) { // Spigot
++            if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper
                  // CraftBukkit start - fire ItemDespawnEvent
                  if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
                      this.age = 0;
@@ -30,12 +30,12 @@ index 6836288bd380651007f3aa76e608767f612f6644..028fd9c7cb927cde84ee2d078681d122
          this.lastTick = MinecraftServer.currentTick;
          // CraftBukkit end
  
--        if (!this.level.isClientSide && this.age >= level.spigotConfig.itemDespawnRate) { // Spigot
-+        if (!this.level.isClientSide && this.age >= this.despawnRate) { // Spigot // Paper
+-        if (!this.level().isClientSide && this.age >= this.level().spigotConfig.itemDespawnRate) { // Spigot
++        if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper
              // CraftBukkit start - fire ItemDespawnEvent
              if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
                  this.age = 0;
-@@ -264,7 +265,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+@@ -269,7 +270,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
      private boolean isMergable() {
          ItemStack itemstack = this.getItem();
  
@@ -44,20 +44,20 @@ index 6836288bd380651007f3aa76e608767f612f6644..028fd9c7cb927cde84ee2d078681d122
      }
  
      private void tryToMerge(ItemEntity other) {
-@@ -505,6 +506,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+@@ -509,6 +510,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
          com.google.common.base.Preconditions.checkArgument(!stack.isEmpty(), "Cannot drop air"); // CraftBukkit
          this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
          this.getEntityData().markDirty(ItemEntity.DATA_ITEM); // CraftBukkit - SPIGOT-4591, must mark dirty
-+        this.despawnRate = level.paperConfig().entities.spawning.altItemDespawnRate.enabled ? level.paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(stack.getItem(), level.spigotConfig.itemDespawnRate) : level.spigotConfig.itemDespawnRate; // Paper
++        this.despawnRate = this.level().paperConfig().entities.spawning.altItemDespawnRate.enabled ? this.level().paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(stack.getItem(), this.level().spigotConfig.itemDespawnRate) : this.level().spigotConfig.itemDespawnRate; // Paper
      }
  
      @Override
-@@ -558,7 +560,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+@@ -562,7 +564,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
  
      public void makeFakeItem() {
          this.setNeverPickUp();
--        this.age = level.spigotConfig.itemDespawnRate - 1; // Spigot
-+        this.age = this.despawnRate - 1; // Spigot
+-        this.age = this.level().spigotConfig.itemDespawnRate - 1; // Spigot
++        this.age = this.despawnRate - 1; // Spigot // Paper
      }
  
      public float getSpin(float tickDelta) {

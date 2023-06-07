@@ -194,13 +194,13 @@ index 0000000000000000000000000000000000000000..0bb4aaa546939b67a5d22865190f3047
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index 8f16640fc2f1233c10392d7e32a54d784fd8e370..1e9f191dc0f9d98f4404d2796f15b13912860b13 100644
+index ae046aff4b9d2ced37ee3e8e908780a807b5c4dd..1188d221be8a4f1dece514e3f66b99f60b556488 100644
 --- a/src/main/java/io/papermc/paper/command/PaperCommand.java
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -41,6 +41,7 @@ public final class PaperCommand extends Command {
+@@ -40,6 +40,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("callback"), new CallbackCommand());
          commands.put(Set.of("dumpplugins"), new DumpPluginsCommand());
          commands.put(Set.of("fixlight"), new FixLightCommand());
-         commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());
 +        commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
  
          return commands.entrySet().stream()
@@ -300,31 +300,40 @@ index 0000000000000000000000000000000000000000..95d6022c9cfb2e36ec5a71be6e343540
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index f838a921a08981bac0d0c0a68e334ba06d11cb18..665e088cb0b73f6a0c62f29c56da462bab7c927e 100644
+index cfc7febc84ac1bdde1a20f8ac35df915218cd910..2cbb2a02da1e5de18613ee977dafc92af9b552e9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -445,6 +445,7 @@ public class ServerChunkCache extends ChunkSource {
-                 // Paper start - async chunk io/loading
-                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, x1, z1); // Paper - rewrite chunk system
-                 // Paper end
+@@ -393,6 +393,7 @@ public class ServerChunkCache extends ChunkSource {
+     @Nullable
+     @Override
+     public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
++        final int x1 = x; final int z1 = z; // Paper - conflict on variable change
+         if (Thread.currentThread() != this.mainThread) {
+             return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
+                 return this.getChunk(x, z, leastStatus, create);
+@@ -426,6 +427,7 @@ public class ServerChunkCache extends ChunkSource {
+ 
+             Objects.requireNonNull(completablefuture);
+             if (!completablefuture.isDone()) { // Paper
 +                com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x1, z1); // Paper - sync load info
                  this.level.timings.syncChunkLoad.startTiming(); // Paper
              chunkproviderserver_b.managedBlock(completablefuture::isDone);
-                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.popChunkWait(); // Paper - async chunk debug  // Paper - rewrite chunk system
+                 this.level.timings.syncChunkLoad.stopTiming(); // Paper
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 5ae321dc30d48f838c49322b5beef89bcbc952bc..67e59ac94c584a742bf5e6e2094459234603ef06 100644
+index 1ea55cced137e16dd2aebd705ea8b4494c43bc4f..203dc7444a2e6b0cfcaf0532e50ae0b22e51210e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -422,6 +422,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         return this.entityLookup;
+@@ -424,6 +424,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
      }
-     // Paper end - rewrite chunk system
+ 
 +    // Paper start
 +    @Override
 +    public boolean hasChunk(int chunkX, int chunkZ) {
 +        return this.getChunkSource().getChunkAtIfLoadedImmediately(chunkX, chunkZ) != null;
 +    }
 +    // Paper end
- 
-     // Paper start - optimise getPlayerByUUID
-     @Nullable
++
+     /** @deprecated */
+     @Deprecated
+     @VisibleForTesting
