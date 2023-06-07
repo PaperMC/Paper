@@ -93,14 +93,15 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
         super.applyTo(sign);
     }
 
-    public static void openSign(Sign sign, Player player) {
+    public static void openSign(Sign sign, Player player, Side side) {
         Preconditions.checkArgument(sign != null, "sign == null");
+        Preconditions.checkArgument(side != null, "side == null");
         Preconditions.checkArgument(sign.isPlaced(), "Sign must be placed");
         Preconditions.checkArgument(sign.getWorld() == player.getWorld(), "Sign must be in same world as Player");
 
         TileEntitySign handle = ((CraftSign<?>) sign).getTileEntity();
 
-        ((CraftPlayer) player).getHandle().openTextEdit(handle, true);
+        ((CraftPlayer) player).getHandle().openTextEdit(handle, Side.FRONT == side);
     }
 
     public static IChatBaseComponent[] sanitizeLines(String[] lines) {

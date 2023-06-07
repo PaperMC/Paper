@@ -2098,12 +2098,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void openSign(Sign sign) {
-        CraftSign.openSign(sign, this);
+        openSign(sign, Side.FRONT);
     }
 
     @Override
     public void openSign(@NotNull Sign sign, @NotNull Side side) {
-        openSign(sign); // todo implement per side
+        CraftSign.openSign(sign, this, side);
     }
 
     @Override
