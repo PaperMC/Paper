@@ -561,7 +561,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
-         this.level.gameEvent(GameEvent.CONTAINER_CLOSE, this.position(), GameEvent.Context.of((Entity) player));
+         this.level().gameEvent(GameEvent.CONTAINER_CLOSE, this.position(), GameEvent.Context.of((Entity) player));
      }
  
 +    // Paper start
@@ -606,19 +606,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
  
      default void unpackChestVehicleLootTable(@Nullable Player player) {
-         MinecraftServer minecraftServer = this.getLevel().getServer();
+         MinecraftServer minecraftServer = this.level().getServer();
 -        if (this.getLootTable() != null && minecraftServer != null) {
 +        if (this.getLootableData().shouldReplenish(player) && minecraftServer != null) { // Paper
-             LootTable lootTable = minecraftServer.getLootTables().get(this.getLootTable());
+             LootTable lootTable = minecraftServer.getLootData().getLootTable(this.getLootTable());
              if (player != null) {
                  CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getLootTable());
              }
  
 -            this.setLootTable((ResourceLocation)null);
-+            // this.setLootTable((ResourceLocation)null); // Paper
 +            this.getLootableData().processRefill(player); // Paper
-+
-             LootContext.Builder builder = (new LootContext.Builder((ServerLevel)this.getLevel())).withParameter(LootContextParams.ORIGIN, this.position()).withOptionalRandomSeed(this.getLootTableSeed());
+             LootParams.Builder builder = (new LootParams.Builder((ServerLevel)this.level())).withParameter(LootContextParams.ORIGIN, this.position());
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
 @@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
@@ -680,17 +678,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void unpackLootTable(@Nullable Player player) {
 -        if (this.lootTable != null && this.level.getServer() != null) {
 +        if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
-             LootTable lootTable = this.level.getServer().getLootTables().get(this.lootTable);
+             LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
              if (player instanceof ServerPlayer) {
                  CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.lootTable);
              }
  
 -            this.lootTable = null;
-+            //this.lootTable = null; // Paper
 +            this.lootableData.processRefill(player); // Paper
-             LootContext.Builder builder = (new LootContext.Builder((ServerLevel)this.level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(this.worldPosition)).withOptionalRandomSeed(this.lootTableSeed);
+             LootParams.Builder builder = (new LootParams.Builder((ServerLevel)this.level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(this.worldPosition));
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBrushableBlock.java
+@@ -0,0 +0,0 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
+         this.setLootTable(this.getLootTable(), seed);
+     }
+ 
+-    private void setLootTable(LootTable table, long seed) {
++    public void setLootTable(LootTable table, long seed) { // Paper - make public since it overrides a public method
+         ResourceLocation key = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
+         getSnapshot().setLootTable(key, seed);
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
@@ -719,19 +729,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public CraftLootable(World world, T tileEntity) {
          super(world, tileEntity);
-diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSuspiciousSand.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSuspiciousSand.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/block/CraftSuspiciousSand.java
-+++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSuspiciousSand.java
-@@ -0,0 +0,0 @@ public class CraftSuspiciousSand extends CraftBlockEntityState<SuspiciousSandBlo
-         this.setLootTable(this.getLootTable(), seed);
-     }
- 
--    private void setLootTable(LootTable table, long seed) {
-+    public void setLootTable(LootTable table, long seed) {  // Paper - change visibility since it overrides a public method
-         ResourceLocation key = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
-         getSnapshot().setLootTable(key, seed);
-     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftChestBoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftChestBoat.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftChestBoat.java
