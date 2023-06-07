@@ -3,6 +3,10 @@ From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
 Date: Mon, 3 Apr 2023 18:46:49 +0200
 Subject: [PATCH] Fix block place logic
 
+Fix several issues when a player interact with a block:
+* the place sound isn't played for the dispensed shulker block
+* desync of the jukebox blocks between bukkit handler and the vanilla interaction
+* poi can desync when the BlockPhysicsEvent is cancelled
 
 diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
 index b0204af850ee182773ad458208cccd946ad148d5..ebee8de2ed831755b6fd154f6cc77ac993839bb9 100644
@@ -36,3 +40,29 @@ index 6a25b768ea2e99acdda781cdc0ab7bf80b45912c..5f0e01060e1d8716e7514a25cbe68b73
                              world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entityhuman, world.getBlockState(blockposition)));
                          }
  
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 147d802d9207e358fdb2d1c7806fc2f634dcfd98..f39ab10c5b0b8d86b579a5b683491204c51db70b 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -646,17 +646,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                 // CraftBukkit start
+                 iblockdata1.updateIndirectNeighbourShapes(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
+                 CraftWorld world = ((ServerLevel) this).getWorld();
++                boolean cancelledUpdates = false; // Paper
+                 if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper
+                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
+                     this.getCraftServer().getPluginManager().callEvent(event);
+ 
+-                    if (event.isCancelled()) {
+-                        return;
+-                    }
++                    cancelledUpdates = event.isCancelled(); // Paper
+                 }
+                 // CraftBukkit end
++                if (!cancelledUpdates) { // Paper
+                 iblockdata.updateNeighbourShapes(this, blockposition, k, j - 1);
+                 iblockdata.updateIndirectNeighbourShapes(this, blockposition, k, j - 1);
++                } // Paper
+             }
+ 
+             // CraftBukkit start - SPIGOT-5710
