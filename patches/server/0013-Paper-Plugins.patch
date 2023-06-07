@@ -6928,10 +6928,10 @@ index f7114d5b8f2f93f62883e24da29afaf9f74ee1a6..8bf0630c0e06950cd99b7ae9898137f7
  
          return foundFrame.orElse(null);
 diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-index a969cd46694ce3094b4a65cf188677d38ae72198..35c9af90dfcb99fac58577174115b59b0d1262ca 100644
+index baa88201c4d08fb4f32f1198e187d7ca138b0f0e..7d09adf27da249851cfc87b7916b915240a65a7e 100644
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -312,7 +312,13 @@ public class BuiltInRegistries {
+@@ -319,7 +319,13 @@ public class BuiltInRegistries {
      }
  
      public static void bootStrap() {
@@ -6946,24 +6946,23 @@ index a969cd46694ce3094b4a65cf188677d38ae72198..35c9af90dfcb99fac58577174115b59b
          validate(REGISTRY);
      }
 diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
-index b5aa358638b9d0638dfe47f7ebac04cca1dd80b9..e43096e69a00f9ea96badd7c966443cfcf3e7b95 100644
+index 1eabd8b5a99850298838b11ba97e3d220f444378..89343863d0cf58ff65c66230855e1e83df078e26 100644
 --- a/src/main/java/net/minecraft/server/Bootstrap.java
 +++ b/src/main/java/net/minecraft/server/Bootstrap.java
-@@ -69,7 +69,11 @@ public class Bootstrap {
-                     EntitySelectorOptions.bootStrap();
+@@ -77,6 +77,11 @@ public class Bootstrap {
                      DispenseItemBehavior.bootStrap();
                      CauldronInteraction.bootStrap();
--                    BuiltInRegistries.bootStrap();
+                     BuiltInRegistries.bootStrap();
 +                    // Paper start
 +                    BuiltInRegistries.bootStrap(() -> {
 +                        io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
 +                    });
 +                    // Paper end
+                     CreativeModeTabs.validate();
                      Bootstrap.wrapStreams();
-                 }
-                 // CraftBukkit start - easier than fixing the decompile
+                     Bootstrap.bootstrapDuration.set(Duration.between(instant, Instant.now()).toMillis());
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index aa054369cef3da4f90ce17788dcb9ca80dc98010..d9f2518a08bc4ae978051be51e467597f9325ecb 100644
+index 35e7f8e7b19c217fa5f3f55abb0f8b9cd6b16f18..72c2f0bf9434e09a0dd51294d3a2200f1e0ed1b1 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -122,6 +122,7 @@ public class Main {
@@ -6975,7 +6974,7 @@ index aa054369cef3da4f90ce17788dcb9ca80dc98010..d9f2518a08bc4ae978051be51e467597
              Bootstrap.validate();
              Util.startTimerHackThread();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6752bae2a976906609d05e3d0c8a18c7413fa5b1..6e1f782938992debbfd9617ab9e2cce4e423876c 100644
+index 6024046b18027e7db68280b957e964605a9854a7..5acdd3253a33d9c9f5e1af955b6e1dc072f77858 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -269,7 +269,8 @@ public final class CraftServer implements Server {
@@ -7064,7 +7063,7 @@ index 909b2c98e7a9117d2f737245e4661792ffafb744..d96399e9bf1a58db5a4a22e58abb99e7
      @Override
      public FileConfiguration getConfig() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index e785bf77ddb37b2409fbc5982927161b36504fb7..a90bfabd166afcd248c5d467d18ec9c0324b7858 100644
+index 0137b414a75894cb8b8413f96eba4f591453f61b..39a9a47ce7150445e1b00a32152c0429b3114302 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -439,6 +439,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
@@ -7873,7 +7872,7 @@ index 0000000000000000000000000000000000000000..ba271c35eb2804f94cfc893bf94affb9
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
-index c6503ff76f56bab5f383f0ca17d137155e9be447..f3db8d2875eaef86223da51b30e9dd722d417daa 100644
+index e944e9dca13883c57e93e480ae5adfe51c342532..f482cb4dc5394de3cf88b4c4e13c18f9c61caf45 100644
 --- a/src/test/java/io/papermc/paper/testing/DummyServer.java
 +++ b/src/test/java/io/papermc/paper/testing/DummyServer.java
 @@ -58,7 +58,7 @@ public final class DummyServer {
