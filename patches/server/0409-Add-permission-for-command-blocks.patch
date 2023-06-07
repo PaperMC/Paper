@@ -5,10 +5,10 @@ Subject: [PATCH] Add permission for command blocks
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 051cbce8394c7a629a7ea8ac422308d96bbad6a6..52d71b08c8338254a0e50780363155da4f4c1934 100644
+index 562534d15f6f70ff286be90fb512b807e00ad807..c185083abf2b4527a7fe046d83c64cd2cc5b5bb9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -404,7 +404,7 @@ public class ServerPlayerGameMode {
+@@ -402,7 +402,7 @@ public class ServerPlayerGameMode {
              BlockEntity tileentity = this.level.getBlockEntity(pos);
              Block block = iblockdata.getBlock();
  
@@ -18,11 +18,11 @@ index 051cbce8394c7a629a7ea8ac422308d96bbad6a6..52d71b08c8338254a0e50780363155da
                  return false;
              } else if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 16baa852df509a3180dc38c8e1c262bf5602b539..cf065dc3a37080fd74c240271d4699ea278ac333 100644
+index 4e90349313c7e8a94949c94127dee24780a631eb..792cc9567e1982f0cea75078045d70bc806934a4 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -870,7 +870,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+@@ -871,7 +871,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (!this.server.isCommandBlockEnabled()) {
              this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
 -        } else if (!this.player.canUseGameMasterBlocks()) {
@@ -30,17 +30,17 @@ index 16baa852df509a3180dc38c8e1c262bf5602b539..cf065dc3a37080fd74c240271d4699ea
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandblocklistenerabstract = null;
-@@ -937,7 +937,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+@@ -938,7 +938,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (!this.server.isCommandBlockEnabled()) {
              this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
 -        } else if (!this.player.canUseGameMasterBlocks()) {
 +        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
-             BaseCommandBlock commandblocklistenerabstract = packet.getCommandBlock(this.player.level);
+             BaseCommandBlock commandblocklistenerabstract = packet.getCommandBlock(this.player.level());
 diff --git a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
-index 7dac559fd35e7ba646b84bb28315001375723643..7c7e5f3c0f9cd1f16192a8fc8163da9b2d9519d5 100644
+index 7f1efe0d9bc059a86166e8e3c5ef4ad23217f6a7..c138678fe82e6c1dd7ce634f90bcbfcad6159276 100644
 --- a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
 +++ b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
 @@ -198,7 +198,7 @@ public abstract class BaseCommandBlock implements CommandSource {
