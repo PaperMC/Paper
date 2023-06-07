@@ -1631,8 +1631,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -0,0 +0,0 @@ public class CommandSourceStack implements SharedSuggestionProvider {
-     private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
+     private final IntConsumer returnValueConsumer;
      public volatile CommandNode currentCommand; // CraftBukkit
 +    public boolean bypassSelectorPermissions = false; // Paper
  
@@ -2302,7 +2302,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
 +            Component ichatbasecomponent = PaperAdventure.asVanilla(deathMessage); // Paper - Adventure
  
-             this.connection.send(new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
+             this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
                  boolean flag1 = true;
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
  
@@ -2491,44 +2491,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
              this.chat(s, message, true);
          }
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-                 return;
-             }
- 
--            // CraftBukkit start
-+            // CraftBukkit start // Paper start - Adventure
-             Player player = this.player.getBukkitEntity();
-             int x = packet.getPos().getX();
-             int y = packet.getPos().getY();
-             int z = packet.getPos().getZ();
--            String[] lines = new String[4];
-+            List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
- 
-             for (int i = 0; i < signText.size(); ++i) {
-                 FilteredText filteredtext = (FilteredText) signText.get(i);
- 
-                 if (this.player.isTextFilteringEnabled()) {
--                    lines[i] = ChatFormatting.stripFormatting(filteredtext.filteredOrEmpty());
-+                    lines.add(net.kyori.adventure.text.Component.text(filteredtext.filteredOrEmpty())); // Paper - adventure
-                 } else {
--                    lines[i] = ChatFormatting.stripFormatting(filteredtext.raw());
-+                    lines.add(net.kyori.adventure.text.Component.text(filteredtext.raw())); // Paper - adventure
-                 }
-             }
-             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.player.getBukkitEntity(), lines);
-             this.cserver.getPluginManager().callEvent(event);
- 
-             if (!event.isCancelled()) {
--                Component[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
--                for (int i = 0; i < components.length; i++) {
--                    tileentitysign.setMessage(i, components[i]);
-+                for (int i = 0; i < 4; i++) {
-+                    tileentitysign.setMessage(i, PaperAdventure.asVanilla(event.line(i)));
-                 }
-+                // Paper end
-                 tileentitysign.isEditable = false;
-             }
-             // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
@@ -2616,15 +2578,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          // CraftBukkit end
  
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
- 
-     }
- 
--    public String remove(ServerPlayer entityplayer) { // CraftBukkit - return string
-+    public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer) { // Paper - return Component
-         ServerLevel worldserver = entityplayer.getLevel();
- 
-         entityplayer.awardStat(Stats.LEAVE_GAME);
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
              entityplayer.closeContainer();
          }
@@ -2830,6 +2783,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.createWorldFog;
      }
  
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -0,0 +0,0 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+             this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
+         } else {
+             SignBlockEntity.LOGGER.warn("Player {} just tried to change non-editable sign", player.getName().getString());
++            if (player.distanceToSqr(this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ()) < 32 * 32) // Paper
+             ((ServerPlayer) player).connection.send(this.getUpdatePacket()); // CraftBukkit
+         }
+     }
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
@@ -3217,7 +3182,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 @@ -0,0 +0,0 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
-         this.front = new CraftSignSide(this.getSnapshot());
+         this.back = new CraftSignSide(this.getSnapshot().getBackText());
      }
  
 +    // Paper start
@@ -3241,7 +3206,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public String[] getLines() {
          return this.front.getLines();
 @@ -0,0 +0,0 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
-         ((CraftPlayer) player).getHandle().openTextEdit(handle);
+         ((CraftPlayer) player).getHandle().openTextEdit(handle, true);
      }
  
 +    // Paper start
@@ -3275,9 +3240,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private java.util.ArrayList<net.kyori.adventure.text.Component> originalLines = null; // ArrayList for RandomAccess
 +    private java.util.ArrayList<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
 +    // Paper end
-     private final SignBlockEntity signText;
+     private final SignText signText;
  
-     public CraftSignSide(SignBlockEntity signText) {
+     public CraftSignSide(SignText signText) {
          this.signText = signText;
      }
  
@@ -3305,7 +3270,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +        // Lazy initialization:
-+        this.lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(this.signText.messages));
++        this.lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(this.signText.getMessages(false)));
 +        this.originalLines = new java.util.ArrayList<>(this.lines);
 +    }
 +    // Paper end
@@ -3315,8 +3280,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public String[] getLines() {
 -        if (this.lines == null) {
 -            // Lazy initialization:
--            this.lines = new String[signText.messages.length];
--            System.arraycopy(CraftSign.revertComponents(signText.messages), 0, lines, 0, lines.length);
+-            Component[] messages = this.signText.getMessages(false);
+-            this.lines = new String[messages.length];
+-            System.arraycopy(CraftSign.revertComponents(messages), 0, lines, 0, lines.length);
 -            this.originalLines = new String[lines.length];
 -            System.arraycopy(lines, 0, originalLines, 0, originalLines.length);
 -        }
@@ -3775,10 +3741,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private void sendSignChange0(Component[] components, Location loc, DyeColor dyeColor, boolean hasGlowingText) {
          SignBlockEntity sign = new SignBlockEntity(CraftLocation.toBlockPosition(loc), Blocks.OAK_SIGN.defaultBlockState());
-         sign.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
-         sign.setHasGlowingText(hasGlowingText);
+         SignText text = sign.getFrontText();
+         text.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-             sign.setMessage(i, components[i]);
+             text.setMessage(i, components[i]);
          }
  
 -        this.getHandle().connection.send(sign.getUpdatePacket());
