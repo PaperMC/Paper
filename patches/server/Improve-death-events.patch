@@ -109,7 +109,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  entityliving.awardKillScore(this, this.deathScore, damageSource);
              }
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             if (!this.level.isClientSide && this.hasCustomName()) {
+             if (!this.level().isClientSide && this.hasCustomName()) {
                  if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
 +             */ // Paper - move down to make death event cancellable - this is the awardKillScore below
@@ -117,8 +117,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.dead = true;
 -            this.getCombatTracker().recheckStatus();
 +            // Paper - moved into if below
-             if (this.level instanceof ServerLevel) {
--                if (entity == null || entity.wasKilled((ServerLevel) this.level, this)) {
+             Level world = this.level();
+ 
+             if (world instanceof ServerLevel) {
+                 ServerLevel worldserver = (ServerLevel) world;
 +                // Paper - move below into if for onKill
 +
 +                // Paper start
@@ -139,42 +141,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (this.isSleeping()) {
 +                        this.stopSleeping();
 +                    }
-+
-+                    if (!this.level.isClientSide && this.hasCustomName()) {
+ 
+-                if (entity == null || entity.killedEntity(worldserver, this)) {
++                    if (!this.level().isClientSide && this.hasCustomName()) {
 +                        if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
 +                    }
 +
 +                    this.getCombatTracker().recheckStatus();
 +                    if (entity != null) {
-+                        entity.wasKilled((ServerLevel) this.level, this);
++                        entity.wasKilled((ServerLevel) this.level(), this);
 +                    }
                      this.gameEvent(GameEvent.ENTITY_DIE);
 -                    this.dropAllDeathLoot(damageSource);
 -                    this.createWitherRose(entityliving);
-+                } else {
-+                    this.dead = false;
-+                    this.setHealth((float) deathEvent.getReviveHealth());
                  }
--
--                this.level.broadcastEntityEvent(this, (byte) 3);
+ 
+-                this.level().broadcastEntityEvent(this, (byte) 3);
 +                // Paper end
 +                this.createWitherRose(entityliving);
              }
  
++            // Paper start
 +            if (this.dead) { // Paper
-+            this.level.broadcastEntityEvent(this, (byte) 3);
++                this.level().broadcastEntityEvent(this, (byte) 3);
              this.setPose(Pose.DYING);
-+            } // Paper
++            }
++            // Paper end
          }
      }
  
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         if (!this.level.isClientSide) {
+         if (!this.level().isClientSide) {
              boolean flag = false;
  
 -            if (adversary instanceof WitherBoss) {
 +            if (this.dead && adversary instanceof WitherBoss) { // Paper
-                 if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+                 if (this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                      BlockPos blockposition = this.blockPosition();
                      BlockState iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -192,7 +194,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          this.dropEquipment(); // CraftBukkit - from below
-         if (this.shouldDropLoot() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+         if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
              this.dropFromLootTable(source, flag);
 +            // Paper start
 +            final boolean prev = this.clearEquipmentSlots;
