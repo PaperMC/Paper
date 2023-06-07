@@ -2533,7 +2533,7 @@ index 1cb95db25a20d38faacd99a5805630c1598e9db3..d99b2235038eb1aba8cda474c4aa51e2
  
                  @Override
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index c48318d9d5882dd87e423aecf27c31994af42bdb..e65c889dd1a84a1a8959d1cb80a8c233c3600a6f 100644
+index c48318d9d5882dd87e423aecf27c31994af42bdb..77e5b1725a6b8264c098ab91aaf87ae19aedd145 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -8,6 +8,7 @@ import com.mojang.logging.LogUtils;
@@ -2578,6 +2578,15 @@ index c48318d9d5882dd87e423aecf27c31994af42bdb..e65c889dd1a84a1a8959d1cb80a8c233
          }
          // CraftBukkit end
  
+@@ -513,7 +513,7 @@ public abstract class PlayerList {
+ 
+     }
+ 
+-    public String remove(ServerPlayer entityplayer) { // CraftBukkit - return string
++    public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer) { // CraftBukkit - return string // Paper - return Component
+         ServerLevel worldserver = entityplayer.serverLevel();
+ 
+         entityplayer.awardStat(Stats.LEAVE_GAME);
 @@ -524,7 +524,7 @@ public abstract class PlayerList {
              entityplayer.closeContainer();
          }
@@ -2784,7 +2793,7 @@ index 4c62df5a3781ec9df4a5c5f1b528649e6e8a62d1..affd1b8c7589ba59330dc0b6fc803cce
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index 8e35fecb84fb9ed61cb31d218f8a21bb7cabeb48..5ba1c6a8e266883a1342815ec54f13df9054165b 100644
+index 8e35fecb84fb9ed61cb31d218f8a21bb7cabeb48..41c863a104d53b6c6feb4576d5b62cead229efec 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 @@ -185,6 +185,7 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
@@ -2795,6 +2804,34 @@ index 8e35fecb84fb9ed61cb31d218f8a21bb7cabeb48..5ba1c6a8e266883a1342815ec54f13df
              ((ServerPlayer) player).connection.send(this.getUpdatePacket()); // CraftBukkit
          }
      }
+@@ -208,20 +209,22 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+ 
+             // CraftBukkit start
+             Player player1 = ((ServerPlayer) player).getBukkitEntity();
+-            String[] lines = new String[4];
++            // Paper start
++            List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
+ 
+             for (int j = 0; j < messages.size(); ++j) {
+-                lines[j] = CraftChatMessage.fromComponent(text.getMessage(j, player.isTextFilteringEnabled()));
++                lines.add(io.papermc.paper.adventure.PaperAdventure.asAdventure(text.getMessage(j, player.isTextFilteringEnabled())));
+             }
+ 
+             SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player1, lines);
+             player.level().getCraftServer().getPluginManager().callEvent(event);
+ 
+             if (!event.isCancelled()) {
+-                Component[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
+-                for (int j = 0; j < components.length; j++) {
+-                    text = text.setMessage(j, components[j]);
++                // Paper start
++                for (int j = 0; j < 4; j++) {
++                    text = text.setMessage(j, io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(j)));
+                 }
++                // Paper end
+             }
+             // CraftBukkit end
+         }
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 index 614e567eb1ef10ac7514909a8425e29ac3627d3d..60596c4ac2ebb8caf19d65591624275ba63b0199 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
