@@ -1218,6 +1218,77 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +    }
 +}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/chunk/ConverterAddBlendingData.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/chunk/ConverterAddBlendingData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/chunk/ConverterAddBlendingData.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.chunk;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.Types;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
++import java.util.Arrays;
++import java.util.HashSet;
++import java.util.Set;
++
++public final class ConverterAddBlendingData extends DataConverter<MapType<String>, MapType<String>> {
++
++    private static final Set<String> STATUSES_TO_SKIP_BLENDING = new HashSet<>(
++            Arrays.asList(
++                    "minecraft:empty",
++                    "minecraft:structure_starts",
++                    "minecraft:structure_references",
++                    "minecraft:biomes"
++            )
++    );
++
++    public ConverterAddBlendingData(final int toVersion) {
++        super(toVersion);
++    }
++
++    public ConverterAddBlendingData(final int toVersion, final int versionStep) {
++        super(toVersion, versionStep);
++    }
++
++    private static MapType<String> createBlendingData(final int height, final int minY) {
++        final MapType<String> ret = Types.NBT.createEmptyMap();
++
++        ret.setInt("min_section", minY >> 4);
++        ret.setInt("max_section", (minY + height) >> 4);
++
++        return ret;
++    }
++
++    @Override
++    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++        data.remove("blending_data");
++        final MapType<String> context = data.getMap("__context");
++        if (!"minecraft:overworld".equals(context == null ? null : context.getString("dimension"))) {
++            return null;
++        }
++
++        final String status = NamespaceUtil.correctNamespace(data.getString("Status"));
++        if (status == null) {
++            return null;
++        }
++
++        final MapType<String> belowZeroRetrogen = data.getMap("below_zero_retrogen");
++
++        if (!STATUSES_TO_SKIP_BLENDING.contains(status)) {
++            data.setMap("blending_data", createBlendingData(384, -64));
++        } else if (belowZeroRetrogen != null) {
++            final String realStatus = NamespaceUtil.correctNamespace(belowZeroRetrogen.getString("target_status", "empty"));
++            if (!STATUSES_TO_SKIP_BLENDING.contains(realStatus)) {
++                data.setMap("blending_data", createBlendingData(256, 0));
++            }
++        }
++
++        return null;
++    }
++}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/chunk/ConverterFlattenChunk.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/chunk/ConverterFlattenChunk.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -2238,6 +2309,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            return this.section;
 +        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/chunk/ConverterRenameStatus.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/chunk/ConverterRenameStatus.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/chunk/ConverterRenameStatus.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.chunk;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
++import java.util.function.Function;
++
++public final class ConverterRenameStatus extends DataConverter<MapType<String>, MapType<String>> {
++
++    private final Function<String, String> renamer;
++
++    public ConverterRenameStatus(final int toVersion, final Function<String, String> renamer) {
++        this(toVersion, 0, renamer);
++    }
++
++    public ConverterRenameStatus(final int toVersion, final int versionStep, final Function<String, String> renamer) {
++        super(toVersion, versionStep);
++        this.renamer = renamer;
++    }
++
++    @Override
++    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++        // Note: DFU technically enforces namespace due to how they wrote their converter, so we will do the same.
++        NamespaceUtil.enforceForPath(data, "Status");
++        RenameHelper.renameString(data, "Status", this.renamer);
++
++        NamespaceUtil.enforceForPath(data.getMap("below_zero_retrogen"), "target_status");
++        RenameHelper.renameString(data.getMap("below_zero_retrogen"), "target_status", this.renamer);
++        return null;
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/entity/ConverterAbstractEntityRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/entity/ConverterAbstractEntityRename.java
@@ -5991,6 +6100,58 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return null;
 +    }
 +}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/leveldat/ConverterRemoveFeatureFlag.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/leveldat/ConverterRemoveFeatureFlag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/leveldat/ConverterRemoveFeatureFlag.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.leveldat;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++import java.util.Set;
++
++public final class ConverterRemoveFeatureFlag extends DataConverter<MapType<String>, MapType<String>> {
++
++    private final Set<String> flags;
++
++    public ConverterRemoveFeatureFlag(final int toVersion, final Set<String> flags) {
++        this(toVersion, 0, flags);
++    }
++
++    public ConverterRemoveFeatureFlag(final int toVersion, final int versionStep, final Set<String> flags) {
++        super(toVersion, versionStep);
++        this.flags = flags;
++    }
++
++    @Override
++    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++        final ListType enabledFeatures = data.getList("enabled_features", ObjectType.STRING);
++        if (enabledFeatures == null) {
++            return null;
++        }
++
++        ListType removedFeatures = null;
++
++        for (int i = 0; i < enabledFeatures.size(); ++i) {
++            final String flag = enabledFeatures.getString(i);
++            if (!this.flags.contains(flag)) {
++                continue;
++            }
++            enabledFeatures.remove(i--);
++
++            if (removedFeatures == null) {
++                removedFeatures = data.getOrCreateList("removed_features", ObjectType.STRING);
++            }
++            removedFeatures.addString(flag);
++        }
++
++        return null;
++    }
++}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/options/ConverterAbstractOptionsRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/options/ConverterAbstractOptionsRename.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -6338,6 +6499,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        return null;
 +    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/tileentity/ConverterAbstractTileEntityRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/tileentity/ConverterAbstractTileEntityRename.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/tileentity/ConverterAbstractTileEntityRename.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.tileentity;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++import java.util.function.Function;
++
++public final class ConverterAbstractTileEntityRename {
++
++    public static void register(final int version, final Function<String, String> renamer) {
++        register(version, 0, renamer);
++    }
++
++    public static void register(final int version, final int subVersion, final Function<String, String> renamer) {
++        MCTypeRegistry.TILE_ENTITY.addStructureConverter(new DataConverter<>(version, subVersion) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                final String id = data.getString("id");
++                if (id == null) {
++                    return null;
++                }
++
++                final String converted = renamer.apply(id);
++
++                if (converted != null) {
++                    data.setString("id", converted);
++                }
++
++                return null;
++            }
++        });
++    }
++
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/IDDataType.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/IDDataType.java
 new file mode 100644
@@ -18084,6 +18285,374 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // registers simple entity "minecraft:interaction"
 +    }
 +}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3438.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3438.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3438.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
++import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
++import ca.spottedleaf.dataconverter.minecraft.converters.tileentity.ConverterAbstractTileEntityRename;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++
++import java.util.HashMap;
++import java.util.Map;
++
++public final class V3438 {
++
++    public static final int VERSION = MCVersions.V1_19_4 + 101;
++
++    public static void register() {
++        // brushable block rename
++        MCTypeRegistry.TILE_ENTITY.copyWalkers(VERSION,"minecraft:suspicious_sand", "minecraft:brushable_block");
++
++        ConverterAbstractTileEntityRename.register(VERSION, new HashMap<>(Map.of(
++                "minecraft:suspicious_sand", "minecraft:brushable_block"
++        ))::get);
++
++
++        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:brushable_block", new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                RenameHelper.renameSingle(data, "loot_table", "LootTable");
++                RenameHelper.renameSingle(data, "loot_table_seed", "LootTableSeed");
++                return null;
++            }
++        });
++
++        ConverterAbstractItemRename.register(VERSION, new HashMap<>(
++                Map.of(
++                        "minecraft:pottery_shard_archer", "minecraft:archer_pottery_shard",
++                        "minecraft:pottery_shard_prize", "minecraft:prize_pottery_shard",
++                        "minecraft:pottery_shard_arms_up", "minecraft:arms_up_pottery_shard",
++                        "minecraft:pottery_shard_skull", "minecraft:skull_pottery_shard"
++                )
++        )::get);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3439.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3439.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3439.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import net.minecraft.network.chat.CommonComponents;
++import net.minecraft.network.chat.Component;
++
++public final class V3439 {
++
++    private static final int VERSION = MCVersions.V1_19_4 + 102;
++
++    public static void register() {
++        final DataConverter<MapType<String>, MapType<String>> signTileUpdater = new DataConverter<>(VERSION) {
++            private static final String BLANK_TEXT_LINE = Component.Serializer.toJson(CommonComponents.EMPTY);
++            private static final String DEFAULT_COLOR = "black";
++
++            private static ListType migrateToList(final MapType<String> root, final String prefix) {
++                if (root == null) {
++                    return null;
++                }
++
++                final ListType ret = root.getTypeUtil().createEmptyList();
++
++                ret.addString(root.getString(prefix.concat("1"), BLANK_TEXT_LINE));
++                ret.addString(root.getString(prefix.concat("2"), BLANK_TEXT_LINE));
++                ret.addString(root.getString(prefix.concat("3"), BLANK_TEXT_LINE));
++                ret.addString(root.getString(prefix.concat("4"), BLANK_TEXT_LINE));
++
++                return ret;
++            }
++
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                final MapType<String> frontText = data.getTypeUtil().createEmptyMap();
++                data.setMap("front_text", frontText);
++
++                frontText.setList("messages", migrateToList(data, "Text"));
++                frontText.setList("filtered_messages", migrateToList(data, "FilteredText"));
++                frontText.setString("color", data.getString("Color", DEFAULT_COLOR));
++                frontText.setBoolean("has_glowing_text", data.getBoolean("GlowingText", false));
++
++                final MapType<String> backText = data.getTypeUtil().createEmptyMap();
++                data.setMap("back_text", backText);
++
++                final ListType blankMessages = data.getTypeUtil().createEmptyList();
++                for (int i = 0; i < 4; ++i) {
++                    blankMessages.addString(BLANK_TEXT_LINE);
++                }
++
++                backText.setList("messages", blankMessages);
++                backText.setList("filtered_messages", blankMessages.copy()); // need to copy so that the value isn't mapped to twice, so that updates to one do not reflect in the other
++                backText.setString("color", DEFAULT_COLOR);
++                backText.setBoolean("has_glowing_text", false);
++
++                return null;
++            }
++        };
++
++        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:sign", signTileUpdater);
++        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:hanging_sign", signTileUpdater);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3440.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3440.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3440.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
++import ca.spottedleaf.dataconverter.minecraft.converters.leveldat.ConverterRemoveFeatureFlag;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
++
++import java.util.Arrays;
++import java.util.HashSet;
++
++public final class V3440 {
++
++    private static final int VERSION = MCVersions.V1_19_4 + 103;
++
++    public static void register() {
++        // Note: MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST is namespaced string
++        ConverterAbstractStringValueTypeRename.register(VERSION, MCTypeRegistry.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST, (final String in) -> {
++            return "minecraft:overworld_update_1_20".equals(NamespaceUtil.correctNamespace(in)) ? "minecraft:overworld" : null;
++        });
++        MCTypeRegistry.LEVEL.addStructureConverter(new ConverterRemoveFeatureFlag(VERSION, new HashSet<>(
++                Arrays.asList(
++                        "minecraft:update_1_20"
++                )
++        )));
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3441.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3441.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3441.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.chunk.ConverterAddBlendingData;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++
++public final class V3441 {
++
++    private static final int VERSION = MCVersions.V1_19_4 + 104;
++
++    public static void register() {
++        // See V3088 for why this converter is duplicated here and in V3088
++        MCTypeRegistry.CHUNK.addStructureConverter(new ConverterAddBlendingData(VERSION));
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3447.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3447.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3447.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
++import java.util.HashMap;
++import java.util.Map;
++
++public final class V3447 {
++
++    private static final int VERSION = MCVersions.V23W14A + 2;
++
++    public static void register() {
++        final String[] targets = new String[] {
++                "minecraft:angler_pottery_shard",
++                "minecraft:archer_pottery_shard",
++                "minecraft:arms_up_pottery_shard",
++                "minecraft:blade_pottery_shard",
++                "minecraft:brewer_pottery_shard",
++                "minecraft:burn_pottery_shard",
++                "minecraft:danger_pottery_shard",
++                "minecraft:explorer_pottery_shard",
++                "minecraft:friend_pottery_shard",
++                "minecraft:heart_pottery_shard",
++                "minecraft:heartbreak_pottery_shard",
++                "minecraft:howl_pottery_shard",
++                "minecraft:miner_pottery_shard",
++                "minecraft:mourner_pottery_shard",
++                "minecraft:plenty_pottery_shard",
++                "minecraft:prize_pottery_shard",
++                "minecraft:sheaf_pottery_shard",
++                "minecraft:shelter_pottery_shard",
++                "minecraft:skull_pottery_shard",
++                "minecraft:snort_pottery_shard"
++        };
++        // shard->sherd
++        final Map<String, String> rename = new HashMap<>(targets.length);
++
++        for (final String target : targets) {
++            final String replace = target.replace("_pottery_shard", "_pottery_sherd");
++            if (rename.put(target, replace) != null) {
++                throw new IllegalArgumentException("Duplicate target " + target);
++            }
++        }
++
++        ConverterAbstractItemRename.register(VERSION, rename::get);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3448.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3448.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3448.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.walkers.generic.DataWalkerListPaths;
++import ca.spottedleaf.dataconverter.types.MapType;
++
++public final class V3448 {
++
++    private static final int VERSION = MCVersions.V23W14A + 3;
++
++    public static void register() {
++        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "minecraft:decorated_pot", new DataWalkerListPaths<>(MCTypeRegistry.ITEM_NAME, "sherds"));
++        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:decorated_pot", new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                RenameHelper.renameSingle(data, "shards", "sherds");
++                return null;
++            }
++        });
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3450.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3450.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3450.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.chunk.ConverterRenameStatus;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import java.util.HashMap;
++import java.util.Map;
++
++public final class V3450 {
++
++    private static final int VERSION = MCVersions.V23W16A + 1;
++
++    public static void register() {
++        MCTypeRegistry.CHUNK.addStructureConverter(new ConverterRenameStatus(VERSION, new HashMap<>(
++                Map.of(
++                        "minecraft:liquid_carvers", "minecraft:carvers",
++                        "minecraft:heightmaps", "minecraft:spawn"
++                )
++        )::get));
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3451.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3451.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3451.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++
++public final class V3451 {
++
++    private static final int VERSION = MCVersions.V23W16A + 2;
++
++    public static void register() {
++        MCTypeRegistry.CHUNK.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                data.remove("isLightOn");
++
++                final ListType sections = data.getList("sections", ObjectType.MAP);
++                if (sections == null) {
++                    return null;
++                }
++
++                for (int i = 0, len = sections.size(); i < len; ++i) {
++                    final MapType<String> section = sections.getMap(i);
++
++                    section.remove("BlockLight");
++                    section.remove("SkyLight");
++                }
++
++                return null;
++            }
++        });
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3459.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3459.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V3459.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++
++public final class V3459 {
++
++    private static final int VERSION = MCVersions.V1_20_PRE5 + 1;
++
++    public static void register() {
++        MCTypeRegistry.LEVEL.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                if (data.hasKey("DragonFight")) {
++                    return null;
++                }
++
++                final MapType<String> dimensionData = data.getMap("DimensionData");
++                if (dimensionData == null) {
++                    return null;
++                }
++
++                final MapType<String> endData = dimensionData.getMap("1");
++                if (endData != null) {
++                    data.setMap("DragonFight", endData.getMap("DragonFight", endData.getTypeUtil().createEmptyMap()));
++                }
++
++                return null;
++            }
++        });
++    }
++}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V501.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V501.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -23138,642 +23707,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        final String correct = correctNamespace(value);
 +        return correct.equals(value) ? null : correct;
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/converters/chunk/ConverterAddBlendingData.java b/src/main/java/ca/spottedleaf/minecraft/converters/chunk/ConverterAddBlendingData.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/converters/chunk/ConverterAddBlendingData.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.converters.chunk;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+import ca.spottedleaf.dataconverter.types.Types;
-+import ca.spottedleaf.dataconverter.util.NamespaceUtil;
-+import java.util.Arrays;
-+import java.util.HashSet;
-+import java.util.Set;
-+
-+public final class ConverterAddBlendingData extends DataConverter<MapType<String>, MapType<String>> {
-+
-+    private static final Set<String> STATUSES_TO_SKIP_BLENDING = new HashSet<>(
-+            Arrays.asList(
-+                    "minecraft:empty",
-+                    "minecraft:structure_starts",
-+                    "minecraft:structure_references",
-+                    "minecraft:biomes"
-+            )
-+    );
-+
-+    public ConverterAddBlendingData(final int toVersion) {
-+        super(toVersion);
-+    }
-+
-+    public ConverterAddBlendingData(final int toVersion, final int versionStep) {
-+        super(toVersion, versionStep);
-+    }
-+
-+    private static MapType<String> createBlendingData(final int height, final int minY) {
-+        final MapType<String> ret = Types.NBT.createEmptyMap();
-+
-+        ret.setInt("min_section", minY >> 4);
-+        ret.setInt("max_section", (minY + height) >> 4);
-+
-+        return ret;
-+    }
-+
-+    @Override
-+    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+        data.remove("blending_data");
-+        final MapType<String> context = data.getMap("__context");
-+        if (!"minecraft:overworld".equals(context == null ? null : context.getString("dimension"))) {
-+            return null;
-+        }
-+
-+        final String status = NamespaceUtil.correctNamespace(data.getString("Status"));
-+        if (status == null) {
-+            return null;
-+        }
-+
-+        final MapType<String> belowZeroRetrogen = data.getMap("below_zero_retrogen");
-+
-+        if (!STATUSES_TO_SKIP_BLENDING.contains(status)) {
-+            data.setMap("blending_data", createBlendingData(384, -64));
-+        } else if (belowZeroRetrogen != null) {
-+            final String realStatus = NamespaceUtil.correctNamespace(belowZeroRetrogen.getString("target_status", "empty"));
-+            if (!STATUSES_TO_SKIP_BLENDING.contains(realStatus)) {
-+                data.setMap("blending_data", createBlendingData(256, 0));
-+            }
-+        }
-+
-+        return null;
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/converters/chunk/ConverterRenameStatus.java b/src/main/java/ca/spottedleaf/minecraft/converters/chunk/ConverterRenameStatus.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/converters/chunk/ConverterRenameStatus.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.converters.chunk;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+import ca.spottedleaf.dataconverter.util.NamespaceUtil;
-+import java.util.function.Function;
-+
-+public final class ConverterRenameStatus extends DataConverter<MapType<String>, MapType<String>> {
-+
-+    private final Function<String, String> renamer;
-+
-+    public ConverterRenameStatus(final int toVersion, final Function<String, String> renamer) {
-+        this(toVersion, 0, renamer);
-+    }
-+
-+    public ConverterRenameStatus(final int toVersion, final int versionStep, final Function<String, String> renamer) {
-+        super(toVersion, versionStep);
-+        this.renamer = renamer;
-+    }
-+
-+    @Override
-+    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+        // Note: DFU technically enforces namespace due to how they wrote their converter, so we will do the same.
-+        NamespaceUtil.enforceForPath(data, "Status");
-+        RenameHelper.renameString(data, "Status", this.renamer);
-+
-+        NamespaceUtil.enforceForPath(data.getMap("below_zero_retrogen"), "target_status");
-+        RenameHelper.renameString(data.getMap("below_zero_retrogen"), "target_status", this.renamer);
-+        return null;
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/converters/leveldat/ConverterRemoveFeatureFlag.java b/src/main/java/ca/spottedleaf/minecraft/converters/leveldat/ConverterRemoveFeatureFlag.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/converters/leveldat/ConverterRemoveFeatureFlag.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.converters.leveldat;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.types.ListType;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+import ca.spottedleaf.dataconverter.types.ObjectType;
-+import java.util.Set;
-+
-+public final class ConverterRemoveFeatureFlag extends DataConverter<MapType<String>, MapType<String>> {
-+
-+    private final Set<String> flags;
-+
-+    public ConverterRemoveFeatureFlag(final int toVersion, final Set<String> flags) {
-+        this(toVersion, 0, flags);
-+    }
-+
-+    public ConverterRemoveFeatureFlag(final int toVersion, final int versionStep, final Set<String> flags) {
-+        super(toVersion, versionStep);
-+        this.flags = flags;
-+    }
-+
-+    @Override
-+    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+        final ListType enabledFeatures = data.getList("enabled_features", ObjectType.STRING);
-+        if (enabledFeatures == null) {
-+            return null;
-+        }
-+
-+        ListType removedFeatures = null;
-+
-+        for (int i = 0; i < enabledFeatures.size(); ++i) {
-+            final String flag = enabledFeatures.getString(i);
-+            if (!this.flags.contains(flag)) {
-+                continue;
-+            }
-+            enabledFeatures.remove(i--);
-+
-+            if (removedFeatures == null) {
-+                removedFeatures = data.getOrCreateList("removed_features", ObjectType.STRING);
-+            }
-+            removedFeatures.addString(flag);
-+        }
-+
-+        return null;
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/converters/tileentity/ConverterAbstractTileEntityRename.java b/src/main/java/ca/spottedleaf/minecraft/converters/tileentity/ConverterAbstractTileEntityRename.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/converters/tileentity/ConverterAbstractTileEntityRename.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.converters.tileentity;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+import java.util.function.Function;
-+
-+public final class ConverterAbstractTileEntityRename {
-+
-+    public static void register(final int version, final Function<String, String> renamer) {
-+        register(version, 0, renamer);
-+    }
-+
-+    public static void register(final int version, final int subVersion, final Function<String, String> renamer) {
-+        MCTypeRegistry.TILE_ENTITY.addStructureConverter(new DataConverter<>(version, subVersion) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                final String id = data.getString("id");
-+                if (id == null) {
-+                    return null;
-+                }
-+
-+                final String converted = renamer.apply(id);
-+
-+                if (converted != null) {
-+                    data.setString("id", converted);
-+                }
-+
-+                return null;
-+            }
-+        });
-+    }
-+
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3438.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3438.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3438.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
-+import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
-+import ca.spottedleaf.minecraft.converters.tileentity.ConverterAbstractTileEntityRename;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+
-+import java.util.HashMap;
-+import java.util.Map;
-+
-+public final class V3438 {
-+
-+    public static final int VERSION = MCVersions.V1_19_4 + 101;
-+
-+    public static void register() {
-+        // brushable block rename
-+        MCTypeRegistry.TILE_ENTITY.copyWalkers(VERSION,"minecraft:suspicious_sand", "minecraft:brushable_block");
-+
-+        ConverterAbstractTileEntityRename.register(VERSION, new HashMap<>(Map.of(
-+                "minecraft:suspicious_sand", "minecraft:brushable_block"
-+        ))::get);
-+
-+
-+        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:brushable_block", new DataConverter<>(VERSION) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                RenameHelper.renameSingle(data, "loot_table", "LootTable");
-+                RenameHelper.renameSingle(data, "loot_table_seed", "LootTableSeed");
-+                return null;
-+            }
-+        });
-+
-+        ConverterAbstractItemRename.register(VERSION, new HashMap<>(
-+                Map.of(
-+                        "minecraft:pottery_shard_archer", "minecraft:archer_pottery_shard",
-+                        "minecraft:pottery_shard_prize", "minecraft:prize_pottery_shard",
-+                        "minecraft:pottery_shard_arms_up", "minecraft:arms_up_pottery_shard",
-+                        "minecraft:pottery_shard_skull", "minecraft:skull_pottery_shard"
-+                )
-+        )::get);
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3439.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3439.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3439.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.types.ListType;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+import net.minecraft.network.chat.CommonComponents;
-+import net.minecraft.network.chat.Component;
-+
-+public final class V3439 {
-+
-+    private static final int VERSION = MCVersions.V1_19_4 + 102;
-+
-+    public static void register() {
-+        final DataConverter<MapType<String>, MapType<String>> signTileUpdater = new DataConverter<>(VERSION) {
-+            private static final String BLANK_TEXT_LINE = Component.Serializer.toJson(CommonComponents.EMPTY);
-+            private static final String DEFAULT_COLOR = "black";
-+
-+            private static ListType migrateToList(final MapType<String> root, final String prefix) {
-+                if (root == null) {
-+                    return null;
-+                }
-+
-+                final ListType ret = root.getTypeUtil().createEmptyList();
-+
-+                ret.addString(root.getString(prefix.concat("1"), BLANK_TEXT_LINE));
-+                ret.addString(root.getString(prefix.concat("2"), BLANK_TEXT_LINE));
-+                ret.addString(root.getString(prefix.concat("3"), BLANK_TEXT_LINE));
-+                ret.addString(root.getString(prefix.concat("4"), BLANK_TEXT_LINE));
-+
-+                return ret;
-+            }
-+
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                final MapType<String> frontText = data.getTypeUtil().createEmptyMap();
-+                data.setMap("front_text", frontText);
-+
-+                frontText.setList("messages", migrateToList(data, "Text"));
-+                frontText.setList("filtered_messages", migrateToList(data, "FilteredText"));
-+                frontText.setString("color", data.getString("Color", DEFAULT_COLOR));
-+                frontText.setBoolean("has_glowing_text", data.getBoolean("GlowingText", false));
-+
-+                final MapType<String> backText = data.getTypeUtil().createEmptyMap();
-+                data.setMap("back_text", backText);
-+
-+                final ListType blankMessages = data.getTypeUtil().createEmptyList();
-+                for (int i = 0; i < 4; ++i) {
-+                    blankMessages.addString(BLANK_TEXT_LINE);
-+                }
-+
-+                backText.setList("messages", blankMessages);
-+                backText.setList("filtered_messages", blankMessages.copy()); // need to copy so that the value isn't mapped to twice, so that updates to one do not reflect in the other
-+                backText.setString("color", DEFAULT_COLOR);
-+                backText.setBoolean("has_glowing_text", false);
-+
-+                return null;
-+            }
-+        };
-+
-+        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:sign", signTileUpdater);
-+        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:hanging_sign", signTileUpdater);
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3440.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3440.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3440.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
-+import ca.spottedleaf.minecraft.converters.leveldat.ConverterRemoveFeatureFlag;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.util.NamespaceUtil;
-+
-+import java.util.Arrays;
-+import java.util.HashSet;
-+
-+public final class V3440 {
-+
-+    private static final int VERSION = MCVersions.V1_19_4 + 103;
-+
-+    public static void register() {
-+        // Note: MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST is namespaced string
-+        ConverterAbstractStringValueTypeRename.register(VERSION, MCTypeRegistry.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST, (final String in) -> {
-+            return "minecraft:overworld_update_1_20".equals(NamespaceUtil.correctNamespace(in)) ? "minecraft:overworld" : null;
-+        });
-+        MCTypeRegistry.LEVEL.addStructureConverter(new ConverterRemoveFeatureFlag(VERSION, new HashSet<>(
-+                Arrays.asList(
-+                        "minecraft:update_1_20"
-+                )
-+        )));
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3441.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3441.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3441.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.minecraft.converters.chunk.ConverterAddBlendingData;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+
-+public final class V3441 {
-+
-+    private static final int VERSION = MCVersions.V1_19_4 + 104;
-+
-+    public static void register() {
-+        // See V3088 for why this converter is duplicated here and in V3088
-+        MCTypeRegistry.CHUNK.addStructureConverter(new ConverterAddBlendingData(VERSION));
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3447.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3447.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3447.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
-+import java.util.HashMap;
-+import java.util.Map;
-+
-+public final class V3447 {
-+
-+    private static final int VERSION = MCVersions.V23W14A + 2;
-+
-+    public static void register() {
-+        final String[] targets = new String[] {
-+                "minecraft:angler_pottery_shard",
-+                "minecraft:archer_pottery_shard",
-+                "minecraft:arms_up_pottery_shard",
-+                "minecraft:blade_pottery_shard",
-+                "minecraft:brewer_pottery_shard",
-+                "minecraft:burn_pottery_shard",
-+                "minecraft:danger_pottery_shard",
-+                "minecraft:explorer_pottery_shard",
-+                "minecraft:friend_pottery_shard",
-+                "minecraft:heart_pottery_shard",
-+                "minecraft:heartbreak_pottery_shard",
-+                "minecraft:howl_pottery_shard",
-+                "minecraft:miner_pottery_shard",
-+                "minecraft:mourner_pottery_shard",
-+                "minecraft:plenty_pottery_shard",
-+                "minecraft:prize_pottery_shard",
-+                "minecraft:sheaf_pottery_shard",
-+                "minecraft:shelter_pottery_shard",
-+                "minecraft:skull_pottery_shard",
-+                "minecraft:snort_pottery_shard"
-+        };
-+        // shard->sherd
-+        final Map<String, String> rename = new HashMap<>(targets.length);
-+
-+        for (final String target : targets) {
-+            final String replace = target.replace("_pottery_shard", "_pottery_sherd");
-+            if (rename.put(target, replace) != null) {
-+                throw new IllegalArgumentException("Duplicate target " + target);
-+            }
-+        }
-+
-+        ConverterAbstractItemRename.register(VERSION, rename::get);
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3448.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3448.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3448.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.minecraft.walkers.generic.DataWalkerListPaths;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+
-+public final class V3448 {
-+
-+    private static final int VERSION = MCVersions.V23W14A + 3;
-+
-+    public static void register() {
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "minecraft:decorated_pot", new DataWalkerListPaths<>(MCTypeRegistry.ITEM_NAME, "sherds"));
-+        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:decorated_pot", new DataConverter<>(VERSION) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                RenameHelper.renameSingle(data, "shards", "sherds");
-+                return null;
-+            }
-+        });
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3450.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3450.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3450.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.minecraft.converters.chunk.ConverterRenameStatus;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import java.util.HashMap;
-+import java.util.Map;
-+
-+public final class V3450 {
-+
-+    private static final int VERSION = MCVersions.V23W16A + 1;
-+
-+    public static void register() {
-+        MCTypeRegistry.CHUNK.addStructureConverter(new ConverterRenameStatus(VERSION, new HashMap<>(
-+                Map.of(
-+                        "minecraft:liquid_carvers", "minecraft:carvers",
-+                        "minecraft:heightmaps", "minecraft:spawn"
-+                )
-+        )::get));
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3451.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3451.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3451.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.types.ListType;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+import ca.spottedleaf.dataconverter.types.ObjectType;
-+
-+public final class V3451 {
-+
-+    private static final int VERSION = MCVersions.V23W16A + 2;
-+
-+    public static void register() {
-+        MCTypeRegistry.CHUNK.addStructureConverter(new DataConverter<>(VERSION) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                data.remove("isLightOn");
-+
-+                final ListType sections = data.getList("sections", ObjectType.MAP);
-+                if (sections == null) {
-+                    return null;
-+                }
-+
-+                for (int i = 0, len = sections.size(); i < len; ++i) {
-+                    final MapType<String> section = sections.getMap(i);
-+
-+                    section.remove("BlockLight");
-+                    section.remove("SkyLight");
-+                }
-+
-+                return null;
-+            }
-+        });
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/minecraft/versions/V3459.java b/src/main/java/ca/spottedleaf/minecraft/versions/V3459.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/minecraft/versions/V3459.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.minecraft.versions;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+
-+public final class V3459 {
-+
-+    private static final int VERSION = MCVersions.V1_20_PRE5 + 1;
-+
-+    public static void register() {
-+        MCTypeRegistry.LEVEL.addStructureConverter(new DataConverter<>(VERSION) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                if (data.hasKey("DragonFight")) {
-+                    return null;
-+                }
-+
-+                final MapType<String> dimensionData = data.getMap("DimensionData");
-+                if (dimensionData == null) {
-+                    return null;
-+                }
-+
-+                final MapType<String> endData = dimensionData.getMap("1");
-+                if (endData != null) {
-+                    data.setMap("DragonFight", endData.getMap("DragonFight", endData.getTypeUtil().createEmptyMap()));
-+                }
-+
-+                return null;
-+            }
-+        });
-+    }
-+}
-diff --git a/src/main/java/ca/spottedleaf/mixin/PrintTheFuckingErrorJesusChristMixin.java b/src/main/java/ca/spottedleaf/mixin/PrintTheFuckingErrorJesusChristMixin.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/mixin/PrintTheFuckingErrorJesusChristMixin.java
-@@ -0,0 +0,0 @@
-+package ca.spottedleaf.mixin;
-+
-+import com.mojang.datafixers.DataFixer;
-+import com.mojang.datafixers.util.Either;
-+import net.minecraft.ReportedException;
-+import net.minecraft.server.level.ChunkHolder;
-+import net.minecraft.server.level.ChunkMap;
-+import net.minecraft.world.level.ChunkPos;
-+import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.storage.ChunkStorage;
-+import org.slf4j.Logger;
-+import org.spongepowered.asm.mixin.Final;
-+import org.spongepowered.asm.mixin.Mixin;
-+import org.spongepowered.asm.mixin.Overwrite;
-+import org.spongepowered.asm.mixin.Shadow;
-+import java.io.IOException;
-+import java.nio.file.Path;
-+
-+@Mixin(ChunkMap.class)
-+public abstract class PrintTheFuckingErrorJesusChristMixin extends ChunkStorage implements ChunkHolder.PlayerProvider {
-+
-+    @Shadow
-+    protected abstract void markPositionReplaceable(ChunkPos chunkPos);
-+
-+    @Shadow
-+    @Final
-+    private static Logger LOGGER;
-+
-+    @Shadow
-+    protected abstract ChunkAccess createEmptyChunk(ChunkPos chunkPos);
-+
-+    public PrintTheFuckingErrorJesusChristMixin(Path path, DataFixer dataFixer, boolean bl) {
-+        super(path, dataFixer, bl);
-+    }
-+
-+    /**
-+     * @reason Print the fucking exception jesus christ how hard is it:
-+     * 1. handle or
-+     * 2. print or
-+     * 3. rethrow
-+     * @author Spottedleaf
-+     */
-+    @Overwrite
-+    private Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> handleChunkLoadFailure(Throwable throwable, ChunkPos chunkPos) {
-+        if (throwable instanceof ReportedException reportedException) {
-+            Throwable throwable2 = reportedException.getCause();
-+            if (!(throwable2 instanceof IOException)) {
-+                this.markPositionReplaceable(chunkPos);
-+                throw reportedException;
-+            }
-+
-+            LOGGER.error("Couldn't load chunk {}", chunkPos, throwable2);
-+        } else if (throwable instanceof IOException) {
-+            LOGGER.error("Couldn't load chunk {}", chunkPos, throwable);
-+        }
-+
-+        LOGGER.error("Couldn't load chunk {} (Vanilla swallowed exception)", chunkPos, throwable);
-+
-+        return Either.left(this.createEmptyChunk(chunkPos));
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/data/structures/StructureUpdater.java b/src/main/java/net/minecraft/data/structures/StructureUpdater.java
