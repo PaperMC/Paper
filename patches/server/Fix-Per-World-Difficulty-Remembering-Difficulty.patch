@@ -12,7 +12,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         chunkproviderserver.getLightEngine().setTaskPerBatch(worldserver.paperConfig().misc.lightQueueSize); // Paper - increase light queue size
+         if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper
          // CraftBukkit start
          // this.updateMobSpawningFlags();
 -        worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
@@ -59,9 +59,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
 -            worldServer.serverLevelData.setDifficulty(difficulty); // CraftBukkit
 +            minecraftserver.setDifficulty(worldServer, difficulty, true); // Paper - don't skip other difficulty-changing logic (fix upstream's fix)
-             source.sendSuccess(Component.translatable("commands.difficulty.success", difficulty.getDisplayName()), true);
-             return 0;
-         }
+             source.sendSuccess(() -> {
+                 return Component.translatable("commands.difficulty.success", difficulty.getDisplayName());
+             }, true);
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
@@ -82,9 +82,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
                  this.isChangingDimension = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
  
-                 this.connection.send(new ClientboundRespawnPacket(worldserver.dimensionTypeId(), worldserver.dimension(), BiomeManager.obfuscateSeed(worldserver.getSeed()), this.gameMode.getGameModeForPlayer(), this.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), (byte) 3, this.getLastDeathLocation()));
--                this.connection.send(new ClientboundChangeDifficultyPacket(this.level.getDifficulty(), this.level.getLevelData().isDifficultyLocked()));
-+                this.connection.send(new ClientboundChangeDifficultyPacket(worldserver.getDifficulty(), this.level.getLevelData().isDifficultyLocked())); // Paper - fix difficulty sync issue
+                 this.connection.send(new ClientboundRespawnPacket(worldserver.dimensionTypeId(), worldserver.dimension(), BiomeManager.obfuscateSeed(worldserver.getSeed()), this.gameMode.getGameModeForPlayer(), this.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), (byte) 3, this.getLastDeathLocation(), this.getPortalCooldown()));
+-                this.connection.send(new ClientboundChangeDifficultyPacket(this.level().getDifficulty(), this.level().getLevelData().isDifficultyLocked()));
++                this.connection.send(new ClientboundChangeDifficultyPacket(worldserver.getDifficulty(), this.level().getLevelData().isDifficultyLocked())); // Paper - fix difficulty sync issue
                  PlayerList playerlist = this.server.getPlayerList();
  
                  playerlist.sendPlayerPermissionLevel(this);
@@ -94,7 +94,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
-         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
 -            this.server.setDifficulty(packet.getDifficulty(), false);
 +            // this.server.setDifficulty(packet.getDifficulty(), false); // Paper - don't allow clients to change this
