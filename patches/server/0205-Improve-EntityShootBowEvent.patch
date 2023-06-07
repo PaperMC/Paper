@@ -9,12 +9,12 @@ Adds missing call to Illagers and also adds Arrow ItemStack to skeletons
 public net.minecraft.world.entity.projectile.AbstractArrow getPickupItem()Lnet.minecraft.world.item.ItemStack;
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
-index 1928354a7b9a4e3b03fc355ce7a1c60c23c504a9..362bc2d78e024df5a1cdfad9da6e768e3a778095 100644
+index 9634de10605eb477c073d4241f8ea5f17eea268d..4ea7a6bd6fdc98bef30546e19e2676a78fb29007 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
 @@ -201,7 +201,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
  
-         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
+         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level().getDifficulty().getId() * 4));
          // CraftBukkit start
 -        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), null, entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true);
 +        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true); // Paper
@@ -22,13 +22,13 @@ index 1928354a7b9a4e3b03fc355ce7a1c60c23c504a9..362bc2d78e024df5a1cdfad9da6e768e
              event.getProjectile().remove();
              return;
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
-index bd65129ec4f1b7c80ef99c34a1d30780f21bb4bf..10573602c9bc73713cbd6989762d3dbb6f6fcf8c 100644
+index 421ed4daed9a61b9e9395538ff36606b196ca1f1..63fce7e3d9f59f36e29bc827a46396d73143bb8b 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
 @@ -196,8 +196,18 @@ public class Illusioner extends SpellcasterIllager implements RangedAttackMob {
          double d3 = Math.sqrt(d0 * d0 + d2 * d2);
  
-         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
+         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level().getDifficulty().getId() * 4));
 +        // Paper start
 +        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, target.getUsedItemHand(), 0.8F, true);
 +        if (event.isCancelled()) {
@@ -37,11 +37,11 @@ index bd65129ec4f1b7c80ef99c34a1d30780f21bb4bf..10573602c9bc73713cbd6989762d3dbb
 +        }
 +
 +        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
-+            this.level.addFreshEntity(entityarrow);
++            this.level().addFreshEntity(entityarrow);
 +        }
-         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
--        this.level.addFreshEntity(entityarrow);
 +        // Paper end
+         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+-        this.level().addFreshEntity(entityarrow);
      }
  
      @Override

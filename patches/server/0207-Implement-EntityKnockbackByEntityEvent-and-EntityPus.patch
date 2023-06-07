@@ -9,10 +9,10 @@ Co-authored-by: aerulion <aerulion@gmail.com>
 This event is called when an entity receives knockback by another entity.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 579b0c70043a545798a6c2871a84c77a5f011744..8b3beb78cf48ea7a23865ddc16c8421ecb047aba 100644
+index 40cfaee167c3991392e7a82094b8e28361b65581..2032b98a1571846b28fd18cdb3ae96f2640a11c9 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1775,8 +1775,17 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -1842,8 +1842,17 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      }
  
      public void push(double deltaX, double deltaY, double deltaZ) {
@@ -33,10 +33,10 @@ index 579b0c70043a545798a6c2871a84c77a5f011744..8b3beb78cf48ea7a23865ddc16c8421e
  
      protected void markHurt() {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index cd0ae977eff36db8a2010596698835dcd9166ef9..10c6f6ac0c56eedf40190216e44d3f5d47b63deb 100644
+index 74c3762ebcb17d3836991f0293f02f5c42081715..eeeaf05cb49e3440bfa3ab94048653f75e6a42da 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -1445,7 +1445,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1494,7 +1494,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                          d0 = (Math.random() - Math.random()) * 0.01D;
                      }
  
@@ -45,7 +45,7 @@ index cd0ae977eff36db8a2010596698835dcd9166ef9..10c6f6ac0c56eedf40190216e44d3f5d
                      if (!flag) {
                          this.indicateDamage(d0, d1);
                      }
-@@ -1494,7 +1494,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1543,7 +1543,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      protected void blockedByShield(LivingEntity target) {
@@ -54,7 +54,7 @@ index cd0ae977eff36db8a2010596698835dcd9166ef9..10c6f6ac0c56eedf40190216e44d3f5d
      }
  
      private boolean checkTotemDeathProtection(DamageSource source) {
-@@ -1750,6 +1750,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1803,6 +1803,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      public void knockback(double strength, double x, double z) {
@@ -66,10 +66,10 @@ index cd0ae977eff36db8a2010596698835dcd9166ef9..10c6f6ac0c56eedf40190216e44d3f5d
          strength *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
          if (strength > 0.0D) {
              this.hasImpulse = true;
-@@ -1757,6 +1762,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1810,6 +1815,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
              Vec3 vec3d1 = (new Vec3(x, 0.0D, z)).normalize().scale(strength);
  
-             this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
+             this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround() ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
 +            // Paper start - call EntityKnockbackByEntityEvent
 +            Vec3 currentMovement = this.getDeltaMovement();
 +            org.bukkit.util.Vector delta = new org.bukkit.util.Vector(currentMovement.x - vec3d.x, currentMovement.y - vec3d.y, currentMovement.z - vec3d.z);
@@ -83,10 +83,10 @@ index cd0ae977eff36db8a2010596698835dcd9166ef9..10c6f6ac0c56eedf40190216e44d3f5d
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 6f1755efd7f1cf9dd65d070a3ba7623333f341bc..984a33d5e1f790a9c78ba57f2dc21fb072a44b3d 100644
+index fec33a79fc9681ef51899a92ebb43c27126bd7ac..8151da761dd2dd561384181576321c71197a84e1 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -1631,7 +1631,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -1633,7 +1633,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
  
          if (flag) {
              if (f1 > 0.0F && target instanceof LivingEntity) {
@@ -122,10 +122,10 @@ index 29cfd065f246bbd3d3c2a5bbd32c3f4813a02951..03ec02f9a2fb5abb5387cd0d83c9481d
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
-index 18a9050158f71245d5d88f9c0833fd5d4e5fdca6..55a8ab31a26a16adbe78b3b34366dc81851c02d4 100644
+index 0f39550f82aa1646dd5e4a887e33c414160ee7d9..9d5d03a913366c0f60557e39523c30df7e2fde33 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
 +++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
-@@ -434,7 +434,7 @@ public class EnderDragon extends Mob implements Enemy {
+@@ -467,7 +467,7 @@ public class EnderDragon extends Mob implements Enemy {
                  double d3 = entity.getZ() - d1;
                  double d4 = Math.max(d2 * d2 + d3 * d3, 0.1D);
  
@@ -135,7 +135,7 @@ index 18a9050158f71245d5d88f9c0833fd5d4e5fdca6..55a8ab31a26a16adbe78b3b34366dc81
                      entity.hurt(this.damageSources().mobAttack(this), 5.0F);
                      this.doEnchantDamageEffects(this, entity);
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
-index f4aa2be477da34c37660f0f3d7997928d327545d..24dc43c7806e99be6dc37af48ec056a5edd19947 100644
+index 4e9cf63f363f7bba12b0a298230e3c7825512631..243397de3b0a843ec95c6b721d7fc654bfc78448 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
 @@ -274,7 +274,7 @@ public class Ravager extends Raider {
@@ -148,23 +148,23 @@ index f4aa2be477da34c37660f0f3d7997928d327545d..24dc43c7806e99be6dc37af48ec056a5
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java
-index f8ccf0cf421bf2d8d6d6ccf8dd9e7c27eb9024ed..de73183166962d84b3fcbb408e011bc9e8486374 100644
+index 81003ce3f05c6be6f52a92b86a4721235f4ce12a..004382377ee364143a34287e7b6546ae1df4e88e 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java
 @@ -40,7 +40,7 @@ public interface HoglinBase {
-             double j = f * (double)(attacker.level.random.nextFloat() * 0.5F + 0.2F);
+             double j = f * (double)(attacker.level().random.nextFloat() * 0.5F + 0.2F);
              Vec3 vec3 = (new Vec3(g, 0.0D, h)).normalize().scale(j).yRot(i);
-             double k = f * (double)attacker.level.random.nextFloat() * 0.5D;
+             double k = f * (double)attacker.level().random.nextFloat() * 0.5D;
 -            target.push(vec3.x, k, vec3.z);
 +            target.push(vec3.x, k, vec3.z, attacker); // Paper
              target.hurtMarked = true;
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 457cafaa39907e85e1d1e9028f0eb75a90f3eb8e..2961e08fc315a0d5f3b95de9d127948da07e66c8 100644
+index 16345738be241e5858a8df189a3c5c1d7b772353..71cca9c0e7742992661e857686aa2908e3474d21 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -1283,9 +1283,9 @@ public abstract class Player extends LivingEntity {
+@@ -1284,9 +1284,9 @@ public abstract class Player extends LivingEntity {
                      if (flag5) {
                          if (i > 0) {
                              if (target instanceof LivingEntity) {
@@ -176,7 +176,7 @@ index 457cafaa39907e85e1d1e9028f0eb75a90f3eb8e..2961e08fc315a0d5f3b95de9d127948d
                              }
  
                              this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
-@@ -1307,7 +1307,7 @@ public abstract class Player extends LivingEntity {
+@@ -1308,7 +1308,7 @@ public abstract class Player extends LivingEntity {
                                  if (entityliving != this && entityliving != target && !this.isAlliedTo((Entity) entityliving) && (!(entityliving instanceof ArmorStand) || !((ArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
                                      // CraftBukkit start - Only apply knockback if the damage hits
                                      if (entityliving.hurt(this.damageSources().playerAttack(this).sweep(), f4)) {
@@ -186,7 +186,7 @@ index 457cafaa39907e85e1d1e9028f0eb75a90f3eb8e..2961e08fc315a0d5f3b95de9d127948d
                                      // CraftBukkit end
                                  }
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index aabb5ad09dd7b11a7dfbaa0849726541c0401951..01ccd4f90ad8aed84a89630cf6df9f7ba9bc3fec 100644
+index 7acd5d9fb7f7d3e067de779a9e3f0cedb587c68a..86a82ecdcffc27b523fddc2709bbd92f315e8590 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 @@ -401,7 +401,7 @@ public abstract class AbstractArrow extends Projectile {

@@ -9,10 +9,10 @@ This can be useful for changing name or skins after a player has logged in.
 public-f net.minecraft.world.entity.player.Player gameProfile
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index efc9b3bf0a63f87f8d1cab57b8f521a306aef5f3..d9c441f600a1f981a9dad075cba9d1d9b28e1aa0 100644
+index 8abd8d7e1bbdd59338725ae075117ec26d567a86..86e6e6ffdd5d8391b7a8f17bbad9b49a62339a8a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1536,7 +1536,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1528,7 +1528,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          this.internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch(), Collections.emptySet());
      }
  
@@ -55,7 +55,7 @@ index e7442952ef1f03969949014492a7ddc6d0796ba5..69a1852905dd4724c30ac8ab88c14251
  
      public Server getServer() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6ec434b6e07aba63b28f9f03eadc3550e43f9998..d3b5c7d0d6ac449ecfb99e0ed62981b296528e07 100644
+index b7f071d7d0128d4c0990b59bd843fd88f8320ca8..407a037ae43c8cd209a9ce18359b5e0a15d9a88f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -82,6 +82,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -64,9 +64,9 @@ index 6ec434b6e07aba63b28f9f03eadc3550e43f9998..d3b5c7d0d6ac449ecfb99e0ed62981b2
  import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.biome.BiomeManager;
  import net.minecraft.world.level.block.entity.SignBlockEntity;
+ import net.minecraft.world.level.block.entity.SignText;
  import net.minecraft.world.level.border.BorderChangeListener;
- import net.minecraft.world.level.saveddata.maps.MapDecoration;
-@@ -291,11 +292,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -216,11 +217,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return server.getPlayer(getUniqueId()) != null;
      }
  
@@ -78,11 +78,11 @@ index 6ec434b6e07aba63b28f9f03eadc3550e43f9998..d3b5c7d0d6ac449ecfb99e0ed62981b2
      @Override
      public InetSocketAddress getAddress() {
          if (this.getHandle().connection == null) return null;
-@@ -1686,8 +1682,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1617,8 +1613,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      private void untrackAndHideEntity(org.bukkit.entity.Entity entity) {
          // Remove this entity from the hidden player's EntityTrackerEntry
--        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
+-        ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
 +        // Paper start
          Entity other = ((CraftEntity) entity).getHandle();
 +        unregisterEntity(other);
@@ -91,11 +91,11 @@ index 6ec434b6e07aba63b28f9f03eadc3550e43f9998..d3b5c7d0d6ac449ecfb99e0ed62981b2
 +    }
 +    private void unregisterEntity(Entity other) {
 +        // Paper end
-+        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
++        ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
          ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
          if (entry != null) {
              entry.removePlayer(this.getHandle());
-@@ -1700,8 +1703,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1631,8 +1634,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                  this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
              }
          }
@@ -104,7 +104,7 @@ index 6ec434b6e07aba63b28f9f03eadc3550e43f9998..d3b5c7d0d6ac449ecfb99e0ed62981b2
      }
  
      void resetAndHideEntity(org.bukkit.entity.Entity entity) {
-@@ -1778,8 +1779,38 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1709,8 +1710,38 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
              entry.updatePlayer(this.getHandle());
          }
@@ -144,7 +144,7 @@ index 6ec434b6e07aba63b28f9f03eadc3550e43f9998..d3b5c7d0d6ac449ecfb99e0ed62981b2
      }
  
      void resetAndShowEntity(org.bukkit.entity.Entity entity) {
-@@ -1792,6 +1823,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1723,6 +1754,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              this.trackAndShowEntity(entity);
          }
      }
