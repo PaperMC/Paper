@@ -17,10 +17,10 @@ Subject: [PATCH] CB fixes
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index ad011c4f328129e2e5eb6b1b1f5e1d282d1ec04a..3bcbdf37ad9d76ec97ad3f20e7a683e267441ed9 100644
+index 82435da47f0f7db73556310f84dc538a7c5f0809..ebae711991a3ae35e35c2cffa8d928677c205492 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -294,7 +294,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -298,7 +298,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
          long l = minecraftserver.getWorldData().worldGenOptions().seed();
  
@@ -30,7 +30,7 @@ index ad011c4f328129e2e5eb6b1b1f5e1d282d1ec04a..3bcbdf37ad9d76ec97ad3f20e7a683e2
          if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
              this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/Marker.java b/src/main/java/net/minecraft/world/entity/Marker.java
-index 15ec0d085d09d9a70eb6cdd47f9e4587dd1402b5..9cd0f0628a3f533229d25d9ccd0d381364f4957c 100644
+index 299d0755b782a26af6c6acc00e3d8ab0269348a9..70791a052c1ec8f41d7f1e65c33eee4f0b1b53b2 100644
 --- a/src/main/java/net/minecraft/world/entity/Marker.java
 +++ b/src/main/java/net/minecraft/world/entity/Marker.java
 @@ -49,8 +49,8 @@ public class Marker extends Entity {
@@ -45,16 +45,16 @@ index 15ec0d085d09d9a70eb6cdd47f9e4587dd1402b5..9cd0f0628a3f533229d25d9ccd0d3813
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-index 36222d2140aa1151c30e095afc557ea7db91911f..9d4a3041ecae2adda40134710eb1edb8571228aa 100644
+index 5e3c750b2ce30b4c89143c5dfbb7a90e861f169f..1769045a053f7f4576099fb21686d84b682194f5 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -441,9 +441,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
+@@ -446,9 +446,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
      }
  
      @Override
 -    protected void actuallyHurt(DamageSource source, float amount) {
 +    protected boolean damageEntity0(DamageSource source, float amount) { // Paper - fix CB method rename issue
-         this.standUpPanic();
+         this.standUpInstantly();
 -        super.actuallyHurt(source, amount);
 +        return super.damageEntity0(source, amount); // Paper - fix CB method rename issue
      }
@@ -83,20 +83,20 @@ index 161ad6ab1443b2ce33a2d7d91d189c855db0453b..15a9736a870055d639d03063c7cf67fd
          this.registryAccess = registryManager;
          this.structureTemplateManager = structureTemplateManager;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6e2a1ca2a1d6cb457c1eb70ce5c25f8287f5ccb9..1177d64793be0d82c99dcd9e037c3e4cef2f74d3 100644
+index 9c82e4d2f5676808bb57c5e7dd19d0e7615ca884..9874d0d3ae16e79f2598d9c1f93a9b7cc40f56b0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2326,7 +2326,13 @@ public final class CraftServer implements Server {
+@@ -2324,7 +2324,13 @@ public final class CraftServer implements Server {
          Validate.notNull(key, "NamespacedKey cannot be null");
  
-         LootTables registry = this.getServer().getLootTables();
--        return new CraftLootTable(key, registry.get(CraftNamespacedKey.toMinecraft(key)));
+         LootDataManager registry = this.getServer().getLootData();
+-        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
 +        // Paper start - honor method contract
 +        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
-+        if (!registry.getIds().contains(lootTableKey)) {
++        if (registry.getLootTable(lootTableKey) == net.minecraft.world.level.storage.loot.LootTable.EMPTY) {
 +            return null;
 +        }
-+        return new CraftLootTable(key, registry.get(lootTableKey));
++        return new CraftLootTable(key, registry.getLootTable(lootTableKey));
 +        // Paper end
      }
  
