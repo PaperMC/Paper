@@ -182,7 +182,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public BlockPos movingTarget = null; public BlockPos getMovingTarget() { return movingTarget; } // Paper
  
      public float getWalkTargetValue(BlockPos pos) {
-         return this.getWalkTargetValue(pos, this.level);
+         return this.getWalkTargetValue(pos, this.level());
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
@@ -245,7 +245,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.mob = mob;
 @@ -0,0 +0,0 @@ public abstract class MoveToBlockGoal extends Goal {
                          mutableBlockPos.setWithOffset(blockPos, m, k - 1, n);
-                         if (this.mob.isWithinRestriction(mutableBlockPos) && this.isValidTarget(this.mob.level, mutableBlockPos)) {
+                         if (this.mob.isWithinRestriction(mutableBlockPos) && this.isValidTarget(this.mob.level(), mutableBlockPos)) {
                              this.blockPos = mutableBlockPos;
 +                            setTargetPosition(mutableBlockPos.immutable()); // Paper
                              return true;
@@ -259,19 +259,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void inactiveTick() {
          // SPIGOT-3874, SPIGOT-3894, SPIGOT-3846, SPIGOT-5286 :(
--        if (level.spigotConfig.tickInactiveVillagers && this.isEffectiveAi()) {
+-        if (this.level().spigotConfig.tickInactiveVillagers && this.isEffectiveAi()) {
 -            this.customServerAiStep();
 +        // Paper start
 +        if (this.getUnhappyCounter() > 0) {
 +            this.setUnhappyCounter(this.getUnhappyCounter() - 1);
-+        }
+         }
 +        if (this.isEffectiveAi()) {
 +            if (level.spigotConfig.tickInactiveVillagers) {
 +                this.customServerAiStep();
 +            } else {
 +                this.mobTick(true);
 +            }
-         }
++        }
 +        maybeDecayGossip();
 +        // Paper end
 +
@@ -280,13 +280,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot End
  
      @Override
--    protected void customServerAiStep() {
-+    protected void customServerAiStep() { mobTick(false); }
-+    protected void mobTick(boolean inactive) {
-         this.level.getProfiler().push("villagerBrain");
--        this.getBrain().tick((ServerLevel) this.level, this);
-+        if (!inactive) this.getBrain().tick((ServerLevel) this.level, this); // Paper
-         this.level.getProfiler().pop();
++    @Deprecated // Paper
+     protected void customServerAiStep() {
++        // Paper start
++        this.customServerAiStep(false);
++    }
++    protected void customServerAiStep(final boolean inactive) {
++        // Paper end
+         this.level().getProfiler().push("villagerBrain");
+-        this.getBrain().tick((ServerLevel) this.level(), this);
++        if (!inactive) this.getBrain().tick((ServerLevel) this.level(), this); // Paper
+         this.level().getProfiler().pop();
          if (this.assignProfessionWhenSpawned) {
              this.assignProfessionWhenSpawned = false;
 @@ -0,0 +0,0 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
@@ -295,7 +299,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        if (!this.isNoAi() && this.random.nextInt(100) == 0) {
 +        if (!inactive && !this.isNoAi() && this.random.nextInt(100) == 0) { // Paper
-             Raid raid = ((ServerLevel) this.level).getRaidAt(this.blockPosition());
+             Raid raid = ((ServerLevel) this.level()).getRaidAt(this.blockPosition());
  
              if (raid != null && raid.isActive() && !raid.isOver()) {
 @@ -0,0 +0,0 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
@@ -321,11 +325,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
  
      public boolean suckInItems() {
-         if (HopperBlockEntity.suckInItems(this.level, this)) {
+         if (HopperBlockEntity.suckInItems(this.level(), this)) {
 +            this.immunize();  // Paper
              return true;
          } else {
-             for(ItemEntity itemEntity : this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(0.25D, 0.0D, 0.25D), EntitySelector.ENTITY_STILL_ALIVE)) {
+             for(ItemEntity itemEntity : this.level().getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(0.25D, 0.0D, 0.25D), EntitySelector.ENTITY_STILL_ALIVE)) {
                  if (HopperBlockEntity.addItem(this, itemEntity)) {
 +                    this.immunize();  // Paper
                      return true;
@@ -560,8 +564,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ActivationType.VILLAGER.boundingBox = player.getBoundingBox().inflate( villagerActivationRange, worldHeight, villagerActivationRange );
 +            // Paper end
  
-             // Paper start
-             java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, null);
+             world.getEntities().get(maxBB, ActivationRange::activateEntity);
+         }
 @@ -0,0 +0,0 @@ public class ActivationRange
       * @param entity
       * @return
@@ -598,8 +602,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
          if ( !( entity instanceof AbstractArrow ) )
          {
--            if ( !entity.isOnGround() || !entity.passengers.isEmpty() || entity.isPassenger() )
-+            if ( (!entity.isOnGround() && !(entity instanceof FlyingMob)) ) // Paper - remove passengers logic
+-            if ( !entity.onGround() || !entity.passengers.isEmpty() || entity.isPassenger() )
++            if ( (!entity.onGround() && !(entity instanceof FlyingMob)) ) // Paper - remove passengers logic
              {
 -                return true;
 +                return 10; // Paper
@@ -624,7 +628,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              {
 -                return true;
 +                return 20; // Paper
-+            }
+             }
+-            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
 +            // Paper start
 +            if (entity instanceof Bee) {
 +                Bee bee = (Bee)entity;
@@ -652,8 +657,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        return config.villagersWorkImmunityFor;
 +                    }
 +                }
-             }
--            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
++            }
 +            if ( entity instanceof Llama && ( (Llama) entity ).inCaravan() )
              {
 -                return true;
@@ -681,11 +685,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start
 +            if (entity instanceof Mob && ((Mob) entity).targetSelector.hasTasks() ) {
 +                return 0;
-             }
++            }
 +            if (entity instanceof Pillager) {
 +                Pillager pillager = (Pillager) entity;
 +                // TODO:?
-+            }
+             }
 +            // Paper end
          }
          // SPIGOT-6644: Otherwise the target refresh tick will be missed
