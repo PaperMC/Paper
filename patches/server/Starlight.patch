@@ -218,58 +218,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.performLightDecrease(lightAccess);
 +    }
 +
-+    protected Iterator<BlockPos> getSources(final LightChunkGetter lightAccess, final ChunkAccess chunk) {
-+        if (chunk instanceof ImposterProtoChunk || chunk instanceof LevelChunk) {
-+            // implementation on Chunk is pretty awful, so write our own here. The big optimisation is
-+            // skipping empty sections, and the far more optimised reading of types.
-+            List<BlockPos> sources = new ArrayList<>();
++    protected List<BlockPos> getSources(final LightChunkGetter lightAccess, final ChunkAccess chunk) {
++        final List<BlockPos> sources = new ArrayList<>();
 +
-+            int offX = chunk.getPos().x << 4;
-+            int offZ = chunk.getPos().z << 4;
++        final int offX = chunk.getPos().x << 4;
++        final int offZ = chunk.getPos().z << 4;
 +
-+            final LevelChunkSection[] sections = chunk.getSections();
-+            for (int sectionY = this.minSection; sectionY <= this.maxSection; ++sectionY) {
-+                final LevelChunkSection section = sections[sectionY - this.minSection];
-+                if (section == null || section.hasOnlyAir()) {
-+                    // no sources in empty sections
-+                    continue;
-+                }
-+                final PalettedContainer<BlockState> states = section.states;
-+                final int offY = sectionY << 4;
-+
-+                for (int index = 0; index < (16 * 16 * 16); ++index) {
-+                    final BlockState state = states.get(index);
-+                    if (state.getLightEmission() <= 0) {
-+                        continue;
-+                    }
-+
-+                    // index = x | (z << 4) | (y << 8)
-+                    sources.add(new BlockPos(offX | (index & 15), offY | (index >>> 8), offZ | ((index >>> 4) & 15)));
-+                }
++        final LevelChunkSection[] sections = chunk.getSections();
++        for (int sectionY = this.minSection; sectionY <= this.maxSection; ++sectionY) {
++            final LevelChunkSection section = sections[sectionY - this.minSection];
++            if (section == null || section.hasOnlyAir()) {
++                // no sources in empty sections
++                continue;
 +            }
++            if (!section.maybeHas((final BlockState state) -> {
++                return state.getLightEmission() > 0;
++            })) {
++                // no light sources in palette
++                continue;
++            }
++            final PalettedContainer<BlockState> states = section.states;
++            final int offY = sectionY << 4;
 +
-+            return sources.iterator();
-+        } else {
-+            // world gen and lighting run in parallel, and if lighting keeps up it can be lighting chunks that are
-+            // being generated. In the nether, lava will add a lot of sources. This resulted in quite a few CME crashes.
-+            // So all we do spinloop until we can collect a list of sources, and even if it is out of date we will pick up
-+            // the missing sources from checkBlock.
-+            for (;;) {
-+                try {
-+                    return chunk.getLights().collect(Collectors.toList()).iterator();
-+                } catch (final Exception cme) {
++            for (int index = 0; index < (16 * 16 * 16); ++index) {
++                final BlockState state = states.get(index);
++                if (state.getLightEmission() <= 0) {
 +                    continue;
 +                }
++
++                // index = x | (z << 4) | (y << 8)
++                sources.add(new BlockPos(offX | (index & 15), offY | (index >>> 8), offZ | ((index >>> 4) & 15)));
 +            }
 +        }
++
++        return sources;
 +    }
 +
 +    @Override
 +    public void lightChunk(final LightChunkGetter lightAccess, final ChunkAccess chunk, final boolean needsEdgeChecks) {
 +        // setup sources
 +        final int emittedMask = this.emittedLightMask;
-+        for (final Iterator<BlockPos> positions = this.getSources(lightAccess, chunk); positions.hasNext();) {
-+            final BlockPos pos = positions.next();
++        final List<BlockPos> positions = this.getSources(lightAccess, chunk);
++        for (int i = 0, len = positions.size(); i < len; ++i) {
++            final BlockPos pos = positions.get(i);
 +            final BlockState blockState = this.getBlockState(pos.getX(), pos.getY(), pos.getZ());
 +            final int emittedLight = blockState.getLightEmission() & emittedMask;
 +
@@ -1537,7 +1528,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.x = x;
 +            this.y = y;
 +            this.z = z;
-+            this.nms = Direction.fromNormal(x, y, z);
++            this.nms = Direction.fromDelta(x, y, z);
 +            this.everythingButThisDirection = (long)(ALL_DIRECTIONS_BITSET ^ (1 << this.ordinal()));
 +            // positive is always even, negative is always odd. Flip the 1 bit to get the negative direction.
 +            this.everythingButTheOppositeDirection = (long)(ALL_DIRECTIONS_BITSET ^ (1 << (this.ordinal() ^ 1)));
@@ -3134,8 +3125,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            @Override
-+            public void onBlockEmissionIncrease(final BlockPos blockPos, final int i) {
-+                // skylight doesn't care
++            public void propagateLightSources(final ChunkPos chunkPos) {
++                throw new UnsupportedOperationException();
 +            }
 +
 +            @Override
@@ -3145,12 +3136,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            @Override
-+            public int runUpdates(final int i, final boolean bl, final boolean bl2) {
++            public int runLightUpdates() {
 +                throw new UnsupportedOperationException();
 +            }
 +
 +            @Override
-+            public void enableLightSources(final ChunkPos chunkPos, final boolean bl) {
++            public void setLightEnabled(final ChunkPos chunkPos, final boolean bl) {
 +                throw new UnsupportedOperationException();
 +            }
 +
@@ -3191,8 +3182,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            @Override
-+            public void onBlockEmissionIncrease(final BlockPos blockPos, final int i) {
-+                this.checkBlock(blockPos);
++            public void propagateLightSources(final ChunkPos chunkPos) {
++                throw new UnsupportedOperationException();
 +            }
 +
 +            @Override
@@ -3202,12 +3193,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            @Override
-+            public int runUpdates(final int i, final boolean bl, final boolean bl2) {
++            public int runLightUpdates() {
 +                throw new UnsupportedOperationException();
 +            }
 +
 +            @Override
-+            public void enableLightSources(final ChunkPos chunkPos, final boolean bl) {
++            public void setLightEnabled(final ChunkPos chunkPos, final boolean bl) {
 +                throw new UnsupportedOperationException();
 +            }
 +
@@ -3232,6 +3223,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                StarLightInterface.this.sectionChange(pos, notReady);
 +            }
 +        };
++    }
++
++    public boolean hasSkyLight() {
++        return this.hasSkyLight;
++    }
++
++    public boolean hasBlockLight() {
++        return this.hasBlockLight;
 +    }
 +
 +    protected int getSkyLightValue(final BlockPos blockPos, final ChunkAccess chunk) {
@@ -4103,7 +4102,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final Logger LOGGER = LogUtils.getLogger();
 +
-+    private static final int STARLIGHT_LIGHT_VERSION = 8;
++    private static final int STARLIGHT_LIGHT_VERSION = 9;
 +
 +    public static int getLightVersion() {
 +        return STARLIGHT_LIGHT_VERSION;
@@ -4522,10 +4521,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +// Paper end
 +
  public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
+     public static final int DEFAULT_BATCH_SIZE = 1000;
      private static final Logger LOGGER = LogUtils.getLogger();
-     private final ProcessorMailbox<Runnable> taskMailbox;
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
-     private volatile int taskPerBatch = 5;
+     private final int taskPerBatch = 1000;
      private final AtomicBoolean scheduled = new AtomicBoolean();
  
 +    // Paper start - replace light engine impl
@@ -4550,8 +4549,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - replace light engine impl
 +    protected final ChunkAccess getChunk(final int chunkX, final int chunkZ) {
 +        return ((ServerLevel)this.theLightEngine.getWorld()).getChunkSource().getChunkAtImmediately(chunkX, chunkZ);
-     }
- 
++    }
++
 +    protected long relightCounter;
 +
 +    public int relight(java.util.Set<ChunkPos> chunks_param,
@@ -4674,18 +4673,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (sky == 15) return 15;
 +        final int block = this.theLightEngine.getBlockReader().getLightValue(pos);
 +        return Math.max(sky, block);
-+    }
+     }
 +    // Paper end - replace light engine imp
-+
+ 
      @Override
      public void close() {
-     }
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override
      public void checkBlock(BlockPos pos) {
 -        BlockPos blockPos = pos.immutable();
--        this.addTask(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), ThreadedLevelLightEngine.TaskType.POST_UPDATE, Util.name(() -> {
+-        this.addTask(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
 -            super.checkBlock(blockPos);
 -        }, () -> {
 -            return "checkBlock " + blockPos;
@@ -4722,15 +4720,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
-     public void enableLightSources(ChunkPos pos, boolean retainData) {
+     public void propagateLightSources(ChunkPos chunkPos) {
 +        if (true) return; // Paper - replace light engine impl
-         this.addTask(pos.x, pos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-             super.enableLightSources(pos, retainData);
+         this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+             super.propagateLightSources(chunkPos);
          }, () -> {
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override
-     public void queueSectionData(LightLayer lightType, SectionPos pos, @Nullable DataLayer nibbles, boolean nonEdge) {
+     public void setLightEnabled(ChunkPos pos, boolean retainData) {
++        if (true) return; // Paper - replace light engine impl
+         this.addTask(pos.x, pos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+             super.setLightEnabled(pos, retainData);
+         }, () -> {
+@@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+ 
+     @Override
+     public void queueSectionData(LightLayer lightType, SectionPos pos, @Nullable DataLayer nibbles) {
 +        if (true) return; // Paper - replace light engine impl
          this.addTask(pos.x(), pos.z(), () -> {
              return 0;
@@ -4743,6 +4749,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.addTask(pos.x, pos.z, () -> {
              return 0;
          }, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+@@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+     }
+ 
+     public CompletableFuture<ChunkAccess> initializeLight(ChunkAccess chunk, boolean bl) {
++        if (true) return CompletableFuture.completedFuture(chunk); // Paper - replace light engine impl
+         ChunkPos chunkPos = chunk.getPos();
+         this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+             LevelChunkSection[] levelChunkSections = chunk.getSections();
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
@@ -4794,7 +4808,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          objectListIterator.back(j);
--        super.runUpdates(Integer.MAX_VALUE, true, true);
+-        super.runLightUpdates();
 +        this.theLightEngine.propagateChanges(); // Paper - rewrite light engine
  
          for(int var5 = 0; objectListIterator.hasNext() && var5 < i; ++var5) {
@@ -4816,13 +4830,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
-             this.emissiveRendering = blockbase_info.emissiveRendering;
-             this.offsetFunction = blockbase_info.offsetFunction;
              this.spawnParticlesOnBreak = blockbase_info.spawnParticlesOnBreak;
+             this.instrument = blockbase_info.instrument;
+             this.replaceable = blockbase_info.replaceable;
 +            this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
          }
  
-         // Paper start
+         private boolean calculateSolid() {
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.shapeExceedsCube;
          }
@@ -4848,8 +4862,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
 +            this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque() ? -1 : this.cache.lightBlock; // Paper - starlight - cache opacity for light
  
+             this.legacySolid = this.calculateSolid();
          }
- 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
@@ -4900,7 +4914,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - rewrite light engine
  
-     public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biome, long inhabitedTime, @Nullable LevelChunkSection[] sectionArrayInitializer, @Nullable BlendingData blendingData) {
+     public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biomeRegistry, long inhabitedTime, @Nullable LevelChunkSection[] sectionArray, @Nullable BlendingData blendingData) {
          this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -4974,8 +4988,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
 @@ -0,0 +0,0 @@ public class ImposterProtoChunk extends ProtoChunk {
-     private final LevelChunk wrapped;
-     private final boolean allowWrites;
+         this.allowWrites = propagateToWrapped;
+     }
  
 +    // Paper start - rewrite light engine
 +    @Override
@@ -5019,9 +5033,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - rewrite light engine
 +
-     public ImposterProtoChunk(LevelChunk wrapped, boolean bl) {
-         super(wrapped.getPos(), UpgradeData.EMPTY, wrapped.levelHeightAccessor, wrapped.getLevel().registryAccess().registryOrThrow(Registries.BIOME), wrapped.getBlendingData());
-         this.wrapped = wrapped;
+     @Nullable
+     @Override
+     public BlockEntity getBlockEntity(BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
@@ -5035,8 +5049,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.setSkyNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world));
 +        // Paper end - rewrite light engine
          this.tickersInLevel = Maps.newHashMap();
-         this.clientLightReady = false;
          this.level = (ServerLevel) world; // CraftBukkit - type
+         this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap();
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
  
      public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
@@ -5089,7 +5103,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final String SKY_LIGHT_TAG = "SkyLight";
  
 +    // Paper start - replace light engine impl
-+    private static final int STARLIGHT_LIGHT_VERSION = 8;
++    private static final int STARLIGHT_LIGHT_VERSION = 9;
 +
 +    private static final String BLOCKLIGHT_STATE_TAG = "starlight.blocklight_state";
 +    private static final String SKYLIGHT_STATE_TAG = "starlight.skylight_state";
@@ -5110,7 +5124,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          LevelChunkSection[] achunksection = new LevelChunkSection[i];
          boolean flag1 = world.dimensionType().hasSkyLight();
          ServerChunkCache chunkproviderserver = world.getChunkSource();
-         LevelLightEngine lightengine = chunkproviderserver.getLightEngine();
+         LevelLightEngine levellightengine = chunkproviderserver.getLightEngine();
 +        // Paper start
 +        ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] blockNibbles = ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world);
 +        ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] skyNibbles = ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(world);
@@ -5136,7 +5150,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -            if (flag3 || flag4) {
 -                if (!flag2) {
--                    lightengine.retainData(chunkPos, true);
+-                    levellightengine.retainData(chunkPos, true);
 -                    flag2 = true;
 -                }
 -
@@ -5146,7 +5160,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                int y = sectionData.getByte("Y");
 +                // Paper end - rewrite the light engine
                  if (flag3) {
--                    lightengine.queueSectionData(LightLayer.BLOCK, SectionPos.of(chunkPos, b0), new DataLayer(nbttagcompound1.getByteArray("BlockLight")), true);
+-                    levellightengine.queueSectionData(LightLayer.BLOCK, SectionPos.of(chunkPos, b0), new DataLayer(nbttagcompound1.getByteArray("BlockLight")));
 +                    // Paper start - rewrite the light engine
 +                    // this is where our diff is
 +                    blockNibbles[y - minSection] = new ca.spottedleaf.starlight.common.light.SWMRNibbleArray(sectionData.getByteArray("BlockLight").clone(), sectionData.getInt(BLOCKLIGHT_STATE_TAG)); // clone for data safety
@@ -5156,7 +5170,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
  
                  if (flag4) {
--                    lightengine.queueSectionData(LightLayer.SKY, SectionPos.of(chunkPos, b0), new DataLayer(nbttagcompound1.getByteArray("SkyLight")), true);
+-                    levellightengine.queueSectionData(LightLayer.SKY, SectionPos.of(chunkPos, b0), new DataLayer(nbttagcompound1.getByteArray("SkyLight")));
 +                    // Paper start - rewrite the light engine
 +                    // we store under the same key so mod programs editing nbt
 +                    // can still read the data, hopefully.
