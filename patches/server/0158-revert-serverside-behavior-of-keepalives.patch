@@ -17,7 +17,7 @@ from networking or during connections flood of chunk packets on slower clients,
  at the cost of dead connections being kept open for longer.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index fbab2e349560249382f87354449efadfedec1ed0..f6365bfdcd3c516ce1ce9ea780e0af3d4102a758 100644
+index 58b700a32d833e277da488fc3fc1ea8692f85361..547f39b4e3c8e13e8d3d8c6abdfa0e2786b7c50a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -259,7 +259,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -42,15 +42,16 @@ index fbab2e349560249382f87354449efadfedec1ed0..f6365bfdcd3c516ce1ce9ea780e0af3d
  
          this.server.getProfiler().push("keepAlive");
 -        long i = Util.getMillis();
-+        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
-+        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
-+        long currentTime = Util.getMillis();
-+        long elapsedTime = currentTime - this.keepAliveTime;
- 
+-
 -        if (i - this.keepAliveTime >= 25000L) { // CraftBukkit
 -            if (this.keepAlivePending) {
 -                this.disconnect(Component.translatable("disconnect.timeout"));
 -            } else {
++        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
++        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
++        long currentTime = Util.getMillis();
++        long elapsedTime = currentTime - this.keepAliveTime;
++
 +        if (this.keepAlivePending) {
 +            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info
