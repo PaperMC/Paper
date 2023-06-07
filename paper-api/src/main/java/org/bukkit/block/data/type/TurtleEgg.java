@@ -1,13 +1,11 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Hatchable;
 
 /**
- * 'hatch' is the number of turtles which may hatch from these eggs.
- * <br>
  * 'eggs' is the number of eggs which appear in this block.
  */
-public interface TurtleEgg extends BlockData {
+public interface TurtleEgg extends Hatchable {
 
     /**
      * Gets the value of the 'eggs' property.
@@ -36,25 +34,4 @@ public interface TurtleEgg extends BlockData {
      * @return the maximum 'eggs' value
      */
     int getMaximumEggs();
-
-    /**
-     * Gets the value of the 'hatch' property.
-     *
-     * @return the 'hatch' value
-     */
-    int getHatch();
-
-    /**
-     * Sets the value of the 'hatch' property.
-     *
-     * @param hatch the new 'hatch' value
-     */
-    void setHatch(int hatch);
-
-    /**
-     * Gets the maximum allowed value of the 'hatch' property.
-     *
-     * @return the maximum 'hatch' value
-     */
-    int getMaximumHatch();
 }

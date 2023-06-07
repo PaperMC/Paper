@@ -1,15 +1,10 @@
 package org.bukkit.inventory;
 
-import org.bukkit.MinecraftExperimental;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a Smithing table.
- *
- * @apiNote Check {@link #getType()} to better handle either the current or experimental
- * variant of this inventory
  */
-@MinecraftExperimental
 public interface SmithingInventory extends Inventory {
 
     /**

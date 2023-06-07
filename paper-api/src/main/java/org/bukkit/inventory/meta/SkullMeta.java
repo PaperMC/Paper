@@ -1,10 +1,8 @@
 package org.bukkit.inventory.meta;
 
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.profile.PlayerProfile;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -90,8 +88,6 @@ public interface SkullMeta extends ItemMeta {
      *
      * @param noteBlockSound the key of the sound to be played, or null
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     void setNoteBlockSound(@Nullable NamespacedKey noteBlockSound);
 
     /**
@@ -102,8 +98,6 @@ public interface SkullMeta extends ItemMeta {
      *
      * @return the key of the sound, or null
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     @Nullable
     NamespacedKey getNoteBlockSound();
 

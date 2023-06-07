@@ -1,8 +1,6 @@
 package org.bukkit.inventory.meta;
 
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,8 +10,6 @@ import org.jetbrains.annotations.Nullable;
  * <strong>Note: Armor trims are part of an experimental feature of Minecraft
  * and hence subject to change.</strong>
  */
-@MinecraftExperimental
-@ApiStatus.Experimental
 public interface ArmorMeta extends ItemMeta {
 
     /**

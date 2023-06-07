@@ -2,20 +2,12 @@ package org.bukkit.inventory.meta.trim;
 
 import org.bukkit.Keyed;
 import org.bukkit.Material;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents a pattern that may be used in an {@link ArmorTrim}.
- *
- * @apiNote Armor trims are part of an experimental feature of Minecraft and
- * hence subject to change. Constants in this class may be null if a data pack
- * is not present to enable these features.
  */
-@MinecraftExperimental
-@ApiStatus.Experimental
 public interface TrimPattern extends Keyed {
 
     /**

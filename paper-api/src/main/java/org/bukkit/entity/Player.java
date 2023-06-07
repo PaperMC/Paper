@@ -539,9 +539,32 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * of the changed blocks or to handle any side effects caused as a result.
      *
      * @param blocks the block states to send to the player
+     */
+    public void sendBlockChanges(@NotNull Collection<BlockState> blocks);
+
+    /**
+     * Send a multi-block change. This fakes a block change packet for a user
+     * at multiple locations. This will not actually change the world in any
+     * way.
+     * <p>
+     * This method may send multiple packets to the client depending on the
+     * blocks in the collection. A packet must be sent for each chunk section
+     * modified, meaning one packet for each 16x16x16 block area. Even if only
+     * one block is changed in two different chunk sections, two packets will
+     * be sent.
+     * <p>
+     * Additionally, this method cannot guarantee the functionality of changes
+     * being sent to the player in chunks not loaded by the client. It is the
+     * responsibility of the caller to ensure that the client is within range
+     * of the changed blocks or to handle any side effects caused as a result.
+     *
+     * @param blocks the block states to send to the player
      * @param suppressLightUpdates whether or not light updates should be
      * suppressed when updating the blocks on the client
+     * @deprecated suppressLightUpdates is not functional in versions greater
+     * than 1.19.4
      */
+    @Deprecated
     public void sendBlockChanges(@NotNull Collection<BlockState> blocks, boolean suppressLightUpdates);
 
     /**

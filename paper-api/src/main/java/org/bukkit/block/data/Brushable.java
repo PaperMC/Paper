@@ -1,15 +1,9 @@
-package org.bukkit.block.data.type;
-
-import org.bukkit.MinecraftExperimental;
-import org.bukkit.block.data.BlockData;
-import org.jetbrains.annotations.ApiStatus;
+package org.bukkit.block.data;
 
 /**
  * 'dusted' represents how far uncovered by brush the block is.
  */
-@MinecraftExperimental
-@ApiStatus.Experimental
-public interface SuspiciousSand extends BlockData {
+public interface Brushable extends BlockData {
 
     /**
      * Gets the value of the 'dusted' property.

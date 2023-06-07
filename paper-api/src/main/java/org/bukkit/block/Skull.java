@@ -1,13 +1,11 @@
 package org.bukkit.block;
 
 import org.bukkit.Material;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.profile.PlayerProfile;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -96,8 +94,6 @@ public interface Skull extends TileState {
      *
      * @return the key of the sound, or null
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     @Nullable
     public NamespacedKey getNoteBlockSound();
 
@@ -110,8 +106,6 @@ public interface Skull extends TileState {
      * @param noteBlockSound the key of the sound to be played, or null
      *
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     public void setNoteBlockSound(@Nullable NamespacedKey noteBlockSound);
 
     /**

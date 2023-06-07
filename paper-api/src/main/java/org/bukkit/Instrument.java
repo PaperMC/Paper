@@ -2,7 +2,6 @@ package org.bukkit;
 
 import com.google.common.collect.Maps;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 public enum Instrument {
@@ -79,44 +78,30 @@ public enum Instrument {
     /**
      * Zombie is normally played when a Zombie Head is on top of the note block.
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     ZOMBIE,
     /**
      * Skeleton is normally played when a Skeleton Head is on top of the note block.
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     SKELETON,
     /**
      * Creeper is normally played when a Creeper Head is on top of the note block.
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     CREEPER,
     /**
      * Dragon is normally played when a Dragon Head is on top of the note block.
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     DRAGON,
     /**
      * Wither Skeleton is normally played when a Wither Skeleton Head is on top of the note block.
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     WITHER_SKELETON,
     /**
      * Piglin is normally played when a Piglin Head is on top of the note block.
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     PIGLIN,
     /**
      * Custom Sound is normally played when a Player Head with the required data is on top of the note block.
      */
-    @MinecraftExperimental
-    @ApiStatus.Experimental
     CUSTOM_HEAD;
 
     private final byte type;

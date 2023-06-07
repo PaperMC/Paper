@@ -2,19 +2,12 @@ package org.bukkit.entity;
 
 import java.util.Collection;
 import org.bukkit.Location;
-import org.bukkit.MinecraftExperimental;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Sniffer.
- *
- * @apiNote This entity is part of an experimental feature of Minecraft and
- * hence subject to change.
  */
-@MinecraftExperimental
-@ApiStatus.Experimental
 public interface Sniffer extends Animals {
 
     /**

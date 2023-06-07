@@ -33,7 +33,8 @@ public final class GameEvent implements Keyed {
     public static final GameEvent BLOCK_UNSWITCH = getEvent("block_deactivate");
     public static final GameEvent CONTAINER_CLOSE = getEvent("container_close");
     public static final GameEvent CONTAINER_OPEN = getEvent("container_open");
-    public static final GameEvent DISPENSE_FAIL = getEvent("dispense_fail");
+    @Deprecated
+    public static final GameEvent DISPENSE_FAIL = getEvent("block_activate");
     public static final GameEvent DRINK = getEvent("drink");
     @Deprecated
     public static final GameEvent DRINKING_FINISH = getEvent("drink");
@@ -70,8 +71,10 @@ public final class GameEvent implements Keyed {
     @Deprecated
     public static final GameEvent MOB_INTERACT = getEvent("entity_interact");
     public static final GameEvent NOTE_BLOCK_PLAY = getEvent("note_block_play");
-    public static final GameEvent PISTON_CONTRACT = getEvent("piston_contract");
-    public static final GameEvent PISTON_EXTEND = getEvent("piston_extend");
+    @Deprecated
+    public static final GameEvent PISTON_CONTRACT = getEvent("block_deactivate");
+    @Deprecated
+    public static final GameEvent PISTON_EXTEND = getEvent("block_activate");
     public static final GameEvent PRIME_FUSE = getEvent("prime_fuse");
     public static final GameEvent PROJECTILE_LAND = getEvent("projectile_land");
     public static final GameEvent PROJECTILE_SHOOT = getEvent("projectile_shoot");
@@ -92,6 +95,21 @@ public final class GameEvent implements Keyed {
     public static final GameEvent TELEPORT = getEvent("teleport");
     @Deprecated
     public static final GameEvent WOLF_SHAKING = getEvent("entity_shake");
+    public static final GameEvent RESONATE_1 = getEvent("resonate_1");
+    public static final GameEvent RESONATE_2 = getEvent("resonate_2");
+    public static final GameEvent RESONATE_3 = getEvent("resonate_3");
+    public static final GameEvent RESONATE_4 = getEvent("resonate_4");
+    public static final GameEvent RESONATE_5 = getEvent("resonate_5");
+    public static final GameEvent RESONATE_6 = getEvent("resonate_6");
+    public static final GameEvent RESONATE_7 = getEvent("resonate_7");
+    public static final GameEvent RESONATE_8 = getEvent("resonate_8");
+    public static final GameEvent RESONATE_9 = getEvent("resonate_9");
+    public static final GameEvent RESONATE_10 = getEvent("resonate_10");
+    public static final GameEvent RESONATE_11 = getEvent("resonate_11");
+    public static final GameEvent RESONATE_12 = getEvent("resonate_12");
+    public static final GameEvent RESONATE_13 = getEvent("resonate_13");
+    public static final GameEvent RESONATE_14 = getEvent("resonate_14");
+    public static final GameEvent RESONATE_15 = getEvent("resonate_15");
     //
     private final NamespacedKey key;
 

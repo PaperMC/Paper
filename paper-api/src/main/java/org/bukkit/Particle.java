@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 public enum Particle {
@@ -124,15 +123,8 @@ public enum Particle {
     SCULK_CHARGE(Float.class),
     SCULK_CHARGE_POP,
     SHRIEK(Integer.class),
-    @MinecraftExperimental
-    @ApiStatus.Experimental
-    DRIPPING_CHERRY_LEAVES,
-    @MinecraftExperimental
-    @ApiStatus.Experimental
-    FALLING_CHERRY_LEAVES,
-    @MinecraftExperimental
-    @ApiStatus.Experimental
-    LANDING_CHERRY_LEAVES,
+    CHERRY_LEAVES,
+    EGG_CRACK,
     /**
      * Uses {@link BlockData} as DataType
      */

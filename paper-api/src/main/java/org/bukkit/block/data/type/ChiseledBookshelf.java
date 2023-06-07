@@ -1,9 +1,7 @@
 package org.bukkit.block.data.type;
 
 import java.util.Set;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.data.Directional;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,8 +11,6 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * Block may have 0, 1... {@link #getMaximumOccupiedSlots()}-1 occupied slots.
  */
-@MinecraftExperimental
-@ApiStatus.Experimental
 public interface ChiseledBookshelf extends Directional {
 
     /**

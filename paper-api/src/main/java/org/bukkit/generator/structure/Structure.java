@@ -46,6 +46,7 @@ public abstract class Structure implements Keyed {
     public static final Structure RUINED_PORTAL_OCEAN = getStructure("ruined_portal_ocean");
     public static final Structure RUINED_PORTAL_NETHER = getStructure("ruined_portal_nether");
     public static final Structure ANCIENT_CITY = getStructure("ancient_city");
+    public static final Structure TRAIL_RUINS = getStructure("trail_ruins");
 
     private static Structure getStructure(String name) {
         return Registry.STRUCTURE.get(NamespacedKey.minecraft(name));

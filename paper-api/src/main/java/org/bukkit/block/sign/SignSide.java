@@ -1,13 +1,11 @@
 package org.bukkit.block.sign;
 
 import org.bukkit.material.Colorable;
-import org.jetbrains.annotations.ApiStatus.Experimental;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a side of a sign.
  */
-@Experimental
 public interface SignSide extends Colorable {
 
     /**

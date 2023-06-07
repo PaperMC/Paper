@@ -155,7 +155,15 @@ public enum LootTables implements Keyed {
     SHEPHERD_GIFT("gameplay/hero_of_the_village/shepherd_gift"),
     TOOLSMITH_GIFT("gameplay/hero_of_the_village/toolsmith_gift"),
     WEAPONSMITH_GIFT("gameplay/hero_of_the_village/weaponsmith_gift"),
+    SNIFFER_DIGGING("gameplay/sniffer_digging"),
     PIGLIN_BARTERING("gameplay/piglin_bartering"),
+    // Archaeology
+    DESERT_WELL_ARCHAEOLOGY("archaeology/desert_well"),
+    DESERT_PYRAMID_ARCHAEOLOGY("archaeology/desert_pyramid"),
+    TRAIL_RUINS_ARCHAEOLOGY_COMMON("archaeology/trail_ruins_common"),
+    TRAIL_RUINS_ARCHAEOLOGY_RARE("archaeology/trail_ruins_rare"),
+    OCEAN_RUIN_WARM_ARCHAEOLOGY("archaeology/ocean_ruin_warm"),
+    OCEAN_RUIN_COLD_ARCHAEOLOGY("archaeology/ocean_ruin_cold"),
     // Sheep
     SHEEP("entities/sheep"),
     SHEEP_BLACK("entities/sheep/black"),

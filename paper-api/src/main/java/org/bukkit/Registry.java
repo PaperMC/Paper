@@ -157,7 +157,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see TrimMaterial
      */
-    @MinecraftExperimental
     @ApiStatus.Experimental
     Registry<TrimMaterial> TRIM_MATERIAL = Bukkit.getRegistry(TrimMaterial.class);
     /**
@@ -165,7 +164,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see TrimPattern
      */
-    @MinecraftExperimental
     @ApiStatus.Experimental
     Registry<TrimPattern> TRIM_PATTERN = Bukkit.getRegistry(TrimPattern.class);
     /**
