@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index c04f733d053a52218893ef2b9ca050f911b50b0a..e63ad0e49818709cb292b9e43f5b52f5cb13002f 100644
+index d86a4eebb4fd4144d762407aaccc7de497d0a5c1..16739eb5fc89fce4a77ad84387c785a5d41a9df2 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -19,6 +19,7 @@ dependencies {
@@ -22,8 +22,8 @@ index c04f733d053a52218893ef2b9ca050f911b50b0a..e63ad0e49818709cb292b9e43f5b52f5
      implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
 +    implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
-     runtimeOnly("org.xerial:sqlite-jdbc:3.41.2.2")
-     runtimeOnly("com.mysql:mysql-connector-j:8.0.32")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 @@ -105,6 +107,18 @@ tasks.check {
  }
@@ -474,7 +474,7 @@ index 52eb3176437113f9a0ff85d10ce5c2415e1b5570..b54ddd0ba0b001fbcb1838a838ca4890
          }
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index ca9a36e357e73b1b518ebb5c937314269655de32..59bb1d340e0be6f15a8c6ac21500cdd909c18a8b 100644
+index 7e11cf7d6871b6125ccccae2b765cd4dfcf38d3b..e857327b796455953e76ddf70913c37a3f1e2ee2 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -64,13 +64,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -494,7 +494,7 @@ index ca9a36e357e73b1b518ebb5c937314269655de32..59bb1d340e0be6f15a8c6ac21500cdd9
      });
      private final PacketFlow receiving;
      private final Queue<Connection.PacketHolder> queue = Queues.newConcurrentLinkedQueue();
-@@ -199,7 +199,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -172,7 +172,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              }
          }
@@ -504,7 +504,7 @@ index ca9a36e357e73b1b518ebb5c937314269655de32..59bb1d340e0be6f15a8c6ac21500cdd9
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 549ea8e0fe702615eefcbfd1cd6a30e05b7b3fd5..771677c0e1cd7bfe089b9a5bb9095650216ff588 100644
+index eef9206a9d6a398eb1d44a36b6a1a342ed7bc878..9d2eb13130d3b68fd0ca07243a3a41735f89c7b2 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -195,6 +195,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -516,10 +516,10 @@ index 549ea8e0fe702615eefcbfd1cd6a30e05b7b3fd5..771677c0e1cd7bfe089b9a5bb9095650
          paperConfigurations.initializeWorldDefaultsConfiguration();
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 4bf38f9006be9e838c54783dafd40cf84553d627..51e8070864ffc4a35377021a7ded9813a40c1a11 100644
+index a25d46fc3e2a106ab94c6b2b49558dd7be11c5b9..8cdb2bdd404f2f091493bb7a93f62f764a8e511b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -218,7 +218,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -221,7 +221,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
      public final UUID uuid;
      public boolean hasPhysicsEvent = true; // Paper
      public static Throwable getAddToWorldStackTrace(Entity entity) {
@@ -530,7 +530,7 @@ index 4bf38f9006be9e838c54783dafd40cf84553d627..51e8070864ffc4a35377021a7ded9813
      }
  
      @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
-@@ -1326,7 +1328,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1235,7 +1237,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
          if (entity.isRemoved()) {
              // Paper start
              if (DEBUG_ENTITIES) {
@@ -540,7 +540,7 @@ index 4bf38f9006be9e838c54783dafd40cf84553d627..51e8070864ffc4a35377021a7ded9813
              }
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index fbf375534e2b8bd6ef052c4625764f4f8feb2ed6..bb9e65eee7e0ca0f715cd5791c47579a57b1b577 100644
+index 776528e50a5abc0e02d9de99231fb47352aa4f43..4017c15a62ce1048a61f55f46f915fd516496181 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -51,10 +51,10 @@ public class ServerConnectionListener {
@@ -592,10 +592,10 @@ index 6599f874d9f97e9ef4862039ecad7277bbc5fd91..7edd4b88eb0476f0630630bc4681e859
                              }
                         }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index ee1c9f2c8dd30b3f32a6d49aa1c43148f4e5ccac..73a3f9eae86df8e9afd08ee9da4c1b8e16dededd 100644
+index cb8166771b57bb4dd7e64150bd02e8944307783f..04d0e2db1bb38700a1bc210296d7f8bfdd3aead5 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -633,7 +633,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -603,7 +603,7 @@ public class LevelChunk extends ChunkAccess {
                      + " (" + getBlockState(blockposition) + ") where there was no entity tile!\n" +
                      "Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16) +
                      "\nWorld: " + level.getLevel().dimension().location());
@@ -621,10 +621,10 @@ index 3c1992e212a6d6f1db4d5b807b38d71913619fc0..9c1aff17aabd062640e3f451a2ef8c50
  
      CraftAsyncScheduler() {
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 383c52c62f49b17db2fbf58009d6ea132d124bea..e0a71bfc1498a517456b21747ab6ef3f1067a3f3 100644
+index 29b315188e3deb994b45b2154b2ce4f17c4fde2d..571d80ca3e85fc108137b317ed1033ca4714718e 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -105,7 +105,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -105,7 +105,7 @@ public class WatchdogThread extends Thread
                      log.log( Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity" );
                      log.log( Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated" );
                      log.log( Level.SEVERE, org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getMessage());
@@ -633,7 +633,7 @@ index 383c52c62f49b17db2fbf58009d6ea132d124bea..e0a71bfc1498a517456b21747ab6ef3f
                      {
                          log.log( Level.SEVERE, "\t\t" + stack );
                      }
-@@ -193,7 +193,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -192,7 +192,7 @@ public class WatchdogThread extends Thread
          }
          log.log( Level.SEVERE, "\tStack:" );
          //
