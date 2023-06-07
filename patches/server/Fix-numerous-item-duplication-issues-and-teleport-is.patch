@@ -28,8 +28,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return null;
              }
              // CraftBukkit end
--            ItemEntity entityitem = new ItemEntity(this.level, this.getX(), this.getY() + (double) yOffset, this.getZ(), stack);
-+            ItemEntity entityitem = new ItemEntity(this.level, this.getX(), this.getY() + (double) yOffset, this.getZ(), stack.copy()); // Paper - clone so we can destroy original
+-            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack);
++            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack.copy()); // Paper - copy so we can destroy original
 +            stack.setCount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe
  
              entityitem.setDefaultPickUpDelay();
@@ -39,18 +39,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Entity teleportTo(ServerLevel worldserver, PositionImpl location) {
          // CraftBukkit end
 +        // Paper start - fix bad state entities causing dupes
-+        if (!isAlive() || !valid) {
++        if (!this.isAlive() || !this.valid) {
 +            LOGGER.warn("Illegal Entity Teleport " + this + " to " + worldserver + ":" + location, new Throwable());
 +            return null;
 +        }
 +        // Paper end
-         if (this.level instanceof ServerLevel && !this.isRemoved()) {
-             this.level.getProfiler().push("changeDimension");
+         if (this.level() instanceof ServerLevel && !this.isRemoved()) {
+             this.level().getProfiler().push("changeDimension");
              // CraftBukkit start
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                  // CraftBukkit end
  
-                 this.level.getProfiler().popPush("reloading");
+                 this.level().getProfiler().popPush("reloading");
 +                // Paper start - Change lead drop timing to prevent dupe
 +                if (this instanceof Mob) {
 +                    ((Mob) this).dropLeash(true, true); // Paper drop lead

@@ -92,7 +92,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-         Thread thread = new io.papermc.paper.util.TickThread(() -> { // Paper - rewrite chunk system
+         Thread thread = new Thread(() -> {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      // CraftBukkit start
@@ -122,12 +122,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.metricsRecorder.isRecording()) {
              this.cancelRecordingMetrics();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.getProfileCache().save(false); // Paper
          }
          // Spigot end
+ 
 +        // Paper start - move final shutdown items here
 +        LOGGER.info("Flushing Chunk IO");
-         io.papermc.paper.chunk.system.io.RegionFileIOThread.close(true); // Paper // Paper - rewrite chunk system
++       // io.papermc.paper.chunk.system.io.RegionFileIOThread.close(true); // Paper // Paper - rewrite chunk system
 +        LOGGER.info("Closing Thread Pool");
 +        Util.shutdownExecutors(); // Paper
 +        LOGGER.info("Closing Server");
@@ -303,7 +303,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } catch (Throwable throwable) {
 +            if (throwable instanceof ThreadDeath) throw throwable; // Paper
              // Paper start - Prevent tile entity and entity crashes
-             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level.getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
+             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
              MinecraftServer.LOGGER.error(msg, throwable);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -475,14 +475,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -0,0 +0,0 @@ import org.bukkit.Bukkit;
- public final class WatchdogThread extends io.papermc.paper.util.TickThread // Paper - rewrite chunk system
+ public class WatchdogThread extends Thread
  {
  
 +    public static final boolean DISABLE_WATCHDOG = Boolean.getBoolean("disable.watchdog"); // Paper
      private static WatchdogThread instance;
      private long timeoutTime;
      private boolean restart;
-@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
      {
          if ( WatchdogThread.instance == null )
          {
@@ -490,7 +490,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              WatchdogThread.instance = new WatchdogThread( timeoutTime * 1000L, restart );
              WatchdogThread.instance.start();
          } else
-@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
              // Paper start
              Logger log = Bukkit.getServer().getLogger();
              long currentTime = WatchdogThread.monotonicMillis();
@@ -507,7 +507,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  lastEarlyWarning = currentTime;
                  if (isLongTimeout) {
                  // Paper end
-@@ -0,0 +0,0 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
  
                  if ( isLongTimeout )
                  {
