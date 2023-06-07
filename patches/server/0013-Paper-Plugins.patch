@@ -1770,10 +1770,10 @@ index 0000000000000000000000000000000000000000..a2fa8406bc3f0dcab6805633ae984d03
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b57d12bca82b5aed4f6c5f235e3cf7a10ec30bca
+index 0000000000000000000000000000000000000000..e72bec3b0cbc41580f1b4beecae316d1c083d3e3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/MetaDependencyTree.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,117 @@
 +package io.papermc.paper.plugin.entrypoint.dependency;
 +
 +import com.google.common.graph.GraphBuilder;
@@ -1835,9 +1835,6 @@ index 0000000000000000000000000000000000000000..b57d12bca82b5aed4f6c5f235e3cf7a1
 +        String identifier = configuration.getName();
 +        // Remove a validated provider's dependencies into the graph
 +        for (String dependency : configuration.getPluginDependencies()) {
-+            this.graph.removeEdge(identifier, dependency);
-+        }
-+        for (String dependency : configuration.getPluginSoftDependencies()) {
 +            this.graph.removeEdge(identifier, dependency);
 +        }
 +        for (String dependency : configuration.getPluginSoftDependencies()) {
@@ -4533,10 +4530,10 @@ index 0000000000000000000000000000000000000000..6ba3bcc468c0a60c76d6d0f0243bda66
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/LegacyPaperMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/LegacyPaperMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..da792ee460a90611550b0d72c4254277fc79347e
+index 0000000000000000000000000000000000000000..8cd649c977172f6b757d68565fcbb9eb8ae100a3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/LegacyPaperMeta.java
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,147 @@
 +package io.papermc.paper.plugin.provider.configuration;
 +
 +import com.google.gson.reflect.TypeToken;
@@ -4631,10 +4628,11 @@ index 0000000000000000000000000000000000000000..da792ee460a90611550b0d72c4254277
 +
 +
 +                        DependencyConfiguration.LoadOrder loadOrder = DependencyConfiguration.LoadOrder.OMIT;
++                        // These meanings are now swapped
 +                        if (flags.contains(DependencyFlag.LOAD_BEFORE)) {
-+                            loadOrder = DependencyConfiguration.LoadOrder.BEFORE;
-+                        } else if (flags.contains(DependencyFlag.LOAD_AFTER)) {
 +                            loadOrder = DependencyConfiguration.LoadOrder.AFTER;
++                        } else if (flags.contains(DependencyFlag.LOAD_AFTER)) {
++                            loadOrder = DependencyConfiguration.LoadOrder.BEFORE;
 +                        }
 +
 +                        flagMap.put(entry.getKey(), new DependencyConfiguration(
@@ -4729,10 +4727,10 @@ index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d4a71fbd06ba25d92d0d75a4c148718f464b562b
+index 0000000000000000000000000000000000000000..45bd29b70782e29eb11c36eaca0f940aee49799b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
-@@ -0,0 +1,245 @@
+@@ -0,0 +1,248 @@
 +package io.papermc.paper.plugin.provider.configuration;
 +
 +import com.google.common.base.Preconditions;
@@ -4898,7 +4896,8 @@ index 0000000000000000000000000000000000000000..d4a71fbd06ba25d92d0d75a4c148718f
 +        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of())
 +            .entrySet()
 +            .stream()
-+            .filter((entry) -> entry.getValue().loadOrder() == DependencyConfiguration.LoadOrder.BEFORE)
++            // This plugin will load BEFORE all dependencies (so dependencies will load AFTER plugin)
++            .filter((entry) -> entry.getValue().load() == DependencyConfiguration.LoadOrder.AFTER)
 +            .map(Map.Entry::getKey)
 +            .toList();
 +    }
@@ -4907,10 +4906,12 @@ index 0000000000000000000000000000000000000000..d4a71fbd06ba25d92d0d75a4c148718f
 +        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of())
 +            .entrySet()
 +            .stream()
-+            .filter((entry) -> entry.getValue().loadOrder() == DependencyConfiguration.LoadOrder.AFTER)
++            // This plugin will load AFTER all dependencies (so dependencies will load BEFORE plugin)
++            .filter((entry) -> entry.getValue().load() == DependencyConfiguration.LoadOrder.BEFORE)
 +            .map(Map.Entry::getKey)
 +            .toList();
 +    }
++
 +
 +    public Map<String, DependencyConfiguration> getServerDependencies() {
 +        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of());
@@ -5279,17 +5280,17 @@ index 0000000000000000000000000000000000000000..a0109a388188b0808900405d334a4031
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/type/DependencyConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/DependencyConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d13d20a501b39d309de15f02c0dda8993987a745
+index 0000000000000000000000000000000000000000..4ce9c3b17997a42f44e34f95ef3177e0adaa18a8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/type/DependencyConfiguration.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.plugin.provider.configuration.type;
 +
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 +
 +@ConfigSerializable
 +public record DependencyConfiguration(
-+    LoadOrder loadOrder,
++    LoadOrder load,
 +    boolean required,
 +    boolean joinClasspath
 +) {
@@ -5308,7 +5309,9 @@ index 0000000000000000000000000000000000000000..d13d20a501b39d309de15f02c0dda899
 +
 +    @ConfigSerializable
 +    public enum LoadOrder {
++        // dependency will now load BEFORE your plugin
 +        BEFORE,
++        // the dependency will now load AFTER your plugin
 +        AFTER,
 +        OMIT
 +    }
@@ -5753,10 +5756,10 @@ index 0000000000000000000000000000000000000000..32f230d66f6953520b59ccbf3079c5a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5b9627dba32c609610a89d828a2d733f10351741
+index 0000000000000000000000000000000000000000..e34656fb0573ff6d826eb4d4dcfd517e01589206
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.plugin.provider.type.paper;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -5782,9 +5785,11 @@ index 0000000000000000000000000000000000000000..5b9627dba32c609610a89d828a2d733f
 +            String name = configuration.getKey();
 +            DependencyConfiguration dependencyConfiguration = configuration.getValue();
 +
-+            if (dependencyConfiguration.loadOrder() == DependencyConfiguration.LoadOrder.BEFORE) {
++            if (dependencyConfiguration.load() == DependencyConfiguration.LoadOrder.AFTER) {
++                // This plugin will load BEFORE all dependencies (so dependencies will load AFTER plugin)
 +                this.loadBefore.add(name);
-+            } else if (dependencyConfiguration.loadOrder() == DependencyConfiguration.LoadOrder.AFTER) {
++            } else if (dependencyConfiguration.load() == DependencyConfiguration.LoadOrder.BEFORE) {
++                // This plugin will load AFTER all dependencies (so dependencies will load BEFORE plugin)
 +                this.loadAfter.add(name);
 +            }
 +        }
