@@ -8,10 +8,10 @@ Makes less git noise, as it won't update the date every single time
 Use -DPaper.skipServerPropertiesComments=true flag to disable writing it
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
-index 26fc8127024d7b81ffe5c1c81b8ef8a68e35cbb6..bafd0f3492a0b8778d28610785129c5eba7fe4a2 100644
+index 9dde5b89e6de9d470b0c0b08e3aa6c471cd075fe..f6e423a76d4c9cf639f1d44af80d33cf3072f6b5 100644
 --- a/src/main/java/net/minecraft/server/dedicated/Settings.java
 +++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
-@@ -23,6 +23,7 @@ public abstract class Settings<T extends Settings<T>> {
+@@ -29,6 +29,7 @@ public abstract class Settings<T extends Settings<T>> {
  
      private static final Logger LOGGER = LogUtils.getLogger();
      public final Properties properties;
@@ -19,11 +19,13 @@ index 26fc8127024d7b81ffe5c1c81b8ef8a68e35cbb6..bafd0f3492a0b8778d28610785129c5e
      // CraftBukkit start
      private OptionSet options = null;
  
-@@ -80,9 +81,47 @@ public abstract class Settings<T extends Settings<T>> {
+@@ -118,7 +119,46 @@ public abstract class Settings<T extends Settings<T>> {
+                 return;
              }
              // CraftBukkit end
-             OutputStream outputstream = Files.newOutputStream(path);
+-            BufferedWriter bufferedwriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
 +            // Paper start - disable writing comments to properties file
++            java.io.OutputStream outputstream = Files.newOutputStream(path);
 +            java.io.BufferedOutputStream bufferedOutputStream =  !skipComments ? new java.io.BufferedOutputStream(outputstream) : new java.io.BufferedOutputStream(outputstream) {
 +                private boolean isRightAfterNewline = true; // If last written char was newline
 +                private boolean isComment = false; // Are we writing comment currently?
@@ -39,32 +41,29 @@ index 26fc8127024d7b81ffe5c1c81b8ef8a68e35cbb6..bafd0f3492a0b8778d28610785129c5e
 +                    for (int index = off; index < off + len; ++index ) {
 +                        byte c = bbuf[index];
 +                        boolean isNewline = (c == '\n' || c == '\r');
-+                        if (isNewline && isComment) {
++                        if (isNewline && this.isComment) {
 +                            // Comment has ended
-+                            isComment = false;
++                            this.isComment = false;
 +                            latest_offset = index+1;
 +                        }
-+                        if (c == '#' && isRightAfterNewline) {
-+                            isComment = true;
++                        if (c == '#' && this.isRightAfterNewline) {
++                            this.isComment = true;
 +                            if (index != latest_offset) {
 +                                // We got some non-comment data earlier
 +                                super.write(bbuf, latest_offset, index-latest_offset);
 +                            }
 +                        }
-+                        isRightAfterNewline = isNewline; // Store for next iteration
++                        this.isRightAfterNewline = isNewline; // Store for next iteration
 +
 +                    }
-+                    if (latest_offset < off+len && !isComment) {
++                    if (latest_offset < off+len && !this.isComment) {
 +                        // We have some unwritten data, that isn't part of a comment
 +                        super.write(bbuf, latest_offset, (off + len) - latest_offset);
 +                    }
 +                }
 +            };
++            BufferedWriter bufferedwriter = new BufferedWriter(new java.io.OutputStreamWriter(bufferedOutputStream, java.nio.charset.StandardCharsets.UTF_8.newEncoder()));
 +            // Paper end
  
              try {
--                this.properties.store(outputstream, "Minecraft server properties");
-+                this.properties.store(bufferedOutputStream, "Minecraft server properties"); // Paper - use bufferedOutputStream
-             } catch (Throwable throwable) {
-                 if (outputstream != null) {
-                     try {
+                 this.properties.store(bufferedwriter, "Minecraft server properties");
