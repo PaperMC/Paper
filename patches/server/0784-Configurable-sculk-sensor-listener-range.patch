@@ -7,14 +7,14 @@ Subject: [PATCH] Configurable sculk sensor listener range
 public-f net.minecraft.world.level.gameevent.vibrations.VibrationListener listenerRange
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
-index a6c226da995eecc323d69a3eff1f8d202410e069..c058187786686190adb8602984580ad7fa6b0069 100644
+index a6c226da995eecc323d69a3eff1f8d202410e069..ce42474501b4e168b7877df4d071c5f2eca549ea 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
 @@ -48,9 +48,11 @@ public class SculkSensorBlockEntity extends BlockEntity implements GameEventList
                  this.vibrationData = listener;
              });
          }
-+        if (nbt.contains(PAPER_LISTENER_RANGE_NBT_KEY)) this.listener.listenerRange = nbt.getInt(PAPER_LISTENER_RANGE_NBT_KEY); // Paper
++        if (nbt.contains(PAPER_LISTENER_RANGE_NBT_KEY)) this.getListener().rangeOverride = nbt.getInt(PAPER_LISTENER_RANGE_NBT_KEY); // Paper
  
      }
  
@@ -26,12 +26,32 @@ index a6c226da995eecc323d69a3eff1f8d202410e069..c058187786686190adb8602984580ad7
          VibrationSystem.Data.CODEC.encodeStart(NbtOps.INSTANCE, this.vibrationData).resultOrPartial(LOGGER::error).ifPresent((listenerNbt) -> {
              nbt.put("listener", listenerNbt);
          });
-+        if (this.listener.listenerRange != ((SculkSensorBlock) net.minecraft.world.level.block.Blocks.SCULK_SENSOR).getListenerRange()) nbt.putInt(PAPER_LISTENER_RANGE_NBT_KEY, this.listener.listenerRange); // Paper - only save if it's different from the default
++        if (this.getListener().rangeOverride != null || this.getListener().rangeOverride != VibrationUser.LISTENER_RANGE) nbt.putInt(PAPER_LISTENER_RANGE_NBT_KEY, this.getListener().rangeOverride); // Paper - only save if it's different from the default
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java b/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
+index 405709bed99bb0ddd3a746f0f7815b59394c1b81..ac8394b9caa4e0b3101897190a26c28ef8acfbd2 100644
+--- a/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
++++ b/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
+@@ -261,6 +261,7 @@ public interface VibrationSystem {
+     public static class Listener implements GameEventListener {
+ 
+         private final VibrationSystem system;
++        @Nullable public Integer rangeOverride = null; // Paper
+ 
+         public Listener(VibrationSystem receiver) {
+             this.system = receiver;
+@@ -273,6 +274,7 @@ public interface VibrationSystem {
+ 
+         @Override
+         public int getListenerRadius() {
++            if (this.rangeOverride != null) return this.rangeOverride; // Paper
+             return this.system.getVibrationUser().getListenerRadius();
+         }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
-index de804383467518ef0f063aea948514db568f59db..38ab3ec08c2f95a14ee6de762e29f91b4a4b4500 100644
+index de804383467518ef0f063aea948514db568f59db..ba4069544de16d3562b55df4d7973e877d66ee1c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSculkSensor.java
 @@ -21,4 +21,16 @@ public class CraftSculkSensor<T extends SculkSensorBlockEntity> extends CraftBlo
@@ -41,13 +61,13 @@ index de804383467518ef0f063aea948514db568f59db..38ab3ec08c2f95a14ee6de762e29f91b
 +    // Paper start
 +    @Override
 +    public int getListenerRange() {
-+        return this.getSnapshot().getListener().listenerRange;
++        return this.getSnapshot().getListener().getListenerRadius();
 +    }
 +
 +    @Override
 +    public void setListenerRange(int range) {
 +        Preconditions.checkArgument(range > 0, "Vibration listener range must be greater than 0");
-+        this.getSnapshot().getListener().listenerRange = range;
++        this.getSnapshot().getListener().rangeOverride = range;
 +    }
 +    // Paper end
  }

@@ -10911,10 +10911,10 @@ index 0000000000000000000000000000000000000000..396d72c00e47cf1669ae20dc839c1c96
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..72c813e1d359486fe8d6776aa82986586b8022f5
+index 0000000000000000000000000000000000000000..cfd97d48ae77d33b68e11de3140a00f3faca34a4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,2100 @@
+@@ -0,0 +1,2101 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.Completable;
@@ -10939,6 +10939,7 @@ index 0000000000000000000000000000000000000000..72c813e1d359486fe8d6776aa8298658
 +import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.server.level.ChunkHolder;
++import net.minecraft.server.level.ChunkLevel;
 +import net.minecraft.server.level.ChunkMap;
 +import net.minecraft.server.level.FullChunkStatus;
 +import net.minecraft.server.level.ServerLevel;
@@ -11520,8 +11521,8 @@ index 0000000000000000000000000000000000000000..72c813e1d359486fe8d6776aa8298658
 +    }
 +
 +    // ticket level state
-+    private int oldTicketLevel = ChunkMap.MAX_CHUNK_DISTANCE + 1;
-+    private int currentTicketLevel = ChunkMap.MAX_CHUNK_DISTANCE + 1;
++    private int oldTicketLevel = ChunkLevel.MAX_LEVEL + 1;
++    private int currentTicketLevel = ChunkLevel.MAX_LEVEL + 1;
 +
 +    public int getTicketLevel() {
 +        return this.currentTicketLevel;
@@ -11605,7 +11606,7 @@ index 0000000000000000000000000000000000000000..72c813e1d359486fe8d6776aa8298658
 +        }
 +
 +        // chunk must be marked inaccessible (i.e unloaded to plugins)
-+        if (this.getChunkStatus() != ChunkHolder.FullChunkStatus.INACCESSIBLE) {
++        if (this.getChunkStatus() != FullChunkStatus.INACCESSIBLE) {
 +            return "fullchunkstatus";
 +        }
 +
@@ -11844,8 +11845,8 @@ index 0000000000000000000000000000000000000000..72c813e1d359486fe8d6776aa8298658
 +
 +        this.oldTicketLevel = newLevel;
 +
-+        final ChunkHolder.FullChunkStatus oldState = ChunkHolder.getFullChunkStatus(oldLevel);
-+        final ChunkHolder.FullChunkStatus newState = ChunkHolder.getFullChunkStatus(newLevel);
++        final FullChunkStatus oldState = ChunkHolder.getFullChunkStatus(oldLevel);
++        final FullChunkStatus newState = ChunkHolder.getFullChunkStatus(newLevel);
 +        final boolean oldUnloaded = oldLevel > ChunkHolderManager.MAX_TICKET_LEVEL;
 +        final boolean newUnloaded = newLevel > ChunkHolderManager.MAX_TICKET_LEVEL;
 +
@@ -11853,7 +11854,7 @@ index 0000000000000000000000000000000000000000..72c813e1d359486fe8d6776aa8298658
 +        final ChunkStatus maxGenerationStatusNew = ChunkHolder.getStatus(newLevel);
 +
 +        // check for cancellations from downgrading ticket level
-+        if (this.requestedGenStatus != null && !newState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && newLevel > oldLevel) {
++        if (this.requestedGenStatus != null && !newState.isOrAfter(FullChunkStatus.FULL) && newLevel > oldLevel) {
 +            // note: cancel() may invoke onChunkGenComplete synchronously here
 +            if (newUnloaded) {
 +                // need to cancel all tasks
@@ -11888,7 +11889,7 @@ index 0000000000000000000000000000000000000000..72c813e1d359486fe8d6776aa8298658
 +        if (newState != oldState) {
 +            if (newState.isOrAfter(oldState)) {
 +                // status upgrade
-+                if (!oldState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && newState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
++                if (!oldState.isOrAfter(FullChunkStatus.FULL) && newState.isOrAfter(FullChunkStatus.FULL)) {
 +                    // may need to schedule full load
 +                    if (this.currentGenStatus != ChunkStatus.FULL) {
 +                        if (this.requestedGenStatus != null) {
@@ -11905,16 +11906,16 @@ index 0000000000000000000000000000000000000000..72c813e1d359486fe8d6776aa8298658
 +                }
 +            } else {
 +                // status downgrade
-+                if (!newState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING) && oldState.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING)) {
-+                    this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.ENTITY_TICKING, null);
++                if (!newState.isOrAfter(FullChunkStatus.ENTITY_TICKING) && oldState.isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
++                    this.completeFullStatusConsumers(FullChunkStatus.ENTITY_TICKING, null);
 +                }
 +
-+                if (!newState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING) && oldState.isOrAfter(ChunkHolder.FullChunkStatus.TICKING)) {
-+                    this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.TICKING, null);
++                if (!newState.isOrAfter(FullChunkStatus.BLOCK_TICKING) && oldState.isOrAfter(FullChunkStatus.BLOCK_TICKING)) {
++                    this.completeFullStatusConsumers(FullChunkStatus.BLOCK_TICKING, null);
 +                }
 +
-+                if (!newState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && oldState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
-+                    this.completeFullStatusConsumers(ChunkHolder.FullChunkStatus.BORDER, null);
++                if (!newState.isOrAfter(FullChunkStatus.FULL) && oldState.isOrAfter(FullChunkStatus.FULL)) {
++                    this.completeFullStatusConsumers(FullChunkStatus.FULL, null);
 +                }
 +            }
 +        }
@@ -13924,10 +13925,10 @@ index a52e6e8be323863ece6624a8ae7f9455279bdc23..e3467aaf6d0c8d486b84362e3c20b3fe
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a6fb7ae77d7cad2243e28a33718e4631f65697fa
+index 0000000000000000000000000000000000000000..962d3cae6340fc11607b59355e291629618f289c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
-@@ -0,0 +1,264 @@
+@@ -0,0 +1,265 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import io.papermc.paper.command.CommandUtil;
@@ -13942,6 +13943,7 @@ index 0000000000000000000000000000000000000000..a6fb7ae77d7cad2243e28a33718e4631
 +import io.papermc.paper.util.MCUtil;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ChunkHolder;
++import net.minecraft.server.level.FullChunkStatus;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.chunk.ChunkAccess;
 +import net.minecraft.world.level.chunk.ImposterProtoChunk;
@@ -14031,8 +14033,8 @@ index 0000000000000000000000000000000000000000..a6fb7ae77d7cad2243e28a33718e4631
 +
 +            int total = 0;
 +            int inactive = 0;
-+            int border = 0;
-+            int ticking = 0;
++            int full = 0;
++            int blockTicking = 0;
 +            int entityTicking = 0;
 +
 +            for (final ChunkHolder chunk : io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(world)) {
@@ -14042,29 +14044,29 @@ index 0000000000000000000000000000000000000000..a6fb7ae77d7cad2243e28a33718e4631
 +
 +                ++total;
 +
-+                ChunkHolder.FullChunkStatus state = chunk.getFullStatus();
++                FullChunkStatus state = chunk.getFullStatus();
 +
 +                switch (state) {
 +                    case INACCESSIBLE -> ++inactive;
-+                    case BORDER -> ++border;
-+                    case TICKING -> ++ticking;
++                    case FULL -> ++full;
++                    case BLOCK_TICKING -> ++blockTicking;
 +                    case ENTITY_TICKING -> ++entityTicking;
 +                }
 +            }
 +
 +            accumulatedTotal += total;
 +            accumulatedInactive += inactive;
-+            accumulatedBorder += border;
-+            accumulatedTicking += ticking;
++            accumulatedBorder += full;
++            accumulatedTicking += blockTicking;
 +            accumulatedEntityTicking += entityTicking;
 +
 +            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.getName(), GREEN), text(":")));
 +            sender.sendMessage(text().color(DARK_AQUA).append(
 +                text("Total: ", BLUE), text(total),
 +                text(" Inactive: ", BLUE), text(inactive),
-+                text(" Border: ", BLUE), text(border),
-+                text(" Ticking: ", BLUE), text(ticking),
-+                text(" Entity: ", BLUE), text(entityTicking)
++                text(" Full: ", BLUE), text(full),
++                text(" Block Ticking: ", BLUE), text(blockTicking),
++                text(" Entity Ticking: ", BLUE), text(entityTicking)
 +            ));
 +        }
 +        if (worlds.size() > 1) {
@@ -14072,9 +14074,9 @@ index 0000000000000000000000000000000000000000..a6fb7ae77d7cad2243e28a33718e4631
 +            sender.sendMessage(text().color(DARK_AQUA).append(
 +                text("Total: ", BLUE), text(accumulatedTotal),
 +                text(" Inactive: ", BLUE), text(accumulatedInactive),
-+                text(" Border: ", BLUE), text(accumulatedBorder),
-+                text(" Ticking: ", BLUE), text(accumulatedTicking),
-+                text(" Entity: ", BLUE), text(accumulatedEntityTicking)
++                text(" Full: ", BLUE), text(accumulatedBorder),
++                text(" Block Ticking: ", BLUE), text(accumulatedTicking),
++                text(" Entity Ticking: ", BLUE), text(accumulatedEntityTicking)
 +            ));
 +        }
 +    }
@@ -14316,7 +14318,7 @@ index cea9c098ade00ee87b8efc8164ab72f5279758f0..197224e31175252d8438a8df585bbb65
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
-index 902317d2dc198a1cbfc679810bcb2173644354cb..2e830847155e7c43ef411d28e81592c21446143b 100644
+index 902317d2dc198a1cbfc679810bcb2173644354cb..67064aa46043cad3ad14b1293c767e6fa461fb6a 100644
 --- a/src/main/java/io/papermc/paper/util/MCUtil.java
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
 @@ -2,16 +2,29 @@ package io.papermc.paper.util;
@@ -14387,7 +14389,7 @@ index 902317d2dc198a1cbfc679810bcb2173644354cb..2e830847155e7c43ef411d28e81592c2
 +                JsonObject playerData = new JsonObject();
 +                players.add(playerData);
 +
-+                Level playerWorld = player.getLevel();
++                Level playerWorld = player.level();
 +                org.bukkit.World craftWorld = playerWorld.getWorld();
 +                Entity.RemovalReason removalReason = player.getRemovalReason();
 +
@@ -17564,7 +17566,7 @@ index f3c9a3dbb6f0e6f825b7477c89ed72ed52845419..20d600d29c2f2e47c798721d1f151e62
 +    */ // Paper - rewrite chunk system
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index fc1afda5a60ab0f3c275f849d8af08d308b36c3f..caff28e2446177d622c999b84d8889fbf61d0b3d 100644
+index 6d5a160a9fdaa04bb930afae8a0765910f631d23..a558e9a364a13fc2e81b73fa00cc0eff59eacb9a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -367,7 +367,7 @@ public class ServerChunkCache extends ChunkSource {
