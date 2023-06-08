@@ -5,10 +5,10 @@ Subject: [PATCH] Allow delegation to vanilla chunk gen
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ecd6d91ca1ddee0d0d3b6d41fb96f432273deffc..9b2f05e6d1d8e52842abaa4c92b60f7558480c70 100644
+index ecd6d91ca1ddee0d0d3b6d41fb96f432273deffc..a03785664a9d1806f3e3e2b53c10a941935ae9d9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2354,6 +2354,90 @@ public final class CraftServer implements Server {
+@@ -2354,6 +2354,88 @@ public final class CraftServer implements Server {
          return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().registryOrThrow(Registries.BIOME));
      }
  
@@ -21,8 +21,8 @@ index ecd6d91ca1ddee0d0d3b6d41fb96f432273deffc..9b2f05e6d1d8e52842abaa4c92b60f75
 +        net.minecraft.world.level.chunk.ChunkStatus.NOISE,
 +        net.minecraft.world.level.chunk.ChunkStatus.SURFACE,
 +        net.minecraft.world.level.chunk.ChunkStatus.CARVERS,
-+        net.minecraft.world.level.chunk.ChunkStatus.LIQUID_CARVERS,
 +        net.minecraft.world.level.chunk.ChunkStatus.FEATURES,
++        net.minecraft.world.level.chunk.ChunkStatus.INITIALIZE_LIGHT,
 +        net.minecraft.world.level.chunk.ChunkStatus.LIGHT
 +    );
 +
@@ -77,8 +77,7 @@ index ecd6d91ca1ddee0d0d3b6d41fb96f432273deffc..9b2f05e6d1d8e52842abaa4c92b60f75
 +                chunk -> {
 +                    throw new UnsupportedOperationException("Not creating full chunks here");
 +                },
-+                chunks,
-+                true
++                chunks
 +            ).thenAccept(either -> {
 +                if (chunkStatus == net.minecraft.world.level.chunk.ChunkStatus.NOISE) {
 +                    either.left().ifPresent(chunk -> net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, net.minecraft.world.level.chunk.ChunkStatus.POST_FEATURES));
@@ -89,7 +88,6 @@ index ecd6d91ca1ddee0d0d3b6d41fb96f432273deffc..9b2f05e6d1d8e52842abaa4c92b60f75
 +        // get empty object
 +        OldCraftChunkData data = (OldCraftChunkData) this.createChunkData(world);
 +        // copy over generated sections
-+        data.getLights().addAll(protoChunk.getLights().toList());
 +        data.setRawChunkData(protoChunk.getSections());
 +        // hooray!
 +        return data;

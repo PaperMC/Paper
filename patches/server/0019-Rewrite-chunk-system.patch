@@ -2310,10 +2310,10 @@ index 95eac2e12a16938d81ab512b00e90c5234b42834..8f7bf1f0400aeab8b7801d113d244d07
      private ChunkSystem() {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..305a4f747c9c8d99d482ba36e8c89a8412593f39
+index 0000000000000000000000000000000000000000..436111365e26be6233ea36b64c1574c823f65406
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1416 @@
+@@ -0,0 +1,1417 @@
 +package io.papermc.paper.chunk.system;
 +
 +import ca.spottedleaf.concurrentutil.collection.SRSWLinkedQueue;
@@ -3222,9 +3222,10 @@ index 0000000000000000000000000000000000000000..305a4f747c9c8d99d482ba36e8c89a84
 +
 +        private boolean isLoadedChunkGeneratable(final ChunkAccess chunkAccess) {
 +            final BelowZeroRetrogen belowZeroRetrogen;
++            // see PortalForcer#findPortalAround
 +            return chunkAccess != null && (
 +                chunkAccess.getStatus() == ChunkStatus.FULL ||
-+                    ((belowZeroRetrogen = chunkAccess.getBelowZeroRetrogen()) != null && belowZeroRetrogen.targetStatus().isOrAfter(ChunkStatus.FULL))
++                    ((belowZeroRetrogen = chunkAccess.getBelowZeroRetrogen()) != null && belowZeroRetrogen.targetStatus().isOrAfter(ChunkStatus.SPAWN))
 +            );
 +        }
 +
@@ -21184,7 +21185,7 @@ index d87f02c748fe2e5b4ea251f6691e8907a152cb6d..5988c0847af4e8f0094328e91f736f25
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/LevelReader.java b/src/main/java/net/minecraft/world/level/LevelReader.java
-index fe76ec5b10242beb6d6057bd680484fc63b7eac3..7f0952fa312e2870f26d94344408b9dcc95f4cc3 100644
+index fe76ec5b10242beb6d6057bd680484fc63b7eac3..e3e2b88b8ade4fa2b482626c7e00ac6a0bf8eb5e 100644
 --- a/src/main/java/net/minecraft/world/level/LevelReader.java
 +++ b/src/main/java/net/minecraft/world/level/LevelReader.java
 @@ -26,6 +26,15 @@ public interface LevelReader extends BlockAndTintGetter, CollisionGetter, Signal
@@ -21194,7 +21195,7 @@ index fe76ec5b10242beb6d6057bd680484fc63b7eac3..7f0952fa312e2870f26d94344408b9dc
 +    // Paper start - rewrite chunk system
 +    default ChunkAccess syncLoadNonFull(int chunkX, int chunkZ, ChunkStatus status) {
 +        if (status == null || status.isOrAfter(ChunkStatus.FULL)) {
-+            throw new IllegalArgumentException("Status: " + status.getName());
++            throw new IllegalArgumentException("Status: " + status.toString());
 +        }
 +        return this.getChunk(chunkX, chunkZ, status, true);
 +    }
