@@ -1,4 +1,4 @@
-Parrot [![Paper Build Status](https://img.shields.io/github/actions/workflow/status/PaperMC/Paper/build.yml?branch=master)](https://github.com/PaperMC/Paper/actions)
+Parrot Build Status: Built 1.19.4-REL
 
 A brand new fork of the popular server software @PaperMC
 
