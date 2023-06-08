@@ -1,0 +1,178 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheRealRyGuy <git@ryguy.me>
+Date: Thu, 8 Jun 2023 01:23:05 -0400
+Subject: [PATCH] Bundle Spark with Paper
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index 8d442c5a498ecf288a0cc0c54889c6e2fda849ce..bce9f544123264303fd7d8155476382fb5fde693 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -283,6 +283,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public int regionFileCacheSize = 256;
+         @Comment("See https://luckformula.emc.gs")
+         public boolean useAlternativeLuckFormula = false;
++        public boolean noSpark = false;
+         public boolean lagCompensateBlockBreaking = true;
+         public boolean useDimensionTypeForCustomSpawners = false;
+         public boolean strictAdvancementDimensionCheck = false;
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/SparkFileProvider.java b/src/main/java/io/papermc/paper/plugin/provider/source/SparkFileProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d882ef1f9dfb8546a5c9aac8b7ebef6f263b1602
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/provider/source/SparkFileProvider.java
+@@ -0,0 +1,91 @@
++package io.papermc.paper.plugin.provider.source;
++
++import com.google.common.io.MoreFiles;
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.configuration.GlobalConfiguration;
++import io.papermc.paper.plugin.entrypoint.Entrypoint;
++import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
++import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
++import io.papermc.paper.plugin.provider.PluginProvider;
++import org.bukkit.plugin.java.JavaPlugin;
++import org.slf4j.Logger;
++
++import java.io.InputStream;
++import java.net.URI;
++import java.net.http.HttpClient;
++import java.net.http.HttpRequest;
++import java.net.http.HttpResponse;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.security.MessageDigest;
++import java.time.Duration;
++
++public class SparkFileProvider extends FileProviderSource {
++
++    public static final SparkFileProvider INSTANCE = new SparkFileProvider();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
++    public static final String SPARK_HASH = "https://sparkapi.lucko.me/download/bukkit/sha1";
++    public static final String SPARK_DOWNLOAD = "https://sparkapi.lucko.me/download/bukkit";
++
++    public SparkFileProvider() {
++        super(dir -> String.format("Loading Spark at %s", dir.toFile().getAbsolutePath()));
++    }
++
++    @Override
++    public void registerProviders(EntrypointHandler entrypointHandler, Path context) throws Exception {
++        if(GlobalConfiguration.get().misc.noSpark) {
++            return;
++        }
++        for(PluginProvider<JavaPlugin> plugin : LaunchEntryPointHandler.INSTANCE.get(Entrypoint.PLUGIN).getRegisteredProviders()) {
++            if(plugin.getMeta().getName().equalsIgnoreCase("spark")) {
++                LOGGER.info("Using locally installed Spark");
++                return;
++            }
++        }
++
++        HttpClient client = HttpClient.newBuilder()
++            .version(HttpClient.Version.HTTP_2)
++            .connectTimeout(Duration.ofMinutes(1))
++            .followRedirects(HttpClient.Redirect.NORMAL)
++            .build();
++
++        if(context.toFile().exists()) {
++            //check hash with most recent spark version
++            try {
++                HttpResponse<String> res = client.send(HttpRequest.newBuilder()
++                    .uri(URI.create(SPARK_HASH))
++                    .GET().build(), HttpResponse.BodyHandlers.ofString());
++                byte[] digest = MessageDigest.getInstance("SHA-1").digest(MoreFiles.asByteSource(context).read());
++
++                StringBuilder hexString = new StringBuilder();
++
++                for (byte aDigest : digest) {
++                    hexString.append(Integer.toHexString(0x100 | 0xFF & aDigest)
++                        .substring(1));
++                }
++
++                if(res.body().contentEquals(hexString)) {
++                    LOGGER.info("Already running newest version of Spark!");
++                    return;
++                } else {
++                    LOGGER.info("Updating Spark!");
++                    context.toFile().delete();
++                }
++            } catch(Exception ex) {
++                throw new RuntimeException("Failed to check Spark hash!", ex);
++            }
++        }
++
++        try {
++            HttpResponse<InputStream> res = client.send(HttpRequest.newBuilder()
++                .uri(URI.create(SPARK_DOWNLOAD))
++                .GET().build(), HttpResponse.BodyHandlers.ofInputStream());
++            Files.copy(res.body(), context);
++            LOGGER.info("Downloaded Spark!");
++        } catch(Exception ex) {
++            throw new RuntimeException("Failed to download Spark!", ex);
++        }
++
++        super.registerProviders(entrypointHandler, context);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index a7e133f3495e9132a5fdae2c24f225e7b026295a..58d8967a633b0e29754709f554567bb84c042940 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -271,6 +271,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // CraftBukkit start
+         // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // Spigot - moved up
+         server.loadPlugins();
++        io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.SparkFileProvider.INSTANCE, getServerDirectory().toPath().resolve("spark.jar"));
+         server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
+         // CraftBukkit end
+ 
+diff --git a/src/test/java/io/papermc/paper/util/SparkApiTest.java b/src/test/java/io/papermc/paper/util/SparkApiTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d92d3f3059e786f7392e397e04018d66fdc5c1c0
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/util/SparkApiTest.java
+@@ -0,0 +1,45 @@
++package io.papermc.paper.util;
++
++import io.papermc.paper.plugin.provider.source.SparkFileProvider;
++import org.junit.Before;
++import org.junit.Test;
++
++import javax.net.ssl.HttpsURLConnection;
++import java.io.IOException;
++import java.net.URI;
++import java.net.http.HttpClient;
++import java.net.http.HttpRequest;
++import java.net.http.HttpResponse;
++import java.time.Duration;
++
++import static org.junit.Assert.assertEquals;
++
++public class SparkApiTest {
++
++    private HttpClient client;
++
++    @Before
++    public void setup() {
++        client = HttpClient.newBuilder()
++            .version(HttpClient.Version.HTTP_2)
++            .connectTimeout(Duration.ofMinutes(1))
++            .followRedirects(HttpClient.Redirect.NORMAL)
++            .build();
++    }
++
++    @Test
++    public void testHash() throws IOException, InterruptedException {
++        HttpResponse<Void> res = client.send(HttpRequest.newBuilder()
++            .uri(URI.create(SparkFileProvider.SPARK_HASH))
++            .GET().build(), HttpResponse.BodyHandlers.discarding());
++        assertEquals("HTTP Request for Spark hash is valid", HttpsURLConnection.HTTP_OK, res.statusCode());
++    }
++
++    @Test
++    public void testDownload() throws IOException, InterruptedException {
++        HttpResponse<Void> res = client.send(HttpRequest.newBuilder()
++            .uri(URI.create(SparkFileProvider.SPARK_DOWNLOAD))
++            .GET().build(), HttpResponse.BodyHandlers.discarding());
++        assertEquals("HTTP Request for Spark download is valid", HttpsURLConnection.HTTP_OK, res.statusCode());
++    }
++}
