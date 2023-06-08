@@ -8,7 +8,7 @@ Move collision logic to just the hasNewCollision call instead of getCubes + hasN
 CHECK ME
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 13e73042653909f194cfc909a96370656cbcf1ca..be79308ac6d30afe7b626f325a44b607969477fe 100644
+index 13e73042653909f194cfc909a96370656cbcf1ca..0dc3cfb53a34cb7ecfa0a31c4c0faa247dda66e6 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -647,7 +647,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -116,7 +116,7 @@ index 13e73042653909f194cfc909a96370656cbcf1ca..be79308ac6d30afe7b626f325a44b607
                              // Paper start - prevent position desync
                              if (this.awaitingPositionFromClient != null) {
                                  return; // ... thanks Mojang for letting move calls teleport across dimensions.
-@@ -1500,11 +1535,22 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1500,11 +1535,23 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                              boolean flag2 = false;
  
                              if (!this.player.isChangingDimension() && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot
@@ -127,6 +127,7 @@ index 13e73042653909f194cfc909a96370656cbcf1ca..be79308ac6d30afe7b626f325a44b607
  
 -                            if (!this.player.noPhysics && !this.player.isSleeping() && (flag2 && worldserver.noCollision(this.player, axisalignedbb) || this.isPlayerCollidingWithAnythingNew(worldserver, axisalignedbb, d0, d1, d2))) {
 +                            // Paper start - optimise out extra getCubes
++                            this.player.absMoveTo(d0, d1, d2, f, f1); // prevent desync by tping to the set position, dropped for unknown reasons by mojang
 +                            // Original for reference:
 +                            // boolean teleportBack = flag2 && worldserver.getCubes(this.player, axisalignedbb) || (didCollide && this.a((IWorldReader) worldserver, axisalignedbb));
 +                            boolean teleportBack = flag2; // violating this is always a fail
@@ -141,7 +142,7 @@ index 13e73042653909f194cfc909a96370656cbcf1ca..be79308ac6d30afe7b626f325a44b607
                                  this.internalTeleport(d3, d4, d5, f, f1, Collections.emptySet()); // CraftBukkit - SPIGOT-1807: Don't call teleport event, when the client thinks the player is falling, because the chunks are not loaded on the client yet.
                                  this.player.doCheckFallDamage(this.player.getX() - d3, this.player.getY() - d4, this.player.getZ() - d5, packet.isOnGround());
                              } else {
-@@ -1587,6 +1633,26 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1587,6 +1634,26 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          }
      }
  
