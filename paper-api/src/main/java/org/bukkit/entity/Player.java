@@ -740,10 +740,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Forces an update of the player's entire inventory.
      *
-     * @deprecated This method should not be relied upon as it is a temporary
-     *     work-around for a larger, more complicated issue.
+     * @apiNote It should not be necessary for plugins to use this method. If it
+     * is required for some reason, it is probably a bug.
      */
-    @Deprecated
+    @ApiStatus.Internal
     public void updateInventory();
 
     /**
