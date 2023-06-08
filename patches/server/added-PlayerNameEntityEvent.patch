@@ -8,31 +8,21 @@ diff --git a/src/main/java/net/minecraft/world/item/NameTagItem.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/NameTagItem.java
 +++ b/src/main/java/net/minecraft/world/item/NameTagItem.java
-@@ -0,0 +0,0 @@
- package net.minecraft.world.item;
- 
-+// Paper start
-+import io.papermc.paper.adventure.PaperAdventure;
-+import io.papermc.paper.event.player.PlayerNameEntityEvent;
-+// Paper end
- import net.minecraft.world.InteractionHand;
- import net.minecraft.world.InteractionResult;
- import net.minecraft.world.entity.LivingEntity;
 @@ -0,0 +0,0 @@ public class NameTagItem extends Item {
      public InteractionResult interactLivingEntity(ItemStack stack, Player user, LivingEntity entity, InteractionHand hand) {
          if (stack.hasCustomHoverName() && !(entity instanceof Player)) {
-             if (!user.level.isClientSide && entity.isAlive()) {
+             if (!user.level().isClientSide && entity.isAlive()) {
 -                entity.setCustomName(stack.getHoverName());
 -                if (entity instanceof Mob) {
 -                    ((Mob)entity).setPersistenceRequired();
 +                // Paper start
-+                PlayerNameEntityEvent event = new PlayerNameEntityEvent(((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity(), entity.getBukkitLivingEntity(), PaperAdventure.asAdventure(stack.getHoverName()), true);
++                io.papermc.paper.event.player.PlayerNameEntityEvent event = new io.papermc.paper.event.player.PlayerNameEntityEvent(((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity(), entity.getBukkitLivingEntity(), io.papermc.paper.adventure.PaperAdventure.asAdventure(stack.getHoverName()), true);
 +                if (!event.callEvent()) return InteractionResult.PASS;
 +                LivingEntity newEntityLiving = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getEntity()).getHandle();
-+                newEntityLiving.setCustomName(event.getName() != null ? PaperAdventure.asVanilla(event.getName()) : null);
++                newEntityLiving.setCustomName(event.getName() != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(event.getName()) : null);
 +                if (event.isPersistent() && newEntityLiving instanceof Mob) {
 +                    ((Mob) newEntityLiving).setPersistenceRequired();
-+                // Paper end
++                    // Paper end
                  }
  
                  stack.shrink(1);
