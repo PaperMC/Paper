@@ -5,10 +5,10 @@ Subject: [PATCH] Prevent chunk loading from Fluid Flowing
 
 
 diff --git a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
-index f809a19afdfdb7df439e907531f54b2df1baf08c..00516a230073391b31795ec5af2aa7aa48db639a 100644
+index fbf699e777d45db3dcf1606d34f509ca1a5bbb7a..c694b16be7c276fbf34aed2fd2aa6d6b79625561 100644
 --- a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
 +++ b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
-@@ -174,7 +174,8 @@ public abstract class FlowingFluid extends Fluid {
+@@ -175,7 +175,8 @@ public abstract class FlowingFluid extends Fluid {
                  Direction enumdirection = (Direction) entry.getKey();
                  FluidState fluid1 = (FluidState) entry.getValue();
                  BlockPos blockposition1 = pos.relative(enumdirection);
@@ -18,7 +18,7 @@ index f809a19afdfdb7df439e907531f54b2df1baf08c..00516a230073391b31795ec5af2aa7aa
  
                  if (this.canSpreadTo(world, pos, blockState, enumdirection, blockposition1, iblockdata1, world.getFluidState(blockposition1), fluid1.getType())) {
                      // CraftBukkit start
-@@ -201,7 +202,9 @@ public abstract class FlowingFluid extends Fluid {
+@@ -202,7 +203,9 @@ public abstract class FlowingFluid extends Fluid {
          while (iterator.hasNext()) {
              Direction enumdirection = (Direction) iterator.next();
              BlockPos blockposition1 = pos.relative(enumdirection);
@@ -29,14 +29,14 @@ index f809a19afdfdb7df439e907531f54b2df1baf08c..00516a230073391b31795ec5af2aa7aa
              FluidState fluid = iblockdata1.getFluidState();
  
              if (fluid.getType().isSame(this) && this.canPassThroughWall(enumdirection, world, pos, state, blockposition1, iblockdata1)) {
-@@ -318,11 +321,18 @@ public abstract class FlowingFluid extends Fluid {
-             if (enumdirection1 != enumdirection) {
-                 BlockPos blockposition2 = blockposition.relative(enumdirection1);
-                 short short0 = FlowingFluid.getCacheKey(blockposition1, blockposition2);
--                Pair<BlockState, FluidState> pair = (Pair) short2objectmap.computeIfAbsent(short0, (short1) -> {
+@@ -319,11 +322,18 @@ public abstract class FlowingFluid extends Fluid {
+             if (enumdirection1 != direction) {
+                 BlockPos blockposition2 = pos.relative(enumdirection1);
+                 short short0 = FlowingFluid.getCacheKey(fromPos, blockposition2);
+-                Pair<BlockState, FluidState> pair = (Pair) stateCache.computeIfAbsent(short0, (short1) -> {
 -                    BlockState iblockdata1 = world.getBlockState(blockposition2);
 +                // Paper start - avoid loading chunks
-+                Pair<BlockState, FluidState> pair = short2objectmap.get(short0);
++                Pair<BlockState, FluidState> pair = stateCache.get(short0);
 +                if (pair == null) {
 +                    BlockState iblockdatax = world.getBlockStateIfLoaded(blockposition2);
 +                    if (iblockdatax == null) {
@@ -46,13 +46,13 @@ index f809a19afdfdb7df439e907531f54b2df1baf08c..00516a230073391b31795ec5af2aa7aa
 -                    return Pair.of(iblockdata1, iblockdata1.getFluidState());
 -                });
 +                    pair = Pair.of(iblockdatax, iblockdatax.getFluidState());
-+                    short2objectmap.put(short0, pair);
++                    stateCache.put(short0, pair);
 +                }
 +                // Paper end
                  BlockState iblockdata1 = (BlockState) pair.getFirst();
                  FluidState fluid = (FluidState) pair.getSecond();
  
-@@ -394,11 +404,16 @@ public abstract class FlowingFluid extends Fluid {
+@@ -395,11 +405,16 @@ public abstract class FlowingFluid extends Fluid {
              Direction enumdirection = (Direction) iterator.next();
              BlockPos blockposition1 = pos.relative(enumdirection);
              short short0 = FlowingFluid.getCacheKey(pos, blockposition1);
