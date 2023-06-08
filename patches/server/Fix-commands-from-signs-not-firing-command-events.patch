@@ -62,32 +62,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 @@ -0,0 +0,0 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
-     private boolean renderMessagedFiltered;
-     private DyeColor color;
-     private boolean hasGlowingText;
-+    private static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
- 
-     public SignBlockEntity(BlockPos pos, BlockState state) {
-         super(BlockEntityType.SIGN, pos, state);
-@@ -0,0 +0,0 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
              ClickEvent chatclickable = chatmodifier.getClickEvent();
  
              if (chatclickable != null && chatclickable.getAction() == ClickEvent.Action.RUN_COMMAND) {
--                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(player), chatclickable.getValue());
+-                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(player, world, pos), chatclickable.getValue());
 +                // Paper start
 +                String command = chatclickable.getValue().startsWith("/") ? chatclickable.getValue() : "/" + chatclickable.getValue();
 +                if (org.spigotmc.SpigotConfig.logCommands)  {
 +                    LOGGER.info("{} issued server command: {}", player.getScoreboardName(), command);
 +                }
-+                io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent event = new io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent(player.getBukkitEntity(), command, new org.bukkit.craftbukkit.util.LazyPlayerSet(player.getServer()), (org.bukkit.block.Sign) io.papermc.paper.util.MCUtil.toBukkitBlock(this.level, this.worldPosition).getState());
++                io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent event = new io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent((org.bukkit.entity.Player) player.getBukkitEntity(), command, new org.bukkit.craftbukkit.util.LazyPlayerSet(player.getServer()), (org.bukkit.block.Sign) io.papermc.paper.util.MCUtil.toBukkitBlock(this.level, this.worldPosition).getState());
 +                if (!event.callEvent()) {
 +                    return false;
 +                }
-+                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(((org.bukkit.craftbukkit.entity.CraftPlayer) event.getPlayer()).getHandle()), event.getMessage());
++                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(((org.bukkit.craftbukkit.entity.CraftPlayer) event.getPlayer()).getHandle(), world, pos), event.getMessage());
 +                // Paper end
+                 flag1 = true;
              }
          }
- 
 @@ -0,0 +0,0 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
          String s = player == null ? "Sign" : player.getName().getString();
          Object object = player == null ? Component.literal("Sign") : player.getDisplayName();
@@ -96,7 +88,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        CommandSource commandSource = this.level.paperConfig().misc.showSignClickCommandFailureMsgsToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this) {
 +            @Override
 +            public void sendSystemMessage(Component message) {
-+                player.sendSystemMessage(message);
++                if (player != null) {
++                    player.sendSystemMessage(message);
++                }
 +            }
 +
 +            @Override
@@ -106,11 +100,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } : this;
 +        // Paper end
          // CraftBukkit - this
--        return new CommandSourceStack(this, Vec3.atCenterOf(this.worldPosition), Vec2.ZERO, (ServerLevel) this.level, 2, s, (Component) object, this.level.getServer(), player);
-+        return new CommandSourceStack(commandSource, Vec3.atCenterOf(this.worldPosition), Vec2.ZERO, (ServerLevel) this.level, 2, s, (Component) object, this.level.getServer(), player); // Paper
+-        return new CommandSourceStack(this, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player);
++        return new CommandSourceStack(commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player); // Paper
      }
  
-     public DyeColor getColor() {
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java

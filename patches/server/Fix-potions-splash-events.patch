@@ -33,7 +33,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (showParticles) { // Paper
              int i = potionregistry.hasInstantEffects() ? 2007 : 2002;
  
-             this.level.levelEvent(i, this.blockPosition(), PotionUtils.getColor(itemstack));
+             this.level().levelEvent(i, this.blockPosition(), PotionUtils.getColor(itemstack));
 +            } // Paper
              this.discard();
          }
@@ -43,9 +43,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final Predicate<net.minecraft.world.entity.LivingEntity> APPLY_WATER_GET_ENTITIES_PREDICATE = ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE.or(Axolotl.class::isInstance); // Paper
 +    private boolean applyWater() { // Paper
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
--        List<net.minecraft.world.entity.LivingEntity> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE);
+-        List<net.minecraft.world.entity.LivingEntity> list = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE);
 +        // Paper start
-+        List<net.minecraft.world.entity.LivingEntity> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.APPLY_WATER_GET_ENTITIES_PREDICATE);
++        List<net.minecraft.world.entity.LivingEntity> list = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.APPLY_WATER_GET_ENTITIES_PREDICATE);
 +        Map<LivingEntity, Double> affected = new HashMap<>();
 +        java.util.Set<LivingEntity> rehydrate = new java.util.HashSet<>();
 +        java.util.Set<LivingEntity> extinguish = new java.util.HashSet<>();
@@ -71,7 +71,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
--        List<Axolotl> list1 = this.level.getEntitiesOfClass(Axolotl.class, axisalignedbb);
+-        List<Axolotl> list1 = this.level().getEntitiesOfClass(Axolotl.class, axisalignedbb);
 -        Iterator iterator1 = list1.iterator();
 -
 -        while (iterator1.hasNext()) {
@@ -102,7 +102,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private void applySplash(List<MobEffectInstance> statusEffects, @Nullable Entity entity) {
 +    private boolean applySplash(List<MobEffectInstance> statusEffects, @Nullable Entity entity) { // Paper
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
-         List<net.minecraft.world.entity.LivingEntity> list1 = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
+         List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
          Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
 @@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                      if (d0 < 16.0D) {
@@ -122,7 +122,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    private void makeAreaOfEffectCloud(ItemStack stack, Potion potion) {
 +    private boolean makeAreaOfEffectCloud(ItemStack stack, Potion potion) { // Paper
-         AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level, this.getX(), this.getY(), this.getZ());
+         AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
          Entity entity = this.getOwner();
  
 @@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
@@ -144,7 +144,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, entityareaeffectcloud);
 -        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved())) {
 +        if (!(event.isCancelled() || entityareaeffectcloud.isRemoved() || (noEffects && entityareaeffectcloud.effects.isEmpty() && entityareaeffectcloud.getPotion().getEffects().isEmpty()))) { // Paper - don't spawn area effect cloud if the effects were empty and not changed during the event handling
-             this.level.addFreshEntity(entityareaeffectcloud);
+             this.level().addFreshEntity(entityareaeffectcloud);
          } else {
              entityareaeffectcloud.discard();
          }
