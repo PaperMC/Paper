@@ -5,10 +5,10 @@ Subject: [PATCH] Add PlayerSetSpawnEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/commands/SetSpawnCommand.java b/src/main/java/net/minecraft/server/commands/SetSpawnCommand.java
-index a2d0699e8427b2262a2396495111125eccafbb66..c29340eb3e4044f6c342146bcd1ddbed6b9a5969 100644
+index a2d0699e8427b2262a2396495111125eccafbb66..d797637f61bdf8a424f56fbb48e28b7c9117d604 100644
 --- a/src/main/java/net/minecraft/server/commands/SetSpawnCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/SetSpawnCommand.java
-@@ -38,11 +38,23 @@ public class SetSpawnCommand {
+@@ -38,24 +38,34 @@ public class SetSpawnCommand {
          ResourceKey<Level> resourcekey = source.getLevel().dimension();
          Iterator iterator = targets.iterator();
  
@@ -26,15 +26,30 @@ index a2d0699e8427b2262a2396495111125eccafbb66..c29340eb3e4044f6c342146bcd1ddbed
 +        // Paper start
 +        if (actualTargets.isEmpty()) {
 +            return 0;
-+        } else {
-+            targets = actualTargets;
 +        }
 +        // Paper end
  
          String s = resourcekey.location().toString();
  
+-        if (targets.size() == 1) {
++        if (actualTargets.size() == 1) { // Paper
+             source.sendSuccess(() -> {
+-                return Component.translatable("commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, s, ((ServerPlayer) targets.iterator().next()).getDisplayName());
++                return Component.translatable("commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, s, ((ServerPlayer) actualTargets.iterator().next()).getDisplayName()); // Paper
+             }, true);
+         } else {
+             source.sendSuccess(() -> {
+-                return Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, s, targets.size());
++                return Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, s, actualTargets.size()); // Paper
+             }, true);
+         }
+ 
+-        return targets.size();
++        return actualTargets.size(); // Paper
+     }
+ }
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 30bc41a609eebbc66826d002453abf65570cdad2..ca9732bc1be9035ee6dd4184b362f73f4db82768 100644
+index 3d9f3e49cc783ace04f5228a5ae33f35799ced4a..fc0ef295241036230e2a0a12775445983df4a861 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1349,7 +1349,7 @@ public class ServerPlayer extends Player {
