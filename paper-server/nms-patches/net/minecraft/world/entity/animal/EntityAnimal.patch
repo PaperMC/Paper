@@ -57,34 +57,39 @@
  
          this.level().broadcastEntityEvent(this, (byte) 18);
      }
-@@ -221,14 +239,23 @@
+@@ -220,12 +238,29 @@
+         if (entityageable != null) {
              entityageable.setBaby(true);
              entityageable.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
-             this.finalizeSpawnChildFromBreeding(worldserver, entityanimal, entityageable);
+-            this.finalizeSpawnChildFromBreeding(worldserver, entityanimal, entityageable);
 -            worldserver.addFreshEntityWithPassengers(entityageable);
-+            worldserver.addFreshEntityWithPassengers(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
++            // CraftBukkit start - call EntityBreedEvent
++            EntityPlayer breeder = Optional.ofNullable(this.getLoveCause()).or(() -> {
++                return Optional.ofNullable(entityanimal.getLoveCause());
++            }).orElse(null);
++            int experience = this.getRandom().nextInt(7) + 1;
++            org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(entityageable, this, entityanimal, breeder, this.breedItem, experience);
++            if (entityBreedEvent.isCancelled()) {
++                return;
++            }
++            experience = entityBreedEvent.getExperience();
++            this.finalizeSpawnChildFromBreeding(worldserver, entityanimal, entityageable, experience);
++            worldserver.addFreshEntityWithPassengers(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING);
++            // CraftBukkit end
          }
      }
  
      public void finalizeSpawnChildFromBreeding(WorldServer worldserver, EntityAnimal entityanimal, @Nullable EntityAgeable entityageable) {
--        Optional.ofNullable(this.getLoveCause()).or(() -> {
-+        // CraftBukkit start - call EntityBreedEvent
-+        Optional<EntityPlayer> cause = Optional.ofNullable(this.getLoveCause()).or(() -> {
++        // CraftBukkit start
++        this.finalizeSpawnChildFromBreeding(worldserver, entityanimal, entityageable, this.getRandom().nextInt(7) + 1);
++    }
++
++    public void finalizeSpawnChildFromBreeding(WorldServer worldserver, EntityAnimal entityanimal, @Nullable EntityAgeable entityageable, int experience) {
++        // CraftBukkit end
+         Optional.ofNullable(this.getLoveCause()).or(() -> {
              return Optional.ofNullable(entityanimal.getLoveCause());
--        }).ifPresent((entityplayer) -> {
-+        });
-+        int experience = this.getRandom().nextInt(7) + 1;
-+        org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(entityageable, this, entityanimal, cause.orElse(null), this.breedItem, experience);
-+        if (entityBreedEvent.isCancelled()) {
-+            return;
-+        }
-+        experience = entityBreedEvent.getExperience();
-+        cause.ifPresent((entityplayer) -> {
-+            // CraftBukkit end
-             entityplayer.awardStat(StatisticList.ANIMALS_BRED);
-             CriterionTriggers.BRED_ANIMALS.trigger(entityplayer, this, entityanimal, entityageable);
-         });
-@@ -238,7 +265,11 @@
+         }).ifPresent((entityplayer) -> {
+@@ -238,7 +273,11 @@
          entityanimal.resetLove();
          worldserver.broadcastEntityEvent(this, (byte) 18);
          if (worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
