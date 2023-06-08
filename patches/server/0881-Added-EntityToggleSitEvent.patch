@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: KyGuy2002 <IEatBeans#1165>
+Date: Fri, 11 Mar 2022 15:33:10 +0000
+Subject: [PATCH] Added EntityToggleSitEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/TamableAnimal.java b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+index 9fb11df7131f400e6e631146c32efccea83adf56..1282911b97292cde30dff83de756bc91bf319cb2 100644
+--- a/src/main/java/net/minecraft/world/entity/TamableAnimal.java
++++ b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+@@ -67,7 +67,7 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+         }
+ 
+         this.orderedToSit = nbt.getBoolean("Sitting");
+-        this.setInSittingPose(this.orderedToSit);
++        this.setInSittingPose(this.orderedToSit, false); // Paper - Don't fire event
+     }
+ 
+     @Override
+@@ -125,6 +125,12 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+     }
+ 
+     public void setInSittingPose(boolean inSittingPose) {
++    // Paper start
++        this.setInSittingPose(inSittingPose, true);
++    }
++    public void setInSittingPose(boolean inSittingPose, boolean callEvent) {
++    // Paper end
++        if (callEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), inSittingPose).callEvent()) return; // Paper start - call EntityToggleSitEvent
+         byte b = this.entityData.get(DATA_FLAGS_ID);
+         if (inSittingPose) {
+             this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
+index 167f142d6960867320b90d61db312ebf23e24a48..844083101e9763330af0175388f6cdda27a97ecc 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
+@@ -427,7 +427,7 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
+ 
+         this.setSleeping(nbt.getBoolean("Sleeping"));
+         this.setVariant(Fox.Type.byName(nbt.getString("Type")));
+-        this.setSitting(nbt.getBoolean("Sitting"));
++        this.setSitting(nbt.getBoolean("Sitting"), false); // Paper
+         this.setIsCrouching(nbt.getBoolean("Crouching"));
+         if (this.level() instanceof ServerLevel) {
+             this.setTargetGoals();
+@@ -440,6 +440,12 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
+     }
+ 
+     public void setSitting(boolean sitting) {
++        this.setSitting(sitting, true);
++    }
++    // Paper start
++    public void setSitting(boolean sitting, boolean fireEvent) {
++        if (fireEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
++    // Paper end
+         this.setFlag(1, sitting);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Panda.java b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+index a0933b8467bf81333dc103055e73bb75069dcb36..9b807b318a2843810c3963277d464439a865cfb6 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Panda.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+@@ -132,6 +132,7 @@ public class Panda extends Animal {
+     }
+ 
+     public void sit(boolean sitting) {
++        if (!new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return; // Paper start - call EntityToggleSitEvent
+         this.setFlag(8, sitting);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+index 2030fdb3124f793d7b545135b1db32fe9be27050..4efa7e331cc974008c653a04687a336e97626445 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
++++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+@@ -591,7 +591,7 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
+     }
+ 
+     public void sitDown() {
+-        if (!this.isCamelSitting()) {
++        if (!this.isCamelSitting() && new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), true).callEvent()) { // Paper
+             this.playSound(SoundEvents.CAMEL_SIT, 1.0F, 1.0F);
+             this.setPose(Pose.SITTING);
+             this.resetLastPoseChangeTick(-this.level().getGameTime());
+@@ -599,7 +599,7 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
+     }
+ 
+     public void standUp() {
+-        if (this.isCamelSitting()) {
++        if (this.isCamelSitting() && new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), false).callEvent()) { // Paper
+             this.playSound(SoundEvents.CAMEL_STAND, 1.0F, 1.0F);
+             this.setPose(Pose.STANDING);
+             this.resetLastPoseChangeTick(this.level().getGameTime());
+@@ -607,6 +607,7 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
+     }
+ 
+     public void standUpInstantly() {
++        if (this.isCamelSitting() && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), false).callEvent()) return; // Paper
+         this.setPose(Pose.STANDING);
+         this.resetLastPoseChangeTickToFullStand(this.level().getGameTime());
+     }

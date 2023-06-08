@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Sun, 16 Oct 2022 16:12:49 +0200
+Subject: [PATCH] More vanilla friendly methods to update trades
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index 4bef7abbed6b64c2f126c81af5484eff200e620f..e30d5ae3e2900f43d7cafde71b8196f26e872841 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -943,6 +943,12 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+ 
+     @Override
+     protected void updateTrades() {
++        // Paper start
++        updateTrades(TRADES_PER_LEVEL);
++    }
++
++    public boolean updateTrades(int amount) {
++        // Paper end
+         VillagerData villagerdata = this.getVillagerData();
+         Int2ObjectMap<VillagerTrades.ItemListing[]> int2objectmap = (Int2ObjectMap) VillagerTrades.TRADES.get(villagerdata.getProfession());
+ 
+@@ -952,9 +958,11 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+             if (avillagertrades_imerchantrecipeoption != null) {
+                 MerchantOffers merchantrecipelist = this.getOffers();
+ 
+-                this.addOffersFromItemListings(merchantrecipelist, avillagertrades_imerchantrecipeoption, 2);
++                this.addOffersFromItemListings(merchantrecipelist, avillagertrades_imerchantrecipeoption, amount); // Paper
++                return true; // Paper
+             }
+         }
++        return false; // Paper
+     }
+ 
+     public void gossip(ServerLevel world, Villager villager, long time) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
+index e6fcdbabde66f4707627fc8c3012aa20de8e34e3..e986767316a717bdbdff7a9ccaaeba068ab2a6d8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
+@@ -100,6 +100,34 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
+     }
+ 
+     // Paper start
++    @Override
++    public boolean increaseLevel(int amount) {
++        Preconditions.checkArgument(amount > 0, "Level earned must be positive");
++        int supposedFinalLevel = this.getVillagerLevel() + amount;
++        Preconditions.checkArgument(net.minecraft.world.entity.npc.VillagerData.MIN_VILLAGER_LEVEL <= supposedFinalLevel && supposedFinalLevel <= net.minecraft.world.entity.npc.VillagerData.MAX_VILLAGER_LEVEL,
++            "Final level reached after the donation (%d) must be between [%d, %d]".formatted(supposedFinalLevel, net.minecraft.world.entity.npc.VillagerData.MIN_VILLAGER_LEVEL, net.minecraft.world.entity.npc.VillagerData.MAX_VILLAGER_LEVEL));
++
++        it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.world.entity.npc.VillagerTrades.ItemListing[]> trades =
++            net.minecraft.world.entity.npc.VillagerTrades.TRADES.get(this.getHandle().getVillagerData().getProfession());
++
++        if (trades == null || trades.isEmpty()) {
++            this.getHandle().setVillagerData(this.getHandle().getVillagerData().setLevel(supposedFinalLevel));
++            return false;
++        }
++
++        while (amount > 0) {
++            this.getHandle().increaseMerchantCareer();
++            amount--;
++        }
++        return true;
++    }
++
++    @Override
++    public boolean addTrades(int amount) {
++        Preconditions.checkArgument(amount > 0, "Number of trades unlocked must be positive");
++        return this.getHandle().updateTrades(amount);
++    }
++
+     @Override
+     public int getRestocksToday() {
+         return getHandle().numberOfRestocksToday;

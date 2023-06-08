@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Fri, 24 Jun 2022 12:39:34 +0200
+Subject: [PATCH] Add EntityFertilizeEggEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+index c48bf4ca76f70d878378fc43c8270de5c3332824..9f7fa132997829e9a34aaae7aac7a6f7d529eee2 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+@@ -441,6 +441,17 @@ public class Turtle extends Animal {
+             if (entityplayer == null && this.partner.getLoveCause() != null) {
+                 entityplayer = this.partner.getLoveCause();
+             }
++            // Paper start
++            RandomSource randomsource = this.animal.getRandom();
++            int experience = randomsource.nextInt(7) + 1;
++            io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((org.bukkit.entity.LivingEntity) turtle.getBukkitEntity(), (org.bukkit.entity.LivingEntity) partner.getBukkitEntity(), entityplayer == null ? null : entityplayer.getBukkitEntity(), turtle.breedItem == null ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(turtle.breedItem).clone(), experience);
++            if (!event.callEvent()) {
++                animal.resetLove();
++                partner.resetLove(); // stop the pathfinding to avoid infinite loop
++                return;
++            }
++            experience = event.getExperience();
++            // Paper end
+ 
+             if (entityplayer != null) {
+                 entityplayer.awardStat(Stats.ANIMALS_BRED);
+@@ -452,10 +463,9 @@ public class Turtle extends Animal {
+             this.partner.setAge(6000);
+             this.animal.resetLove();
+             this.partner.resetLove();
+-            RandomSource randomsource = this.animal.getRandom();
+ 
+-            if (this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+-                this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), randomsource.nextInt(7) + 1, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper;
++            if (experience > 0 && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper
++                this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper
+             }
+ 
+         }

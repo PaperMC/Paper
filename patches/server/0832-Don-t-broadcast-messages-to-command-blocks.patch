@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 16 Jun 2022 14:22:56 -0700
+Subject: [PATCH] Don't broadcast messages to command blocks
+
+Previously the broadcast method would update the last output
+in command blocks, and if called asynchronously, would throw
+an error
+
+diff --git a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
+index c138678fe82e6c1dd7ce634f90bcbfcad6159276..fdf1ee8504afc820df96eed0941eb3f1cd9ba392 100644
+--- a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
++++ b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
+@@ -172,6 +172,7 @@ public abstract class BaseCommandBlock implements CommandSource {
+     @Override
+     public void sendSystemMessage(Component message) {
+         if (this.trackOutput) {
++            org.spigotmc.AsyncCatcher.catchOp("sendSystemMessage to a command block"); // Paper
+             SimpleDateFormat simpledateformat = BaseCommandBlock.TIME_FORMAT;
+             Date date = new Date();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index dcf7fac3a5619afde34aa22cbc6077579b60eb09..a28da8addf6c06d6c80d9a6a8bd9617808ba7de6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1789,7 +1789,7 @@ public final class CraftServer implements Server {
+         // Paper end
+         Set<CommandSender> recipients = new HashSet<>();
+         for (Permissible permissible : this.getPluginManager().getPermissionSubscriptions(permission)) {
+-            if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
++            if (permissible instanceof CommandSender && !(permissible instanceof org.bukkit.command.BlockCommandSender) && permissible.hasPermission(permission)) { // Paper - don't broadcast to BlockCommandSender (specifically Command Blocks)
+                 recipients.add((CommandSender) permissible);
+             }
+         }
