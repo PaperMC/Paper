@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hugo Manrique <hugmanrique@gmail.com>
+Date: Mon, 23 Jul 2018 12:57:39 +0200
+Subject: [PATCH] Option to prevent armor stands from doing entity lookups
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index 68ac3ffae5d800bde3c5b5163a52768a43bb5963..a59381646031a1a99c98c8c6ad9de7efc96b774a 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -337,6 +337,7 @@ public class ArmorStand extends LivingEntity {
+ 
+     @Override
+     protected void pushEntities() {
++        if (!this.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return; // Paper
+         List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox(), ArmorStand.RIDABLE_MINECARTS);
+ 
+         for (int i = 0; i < list.size(); ++i) {
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index b282f32c95b23b69156970d76171772218b87bc7..1beff41c02fb4c22b5474da7c514be2f50f16055 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -765,6 +765,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             // Paper end
+         }
+     }
++    // Paper start - Prevent armor stands from doing entity lookups
++    @Override
++    public boolean noCollision(@Nullable Entity entity, AABB box) {
++        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
++        return LevelAccessor.super.noCollision(entity, box);
++    }
++    // Paper end
+ 
+     public boolean shouldTickDeath(Entity entity) {
+         return true;

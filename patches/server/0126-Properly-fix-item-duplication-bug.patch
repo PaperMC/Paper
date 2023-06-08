@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Tue, 27 Dec 2016 01:57:57 +0000
+Subject: [PATCH] Properly fix item duplication bug
+
+Credit to prplz for figuring out the real issue
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 321d14f241df1246061ba73b2488f5ab5326a734..0cb86afa3732eaf04dd6369d7499bd628df7e12f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2392,7 +2392,7 @@ public class ServerPlayer extends Player {
+ 
+     @Override
+     public boolean isImmobile() {
+-        return super.isImmobile() || !this.getBukkitEntity().isOnline();
++        return super.isImmobile() || (this.connection != null && this.connection.isDisconnected()); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 6017d2d5378f1d6c2a258469cc24c51e7a4ab4b6..cf5972518023dabd9cf7110d93643886d1ad047e 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3149,7 +3149,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     }
+ 
+     public final boolean isDisconnected() {
+-        return !this.player.joining && !this.connection.isConnected();
++        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper
+     }
+     // CraftBukkit end
+ 
