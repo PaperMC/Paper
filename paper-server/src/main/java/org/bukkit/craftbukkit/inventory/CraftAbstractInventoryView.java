@@ -164,7 +164,6 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
                     type = InventoryType.SlotType.CRAFTING;
                     break;
                 case ANVIL:
-                case SMITHING:
                 case CARTOGRAPHY:
                 case GRINDSTONE:
                 case MERCHANT:
@@ -182,6 +181,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
                     }
                     break;
                 case LOOM:
+                case SMITHING: // Paper - properly remove experimental smithing inventory
                 case SMITHING_NEW:
                     if (slot == 3) {
                         type = InventoryType.SlotType.RESULT;
