@@ -97,7 +97,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.craftbukkit.generator.strucutre.CraftStructure;
+import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;

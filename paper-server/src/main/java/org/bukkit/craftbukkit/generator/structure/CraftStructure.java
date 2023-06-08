@@ -1,4 +1,4 @@
-package org.bukkit.craftbukkit.generator.strucutre;
+package org.bukkit.craftbukkit.generator.structure;
 
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.registries.Registries;
