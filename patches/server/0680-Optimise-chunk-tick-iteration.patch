@@ -6,10 +6,10 @@ Subject: [PATCH] Optimise chunk tick iteration
 Use a dedicated list of entity ticking chunks to reduce the cost
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 51c112656f26f142bd6c126253520e812a338783..0f2590501d742b1f5a410d45c7781bd18b4a4525 100644
+index b705545ecaef9203ef2ff067ed947ad4aa86dc89..3914fae62d3e0c0a9aeb8fd2bd48e76889c25a3a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -88,6 +88,11 @@ public class ChunkHolder {
+@@ -91,6 +91,11 @@ public class ChunkHolder {
          this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
          this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
          // Paper end - optimise anyPlayerCloseEnoughForSpawning
@@ -21,7 +21,7 @@ index 51c112656f26f142bd6c126253520e812a338783..0f2590501d742b1f5a410d45c7781bd1
      }
  
      public void onChunkRemove() {
-@@ -95,6 +100,11 @@ public class ChunkHolder {
+@@ -98,6 +103,11 @@ public class ChunkHolder {
          this.playersInMobSpawnRange = null;
          this.playersInChunkTickRange = null;
          // Paper end - optimise anyPlayerCloseEnoughForSpawning
@@ -33,7 +33,7 @@ index 51c112656f26f142bd6c126253520e812a338783..0f2590501d742b1f5a410d45c7781bd1
      }
      // Paper end
  
-@@ -210,7 +220,7 @@ public class ChunkHolder {
+@@ -237,7 +247,7 @@ public class ChunkHolder {
  
              if (i < 0 || i >= this.changedBlocksPerSection.length) return; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
              if (this.changedBlocksPerSection[i] == null) {
@@ -42,7 +42,7 @@ index 51c112656f26f142bd6c126253520e812a338783..0f2590501d742b1f5a410d45c7781bd1
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
              }
  
-@@ -234,6 +244,7 @@ public class ChunkHolder {
+@@ -261,6 +271,7 @@ public class ChunkHolder {
                      int k = this.lightEngine.getMaxLightSection();
  
                      if (y >= j && y <= k) {
@@ -50,7 +50,7 @@ index 51c112656f26f142bd6c126253520e812a338783..0f2590501d742b1f5a410d45c7781bd1
                          int l = y - j;
  
                          if (lightType == LightLayer.SKY) {
-@@ -248,8 +259,19 @@ public class ChunkHolder {
+@@ -275,8 +286,19 @@ public class ChunkHolder {
          }
      }
  
@@ -69,13 +69,13 @@ index 51c112656f26f142bd6c126253520e812a338783..0f2590501d742b1f5a410d45c7781bd1
 -        if (this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
 +        if (this.needsBroadcastChanges()) { // Paper - moved into above, other logic needs to call
              Level world = chunk.getLevel();
-             int i = 0;
+             List list;
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 503a642165f6f1292c07e8a9e618218bb96a97e9..b0cfdead8a345eaab7747ed6b84271e8e09d1713 100644
+index 7d80cfd701d910badf1feaecaa4ce5129584e21d..03b802f9f6e31b1ab23af0ff7b235f64c72ec462 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -116,6 +116,8 @@ import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
+@@ -115,6 +115,8 @@ import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
  import org.bukkit.entity.Player;
  // CraftBukkit end
  
@@ -84,7 +84,7 @@ index 503a642165f6f1292c07e8a9e618218bb96a97e9..b0cfdead8a345eaab7747ed6b84271e8
  public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider {
  
      private static final byte CHUNK_TYPE_REPLACEABLE = -1;
-@@ -154,6 +156,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -152,6 +154,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
@@ -93,7 +93,7 @@ index 503a642165f6f1292c07e8a9e618218bb96a97e9..b0cfdead8a345eaab7747ed6b84271e8
      // Paper - rewrite chunk system
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index d1652c237b2b272f0dfe80f774cff16056f39046..b768767b92bf7691a6e57627c69818a1f5fd82c8 100644
+index 8f1949cf33bdc35d6d024dd82faae37fec325d6f..d9a14c1c42ce9adc53543e7b95a4083b4109cb33 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -48,6 +48,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
@@ -104,7 +104,7 @@ index d1652c237b2b272f0dfe80f774cff16056f39046..b768767b92bf7691a6e57627c69818a1
  
  public class ServerChunkCache extends ChunkSource {
  
-@@ -724,42 +725,59 @@ public class ServerChunkCache extends ChunkSource {
+@@ -725,42 +726,59 @@ public class ServerChunkCache extends ChunkSource {
  
              this.lastSpawnState = spawnercreature_d;
              gameprofilerfiller.popPush("filteringLoadedChunks");
@@ -130,7 +130,8 @@ index d1652c237b2b272f0dfe80f774cff16056f39046..b768767b92bf7691a6e57627c69818a1
 +            // Paper - only shuffle if per-player mob spawning is disabled
              // Paper - moved natural spawn event up
 -            Iterator iterator1 = list.iterator();
-+            // Paper start - optimise chunk tick iteration
+ 
++            // Paper start - optimise chunk tick iteratio
 +            Iterator<LevelChunk> iterator1;
 +            if (this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
 +                iterator1 = this.entityTickingChunks.iterator();
@@ -143,7 +144,6 @@ index d1652c237b2b272f0dfe80f774cff16056f39046..b768767b92bf7691a6e57627c69818a1
 +                Collections.shuffle(shuffled);
 +                iterator1 = shuffled.iterator();
 +            }
- 
 +            try {
              while (iterator1.hasNext()) {
 -                ServerChunkCache.ChunkAndHolder chunkproviderserver_a = (ServerChunkCache.ChunkAndHolder) iterator1.next();
@@ -181,7 +181,7 @@ index d1652c237b2b272f0dfe80f774cff16056f39046..b768767b92bf7691a6e57627c69818a1
              this.level.timings.chunkTicks.stopTiming(); // Paper
              gameprofilerfiller.popPush("customSpawners");
              if (flag2) {
-@@ -767,15 +785,24 @@ public class ServerChunkCache extends ChunkSource {
+@@ -768,15 +786,24 @@ public class ServerChunkCache extends ChunkSource {
                  this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
                  } // Paper - timings
              }

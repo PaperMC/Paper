@@ -10,7 +10,7 @@ hoping that at least then we don't swap chunks, and maybe recover
 them all.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index f0f38f1a7603cd06aba6adefd370d40b97f2e5b8..34a1976699571608ae19e20dc1b6020759dad909 100644
+index b417b175c925049058327c7bc4ed1cc31a644018..603fcf3816d65d0a695e038d5980b1cd98659f4c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -70,6 +70,18 @@ import net.minecraft.world.ticks.ProtoChunkTicks;
@@ -30,19 +30,19 @@ index f0f38f1a7603cd06aba6adefd370d40b97f2e5b8..34a1976699571608ae19e20dc1b60207
 +    }
 +    // Paper end
  
-     public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState(), null); // Paper - Anti-Xray - Add preset block states
+     public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState());
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -485,7 +497,7 @@ public class ChunkSerializer {
+@@ -434,7 +446,7 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
 -        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading
 +        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading // Paper - diff on change
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
-         nbttagcompound.putString("Status", chunk.getStatus().getName());
+         nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getStatus()).toString());
          BlendingData blendingdata = chunk.getBlendingData();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index e9b13e4f70d9a556e6a7d022a952085051c1819d..71abf1c82ee4f5530bd29b3a97dec9fdb7705779 100644
+index b4e7c9b317d532d4915932f8f79dfebf2b63ff16..2d93251abb1018381cf00dbbb120c8ea036710c6 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 @@ -41,7 +41,7 @@ public class ChunkStorage implements AutoCloseable {
@@ -87,7 +87,7 @@ index c8298a597818227de33a4afce4698ec0666cf758..6baceb6ce9021c489be6e79d338a9704
          this.used.set(start, start + size);
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index cda87a66fe80bf910f629c64e36c1fecbad81d77..9bae47f99336c377beb72c4b50b7f01cb4db15da 100644
+index eee5dfa165203463cb791e33530944c6b09e7eb7..98c436d84e4aedbdb805129fcdb6b871a1b4e3d9 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -51,6 +51,355 @@ public class RegionFile implements AutoCloseable {
@@ -685,15 +685,20 @@ index cda87a66fe80bf910f629c64e36c1fecbad81d77..9bae47f99336c377beb72c4b50b7f01c
          return bytebuffer;
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 65fd57609e45ccd49ebfc1ba80d25243da13ab6e..d5b501bcb33a785ef0301bf6bb8d396b9d4fbb6a 100644
+index c3d26756a716f151d3909ddfeacc47b28d05c498..5291bbe208397d73e6950e9f196bcd1da55c1fad 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -26,7 +26,15 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -25,6 +25,7 @@ public class RegionFileStorage implements AutoCloseable {
+     public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap();
      private final Path folder;
      private final boolean sync;
- 
 +    private final boolean isChunkData; // Paper
-+
+ 
+     // Paper start - cache regionfile does not exist state
+     static final int MAX_NON_EXISTING_CACHE = 1024 * 64;
+@@ -56,6 +57,12 @@ public class RegionFileStorage implements AutoCloseable {
+     // Paper end - cache regionfile does not exist state
+ 
      protected RegionFileStorage(Path directory, boolean dsync) { // Paper - protected constructor
 +        // Paper start - add isChunkData param
 +        this(directory, dsync, false);
@@ -704,19 +709,25 @@ index 65fd57609e45ccd49ebfc1ba80d25243da13ab6e..d5b501bcb33a785ef0301bf6bb8d396b
          this.folder = directory;
          this.sync = dsync;
      }
-@@ -88,9 +96,9 @@ public class RegionFileStorage implements AutoCloseable {
-             FileUtil.createDirectoriesSafe(this.folder);
+@@ -125,7 +132,7 @@ public class RegionFileStorage implements AutoCloseable {
+             // Paper - only create directory if not existing only - moved down
              Path path = this.folder;
              int j = chunkcoordintpair.getRegionX();
 -            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
 +            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca"); // Paper - diff on change
-             if (existingOnly && !java.nio.file.Files.exists(path1)) return null; // CraftBukkit
+             if (existingOnly && !java.nio.file.Files.exists(path1)) { // Paper start - cache regionfile does not exist state
+                 this.markNonExisting(regionPos);
+                 return null; // CraftBukkit
+@@ -134,7 +141,7 @@ public class RegionFileStorage implements AutoCloseable {
+             }
+             // Paper end - cache regionfile does not exist state
+             FileUtil.createDirectoriesSafe(this.folder); // Paper - only create directory if not existing only - moved from above
 -            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
 +            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
  
              this.regionCache.putAndMoveToFirst(i, regionfile1);
              // Paper start
-@@ -175,6 +183,13 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -219,6 +226,13 @@ public class RegionFileStorage implements AutoCloseable {
          if (regionfile == null) {
              return null;
          }
@@ -730,7 +741,7 @@ index 65fd57609e45ccd49ebfc1ba80d25243da13ab6e..d5b501bcb33a785ef0301bf6bb8d396b
          // CraftBukkit end
          try { // Paper
          DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
-@@ -191,6 +206,20 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -235,6 +249,20 @@ public class RegionFileStorage implements AutoCloseable {
              try {
                  if (datainputstream != null) {
                      nbttagcompound = NbtIo.read((DataInput) datainputstream);
