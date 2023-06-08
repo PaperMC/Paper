@@ -2793,37 +2793,35 @@ index 4c62df5a3781ec9df4a5c5f1b528649e6e8a62d1..affd1b8c7589ba59330dc0b6fc803cce
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index 8e35fecb84fb9ed61cb31d218f8a21bb7cabeb48..584feb744bd2aa34f788de17d43c16a04c33a2c6 100644
+index f18a05566b8bbb1f481dcee0d2c53ddda68dae9e..a778d53bba0f9678a47ce6c3d94449ae7cd1c527 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-@@ -208,20 +208,22 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+@@ -211,19 +211,20 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
  
-             // CraftBukkit start
-             Player player1 = ((ServerPlayer) player).getBukkitEntity();
--            String[] lines = new String[4];
-+            // Paper start
-+            List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
+         // CraftBukkit start
+         Player player = ((ServerPlayer) entityhuman).getBukkitEntity();
+-        String[] lines = new String[4];
++        List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>(); // Paper - adventure
  
-             for (int j = 0; j < messages.size(); ++j) {
--                lines[j] = CraftChatMessage.fromComponent(text.getMessage(j, player.isTextFilteringEnabled()));
-+                lines.add(io.papermc.paper.adventure.PaperAdventure.asAdventure(text.getMessage(j, player.isTextFilteringEnabled())));
-             }
- 
-             SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player1, lines);
-             player.level().getCraftServer().getPluginManager().callEvent(event);
- 
-             if (!event.isCancelled()) {
--                Component[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
--                for (int j = 0; j < components.length; j++) {
--                    text = text.setMessage(j, components[j]);
-+                // Paper start
-+                for (int j = 0; j < 4; j++) {
-+                    text = text.setMessage(j, io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(j)));
-                 }
-+                // Paper end
-             }
-             // CraftBukkit end
+         for (int j = 0; j < list.size(); ++j) {
+-            lines[j] = CraftChatMessage.fromComponent(signtext.getMessage(j, entityhuman.isTextFilteringEnabled()));
++            lines.add(io.papermc.paper.adventure.PaperAdventure.asAdventure(signtext.getMessage(j, entityhuman.isTextFilteringEnabled()))); // Paper - adventure
          }
+ 
+         SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player, lines, (front) ? Side.FRONT : Side.BACK);
+         entityhuman.level().getCraftServer().getPluginManager().callEvent(event);
+ 
+         if (!event.isCancelled()) {
+-            Component[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
+-            for (int j = 0; j < components.length; j++) {
+-                signtext = signtext.setMessage(j, components[j]);
++            // Paper start - adventure
++            for (int j = 0; j < 4; j++) {
++                signtext = signtext.setMessage(j, io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(j)));
++                // Paper end - adventure
+             }
+         } else {
+             signtext = originalText;
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 index 614e567eb1ef10ac7514909a8425e29ac3627d3d..60596c4ac2ebb8caf19d65591624275ba63b0199 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
@@ -3026,7 +3024,7 @@ index 9874d0d3ae16e79f2598d9c1f93a9b7cc40f56b0..7d95f4e919f46fd415a3cf88b1bb7c16
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index c8a035d396a56e3f4c437c5524e8e67a946b1674..1440b6b8b71ece71b076601752b06bdcff45542f 100644
+index 29ef66be12ec2a2765a76eb3d419c337846c75ac..711dbf6e5cf9b4ffabaab2bcf10f13711683a61e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -153,6 +153,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -3207,7 +3205,7 @@ index 0beb96dc896f63003e1b1ae458b73902bdbe648a..102eb86bad3000f258775ac06ecd1a6d
      public String getCustomName() {
          EnchantmentTableBlockEntity enchant = this.getSnapshot();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
-index 0d5ea9d065f0b471a97b84ffc80fadc9e7953d04..1a49daed4fe43d4513561e03937374c312d09efb 100644
+index b22009c0b068f1bc2c59861c4be593ea764248c6..cc6aab5341365f9b4ec3cb23e2a4f5006aa75cd7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 @@ -25,6 +25,23 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
@@ -3234,8 +3232,8 @@ index 0d5ea9d065f0b471a97b84ffc80fadc9e7953d04..1a49daed4fe43d4513561e03937374c3
      @Override
      public String[] getLines() {
          return this.front.getLines();
-@@ -103,6 +120,20 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
-         ((CraftPlayer) player).getHandle().openTextEdit(handle, true);
+@@ -104,6 +121,20 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
+         ((CraftPlayer) player).getHandle().openTextEdit(handle, Side.FRONT == side);
      }
  
 +    // Paper start
@@ -3256,7 +3254,7 @@ index 0d5ea9d065f0b471a97b84ffc80fadc9e7953d04..1a49daed4fe43d4513561e03937374c3
          Component[] components = new Component[4];
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/sign/CraftSignSide.java b/src/main/java/org/bukkit/craftbukkit/block/sign/CraftSignSide.java
-index d9cc425919d3c07607e36557a5b109e0212483c7..0c3716e5e91a9791b28f4d308d99dbac90e7f34b 100644
+index 43f6ac44525048faf0b0cd2c11f9bc36fa0cab5d..1317cdd48c1c27c9e5152da5403237b1bb15ac52 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/sign/CraftSignSide.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/sign/CraftSignSide.java
 @@ -12,37 +12,69 @@ import org.jetbrains.annotations.Nullable;
@@ -3269,7 +3267,7 @@ index d9cc425919d3c07607e36557a5b109e0212483c7..0c3716e5e91a9791b28f4d308d99dbac
 +    private java.util.ArrayList<net.kyori.adventure.text.Component> originalLines = null; // ArrayList for RandomAccess
 +    private java.util.ArrayList<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
 +    // Paper end
-     private final SignText signText;
+     private SignText signText;
  
      public CraftSignSide(SignText signText) {
          this.signText = signText;
@@ -3344,7 +3342,7 @@ index d9cc425919d3c07607e36557a5b109e0212483c7..0c3716e5e91a9791b28f4d308d99dbac
      @Override
 @@ -68,13 +100,16 @@ public class CraftSignSide implements SignSide {
  
-     public void applyLegacyStringToSignSide() {
+     public SignText applyLegacyStringToSignSide() {
          if (this.lines != null) {
 -            for (int i = 0; i < lines.length; i++) {
 -                String line = (this.lines[i] == null) ? "" : this.lines[i];
@@ -3356,13 +3354,13 @@ index d9cc425919d3c07607e36557a5b109e0212483c7..0c3716e5e91a9791b28f4d308d99dbac
 +                if (component.equals(origComp)) {
                      continue; // The line contents are still the same, skip.
                  }
--                this.signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
-+                this.signText.setMessage(i, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
+-                this.signText = this.signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
++                this.signText = this.signText.setMessage(i, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
              }
 +            // Paper end
          }
-     }
- }
+ 
+         return this.signText;
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
 index 3de88112bdb08d6bd0d28f20582c4090bfd8dbfe..87f2cea36d852c81fdb0a1bc21162d41377ab2e7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
@@ -3616,7 +3614,7 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..f9863e138994f6c7a7975a852f106faa
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index a3a8c94b576c917428ac5c8fcab3f75b6e28880b..8beafda74a1e1c274906ba91a6f93ac8b5c85437 100644
+index 242b6cb2ac775b4fc687a5a62011b53ab7bde7f6..d1e6cfe6009a31e109b4061ac3cba48947404f44 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -285,14 +285,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -4513,10 +4511,10 @@ index 507fa96a3fb904b74429df5756c9a6378ec8c5b7..abb9e88abc74135284b941e040d40586
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 3b62ffe4f531e62da9e49050a0b944d8887f43f2..7500684057dca1bfe615e64da55ef521abb4ed9a 100644
+index 5fab8014b0ae3d56610aeaaa21a8c1ba6f7f1bfd..16dd61b832d7b6519786072e41cdde9df3ab8e7f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -749,6 +749,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -750,6 +750,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return !(this.hasDisplayName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isUnbreakable() || this.hasDamage() || this.hasAttributeModifiers());
      }
  
@@ -4535,7 +4533,7 @@ index 3b62ffe4f531e62da9e49050a0b944d8887f43f2..7500684057dca1bfe615e64da55ef521
      @Override
      public String getDisplayName() {
          return CraftChatMessage.fromJSONComponent(displayName);
-@@ -784,6 +796,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -785,6 +797,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return this.lore != null && !this.lore.isEmpty();
      }
  
