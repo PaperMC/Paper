@@ -9941,7 +9941,7 @@ index 0000000000000000000000000000000000000000..39411cc2e4af6edf767cc06bbca8335b
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ecc366a4176b2efadc46aa91aa21621f0fc6abe9
+index 0000000000000000000000000000000000000000..e929d55fdb6fad6587af058dff6cadb6bc2a156b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkUpgradeGenericStatusTask.java
 @@ -0,0 +1,212 @@
@@ -10031,7 +10031,7 @@ index 0000000000000000000000000000000000000000..ecc366a4176b2efadc46aa91aa21621f
 +                    return;
 +                }
 +                completeFuture = this.toStatus.generate(Runnable::run, this.world, chunkMap.generator, chunkMap.structureTemplateManager,
-+                    serverChunkCache.getLightEngine(), null, this.neighbours, false)
++                    serverChunkCache.getLightEngine(), null, this.neighbours)
 +                    .whenComplete((final Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either, final Throwable throwable) -> {
 +                        final ChunkAccess newChunk = (either == null) ? null : either.left().orElse(null);
 +                        if (newChunk instanceof ProtoChunk) {
@@ -17566,7 +17566,7 @@ index f3c9a3dbb6f0e6f825b7477c89ed72ed52845419..20d600d29c2f2e47c798721d1f151e62
 +    */ // Paper - rewrite chunk system
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 6d5a160a9fdaa04bb930afae8a0765910f631d23..a558e9a364a13fc2e81b73fa00cc0eff59eacb9a 100644
+index 6d5a160a9fdaa04bb930afae8a0765910f631d23..5c97b0069d20815c2a1d61bf34596a8a928d8940 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -367,7 +367,7 @@ public class ServerChunkCache extends ChunkSource {
@@ -17700,7 +17700,7 @@ index 6d5a160a9fdaa04bb930afae8a0765910f631d23..a558e9a364a13fc2e81b73fa00cc0eff
 -                    throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("No chunk holder after ticket has been added"));
 -                }
 -            }
-+        boolean needsFullScheduling = leastStatus == ChunkStatus.FULL && (chunkHolder == null || !chunkHolder.getChunkStatus().isOrAfter(ChunkHolder.FullChunkStatus.BORDER));
++        boolean needsFullScheduling = leastStatus == ChunkStatus.FULL && (chunkHolder == null || !chunkHolder.getChunkStatus().isOrAfter(FullChunkStatus.FULL));
 +
 +        if ((chunkHolder == null || chunkHolder.getTicketLevel() > minLevel || needsFullScheduling) && !create) {
 +            return ChunkHolder.UNLOADED_CHUNK_FUTURE;
@@ -19380,7 +19380,7 @@ index fb5a06a908d2b42bf0530b62ed648548499d9f87..ec55711e912fe6cb8f797c0b21bcef27
  
      public int getIndex() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 09999a3f523ce6d652799215d3418284a69042c1..3da04db71d6f33b2f466c11e031e0a11c298379b 100644
+index 09999a3f523ce6d652799215d3418284a69042c1..a0c88a15be577d552e61bfa923a6e566b1cfcc49 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -661,9 +661,26 @@ public class LevelChunk extends ChunkAccess {
@@ -19554,7 +19554,7 @@ index 09999a3f523ce6d652799215d3418284a69042c1..3da04db71d6f33b2f466c11e031e0a11
  
      public FullChunkStatus getFullStatus() {
 -        return this.fullStatus == null ? FullChunkStatus.FULL : (FullChunkStatus) this.fullStatus.get();
-+        return this.chunkHolder == null ? FullChunkStaatus.INACCESSIBLE : this.chunkHolder.getChunkStatus(); // Paper - rewrite chunk system
++        return this.chunkHolder == null ? FullChunkStatus.INACCESSIBLE : this.chunkHolder.getChunkStatus(); // Paper - rewrite chunk system
      }
  
      public void setFullStatus(Supplier<FullChunkStatus> levelTypeProvider) {
