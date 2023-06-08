@@ -5,7 +5,7 @@ Subject: [PATCH] Fix issues with mob conversion
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
-index e799714e562d2653c75604b7331487e5f3c42067..badde621357a567965f0ef203e402e21bed09059 100644
+index e88af2dcc0f7fc5190654e2640f67d706e6c8c81..8b818a7cb835512c4bd2ea9641d4bfd904150332 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
 @@ -90,10 +90,15 @@ public class Skeleton extends AbstractSkeleton {
@@ -13,10 +13,9 @@ index e799714e562d2653c75604b7331487e5f3c42067..badde621357a567965f0ef203e402e21
  
      protected void doFreezeConversion() {
 -        this.convertTo(EntityType.STRAY, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons
--        if (!this.isSilent()) {
 +        Stray stray = this.convertTo(EntityType.STRAY, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons // Paper - track result of conversion
-+        if (stray != null && !this.isSilent()) { // Paper - only send event if conversion succeeded
-             this.level.levelEvent((Player) null, 1048, this.blockPosition(), 0);
+         if (!this.isSilent()) {
+             this.level().levelEvent((Player) null, 1048, this.blockPosition(), 0);
          }
 +        // Paper start - reset conversion time to prevent event spam
 +        if (stray == null) {
@@ -27,7 +26,7 @@ index e799714e562d2653c75604b7331487e5f3c42067..badde621357a567965f0ef203e402e21
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
-index 45741410a13cffe3419e34b5607b048bbcf1c3ff..5d3b3cb3a882eb5d716f678095a65b28d0967476 100644
+index 98c41e87b644f79ebfd45af2e0d7b887a3f5d00b..e8f6c34ea789136d63c0aa88aec90203ef6282b5 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 @@ -239,6 +239,11 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
@@ -43,7 +42,7 @@ index 45741410a13cffe3419e34b5607b048bbcf1c3ff..5d3b3cb3a882eb5d716f678095a65b28
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
-index 5df28bd2d4e2d3c3c28bc35179e098289ecd07c5..67c012476519d93e2a4529b6cdccb0f1e53b52ad 100644
+index e7282012420da3be738ad47c2b15d7455bc2503f..ed7c5c38502781325610e4d97407024e143bb7b0 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
 @@ -113,6 +113,11 @@ public abstract class AbstractPiglin extends Monster {
