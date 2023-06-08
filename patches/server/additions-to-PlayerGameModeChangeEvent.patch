@@ -58,7 +58,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
 +        return event == null ? false : event.isCancelled();
 +    }
-+    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, net.kyori.adventure.text.Component message) {
++    @Nullable
++    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
 +        if (event == null || event.isCancelled()) {
 +            // Paper end
@@ -102,9 +103,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean changeGameModeForPlayer(GameType gameMode) {
 +        // Paper end
 +        PlayerGameModeChangeEvent event = this.changeGameModeForPlayer(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
-+        return event == null ? false : event.isCancelled();
++        return event != null && event.isCancelled();
 +    }
-+    public PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, net.kyori.adventure.text.Component cancelMessage) {
++    @Nullable
++    public PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component cancelMessage) {
 +        // Paper end
          if (gameMode == this.gameModeForPlayer) {
 -            return false;
@@ -138,7 +140,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      if (this.server.isHardcore()) {
 -                        this.player.setGameMode(GameType.SPECTATOR);
 +                        this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper
-                         ((GameRules.BooleanValue) this.player.getLevel().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS)).set(false, this.server);
+                         ((GameRules.BooleanValue) this.player.level().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS)).set(false, this.server);
                      }
                  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
