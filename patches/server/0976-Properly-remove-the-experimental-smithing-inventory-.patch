@@ -1,0 +1,130 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 8 Jun 2023 14:45:18 -0700
+Subject: [PATCH] Properly remove the experimental smithing inventory type
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/SmithingMenu.java b/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
+index dbfd36859010a1f950769708fbc5fc604c0754a9..7cc161b13f915dd8fe1ebc77169f1c2cbed2849b 100644
+--- a/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
+@@ -147,7 +147,7 @@ public class SmithingMenu extends ItemCombinerMenu {
+             return this.bukkitEntity;
+         }
+ 
+-        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventorySmithingNew(
++        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventorySmithing( // Paper
+                 access.getLocation(), this.inputSlots, this.resultSlots);
+         this.bukkitEntity = new CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
+         return this.bukkitEntity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+index bdaa739aa18a95894a165e9333a3e9d596fd7dc3..3075ba5f6d66316f27e618d8b279252e9520b9cb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+@@ -161,6 +161,7 @@ public class CraftContainer extends AbstractContainerMenu {
+             case STONECUTTER:
+                 return MenuType.STONECUTTER;
+             case SMITHING_NEW:
++            case SMITHING:
+                 return MenuType.SMITHING;
+             case CREATIVE:
+             case CRAFTING:
+@@ -204,7 +205,6 @@ public class CraftContainer extends AbstractContainerMenu {
+                 this.delegate = new HopperMenu(windowId, bottom, top);
+                 break;
+             case ANVIL:
+-            case SMITHING:
+                 this.setupAnvil(top, bottom); // SPIGOT-6783 - manually set up slots so we can use the delegated inventory and not the automatically created one
+                 break;
+             case BEACON:
+@@ -237,6 +237,7 @@ public class CraftContainer extends AbstractContainerMenu {
+             case MERCHANT:
+                 this.delegate = new MerchantMenu(windowId, bottom);
+                 break;
++            case SMITHING: // Paper
+             case SMITHING_NEW:
+                 this.setupSmithing(top, bottom); // SPIGOT-6783 - manually set up slots so we can use the delegated inventory and not the automatically created one
+                 break;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+index 092f6843e3b43d4c615d2eee344f5966e96ae850..10844fecc01370dcd0cc36f83e166bacb48ded30 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+@@ -536,8 +536,7 @@ public class CraftInventory implements Inventory {
+             return InventoryType.COMPOSTER;
+         } else if (this.inventory instanceof JukeboxBlockEntity) {
+             return InventoryType.JUKEBOX;
+-        } else if (this instanceof CraftInventorySmithingNew) {
+-            return InventoryType.SMITHING_NEW;
++            // Paper - remove
+         } else {
+             return InventoryType.CHEST;
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventorySmithing.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventorySmithing.java
+index b665e5ce358b54be7c3c9a5e0ab21fa9430a685b..d89c5d601a15a9b4787e5672a850cb4eaf3eced0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventorySmithing.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventorySmithing.java
+@@ -28,12 +28,12 @@ public class CraftInventorySmithing extends CraftResultInventory implements Smit
+ 
+     @Override
+     public ItemStack getResult() {
+-        return getItem(2);
++        return getItem(net.minecraft.world.inventory.SmithingMenu.RESULT_SLOT); // Paper
+     }
+ 
+     @Override
+     public void setResult(ItemStack item) {
+-        setItem(2, item);
++        setItem(net.minecraft.world.inventory.SmithingMenu.RESULT_SLOT, item); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventorySmithingNew.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventorySmithingNew.java
+deleted file mode 100644
+index 50c023f7f742f1466f75a217937ef664a619d753..0000000000000000000000000000000000000000
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventorySmithingNew.java
++++ /dev/null
+@@ -1,44 +0,0 @@
+-package org.bukkit.craftbukkit.inventory;
+-
+-import net.minecraft.world.Container;
+-import net.minecraft.world.inventory.ResultContainer;
+-import org.bukkit.Location;
+-import org.bukkit.inventory.ItemStack;
+-import org.bukkit.inventory.Recipe;
+-import org.bukkit.inventory.SmithingInventory;
+-
+-public class CraftInventorySmithingNew extends CraftResultInventory implements SmithingInventory {
+-
+-    private final Location location;
+-
+-    public CraftInventorySmithingNew(Location location, Container inventory, ResultContainer resultInventory) {
+-        super(inventory, resultInventory);
+-        this.location = location;
+-    }
+-
+-    @Override
+-    public ResultContainer getResultInventory() {
+-        return (ResultContainer) super.getResultInventory();
+-    }
+-
+-    @Override
+-    public Location getLocation() {
+-        return this.location;
+-    }
+-
+-    @Override
+-    public ItemStack getResult() {
+-        return getItem(3);
+-    }
+-
+-    @Override
+-    public void setResult(ItemStack item) {
+-        setItem(3, item);
+-    }
+-
+-    @Override
+-    public Recipe getRecipe() {
+-        net.minecraft.world.item.crafting.Recipe recipe = this.getResultInventory().getRecipeUsed();
+-        return (recipe == null) ? null : recipe.toBukkitRecipe();
+-    }
+-}
