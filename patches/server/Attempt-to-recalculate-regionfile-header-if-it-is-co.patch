@@ -30,7 +30,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  
-     public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState(), null); // Paper - Anti-Xray - Add preset block states
+     public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState());
      private static final Logger LOGGER = LogUtils.getLogger();
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading
 +        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading // Paper - diff on change
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
-         nbttagcompound.putString("Status", chunk.getStatus().getName());
+         nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getStatus()).toString());
          BlendingData blendingdata = chunk.getBlendingData();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -689,11 +689,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
+     public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap();
      private final Path folder;
      private final boolean sync;
- 
 +    private final boolean isChunkData; // Paper
-+
+ 
+     // Paper start - cache regionfile does not exist state
+     static final int MAX_NON_EXISTING_CACHE = 1024 * 64;
+@@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
+     // Paper end - cache regionfile does not exist state
+ 
      protected RegionFileStorage(Path directory, boolean dsync) { // Paper - protected constructor
 +        // Paper start - add isChunkData param
 +        this(directory, dsync, false);
@@ -705,12 +710,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.sync = dsync;
      }
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
-             FileUtil.createDirectoriesSafe(this.folder);
+             // Paper - only create directory if not existing only - moved down
              Path path = this.folder;
              int j = chunkcoordintpair.getRegionX();
 -            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
 +            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca"); // Paper - diff on change
-             if (existingOnly && !java.nio.file.Files.exists(path1)) return null; // CraftBukkit
+             if (existingOnly && !java.nio.file.Files.exists(path1)) { // Paper start - cache regionfile does not exist state
+                 this.markNonExisting(regionPos);
+                 return null; // CraftBukkit
+@@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
+             }
+             // Paper end - cache regionfile does not exist state
+             FileUtil.createDirectoriesSafe(this.folder); // Paper - only create directory if not existing only - moved from above
 -            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
 +            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
  

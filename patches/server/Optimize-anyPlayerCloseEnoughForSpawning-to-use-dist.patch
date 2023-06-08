@@ -38,17 +38,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInChunkTickRange;
 +    // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +
-     public ChunkHolder(ChunkPos pos, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.PlayerProvider playersWatchingChunkProvider, io.papermc.paper.chunk.system.scheduling.NewChunkHolder newChunkHolder) { // Paper - rewrite chunk system
-         this.newChunkHolder = newChunkHolder; // Paper - rewrite chunk system
-         this.chunkToSaveHistory = null;
+     // Paper start - replace player chunk loader
+     private final com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> playersSentChunkTo = new com.destroystokyo.paper.util.maplist.ReferenceList<>();
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
-     public final io.papermc.paper.chunk.PlayerChunkLoader playerChunkManager = new io.papermc.paper.chunk.PlayerChunkLoader(this, this.pooledLinkedPlayerHashSets); // Paper - replace chunk loader
++    public final io.papermc.paper.chunk.PlayerChunkLoader playerChunkManager = new io.papermc.paper.chunk.PlayerChunkLoader(this, this.pooledLinkedPlayerHashSets); // Paper - replace chunk loader
 +    // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +    // A note about the naming used here:
 +    // Previously, mojang used a "spawn range" of 8 for controlling both ticking and
@@ -62,7 +63,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
  
      void addPlayerToDistanceMaps(ServerPlayer player) {
-         this.playerChunkManager.addPlayer(player); // Paper - replace chunk loader
+         this.level.playerChunkLoader.addPlayer(player); // Paper - replace chunk loader
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
@@ -72,7 +73,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.playerMobDistanceMap.add(player, chunkX, chunkZ, io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player));
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      void removePlayerFromDistanceMaps(ServerPlayer player) {
-         this.playerChunkManager.removePlayer(player); // Paper - replace chunk loader
+         this.level.playerChunkLoader.removePlayer(player); // Paper - replace chunk loader
  
 +        // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerMobSpawnMap.remove(player);
@@ -84,7 +85,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
-         this.playerChunkManager.updatePlayer(player); // Paper - replace chunk loader
+         this.level.playerChunkLoader.updatePlayer(player); // Paper - replace chunk loader
 +        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
          // Paper start - per player mob spawning
          if (this.playerMobDistanceMap != null) {
@@ -213,14 +214,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
-     private static final int BLOCK_TICKING_LEVEL_THRESHOLD = 33;
+     private static final int INITIAL_TICKET_LIST_CAPACITY = 4;
      final Long2ObjectMap<ObjectSet<ServerPlayer>> playersPerChunk = new Long2ObjectOpenHashMap();
      // Paper - rewrite chunk system
 -    private final DistanceManager.FixedPlayerDistanceChunkTracker naturalSpawnChunkCounter = new DistanceManager.FixedPlayerDistanceChunkTracker(8);
 +    public static final int MOB_SPAWN_RANGE = 8; // private final DistanceManager.FixedPlayerDistanceChunkTracker naturalSpawnChunkCounter = new DistanceManager.FixedPlayerDistanceChunkTracker(8); // Paper - no longer used
-     //private final TickingTracker tickingTicketsTracker = new TickingTracker(); // Paper - no longer used
-     //private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33); // Paper - no longer used
      // Paper - rewrite chunk system
+     private final ChunkMap chunkMap; // Paper
+ 
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
          long i = chunkcoordintpair.toLong();
  
@@ -337,10 +338,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-     public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
+     public Integer clientViewDistance;
      // CraftBukkit end
      public boolean isRealPlayer; // Paper
 +    public double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
      public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
- 
+     public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - there are a lot of changes to do if we change all methods leading to the event
