@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Nov 2022 13:16:01 -0800
+Subject: [PATCH] check global player list where appropriate
+
+Makes certain entities check all players when searching for a player
+instead of just checking players in their world.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 5bdae591d344fc9b72ffcc1a44fb5e495b1e6bb2..37873ea2876a89ac8ea702ab0a71171e044852bc 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2805,4 +2805,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
+         }
+     }
++
++    // Paper start
++    @Override
++    @Nullable
++    public Player getGlobalPlayerByUUID(UUID uuid) {
++        return this.server.getPlayerList().getPlayer(uuid);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index e489459a78ed945cfc345f4e3329bdd41e2bfb6f..d688308e12f44100e6296740f600ec3b064efe88 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3620,7 +3620,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public void onItemPickup(ItemEntity item) {
+-        Entity entity = item.getOwner();
++        Entity entity = item.thrower != null ? this.level().getGlobalPlayerByUUID(item.thrower) : null; // Paper - check all players
+ 
+         if (entity instanceof ServerPlayer) {
+             CriteriaTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.trigger((ServerPlayer) entity, item.getItem(), this);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java b/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
+index 59ed51907fc21784b37a55ee01207d8a730ae29a..25ed5571b24e590bc95056020d84496492b53298 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
+@@ -269,7 +269,7 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+         entityvillager.finalizeSpawn(world, world.getCurrentDifficultyAt(entityvillager.blockPosition()), MobSpawnType.CONVERSION, (SpawnGroupData) null, (CompoundTag) null);
+         entityvillager.refreshBrain(world);
+         if (this.conversionStarter != null) {
+-            Player entityhuman = world.getPlayerByUUID(this.conversionStarter);
++            Player entityhuman = world.getGlobalPlayerByUUID(this.conversionStarter); // Paper - check all players
+ 
+             if (entityhuman instanceof ServerPlayer) {
+                 CriteriaTriggers.CURED_ZOMBIE_VILLAGER.trigger((ServerPlayer) entityhuman, this, entityvillager);
+diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
+index d860ddae508f53d06f74d8ae0efdfc500c1ddf07..3b959f42d958bf0f426853aee56753d6c455fcdb 100644
+--- a/src/main/java/net/minecraft/world/level/EntityGetter.java
++++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
+@@ -243,4 +243,11 @@ public interface EntityGetter {
+ 
+         return null;
+     }
++
++    // Paper start
++    @Nullable
++    default Player getGlobalPlayerByUUID(UUID uuid) {
++        return this.getPlayerByUUID(uuid);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+index faad948f089575e4988d989790cc1dd13f8a79cd..5935cf23ec11ae48b6c7cec9bd696d10d808e729 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+@@ -100,6 +100,13 @@ public class SculkShriekerBlockEntity extends BlockEntity implements GameEventLi
+ 
+     @Nullable
+     public static ServerPlayer tryGetPlayer(@Nullable Entity entity) {
++        // Paper start - ensure level is the same for sculk events
++        final ServerPlayer player = tryGetPlayer0(entity);
++        return player != null && player.level() == entity.level() ? player : null;
++    }
++    @Nullable
++    private static ServerPlayer tryGetPlayer0(@Nullable Entity entity) {
++        // Paper end
+         if (entity instanceof ServerPlayer serverPlayer) {
+             return serverPlayer;
+         } else {
