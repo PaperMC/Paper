@@ -29,7 +29,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private int count;
      private Player followingPlayer;
 +    // Paper start
++    @javax.annotation.Nullable
 +    public java.util.UUID sourceEntityId;
++    @javax.annotation.Nullable
 +    public java.util.UUID triggerEntityId;
 +    public org.bukkit.entity.ExperienceOrb.SpawnReason spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
 +
@@ -73,11 +75,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this(world, x, y, z, amount, null, null);
 +    }
 +
-+    public ExperienceOrb(Level world, double d0, double d1, double d2, int i, org.bukkit.entity.ExperienceOrb.SpawnReason reason, Entity triggerId) {
++    public ExperienceOrb(Level world, double d0, double d1, double d2, int i, @javax.annotation.Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @javax.annotation.Nullable Entity triggerId) {
 +        this(world, d0, d1, d2, i, reason, triggerId, null);
 +    }
 +
-+    public ExperienceOrb(Level world, double d0, double d1, double d2, int i, org.bukkit.entity.ExperienceOrb.SpawnReason reason, Entity triggerId, Entity sourceId) {
++    public ExperienceOrb(Level world, double d0, double d1, double d2, int i, @javax.annotation.Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @javax.annotation.Nullable Entity triggerId, @javax.annotation.Nullable Entity sourceId) {
          this(EntityType.EXPERIENCE_ORB, world);
 -        this.setPos(x, y, z);
 +        this.sourceEntityId = sourceId != null ? sourceId.getUUID() : null;
@@ -149,11 +151,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/animal/Animal.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Animal.java
 @@ -0,0 +0,0 @@ public abstract class Animal extends AgeableMob {
+ 
+     public void finalizeSpawnChildFromBreeding(ServerLevel worldserver, Animal entityanimal, @Nullable AgeableMob entityageable, int experience) {
+         // CraftBukkit end
+-        Optional.ofNullable(this.getLoveCause()).or(() -> {
+-            return Optional.ofNullable(entityanimal.getLoveCause());
+-        }).ifPresent((entityplayer) -> {
++        // Paper start
++        ServerPlayer entityplayer = this.getLoveCause();
++        if (entityplayer == null) entityplayer = entityanimal.getLoveCause();
++        if (entityplayer != null) {
++            // Paper end
+             entityplayer.awardStat(Stats.ANIMALS_BRED);
+             CriteriaTriggers.BRED_ANIMALS.trigger(entityplayer, this, entityanimal, entityageable);
+-        });
++        } // Paper
+         this.setAge(6000);
+         entityanimal.setAge(6000);
+         this.resetLove();
+@@ -0,0 +0,0 @@ public abstract class Animal extends AgeableMob {
          if (worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
              // CraftBukkit start - use event experience
              if (experience > 0) {
 -                worldserver.addFreshEntity(new ExperienceOrb(worldserver, this.getX(), this.getY(), this.getZ(), experience));
-+                worldserver.addFreshEntity(new ExperienceOrb(worldserver, this.getX(), this.getY(), this.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, null)); // Paper //TODO trigger
++                worldserver.addFreshEntity(new ExperienceOrb(worldserver, this.getX(), this.getY(), this.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper
              }
              // CraftBukkit end
          }
