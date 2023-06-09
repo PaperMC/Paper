@@ -133,13 +133,13 @@ allprojects {
 
 tasks.collectAtsFromPatches {
     // Uncomment while updating for a new Minecraft version
-    extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
+    // extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
 }
 
 // Uncomment while updating for a new Minecraft version
-tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches> {
-    filterPatches.set(false)
-}
+// tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches> {
+//     filterPatches.set(false)
+// }
 
 tasks.register("printMinecraftVersion") {
     doLast {
