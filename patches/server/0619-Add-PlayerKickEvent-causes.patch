@@ -88,7 +88,7 @@ index c68bac4727f6b2ca95fc8c438303097af14286f2..bb629ec263959c8268de88ca807bddb6
                  return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
              }, true);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 707f0e0bdd3617fac987dacea36df6c363ca71ca..18bdc328dd80e637c3e8cb8a12bd7bfead163191 100644
+index 707f0e0bdd3617fac987dacea36df6c363ca71ca..2f04823ef4143223ae1e1d108f9ff5721c575039 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -362,7 +362,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -146,13 +146,13 @@ index 707f0e0bdd3617fac987dacea36df6c363ca71ca..18bdc328dd80e637c3e8cb8a12bd7bfe
      public void disconnect(final Component reason) {
 -        this.disconnect(PaperAdventure.asAdventure(reason));
 +        this.disconnect(PaperAdventure.asAdventure(reason), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++    }
++
++    public void disconnect(final Component reason, PlayerKickEvent.Cause cause) {
++        this.disconnect(PaperAdventure.asAdventure(reason), cause);
      }
  
 -    public void disconnect(net.kyori.adventure.text.Component reason) {
-+    public void disconnect(final Component reason, PlayerKickEvent.Cause cause) {
-+        this.disconnect(PaperAdventure.asAdventure(reason), cause);
-+    }
-+
 +    public void disconnect(net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
          // Paper end
          // CraftBukkit start - fire PlayerKickEvent
@@ -193,7 +193,7 @@ index 707f0e0bdd3617fac987dacea36df6c363ca71ca..18bdc328dd80e637c3e8cb8a12bd7bfe
                  return;
              }
  
-@@ -827,7 +837,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -827,13 +837,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - run this async
          // CraftBukkit start
          if (this.chatSpamTickCount.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit && !this.server.getPlayerList().isOp(this.player.getGameProfile())) { // Paper start - split and make configurable
@@ -202,6 +202,13 @@ index 707f0e0bdd3617fac987dacea36df6c363ca71ca..18bdc328dd80e637c3e8cb8a12bd7bfe
              return;
          }
          // Paper start
+         String str = packet.getCommand(); int index = -1;
+         if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64)) {
+-            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]))); // Paper
++            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper
+             return;
+         }
+         // Paper end
 @@ -986,7 +996,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          // Paper start - validate pick item position
          if (!(packet.getSlot() >= 0 && packet.getSlot() < this.player.getInventory().items.size())) {
