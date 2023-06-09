@@ -21,15 +21,30 @@ index 834c5e3fbff3819f3f72e95a1072d9b9e57f25b3..294d22b6b27e96b59c77527efcfefa94
          world.playSound((Player)null, pos, SoundEvents.FROGSPAWN_HATCH, SoundSource.BLOCKS, 1.0F, 1.0F);
          this.spawnTadpoles(world, pos, random);
 diff --git a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
-index 1e115adfcfee518667559100d04050f5e71c8a23..9511c116189ebdfaf38bd001c37e59fdde2a1854 100644
+index 1e115adfcfee518667559100d04050f5e71c8a23..8f08a977f7433b8237aff26c6d03d821a843c261 100644
 --- a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
-@@ -60,6 +60,11 @@ public class SnifferEggBlock extends Block {
+@@ -54,12 +54,26 @@ public class SnifferEggBlock extends Block {
+         return this.getHatchLevel(state) == 2;
+     }
+ 
++    // Paper start
++    private void rescheduleTick(ServerLevel world, BlockPos pos) {
++        int baseDelay = hatchBoost(world, pos) ? 12000 : 24000;
++        world.scheduleTick(pos, this, (baseDelay / 3) + world.random.nextInt(300));
++        // reschedule to avoid being stuck here and behave like the other calls (see #onPlace)
++    }
++    // Paper end
++
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (!this.isReadyToHatch(state)) {
              world.playSound((Player)null, pos, SoundEvents.SNIFFER_EGG_CRACK, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
              world.setBlock(pos, state.setValue(HATCH, Integer.valueOf(this.getHatchLevel(state) + 1)), 2);
          } else {
 +            // Paper start - Call BlockFadeEvent
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) {
++                rescheduleTick(world, pos);
 +                return;
 +            }
 +            // Paper end
