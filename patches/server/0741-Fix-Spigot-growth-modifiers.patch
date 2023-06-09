@@ -4,8 +4,8 @@ Date: Fri, 3 Dec 2021 17:09:24 -0800
 Subject: [PATCH] Fix Spigot growth modifiers
 
 Fixes kelp modifier changing growth for other crops
-Also add growth modifiers for glow berries, mangrove propagules
-and torchflower crops
+Also add growth modifiers for glow berries, mangrove propagules,
+torchflower crops and pitcher plant crops
 Also fix above-mentioned modifiers from having the reverse effect
 
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
@@ -87,8 +87,21 @@ index 5d78348fc18b22ccb7ad109890f867e20efec047..44c78f0d56c3459c063c104e401a521e
                  this.advanceTree(world, pos, state, random);
              }
  
+diff --git a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+index 593eae04ecf6dee86c9c3664ddcdc3f86d042e66..849c0ae6ca30691134f51e5d4d5da372e0e728bd 100644
+--- a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+@@ -116,7 +116,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         float f = CropBlock.getGrowthSpeed(this, world, pos);
+-        boolean bl = random.nextInt((int)(25.0F / f) + 1) == 0;
++        boolean bl = random.nextFloat() < (world.spigotConfig.pitcherPlantModifier / (100.0F * (Math.floor(25.0F / f) + 1))); // Paper
+         if (bl) {
+             this.grow(world, state, pos, 1);
+         }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index b7d6197cb5f46bb020fff049ae2dd8fc3ee8ff2f..8c45f28450bc1079ee5d184591f1ac03babced4e 100644
+index b7d6197cb5f46bb020fff049ae2dd8fc3ee8ff2f..38da4cc3fe3be86e43432de942a1290fa8215474 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -96,6 +96,7 @@ public class SpigotWorldConfig
@@ -99,15 +112,16 @@ index b7d6197cb5f46bb020fff049ae2dd8fc3ee8ff2f..8c45f28450bc1079ee5d184591f1ac03
      public int wheatModifier;
      public int wartModifier;
      public int vineModifier;
-@@ -106,6 +107,7 @@ public class SpigotWorldConfig
+@@ -106,6 +107,8 @@ public class SpigotWorldConfig
      public int twistingVinesModifier;
      public int weepingVinesModifier;
      public int caveVinesModifier;
 +    public int glowBerryModifier; // Paper
++    public int pitcherPlantModifier; // Paper
      private int getAndValidateGrowth(String crop)
      {
          int modifier = this.getInt( "growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100 );
-@@ -129,6 +131,7 @@ public class SpigotWorldConfig
+@@ -129,6 +132,7 @@ public class SpigotWorldConfig
          this.beetrootModifier = this.getAndValidateGrowth( "Beetroot" );
          this.carrotModifier = this.getAndValidateGrowth( "Carrot" );
          this.potatoModifier = this.getAndValidateGrowth( "Potato" );
@@ -115,11 +129,12 @@ index b7d6197cb5f46bb020fff049ae2dd8fc3ee8ff2f..8c45f28450bc1079ee5d184591f1ac03
          this.wheatModifier = this.getAndValidateGrowth( "Wheat" );
          this.wartModifier = this.getAndValidateGrowth( "NetherWart" );
          this.vineModifier = this.getAndValidateGrowth( "Vine" );
-@@ -139,6 +142,7 @@ public class SpigotWorldConfig
+@@ -139,6 +143,8 @@ public class SpigotWorldConfig
          this.twistingVinesModifier = this.getAndValidateGrowth( "TwistingVines" );
          this.weepingVinesModifier = this.getAndValidateGrowth( "WeepingVines" );
          this.caveVinesModifier = this.getAndValidateGrowth( "CaveVines" );
 +        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry"); // Paper
++        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant"); // Paper
      }
  
      public double itemMerge;
