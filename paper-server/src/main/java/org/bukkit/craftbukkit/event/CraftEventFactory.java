@@ -195,6 +195,7 @@ import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.entity.SpawnerSpawnEvent;
 import org.bukkit.event.entity.StriderTemperatureChangeEvent;
 import org.bukkit.event.entity.VillagerCareerChangeEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -1516,6 +1517,21 @@ public class CraftEventFactory {
         PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
         event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
         event.getInventory().setResult(event.getResult());
+        return event;
+    }
+
+    /**
+     * Mob spawner event.
+     */
+    public static SpawnerSpawnEvent callSpawnerSpawnEvent(Entity spawnee, BlockPosition pos) {
+        org.bukkit.craftbukkit.entity.CraftEntity entity = spawnee.getBukkitEntity();
+        BlockState state = CraftBlock.at(spawnee.level(), pos).getState();
+        if (!(state instanceof org.bukkit.block.CreatureSpawner)) {
+            state = null;
+        }
+
+        SpawnerSpawnEvent event = new SpawnerSpawnEvent(entity, (org.bukkit.block.CreatureSpawner) state);
+        entity.getServer().getPluginManager().callEvent(event);
         return event;
     }
 
