@@ -2310,7 +2310,7 @@ index 95eac2e12a16938d81ab512b00e90c5234b42834..8f7bf1f0400aeab8b7801d113d244d07
      private ChunkSystem() {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..436111365e26be6233ea36b64c1574c823f65406
+index 0000000000000000000000000000000000000000..c5507553d735bbb82cbbce0308138c5a82ccc3f9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
 @@ -0,0 +1,1417 @@
@@ -2896,14 +2896,14 @@ index 0000000000000000000000000000000000000000..436111365e26be6233ea36b64c1574c8
 +
 +        private static int getLoadViewDistance(final int tickViewDistance, final int playerLoadViewDistance,
 +                                               final int worldLoadViewDistance) {
-+            return Math.max(tickViewDistance, playerLoadViewDistance < 0 ? worldLoadViewDistance : playerLoadViewDistance);
++            return Math.max(tickViewDistance + 1, playerLoadViewDistance < 0 ? worldLoadViewDistance : playerLoadViewDistance);
 +        }
 +
 +        private static int getSendViewDistance(final int loadViewDistance, final int clientViewDistance,
 +                                               final int playerSendViewDistance, final int worldSendViewDistance) {
 +            return Math.min(
-+                loadViewDistance,
-+                playerSendViewDistance < 0 ? (!GlobalConfiguration.get().chunkLoadingAdvanced.autoConfigSendDistance || clientViewDistance < 0 ? (worldSendViewDistance < 0 ? loadViewDistance : worldSendViewDistance) : clientViewDistance) : playerSendViewDistance
++                loadViewDistance - 1,
++                playerSendViewDistance < 0 ? (!GlobalConfiguration.get().chunkLoadingAdvanced.autoConfigSendDistance || clientViewDistance < 0 ? (worldSendViewDistance < 0 ? (loadViewDistance - 1) : worldSendViewDistance) : clientViewDistance + 1) : playerSendViewDistance
 +            );
 +        }
 +
@@ -2976,7 +2976,7 @@ index 0000000000000000000000000000000000000000..436111365e26be6233ea36b64c1574c8
 +        private boolean wantChunkSent(final int chunkX, final int chunkZ) {
 +            final int dx = this.lastChunkX - chunkX;
 +            final int dz = this.lastChunkZ - chunkZ;
-+            return Math.max(Math.abs(dx), Math.abs(dz)) <= this.lastSendDistance && wantChunkLoaded(
++            return (Math.max(Math.abs(dx), Math.abs(dz)) <= (this.lastSendDistance + 1)) && wantChunkLoaded(
 +                this.lastChunkX, this.lastChunkZ, chunkX, chunkZ, this.lastSendDistance
 +            );
 +        }
@@ -3317,7 +3317,7 @@ index 0000000000000000000000000000000000000000..436111365e26be6233ea36b64c1574c8
 +                // everything <= sendDistance
 +                // Note: Vanilla may want to send chunks outside the send view distance, so we do need
 +                // the dist <= view check
-+                final boolean sendChunk = squareDistance <= sendViewDistance
++                final boolean sendChunk = (squareDistance <= (sendViewDistance + 1))
 +                    && wantChunkLoaded(currentChunkX, currentChunkZ, chunkX, chunkZ, sendViewDistance);
 +                final boolean sentChunk = sendChunk ? this.sentChunks.contains(chunk) : this.sentChunks.remove(chunk);
 +
@@ -17636,7 +17636,7 @@ index 4620e64d8eb81520b75fbfbc64603e5887c7b016..c5389e7f3665c06e487dfde3200b7e22
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 19bd6f9aee3ccb1af1b010ee51a54aa2d0bf9c84..a502d293cedb2f507e6cf1792429b36685ed1910 100644
+index 19bd6f9aee3ccb1af1b010ee51a54aa2d0bf9c84..6f30a16595e352e32375530a0482d8c0ee9c1113 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -127,10 +127,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -18461,7 +18461,7 @@ index 19bd6f9aee3ccb1af1b010ee51a54aa2d0bf9c84..a502d293cedb2f507e6cf1792429b366
 -                    this.updateChunkTracking(entityplayer, chunkcoordintpair, mutableobject, flag, flag1);
 -                });
 -            }
-+            this.level.playerChunkLoader.setLoadDistance(this.viewDistance); // Paper - replace player loader system
++            this.level.playerChunkLoader.setLoadDistance(this.viewDistance + 1); // Paper - replace player loader system
          }
  
      }
