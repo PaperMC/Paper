@@ -2896,14 +2896,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        private static int getLoadViewDistance(final int tickViewDistance, final int playerLoadViewDistance,
 +                                               final int worldLoadViewDistance) {
-+            return Math.max(tickViewDistance, playerLoadViewDistance < 0 ? worldLoadViewDistance : playerLoadViewDistance);
++            return Math.max(tickViewDistance + 1, playerLoadViewDistance < 0 ? worldLoadViewDistance : playerLoadViewDistance);
 +        }
 +
 +        private static int getSendViewDistance(final int loadViewDistance, final int clientViewDistance,
 +                                               final int playerSendViewDistance, final int worldSendViewDistance) {
 +            return Math.min(
-+                loadViewDistance,
-+                playerSendViewDistance < 0 ? (!GlobalConfiguration.get().chunkLoadingAdvanced.autoConfigSendDistance || clientViewDistance < 0 ? (worldSendViewDistance < 0 ? loadViewDistance : worldSendViewDistance) : clientViewDistance) : playerSendViewDistance
++                loadViewDistance - 1,
++                playerSendViewDistance < 0 ? (!GlobalConfiguration.get().chunkLoadingAdvanced.autoConfigSendDistance || clientViewDistance < 0 ? (worldSendViewDistance < 0 ? (loadViewDistance - 1) : worldSendViewDistance) : clientViewDistance + 1) : playerSendViewDistance
 +            );
 +        }
 +
@@ -2976,7 +2976,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        private boolean wantChunkSent(final int chunkX, final int chunkZ) {
 +            final int dx = this.lastChunkX - chunkX;
 +            final int dz = this.lastChunkZ - chunkZ;
-+            return Math.max(Math.abs(dx), Math.abs(dz)) <= this.lastSendDistance && wantChunkLoaded(
++            return (Math.max(Math.abs(dx), Math.abs(dz)) <= (this.lastSendDistance + 1)) && wantChunkLoaded(
 +                this.lastChunkX, this.lastChunkZ, chunkX, chunkZ, this.lastSendDistance
 +            );
 +        }
@@ -3317,7 +3317,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // everything <= sendDistance
 +                // Note: Vanilla may want to send chunks outside the send view distance, so we do need
 +                // the dist <= view check
-+                final boolean sendChunk = squareDistance <= sendViewDistance
++                final boolean sendChunk = (squareDistance <= (sendViewDistance + 1))
 +                    && wantChunkLoaded(currentChunkX, currentChunkZ, chunkX, chunkZ, sendViewDistance);
 +                final boolean sentChunk = sendChunk ? this.sentChunks.contains(chunk) : this.sentChunks.remove(chunk);
 +
@@ -18461,7 +18461,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    this.updateChunkTracking(entityplayer, chunkcoordintpair, mutableobject, flag, flag1);
 -                });
 -            }
-+            this.level.playerChunkLoader.setLoadDistance(this.viewDistance); // Paper - replace player loader system
++            this.level.playerChunkLoader.setLoadDistance(this.viewDistance + 1); // Paper - replace player loader system
          }
  
      }
