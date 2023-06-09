@@ -6,7 +6,7 @@ Subject: [PATCH] Remote Connections shouldn't hold up shutdown
 Bugs in the connection logic appears to leave stale connections even, preventing shutdown
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index c2f5d3153591d48c6c2afdec049a7b390066bfdb..f4c7866a27319b2da8c00e8fe9b8f1f6306045ab 100644
+index c2f5d3153591d48c6c2afdec049a7b390066bfdb..aa1622fb3ea1f349b539e09c811de0f297a86076 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -391,11 +391,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -14,12 +14,31 @@ index c2f5d3153591d48c6c2afdec049a7b390066bfdb..f4c7866a27319b2da8c00e8fe9b8f1f6
  
          if (this.rconThread != null) {
 -            this.rconThread.stop();
-+            //this.remoteControlListener.b(); // Paper - don't wait for remote connections
++            this.rconThread.stopNonBlocking(); // Paper - don't wait for remote connections
          }
  
          if (this.queryThreadGs4 != null) {
 -            this.queryThreadGs4.stop();
-+            //this.remoteStatusListener.b(); // Paper - don't wait for remote connections
++            // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
          }
  
          System.exit(0); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+index 3bf60f640aa9fa4cabd2b3e5d3931e8467b9df24..2c1289aa2bf8b7bb67709190263b82b811c17fff 100644
+--- a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
++++ b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+@@ -107,6 +107,14 @@ public class RconThread extends GenericThread {
+ 
+         this.clients.clear();
+     }
++    // Paper start
++    public void stopNonBlocking() {
++        this.running = false;
++        for (RconClient client : this.clients) {
++            client.running = false;
++        }
++    }
++    // Paper stop
+ 
+     private void closeSocket(ServerSocket socket) {
+         LOGGER.debug("closeSocket: {}", (Object)socket);
