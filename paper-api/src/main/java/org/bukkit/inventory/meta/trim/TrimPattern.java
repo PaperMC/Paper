@@ -54,4 +54,24 @@ public interface TrimPattern extends Keyed {
      * {@link Material#SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE}.
      */
     public static final TrimPattern SPIRE = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft("spire"));
+    /**
+     * {@link Material#WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE}.
+     */
+    public static final TrimPattern WAYFINDER = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft("wayfinder"));
+    /**
+     * {@link Material#SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE}.
+     */
+    public static final TrimPattern SHAPER = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft("shaper"));
+    /**
+     * {@link Material#SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE}.
+     */
+    public static final TrimPattern SILENCE = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft("silence"));
+    /**
+     * {@link Material#RAISER_ARMOR_TRIM_SMITHING_TEMPLATE}.
+     */
+    public static final TrimPattern RAISER = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft("raiser"));
+    /**
+     * {@link Material#HOST_ARMOR_TRIM_SMITHING_TEMPLATE}.
+     */
+    public static final TrimPattern HOST = Registry.TRIM_PATTERN.get(NamespacedKey.minecraft("host"));
 }
