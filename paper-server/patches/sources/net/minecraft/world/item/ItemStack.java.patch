@@ -152,7 +152,7 @@
              });
          }
      }
-@@ -370,32 +418,191 @@
+@@ -370,32 +418,195 @@
      }
  
      public InteractionResult useOn(UseOnContext context) {
@@ -323,7 +323,11 @@
 +
 +                        // SPIGOT-1288 - play sound stripped from ItemBlock
 +                        if (this.item instanceof BlockItem) {
-+                            SoundType soundeffecttype = ((BlockItem) this.item).getBlock().defaultBlockState().getSoundType(); // TODO: not strictly correct, however currently only affects decorated pots
++                        // Paper start - Fix spigot sound playing for BlockItem ItemStacks
++                        BlockPos position = new net.minecraft.world.item.context.BlockPlaceContext(context).getClickedPos();
++                        net.minecraft.world.level.block.state.BlockState blockData = world.getBlockState(position);
++                        SoundType soundeffecttype = blockData.getSoundType();
++                        // Paper end - Fix spigot sound playing for BlockItem ItemStacks
 +                            world.playSound(entityhuman, blockposition, soundeffecttype.getPlaceSound(), SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
 +                        }
 +
@@ -349,7 +353,7 @@
          ItemStack itemstack = this.copy();
          boolean flag = this.getUseDuration(user) <= 0;
          InteractionResult enuminteractionresult = this.getItem().use(world, user, hand);
-@@ -490,27 +697,66 @@
+@@ -490,27 +701,66 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
@@ -423,7 +427,7 @@
  
              this.shrink(1);
              breakCallback.accept(item);
-@@ -518,7 +764,7 @@
+@@ -518,7 +768,7 @@
  
      }
  
@@ -432,7 +436,7 @@
          if (player instanceof ServerPlayer entityplayer) {
              int j = this.processDurabilityChange(amount, entityplayer.serverLevel(), entityplayer);
  
-@@ -535,6 +781,11 @@
+@@ -535,6 +785,11 @@
      }
  
      public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
@@ -444,7 +448,7 @@
          Level world = entity.level();
  
          if (world instanceof ServerLevel worldserver) {
-@@ -546,9 +797,9 @@
+@@ -546,9 +801,9 @@
                  entityplayer = null;
              }
  
@@ -457,7 +461,7 @@
          }
  
      }
-@@ -580,11 +831,11 @@
+@@ -580,11 +835,11 @@
          return this.getItem().getBarColor(this);
      }
  
@@ -471,7 +475,7 @@
          return this.getItem().overrideOtherStackedOnMe(this, stack, slot, clickType, player, cursorStackReference);
      }
  
-@@ -592,8 +843,8 @@
+@@ -592,8 +847,8 @@
          Item item = this.getItem();
  
          if (item.hurtEnemy(this, target, user)) {
@@ -482,7 +486,7 @@
  
                  entityhuman.awardStat(Stats.ITEM_USED.get(item));
              }
-@@ -608,7 +859,7 @@
+@@ -608,7 +863,7 @@
          this.getItem().postHurtEnemy(this, target, user);
      }
  
@@ -491,7 +495,7 @@
          Item item = this.getItem();
  
          if (item.mineBlock(this, world, state, pos, miner)) {
-@@ -617,11 +868,11 @@
+@@ -617,11 +872,11 @@
  
      }
  
@@ -505,7 +509,7 @@
          return this.getItem().interactLivingEntity(this, user, entity, hand);
      }
  
-@@ -736,7 +987,7 @@
+@@ -736,7 +991,7 @@
  
      }
  
@@ -514,7 +518,7 @@
          player.awardStat(Stats.ITEM_CRAFTED.get(this.getItem()), amount);
          this.getItem().onCraftedBy(this, world, player);
      }
-@@ -770,6 +1021,12 @@
+@@ -770,6 +1025,12 @@
          return this.getItem().useOnRelease(this);
      }
  
@@ -527,7 +531,7 @@
      @Nullable
      public <T> T set(DataComponentType<? super T> type, @Nullable T value) {
          return this.components.set(type, value);
-@@ -806,6 +1063,25 @@
+@@ -806,6 +1067,25 @@
          }
      }
  
@@ -553,7 +557,7 @@
      public void applyComponents(DataComponentPatch changes) {
          this.components.applyPatch(changes);
          this.getItem().verifyComponentsAfterLoad(this);
-@@ -858,7 +1134,7 @@
+@@ -858,7 +1138,7 @@
      }
  
      private <T extends TooltipProvider> void addToTooltip(DataComponentType<T> componentType, Item.TooltipContext context, Consumer<Component> textConsumer, TooltipFlag type) {
@@ -562,7 +566,7 @@
  
          if (t0 != null) {
              t0.addToTooltip(context, textConsumer, type);
-@@ -866,7 +1142,7 @@
+@@ -866,7 +1146,7 @@
  
      }
  
@@ -571,7 +575,7 @@
          boolean flag = this.getItem().shouldPrintOpWarning(this, player);
  
          if (!type.isCreative() && this.has(DataComponents.HIDE_TOOLTIP)) {
-@@ -941,7 +1217,7 @@
+@@ -941,7 +1221,7 @@
          }
      }
  
@@ -580,7 +584,7 @@
          ItemAttributeModifiers itemattributemodifiers = (ItemAttributeModifiers) this.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
  
          if (itemattributemodifiers.showInTooltip()) {
-@@ -966,7 +1242,7 @@
+@@ -966,7 +1246,7 @@
          }
      }
  
@@ -589,7 +593,7 @@
          double d0 = modifier.amount();
          boolean flag = false;
  
-@@ -1091,6 +1367,14 @@
+@@ -1091,6 +1371,14 @@
          EnchantmentHelper.forEachModifier(this, slot, attributeModifierConsumer);
      }
  
@@ -604,7 +608,7 @@
      public Component getDisplayName() {
          MutableComponent ichatmutablecomponent = Component.empty().append(this.getHoverName());
  
-@@ -1153,7 +1437,7 @@
+@@ -1153,7 +1441,7 @@
      }
  
      public void consume(int amount, @Nullable LivingEntity entity) {
