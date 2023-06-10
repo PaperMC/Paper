@@ -1,0 +1,241 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 9 Jun 2023 21:35:22 -0400
+Subject: [PATCH] Add PlayerPlaceBlockEvent/PostPlayerPlaceBlockEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerPlaceBlockEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerPlaceBlockEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..69326e1e4493480a577237ac81d194c6087f03b5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerPlaceBlockEvent.java
+@@ -0,0 +1,106 @@
++package io.papermc.paper.event.player;
++
++import io.papermc.paper.math.BlockPosition;
++import org.bukkit.Bukkit;
++import org.bukkit.Material;
++import org.bukkit.block.BlockState;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when a player places a block in the world.
++ * <p>
++ * <b>Note:</b> Unlike the {@link org.bukkit.event.block.BlockPlaceEvent} and {@link org.bukkit.event.block.BlockMultiPlaceEvent}, the block will not exist in the world
++ * at the time this event is called. In order to get the block state that will be placed into the world, use the {@link PlayerPlaceBlockEvent#getPlaceState()} method.
++ */
++public class PlayerPlaceBlockEvent extends PlayerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull
++    private final ItemStack itemStack;
++    @NotNull
++    private final BlockPosition placePos;
++    @NotNull
++    private BlockState placeState;
++    private boolean cancelled;
++
++    public PlayerPlaceBlockEvent(@NotNull Player player, @NotNull ItemStack itemStack, @NotNull BlockPosition placePos, @NotNull BlockState placeState) {
++        super(player);
++        this.itemStack = itemStack;
++        this.placePos = placePos;
++        this.placeState = placeState;
++    }
++
++    /**
++     * Gets the place that this block was placed.
++     * @return position that this block was placed
++     */
++    @NotNull
++    public BlockPosition getPlacePos() {
++        return this.placePos;
++    }
++
++    /**
++     * Gets the itemstack used to place the block(s).
++     *
++     * @return itemstack
++     */
++    @NotNull
++    public ItemStack getItemStack() {
++        return this.itemStack;
++    }
++
++    @NotNull
++    public BlockState getPlaceState() {
++        return this.placeState;
++    }
++
++    // TODO: BETTER BLOCK STATE API
++//    /**
++//     * Sets the block state that is being placed in the world.
++//     *
++//     * @param blockState block
++//     */
++//    public void setBlockData(@NotNull BlockState blockState) {
++//        this.placeState = blockState;
++//    }
++
++    /**
++     * Gets the cancellation state of this event. A cancelled event will not
++     * be executed in the server, but will still pass to other plugins
++     *
++     * @return true if this event is cancelled
++     */
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    /**
++     * Sets the cancellation state of this event. A cancelled event will not
++     * be executed in the server, but will still pass to other plugins.
++     *
++     * @param cancel true if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/PostPlayerPlaceBlockEvent.java b/src/main/java/io/papermc/paper/event/player/PostPlayerPlaceBlockEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fd7fa3248bfe0e556f09834955d44530dd79d87d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PostPlayerPlaceBlockEvent.java
+@@ -0,0 +1,82 @@
++package io.papermc.paper.event.player;
++
++import io.papermc.paper.math.BlockPosition;
++import org.bukkit.block.BlockState;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collection;
++import java.util.List;
++
++/**
++ * Called after a player places a block in the world.
++ * This allows you to access all block states that were changed in an event.
++ * <p>
++ * Getting the block in the world in this event call is <b>undefined behavior</b>.
++ * <p>
++ * <b>Note:</b> Unlike the {@link org.bukkit.event.block.BlockPlaceEvent} and {@link org.bukkit.event.block.BlockMultiPlaceEvent}, this event is unable to be cancelled.
++ * This is due to the fact that it is not possible to properly ensure that we are able to recover the state of the world from before a block placement.
++ */
++public class PostPlayerPlaceBlockEvent extends PlayerEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull
++    private final ItemStack itemStack;
++    @NotNull
++    private final BlockPosition placePos;
++    @NotNull
++    private Collection<BlockState> placedBlocks;
++
++    public PostPlayerPlaceBlockEvent(@NotNull Player player, @NotNull ItemStack itemStack, @NotNull BlockPosition placePos, @NotNull Collection<BlockState> placedBlocks) {
++        super(player);
++        this.itemStack = itemStack;
++        this.placePos = placePos;
++        this.placedBlocks = placedBlocks;
++    }
++
++    /**
++     * Gets the place that this block was placed.
++     * @return position that this block was placed
++     */
++    @NotNull
++    public BlockPosition getPlacePos() {
++        return this.placePos;
++    }
++
++    /**
++     * Gets the itemstack used to place the block(s).
++     *
++     * @return itemstack
++     */
++    @NotNull
++    public ItemStack getItemStack() {
++        return this.itemStack;
++    }
++
++    /**
++     * Returns an immutable list of all blocks changed in this block
++     * placement.
++     * @return changed blocks
++     */
++    @NotNull
++    public Collection<BlockState> getPlacedBlocks() {
++        return this.placedBlocks;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/block/BlockMultiPlaceEvent.java b/src/main/java/org/bukkit/event/block/BlockMultiPlaceEvent.java
+index 7ca2b1b321447289c50c210a608a88db9c4b4f99..ac6db284ad9ec248e7f94599c20c295132cbdc6f 100644
+--- a/src/main/java/org/bukkit/event/block/BlockMultiPlaceEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockMultiPlaceEvent.java
+@@ -14,7 +14,13 @@ import org.jetbrains.annotations.NotNull;
+  * by {@link #getBlockPlaced()} and its related methods is the block where
+  * the placed block would exist if the placement only affected a single
+  * block.
++ * If a Block Place event is cancelled, the block will not be placed.
++ * @deprecated This event does not properly represent the block placing process. Currently, this event passes the blocks captured
++ * in the world due to a place and reverts them when cancelled. This causes many issues, and has been the cause of dupes and general
++ * odd behaviors in the server. It is encouraged to use the {@link io.papermc.paper.event.player.PlayerPlaceBlockEvent} instead, as this
++ * does not cause any block capturing behavior. This method will be scheduled for removal in a future release.
+  */
++@Deprecated // Paper
+ public class BlockMultiPlaceEvent extends BlockPlaceEvent {
+     private final List<BlockState> states;
+ 
+diff --git a/src/main/java/org/bukkit/event/block/BlockPlaceEvent.java b/src/main/java/org/bukkit/event/block/BlockPlaceEvent.java
+index 4e3c406ba883aae553e8d69b6b719b872cd6096c..f67fb2b4057af20bd0c993392395555d24cead15 100644
+--- a/src/main/java/org/bukkit/event/block/BlockPlaceEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockPlaceEvent.java
+@@ -13,7 +13,12 @@ import org.jetbrains.annotations.NotNull;
+  * Called when a block is placed by a player.
+  * <p>
+  * If a Block Place event is cancelled, the block will not be placed.
++ * @deprecated This event does not properly represent the block placing process. Currently this event passes the blocks captured
++ * in the world due to a place and reverts them when cancelled. This causes many issues, and has been the cause of dupes and general
++ * odd behaviors in the server. It is encouraged to use the {@link io.papermc.paper.event.player.PlayerPlaceBlockEvent} instead, as this
++ * does not cause any block capturing behavior. This method will be scheduled for removal in a future release.
+  */
++@Deprecated // Paper
+ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     protected boolean cancel;

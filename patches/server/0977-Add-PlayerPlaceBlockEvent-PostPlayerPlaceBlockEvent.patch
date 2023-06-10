@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 9 Jun 2023 21:35:17 -0400
+Subject: [PATCH] Add PlayerPlaceBlockEvent/PostPlayerPlaceBlockEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
+index ebee8de2ed831755b6fd154f6cc77ac993839bb9..b018574a236de6a6ecbbf07d420f3470368bf99a 100644
+--- a/src/main/java/net/minecraft/world/item/BlockItem.java
++++ b/src/main/java/net/minecraft/world/item/BlockItem.java
+@@ -83,6 +83,24 @@ public class BlockItem extends Item {
+                 final org.bukkit.block.BlockState oldBlockstate = blockstate != null ? blockstate : org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos()); // Paper
+                 // CraftBukkit end
+ 
++                // Paper start
++                if (iblockdata != null && blockactioncontext1.getPlayer() != null) {
++                    Player entityhuman = blockactioncontext1.getPlayer();
++                    BlockPos blockposition = blockactioncontext1.getClickedPos();
++                    ItemStack itemstack = blockactioncontext1.getItemInHand();
++                    io.papermc.paper.event.player.PlayerPlaceBlockEvent event = new io.papermc.paper.event.player.PlayerPlaceBlockEvent(
++                        (org.bukkit.entity.Player) entityhuman.getBukkitEntity(),
++                        org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack),
++                        io.papermc.paper.math.Position.block(blockposition.getX(), blockposition.getY(), blockposition.getZ()),
++                        org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(iblockdata, null)
++                    );
++
++                    if (!event.callEvent()) {
++                        return InteractionResult.FAIL;
++                    }
++                    iblockdata = ((org.bukkit.craftbukkit.block.CraftBlockState) event.getPlaceState()).getHandle();
++                }
++                // Paper end
+                 if (iblockdata == null) {
+                     return InteractionResult.FAIL;
+                 } else if (!this.placeBlock(blockactioncontext1, iblockdata)) {
+@@ -109,7 +127,27 @@ public class BlockItem extends Item {
+                             throw e; // Rethrow exception if not placed by a player
+                         }
+                         // Paper end
++                        // Paper start
++                        boolean old = world.captureBlockStates;
++                        try {
++                            world.captureBlockStates = true;
++                        // Paper end
+                         iblockdata1.getBlock().setPlacedBy(world, blockposition, iblockdata1, entityhuman, itemstack);
++                        // Paper start
++                            if (blockactioncontext1.getPlayer() != null) {
++                                io.papermc.paper.event.player.PostPlayerPlaceBlockEvent event = new io.papermc.paper.event.player.PostPlayerPlaceBlockEvent(
++                                    (org.bukkit.entity.Player) entityhuman.getBukkitEntity(),
++                                    org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack),
++                                    io.papermc.paper.math.Position.block(blockposition.getX(), blockposition.getY(), blockposition.getZ()),
++                                    java.util.Collections.unmodifiableCollection(world.capturedBlockStates.values())
++                                );
++
++                                event.callEvent();
++                            }
++                        } finally {
++                            world.captureBlockStates = old;
++                        }
++                        // Paper end
+                         // CraftBukkit start
+                         if (blockstate != null) {
+                             org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((ServerLevel) world, entityhuman, blockactioncontext1.getHand(), blockstate, blockposition.getX(), blockposition.getY(), blockposition.getZ());
