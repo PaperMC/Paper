@@ -9,7 +9,10 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when a sign is opened by the player.
+ * @deprecated use {@link io.papermc.paper.event.player.PlayerOpenSignEvent}
  */
+@Deprecated(forRemoval = true) // Paper
+@org.bukkit.Warning(false) // Paper
 public class PlayerSignOpenEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
