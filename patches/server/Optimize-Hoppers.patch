@@ -510,19 +510,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  flag = true;
              } else if (HopperBlockEntity.canMergeItems(itemstack1, stack)) {
 @@ -0,0 +0,0 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         // CraftBukkit end
      }
  
++    // Paper start - optimize hopper item suck in
++    static final AABB HOPPER_ITEM_SUCK_OVERALL = Hopper.SUCK.bounds();
++    static final AABB[] HOPPER_ITEM_SUCK_INDIVIDUAL = Hopper.SUCK.toAabbs().toArray(new AABB[0]);
++    // Paper end - optimize hopper item suck in
++
      public static List<ItemEntity> getItemsAtAndAbove(Level world, Hopper hopper) {
 -        return (List) hopper.getSuckShape().toAabbs().stream().flatMap((axisalignedbb) -> {
 -            return world.getEntitiesOfClass(ItemEntity.class, axisalignedbb.move(hopper.getLevelX() - 0.5D, hopper.getLevelY() - 0.5D, hopper.getLevelZ() - 0.5D), EntitySelector.ENTITY_STILL_ALIVE).stream();
 -        }).collect(Collectors.toList());
-+        // Paper start - Optimize item suck in. remove streams, restore 1.12 checks. Seriously checking the bowl?!
-+        double x = hopper.getLevelX();
-+        double y = hopper.getLevelY();
-+        double z = hopper.getLevelZ();
-+        AABB bb = new AABB(x - 0.5D, y, z - 0.5D, x + 0.5D, y + 1.5D, z + 0.5D);
-+        return world.getEntitiesOfClass(ItemEntity.class, bb, Entity::isAlive);
-+        // Paper end
++        // Paper start - optimize hopper item suck in
++        // eliminate multiple getEntitiesOfClass() but maintain the voxelshape collision by moving
++        // the individual AABB checks into the predicate
++        final double shiftX = hopper.getLevelX() - 0.5D;
++        final double shiftY = hopper.getLevelY() - 0.5D;
++        final double shiftZ = hopper.getLevelZ() - 0.5D;
++        return world.getEntitiesOfClass(ItemEntity.class, HOPPER_ITEM_SUCK_OVERALL.move(shiftX, shiftY, shiftZ), (final Entity entity) -> {
++            if (!entity.isAlive()) { // EntitySelector.ENTITY_STILL_ALIVE
++                return false;
++            }
++
++            for (final AABB aabb : HOPPER_ITEM_SUCK_INDIVIDUAL) {
++                if (aabb.move(shiftX, shiftY, shiftZ).intersects(entity.getBoundingBox())) {
++                    return true;
++                }
++            }
++
++            return false;
++        });
++        // Paper end - optimize hopper item suck in
      }
  
      @Nullable
