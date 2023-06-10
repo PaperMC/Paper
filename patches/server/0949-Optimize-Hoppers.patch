@@ -68,7 +68,7 @@ index 5bdad1866386908b9fef74d15862eb107fabe68f..370a25d2deb54f10a35ee24d9e7e92fb
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..beb70310f2e9657fee89cb4b6a9885712b0116e6 100644
+index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f448d3c79f 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -193,6 +193,201 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -509,20 +509,39 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..beb70310f2e9657fee89cb4b6a988571
                  stack = leftover; // Paper
                  flag = true;
              } else if (HopperBlockEntity.canMergeItems(itemstack1, stack)) {
-@@ -517,18 +723,28 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -516,19 +722,47 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         // CraftBukkit end
      }
  
++    // Paper start - optimize hopper item suck in
++    static final AABB HOPPER_ITEM_SUCK_OVERALL = Hopper.SUCK.bounds();
++    static final AABB[] HOPPER_ITEM_SUCK_INDIVIDUAL = Hopper.SUCK.toAabbs().toArray(new AABB[0]);
++    // Paper end - optimize hopper item suck in
++
      public static List<ItemEntity> getItemsAtAndAbove(Level world, Hopper hopper) {
 -        return (List) hopper.getSuckShape().toAabbs().stream().flatMap((axisalignedbb) -> {
 -            return world.getEntitiesOfClass(ItemEntity.class, axisalignedbb.move(hopper.getLevelX() - 0.5D, hopper.getLevelY() - 0.5D, hopper.getLevelZ() - 0.5D), EntitySelector.ENTITY_STILL_ALIVE).stream();
 -        }).collect(Collectors.toList());
-+        // Paper start - Optimize item suck in. remove streams, restore 1.12 checks. Seriously checking the bowl?!
-+        double x = hopper.getLevelX();
-+        double y = hopper.getLevelY();
-+        double z = hopper.getLevelZ();
-+        AABB bb = new AABB(x - 0.5D, y, z - 0.5D, x + 0.5D, y + 1.5D, z + 0.5D);
-+        return world.getEntitiesOfClass(ItemEntity.class, bb, Entity::isAlive);
-+        // Paper end
++        // Paper start - optimize hopper item suck in
++        // eliminate multiple getEntitiesOfClass() but maintain the voxelshape collision by moving
++        // the individual AABB checks into the predicate
++        final double shiftX = hopper.getLevelX() - 0.5D;
++        final double shiftY = hopper.getLevelY() - 0.5D;
++        final double shiftZ = hopper.getLevelZ() - 0.5D;
++        return world.getEntitiesOfClass(ItemEntity.class, HOPPER_ITEM_SUCK_OVERALL.move(shiftX, shiftY, shiftZ), (final Entity entity) -> {
++            if (!entity.isAlive()) { // EntitySelector.ENTITY_STILL_ALIVE
++                return false;
++            }
++
++            for (final AABB aabb : HOPPER_ITEM_SUCK_INDIVIDUAL) {
++                if (aabb.move(shiftX, shiftY, shiftZ).intersects(entity.getBoundingBox())) {
++                    return true;
++                }
++            }
++
++            return false;
++        });
++        // Paper end - optimize hopper item suck in
      }
  
      @Nullable
@@ -542,7 +561,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..beb70310f2e9657fee89cb4b6a988571
          Object object = null;
          BlockPos blockposition = BlockPos.containing(x, y, z);
          if ( !world.spigotConfig.hopperCanLoadChunks && !world.hasChunkAt( blockposition ) ) return null; // Spigot
-@@ -548,7 +764,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -548,7 +782,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
              }
          }
  
@@ -551,7 +570,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..beb70310f2e9657fee89cb4b6a988571
              List<Entity> list = world.getEntities((Entity) null, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR);
  
              if (!list.isEmpty()) {
-@@ -560,7 +776,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -560,7 +794,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      private static boolean canMergeItems(ItemStack first, ItemStack second) {
