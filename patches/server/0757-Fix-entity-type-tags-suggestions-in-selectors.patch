@@ -60,7 +60,7 @@ index 7592b592a541912f729d6b99f455cd87ebcb34b8..f967e9039c87ec458da3f133743df834
                  }
  
 diff --git a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
-index 850db283bf12345e9e7d7e8e590dbe8135c6dce1..a2ea64b7ec5f47224312a1e08dd64347be6f7c43 100644
+index 850db283bf12345e9e7d7e8e590dbe8135c6dce1..a71726cee91fb406875a4540c9fb7c0ecf757294 100644
 --- a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
 @@ -128,7 +128,7 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
@@ -72,6 +72,27 @@ index 850db283bf12345e9e7d7e8e590dbe8135c6dce1..a2ea64b7ec5f47224312a1e08dd64347
  
              try {
                  argumentparserselector.parse();
+@@ -137,7 +137,19 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
+             }
+ 
+             return argumentparserselector.fillSuggestions(suggestionsbuilder, (suggestionsbuilder1) -> {
+-                Collection<String> collection = icompletionprovider.getOnlinePlayerNames();
++                // Paper start
++                final Collection<String> collection;
++                if (icompletionprovider instanceof CommandSourceStack commandSourceStack && commandSourceStack.getEntity() instanceof ServerPlayer sourcePlayer) {
++                    collection = new java.util.ArrayList<>();
++                    for (final ServerPlayer player : commandSourceStack.getServer().getPlayerList().getPlayers()) {
++                        if (sourcePlayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
++                            collection.add(player.getGameProfile().getName());
++                        }
++                    }
++                } else {
++                    collection = icompletionprovider.getOnlinePlayerNames();
++                }
++                // Paper end
+                 Iterable<String> iterable = this.playersOnly ? collection : Iterables.concat(collection, icompletionprovider.getSelectedEntities());
+ 
+                 SharedSuggestionProvider.suggest((Iterable) iterable, suggestionsbuilder1);
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
 index cdc1319a7cb45a7c5ea30885958b8c3c54f0a241..4cc2ee22369aef22c9bf9d2b244c7278d6db39bb 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
