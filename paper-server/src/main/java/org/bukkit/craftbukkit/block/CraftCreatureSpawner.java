@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import java.util.Optional;
 import net.minecraft.util.RandomSource;
+import net.minecraft.util.random.SimpleWeightedRandomList;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.MobSpawnerData;
 import net.minecraft.world.level.block.entity.TileEntityMobSpawner;
@@ -20,18 +21,21 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
     public EntityType getSpawnedType() {
         MobSpawnerData spawnData = this.getSnapshot().getSpawner().nextSpawnData;
         if (spawnData == null) {
-            return EntityType.PIG; // TODO: Change API contract to nullable?
+            return null;
         }
 
         Optional<EntityTypes<?>> type = EntityTypes.by(spawnData.getEntityToSpawn());
-        return (type.isEmpty()) ? EntityType.PIG : EntityType.fromName(EntityTypes.getKey(type.get()).getPath());
+        return type.map(entityTypes -> EntityType.fromName(EntityTypes.getKey(entityTypes).getPath())).orElse(null);
     }
 
     @Override
     public void setSpawnedType(EntityType entityType) {
-        if (entityType == null || entityType.getName() == null) {
-            throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
+        if (entityType == null) {
+            this.getSnapshot().getSpawner().spawnPotentials = SimpleWeightedRandomList.empty(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
+            this.getSnapshot().getSpawner().nextSpawnData = null;
+            return;
         }
+        Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "Can't spawn EntityType %s from mob spawners!", entityType);
 
         RandomSource rand = (this.isPlaced()) ? this.getWorldHandle().getRandom() : RandomSource.create();
         this.getSnapshot().setEntityId(EntityTypes.byString(entityType.getName()).get(), rand);
@@ -41,11 +45,11 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
     public String getCreatureTypeName() {
         MobSpawnerData spawnData = this.getSnapshot().getSpawner().nextSpawnData;
         if (spawnData == null) {
-            return ""; // TODO: Change API contract to nullable?
+            return null;
         }
 
         Optional<EntityTypes<?>> type = EntityTypes.by(spawnData.getEntityToSpawn());
-        return (type.isEmpty()) ? "" : EntityTypes.getKey(type.get()).getPath();
+        return type.map(entityTypes -> EntityTypes.getKey(entityTypes).getPath()).orElse(null);
     }
 
     @Override
@@ -53,6 +57,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
         // Verify input
         EntityType type = EntityType.fromName(creatureType);
         if (type == null) {
+            setSpawnedType(null);
             return;
         }
         setSpawnedType(type);
