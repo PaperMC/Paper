@@ -1,7 +1,7 @@
 package org.bukkit.block;
 
 import org.bukkit.entity.EntityType;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a creature spawner.
@@ -11,36 +11,36 @@ public interface CreatureSpawner extends TileState {
     /**
      * Get the spawner's creature type.
      *
-     * @return The creature type.
+     * @return The creature type or null if it not set.
      */
-    @NotNull
+    @Nullable
     public EntityType getSpawnedType();
 
     /**
      * Set the spawner's creature type.
      *
-     * @param creatureType The creature type.
+     * @param creatureType The creature type or null to clear.
      */
-    public void setSpawnedType(@NotNull EntityType creatureType);
+    public void setSpawnedType(@Nullable EntityType creatureType);
 
     /**
      * Set the spawner mob type.
      *
-     * @param creatureType The creature type's name.
+     * @param creatureType The creature type's name or null to clear.
      * @deprecated magic value, use
      * {@link #setSpawnedType(org.bukkit.entity.EntityType)}.
      */
     @Deprecated
-    public void setCreatureTypeByName(@NotNull String creatureType);
+    public void setCreatureTypeByName(@Nullable String creatureType);
 
     /**
      * Get the spawner's creature type.
      *
-     * @return The creature type's name.
+     * @return The creature type's name if is set.
      * @deprecated magic value, use {@link #getSpawnedType()}.
      */
     @Deprecated
-    @NotNull
+    @Nullable
     public String getCreatureTypeName();
 
     /**
@@ -68,7 +68,7 @@ public interface CreatureSpawner extends TileState {
      * This value is used when the spawner resets its delay (for any reason).
      * It will choose a random number between {@link #getMinSpawnDelay()}
      * and {@link #getMaxSpawnDelay()} for its next {@link #getDelay()}.
-     *
+     * <br>
      * Default value is 200 ticks.
      *
      * @return the minimum spawn delay amount
@@ -92,7 +92,7 @@ public interface CreatureSpawner extends TileState {
      * <br>
      * This value <b>must</b> be greater than 0 and less than or equal to
      * {@link #getMaxSpawnDelay()}.
-     *
+     * <br>
      * Default value is 800 ticks.
      *
      * @return the maximum spawn delay amount
