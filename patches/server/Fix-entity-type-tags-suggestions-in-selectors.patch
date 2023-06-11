@@ -72,6 +72,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              try {
                  argumentparserselector.parse();
+@@ -0,0 +0,0 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
+             }
+ 
+             return argumentparserselector.fillSuggestions(suggestionsbuilder, (suggestionsbuilder1) -> {
+-                Collection<String> collection = icompletionprovider.getOnlinePlayerNames();
++                // Paper start
++                final Collection<String> collection;
++                if (icompletionprovider instanceof CommandSourceStack commandSourceStack && commandSourceStack.getEntity() instanceof ServerPlayer sourcePlayer) {
++                    collection = new java.util.ArrayList<>();
++                    for (final ServerPlayer player : commandSourceStack.getServer().getPlayerList().getPlayers()) {
++                        if (sourcePlayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
++                            collection.add(player.getGameProfile().getName());
++                        }
++                    }
++                } else {
++                    collection = icompletionprovider.getOnlinePlayerNames();
++                }
++                // Paper end
+                 Iterable<String> iterable = this.playersOnly ? collection : Iterables.concat(collection, icompletionprovider.getSelectedEntities());
+ 
+                 SharedSuggestionProvider.suggest((Iterable) iterable, suggestionsbuilder1);
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
