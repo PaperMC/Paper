@@ -140,6 +140,13 @@ public interface Server extends PluginMessageRecipient {
     public int getMaxPlayers();
 
     /**
+     * Set the maximum amount of players allowed to be logged in at once.
+     *
+     * @param maxPlayers The maximum amount of concurrent players
+     */
+    void setMaxPlayers(int maxPlayers);
+
+    /**
      * Get the game port that the server runs on.
      *
      * @return the port number of this server
@@ -1300,6 +1307,13 @@ public interface Server extends PluginMessageRecipient {
      */
     @NotNull
     String getMotd();
+
+    /**
+     * Set the message that is displayed on the server list.
+     *
+     * @param motd The message to be displayed
+     */
+    void setMotd(@NotNull String motd);
 
     /**
      * Gets the default message that is displayed when the server is stopped.
