@@ -104,22 +104,26 @@ index 0000000000000000000000000000000000000000..3246049fd557951d971ef40112a411c1
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java b/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0ebc5ad52fa347fee9b31e3c2b41b79d94dc6644
+index 0000000000000000000000000000000000000000..465d634dae2e94a488c03376c3ec59a242c8e59b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,84 @@
 +package io.papermc.paper.adventure;
 +
++import com.google.common.collect.Collections2;
 +import java.util.Set;
 +import java.util.function.Function;
 +import net.kyori.adventure.bossbar.BossBar;
 +import net.kyori.adventure.bossbar.BossBarImplementation;
++import net.kyori.adventure.bossbar.BossBarViewer;
 +import net.kyori.adventure.text.Component;
 +import net.minecraft.network.protocol.game.ClientboundBossEventPacket;
 +import net.minecraft.server.level.ServerBossEvent;
++import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.world.BossEvent;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.NotNull;
 +
 +public final class BossBarImplementationImpl implements BossBar.Listener, BossBarImplementation {
 +    private final BossBar bar;
@@ -175,6 +179,11 @@ index 0000000000000000000000000000000000000000..0ebc5ad52fa347fee9b31e3c2b41b79d
 +    @Override
 +    public void bossBarFlagsChanged(final @NonNull BossBar bar, final @NonNull Set<BossBar.Flag> flagsAdded, final @NonNull Set<BossBar.Flag> flagsRemoved) {
 +        this.maybeBroadcast(ClientboundBossEventPacket::createUpdatePropertiesPacket);
++    }
++
++    @Override
++    public @NotNull Iterable<? extends BossBarViewer> viewers() {
++        return this.vanilla == null ? Set.of() : Collections2.transform(this.vanilla.getPlayers(), ServerPlayer::getBukkitEntity);
 +    }
 +
 +    private void maybeBroadcast(final Function<BossEvent, ClientboundBossEventPacket> fn) {
