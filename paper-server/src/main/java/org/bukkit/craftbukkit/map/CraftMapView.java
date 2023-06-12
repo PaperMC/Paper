@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.map;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,7 +17,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
-import org.bukkit.map.MapView.Scale;
 
 public final class CraftMapView implements MapView {
 
@@ -33,14 +33,11 @@ public final class CraftMapView implements MapView {
     @Override
     public int getId() {
         String text = worldMap.id;
-        if (text.startsWith("map_")) {
-            try {
-                return Integer.parseInt(text.substring("map_".length()));
-            } catch (NumberFormatException ex) {
-                throw new IllegalStateException("Map has non-numeric ID");
-            }
-        } else {
-            throw new IllegalStateException("Map has invalid ID");
+        Preconditions.checkState(text.startsWith("map_"), "Map has a invalid ID");
+        try {
+            return Integer.parseInt(text.substring("map_".length()));
+        } catch (NumberFormatException ex) {
+            throw new IllegalStateException("Map has non-numeric ID");
         }
     }
 

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import java.util.ListIterator;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -53,9 +54,7 @@ public class InventoryIterator implements ListIterator<ItemStack> {
 
     @Override
     public void set(ItemStack item) {
-        if (lastDirection == null) {
-            throw new IllegalStateException("No current item!");
-        }
+        Preconditions.checkState(lastDirection != null, "No current item!");
         int i = lastDirection ? nextIndex - 1 : nextIndex;
         inventory.setItem(i, item);
     }

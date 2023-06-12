@@ -263,9 +263,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
 
         if (map.containsKey("properties")) {
             for (Object propertyData : (List<?>) map.get("properties")) {
-                if (!(propertyData instanceof Map)) {
-                    throw new IllegalArgumentException("Property data (" + propertyData + ") is not a valid Map");
-                }
+                Preconditions.checkArgument(propertyData instanceof Map, "Propertu data (%s) is not a valid Map", propertyData);
                 Property property = CraftProfileProperty.deserialize((Map<?, ?>) propertyData);
                 profile.properties.put(property.getName(), property);
             }

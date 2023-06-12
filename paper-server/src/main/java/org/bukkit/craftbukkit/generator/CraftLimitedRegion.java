@@ -68,9 +68,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     public GeneratorAccessSeed getHandle() {
         GeneratorAccessSeed handle = weakAccess.get();
 
-        if (handle == null) {
-            throw new IllegalStateException("GeneratorAccessSeed no longer present, are you using it in a different tick?");
-        }
+        Preconditions.checkState(handle != null, "GeneratorAccessSeed no longer present, are you using it in a different tick?");
 
         return handle;
     }

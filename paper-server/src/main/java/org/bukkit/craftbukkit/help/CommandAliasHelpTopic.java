@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.help;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.help.HelpMap;
@@ -15,12 +15,13 @@ public class CommandAliasHelpTopic extends HelpTopic {
         this.aliasFor = aliasFor.startsWith("/") ? aliasFor : "/" + aliasFor;
         this.helpMap = helpMap;
         this.name = alias.startsWith("/") ? alias : "/" + alias;
-        Validate.isTrue(!this.name.equals(this.aliasFor), "Command " + this.name + " cannot be alias for itself");
+        Preconditions.checkArgument(!this.name.equals(this.aliasFor), "Command %s cannot be alias for itself", this.name);
         this.shortText = ChatColor.YELLOW + "Alias for " + ChatColor.WHITE + this.aliasFor;
     }
 
     @Override
     public String getFullText(CommandSender forWho) {
+        Preconditions.checkArgument(forWho != null, "CommandServer forWho cannot be null");
         StringBuilder sb = new StringBuilder(shortText);
         HelpTopic aliasForTopic = helpMap.getHelpTopic(aliasFor);
         if (aliasForTopic != null) {
@@ -32,6 +33,7 @@ public class CommandAliasHelpTopic extends HelpTopic {
 
     @Override
     public boolean canSee(CommandSender commandSender) {
+        Preconditions.checkArgument(commandSender != null, "CommandServer cannot be null");
         if (amendedPermission == null) {
             HelpTopic aliasForTopic = helpMap.getHelpTopic(aliasFor);
             if (aliasForTopic != null) {

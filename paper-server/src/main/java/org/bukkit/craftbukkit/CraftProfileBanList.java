@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.authlib.GameProfile;
 import java.io.IOException;
@@ -12,7 +13,6 @@ import net.minecraft.server.players.GameProfileBanEntry;
 import net.minecraft.server.players.GameProfileBanList;
 import net.minecraft.server.players.JsonListEntry;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 
 public class CraftProfileBanList implements org.bukkit.BanList {
@@ -24,7 +24,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
 
     @Override
     public org.bukkit.BanEntry getBanEntry(String target) {
-        Validate.notNull(target, "Target cannot be null");
+        Preconditions.checkArgument(target != null, "Target cannot be null");
 
         GameProfile profile = getProfile(target);
         if (profile == null) {
@@ -41,7 +41,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
 
     @Override
     public org.bukkit.BanEntry addBan(String target, String reason, Date expires, String source) {
-        Validate.notNull(target, "Ban target cannot be null");
+        Preconditions.checkArgument(target != null, "Ban target cannot be null");
 
         GameProfile profile = getProfile(target);
         if (profile == null) {
@@ -77,7 +77,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
 
     @Override
     public boolean isBanned(String target) {
-        Validate.notNull(target, "Target cannot be null");
+        Preconditions.checkArgument(target != null, "Target cannot be null");
 
         GameProfile profile = getProfile(target);
         if (profile == null) {
@@ -89,7 +89,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
 
     @Override
     public void pardon(String target) {
-        Validate.notNull(target, "Target cannot be null");
+        Preconditions.checkArgument(target != null, "Target cannot be null");
 
         GameProfile profile = getProfile(target);
         list.remove(profile);

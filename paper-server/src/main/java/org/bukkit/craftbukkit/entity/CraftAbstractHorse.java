@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.UUID;
 import net.minecraft.world.entity.ai.attributes.GenericAttributes;
 import net.minecraft.world.entity.animal.horse.EntityHorseAbstract;
-import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;
 import org.bukkit.entity.AbstractHorse;
@@ -34,8 +34,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public void setDomestication(int value) {
-        Validate.isTrue(value >= 0, "Domestication cannot be less than zero");
-        Validate.isTrue(value <= getMaxDomestication(), "Domestication cannot be greater than the max domestication");
+        Preconditions.checkArgument(value >= 0 && value <= this.getMaxDomestication(), "Domestication level (%s) need to be between %s and %s (max domestication)", value, 0, this.getMaxDomestication());
         getHandle().setTemper(value);
     }
 
@@ -46,7 +45,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public void setMaxDomestication(int value) {
-        Validate.isTrue(value > 0, "Max domestication cannot be zero or less");
+        Preconditions.checkArgument(value > 0, "Max domestication (%s) cannot be zero or less", value);
         getHandle().maxDomestication = value;
     }
 
@@ -57,7 +56,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public void setJumpStrength(double strength) {
-        Validate.isTrue(strength >= 0, "Jump strength cannot be less than zero");
+        Preconditions.checkArgument(strength >= 0, "Jump strength (%s) cannot be less than zero", strength);
         getHandle().getAttribute(GenericAttributes.JUMP_STRENGTH).setBaseValue(strength);
     }
 

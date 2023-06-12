@@ -1,16 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.animal.horse.EntityHorse;
 import net.minecraft.world.entity.animal.horse.HorseColor;
 import net.minecraft.world.entity.animal.horse.HorseStyle;
-import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryHorse;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse;
-import org.bukkit.entity.Horse.Color;
-import org.bukkit.entity.Horse.Style;
-import org.bukkit.entity.Horse.Variant;
 import org.bukkit.inventory.HorseInventory;
 
 public class CraftHorse extends CraftAbstractHorse implements Horse {
@@ -36,7 +33,7 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
 
     @Override
     public void setColor(Color color) {
-        Validate.notNull(color, "Color cannot be null");
+        Preconditions.checkArgument(color != null, "Color cannot be null");
         getHandle().setVariantAndMarkings(HorseColor.byId(color.ordinal()), getHandle().getMarkings());
     }
 
@@ -47,7 +44,7 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
 
     @Override
     public void setStyle(Style style) {
-        Validate.notNull(style, "Style cannot be null");
+        Preconditions.checkArgument(style != null, "Style cannot be null");
         getHandle().setVariantAndMarkings(getHandle().getVariant(), HorseStyle.byId(style.ordinal()));
     }
 

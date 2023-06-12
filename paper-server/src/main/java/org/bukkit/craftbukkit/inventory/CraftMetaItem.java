@@ -46,7 +46,6 @@ import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.item.ItemBlock;
 import net.minecraft.world.level.block.state.IBlockData;
-import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.EnumUtils;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -180,7 +179,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         public static ItemMeta deserialize(Map<String, Object> map) throws Throwable {
-            Validate.notNull(map, "Cannot deserialize null map");
+            Preconditions.checkArgument(map != null, "Cannot deserialize null map");
 
             String type = getString(map, TYPE_FIELD, false);
             Constructor<? extends CraftMetaItem> constructor = constructorMap.get(type);
@@ -789,13 +788,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public boolean hasEnchant(Enchantment ench) {
-        Validate.notNull(ench, "Enchantment cannot be null");
+        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
         return hasEnchants() && enchantments.containsKey(ench);
     }
 
     @Override
     public int getEnchantLevel(Enchantment ench) {
-        Validate.notNull(ench, "Enchantment cannot be null");
+        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
         Integer level = hasEnchants() ? enchantments.get(ench) : null;
         if (level == null) {
             return 0;
@@ -810,7 +809,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
-        Validate.notNull(ench, "Enchantment cannot be null");
+        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
         if (enchantments == null) {
             enchantments = new LinkedHashMap<Enchantment, Integer>(4);
         }
@@ -824,7 +823,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public boolean removeEnchant(Enchantment ench) {
-        Validate.notNull(ench, "Enchantment cannot be null");
+        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
         return hasEnchants() && enchantments.remove(ench) != null;
     }
 
@@ -1330,9 +1329,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         for (Object object : addFrom) {
             if (!(object instanceof String)) {
-                if (object != null) {
-                    throw new IllegalArgumentException(addFrom + " cannot contain non-string " + object.getClass().getName());
-                }
+                Preconditions.checkArgument(object == null, "%s cannot contain non-string %s", addFrom, object.getClass().getName());
 
                 addTo.add(CraftChatMessage.toJSON(IChatBaseComponent.empty()));
             } else {

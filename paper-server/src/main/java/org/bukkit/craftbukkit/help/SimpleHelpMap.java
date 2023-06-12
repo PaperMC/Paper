@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.help;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
@@ -223,9 +224,7 @@ public class SimpleHelpMap implements HelpMap {
 
     @Override
     public void registerHelpTopicFactory(Class commandClass, HelpTopicFactory factory) {
-        if (!Command.class.isAssignableFrom(commandClass) && !CommandExecutor.class.isAssignableFrom(commandClass)) {
-            throw new IllegalArgumentException("commandClass must implement either Command or CommandExecutor!");
-        }
+        Preconditions.checkArgument(Command.class.isAssignableFrom(commandClass) && CommandExecutor.class.isAssignableFrom(commandClass), "commandClass (%s) must implement either Command or CommandExecutor", commandClass.getName());
         topicFactoryMap.put(commandClass, factory);
     }
 

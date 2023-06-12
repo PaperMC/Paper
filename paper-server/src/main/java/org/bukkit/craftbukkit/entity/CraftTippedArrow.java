@@ -1,11 +1,11 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.entity.projectile.EntityTippedArrow;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
@@ -105,7 +105,7 @@ public class CraftTippedArrow extends CraftArrow implements Arrow {
 
     @Override
     public void setBasePotionData(PotionData data) {
-        Validate.notNull(data, "PotionData cannot be null");
+        Preconditions.checkArgument(data != null, "PotionData cannot be null");
         getHandle().setPotionType(CraftPotionUtil.fromBukkit(data));
     }
 

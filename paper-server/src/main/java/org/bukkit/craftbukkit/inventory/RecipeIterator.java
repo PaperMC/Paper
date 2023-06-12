@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -43,10 +44,7 @@ public class RecipeIterator implements Iterator<Recipe> {
 
     @Override
     public void remove() {
-        if (current == null) {
-            throw new IllegalStateException("next() not yet called");
-        }
-
+        Preconditions.checkState(current != null, "next() not yet called");
         current.remove();
     }
 }

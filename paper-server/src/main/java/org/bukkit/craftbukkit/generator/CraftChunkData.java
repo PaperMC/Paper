@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.generator;
 
+import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.world.level.block.Blocks;
@@ -38,9 +39,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     public IChunkAccess getHandle() {
         IChunkAccess access = weakChunk.get();
 
-        if (access == null) {
-            throw new IllegalStateException("IChunkAccess no longer present, are you using it in a different tick?");
-        }
+        Preconditions.checkState(access != null, "IChunkAccess no longer present, are you using it in a different tick?");
 
         return access;
     }

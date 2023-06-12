@@ -152,18 +152,32 @@ if (false && !this.world.isClientSide && !this.isDead && (d0*d0) + d1 + (d2*d2) 
     this.h();
 }
 ```
-
-* When adding a validation check, this applies everywhere not just in Minecraft classes, see if the Validate package has a better, more concise method you can use instead.
-    * The Preconditions package works just as well. Either are acceptable; though these are, by no means, the only accepted validation strategies.
+* For checks related to API where an exception needs to be thrown in a specific case we recommend use the package `Preconditions`
+  * For checking arguments we recommend using `Preconditions#checkArgument` where a failing check should throw a `IllegalArgumentException`
+    * We recommend using this to ensure the behaviour of `@NotNull` in the Bukkit API
+  * For checking arguments we recommend using `Preconditions#checkState` where a failing check should throw a `IllegalStateException`
 
 __For example, you should use:__
 ```java
-Validate.notNull(sender, "Sender cannot be null");
+private Object messenger;
+
+public void sendMessage(Sender sender, String message) {
+    Preconditions.checkArgument(sender != null, "sender cannot be null");
+    Preconditions.checkState(this.messenger != null, "The messenger instance cannot be used")
+}
 ```
 __Instead of:__
 ```java
-if (sender == null) {
-    throw new IllegalArgumentException("Sender cannot be null");
+private Object messenger;
+
+public void sendMessage(Sender sender, String message) {
+    if (sender == null) {
+        throw new IllegalArgumentException("Sender cannot be null");
+    }
+
+    if (this.messenger == null) {
+        throw new IllegalStateException("The messenger instance cannot be used");
+    }
 }
 ```
 

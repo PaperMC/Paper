@@ -615,7 +615,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setFreezeTicks(int ticks) {
-        Preconditions.checkArgument(0 <= ticks, "Ticks cannot be less than 0");
+        Preconditions.checkArgument(0 <= ticks, "Ticks (%s) cannot be less than 0", ticks);
 
         getHandle().setTicksFrozen(ticks);
     }
@@ -681,17 +681,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public List<org.bukkit.entity.Entity> getPassengers() {
-        return Lists.newArrayList(Lists.transform(getHandle().passengers, new Function<Entity, org.bukkit.entity.Entity>() {
-            @Override
-            public org.bukkit.entity.Entity apply(Entity input) {
-                return input.getBukkitEntity();
-            }
-        }));
+        return Lists.newArrayList(Lists.transform(getHandle().passengers, (Function<Entity, org.bukkit.entity.Entity>) input -> input.getBukkitEntity()));
     }
 
     @Override
     public boolean addPassenger(org.bukkit.entity.Entity passenger) {
-        Preconditions.checkArgument(passenger != null, "passenger == null");
+        Preconditions.checkArgument(passenger != null, "Entity passenger cannot be null");
         Preconditions.checkArgument(!this.equals(passenger), "Entity cannot ride itself.");
 
         return ((CraftEntity) passenger).getHandle().startRiding(getHandle(), true);
@@ -699,7 +694,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean removePassenger(org.bukkit.entity.Entity passenger) {
-        Preconditions.checkArgument(passenger != null, "passenger == null");
+        Preconditions.checkArgument(passenger != null, "Entity passenger cannot be null");
 
         ((CraftEntity) passenger).getHandle().stopRiding();
         return true;
@@ -752,9 +747,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setTicksLived(int value) {
-        if (value <= 0) {
-            throw new IllegalArgumentException("Age must be at least 1 tick");
-        }
+        Preconditions.checkArgument(value > 0, "Age value (%s) must be positive", value);
         getHandle().tickCount = value;
     }
 

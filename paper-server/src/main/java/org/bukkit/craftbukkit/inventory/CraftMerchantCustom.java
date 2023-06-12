@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.sounds.SoundEffect;
 import net.minecraft.sounds.SoundEffects;
@@ -8,8 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.IMerchant;
 import net.minecraft.world.item.trading.MerchantRecipe;
 import net.minecraft.world.item.trading.MerchantRecipeList;
-import net.minecraft.world.level.World;
-import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftMerchantCustom extends CraftMerchant {
@@ -37,7 +36,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         protected CraftMerchant craftMerchant;
 
         public MinecraftMerchant(String title) {
-            Validate.notNull(title, "Title cannot be null");
+            Preconditions.checkArgument(title != null, "Title cannot be null");
             this.title = CraftChatMessage.fromString(title)[0];
         }
 

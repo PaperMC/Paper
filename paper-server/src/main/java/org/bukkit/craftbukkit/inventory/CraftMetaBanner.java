@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -114,9 +115,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
         }
 
         for (Object obj : rawPatternList) {
-            if (!(obj instanceof Pattern)) {
-                throw new IllegalArgumentException("Object in pattern list is not valid. " + obj.getClass());
-            }
+            Preconditions.checkArgument(obj instanceof Pattern, "Object (%s) in pattern list is not valid", obj.getClass());
             addPattern((Pattern) obj);
         }
     }

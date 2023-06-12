@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
+import com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -273,9 +274,7 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
 
         @Override
         public void remove() {
-            if (lastRet < 0) {
-                throw new IllegalStateException();
-            }
+            Preconditions.checkState(lastRet >= 0, "");
 
             if (modCount != expectedModCount) {
                 throw new ConcurrentModificationException();

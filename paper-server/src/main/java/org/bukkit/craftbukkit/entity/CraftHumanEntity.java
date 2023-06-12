@@ -247,9 +247,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public void setGameMode(GameMode mode) {
-        if (mode == null) {
-            throw new IllegalArgumentException("Mode cannot be null");
-        }
+        Preconditions.checkArgument(mode != null, "GameMode cannot be null");
 
         this.mode = mode;
     }

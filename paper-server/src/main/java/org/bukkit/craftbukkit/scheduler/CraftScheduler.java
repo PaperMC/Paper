@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.scheduler;
 
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -16,7 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 import java.util.logging.Level;
-import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -283,7 +283,7 @@ public class CraftScheduler implements BukkitScheduler {
 
     @Override
     public void cancelTasks(final Plugin plugin) {
-        Validate.notNull(plugin, "Cannot cancel tasks of null plugin");
+        Preconditions.checkArgument(plugin != null, "Cannot cancel tasks of null plugin");
         final CraftTask task = new CraftTask(
                 new Runnable() {
                     @Override
@@ -459,16 +459,15 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     private static void validate(final Plugin plugin, final Object task) {
-        Validate.notNull(plugin, "Plugin cannot be null");
-        Validate.notNull(task, "Task cannot be null");
-        Validate.isTrue(task instanceof Runnable || task instanceof Consumer || task instanceof Callable, "Task must be Runnable, Consumer, or Callable");
+        Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
+        Preconditions.checkArgument(task instanceof Runnable || task instanceof Consumer || task instanceof Callable, "Task must be Runnable, Consumer, or Callable");
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
         }
     }
 
     private int nextId() {
-        Validate.isTrue(runners.size() < Integer.MAX_VALUE, "There are already " + Integer.MAX_VALUE + " tasks scheduled! Cannot schedule more.");
+        Preconditions.checkArgument(runners.size() < Integer.MAX_VALUE, "There are already %s tasks scheduled! Cannot schedule more", Integer.MAX_VALUE);
         int id;
         do {
             id = ids.updateAndGet(INCREMENT_IDS);

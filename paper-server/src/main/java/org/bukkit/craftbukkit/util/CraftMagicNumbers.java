@@ -268,9 +268,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public Advancement loadAdvancement(NamespacedKey key, String advancement) {
-        if (Bukkit.getAdvancement(key) != null) {
-            throw new IllegalArgumentException("Advancement " + key + " already exists.");
-        }
+        Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
         MinecraftKey minecraftkey = CraftNamespacedKey.toMinecraft(key);
 
         JsonElement jsonelement = AdvancementDataWorld.GSON.fromJson(advancement, JsonElement.class);

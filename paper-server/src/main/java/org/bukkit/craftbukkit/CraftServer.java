@@ -117,7 +117,6 @@ import net.minecraft.world.level.storage.WorldNBTStorage;
 import net.minecraft.world.level.storage.loot.LootDataManager;
 import net.minecraft.world.level.validation.ContentValidationException;
 import net.minecraft.world.phys.Vec3D;
-import org.apache.commons.lang.Validate;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -553,7 +552,7 @@ public final class CraftServer implements Server {
     @Override
     @Deprecated
     public Player getPlayer(final String name) {
-        Validate.notNull(name, "Name cannot be null");
+        Preconditions.checkArgument(name != null, "name cannot be null");
 
         Player found = getPlayerExact(name);
         // Try for an exact match first.
@@ -579,7 +578,7 @@ public final class CraftServer implements Server {
     @Override
     @Deprecated
     public Player getPlayerExact(String name) {
-        Validate.notNull(name, "Name cannot be null");
+        Preconditions.checkArgument(name != null, "name cannot be null");
 
         EntityPlayer player = playerList.getPlayerByName(name);
         return (player != null) ? player.getBukkitEntity() : null;
@@ -587,8 +586,9 @@ public final class CraftServer implements Server {
 
     @Override
     public Player getPlayer(UUID id) {
-        EntityPlayer player = playerList.getPlayer(id);
+        Preconditions.checkArgument(id != null, "UUID id cannot be null");
 
+        EntityPlayer player = playerList.getPlayer(id);
         if (player != null) {
             return player.getBukkitEntity();
         }
@@ -604,9 +604,9 @@ public final class CraftServer implements Server {
     @Override
     @Deprecated
     public List<Player> matchPlayer(String partialName) {
-        Validate.notNull(partialName, "PartialName cannot be null");
+        Preconditions.checkArgument(partialName != null, "partialName cannot be null");
 
-        List<Player> matchedPlayers = new ArrayList<Player>();
+        List<Player> matchedPlayers = new ArrayList<>();
 
         for (Player iterPlayer : this.getOnlinePlayers()) {
             String iterPlayerName = iterPlayer.getName();
@@ -792,8 +792,8 @@ public final class CraftServer implements Server {
 
     @Override
     public int getTicksPerSpawns(SpawnCategory spawnCategory) {
-        Validate.notNull(spawnCategory, "SpawnCategory cannot be null");
-        Validate.isTrue(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " are not supported.");
+        Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
+        Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
         return this.configuration.getInt(CraftSpawnCategory.getConfigNameTicksPerSpawn(spawnCategory));
     }
 
@@ -844,8 +844,8 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean dispatchCommand(CommandSender sender, String commandLine) {
-        Validate.notNull(sender, "Sender cannot be null");
-        Validate.notNull(commandLine, "CommandLine cannot be null");
+        Preconditions.checkArgument(sender != null, "sender cannot be null");
+        Preconditions.checkArgument(commandLine != null, "commandLine cannot be null");
 
         if (commandMap.dispatch(sender, commandLine)) {
             return true;
@@ -1027,7 +1027,7 @@ public final class CraftServer implements Server {
     @Override
     public World createWorld(WorldCreator creator) {
         Preconditions.checkState(console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
-        Validate.notNull(creator, "Creator may not be null");
+        Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
 
         String name = creator.name();
         ChunkGenerator generator = creator.generator();
@@ -1039,8 +1039,8 @@ public final class CraftServer implements Server {
             return world;
         }
 
-        if ((folder.exists()) && (!folder.isDirectory())) {
-            throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
+        if (folder.exists()) {
+            Preconditions.checkArgument(folder.isDirectory(), "File (%s) exists and isn't a folder", name);
         }
 
         if (generator == null) {
@@ -1063,7 +1063,7 @@ public final class CraftServer implements Server {
                 actualDimension = WorldDimension.END;
                 break;
             default:
-                throw new IllegalArgumentException("Illegal dimension");
+                throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
         }
 
         Convertable.ConversionSession worldSession;
@@ -1105,9 +1105,7 @@ public final class CraftServer implements Server {
         worlddata.setModdedInfo(console.getServerModName(), console.getModdedStatus().shouldReportAsModified());
 
         if (console.options.has("forceUpgrade")) {
-            net.minecraft.server.Main.forceUpgrade(worldSession, DataConverterRegistry.getDataFixer(), console.options.has("eraseCache"), () -> {
-                return true;
-            }, iregistry);
+            net.minecraft.server.Main.forceUpgrade(worldSession, DataConverterRegistry.getDataFixer(), console.options.has("eraseCache"), () -> true, iregistry);
         }
 
         long j = BiomeManager.obfuscateSeed(creator.seed());
@@ -1203,7 +1201,8 @@ public final class CraftServer implements Server {
 
     @Override
     public World getWorld(String name) {
-        Validate.notNull(name, "Name cannot be null");
+        Preconditions.checkArgument(name != null, "name cannot be null");
+        Preconditions.checkArgument(!name.isBlank(), "name cannot be empty");
 
         return worlds.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }
@@ -1294,7 +1293,7 @@ public final class CraftServer implements Server {
 
     @Override
     public List<Recipe> getRecipesFor(ItemStack result) {
-        Validate.notNull(result, "Result cannot be null");
+        Preconditions.checkArgument(result != null, "ItemStack cannot be null");
 
         List<Recipe> results = new ArrayList<Recipe>();
         Iterator<Recipe> iter = recipeIterator();
@@ -1313,7 +1312,7 @@ public final class CraftServer implements Server {
 
     @Override
     public Recipe getRecipe(NamespacedKey recipeKey) {
-        Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
+        Preconditions.checkArgument(recipeKey != null, "NamespacedKey recipeKey cannot be null");
 
         return getServer().getRecipeManager().byKey(CraftNamespacedKey.toMinecraft(recipeKey)).map(IRecipe::toBukkitRecipe).orElse(null);
     }
@@ -1344,8 +1343,8 @@ public final class CraftServer implements Server {
 
     @Override
     public ItemStack craftItem(ItemStack[] craftingMatrix, World world, Player player) {
-        Preconditions.checkArgument(world != null, "world must not be null");
-        Preconditions.checkArgument(player != null, "player must not be null");
+        Preconditions.checkArgument(world != null, "world cannot be null");
+        Preconditions.checkArgument(player != null, "player cannot be null");
 
         CraftWorld craftWorld = (CraftWorld) world;
         CraftPlayer craftPlayer = (CraftPlayer) player;
@@ -1575,7 +1574,7 @@ public final class CraftServer implements Server {
 
     @Override
     public CraftMapView createMap(World world) {
-        Validate.notNull(world, "World cannot be null");
+        Preconditions.checkArgument(world != null, "World cannot be null");
 
         net.minecraft.world.level.World minecraftWorld = ((CraftWorld) world).getHandle();
         // creates a new map at world spawn with the scale of 3, with out tracking position and unlimited tracking
@@ -1590,9 +1589,9 @@ public final class CraftServer implements Server {
 
     @Override
     public ItemStack createExplorerMap(World world, Location location, StructureType structureType, int radius, boolean findUnexplored) {
-        Validate.notNull(world, "World cannot be null");
-        Validate.notNull(structureType, "StructureType cannot be null");
-        Validate.notNull(structureType.getMapIcon(), "Cannot create explorer maps for StructureType " + structureType.getName());
+        Preconditions.checkArgument(world != null, "World cannot be null");
+        Preconditions.checkArgument(structureType != null, "StructureType cannot be null");
+        Preconditions.checkArgument(structureType.getMapIcon() != null, "Cannot create explorer maps for StructureType %s", structureType.getName());
 
         WorldServer worldServer = ((CraftWorld) world).getHandle();
         Location structureLocation = world.locateNearestStructure(location, structureType, radius, findUnexplored);
@@ -1640,8 +1639,8 @@ public final class CraftServer implements Server {
     @Override
     @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
-        Validate.notNull(name, "Name cannot be null");
-        Validate.notEmpty(name, "Name cannot be empty");
+        Preconditions.checkArgument(name != null, "name cannot be null");
+        Preconditions.checkArgument(!name.isBlank(), "name cannot be empty");
 
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
@@ -1663,7 +1662,7 @@ public final class CraftServer implements Server {
 
     @Override
     public OfflinePlayer getOfflinePlayer(UUID id) {
-        Validate.notNull(id, "UUID cannot be null");
+        Preconditions.checkArgument(id != null, "UUID id cannot be null");
 
         OfflinePlayer result = getPlayer(id);
         if (result == null) {
@@ -1708,14 +1707,16 @@ public final class CraftServer implements Server {
 
     @Override
     public void banIP(String address) {
-        Validate.notNull(address, "Address cannot be null.");
+        Preconditions.checkArgument(address != null, "address cannot be null");
+        Preconditions.checkArgument(!address.isBlank(), "address cannot be empty");
 
         this.getBanList(org.bukkit.BanList.Type.IP).addBan(address, null, null, null);
     }
 
     @Override
     public void unbanIP(String address) {
-        Validate.notNull(address, "Address cannot be null.");
+        Preconditions.checkArgument(address != null, "address cannot be null");
+        Preconditions.checkArgument(!address.isBlank(), "address cannot be empty");
 
         this.getBanList(org.bukkit.BanList.Type.IP).pardon(address);
     }
@@ -1733,7 +1734,7 @@ public final class CraftServer implements Server {
 
     @Override
     public BanList getBanList(BanList.Type type) {
-        Validate.notNull(type, "Type cannot be null");
+        Preconditions.checkArgument(type != null, "BanList.Type cannot be null");
 
         switch (type) {
         case IP:
@@ -1794,7 +1795,7 @@ public final class CraftServer implements Server {
 
     @Override
     public void setDefaultGameMode(GameMode mode) {
-        Validate.notNull(mode, "Mode cannot be null");
+        Preconditions.checkArgument(mode != null, "GameMode cannot be null");
 
         for (World world : getWorlds()) {
             ((CraftWorld) world).getHandle().serverLevelData.setGameType(EnumGamemode.byId(mode.getValue()));
@@ -1869,25 +1870,28 @@ public final class CraftServer implements Server {
 
     @Override
     public Inventory createInventory(InventoryHolder owner, InventoryType type) {
-        Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
+        Preconditions.checkArgument(type != null, "InventoryType cannot be null");
+        Preconditions.checkArgument(type.isCreatable(), "InventoryType.%s cannot be used to create a inventory", type);
         return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
     }
 
     @Override
     public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
-        Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
+        Preconditions.checkArgument(type != null, "InventoryType cannot be null");
+        Preconditions.checkArgument(type.isCreatable(), "InventoryType.%s cannot be used to create a inventory", type);
+        Preconditions.checkArgument(title != null, "title cannot be null");
         return CraftInventoryCreator.INSTANCE.createInventory(owner, type, title);
     }
 
     @Override
     public Inventory createInventory(InventoryHolder owner, int size) throws IllegalArgumentException {
-        Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got " + size + ")");
+        Preconditions.checkArgument(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got %s)", size);
         return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
     }
 
     @Override
     public Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException {
-        Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got " + size + ")");
+        Preconditions.checkArgument(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got %s)", size);
         return CraftInventoryCreator.INSTANCE.createInventory(owner, size, title);
     }
 
@@ -2063,10 +2067,8 @@ public final class CraftServer implements Server {
 
     @Override
     public CraftIconCache loadServerIcon(File file) throws Exception {
-        Validate.notNull(file, "File cannot be null");
-        if (!file.isFile()) {
-            throw new IllegalArgumentException(file + " is not a file");
-        }
+        Preconditions.checkArgument(file != null, "File cannot be null");
+        Preconditions.checkArgument(file.isFile(), "File (%s) is not a valid file", file);
         return loadServerIcon0(file);
     }
 
@@ -2076,13 +2078,13 @@ public final class CraftServer implements Server {
 
     @Override
     public CraftIconCache loadServerIcon(BufferedImage image) throws Exception {
-        Validate.notNull(image, "Image cannot be null");
+        Preconditions.checkArgument(image != null, "BufferedImage image cannot be null");
         return loadServerIcon0(image);
     }
 
     static CraftIconCache loadServerIcon0(BufferedImage image) throws Exception {
-        Validate.isTrue(image.getWidth() == 64, "Must be 64 pixels wide");
-        Validate.isTrue(image.getHeight() == 64, "Must be 64 pixels high");
+        Preconditions.checkArgument(image.getWidth() == 64, "BufferedImage must be 64 pixels wide (%s)", image.getWidth());
+        Preconditions.checkArgument(image.getHeight() == 64, "BufferedImage must be 64 pixels high (%s)", image.getHeight());
 
         ByteArrayOutputStream bytebuf = new ByteArrayOutputStream();
         ImageIO.write(image, "PNG", bytebuf);
@@ -2102,7 +2104,7 @@ public final class CraftServer implements Server {
 
     @Override
     public ChunkGenerator.ChunkData createChunkData(World world) {
-        Validate.notNull(world, "World cannot be null");
+        Preconditions.checkArgument(world != null, "World cannot be null");
         WorldServer handle = ((CraftWorld) world).getHandle();
         return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().registryOrThrow(Registries.BIOME));
     }
@@ -2114,13 +2116,18 @@ public final class CraftServer implements Server {
 
     @Override
     public KeyedBossBar createBossBar(NamespacedKey key, String title, BarColor barColor, BarStyle barStyle, BarFlag... barFlags) {
-        Preconditions.checkArgument(key != null, "key");
+        Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
+        Preconditions.checkArgument(barColor != null, "BarColor key cannot be null");
+        Preconditions.checkArgument(barStyle != null, "BarStyle key cannot be null");
 
         BossBattleCustom bossBattleCustom = getServer().getCustomBossEvents().create(CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
         CraftKeyedBossbar craftKeyedBossbar = new CraftKeyedBossbar(bossBattleCustom);
         craftKeyedBossbar.setColor(barColor);
         craftKeyedBossbar.setStyle(barStyle);
         for (BarFlag flag : barFlags) {
+            if (flag == null) {
+                continue;
+            }
             craftKeyedBossbar.addFlag(flag);
         }
 
@@ -2161,7 +2168,7 @@ public final class CraftServer implements Server {
 
     @Override
     public Entity getEntity(UUID uuid) {
-        Validate.notNull(uuid, "UUID cannot be null");
+        Preconditions.checkArgument(uuid != null, "UUID id cannot be null");
 
         for (WorldServer world : getServer().getAllLevels()) {
             net.minecraft.world.entity.Entity entity = world.getEntity(uuid);
@@ -2175,7 +2182,7 @@ public final class CraftServer implements Server {
 
     @Override
     public org.bukkit.advancement.Advancement getAdvancement(NamespacedKey key) {
-        Preconditions.checkArgument(key != null, "key");
+        Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
 
         Advancement advancement = console.getAdvancements().getAdvancement(CraftNamespacedKey.toMinecraft(key));
         return (advancement == null) ? null : advancement.bukkit;
@@ -2193,7 +2200,7 @@ public final class CraftServer implements Server {
 
     @Override
     public BlockData createBlockData(org.bukkit.Material material) {
-        Validate.isTrue(material != null, "Must provide material");
+        Preconditions.checkArgument(material != null, "Material cannot be null");
 
         return createBlockData(material, (String) null);
     }
@@ -2211,14 +2218,14 @@ public final class CraftServer implements Server {
 
     @Override
     public BlockData createBlockData(String data) throws IllegalArgumentException {
-        Validate.isTrue(data != null, "Must provide data");
+        Preconditions.checkArgument(data != null, "data cannot be null");
 
         return createBlockData(null, data);
     }
 
     @Override
     public BlockData createBlockData(org.bukkit.Material material, String data) {
-        Validate.isTrue(material != null || data != null, "Must provide one of material or data");
+        Preconditions.checkArgument(material != null, "Material cannot be null");
 
         return CraftBlockData.newData(material, data);
     }
@@ -2226,35 +2233,35 @@ public final class CraftServer implements Server {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Keyed> org.bukkit.Tag<T> getTag(String registry, NamespacedKey tag, Class<T> clazz) {
-        Validate.notNull(registry, "registry cannot be null");
-        Validate.notNull(tag, "NamespacedKey cannot be null");
-        Validate.notNull(clazz, "Class cannot be null");
+        Preconditions.checkArgument(registry != null, "registry cannot be null");
+        Preconditions.checkArgument(tag != null, "NamespacedKey tag cannot be null");
+        Preconditions.checkArgument(clazz != null, "Class clazz cannot be null");
         MinecraftKey key = CraftNamespacedKey.toMinecraft(tag);
 
         switch (registry) {
             case org.bukkit.Tag.REGISTRY_BLOCKS -> {
-                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
+                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace (%s) must have material type", clazz.getName());
                 TagKey<Block> blockTagKey = TagKey.create(Registries.BLOCK, key);
                 if (BuiltInRegistries.BLOCK.getTag(blockTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftBlockTag(BuiltInRegistries.BLOCK, blockTagKey);
                 }
             }
             case org.bukkit.Tag.REGISTRY_ITEMS -> {
-                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
+                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace (%s) must have material type", clazz.getName());
                 TagKey<Item> itemTagKey = TagKey.create(Registries.ITEM, key);
                 if (BuiltInRegistries.ITEM.getTag(itemTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftItemTag(BuiltInRegistries.ITEM, itemTagKey);
                 }
             }
             case org.bukkit.Tag.REGISTRY_FLUIDS -> {
-                Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
+                Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace (%s) must have fluid type", clazz.getName());
                 TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
                 if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
                 }
             }
             case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
-                Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+                Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace (%s) must have entity type", clazz.getName());
                 TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
                 if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
@@ -2269,26 +2276,26 @@ public final class CraftServer implements Server {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Keyed> Iterable<org.bukkit.Tag<T>> getTags(String registry, Class<T> clazz) {
-        Validate.notNull(registry, "registry cannot be null");
-        Validate.notNull(clazz, "Class cannot be null");
+        Preconditions.checkArgument(registry != null, "registry cannot be null");
+        Preconditions.checkArgument(clazz != null, "Class clazz cannot be null");
         switch (registry) {
             case org.bukkit.Tag.REGISTRY_BLOCKS -> {
-                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
+                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace (%s) must have material type", clazz.getName());
                 IRegistry<Block> blockTags = BuiltInRegistries.BLOCK;
                 return blockTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
             }
             case org.bukkit.Tag.REGISTRY_ITEMS -> {
-                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
+                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace (%s) must have material type", clazz.getName());
                 IRegistry<Item> itemTags = BuiltInRegistries.ITEM;
                 return itemTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
             }
             case org.bukkit.Tag.REGISTRY_FLUIDS -> {
-                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Fluid namespace must have fluid type");
+                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Fluid namespace (%s) must have fluid type", clazz.getName());
                 IRegistry<FluidType> fluidTags = BuiltInRegistries.FLUID;
                 return fluidTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
             }
             case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
-                Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+                Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace (%s) must have entity type", clazz.getName());
                 IRegistry<EntityTypes<?>> entityTags = BuiltInRegistries.ENTITY_TYPE;
                 return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
             }
@@ -2298,7 +2305,7 @@ public final class CraftServer implements Server {
 
     @Override
     public LootTable getLootTable(NamespacedKey key) {
-        Validate.notNull(key, "NamespacedKey cannot be null");
+        Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
 
         LootDataManager registry = getServer().getLootData();
         return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
@@ -2306,8 +2313,8 @@ public final class CraftServer implements Server {
 
     @Override
     public List<Entity> selectEntities(CommandSender sender, String selector) {
-        Preconditions.checkArgument(selector != null, "Selector cannot be null");
-        Preconditions.checkArgument(sender != null, "Sender cannot be null");
+        Preconditions.checkArgument(selector != null, "selector cannot be null");
+        Preconditions.checkArgument(sender != null, "CommandSender sender cannot be null");
 
         ArgumentEntity arg = ArgumentEntity.entities();
         List<? extends net.minecraft.world.entity.Entity> nms;
@@ -2315,7 +2322,7 @@ public final class CraftServer implements Server {
         try {
             StringReader reader = new StringReader(selector);
             nms = arg.parse(reader, true).findEntities(VanillaCommandWrapper.getListener(sender));
-            Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data in selector: " + selector);
+            Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data in selector: %s", selector);
         } catch (CommandSyntaxException ex) {
             throw new IllegalArgumentException("Could not parse selector: " + selector, ex);
         }

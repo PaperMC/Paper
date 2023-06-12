@@ -1,13 +1,13 @@
 package org.bukkit.craftbukkit.inventory;
 
 import static org.bukkit.craftbukkit.inventory.CraftMetaItem.*;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.EnchantmentManager;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -176,7 +176,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public void addUnsafeEnchantment(Enchantment ench, int level) {
-        Validate.notNull(ench, "Cannot add null enchantment");
+        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
 
         if (!makeTag(handle)) {
             return;
@@ -221,7 +221,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public int getEnchantmentLevel(Enchantment ench) {
-        Validate.notNull(ench, "Cannot find null enchantment");
+        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
         if (handle == null) {
             return 0;
         }
@@ -230,7 +230,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public int removeEnchantment(Enchantment ench) {
-        Validate.notNull(ench, "Cannot remove null enchantment");
+        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
 
         NBTTagList list = getEnchantmentList(handle), listCopy;
         if (list == null) {

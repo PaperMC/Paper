@@ -348,17 +348,13 @@ public final class CraftLegacy {
                             IBlockState state = states.getProperty(dataKey);
 
                             if (state == null) {
-                                if (whitelistedStates.contains(dataKey)) {
-                                    continue;
-                                }
-                                throw new IllegalStateException("No state for " + dataKey);
+                                Preconditions.checkArgument(whitelistedStates.contains(dataKey), "No state for %s", dataKey);
+                                continue;
                             }
 
                             Preconditions.checkState(!properties.getString(dataKey).isEmpty(), "Empty data string");
                             Optional opt = state.getValue(properties.getString(dataKey));
-                            if (!opt.isPresent()) {
-                                throw new IllegalStateException("No state value " + properties.getString(dataKey) + " for " + dataKey);
-                            }
+                            Preconditions.checkArgument(opt.isPresent(), "No state value %s for %s", properties.getString(dataKey), dataKey);
 
                             blockData = blockData.setValue(state, (Comparable) opt.get());
                         }

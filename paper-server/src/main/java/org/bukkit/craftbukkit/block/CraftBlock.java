@@ -31,7 +31,6 @@ import net.minecraft.world.phys.MovingObjectPosition;
 import net.minecraft.world.phys.MovingObjectPositionBlock;
 import net.minecraft.world.phys.Vec3D;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
@@ -392,10 +391,9 @@ public class CraftBlock implements Block {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof CraftBlock)) {
+        if (!(o instanceof CraftBlock other)) {
             return false;
         }
-        CraftBlock other = (CraftBlock) o;
 
         return this.position.equals(other.position) && this.getWorld().equals(other.getWorld());
     }
@@ -593,15 +591,15 @@ public class CraftBlock implements Block {
 
     @Override
     public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode) {
-        Validate.notNull(start, "Start location is null!");
-        Validate.isTrue(this.getWorld().equals(start.getWorld()), "Start location is from different world!");
+        Preconditions.checkArgument(start != null, "Location start cannot be null");
+        Preconditions.checkArgument(this.getWorld().equals(start.getWorld()), "Location start cannot be a different world");
         start.checkFinite();
 
-        Validate.notNull(direction, "Direction is null!");
+        Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
         direction.checkFinite();
-        Validate.isTrue(direction.lengthSquared() > 0, "Direction's magnitude is 0!");
+        Preconditions.checkArgument(direction.lengthSquared() > 0, "Direction's magnitude (%s) must be greater than 0", direction.lengthSquared());
 
-        Validate.notNull(fluidCollisionMode, "Fluid collision mode is null!");
+        Preconditions.checkArgument(fluidCollisionMode != null, "FluidCollisionMode cannot be null");
         if (maxDistance < 0.0D) {
             return null;
         }
@@ -634,7 +632,7 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean canPlace(BlockData data) {
-        Preconditions.checkArgument(data != null, "Provided block data is null!");
+        Preconditions.checkArgument(data != null, "BlockData cannot be null");
         net.minecraft.world.level.block.state.IBlockData iblockdata = ((CraftBlockData) data).getState();
         net.minecraft.world.level.World world = this.world.getMinecraftWorld();
 

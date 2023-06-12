@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.projectiles;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.core.IPosition;
 import net.minecraft.core.SourceBlock;
@@ -20,7 +21,6 @@ import net.minecraft.world.entity.projectile.EntityTippedArrow;
 import net.minecraft.world.entity.projectile.IProjectile;
 import net.minecraft.world.level.block.BlockDispenser;
 import net.minecraft.world.level.block.entity.TileEntityDispenser;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -63,7 +63,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
 
     @Override
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
-        Validate.isTrue(getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
+        Preconditions.checkArgument(getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
         // Copied from BlockDispenser.dispense()
         SourceBlock isourceblock = new SourceBlock((WorldServer) dispenserBlock.getLevel(), dispenserBlock.getBlockPos());
         // Copied from DispenseBehaviorProjectile
@@ -132,7 +132,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             ((EntityFireball) launch).projectileSource = this;
         }
 
-        Validate.notNull(launch, "Projectile not supported");
+        Preconditions.checkArgument(launch != null, "Projectile not supported");
 
         if (launch instanceof IProjectile) {
             if (launch instanceof EntityProjectile) {

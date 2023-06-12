@@ -5,7 +5,6 @@ import net.minecraft.core.EnumDirection;
 import net.minecraft.world.entity.decoration.EntityHanging;
 import net.minecraft.world.entity.decoration.EntityItemFrame;
 import net.minecraft.world.level.block.Blocks;
-import org.apache.commons.lang.Validate;
 import org.bukkit.Rotation;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
@@ -75,7 +74,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
 
     @Override
     public void setItemDropChance(float chance) {
-        Preconditions.checkArgument(0.0 <= chance && chance <= 1.0, "Chance outside range [0, 1]");
+        Preconditions.checkArgument(0.0 <= chance && chance <= 1.0, "Chance (%s) outside range [0, 1]", chance);
         getHandle().dropChance = chance;
     }
 
@@ -110,7 +109,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
 
     @Override
     public void setRotation(Rotation rotation) {
-        Validate.notNull(rotation, "Rotation cannot be null");
+        Preconditions.checkArgument(rotation != null, "Rotation cannot be null");
         getHandle().setRotation(toInteger(rotation));
     }
 
