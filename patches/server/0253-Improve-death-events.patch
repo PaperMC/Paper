@@ -70,7 +70,7 @@ index 0578d72681a0d45b6c8d1d6d04208eb14fb60083..2b4c0042b1971a9d922c8d32aa74c7f2
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a164fcf834c 100644
+index f3af1c540b59819375f70ffbda6135601802cdbc..b712f505fd092e0366ffc74ff59345a7f8c701be 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -261,6 +261,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -108,7 +108,7 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
              if (this.deathScore >= 0 && entityliving != null) {
                  entityliving.awardKillScore(this, this.deathScore, damageSource);
              }
-@@ -1674,24 +1674,56 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1674,24 +1674,59 @@ public abstract class LivingEntity extends Entity implements Attackable {
              if (!this.level().isClientSide && this.hasCustomName()) {
                  if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
@@ -137,12 +137,12 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
 +                        this.clearedEquipmentSlots.clear();
 +                    }
 +                    // Paper end
-+
+ 
+-                if (entity == null || entity.killedEntity(worldserver, this)) {
 +                    if (this.isSleeping()) {
 +                        this.stopSleeping();
 +                    }
- 
--                if (entity == null || entity.killedEntity(worldserver, this)) {
++
 +                    if (!this.level().isClientSide && this.hasCustomName()) {
 +                        if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
 +                    }
@@ -154,6 +154,9 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
                      this.gameEvent(GameEvent.ENTITY_DIE);
 -                    this.dropAllDeathLoot(damageSource);
 -                    this.createWitherRose(entityliving);
++                } else {
++                    this.dead = false;
++                    this.setHealth((float) deathEvent.getReviveHealth());
                  }
  
 -                this.level().broadcastEntityEvent(this, (byte) 3);
@@ -170,7 +173,7 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
          }
      }
  
-@@ -1699,7 +1731,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1699,7 +1734,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
          if (!this.level().isClientSide) {
              boolean flag = false;
  
@@ -179,7 +182,7 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
                  if (this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                      BlockPos blockposition = this.blockPosition();
                      BlockState iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
-@@ -1728,7 +1760,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1728,7 +1763,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
          }
      }
  
@@ -192,7 +195,7 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
          Entity entity = source.getEntity();
          int i;
  
-@@ -1743,18 +1779,27 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1743,18 +1782,27 @@ public abstract class LivingEntity extends Entity implements Attackable {
          this.dropEquipment(); // CraftBukkit - from below
          if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
              this.dropFromLootTable(source, flag);
