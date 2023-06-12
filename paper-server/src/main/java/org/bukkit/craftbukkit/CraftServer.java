@@ -2222,7 +2222,7 @@ public final class CraftServer implements Server {
 
     @Override
     public BlockData createBlockData(org.bukkit.Material material, String data) {
-        Preconditions.checkArgument(material != null, "Material cannot be null");
+        Preconditions.checkArgument(material != null || data != null, "Must provide one of material or data");
 
         return CraftBlockData.newData(material, data);
     }
