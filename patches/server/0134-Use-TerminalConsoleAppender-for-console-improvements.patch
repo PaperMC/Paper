@@ -6,6 +6,10 @@ Subject: [PATCH] Use TerminalConsoleAppender for console improvements
 Rewrite console improvements (console colors, tab completion,
 persistent input line, ...) using JLine 3.x and TerminalConsoleAppender.
 
+Also uses the new ANSIComponentSerializer to serialize components when
+logging them via the ComponentLogger, or when sending messages to the
+console, for hex color support.
+
 New features:
   - Support console colors for Vanilla commands
   - Add console colors for warnings and errors
@@ -18,11 +22,13 @@ Other changes:
   - Server starts 1-2 seconds faster thanks to optimizations in Log4j
     configuration
 
+Co-Authored-By: Emilia Kond <emilia@rymiel.space>
+
 diff --git a/build.gradle.kts b/build.gradle.kts
-index d8da21801eda8ea5d04c8eb2941bbef968cb7951..38c08ee8e935d3fdf5ad4e443352e3563609e3c0 100644
+index 9ab4d3e462c02e4d23b45adb46965eb75eb2178e..700be2fdc10d14222f06e482681bb3a2e9a0aee6 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -8,7 +8,17 @@ plugins {
+@@ -8,7 +8,19 @@ plugins {
  
  dependencies {
      implementation(project(":paper-api"))
@@ -30,6 +36,7 @@ index d8da21801eda8ea5d04c8eb2941bbef968cb7951..38c08ee8e935d3fdf5ad4e443352e356
 +    // Paper start
 +    implementation("org.jline:jline-terminal-jansi:3.21.0")
 +    implementation("net.minecrell:terminalconsoleappender:1.3.0")
++    implementation("net.kyori:adventure-text-serializer-ansi")
 +    /*
 +          Required to add the missing Log4j2Plugins.dat file from log4j-core
 +          which has been removed by Mojang. Without it, log4j has to classload
@@ -37,6 +44,7 @@ index d8da21801eda8ea5d04c8eb2941bbef968cb7951..38c08ee8e935d3fdf5ad4e443352e356
 +          Scanning takes about 1-2 seconds so adding this speeds up the server start.
 +     */
 +    runtimeOnly("org.apache.logging.log4j:log4j-core:2.14.1")
++    annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - Needed to generate meta for our Log4j plugins
 +    // Paper end
      implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
      implementation("org.ow2.asm:asm:9.4")
@@ -90,29 +98,141 @@ index 0000000000000000000000000000000000000000..a4070b59e261f0f1ac4beec47b11492f
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869
+index 0000000000000000000000000000000000000000..8f07539a82f449ad217e316a7513a1708781fb63
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,26 @@
 +package com.destroystokyo.paper.console;
 +
++import net.kyori.adventure.audience.MessageType;
++import net.kyori.adventure.identity.Identity;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import org.apache.logging.log4j.LogManager;
-+import org.apache.logging.log4j.Logger;
 +import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
 +
 +public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
 +
-+    private static final Logger LOGGER = LogManager.getRootLogger();
++    private static final ComponentLogger LOGGER = ComponentLogger.logger(LogManager.getRootLogger().getName());
 +
 +    @Override
 +    public void sendRawMessage(String message) {
-+        // TerminalConsoleAppender supports color codes directly in log messages
++        final Component msg = LegacyComponentSerializer.legacySection().deserialize(message);
++        this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
++    }
++
++    @Override
++    public void sendMessage(Identity identity, Component message, MessageType type) {
 +        LOGGER.info(message);
 +    }
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+index 3dc613116c086444ece88bcb0a569eeea953074f..db54a9c32578defa02fa58dc694c96684a4885ac 100644
+--- a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
++++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+@@ -20,6 +20,7 @@ import net.kyori.adventure.text.TranslatableComponent;
+ import net.kyori.adventure.text.flattener.ComponentFlattener;
+ import net.kyori.adventure.text.format.TextColor;
+ import net.kyori.adventure.text.serializer.ComponentSerializer;
++import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
+ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+ import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
+ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+@@ -107,6 +108,9 @@ public final class PaperAdventure {
+     public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale"); // init after FLATTENER because classloading triggered here might create a logger
+     @Deprecated
+     public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
++
++    public static final ANSIComponentSerializer ANSI_SERIALIZER = ANSIComponentSerializer.builder().flattener(FLATTENER).build();
++
+     private static final Codec<CompoundTag, String, IOException, IOException> NBT_CODEC = new Codec<CompoundTag, String, IOException, IOException>() {
+         @Override
+         public @NotNull CompoundTag decode(final @NotNull String encoded) throws IOException {
+diff --git a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
+index c3631efda9c7fa531a8a9f18fbee7b5f8655382b..769f6489632302627fa1730cc08e77f51eb54eb4 100644
+--- a/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
++++ b/src/main/java/io/papermc/paper/adventure/providers/ComponentLoggerProviderImpl.java
+@@ -1,9 +1,11 @@
+ package io.papermc.paper.adventure.providers;
+ 
+ import io.papermc.paper.adventure.PaperAdventure;
++import java.util.Locale;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+ import net.kyori.adventure.text.logger.slf4j.ComponentLoggerProvider;
++import net.kyori.adventure.translation.GlobalTranslator;
+ import org.jetbrains.annotations.NotNull;
+ import org.slf4j.LoggerFactory;
+ 
+@@ -14,6 +16,6 @@ public class ComponentLoggerProviderImpl implements ComponentLoggerProvider {
+     }
+ 
+     private String serialize(final Component message) {
+-        return PaperAdventure.asPlain(message, null);
++        return PaperAdventure.ANSI_SERIALIZER.serialize(GlobalTranslator.render(message, Locale.getDefault()));
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/console/StripANSIConverter.java b/src/main/java/io/papermc/paper/console/StripANSIConverter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..91547f6e6fe90006713beb2818da634304bdd236
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/console/StripANSIConverter.java
+@@ -0,0 +1,51 @@
++package io.papermc.paper.console;
++
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.config.Configuration;
++import org.apache.logging.log4j.core.config.plugins.Plugin;
++import org.apache.logging.log4j.core.layout.PatternLayout;
++import org.apache.logging.log4j.core.pattern.ConverterKeys;
++import org.apache.logging.log4j.core.pattern.LogEventPatternConverter;
++import org.apache.logging.log4j.core.pattern.PatternConverter;
++import org.apache.logging.log4j.core.pattern.PatternFormatter;
++import org.apache.logging.log4j.core.pattern.PatternParser;
++
++import java.util.List;
++import java.util.regex.Pattern;
++
++@Plugin(name = "stripAnsi", category = PatternConverter.CATEGORY)
++@ConverterKeys({"stripAnsi"})
++public final class StripANSIConverter extends LogEventPatternConverter {
++    final private Pattern ANSI_PATTERN = Pattern.compile("\\e\\[[\\d;]*[^\\d;]");
++
++    private final List<PatternFormatter> formatters;
++
++    private StripANSIConverter(List<PatternFormatter> formatters) {
++        super("stripAnsi", null);
++        this.formatters = formatters;
++    }
++
++    @Override
++    public void format(LogEvent event, StringBuilder toAppendTo) {
++        int start = toAppendTo.length();
++        for (PatternFormatter formatter : formatters) {
++            formatter.format(event, toAppendTo);
++        }
++        String content = toAppendTo.substring(start);
++        content = ANSI_PATTERN.matcher(content).replaceAll("");
++
++        toAppendTo.setLength(start);
++        toAppendTo.append(content);
++    }
++
++    public static StripANSIConverter newInstance(Configuration config, String[] options) {
++        if (options.length != 1) {
++            LOGGER.error("Incorrect number of options on stripAnsi. Expected exactly 1, received " + options.length);
++            return null;
++        }
++
++        PatternParser parser = PatternLayout.createPatternParser(config);
++        List<PatternFormatter> formatters = parser.parse(options[0]);
++        return new StripANSIConverter(formatters);
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 79b4139b653a09142e1b624849ad7c529c35450d..bc96a5c546c01b092f513f202e833b7b5f320e72 100644
+index 79b4139b653a09142e1b624849ad7c529c35450d..54108afdf1f88f8d9056b744ee9b0d3ebf009fcb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -165,7 +165,7 @@ import com.mojang.datafixers.util.Pair;
@@ -166,7 +286,7 @@ index 79b4139b653a09142e1b624849ad7c529c35450d..bc96a5c546c01b092f513f202e833b7b
      @Override
      public void sendSystemMessage(Component message) {
 -        MinecraftServer.LOGGER.info(message.getString());
-+        MinecraftServer.LOGGER.info(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
++        MinecraftServer.LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
      }
  
      public KeyPair getKeyPair() {
@@ -221,6 +341,19 @@ index 81a0a897a1fd2a408bfe43f24ed5e5f4bbefe161..24f62f9c4d288297d7a324e806745cc1
  
          System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
          System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
+diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+index 75083eeb9b413e6dd5375007360dce6857a08fff..d292fdb165436f0b9b46b32110f5e09ad0e517a1 100644
+--- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
++++ b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+@@ -166,7 +166,7 @@ public class MinecraftServerGui extends JComponent {
+         this.finalizers.forEach(Runnable::run);
+     }
+ 
+-    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})*)?[m|K]"); // CraftBukkit
++    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\e\\[[\\d;]*[^\\d;]"); // CraftBukkit // Paper
+     public void print(JTextArea textArea, JScrollPane scrollPane, String message) {
+         if (!SwingUtilities.isEventDispatchThread()) {
+             SwingUtilities.invokeLater(() -> {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index a9cab02b97f85fec31ad636f7a340066d409be36..03ea44619bc3445956f3e4539fc0e2923a29a92d 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -478,7 +611,7 @@ index 0000000000000000000000000000000000000000..0694b21465fb9e4164e71862ff24b622
 @@ -0,0 +1 @@
 +log4j.skipJansi=true
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
-index 722ca84968cbbbdeffd09939abff0cccd0a84010..620b9490e5f159080e50289d127404a1b56adbef 100644
+index 722ca84968cbbbdeffd09939abff0cccd0a84010..a994ec0f8621b1f267b40049306f63479c050e2f 100644
 --- a/src/main/resources/log4j2.xml
 +++ b/src/main/resources/log4j2.xml
 @@ -1,17 +1,14 @@
@@ -495,11 +628,11 @@ index 722ca84968cbbbdeffd09939abff0cccd0a84010..620b9490e5f159080e50289d127404a1
 -            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %msg%n" />
 -        </Queue>
 +        <TerminalConsole name="TerminalConsole">
-+            <PatternLayout pattern="%highlightError{[%d{HH:mm:ss} %level]: %minecraftFormatting{%msg}%n%xEx}" />
++            <PatternLayout pattern="%highlightError{[%d{HH:mm:ss} %level]: %msg%n%xEx}" />
 +        </TerminalConsole>
          <RollingRandomAccessFile name="File" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz">
 -            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %msg%n" />
-+            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %minecraftFormatting{%msg}{strip}%n" />
++            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level]: %stripAnsi{%msg}%n" />
              <Policies>
                  <TimeBasedTriggeringPolicy />
                  <OnStartupTriggeringPolicy />
