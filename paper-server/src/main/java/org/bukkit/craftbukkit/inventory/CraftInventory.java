@@ -84,7 +84,7 @@ public class CraftInventory implements Inventory {
 
     @Override
     public void setContents(ItemStack[] items) {
-        Preconditions.checkArgument(getSize() < items.length, "Invalid inventory size (%s); expected %s or less", items.length, getSize());
+        Preconditions.checkArgument(items.length <= getSize(), "Invalid inventory size (%s); expected %s or less", items.length, getSize());
 
         for (int i = 0; i < getSize(); i++) {
             if (i >= items.length) {

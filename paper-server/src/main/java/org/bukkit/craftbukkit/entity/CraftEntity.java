@@ -747,7 +747,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setTicksLived(int value) {
-        Preconditions.checkArgument(value > 0, "Age value (%s) must be positive", value);
+        Preconditions.checkArgument(value > 0, "Age value (%s) must be greater than 0", value);
         getHandle().tickCount = value;
     }
 

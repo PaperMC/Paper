@@ -32,7 +32,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public void setContents(ItemStack[] items) {
-        Preconditions.checkArgument(getSize() <= items.length, "Invalid inventory size (%s); expected %s or less", items.length, getSize());
+        Preconditions.checkArgument(items.length <= getSize(), "Invalid inventory size (%s); expected %s or less", items.length, getSize());
         setContents(items[0], Arrays.copyOfRange(items, 1, items.length));
     }
 
@@ -96,7 +96,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public void setMatrix(ItemStack[] contents) {
-        Preconditions.checkArgument(getMatrixInventory().getContainerSize() <= contents.length, "Invalid inventory size (%s); expected %s or less", contents.length, getMatrixInventory().getContainerSize());
+        Preconditions.checkArgument(contents.length <= getMatrixInventory().getContainerSize(), "Invalid inventory size (%s); expected %s or less", contents.length, getMatrixInventory().getContainerSize());
 
         for (int i = 0; i < getMatrixInventory().getContainerSize(); i++) {
             if (i < contents.length) {

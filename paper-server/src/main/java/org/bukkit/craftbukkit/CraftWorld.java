@@ -1550,9 +1550,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        Preconditions.checkArgument(loc != null, "Location cannot be null");
-        Preconditions.checkArgument(sound != null, "Sound cannot be null");
-        Preconditions.checkArgument(category != null, "Category cannot be null");
+        if (loc == null || sound == null || category == null) return;
 
         double x = loc.getX();
         double y = loc.getY();
@@ -1563,9 +1561,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        Preconditions.checkArgument(loc != null, "Location cannot be null");
-        Preconditions.checkArgument(sound != null, "Sound cannot be null");
-        Preconditions.checkArgument(category != null, "Category cannot be null");
+        if (loc == null || sound == null || category == null) return;
 
         double x = loc.getX();
         double y = loc.getY();

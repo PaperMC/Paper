@@ -457,16 +457,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        Preconditions.checkArgument(sound != null, "Sound cannot be null");
-        Preconditions.checkArgument(category != null, "Category cannot be null");
+        if (loc == null || sound == null || category == null || getHandle().connection == null) return;
 
         playSound0(loc, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(CraftSound.getSoundEffect(sound)), net.minecraft.sounds.SoundCategory.valueOf(category.name()), volume, pitch);
     }
 
     @Override
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        Preconditions.checkArgument(sound != null, "sound cannot be null");
-        Preconditions.checkArgument(category != null, "Category cannot be null");
+        if (loc == null || sound == null || category == null || getHandle().connection == null) return;
 
         playSound0(loc, Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), volume, pitch);
     }
@@ -492,16 +490,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void playSound(org.bukkit.entity.Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        Preconditions.checkArgument(category != null, "Category cannot be null");
-        Preconditions.checkArgument(sound != null, "Sound cannot be null");
+        if (!(entity instanceof CraftEntity craftEntity) || sound == null || category == null || getHandle().connection == null) return;
 
         playSound0(entity, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(CraftSound.getSoundEffect(sound)), net.minecraft.sounds.SoundCategory.valueOf(category.name()), volume, pitch);
     }
 
     @Override
     public void playSound(org.bukkit.entity.Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        Preconditions.checkArgument(category != null, "Category cannot be null");
-        Preconditions.checkArgument(sound != null, "sound cannot be null");
+        if (!(entity instanceof CraftEntity craftEntity) || sound == null || category == null || getHandle().connection == null) return;
 
         playSound0(entity, Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), volume, pitch);
     }
