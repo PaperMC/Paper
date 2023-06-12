@@ -1639,6 +1639,7 @@ public final class CraftServer implements Server {
     @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
+        Preconditions.checkArgument(!name.isBlank(), "name cannot be empty");
 
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
