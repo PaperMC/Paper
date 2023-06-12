@@ -192,34 +192,24 @@ index e68205fe7169c7c5b7c6fdada2ee97d86107ca97..aa8972fd1a1fade05d60ab69efb8ff24
                  try {
                      filechannel.close();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 07c4d9cd5081378e1b903518f7174fca959cd9e3..dfc2789009fcaa08baa8054bdac915590b8701d6 100644
+index fcbf32a233c240dd45f75ee736bd102ce9f79332..833240d2a4936343710a60876a66d01112e15a2c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-@@ -17,6 +17,9 @@ import java.util.concurrent.atomic.AtomicReference;
- import java.util.function.Consumer;
- import java.util.function.IntUnaryOperator;
- import java.util.logging.Level;
-+import com.destroystokyo.paper.ServerSchedulerReportingWrapper;
-+import com.destroystokyo.paper.event.server.ServerExceptionEvent;
-+import com.destroystokyo.paper.exception.ServerSchedulerException;
- import org.apache.commons.lang.Validate;
- import org.bukkit.plugin.IllegalPluginAccessException;
- import org.bukkit.plugin.Plugin;
-@@ -434,6 +437,8 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -434,6 +434,8 @@ public class CraftScheduler implements BukkitScheduler {
                              msg,
                              throwable);
                      }
 +                    org.bukkit.Bukkit.getServer().getPluginManager().callEvent(
-+                        new ServerExceptionEvent(new ServerSchedulerException(msg, throwable, task)));
++                        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(msg, throwable, task)));
                      // Paper end
                  } finally {
                      this.currentTask = null;
-@@ -441,7 +446,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -441,7 +443,7 @@ public class CraftScheduler implements BukkitScheduler {
                  this.parsePending();
              } else {
                  this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));
 -                this.executor.execute(task);
-+                this.executor.execute(new ServerSchedulerReportingWrapper(task)); // Paper
++                this.executor.execute(new com.destroystokyo.paper.ServerSchedulerReportingWrapper(task)); // Paper
                  // We don't need to parse pending
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
