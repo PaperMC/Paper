@@ -224,7 +224,7 @@ public class SimpleHelpMap implements HelpMap {
 
     @Override
     public void registerHelpTopicFactory(Class commandClass, HelpTopicFactory factory) {
-        Preconditions.checkArgument(Command.class.isAssignableFrom(commandClass) && CommandExecutor.class.isAssignableFrom(commandClass), "commandClass (%s) must implement either Command or CommandExecutor", commandClass.getName());
+        Preconditions.checkArgument(Command.class.isAssignableFrom(commandClass) || CommandExecutor.class.isAssignableFrom(commandClass), "commandClass (%s) must implement either Command or CommandExecutor", commandClass.getName());
         topicFactoryMap.put(commandClass, factory);
     }
 
