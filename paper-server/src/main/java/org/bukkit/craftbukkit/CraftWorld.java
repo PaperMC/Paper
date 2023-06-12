@@ -1565,7 +1565,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
         Preconditions.checkArgument(loc != null, "Location cannot be null");
         Preconditions.checkArgument(sound != null, "Sound cannot be null");
-        Preconditions.checkArgument(!sound.isBlank(), "Sound cannot be empty");
         Preconditions.checkArgument(category != null, "Category cannot be null");
 
         double x = loc.getX();
@@ -1674,7 +1673,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean isGameRule(String rule) {
         Preconditions.checkArgument(rule != null, "String rule cannot be null");
-        Preconditions.checkArgument(!rule.isBlank(), "String rule cannot be empty");
+        Preconditions.checkArgument(!rule.isEmpty(), "String rule cannot be empty");
         return getGameRulesNMS().containsKey(rule);
     }
 

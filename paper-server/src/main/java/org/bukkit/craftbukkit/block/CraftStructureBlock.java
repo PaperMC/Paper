@@ -42,7 +42,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
     @Override
     public void setAuthor(String author) {
         Preconditions.checkArgument(author != null, "Author name cannot be null");
-        Preconditions.checkArgument(!author.isBlank(), "Author name cannot be empty");
+        Preconditions.checkArgument(!author.isEmpty(), "Author name cannot be empty");
         getSnapshot().author = author;
     }
 

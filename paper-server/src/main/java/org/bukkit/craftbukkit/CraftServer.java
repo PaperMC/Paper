@@ -1639,7 +1639,6 @@ public final class CraftServer implements Server {
     @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
-        Preconditions.checkArgument(!name.isBlank(), "name cannot be empty");
 
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
@@ -1707,7 +1706,6 @@ public final class CraftServer implements Server {
     @Override
     public void banIP(String address) {
         Preconditions.checkArgument(address != null, "address cannot be null");
-        Preconditions.checkArgument(!address.isBlank(), "address cannot be empty");
 
         this.getBanList(org.bukkit.BanList.Type.IP).addBan(address, null, null, null);
     }
@@ -1715,7 +1713,6 @@ public final class CraftServer implements Server {
     @Override
     public void unbanIP(String address) {
         Preconditions.checkArgument(address != null, "address cannot be null");
-        Preconditions.checkArgument(!address.isBlank(), "address cannot be empty");
 
         this.getBanList(org.bukkit.BanList.Type.IP).pardon(address);
     }
