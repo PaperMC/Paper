@@ -102,6 +102,87 @@ index 0000000000000000000000000000000000000000..3246049fd557951d971ef40112a411c1
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java b/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0ebc5ad52fa347fee9b31e3c2b41b79d94dc6644
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/BossBarImplementationImpl.java
+@@ -0,0 +1,75 @@
++package io.papermc.paper.adventure;
++
++import java.util.Set;
++import java.util.function.Function;
++import net.kyori.adventure.bossbar.BossBar;
++import net.kyori.adventure.bossbar.BossBarImplementation;
++import net.kyori.adventure.text.Component;
++import net.minecraft.network.protocol.game.ClientboundBossEventPacket;
++import net.minecraft.server.level.ServerBossEvent;
++import net.minecraft.world.BossEvent;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++public final class BossBarImplementationImpl implements BossBar.Listener, BossBarImplementation {
++    private final BossBar bar;
++    private ServerBossEvent vanilla;
++
++    public BossBarImplementationImpl(final BossBar bar) {
++        this.bar = bar;
++    }
++
++    public void playerShow(final CraftPlayer player) {
++        if (this.vanilla == null) {
++            this.vanilla = new ServerBossEvent(
++                PaperAdventure.asVanilla(this.bar.name()),
++                PaperAdventure.asVanilla(this.bar.color()),
++                PaperAdventure.asVanilla(this.bar.overlay())
++            );
++            this.vanilla.adventure = this.bar;
++            this.bar.addListener(this);
++        }
++        this.vanilla.addPlayer(player.getHandle());
++    }
++
++    public void playerHide(final CraftPlayer player) {
++        if (this.vanilla != null) {
++            this.vanilla.removePlayer(player.getHandle());
++            if (this.vanilla.getPlayers().isEmpty()) {
++                this.bar.removeListener(this);
++                this.vanilla = null;
++            }
++        }
++    }
++
++    @Override
++    public void bossBarNameChanged(final @NonNull BossBar bar, final @NonNull Component oldName, final @NonNull Component newName) {
++        this.maybeBroadcast(ClientboundBossEventPacket::createUpdateNamePacket);
++    }
++
++    @Override
++    public void bossBarProgressChanged(final @NonNull BossBar bar, final float oldProgress, final float newProgress) {
++        this.maybeBroadcast(ClientboundBossEventPacket::createUpdateProgressPacket);
++    }
++
++    @Override
++    public void bossBarColorChanged(final @NonNull BossBar bar, final BossBar.@NonNull Color oldColor, final BossBar.@NonNull Color newColor) {
++        this.maybeBroadcast(ClientboundBossEventPacket::createUpdateStylePacket);
++    }
++
++    @Override
++    public void bossBarOverlayChanged(final @NonNull BossBar bar, final BossBar.@NonNull Overlay oldOverlay, final BossBar.@NonNull Overlay newOverlay) {
++        this.maybeBroadcast(ClientboundBossEventPacket::createUpdateStylePacket);
++    }
++
++    @Override
++    public void bossBarFlagsChanged(final @NonNull BossBar bar, final @NonNull Set<BossBar.Flag> flagsAdded, final @NonNull Set<BossBar.Flag> flagsRemoved) {
++        this.maybeBroadcast(ClientboundBossEventPacket::createUpdatePropertiesPacket);
++    }
++
++    private void maybeBroadcast(final Function<BossEvent, ClientboundBossEventPacket> fn) {
++        if (this.vanilla != null) {
++            this.vanilla.broadcast(fn);
++        }
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatDecorationProcessor.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..3b53d87a52cafb2503419f21ddd87d42a5ec0330
@@ -1130,56 +1211,6 @@ index 0000000000000000000000000000000000000000..3dc613116c086444ece88bcb0a569eee
 +        return ChatFormatting.getByHexValue(color.value());
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..7493efba31403cbe7f26e493f165f1b83aa847bb
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
-@@ -0,0 +1,44 @@
-+package io.papermc.paper.adventure;
-+
-+import java.util.Set;
-+import java.util.function.Consumer;
-+import java.util.function.Function;
-+
-+import net.kyori.adventure.bossbar.BossBar;
-+import net.kyori.adventure.text.Component;
-+import net.minecraft.network.protocol.game.ClientboundBossEventPacket;
-+import net.minecraft.world.BossEvent;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+
-+public final class VanillaBossBarListener implements BossBar.Listener {
-+    private final Consumer<Function<BossEvent, ClientboundBossEventPacket>> action;
-+
-+    public VanillaBossBarListener(final Consumer<Function<BossEvent, ClientboundBossEventPacket>> action) {
-+        this.action = action;
-+    }
-+
-+    @Override
-+    public void bossBarNameChanged(final @NonNull BossBar bar, final @NonNull Component oldName, final @NonNull Component newName) {
-+        this.action.accept(ClientboundBossEventPacket::createUpdateNamePacket);
-+    }
-+
-+    @Override
-+    public void bossBarProgressChanged(final @NonNull BossBar bar, final float oldProgress, final float newProgress) {
-+        this.action.accept(ClientboundBossEventPacket::createUpdateProgressPacket);
-+    }
-+
-+    @Override
-+    public void bossBarColorChanged(final @NonNull BossBar bar, final BossBar.@NonNull Color oldColor, final BossBar.@NonNull Color newColor) {
-+        this.action.accept(ClientboundBossEventPacket::createUpdateStylePacket);
-+    }
-+
-+    @Override
-+    public void bossBarOverlayChanged(final @NonNull BossBar bar, final BossBar.@NonNull Overlay oldOverlay, final BossBar.@NonNull Overlay newOverlay) {
-+        this.action.accept(ClientboundBossEventPacket::createUpdateStylePacket);
-+    }
-+
-+    @Override
-+    public void bossBarFlagsChanged(final @NonNull BossBar bar, final @NonNull Set<BossBar.Flag> flagsAdded, final @NonNull Set<BossBar.Flag> flagsRemoved) {
-+        this.action.accept(ClientboundBossEventPacket::createUpdatePropertiesPacket);
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2a08e0461db4e699b7e6a1558a4419c848fc7f4f
@@ -1204,6 +1235,26 @@ index 0000000000000000000000000000000000000000..2a08e0461db4e699b7e6a1558a4419c8
 +    @Override
 +    public net.minecraft.network.chat.Component serialize(final Component component) {
 +        return net.minecraft.network.chat.Component.Serializer.fromJson(GsonComponentSerializer.gson().serializer().toJsonTree(component));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/adventure/providers/BossBarImplementationProvider.java b/src/main/java/io/papermc/paper/adventure/providers/BossBarImplementationProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2ee72fe7cb56e70404b8c86f0c9578750a45af03
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/providers/BossBarImplementationProvider.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.adventure.providers;
++
++import io.papermc.paper.adventure.BossBarImplementationImpl;
++import net.kyori.adventure.bossbar.BossBar;
++import net.kyori.adventure.bossbar.BossBarImplementation;
++import org.jetbrains.annotations.NotNull;
++
++@SuppressWarnings("UnstableApiUsage") // permitted provider
++public class BossBarImplementationProvider implements BossBarImplementation.Provider {
++    @Override
++    public @NotNull BossBarImplementation create(final @NotNull BossBar bar) {
++        return new BossBarImplementationImpl(bar);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/providers/ClickCallbackProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/ClickCallbackProviderImpl.java
@@ -1559,48 +1610,6 @@ index 0000000000000000000000000000000000000000..c0701d4f93a4d77a8177d2dd8d5076f9
 +    @Override
 +    public @NotNull Consumer<PlainTextComponentSerializer.Builder> plainText() {
 +        return builder -> builder.flattener(PaperAdventure.FLATTENER);
-+    }
-+}
-diff --git a/src/main/java/net/kyori/adventure/bossbar/HackyBossBarPlatformBridge.java b/src/main/java/net/kyori/adventure/bossbar/HackyBossBarPlatformBridge.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..2dc92d8d2764d3e9b621d5c7d5e30c30367b3117
---- /dev/null
-+++ b/src/main/java/net/kyori/adventure/bossbar/HackyBossBarPlatformBridge.java
-@@ -0,0 +1,36 @@
-+package net.kyori.adventure.bossbar;
-+
-+import io.papermc.paper.adventure.PaperAdventure;
-+import io.papermc.paper.adventure.VanillaBossBarListener;
-+import net.minecraft.server.level.ServerBossEvent;
-+import org.bukkit.craftbukkit.entity.CraftPlayer;
-+
-+public abstract class HackyBossBarPlatformBridge {
-+    public ServerBossEvent vanilla$bar;
-+    private VanillaBossBarListener vanilla$listener;
-+
-+    public final void paper$playerShow(final CraftPlayer player) {
-+        if (this.vanilla$bar == null) {
-+            final BossBar $this = (BossBar) this;
-+            this.vanilla$bar = new ServerBossEvent(
-+                PaperAdventure.asVanilla($this.name()),
-+                PaperAdventure.asVanilla($this.color()),
-+                PaperAdventure.asVanilla($this.overlay())
-+            );
-+            this.vanilla$bar.adventure = $this;
-+            this.vanilla$listener = new VanillaBossBarListener(this.vanilla$bar::broadcast);
-+            $this.addListener(this.vanilla$listener);
-+        }
-+        this.vanilla$bar.addPlayer(player.getHandle());
-+    }
-+
-+    public final void paper$playerHide(final CraftPlayer player) {
-+        if (this.vanilla$bar != null) {
-+            this.vanilla$bar.removePlayer(player.getHandle());
-+            if (this.vanilla$bar.getPlayers().isEmpty()) {
-+                ((BossBar) this).removeListener(this.vanilla$listener);
-+                this.vanilla$bar = null;
-+            }
-+        }
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/ChatFormatting.java b/src/main/java/net/minecraft/ChatFormatting.java
@@ -3614,7 +3623,7 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..f9863e138994f6c7a7975a852f106faa
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 242b6cb2ac775b4fc687a5a62011b53ab7bde7f6..d1e6cfe6009a31e109b4061ac3cba48947404f44 100644
+index 242b6cb2ac775b4fc687a5a62011b53ab7bde7f6..e087ec1f456a8eff1071700fb98eac792ebb8d19 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -285,14 +285,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -3833,7 +3842,7 @@ index 242b6cb2ac775b4fc687a5a62011b53ab7bde7f6..d1e6cfe6009a31e109b4061ac3cba489
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -2124,6 +2211,232 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2124,6 +2211,252 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
@@ -3992,14 +4001,34 @@ index 242b6cb2ac775b4fc687a5a62011b53ab7bde7f6..d1e6cfe6009a31e109b4061ac3cba489
 +
 +    // resetTitle implemented above
 +
++    private @Nullable Set<net.kyori.adventure.bossbar.BossBar> activeBossBars;
++
++    @Override
++    public @NotNull Iterable<? extends net.kyori.adventure.bossbar.BossBar> activeBossBars() {
++        if (this.activeBossBars != null) {
++            return java.util.Collections.unmodifiableSet(this.activeBossBars);
++        }
++        return Set.of();
++    }
++
 +    @Override
 +    public void showBossBar(final net.kyori.adventure.bossbar.BossBar bar) {
-+        ((net.kyori.adventure.bossbar.HackyBossBarPlatformBridge) bar).paper$playerShow(this);
++        net.kyori.adventure.bossbar.BossBarImplementation.get(bar, io.papermc.paper.adventure.BossBarImplementationImpl.class).playerShow(this);
++        if (this.activeBossBars == null) {
++            this.activeBossBars = new HashSet<>();
++        }
++        this.activeBossBars.add(bar);
 +    }
 +
 +    @Override
 +    public void hideBossBar(final net.kyori.adventure.bossbar.BossBar bar) {
-+        ((net.kyori.adventure.bossbar.HackyBossBarPlatformBridge) bar).paper$playerHide(this);
++        net.kyori.adventure.bossbar.BossBarImplementation.get(bar, io.papermc.paper.adventure.BossBarImplementationImpl.class).playerHide(this);
++        if (this.activeBossBars != null) {
++            this.activeBossBars.remove(bar);
++            if (this.activeBossBars.isEmpty()) {
++                this.activeBossBars = null;
++            }
++        }
 +    }
 +
 +    @Override
@@ -4942,6 +4971,13 @@ index 838d5b877c01be3ef353f434d98e27b46c0a3fb4..5c4c0ba05f10d2d83b22d3e86805cfa8
          HashSet<Player> reference = new HashSet<Player>(players.size());
          for (ServerPlayer player : players) {
              reference.add(player.getBukkitEntity());
+diff --git a/src/main/resources/META-INF/services/net.kyori.adventure.bossbar.BossBarImplementation$Provider b/src/main/resources/META-INF/services/net.kyori.adventure.bossbar.BossBarImplementation$Provider
+new file mode 100644
+index 0000000000000000000000000000000000000000..9b7119d0b88bf7f9d25fab37a15340cabc0c9b7b
+--- /dev/null
++++ b/src/main/resources/META-INF/services/net.kyori.adventure.bossbar.BossBarImplementation$Provider
+@@ -0,0 +1 @@
++io.papermc.paper.adventure.providers.BossBarImplementationProvider
 diff --git a/src/main/resources/META-INF/services/net.kyori.adventure.text.event.ClickCallback$Provider b/src/main/resources/META-INF/services/net.kyori.adventure.text.event.ClickCallback$Provider
 new file mode 100644
 index 0000000000000000000000000000000000000000..845711e03c41c6b6a03d541f1c43d37b24c11733
