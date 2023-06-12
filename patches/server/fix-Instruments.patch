@@ -10,62 +10,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-     public void playNote(Location loc, Instrument instrument, Note note) {
+ 
          if (this.getHandle().connection == null) return;
  
--        String instrumentName = null;
--        switch (instrument.ordinal()) {
--            case 0:
--                instrumentName = "harp";
--                break;
--            case 1:
--                instrumentName = "basedrum";
--                break;
--            case 2:
--                instrumentName = "snare";
--                break;
--            case 3:
--                instrumentName = "hat";
--                break;
--            case 4:
--                instrumentName = "bass";
--                break;
--            case 5:
--                instrumentName = "flute";
--                break;
--            case 6:
--                instrumentName = "bell";
--                break;
--            case 7:
--                instrumentName = "guitar";
--                break;
--            case 8:
--                instrumentName = "chime";
--                break;
--            case 9:
--                instrumentName = "xylophone";
--                break;
--            case 10:
--                instrumentName = "iron_xylophone";
--                break;
--            case 11:
--                instrumentName = "cow_bell";
--                break;
--            case 12:
--                instrumentName = "didgeridoo";
--                break;
--            case 13:
--                instrumentName = "bit";
--                break;
--            case 14:
--                instrumentName = "banjo";
--                break;
--            case 15:
--                instrumentName = "pling";
--                break;
--            case 16:
--                instrumentName = "xylophone";
--                break;
+-        String instrumentName = switch (instrument.ordinal()) {
+-            case 0 -> "harp";
+-            case 1 -> "basedrum";
+-            case 2 -> "snare";
+-            case 3 -> "hat";
+-            case 4 -> "bass";
+-            case 5 -> "flute";
+-            case 6 -> "bell";
+-            case 7 -> "guitar";
+-            case 8 -> "chime";
+-            case 9 -> "xylophone";
+-            case 10 -> "iron_xylophone";
+-            case 11 -> "cow_bell";
+-            case 12 -> "didgeridoo";
+-            case 13 -> "bit";
+-            case 14 -> "banjo";
+-            case 15 -> "pling";
+-            case 16 -> "xylophone";
+-            default -> null;
+-        };
+-
+-        float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
+-        this.getHandle().connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(CraftSound.getSoundEffect("block.note_block." + instrumentName)), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong()));
 +        // Paper start - fix all this (modeled off of NoteBlock)
 +        net.minecraft.world.level.block.state.properties.NoteBlockInstrument nms = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
 +        float f;
@@ -73,9 +43,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
 +        } else {
 +            f = 1.0f;
-         }
--        float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
--        this.getHandle().connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(CraftSound.getSoundEffect("block.note_block." + instrumentName)), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong()));
++        }
 +        if (!nms.hasCustomSound()) {
 +            this.getHandle().connection.send(new ClientboundSoundPacket(nms.getSoundEvent(), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong()));
 +        }

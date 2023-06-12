@@ -2181,13 +2181,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private static final float AVERAGE_TICK_TIME_SMOOTHING = 0.8F;
      private static final int TICK_STATS_SPAN = 100;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private boolean preventProxyConnections;
+     private boolean pvp;
      private boolean allowFlight;
-     @Nullable
-     private String motd;
-+    @Nullable private net.kyori.adventure.text.Component cachedMotd; // Paper
+-    @Nullable
+-    private String motd;
++    private net.kyori.adventure.text.Component motd; // Paper - Adventure
      private int playerIdleTimeout;
      public final long[] tickTimes;
      @Nullable
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private ServerStatus buildServerStatus() {
+         ServerStatus.Players serverping_serverpingplayersample = this.buildPlayerStatus();
+ 
+-        return new ServerStatus(Component.nullToEmpty(this.motd), Optional.of(serverping_serverpingplayersample), Optional.of(ServerStatus.Version.current()), Optional.ofNullable(this.statusIcon), this.enforceSecureProfile());
++        return new ServerStatus(io.papermc.paper.adventure.PaperAdventure.asVanilla(this.motd), Optional.of(serverping_serverpingplayersample), Optional.of(ServerStatus.Version.current()), Optional.ofNullable(this.statusIcon), this.enforceSecureProfile()); // Paper - Adventure
+     }
+ 
+     private ServerStatus.Players buildPlayerStatus() {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          SpigotTimings.schedulerTimer.startTiming(); // Spigot
          this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
@@ -2197,24 +2208,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          SpigotTimings.commandFunctionsTimer.startTiming(); // Spigot
          this.getFunctions().tick();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         return this.motd;
+     public abstract boolean isCommandBlockEnabled();
+ 
+     public String getMotd() {
+-        return this.motd;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.motd); // Paper - Adventure
      }
  
-+    public net.kyori.adventure.text.Component getComponentMotd() {
-+        net.kyori.adventure.text.Component component = cachedMotd;
-+        if (this.motd != null && this.cachedMotd == null) {
-+            component = cachedMotd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.motd);
-+        }
-+
-+        return component != null ? component : net.kyori.adventure.text.Component.empty();
+     public void setMotd(String motd) {
++        // Paper start - Adventure
++        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOr(motd, net.kyori.adventure.text.Component.empty());
 +    }
 +
-     public void setMotd(String motd) {
++    public net.kyori.adventure.text.Component motd() {
++        return this.motd;
++    }
++
++    public void motd(net.kyori.adventure.text.Component motd) {
++        // Paper end - Adventure
          this.motd = motd;
-+        this.cachedMotd = null; // Paper
      }
  
-     public boolean isStopped() {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
@@ -2937,14 +2951,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public Inventory createInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
-+        Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
++        Preconditions.checkArgument(type.isCreatable(), "Cannot open an inventory of type ", type);
 +        return CraftInventoryCreator.INSTANCE.createInventory(owner, type, title);
 +    }
 +    // Paper end
 +
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
-         Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
+         Preconditions.checkArgument(type != null, "InventoryType cannot be null");
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
@@ -2952,14 +2966,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public Inventory createInventory(InventoryHolder owner, int size, net.kyori.adventure.text.Component title) throws IllegalArgumentException {
-+        Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got " + size + ")");
++        Preconditions.checkArgument(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got " + size + ")");
 +        return CraftInventoryCreator.INSTANCE.createInventory(owner, size, title);
 +    }
 +    // Paper end
 +
      @Override
      public Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException {
-         Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got " + size + ")");
+         Preconditions.checkArgument(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got %s)", size);
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size, title);
      }
  
@@ -2978,12 +2992,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return Thread.currentThread().equals(console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
-+    // Paper start
++    // Paper start - Adventure
 +    @Override
 +    public net.kyori.adventure.text.Component motd() {
-+        return console.getComponentMotd();
++        return this.console.motd();
++    }
++    @Override
++    public void motd(final net.kyori.adventure.text.Component motd) {
++        this.console.motd(motd);
 +    }
 +    // Paper end
++
      @Override
      public String getMotd() {
          return this.console.getMotd();
@@ -3750,7 +3769,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public void setCompassTarget(Location loc) {
-         if (this.getHandle().connection == null) return;
+         Preconditions.checkArgument(loc != null, "Location cannot be null");
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.getHandle().connection.send(packet);
      }
@@ -3764,8 +3783,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (lines == null) {
 +            lines = new java.util.ArrayList<>(4);
 +        }
-+        Validate.notNull(loc, "Location cannot be null");
-+        Validate.notNull(dyeColor, "DyeColor cannot be null");
++        Preconditions.checkArgument(loc != null, "Location cannot be null");
++        Preconditions.checkArgument(dyeColor != null, "DyeColor cannot be null");
 +        if (lines.size() < 4) {
 +            throw new IllegalArgumentException("Must have at least 4 lines");
 +        }
@@ -3777,7 +3796,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void sendSignChange(Location loc, String[] lines) {
          this.sendSignChange(loc, lines, DyeColor.BLACK);
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         }
+         if (this.getHandle().connection == null) return;
  
          Component[] components = CraftSign.sanitizeLines(lines);
 +        // Paper start - adventure
@@ -3823,10 +3842,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public void setResourcePack(String url, byte[] hashBytes, net.kyori.adventure.text.Component prompt, boolean force) {
-+        Validate.notNull(url, "Resource pack URL cannot be null");
++        Preconditions.checkArgument(url != null, "Resource pack URL cannot be null");
 +        final String hash;
 +        if (hashBytes != null) {
-+            Validate.isTrue(hashBytes.length == 20, "Resource pack hash should be 20 bytes long but was " + hashBytes.length);
++            Preconditions.checkArgument(hashBytes.length == 20, "Resource pack hash should be 20 bytes long but was " + hashBytes.length);
 +            hash = BaseEncoding.base16().lowerCase().encode(hashBytes);
 +        } else {
 +            hash = "";
@@ -4218,7 +4237,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this(owner, type.getDefaultSize(), type.getDefaultTitle());
              this.type = type;
 @@ -0,0 +0,0 @@ public class CraftInventoryCustom extends CraftInventory {
-             Validate.notNull(title, "Title cannot be null");
+             Preconditions.checkArgument(title != null, "title cannot be null");
              this.items = NonNullList.withSize(size, ItemStack.EMPTY);
              this.title = title;
 +            this.adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title);
@@ -4229,7 +4248,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +        // Paper start
 +        public MinecraftInventory(final InventoryHolder owner, final int size, final net.kyori.adventure.text.Component title) {
-+            Validate.notNull(title, "Title cannot be null");
++            Preconditions.checkArgument(title != null, "Title cannot be null");
 +            this.items = NonNullList.withSize(size, ItemStack.EMPTY);
 +            this.title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(title);
 +            this.adventure$title = title;
@@ -4323,12 +4342,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +        @Deprecated // Paper - Adventure
          public MinecraftMerchant(String title) {
-             Validate.notNull(title, "Title cannot be null");
+             Preconditions.checkArgument(title != null, "Title cannot be null");
              this.title = CraftChatMessage.fromString(title)[0];
          }
 +        // Paper start
 +        public MinecraftMerchant(net.kyori.adventure.text.Component title) {
-+            Validate.notNull(title, "Title cannot be null");
++            Preconditions.checkArgument(title != null, "Title cannot be null");
 +            this.title = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
 +        }
 +        // Paper end
@@ -4339,9 +4358,9 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-@@ -0,0 +0,0 @@
- package org.bukkit.craftbukkit.inventory;
+@@ -0,0 +0,0 @@ package org.bukkit.craftbukkit.inventory;
  
+ import com.google.common.base.Preconditions;
  import com.google.common.collect.ImmutableList;
 -import com.google.common.collect.ImmutableMap.Builder;
  import com.google.common.collect.Lists;
@@ -4379,7 +4398,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public net.kyori.adventure.text.Component page(final int page) {
-+        Validate.isTrue(isValidPage(page), "Invalid page number");
++        Preconditions.checkArgument(isValidPage(page), "Invalid page number");
 +        return this instanceof CraftMetaBookSigned ? net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(pages.get(page - 1)) : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(pages.get(page - 1));
 +    }
 +
@@ -4495,7 +4514,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
      @Override
      public String getPage(final int page) {
-         Validate.isTrue(this.isValidPage(page), "Invalid page number");
+         Preconditions.checkArgument(this.isValidPage(page), "Invalid page number (%s)", page);
 @@ -0,0 +0,0 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
      }
  
@@ -4758,7 +4777,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
      @Override
      public String getDisplayName() throws IllegalStateException {
-         CraftScoreboard scoreboard = this.checkState();
+         this.checkState();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
@@ -4785,12 +4804,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (displayName == null) {
 +            displayName = net.kyori.adventure.text.Component.empty();
 +        }
-+        Validate.notNull(name, "Objective name cannot be null");
-+        Validate.notNull(criteria, "Criteria cannot be null");
-+        Validate.notNull(displayName, "Display name cannot be null");
-+        Validate.notNull(renderType, "RenderType cannot be null");
-+        Validate.isTrue(name.length() <= Short.MAX_VALUE, "The name '" + name + "' is longer than the limit of 32767 characters");
-+        Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
++        Preconditions.checkArgument(name != null, "Objective name cannot be null");
++        Preconditions.checkArgument(criteria != null, "Criteria cannot be null");
++        Preconditions.checkArgument(renderType != null, "RenderType cannot be null");
++        Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
++        Preconditions.checkArgument(this.board.getObjective(name) == null, "An objective of name '%s' already exists", name);
 +        net.minecraft.world.scores.Objective objective = board.addObjective(name, ((CraftCriteria) criteria).criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
 +        return new CraftObjective(this, objective);
 +    }
@@ -4802,13 +4820,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public CraftObjective registerNewObjective(String name, Criteria criteria, String displayName, RenderType renderType) throws IllegalArgumentException {
--        Validate.notNull(name, "Objective name cannot be null");
--        Validate.notNull(criteria, "Criteria cannot be null");
--        Validate.notNull(displayName, "Display name cannot be null");
--        Validate.notNull(renderType, "RenderType cannot be null");
--        Validate.isTrue(name.length() <= Short.MAX_VALUE, "The name '" + name + "' is longer than the limit of 32767 characters");
--        Validate.isTrue(displayName.length() <= 128, "The display name '" + displayName + "' is longer than the limit of 128 characters");
--        Validate.isTrue(this.board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
+-        Preconditions.checkArgument(name != null, "Objective name cannot be null");
+-        Preconditions.checkArgument(criteria != null, "Criteria cannot be null");
+-        Preconditions.checkArgument(displayName != null, "Display name cannot be null");
+-        Preconditions.checkArgument(renderType != null, "RenderType cannot be null");
+-        Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
+-        Preconditions.checkArgument(displayName.length() <= 128, "The display name '%s' is longer than the limit of 128 characters (%s)", displayName, displayName.length());
+-        Preconditions.checkArgument(this.board.getObjective(name) == null, "An objective of name '%s' already exists", name);
 -
 -        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
 -        return new CraftObjective(this, objective);
@@ -4967,9 +4985,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
 -    HashSet<Player> makeReference() {
 +    protected HashSet<Player> makeReference() { // Paper - protected
-         if (reference != null) {
-             throw new IllegalStateException("Reference already created!");
-         }
+         Preconditions.checkState(reference == null, "Reference already created!");
          List<ServerPlayer> players = this.server.getPlayerList().players;
 +        // Paper start
 +        return makePlayerSet(this.server);
