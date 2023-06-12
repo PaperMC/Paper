@@ -2051,13 +2051,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
   * Represents a player, connected or not
   */
 -public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient {
-+public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified { // Paper
++public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer { // Paper
 +
 +    // Paper start
 +    @Override
 +    default net.kyori.adventure.identity.@NotNull Identity identity() {
 +        return net.kyori.adventure.identity.Identity.identity(this.getUniqueId());
 +    }
++
++    /**
++     * Gets an unmodifiable view of all known currently active bossbars.
++     * <p>
++     * <b>This currently only returns bossbars shown to the player via
++     * {@link #showBossBar(net.kyori.adventure.bossbar.BossBar)} and does not contain bukkit
++     * {@link org.bukkit.boss.BossBar} instances shown to the player.</b>
++     *
++     * @return an unmodifiable view of all known currently active bossbars
++     * @since 4.14.0
++     */
++    @Override
++    @org.jetbrains.annotations.UnmodifiableView @NotNull Iterable<? extends net.kyori.adventure.bossbar.BossBar> activeBossBars();
 +
 +    /**
 +     * Gets the "friendly" name to display of this player.
@@ -2358,25 +2371,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt);
  
 +    // Paper start
-     /**
-      * Request that the player's client download and switch resource packs.
-      * <p>
-@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      * @param hash The sha1 hash sum of the resource pack file which is used
-      *     to apply a cached version of the pack directly without downloading
-      *     if it is available. Hast to be 20 bytes long!
-+     * @param prompt The optional custom prompt message to be shown to client.
-+     * @throws IllegalArgumentException Thrown if the URL is null.
-+     * @throws IllegalArgumentException Thrown if the URL is too long. The
-+     *     length restriction is an implementation specific arbitrary value.
-+     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
-+     *     long.
-+     */
-+    default void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt) {
-+        this.setResourcePack(url, hash, prompt, false);
-+    }
-+    // Paper end
-+
 +    /**
 +     * Request that the player's client download and switch resource packs.
 +     * <p>
@@ -2406,16 +2400,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *     pack correctly.
 +     * </ul>
 +     *
-+     * @deprecated in favour of {@link #setResourcePack(String, byte[], Component, boolean)}
 +     * @param url The URL from which the client will download the resource
 +     *     pack. The string must contain only US-ASCII characters and should
 +     *     be encoded as per RFC 1738.
 +     * @param hash The sha1 hash sum of the resource pack file which is used
 +     *     to apply a cached version of the pack directly without downloading
 +     *     if it is available. Hast to be 20 bytes long!
-      * @param force If true, the client will be disconnected from the server
-      *     when it declines to use the resource pack.
-      * @throws IllegalArgumentException Thrown if the URL is null.
++     * @param prompt The optional custom prompt message to be shown to client.
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
++     *     long.
++     */
++    default void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt) {
++        this.setResourcePack(url, hash, prompt, false);
++    }
++    // Paper end
++
+     /**
+      * Request that the player's client download and switch resource packs.
+      * <p>
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     pack correctly.
+      * </ul>
+      *
++     * @deprecated in favour of {@link #setResourcePack(String, byte[], Component, boolean)}
+      * @param url The URL from which the client will download the resource
+      *     pack. The string must contain only US-ASCII characters and should
+      *     be encoded as per RFC 1738.
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
