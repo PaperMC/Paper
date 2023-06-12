@@ -24,16 +24,20 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     private int level;
     private boolean cancelled;
     private final Map<Enchantment, Integer> enchants;
+    private final Enchantment enchantmentHint;
+    private final int levelHint;
     private final Player enchanter;
     private final int button;
 
-    public EnchantItemEvent(@NotNull final Player enchanter, @NotNull final InventoryView view, @NotNull final Block table, @NotNull final ItemStack item, final int level, @NotNull final Map<Enchantment, Integer> enchants, final int i) {
+    public EnchantItemEvent(@NotNull final Player enchanter, @NotNull final InventoryView view, @NotNull final Block table, @NotNull final ItemStack item, final int level, @NotNull final Map<Enchantment, Integer> enchants, @NotNull final Enchantment enchantmentHint, final int levelHint, final int i) {
         super(view);
         this.enchanter = enchanter;
         this.table = table;
         this.item = item;
         this.level = level;
         this.enchants = new HashMap<Enchantment, Integer>(enchants);
+        this.enchantmentHint = enchantmentHint;
+        this.levelHint = levelHint;
         this.cancelled = false;
         this.button = i;
     }
@@ -100,6 +104,27 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     @NotNull
     public Map<Enchantment, Integer> getEnchantsToAdd() {
         return enchants;
+    }
+
+    /**
+     * Get the {@link Enchantment} that was displayed as a hint to the player
+     * on the selected enchantment offer.
+     *
+     * @return the hinted enchantment
+     */
+    @NotNull
+    public Enchantment getEnchantmentHint() {
+        return enchantmentHint;
+    }
+
+    /**
+     * Get the level of the enchantment that was displayed as a hint to the
+     * player on the selected enchantment offer.
+     *
+     * @return the level of the hinted enchantment
+     */
+    public int getLevelHint() {
+        return levelHint;
     }
 
     /**
