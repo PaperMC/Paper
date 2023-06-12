@@ -1202,7 +1202,6 @@ public final class CraftServer implements Server {
     @Override
     public World getWorld(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
-        Preconditions.checkArgument(!name.isBlank(), "name cannot be empty");
 
         return worlds.get(name.toLowerCase(java.util.Locale.ENGLISH));
     }
