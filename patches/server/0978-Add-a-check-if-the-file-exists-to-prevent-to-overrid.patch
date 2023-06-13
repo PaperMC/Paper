@@ -6,10 +6,10 @@ Subject: [PATCH] Add a check if the file exists to prevent to override the
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ffa27c9c02dc4d12411fc089de3af8e8e12ba06e..2e627340ce0a5633fd4258fe5f5dcbd71213f969 100644
+index ffa27c9c02dc4d12411fc089de3af8e8e12ba06e..467d2cfd1b48b7816b9a167376feea7a6afff8f7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -350,10 +350,14 @@ public final class CraftServer implements Server {
+@@ -350,11 +350,14 @@ public final class CraftServer implements Server {
          if (this.getCommandsConfigFile().isFile()) {
              legacyAlias = null;
          }
@@ -17,13 +17,13 @@ index ffa27c9c02dc4d12411fc089de3af8e8e12ba06e..2e627340ce0a5633fd4258fe5f5dcbd7
          this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
 -        this.commandsConfiguration.options().copyDefaults(true);
 -        this.commandsConfiguration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), Charsets.UTF_8)));
--        this.saveCommandsConfig();
-+        if (java.nio.file.Files.notExists(this.getCommandsConfigFile().toPath())) { // Paper start
-+            this.commandsConfiguration.options().copyDefaults(true);
-+            this.commandsConfiguration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), Charsets.UTF_8)));
-+            this.saveCommandsConfig();
-+        }
-+        // Paper end
- 
++        // Paper start - don't enforce icanhasbukkit default if alias block exists
++        final YamlConfiguration commandsDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), Charsets.UTF_8));
++        if (this.commandsConfiguration.contains("aliases")) commandsDefaults.set("aliases", null);
++        this.commandsConfiguration.setDefaults(commandsDefaults);
++        // Paper stop - dont enforce icanhasbukkit default if alias block exists
+         this.saveCommandsConfig();
+-
          // Migrate aliases from old file and add previously implicit $1- to pass all arguments
          if (legacyAlias != null) {
+             ConfigurationSection aliases = this.commandsConfiguration.createSection("aliases");
