@@ -16719,12 +16719,12 @@ index 0000000000000000000000000000000000000000..ce449b7b6f615f2c8240e4207f06d4e5
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 3ab557277cff7c8a43b0f3de45d17f2bf78f7747..c457bdcb93fa306a2d67b31c0abb53465d809862 100644
+index 047b07c7443c0d6a403506b869d63806ec2a85f7..18092ddfd000ef36f0e182ac064c2f667b1e611b 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -92,6 +92,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     private int tickCount;
-     private boolean handlingFault;
+@@ -94,6 +94,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     @Nullable
+     private volatile Component delayedDisconnect;
      public String hostname = ""; // CraftBukkit - add field
 +    // Paper start - add pending task queue
 +    private final Queue<Runnable> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
@@ -16751,7 +16751,7 @@ index 3ab557277cff7c8a43b0f3de45d17f2bf78f7747..c457bdcb93fa306a2d67b31c0abb5346
  
      public Connection(PacketFlow side) {
          this.receiving = side;
-@@ -255,6 +277,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -261,6 +283,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      private void flushQueue() {
@@ -16759,7 +16759,7 @@ index 3ab557277cff7c8a43b0f3de45d17f2bf78f7747..c457bdcb93fa306a2d67b31c0abb5346
          if (this.channel != null && this.channel.isOpen()) {
              Queue queue = this.queue;
  
-@@ -267,6 +290,12 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -273,6 +296,12 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
              }
          }
@@ -21228,7 +21228,7 @@ index f739a175e26f250c652c73b8985158fe37c2823a..5f4fa76fe3a1a0a4fc11064fcf57bfab
                      structurestart = structureAccessor.getStartForStructure(SectionPos.bottomOf(ichunkaccess), (Structure) holder.value(), ichunkaccess);
                  } while (structurestart == null);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-index fb5a06a908d2b42bf0530b62ed648548499d9f87..ec55711e912fe6cb8f797c0b21bcef273966a47a 100644
+index 846ae3fd184a1d63b743aa25e045604576697c96..a907b79fd8291a0e92db138f37239d17424188a1 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
 @@ -30,6 +30,30 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
