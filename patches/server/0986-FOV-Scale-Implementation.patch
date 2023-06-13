@@ -6,39 +6,52 @@ Subject: [PATCH] FOV Scale Implementation
 Modifies the player's fov by a factor
 The multiplier is affected by the client Accessibility option 'FOV Effects'
 
-The formula used to change walkingSpeed is based on the vanilla FOV scale calculation:
+This works due to the way vanilla calculates FOV scale as a ratio
+between movementSpeed and walkingSpeed:
+
 fovScale = (movementSpeed / walkingSpeed + 1.0f) / 2.0f
 
-Rearranging this formula in terms of walkingSpeed gives:
-walkingSpeed = movementSpeed / (fovScale * 2.0f - 1.0f)
+Normally, servers might implement a 'zoom' by changing the movementSpeed
+- this behaviour is well known. However, changing the walkingSpeed
+achieves a similar effect without affecting the speed at which the
+player is able to move.
 
-If we wanted a fixed FOV scale (regardless of the movement speed), we would use the above formula.
-However, we want our FOV scale to work additively with the normal FOV scale caused by movement speed changes.
-Therefore, we replace movementSpeed with walkingSpeed, arriving at the final calculation:
-walkingSpeed = walkingSpeed / (fovScale * 2.0f - 1.0f)
+This patch adds API to do exactly that.
+
+(Note that 'walkingSpeed' on the client has no other use than to
+calculate the FOV)
 
 == AT ==
 public-f net.minecraft.network.protocol.game.ClientboundPlayerAbilitiesPacket walkingSpeed
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..d9397ebbc2e34bed77b87d7570f8924230e1965a 100644
+index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..954382a1442d581bb3f13bf8e9e94c29335bb300 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1877,7 +1877,11 @@ public class ServerPlayer extends Player {
+@@ -1877,7 +1877,20 @@ public class ServerPlayer extends Player {
      @Override
      public void onUpdateAbilities() {
          if (this.connection != null) {
 -            this.connection.send(new ClientboundPlayerAbilitiesPacket(this.getAbilities()));
 +            // Paper start - use fov scale
 +            ClientboundPlayerAbilitiesPacket abilitiesPacket = new ClientboundPlayerAbilitiesPacket(this.getAbilities());
-+            abilitiesPacket.walkingSpeed = abilitiesPacket.walkingSpeed / (this.getBukkitEntity().getFovScale() * 2 - 1);
++            float fovScale = this.getBukkitEntity().getFovScale();
++            if (fovScale < -1E24f) {
++                // Force minimum FOV (0.1), capped to avoid producing -Infinity
++                abilitiesPacket.walkingSpeed = abilitiesPacket.walkingSpeed < 0 ? 1E-24f : -1E-24f;
++            } else if (fovScale > 1E24f) {
++                // Force maximum FOV (1.5), capped to avoid producing +Infinity
++                abilitiesPacket.walkingSpeed = abilitiesPacket.walkingSpeed < 0 ? -1E-24f : 1E-24f;
++            } else {
++                abilitiesPacket.walkingSpeed = abilitiesPacket.walkingSpeed / fovScale;
++            }
 +            this.connection.send(abilitiesPacket);
 +            // Paper end
              this.updateInvisibilityStatus();
          }
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index be64633c8bcee96f2ad5247525cac965b7b031b1..07d0c2143e6920fd973198e52a43cc2a5f766a74 100644
+index be64633c8bcee96f2ad5247525cac965b7b031b1..ec94f95ae947621188110e043a915f344b94e0b7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -184,6 +184,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -49,19 +62,13 @@ index be64633c8bcee96f2ad5247525cac965b7b031b1..07d0c2143e6920fd973198e52a43cc2a
      // Paper end
  
      public CraftPlayer(CraftServer server, ServerPlayer entity) {
-@@ -2405,6 +2406,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2405,6 +2406,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().getAbilities().walkingSpeed * 2f;
      }
  
-+    // Paper start - Set/get fov scale
++    // Paper start - set/get fov scale
 +    @Override
 +    public void setFovScale(float value) {
-+        if (value < 0.5) {
-+            throw new IllegalArgumentException(value + " is too low");
-+        }
-+        if (value > 1.5) {
-+            throw new IllegalArgumentException(value + " is too high");
-+        }
 +        if (this.fovScale != value) {
 +            this.fovScale = value;
 +            this.getHandle().onUpdateAbilities();
