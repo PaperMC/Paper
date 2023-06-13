@@ -3463,10 +3463,10 @@ index 0000000000000000000000000000000000000000..cea9c098ade00ee87b8efc8164ab72f5
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..902317d2dc198a1cbfc679810bcb2173644354cb
+index 0000000000000000000000000000000000000000..8bc8e5224f54939efd93c5e39e56a9301ae60bb2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
-@@ -0,0 +1,517 @@
+@@ -0,0 +1,521 @@
 +package io.papermc.paper.util;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -3740,6 +3740,10 @@ index 0000000000000000000000000000000000000000..902317d2dc198a1cbfc679810bcb2173
 +
 +    public static org.bukkit.scheduler.BukkitTask scheduleTask(int ticks, Runnable runnable, String taskName) {
 +        return MinecraftServer.getServer().server.getScheduler().scheduleInternalTask(runnable, ticks, taskName);
++    }
++
++    public static org.bukkit.scheduler.BukkitTask scheduleAsyncRepeatingTask(Runnable runnable, String taskName, int delay, int period) {
++        return MinecraftServer.getServer().server.getScheduler().scheduleAsyncRepeatingInternalTask(runnable, delay, period, taskName);
 +    }
 +
 +    public static void processQueue() {
@@ -7401,8 +7405,25 @@ index e24609bb51369c08a68120830ead33706b17dafa..f4cdda9fabb3a13f7cc8b6056815bdba
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncTask.java
+index 2f3e2a404f55f09ae4db8261e495275e31228034..c54da6d7931e9a790aebdfb04a94e86ab8dfe3f7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncTask.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncTask.java
+@@ -17,6 +17,12 @@ class CraftAsyncTask extends CraftTask {
+         this.runners = runners;
+     }
+ 
++    CraftAsyncTask(final Map<Integer, CraftTask> runners, final Object task, final int id, final String taskName, final long period) {
++        super(task, id, taskName);
++        setPeriod(period);
++        this.runners = runners;
++    }
++
+     @Override
+     public boolean isSync() {
+         return false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 2f52148f36e56c503e619634eedd3d46d9f44938..054fcc3713f02e358dfe049491c8d1689ccc750b 100644
+index 2f52148f36e56c503e619634eedd3d46d9f44938..65e8b26b1027bed5cff3eb8d0ca0e040d23374eb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -44,6 +44,7 @@ import org.bukkit.scheduler.BukkitWorker;
@@ -7413,7 +7434,7 @@ index 2f52148f36e56c503e619634eedd3d46d9f44938..054fcc3713f02e358dfe049491c8d168
      /**
       * The start ID for the counter.
       */
-@@ -192,6 +193,11 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -192,6 +193,16 @@ public class CraftScheduler implements BukkitScheduler {
          this.runTaskTimer(plugin, (Object) task, delay, period);
      }
  
@@ -7422,10 +7443,15 @@ index 2f52148f36e56c503e619634eedd3d46d9f44938..054fcc3713f02e358dfe049491c8d168
 +        return handle(task, delay);
 +    }
 +
++    public BukkitTask scheduleAsyncRepeatingInternalTask(Runnable run, int delay, int period, String taskname) {
++        final CraftTask task = new CraftAsyncTask(this.runners, run, nextId(), taskname, period);
++        return handle(task, delay);
++    }
++
      public BukkitTask runTaskTimer(Plugin plugin, Object runnable, long delay, long period) {
          CraftScheduler.validate(plugin, runnable);
          if (delay < 0L) {
-@@ -415,13 +421,20 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -415,13 +426,20 @@ public class CraftScheduler implements BukkitScheduler {
                      task.run();
                      task.timings.stopTiming(); // Spigot
                  } catch (final Throwable throwable) {
@@ -7479,12 +7505,11 @@ index 592a2a513ebf0002abf1255e11012ecc66adecf0..b89846e0f645c79afec018dae1d64a1b
          this.plugin = plugin;
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..909b2c98e7a9117d2f737245e4661792ffafb744
+index 0000000000000000000000000000000000000000..8415d071d530565ef7be107f35c3dd8f59898391
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,141 @@
 +package org.bukkit.craftbukkit.scheduler;
-+
 +
 +import org.bukkit.Server;
 +import org.bukkit.command.Command;
@@ -7495,23 +7520,25 @@ index 0000000000000000000000000000000000000000..909b2c98e7a9117d2f737245e4661792
 +import org.bukkit.plugin.PluginBase;
 +import org.bukkit.plugin.PluginDescriptionFile;
 +import org.bukkit.plugin.PluginLoader;
-+import org.bukkit.plugin.PluginLogger;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +import java.io.File;
 +import java.io.InputStream;
 +import java.util.List;
++import java.util.logging.Logger;
 +
 +public class MinecraftInternalPlugin extends PluginBase {
 +    private boolean enabled = true;
 +
 +    private final String pluginName;
-+    private PluginDescriptionFile pdf;
++    private final PluginDescriptionFile pdf;
++    private final Logger logger;
 +
 +    public MinecraftInternalPlugin() {
 +        this.pluginName = "Minecraft";
-+        pdf = new PluginDescriptionFile(pluginName, "1.0", "nms");
++        this.pdf = new PluginDescriptionFile(pluginName, "1.0", "nms");
++        this.logger = com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(this.pdf);
 +    }
 +
 +    public void setEnabled(boolean enabled) {
@@ -7559,8 +7586,8 @@ index 0000000000000000000000000000000000000000..909b2c98e7a9117d2f737245e4661792
 +    }
 +
 +    @Override
-+    public PluginLogger getLogger() {
-+        throw new UnsupportedOperationException("Not supported.");
++    public Logger getLogger() {
++        return logger;
 +    }
 +
 +    @Override

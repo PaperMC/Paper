@@ -6,13 +6,14 @@ Subject: [PATCH] Add exception reporting event
 
 diff --git a/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java b/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f699ce18ca044f813e194ef2786b7ea853ea86e7
+index 0000000000000000000000000000000000000000..60542e7dfb69b54aabdc6c14128b62301c2b42f6
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,39 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Preconditions;
++import net.minecraft.server.MinecraftServer;
 +import org.bukkit.craftbukkit.scheduler.CraftTask;
 +import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 +import com.destroystokyo.paper.exception.ServerSchedulerException;
@@ -33,12 +34,12 @@ index 0000000000000000000000000000000000000000..f699ce18ca044f813e194ef2786b7ea8
 +        try {
 +            internalTask.run();
 +        } catch (RuntimeException e) {
-+            internalTask.getOwner().getServer().getPluginManager().callEvent(
++            MinecraftServer.getServer().server.getPluginManager().callEvent(
 +                    new ServerExceptionEvent(new ServerSchedulerException(e, internalTask))
 +            );
 +            throw e;
 +        } catch (Throwable t) {
-+            internalTask.getOwner().getServer().getPluginManager().callEvent(
++            MinecraftServer.getServer().server.getPluginManager().callEvent(
 +                    new ServerExceptionEvent(new ServerSchedulerException(t, internalTask))
 +            ); //Do not rethrow, since it is not permitted with Runnable#run
 +        }
@@ -192,7 +193,7 @@ index e68205fe7169c7c5b7c6fdada2ee97d86107ca97..aa8972fd1a1fade05d60ab69efb8ff24
                  try {
                      filechannel.close();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 07c4d9cd5081378e1b903518f7174fca959cd9e3..dfc2789009fcaa08baa8054bdac915590b8701d6 100644
+index 918f29f4bebaca71b876169d4fc13b8e0cc31e0f..e903a5d623a291fbc9133e2b22b39d09fa4c1498 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -17,6 +17,9 @@ import java.util.concurrent.atomic.AtomicReference;
@@ -205,7 +206,7 @@ index 07c4d9cd5081378e1b903518f7174fca959cd9e3..dfc2789009fcaa08baa8054bdac91559
  import org.apache.commons.lang.Validate;
  import org.bukkit.plugin.IllegalPluginAccessException;
  import org.bukkit.plugin.Plugin;
-@@ -434,6 +437,8 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -439,6 +442,8 @@ public class CraftScheduler implements BukkitScheduler {
                              msg,
                              throwable);
                      }
@@ -214,7 +215,7 @@ index 07c4d9cd5081378e1b903518f7174fca959cd9e3..dfc2789009fcaa08baa8054bdac91559
                      // Paper end
                  } finally {
                      this.currentTask = null;
-@@ -441,7 +446,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -446,7 +451,7 @@ public class CraftScheduler implements BukkitScheduler {
                  this.parsePending();
              } else {
                  this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));
