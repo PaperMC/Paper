@@ -358,7 +358,11 @@ public final class CraftServer implements Server {
         }
         this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
         this.commandsConfiguration.options().copyDefaults(true);
-        this.commandsConfiguration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), Charsets.UTF_8)));
+        // Paper start - don't enforce icanhasbukkit default if alias block exists
+        final YamlConfiguration commandsDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), Charsets.UTF_8));
+        if (this.commandsConfiguration.contains("aliases")) commandsDefaults.set("aliases", null);
+        this.commandsConfiguration.setDefaults(commandsDefaults);
+        // Paper end - don't enforce icanhasbukkit default if alias block exists
         this.saveCommandsConfig();
 
         // Migrate aliases from old file and add previously implicit $1- to pass all arguments
