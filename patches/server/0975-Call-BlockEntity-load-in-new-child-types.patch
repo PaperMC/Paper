@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Wed, 14 Jun 2023 12:52:29 +0200
+Subject: [PATCH] Call BlockEntity#load in new child types
+
+BlockEntity#load is responsible for loading the pdc data for block
+entities. Some of the new block entities added by mojang do not call
+their super method, preventing paper from loading the PDC, which
+leads to a loss of data.
+
+This patch adds the super calls to prevent this.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+index 14ddb953176b02e7ac68401c5c03120f920739a1..7a3ac883be4015d41a4c7582341a424b4bd6bbf4 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+@@ -239,6 +239,7 @@ public class BrushableBlockEntity extends BlockEntity {
+ 
+     @Override
+     public void load(CompoundTag nbt) {
++        super.load(nbt); // Paper - invoke super to load additional, bukkit managed data
+         if (!this.tryLoadLootTable(nbt) && nbt.contains("item")) {
+             this.item = ItemStack.of(nbt.getCompound("item"));
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ChiseledBookShelfBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/ChiseledBookShelfBlockEntity.java
+index 47e194ef4e75f95573b40ff9f1a11810381cfce8..200b8b89403f61f7a3180d3d111c54453816a768 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ChiseledBookShelfBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ChiseledBookShelfBlockEntity.java
+@@ -92,6 +92,7 @@ public class ChiseledBookShelfBlockEntity extends BlockEntity implements Contain
+ 
+     @Override
+     public void load(CompoundTag nbt) {
++        super.load(nbt); // Paper - invoke super to load additional, bukkit managed data
+         this.items.clear();
+         ContainerHelper.loadAllItems(nbt, this.items);
+         this.lastInteractedSlot = nbt.getInt("last_interacted_slot");
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+index dfcc141dec0ff6e7704af8852a65783558398a67..a606aed406551f4d3cc0bf09d6e231d87fe00f53 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+@@ -42,6 +42,7 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
+ 
+     @Override
+     public void load(CompoundTag nbt) {
++        super.load(nbt); // Paper - invoke super to load additional, bukkit managed data
+         this.catalystListener.sculkSpreader.load(nbt);
+     }
+ 
