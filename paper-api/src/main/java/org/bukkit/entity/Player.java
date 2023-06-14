@@ -22,6 +22,7 @@ import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.sign.Side;
 import org.bukkit.conversations.Conversable;
@@ -687,6 +688,26 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
      */
     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
+
+    /**
+     * Send a TileState change. This fakes a TileState change for a user at
+     * the given location. This will not actually change the world in any way.
+     * This method will use a TileState at the location's block or a faked TileState
+     * sent via
+     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
+     * <p>
+     * If the client does not have an appropriate tile at the given location it
+     * may display an error message to the user.
+     * <p>
+     * {@link BlockData#createBlockState()} can be used to create a {@link BlockState}.
+     *
+     * @param loc the location of the sign
+     * @param tileState the tile state
+     * @throws IllegalArgumentException if location is null
+     * @throws IllegalArgumentException if tileState is null
+     */
+    @ApiStatus.Experimental
+    public void sendBlockUpdate(@NotNull Location loc, @NotNull TileState tileState) throws IllegalArgumentException;
 
     /**
      * Render a map and send it to the player in its entirety. This may be
