@@ -1,12 +1,11 @@
 --- a/net/minecraft/world/level/block/entity/TileEntitySign.java
 +++ b/net/minecraft/world/level/block/entity/TileEntitySign.java
-@@ -31,7 +31,18 @@
+@@ -31,7 +31,17 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
 -public class TileEntitySign extends TileEntity {
 +// CraftBukkit start
-+import net.minecraft.EnumChatFormat;
 +import net.minecraft.nbt.NBTBase;
 +import net.minecraft.server.level.EntityPlayer;
 +import org.bukkit.block.sign.Side;
@@ -20,7 +19,7 @@
  
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final int MAX_TEXT_LINE_WIDTH = 90;
-@@ -100,7 +111,7 @@
+@@ -100,7 +110,7 @@
      @Override
      protected void saveAdditional(NBTTagCompound nbttagcompound) {
          super.saveAdditional(nbttagcompound);
@@ -29,7 +28,7 @@
          Logger logger = TileEntitySign.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -119,7 +130,7 @@
+@@ -119,7 +129,7 @@
      @Override
      public void load(NBTTagCompound nbttagcompound) {
          super.load(nbttagcompound);
@@ -38,7 +37,7 @@
          Logger logger;
  
          if (nbttagcompound.contains("front_text")) {
-@@ -173,12 +184,13 @@
+@@ -173,12 +183,13 @@
      public void updateSignText(EntityHuman entityhuman, boolean flag, List<FilteredText> list) {
          if (!this.isWaxed() && entityhuman.getUUID().equals(this.getPlayerWhoMayEdit()) && this.level != null) {
              this.updateText((signtext) -> {
@@ -53,7 +52,7 @@
          }
      }
  
-@@ -188,7 +200,8 @@
+@@ -188,7 +199,8 @@
          return this.setText((SignText) unaryoperator.apply(signtext), flag);
      }
  
@@ -63,7 +62,7 @@
          for (int i = 0; i < list.size(); ++i) {
              FilteredText filteredtext = (FilteredText) list.get(i);
              ChatModifier chatmodifier = signtext.getMessage(i, entityhuman.isTextFilteringEnabled()).getStyle();
-@@ -200,6 +213,27 @@
+@@ -200,6 +212,29 @@
              }
          }
  
@@ -71,27 +70,29 @@
 +        Player player = ((EntityPlayer) entityhuman).getBukkitEntity();
 +        String[] lines = new String[4];
 +
-+        for (int j = 0; j < list.size(); ++j) {
-+            lines[j] = CraftChatMessage.fromComponent(signtext.getMessage(j, entityhuman.isTextFilteringEnabled()));
++        for (int i = 0; i < list.size(); ++i) {
++            lines[i] = CraftChatMessage.fromComponent(signtext.getMessage(i, entityhuman.isTextFilteringEnabled()));
 +        }
 +
-+        SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player, lines, (front) ? Side.FRONT : Side.BACK);
++        SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player, lines.clone(), (front) ? Side.FRONT : Side.BACK);
 +        entityhuman.level().getCraftServer().getPluginManager().callEvent(event);
 +
-+        if (!event.isCancelled()) {
-+            IChatBaseComponent[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
-+            for (int j = 0; j < components.length; j++) {
-+                signtext = signtext.setMessage(j, components[j]);
++        if (event.isCancelled()) {
++            return originalText;
++        }
++
++        IChatBaseComponent[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
++        for (int i = 0; i < components.length; i++) {
++            if (!Objects.equals(lines[i], event.getLine(i))) {
++                signtext = signtext.setMessage(i, components[i]);
 +            }
-+        } else {
-+            signtext = originalText;
 +        }
 +        // CraftBukkit end
 +
          return signtext;
      }
  
-@@ -250,11 +284,37 @@
+@@ -250,11 +285,37 @@
          return flag1;
      }
  
@@ -131,7 +132,7 @@
      }
  
      @Override
-@@ -283,7 +343,7 @@
+@@ -283,7 +344,7 @@
  
      private void markUpdated() {
          this.setChanged();
