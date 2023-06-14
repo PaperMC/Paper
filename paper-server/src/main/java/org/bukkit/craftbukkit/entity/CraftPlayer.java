@@ -695,7 +695,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (lines == null) {
             lines = new String[4];
         }
-        Preconditions.checkArgument(lines.length < 4, "lines (%s) must be lower than 4", lines.length);
+        Preconditions.checkArgument(lines.length >= 4, "Must have at least 4 lines (%s)", lines.length);
 
         if (getHandle().connection == null) return;
 
