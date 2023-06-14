@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.monster.EntityEnderman;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
@@ -8,6 +9,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Enderman;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.material.MaterialData;
 
@@ -51,5 +53,17 @@ public class CraftEnderman extends CraftMonster implements Enderman {
     @Override
     public EntityType getType() {
         return EntityType.ENDERMAN;
+    }
+
+    @Override
+    public boolean teleport() {
+        return getHandle().teleport();
+    }
+
+    @Override
+    public boolean teleportTowards(Entity entity) {
+        Preconditions.checkArgument(entity != null, "entity cannot be null");
+
+        return getHandle().teleportTowards(((CraftEntity) entity).getHandle());
     }
 }
