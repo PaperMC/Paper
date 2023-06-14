@@ -702,11 +702,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
         TileEntitySign sign = new TileEntitySign(CraftLocation.toBlockPosition(loc), Blocks.OAK_SIGN.defaultBlockState());
         SignText text = sign.getFrontText();
-        text.setColor(EnumColor.byId(dyeColor.getWoolData()));
-        text.setHasGlowingText(hasGlowingText);
+        text = text.setColor(EnumColor.byId(dyeColor.getWoolData()));
+        text = text.setHasGlowingText(hasGlowingText);
         for (int i = 0; i < components.length; i++) {
-            text.setMessage(i, components[i]);
+            text = text.setMessage(i, components[i]);
         }
+        sign.setText(text, true);
 
         getHandle().connection.send(sign.getUpdatePacket());
     }
