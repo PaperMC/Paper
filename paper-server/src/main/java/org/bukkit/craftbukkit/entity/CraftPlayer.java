@@ -36,6 +36,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketDataSerializer;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
 import net.minecraft.network.protocol.game.ClientboundCustomChatCompletionsPacket;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
@@ -62,6 +63,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutNamedSoundEffect;
 import net.minecraft.network.protocol.game.PacketPlayOutPlayerListHeaderFooter;
 import net.minecraft.network.protocol.game.PacketPlayOutSpawnPosition;
 import net.minecraft.network.protocol.game.PacketPlayOutStopSound;
+import net.minecraft.network.protocol.game.PacketPlayOutTileEntityData;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateAttributes;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateHealth;
 import net.minecraft.network.protocol.game.PacketPlayOutWorldEvent;
@@ -86,6 +88,7 @@ import net.minecraft.world.item.EnumColor;
 import net.minecraft.world.level.EnumGamemode;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SignText;
+import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntitySign;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.border.IWorldBorderListener;
@@ -111,6 +114,7 @@ import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.sign.Side;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -128,7 +132,9 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.CraftWorldBorder;
 import org.bukkit.craftbukkit.advancement.CraftAdvancement;
 import org.bukkit.craftbukkit.advancement.CraftAdvancementProgress;
+import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.block.CraftSign;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
@@ -703,6 +709,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         getHandle().connection.send(sign.getUpdatePacket());
+    }
+
+    @Override
+    public void sendBlockUpdate(@NotNull Location location, @NotNull TileState tileState) throws IllegalArgumentException {
+        Preconditions.checkArgument(location != null, "Location can not be null");
+        Preconditions.checkArgument(tileState != null, "TileState can not be null");
+
+        if (getHandle().connection == null) return;
+
+        CraftBlockEntityState<?> craftState = ((CraftBlockEntityState<?>) tileState);
+        getHandle().connection.send(craftState.getUpdatePacket(location));
     }
 
     @Override

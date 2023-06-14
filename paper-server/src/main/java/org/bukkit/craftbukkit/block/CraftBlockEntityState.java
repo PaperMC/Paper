@@ -1,10 +1,17 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.PacketListenerPlayOut;
+import net.minecraft.network.protocol.game.PacketPlayOutTileEntityData;
 import net.minecraft.world.level.block.entity.TileEntity;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.TileState;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.persistence.PersistentDataContainer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState implements TileState {
 
@@ -104,5 +111,11 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
     @Override
     public PersistentDataContainer getPersistentDataContainer() {
         return this.getSnapshot().persistentDataContainer;
+    }
+
+    @Nullable
+    public Packet<PacketListenerPlayOut> getUpdatePacket(@NotNull Location location) {
+        T vanillaTileEntitiy = (T) TileEntity.loadStatic(CraftLocation.toBlockPosition(location), getHandle(), getSnapshotNBT());
+        return PacketPlayOutTileEntityData.create(vanillaTileEntitiy);
     }
 }
