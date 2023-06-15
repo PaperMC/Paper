@@ -73,7 +73,7 @@ index f68ef89f37057cf677a767026ab395f7a839a2f9..a6aa33b9574d0278e10927007a62290e
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..3158904dbe1e888c9a2a874e8b059612c8e2f213 100644
+index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..8a2d26de9070f6fc60ac58f0305a86c42146b257 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 @@ -1,5 +1,6 @@
@@ -83,8 +83,15 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..3158904dbe1e888c9a2a874e8b059612
  import com.google.common.base.Charsets;
  import com.google.common.base.Preconditions;
  import com.google.common.collect.ImmutableList;
-@@ -26,6 +27,15 @@ import org.bukkit.util.StringUtil;
+@@ -24,8 +25,22 @@ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.PluginDescriptionFile;
+ import org.bukkit.util.StringUtil;
  import org.jetbrains.annotations.NotNull;
++// Paper start - version command 2.0
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.event.ClickEvent;
++// Paper end - version command 2.0
  
  public class VersionCommand extends BukkitCommand {
 +    private VersionFetcher versionFetcher;
@@ -99,7 +106,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..3158904dbe1e888c9a2a874e8b059612
      public VersionCommand(@NotNull String name) {
          super(name);
  
-@@ -40,7 +50,7 @@ public class VersionCommand extends BukkitCommand {
+@@ -40,7 +55,7 @@ public class VersionCommand extends BukkitCommand {
          if (!testPermission(sender)) return true;
  
          if (args.length == 0) {
@@ -108,26 +115,26 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..3158904dbe1e888c9a2a874e8b059612
              sendVersion(sender);
          } else {
              StringBuilder name = new StringBuilder();
-@@ -79,7 +89,17 @@ public class VersionCommand extends BukkitCommand {
+@@ -79,8 +94,16 @@ public class VersionCommand extends BukkitCommand {
  
      private void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
          PluginDescriptionFile desc = plugin.getDescription();
 -        sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
+-
++        // Paper start - version command 2.0
 +        sender.sendMessage(
-+                net.kyori.adventure.text.Component.text()
-+                        .append(net.kyori.adventure.text.Component.text(desc.getName(),
-+                                net.kyori.adventure.text.format.NamedTextColor.GREEN))
-+                        .append(net.kyori.adventure.text.Component.text(" version "))
-+                        .append(net.kyori.adventure.text.Component.text(
-+                                desc.getVersion(), net.kyori.adventure.text.format.NamedTextColor.GREEN)
-+                                .clickEvent(net.kyori.adventure.text.event.ClickEvent.copyToClipboard(
-+                                desc.getVersion()
-+                        )))
++                Component.text()
++                        .append(Component.text(desc.getName(), NamedTextColor.GREEN))
++                        .append(Component.text(" version "))
++                        .append(Component.text(desc.getVersion(), NamedTextColor.GREEN)
++                                .clickEvent(ClickEvent.copyToClipboard(desc.getVersion()))
++                        )
 +        );
- 
++        // Paper end - version command 2.0
          if (desc.getDescription() != null) {
              sender.sendMessage(desc.getDescription());
-@@ -146,14 +166,14 @@ public class VersionCommand extends BukkitCommand {
+         }
+@@ -146,14 +169,14 @@ public class VersionCommand extends BukkitCommand {
  
      private final ReentrantLock versionLock = new ReentrantLock();
      private boolean hasVersion = false;
@@ -144,7 +151,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..3158904dbe1e888c9a2a874e8b059612
                  lastCheck = System.currentTimeMillis();
                  hasVersion = false;
              } else {
-@@ -168,7 +188,7 @@ public class VersionCommand extends BukkitCommand {
+@@ -168,7 +191,7 @@ public class VersionCommand extends BukkitCommand {
                  return;
              }
              versionWaiters.add(sender);
@@ -153,7 +160,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..3158904dbe1e888c9a2a874e8b059612
              if (!versionTaskStarted) {
                  versionTaskStarted = true;
                  new Thread(new Runnable() {
-@@ -186,6 +206,13 @@ public class VersionCommand extends BukkitCommand {
+@@ -186,6 +209,13 @@ public class VersionCommand extends BukkitCommand {
  
      private void obtainVersion() {
          String version = Bukkit.getVersion();
@@ -167,7 +174,7 @@ index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..3158904dbe1e888c9a2a874e8b059612
          if (version == null) version = "Custom";
          String[] parts = version.substring(0, version.indexOf(' ')).split("-");
          if (parts.length == 4) {
-@@ -215,11 +242,24 @@ public class VersionCommand extends BukkitCommand {
+@@ -215,11 +245,24 @@ public class VersionCommand extends BukkitCommand {
          } else {
              setVersionMessage("Unknown version, custom build?");
          }
