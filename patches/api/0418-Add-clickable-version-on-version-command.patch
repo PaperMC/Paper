@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheMeinerLP <p.glanz@madfix.me>
+Date: Thu, 15 Jun 2023 09:48:39 +0200
+Subject: [PATCH] Add clickable version on version command
+
+
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index e40f017f87d6b6b4770501b106c76dc69ec69abb..9eab13cde6bc130c27e47f759b75525b9af1ce55 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -18,6 +18,10 @@ import java.util.HashSet;
+ import java.util.List;
+ import java.util.Set;
+ import java.util.concurrent.locks.ReentrantLock;
++
++import net.kyori.adventure.text.minimessage.MiniMessage;
++import net.kyori.adventure.text.minimessage.tag.Tag;
++import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.CommandSender;
+@@ -89,7 +93,12 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
+         PluginDescriptionFile desc = plugin.getDescription();
+-        sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
++        var tags = TagResolver.builder()
++                .resolvers(TagResolver.standard())
++                .tag("name", (argumentQueue, context) -> Tag.selfClosingInserting(context.deserialize(desc.getName())))
++                .tag("version", (argumentQueue, context) -> Tag.selfClosingInserting(context.deserialize(desc.getVersion())))
++                .build();
++        sender.sendMessage(MiniMessage.miniMessage().deserialize("<green><name></green> <white>version</white> <green><click:COPY_TO_CLIPBOARD:'<version>'><version></click></green>", tags));
+ 
+         if (desc.getDescription() != null) {
+             sender.sendMessage(desc.getDescription());
