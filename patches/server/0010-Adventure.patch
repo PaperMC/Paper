@@ -2825,35 +2825,37 @@ index 4c62df5a3781ec9df4a5c5f1b528649e6e8a62d1..affd1b8c7589ba59330dc0b6fc803cce
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index f18a05566b8bbb1f481dcee0d2c53ddda68dae9e..a778d53bba0f9678a47ce6c3d94449ae7cd1c527 100644
+index f0c08f3a5094e1faaed70ffdc0eb5b6dd16ed500..8b26e90c0e7affb23fe8f92d757fe3a690b858ec 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-@@ -211,19 +211,20 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+@@ -211,22 +211,22 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
  
          // CraftBukkit start
          Player player = ((ServerPlayer) entityhuman).getBukkitEntity();
 -        String[] lines = new String[4];
 +        List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>(); // Paper - adventure
  
-         for (int j = 0; j < list.size(); ++j) {
--            lines[j] = CraftChatMessage.fromComponent(signtext.getMessage(j, entityhuman.isTextFilteringEnabled()));
-+            lines.add(io.papermc.paper.adventure.PaperAdventure.asAdventure(signtext.getMessage(j, entityhuman.isTextFilteringEnabled()))); // Paper - adventure
+         for (int i = 0; i < list.size(); ++i) {
+-            lines[i] = CraftChatMessage.fromComponent(signtext.getMessage(i, entityhuman.isTextFilteringEnabled()));
++            lines.add(io.papermc.paper.adventure.PaperAdventure.asAdventure(signtext.getMessage(i, entityhuman.isTextFilteringEnabled()))); // Paper - Adventure
          }
  
-         SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player, lines, (front) ? Side.FRONT : Side.BACK);
+-        SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player, lines.clone(), (front) ? Side.FRONT : Side.BACK);
++        SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player, new java.util.ArrayList<>(lines), (front) ? Side.FRONT : Side.BACK); // Paper - Adventure
          entityhuman.level().getCraftServer().getPluginManager().callEvent(event);
  
-         if (!event.isCancelled()) {
--            Component[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
--            for (int j = 0; j < components.length; j++) {
--                signtext = signtext.setMessage(j, components[j]);
-+            // Paper start - adventure
-+            for (int j = 0; j < 4; j++) {
-+                signtext = signtext.setMessage(j, io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(j)));
-+                // Paper end - adventure
+         if (event.isCancelled()) {
+             return originalText;
+         }
+ 
+-        Component[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
++        Component[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.lines()); // Paper - Adventure
+         for (int i = 0; i < components.length; i++) {
+-            if (!Objects.equals(lines[i], event.getLine(i))) {
++            if (!Objects.equals(lines.get(i), event.line(i))) { // Paper - Adventure
+                 signtext = signtext.setMessage(i, components[i]);
              }
-         } else {
-             signtext = originalText;
+         }
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 index 614e567eb1ef10ac7514909a8425e29ac3627d3d..60596c4ac2ebb8caf19d65591624275ba63b0199 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
@@ -3242,7 +3244,7 @@ index 0beb96dc896f63003e1b1ae458b73902bdbe648a..102eb86bad3000f258775ac06ecd1a6d
      public String getCustomName() {
          EnchantmentTableBlockEntity enchant = this.getSnapshot();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
-index b22009c0b068f1bc2c59861c4be593ea764248c6..cc6aab5341365f9b4ec3cb23e2a4f5006aa75cd7 100644
+index 116c127381fe95825e719f4af8dfdf36d11048e0..8ce466c19dae6534be828779639aedb687a94e68 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
 @@ -25,6 +25,23 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
@@ -3651,10 +3653,10 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..f9863e138994f6c7a7975a852f106faa
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed3da27a5f 100644
+index 39a6c870c08ae5847dc5859316b1b616b3a0fa5b..41ec9e0adb2a17f8cab4fb1f1735d8b2679f92d0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -282,14 +282,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -286,14 +286,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public String getDisplayName() {
@@ -3694,7 +3696,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
      @Override
      public String getPlayerListName() {
          return this.getHandle().listName == null ? getName() : CraftChatMessage.fromComponent(this.getHandle().listName);
-@@ -308,42 +333,42 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -312,42 +337,42 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
@@ -3746,7 +3748,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
          this.getHandle().connection.send(packet);
      }
  
-@@ -375,6 +400,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -379,6 +404,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.getHandle().connection.disconnect(message == null ? "" : message);
      }
  
@@ -3770,7 +3772,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
      @Override
      public void setCompassTarget(Location loc) {
          Preconditions.checkArgument(loc != null, "Location cannot be null");
-@@ -669,6 +711,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -673,6 +715,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.getHandle().connection.send(packet);
      }
  
@@ -3795,7 +3797,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
      @Override
      public void sendSignChange(Location loc, String[] lines) {
          this.sendSignChange(loc, lines, DyeColor.BLACK);
-@@ -692,6 +752,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -696,6 +756,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          if (this.getHandle().connection == null) return;
  
          Component[] components = CraftSign.sanitizeLines(lines);
@@ -3806,10 +3808,10 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
 +    private void sendSignChange0(Component[] components, Location loc, DyeColor dyeColor, boolean hasGlowingText) {
          SignBlockEntity sign = new SignBlockEntity(CraftLocation.toBlockPosition(loc), Blocks.OAK_SIGN.defaultBlockState());
          SignText text = sign.getFrontText();
-         text.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
-@@ -700,7 +765,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-             text.setMessage(i, components[i]);
+         text = text.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
+@@ -705,7 +770,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
+         sign.setText(text, true);
  
 -        this.getHandle().connection.send(sign.getUpdatePacket());
 +        getHandle().connection.send(sign.getUpdatePacket());
@@ -3817,7 +3819,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
      }
  
      @Override
-@@ -1590,7 +1656,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1606,7 +1672,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setResourcePack(String url) {
@@ -3826,7 +3828,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
      }
  
      @Override
-@@ -1605,7 +1671,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1621,7 +1687,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setResourcePack(String url, byte[] hash, boolean force) {
@@ -3835,7 +3837,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
      }
  
      @Override
-@@ -1621,6 +1687,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1637,6 +1703,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
@@ -3857,7 +3859,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
      public void addChannel(String channel) {
          Preconditions.checkState(this.channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel);
          channel = StandardMessenger.validateAndCorrectChannel(channel);
-@@ -2012,6 +2093,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2028,6 +2109,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : this.getHandle().clientViewDistance;
      }
  
@@ -3870,7 +3872,7 @@ index bab41176551656947be4bea4fec3ec82e51146e2..e37f69880c4b439245d7edb4c35418ed
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -2062,6 +2149,252 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2078,6 +2165,252 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
