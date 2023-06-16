@@ -3214,7 +3214,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // copied from hacker's delight (signed division magic value)
 +    // http://www.hackersdelight.org/hdcodetxt/magic.c.txt
 +    public static long getDivisorNumbers(final int d) {
-+        final int ad = IntegerUtil.branchlessAbs(d);
++        final int ad = branchlessAbs(d);
 +
 +        if (ad < 2) {
 +            throw new IllegalArgumentException("|number| must be in [2, 2^31 -1], not: " + d);
@@ -3223,11 +3223,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final int two31 = 0x80000000;
 +        final long mask = 0xFFFFFFFFL; // mask for enforcing unsigned behaviour
 +
++        /*
++         Signed usage:
++         int number;
++         long magic = getDivisorNumbers(div);
++         long mul = magic >>> 32;
++         int sign = number >> 31;
++         int result = (int)(((long)number * mul) >>> magic) - sign;
++         */
++        /*
++         Unsigned usage:
++         int number;
++         long magic = getDivisorNumbers(div);
++         long mul = magic >>> 32;
++         int result = (int)(((long)number * mul) >>> magic);
++         */
++
 +        int p = 31;
 +
 +        // all these variables are UNSIGNED!
 +        int t = two31 + (d >>> 31);
-+        int anc = t - 1 - t%ad;
++        int anc = t - 1 - (int)((t & mask)%ad);
 +        int q1 = (int)((two31 & mask)/(anc & mask));
 +        int r1 = two31 - q1*anc;
 +        int q2 = (int)((two31 & mask)/(ad & mask));
@@ -3255,7 +3271,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (d < 0) {
 +            magicNum = -magicNum;
 +        }
-+        int shift = p - 32;
++        int shift = p;
 +        return ((long)magicNum << 32) | shift;
 +    }
 +
