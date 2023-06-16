@@ -3111,10 +3111,10 @@ index 0000000000000000000000000000000000000000..413e4b6da027876dbbe8eb78f2568a44
 +}
 diff --git a/src/main/java/io/papermc/paper/util/IntegerUtil.java b/src/main/java/io/papermc/paper/util/IntegerUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a1bc1d1d0c86217ef18883d281195bc6b27e52ac
+index 0000000000000000000000000000000000000000..16785bd5c0524f6bad0691ca7ecd4514608d2eab
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/IntegerUtil.java
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,242 @@
 +package io.papermc.paper.util;
 +
 +public final class IntegerUtil {
@@ -3214,7 +3214,7 @@ index 0000000000000000000000000000000000000000..a1bc1d1d0c86217ef18883d281195bc6
 +    // copied from hacker's delight (signed division magic value)
 +    // http://www.hackersdelight.org/hdcodetxt/magic.c.txt
 +    public static long getDivisorNumbers(final int d) {
-+        final int ad = IntegerUtil.branchlessAbs(d);
++        final int ad = branchlessAbs(d);
 +
 +        if (ad < 2) {
 +            throw new IllegalArgumentException("|number| must be in [2, 2^31 -1], not: " + d);
@@ -3223,11 +3223,27 @@ index 0000000000000000000000000000000000000000..a1bc1d1d0c86217ef18883d281195bc6
 +        final int two31 = 0x80000000;
 +        final long mask = 0xFFFFFFFFL; // mask for enforcing unsigned behaviour
 +
++        /*
++         Signed usage:
++         int number;
++         long magic = getDivisorNumbers(div);
++         long mul = magic >>> 32;
++         int sign = number >> 31;
++         int result = (int)(((long)number * mul) >>> magic) - sign;
++         */
++        /*
++         Unsigned usage:
++         int number;
++         long magic = getDivisorNumbers(div);
++         long mul = magic >>> 32;
++         int result = (int)(((long)number * mul) >>> magic);
++         */
++
 +        int p = 31;
 +
 +        // all these variables are UNSIGNED!
 +        int t = two31 + (d >>> 31);
-+        int anc = t - 1 - t%ad;
++        int anc = t - 1 - (int)((t & mask)%ad);
 +        int q1 = (int)((two31 & mask)/(anc & mask));
 +        int r1 = two31 - q1*anc;
 +        int q2 = (int)((two31 & mask)/(ad & mask));
@@ -3255,7 +3271,7 @@ index 0000000000000000000000000000000000000000..a1bc1d1d0c86217ef18883d281195bc6
 +        if (d < 0) {
 +            magicNum = -magicNum;
 +        }
-+        int shift = p - 32;
++        int shift = p;
 +        return ((long)magicNum << 32) | shift;
 +    }
 +
@@ -6690,7 +6706,7 @@ index a0b5895abc88d297045e05f25bb09527991d43f0..6e0bd0eab0b06a4ac3042496bbb91292
          super(type, world);
          this.xpReward = 5;
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 6375dfa336d232c7876e184690a1cb5c9bc2c495..2e948330c4951e3df7091fa870573f163d2af286 100644
+index a797c6dd17cf73feada7badccf47b4036f746405..6758e72177c0a407cf6c392b10263f095e4d06e8 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
 @@ -788,6 +788,25 @@ public final class ItemStack {
