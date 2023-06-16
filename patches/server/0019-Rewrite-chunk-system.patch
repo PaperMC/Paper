@@ -2310,10 +2310,10 @@ index 95eac2e12a16938d81ab512b00e90c5234b42834..8f7bf1f0400aeab8b7801d113d244d07
      private ChunkSystem() {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a495d692841c1a6056ca82519ee9b9c66f1ff5cd
+index 0000000000000000000000000000000000000000..924539d4ac50c70178ba220424ffacd6ff277c8b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1418 @@
+@@ -0,0 +1,1426 @@
 +package io.papermc.paper.chunk.system;
 +
 +import ca.spottedleaf.concurrentutil.collection.SRSWLinkedQueue;
@@ -3169,6 +3169,14 @@ index 0000000000000000000000000000000000000000..a495d692841c1a6056ca82519ee9b9c6
 +                    // nothing to do
 +                    // the target chunk may not be owned by this region, but this should be resolved in the future
 +                    break;
++                }
++                if (!chunk.isPostProcessingDone) {
++                    // not yet post-processed, need to do this so that tile entities can properly be sent to clients
++                    chunk.postProcessGeneration();
++                    // check if there was any recursive action
++                    if (this.removed || this.sendQueue.isEmpty() || this.sendQueue.firstLong() != pendingSend) {
++                        return;
++                    } // else: good to dequeue and send, fall through
 +                }
 +                this.sendQueue.dequeueLong();
 +
@@ -22765,7 +22773,7 @@ index 73f61f2b0c0aeefabb7b7bba7ca37914751dcc42..4a3593f24fc844a6a8b1b6c28ad2dc9c
      // Spigot start
      private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6812237223f8b31e19476cf320192214994c032c..d67a7f9534c3dc43310a26e8e9073c6442a2edef 100644
+index ef25bfa8c9341104df5cc150eefada52c5353efa..07934c6b9fc1412a404c8c1fdb704cf8adccfb08 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -187,6 +187,48 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
