@@ -71,6 +71,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private EntityDamageEvent lastDamageEvent;
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
     protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+    // Paper start - Folia shedulers
+    public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
+    private final io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler apiScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler(this);
+
+    @Override
+    public final io.papermc.paper.threadedregions.scheduler.EntityScheduler getScheduler() {
+        return this.apiScheduler;
+    };
+    // Paper end - Folia schedulers
 
     public CraftEntity(final CraftServer server, final Entity entity) {
         this.server = server;
@@ -486,6 +495,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public Entity getHandle() {
         return this.entity;
     }
+
+    // Paper start
+    public Entity getHandleRaw() {
+        return this.entity;
+    }
+    // Paper end
 
     @Override
     public final EntityType getType() {

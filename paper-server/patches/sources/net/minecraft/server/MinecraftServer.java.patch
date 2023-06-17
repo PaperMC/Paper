@@ -927,24 +927,22 @@
                  this.onServerExit();
              }
  
-@@ -889,9 +1336,16 @@
+@@ -889,7 +1336,14 @@
      }
  
      private boolean haveTime() {
 -        return this.runningTask() || Util.getNanos() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.nextTickTimeNanos);
 +        // CraftBukkit start
 +        return this.forceTicks || this.runningTask() || Util.getNanos() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTimeNanos : this.nextTickTimeNanos);
-     }
- 
++    }
++
 +    private void executeModerately() {
 +        this.runAllTasks();
 +        java.util.concurrent.locks.LockSupport.parkNanos("executing tasks", 1000L);
 +        // CraftBukkit end
-+    }
-+
-     public static boolean throwIfFatalException() {
-         RuntimeException runtimeexception = (RuntimeException) MinecraftServer.fatalException.get();
+     }
  
+     public static boolean throwIfFatalException() {
 @@ -903,7 +1357,7 @@
      }
  
@@ -1061,11 +1059,25 @@
              ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList(j);
              int k = Mth.nextInt(this.random, 0, list.size() - j);
  
-@@ -1154,24 +1623,58 @@
+@@ -1154,24 +1623,72 @@
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
 +        this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
++        // Paper start - Folia scheduler API
++        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
++        getAllLevels().forEach(level -> {
++            for (final Entity entity : level.getEntities().getAll()) {
++                if (entity.isRemoved()) {
++                    continue;
++                }
++                final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
++                if (bukkit != null) {
++                    bukkit.taskScheduler.executeTick();
++                }
++            }
++        });
++        // Paper end - Folia scheduler API
 +        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          gameprofilerfiller.push("commandFunctions");
          this.getFunctions().tick();
@@ -1121,7 +1133,7 @@
  
              gameprofilerfiller.push("tick");
  
-@@ -1186,7 +1689,9 @@
+@@ -1186,7 +1703,9 @@
  
              gameprofilerfiller.pop();
              gameprofilerfiller.pop();
@@ -1131,7 +1143,7 @@
  
          gameprofilerfiller.popPush("connection");
          this.tickConnection();
-@@ -1267,6 +1772,22 @@
+@@ -1267,6 +1786,22 @@
          return (ServerLevel) this.levels.get(key);
      }
  
@@ -1154,7 +1166,7 @@
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
      }
-@@ -1296,7 +1817,7 @@
+@@ -1296,7 +1831,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -1163,7 +1175,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -1347,7 +1868,7 @@
+@@ -1347,7 +1882,7 @@
  
      @Override
      public void sendSystemMessage(Component message) {
@@ -1172,7 +1184,7 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1385,11 +1906,14 @@
+@@ -1385,11 +1920,14 @@
          }
      }
  
@@ -1192,7 +1204,7 @@
          }
      }
  
-@@ -1403,7 +1927,7 @@
+@@ -1403,7 +1941,7 @@
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
  
@@ -1201,7 +1213,7 @@
          }
  
      }
-@@ -1481,10 +2005,20 @@
+@@ -1481,10 +2019,20 @@
  
      @Override
      public String getMotd() {
@@ -1223,7 +1235,7 @@
          this.motd = motd;
      }
  
-@@ -1507,7 +2041,7 @@
+@@ -1507,7 +2055,7 @@
      }
  
      public ServerConnectionListener getConnection() {
@@ -1232,7 +1244,7 @@
      }
  
      public boolean isReady() {
-@@ -1593,7 +2127,7 @@
+@@ -1593,7 +2141,7 @@
      @Override
      public void executeIfPossible(Runnable runnable) {
          if (this.isStopped()) {
@@ -1241,7 +1253,7 @@
          } else {
              super.executeIfPossible(runnable);
          }
-@@ -1632,13 +2166,19 @@
+@@ -1632,13 +2180,19 @@
          return this.functionManager;
      }
  
@@ -1263,7 +1275,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,17 +2194,21 @@
+@@ -1654,17 +2208,21 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -1285,7 +1297,7 @@
          }, this);
  
          if (this.isSameThread()) {
-@@ -1789,14 +2333,15 @@
+@@ -1789,14 +2347,15 @@
          if (this.isEnforceWhitelist()) {
              PlayerList playerlist = source.getServer().getPlayerList();
              UserWhiteList whitelist = playerlist.getWhiteList();
@@ -1303,7 +1315,7 @@
                  }
              }
  
-@@ -1952,7 +2497,7 @@
+@@ -1952,7 +2511,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1312,7 +1324,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2603,7 @@
+@@ -2058,7 +2617,7 @@
              try {
                  label51:
                  {
@@ -1321,19 +1333,22 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2108,6 +2653,21 @@
- 
-     }
- 
+@@ -2105,9 +2664,24 @@
+         if (bufferedwriter != null) {
+             bufferedwriter.close();
+         }
++
++    }
++
 +    // CraftBukkit start
 +    public boolean isDebugging() {
 +        return false;
 +    }
-+
+ 
 +    public static MinecraftServer getServer() {
 +        return SERVER; // Paper
-+    }
-+
+     }
+ 
 +    @Deprecated
 +    public static RegistryAccess getDefaultRegistryAccess() {
 +        return CraftRegistry.getMinecraftRegistry();
@@ -1343,7 +1358,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2225,18 +2785,24 @@
+@@ -2225,18 +2799,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -1372,7 +1387,7 @@
      }
  
      public boolean logIPs() {
-@@ -2377,6 +2943,32 @@
+@@ -2377,6 +2957,32 @@
      }
  
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {

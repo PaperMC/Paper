@@ -263,6 +263,22 @@ class PaperPluginInstanceManager {
                 + pluginName + " (Is it up to date?)", ex, plugin); // Paper
         }
 
+        // Paper start - Folia schedulers
+        try {
+            this.server.getGlobalRegionScheduler().cancelTasks(plugin);
+        } catch (Throwable ex) {
+            this.handlePluginException("Error occurred (in the plugin loader) while cancelling global tasks for "
+                + pluginName + " (Is it up to date?)", ex, plugin); // Paper
+        }
+
+        try {
+            this.server.getAsyncScheduler().cancelTasks(plugin);
+        } catch (Throwable ex) {
+            this.handlePluginException("Error occurred (in the plugin loader) while cancelling async tasks for "
+                + pluginName + " (Is it up to date?)", ex, plugin); // Paper
+        }
+        // Paper end - Folia schedulers
+
         try {
             this.server.getServicesManager().unregisterAll(plugin);
         } catch (Throwable ex) {
