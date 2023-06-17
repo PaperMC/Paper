@@ -1,8 +1,20 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 17 Jun 2023 11:52:52 +0200
-Subject: [PATCH] Folia scheduler API
+Subject: [PATCH] Folia scheduler and owned region API
 
+Pulling Folia API to Paper is primarily intended for plugins
+that want to target both Paper and Folia without unnecessary
+compatibility layers.
+
+Add both a location based scheduler, an entity based scheduler,
+and a global region scheduler.
+
+Owned region API may be useful for plugins which want to perform
+operations over large areas outside of the buffer zone provided
+by the regionaliser, as it is not guaranteed that anything
+outside of the buffer zone is owned. Then, the plugins may use
+the schedulers depending on the result of the ownership check.
 
 diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
 new file mode 100644
@@ -1109,16 +1121,15 @@ index 0000000000000000000000000000000000000000..d306f911757a4d556c82c0070d4837db
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 80cf4852e4010eeeadaf920ab927a40df0179b40..dcc0cd49cf328b5e70442b0c9da948063a687319 100644
+index 80cf4852e4010eeeadaf920ab927a40df0179b40..912affb0ab1c4c40f7a655194e95ec6f0ebf1fcd 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1479,6 +1479,19 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1479,6 +1479,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
          this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
          MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
 +        // Paper start - Folia scheduler API
-+        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick(); // Paper
-+        // TODO there has got to be a more efficient variant of this crap
++        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
 +        getAllLevels().forEach(level -> level.getAllEntities().forEach(entity -> {
 +            if (entity.isRemoved()) {
 +                return;
