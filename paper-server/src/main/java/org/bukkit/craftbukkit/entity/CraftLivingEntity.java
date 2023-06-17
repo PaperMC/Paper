@@ -573,6 +573,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return effects;
     }
 
+    // Paper start - LivingEntity#clearActivePotionEffects();
+    @Override
+    public boolean clearActivePotionEffects() {
+        return this.getHandle().removeAllEffects(EntityPotionEffectEvent.Cause.PLUGIN);
+    }
+    // Paper end
+
     @Override
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile) {
         return this.launchProjectile(projectile, null);
