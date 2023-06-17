@@ -87,6 +87,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    case "ancient_cities":
 +                        seed = conf.ancientCitySeed;
 +                        break;
++                    case "trail_ruins":
++                        seed = conf.trailRuinsSeed;
++                        break;
 +                    // Paper end
                  }
  
@@ -238,6 +241,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int portalSeed;
 +    // Paper start - add missing structure set configs
 +    public int ancientCitySeed;
++    public int trailRuinsSeed;
 +    public int buriedTreasureSeed;
 +    public Integer mineshaftSeed;
 +    public Long strongholdSeed;
@@ -255,6 +259,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.portalSeed = this.getInt( "seed-portal", 34222645 );
 +        // Paper start - add missing structure set configs
 +        this.ancientCitySeed = this.getInt("seed-ancientcity", 20083232);
++        this.trailRuinsSeed = this.getInt("seed-trailruins", 83469867);
 +        this.buriedTreasureSeed = this.getInt("seed-buriedtreasure", 10387320); // StructurePlacement#HIGHLY_ARBITRARY_RANDOM_SALT
 +        this.mineshaftSeed = this.getSeed("seed-mineshaft", Integer::parseInt);
 +        this.strongholdSeed = this.getSeed("seed-stronghold", Long::parseLong);
@@ -262,3 +267,83 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.log( "Custom Map Seeds:  Village: " + this.villageSeed + " Desert: " + this.desertSeed + " Igloo: " + this.iglooSeed + " Jungle: " + this.jungleSeed + " Swamp: " + this.swampSeed + " Monument: " + this.monumentSeed
                  + " Ocean: " + this.oceanSeed + " Shipwreck: " + this.shipwreckSeed + " End City: " + this.endCitySeed + " Slime: " + this.slimeSeed + " Nether: " + this.netherSeed + " Mansion: " + this.mansionSeed + " Fossil: " + this.fossilSeed + " Portal: " + this.portalSeed );
      }
+diff --git a/src/test/java/io/papermc/paper/world/structure/StructureSeedConfigTest.java b/src/test/java/io/papermc/paper/world/structure/StructureSeedConfigTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/world/structure/StructureSeedConfigTest.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.world.structure;
++
++import io.papermc.paper.configuration.PaperConfigurations;
++import java.io.File;
++import java.lang.reflect.Field;
++import net.minecraft.core.Registry;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.level.levelgen.structure.BuiltinStructureSets;
++import net.minecraft.world.level.levelgen.structure.StructureSet;
++import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
++import org.bukkit.configuration.file.YamlConfiguration;
++import org.bukkit.support.AbstractTestingBase;
++import org.jetbrains.annotations.NotNull;
++import org.junit.Test;
++import org.spigotmc.SpigotConfig;
++import org.spigotmc.SpigotWorldConfig;
++
++import static org.junit.Assert.assertEquals;
++
++public class StructureSeedConfigTest extends AbstractTestingBase {
++
++    @Test
++    public void checkStructureSeedDefaults() throws ReflectiveOperationException {
++        SpigotConfig.config = new YamlConfiguration() {
++            @Override
++            public void save(final @NotNull File file) {
++                // no-op
++            }
++        };
++        final SpigotWorldConfig config = PaperConfigurations.SPIGOT_WORLD_DEFAULTS.get();
++
++
++        final Registry<StructureSet> structureSets = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(Registries.STRUCTURE_SET);
++        for (final ResourceKey<StructureSet> setKey : structureSets.registryKeySet()) {
++            assertEquals(ResourceLocation.DEFAULT_NAMESPACE, setKey.location().getNamespace());
++            final StructureSet set = structureSets.getOrThrow(setKey);
++            if (setKey == BuiltinStructureSets.STRONGHOLDS) { // special case due to seed matching world seed
++                assertEquals(0, set.placement().salt);
++                continue;
++            }
++            int salt = switch (setKey.location().getPath()) {
++                case "villages" -> config.villageSeed;
++                case "desert_pyramids" -> config.desertSeed;
++                case "igloos" -> config.iglooSeed;
++                case "jungle_temples" -> config.jungleSeed;
++                case "swamp_huts" -> config.swampSeed;
++                case "pillager_outposts" -> config.outpostSeed;
++                case "ocean_monuments" -> config.monumentSeed;
++                case "woodland_mansions" -> config.mansionSeed;
++                case "buried_treasures" -> config.buriedTreasureSeed;
++                case "mineshafts" -> config.mineshaftSeed == null ? 0 : config.mineshaftSeed; // mineshaft seed is set differently
++                case "ruined_portals" -> config.portalSeed;
++                case "shipwrecks" -> config.shipwreckSeed;
++                case "ocean_ruins" -> config.oceanSeed;
++                case "nether_complexes" -> config.netherSeed;
++                case "nether_fossils" -> config.fossilSeed;
++                case "end_cities" -> config.endCitySeed;
++                case "ancient_cities" -> config.ancientCitySeed;
++                case "trail_ruins" -> config.trailRuinsSeed;
++                default -> throw new AssertionError("Missing structure set seed in SpigotWorldConfig for " + setKey);
++            };
++            if (setKey == BuiltinStructureSets.BURIED_TREASURES) {
++                final Field field = StructurePlacement.class.getDeclaredField("HIGHLY_ARBITRARY_RANDOM_SALT");
++                field.trySetAccessible();
++                assertEquals(0, set.placement().salt);
++                assertEquals("Mismatched default seed for " + setKey + ". Should be " + field.get(null), field.get(null), salt);
++                continue;
++            }
++            assertEquals("Mismatched default seed for " + setKey + ". Should be " + set.placement().salt, set.placement().salt, salt);
++        }
++    }
++}
