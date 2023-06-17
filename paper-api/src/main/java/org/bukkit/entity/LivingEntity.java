@@ -657,6 +657,15 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @NotNull
     public Collection<PotionEffect> getActivePotionEffects();
 
+    // Paper start - LivingEntity#clearActivePotionEffects();
+    /**
+     * Removes all active potion effects for this entity.
+     *
+     * @return true if any were removed
+     */
+    boolean clearActivePotionEffects();
+    // Paper end
+
     /**
      * Checks whether the living entity has block line of sight to another.
      * <p>
