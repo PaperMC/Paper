@@ -10,6 +10,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,18 +35,24 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     private Result useClickedBlock;
     private Result useItemInHand;
     private EquipmentSlot hand;
+    private Vector clickedPosistion;
 
     public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace) {
         this(who, action, item, clickedBlock, clickedFace, EquipmentSlot.HAND);
     }
 
     public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand) {
+        this(who, action, item, clickedBlock, clickedFace, hand, null);
+    }
+
+    public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand, @Nullable final Vector clickedPosition) {
         super(who);
         this.action = action;
         this.item = item;
         this.blockClicked = clickedBlock;
         this.blockFace = clickedFace;
         this.hand = hand;
+        this.clickedPosistion = clickedPosition;
 
         useItemInHand = Result.DEFAULT;
         useClickedBlock = clickedBlock == null ? Result.DENY : Result.ALLOW;
@@ -219,6 +226,19 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     @Nullable
     public EquipmentSlot getHand() {
         return hand;
+    }
+
+    /**
+     * Gets the exact position on the block the player interacted with, this will
+     * be null outside of {@link Action#RIGHT_CLICK_BLOCK}.
+     * <p>
+     * All vector components are between 0.0 and 1.0 inclusive.
+     *
+     * @return the clicked position. May be null.
+     */
+    @Nullable
+    public Vector getClickedPosition() {
+        return clickedPosistion;
     }
 
     @NotNull
