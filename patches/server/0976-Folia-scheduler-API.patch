@@ -1145,10 +1145,22 @@ index 8547e7ff2f1f5b7701fb0f3c3010c14601a5f83e..fff7ad7a45f310783ac96b44575ad3db
          this.players.remove(entityplayer);
          this.playersByName.remove(entityplayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..5689694451d179180fc80b52930d481bf7b2b7fd 100644
+index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..d2e65783d80586b70950ad2a5b432aa021e77412 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -251,6 +251,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -246,11 +246,23 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     public @Nullable Throwable addedToWorldStack; // Paper - entity debug
+     public CraftEntity getBukkitEntity() {
+         if (this.bukkitEntity == null) {
+-            this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
++            // Paper start - Folia schedulers
++            synchronized (this) {
++                if (this.bukkitEntity == null) {
++                    return this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
++                }
++            }
++            // Paper end - Folia schedulers
+         }
          return this.bukkitEntity;
      }
  
@@ -1161,7 +1173,7 @@ index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..5689694451d179180fc80b52930d481b
      @Override
      public CommandSender getBukkitSender(CommandSourceStack wrapper) {
          return this.getBukkitEntity();
-@@ -4678,12 +4684,28 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -4678,12 +4690,28 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
  
          if (reason != RemovalReason.UNLOADED_TO_CHUNK) this.getPassengers().forEach(Entity::stopRiding); // Paper - chunk system - don't adjust passenger state when unloading, it's just not safe (and messes with our logic in entity chunk unload)
          this.levelCallback.onRemove(reason);
