@@ -2696,6 +2696,164 @@ public final class Bukkit {
     }
     // Paper end
 
+    // Paper start - Folia region threading API
+    /**
+     * Returns the region task scheduler. The region task scheduler can be used to schedule
+     * tasks by location to be executed on the region which owns the location.
+     * <p>
+     * <b>Note</b>: It is entirely inappropriate to use the region scheduler to schedule tasks for entities.
+     * If you wish to schedule tasks to perform actions on entities, you should be using {@link Entity#getScheduler()}
+     * as the entity scheduler will "follow" an entity if it is teleported, whereas the region task scheduler
+     * will not.
+     * </p>
+     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
+     * @return the region task scheduler
+     */
+    public static @NotNull io.papermc.paper.threadedregions.scheduler.RegionScheduler getRegionScheduler() {
+        return server.getRegionScheduler();
+    }
+
+    /**
+     * Returns the async task scheduler. The async task scheduler can be used to schedule tasks
+     * that execute asynchronously from the server tick process.
+     * @return the async task scheduler
+     */
+    public static @NotNull io.papermc.paper.threadedregions.scheduler.AsyncScheduler getAsyncScheduler() {
+        return server.getAsyncScheduler();
+    }
+
+    /**
+     * Returns the global region task scheduler. The global task scheduler can be used to schedule
+     * tasks to execute on the global region.
+     * <p>
+     * The global region is responsible for maintaining world day time, world game time, weather cycle,
+     * sleep night skipping, executing commands for console, and other misc. tasks that do not belong to any specific region.
+     * </p>
+     * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
+     * @return the global region scheduler
+     */
+    public static @NotNull io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler getGlobalRegionScheduler() {
+        return server.getGlobalRegionScheduler();
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the chunk at the specified world and block position.
+     * @param world Specified world.
+     * @param position Specified block position.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position) {
+        return server.isOwnedByCurrentRegion(world, position);
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the chunks centered at the specified block position within the specified square radius.
+     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
+     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
+     * @param world Specified world.
+     * @param position Specified block position.
+     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
+     *                           radius, but rather a <i>Chebyshev Distance</i>.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position, int squareRadiusChunks) {
+        return server.isOwnedByCurrentRegion(world, position, squareRadiusChunks);
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the chunk at the specified world and block position as included in the specified location.
+     * @param location Specified location, must have a non-null world.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull Location location) {
+        return server.isOwnedByCurrentRegion(location);
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the chunks centered at the specified world and block position as included in the specified location
+     * within the specified square radius.
+     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
+     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
+     * @param location Specified location, must have a non-null world.
+     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
+     *                           radius, but rather a <i>Chebyshev Distance</i>.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull Location location, int squareRadiusChunks) {
+        return server.isOwnedByCurrentRegion(location, squareRadiusChunks);
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the chunk at the specified block position.
+     * @param block Specified block position.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull org.bukkit.block.Block block) {
+        return server.isOwnedByCurrentRegion(block.getLocation());
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the chunk at the specified world and chunk position.
+     * @param world Specified world.
+     * @param chunkX Specified x-coordinate of the chunk position.
+     * @param chunkZ Specified z-coordinate of the chunk position.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ) {
+        return server.isOwnedByCurrentRegion(world, chunkX, chunkZ);
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the chunks centered at the specified world and chunk position within the specified
+     * square radius.
+     * Specifically, this function checks that every chunk with position x in [centerX - radius, centerX + radius] and
+     * position z in [centerZ - radius, centerZ + radius] is owned by the current ticking region.
+     * @param world Specified world.
+     * @param chunkX Specified x-coordinate of the chunk position.
+     * @param chunkZ Specified z-coordinate of the chunk position.
+     * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
+     *                           radius, but rather a <i>Chebyshev Distance</i>.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ, int squareRadiusChunks) {
+        return server.isOwnedByCurrentRegion(world, chunkX, chunkZ, squareRadiusChunks);
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the chunks in the rectangle specified by the min and max parameters.
+     * Specifically, this function checks that every chunk with position x in [minChunkX, maxChunkX] and
+     * position z in [minChunkZ, maxChunkZ] is owned by the current ticking region.
+     * @param world Specified world.
+     * @param minChunkX Specified x-coordinate of the minimum chunk position.
+     * @param minChunkZ Specified z-coordinate of the minimum chunk position.
+     * @param maxChunkX Specified x-coordinate of the maximum chunk position.
+     * @param maxChunkZ Specified z-coordinate of the maximum chunk position.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull World world, int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ) {
+        return server.isOwnedByCurrentRegion(world, minChunkX, minChunkZ, maxChunkX, maxChunkZ);
+    }
+
+    /**
+     * Returns whether the current thread is ticking a region and that the region being ticked
+     * owns the specified entity. Note that this function is the only appropriate method of checking
+     * for ownership of an entity, as retrieving the entity's location is undefined unless the entity is owned
+     * by the current region.
+     * @param entity Specified entity.
+     */
+    public static boolean isOwnedByCurrentRegion(@NotNull Entity entity) {
+        return server.isOwnedByCurrentRegion(entity);
+    }
+
+    /**
+     * Returns whether the current thread is ticking the global region.
+     * @see io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler
+     */
+    public static boolean isGlobalTickThread() {
+        return server.isGlobalTickThread();
+    }
+    // Paper end - Folia region threading API
+
     @NotNull
     public static Server.Spigot spigot() {
         return server.spigot();
