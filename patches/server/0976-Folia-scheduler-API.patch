@@ -229,7 +229,7 @@ index 0000000000000000000000000000000000000000..94056d61a304ee012ae1828a33412516
 +}
 diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaAsyncScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaAsyncScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1607d55a9b673673276fc0d97c92ef9426ce6395
+index 0000000000000000000000000000000000000000..374abffb9f1ce1a308822aed13038e77fe9ca08b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaAsyncScheduler.java
 @@ -0,0 +1,328 @@
@@ -257,7 +257,7 @@ index 0000000000000000000000000000000000000000..1607d55a9b673673276fc0d97c92ef94
 +
 +public final class FoliaAsyncScheduler implements AsyncScheduler {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    private final Executor executors = new ThreadPoolExecutor(Math.max(4, Runtime.getRuntime().availableProcessors() / 2), Integer.MAX_VALUE,
 +        30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
@@ -1203,14 +1203,14 @@ index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..d2e65783d80586b70950ad2a5b432aa0
      public void setLevelCallback(EntityInLevelCallback changeListener) {
          this.levelCallback = changeListener;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 59984cb8ba9ffb66b59a2c907e4f04b5a51ea8ed..7ab21ae3dfd9d1e0471fac0437083afdd8f10a68 100644
+index 59984cb8ba9ffb66b59a2c907e4f04b5a51ea8ed..0859f11567aecc8cae993a1409cfac7c53ab3dd5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -302,6 +302,27 @@ public final class CraftServer implements Server {
+@@ -302,6 +302,76 @@ public final class CraftServer implements Server {
      private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
      private final CraftPotionBrewer potionBrewer = new CraftPotionBrewer(); // Paper
  
-+    // Paper start - Folia scheduler API
++    // Paper start - Folia region threading API
 +    private final io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler regionizedScheduler = new io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler();
 +    private final io.papermc.paper.threadedregions.scheduler.FoliaAsyncScheduler asyncScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaAsyncScheduler();
 +    private final io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler globalRegionScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler();
@@ -1229,7 +1229,56 @@ index 59984cb8ba9ffb66b59a2c907e4f04b5a51ea8ed..7ab21ae3dfd9d1e0471fac0437083afd
 +    public final io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler getGlobalRegionScheduler() {
 +        return this.globalRegionScheduler;
 +    }
-+    // Paper end
++
++    @Override
++    public final boolean isOwnedByCurrentRegion(World world, io.papermc.paper.math.Position position) {
++        return io.papermc.paper.util.TickThread.isTickThreadFor(
++            ((CraftWorld) world).getHandle(), position.blockX() >> 4, position.blockZ() >> 4
++        );
++    }
++
++    @Override
++    public final boolean isOwnedByCurrentRegion(World world, io.papermc.paper.math.Position position, int squareRadiusChunks) {
++        return io.papermc.paper.util.TickThread.isTickThreadFor(
++            ((CraftWorld) world).getHandle(), position.blockX() >> 4, position.blockZ() >> 4, squareRadiusChunks
++        );
++    }
++
++    @Override
++    public final boolean isOwnedByCurrentRegion(Location location) {
++        World world = location.getWorld();
++        return io.papermc.paper.util.TickThread.isTickThreadFor(
++            ((CraftWorld) world).getHandle(), location.getBlockX() >> 4, location.getBlockZ() >> 4
++        );
++    }
++
++    @Override
++    public final boolean isOwnedByCurrentRegion(Location location, int squareRadiusChunks) {
++        World world = location.getWorld();
++        return io.papermc.paper.util.TickThread.isTickThreadFor(
++            ((CraftWorld) world).getHandle(), location.getBlockX() >> 4, location.getBlockZ() >> 4, squareRadiusChunks
++        );
++    }
++
++    @Override
++    public final boolean isOwnedByCurrentRegion(World world, int chunkX, int chunkZ) {
++        return io.papermc.paper.util.TickThread.isTickThreadFor(
++            ((CraftWorld) world).getHandle(), chunkX, chunkZ
++        );
++    }
++
++    @Override
++    public final boolean isOwnedByCurrentRegion(World world, int chunkX, int chunkZ, int squareRadiusChunks) {
++        return io.papermc.paper.util.TickThread.isTickThreadFor(
++            ((CraftWorld) world).getHandle(), chunkX, chunkZ, squareRadiusChunks
++        );
++    }
++
++    @Override
++    public final boolean isOwnedByCurrentRegion(Entity entity) {
++        return io.papermc.paper.util.TickThread.isTickThreadFor(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandleRaw());
++    }
++    // Paper end - Folia reagion threading API
 +
      static {
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
