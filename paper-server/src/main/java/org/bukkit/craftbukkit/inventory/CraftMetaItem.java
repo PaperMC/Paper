@@ -1329,7 +1329,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         for (Object object : addFrom) {
             if (!(object instanceof String)) {
-                Preconditions.checkArgument(object == null, "%s cannot contain non-string %s", addFrom, object.getClass().getName());
+                if (object != null) {
+                    // SPIGOT-7399: Null check via if is important,
+                    // otherwise object.getClass().getName() could throw an error for a valid argument -> when it is null which is valid,
+                    // when using Preconditions
+                    throw new IllegalArgumentException(addFrom + " cannot contain non-string " + object.getClass().getName());
+                }
 
                 addTo.add(CraftChatMessage.toJSON(IChatBaseComponent.empty()));
             } else {
