@@ -4,6 +4,36 @@ Date: Wed, 14 Dec 2022 15:52:11 -0800
 Subject: [PATCH] Improve logging and errors
 
 
+diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
+index f6e423a76d4c9cf639f1d44af80d33cf3072f6b5..135fc81414446f24c3adad71f5199c7898a6c1cd 100644
+--- a/src/main/java/net/minecraft/server/dedicated/Settings.java
++++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
+@@ -49,6 +49,12 @@ public abstract class Settings<T extends Settings<T>> {
+     }
+ 
+     public static Properties loadFromFile(Path path) {
++        // Paper start
++        if (Files.notExists(path)) {
++            LOGGER.info("Could not find existing {}. Creating with default values...", path.getFileName());
++            return new Properties();
++        }
++        // Paper end
+         try {
+             Properties properties;
+             Properties properties1;
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 1f6a0ec6e42906466aa63fe81f2d651b8512e837..0d998395b65be269c2b5b58acd1b2b46408f8f8e 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3588,7 +3588,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                     this.resetPlayerChatState(remotechatsession_a.validate(this.player.getGameProfile(), signaturevalidator, Duration.ZERO));
+                 } catch (ProfilePublicKey.ValidationException profilepublickey_b) {
+-                    ServerGamePacketListenerImpl.LOGGER.error("Failed to validate profile key: {}", profilepublickey_b.getMessage());
++                    // ServerGamePacketListenerImpl.LOGGER.error("Failed to validate profile key: {}", profilepublickey_b.getMessage()); // Paper - unnecessary log
+                     this.disconnect(profilepublickey_b.getComponent(), profilepublickey_b.kickCause); // Paper - kick event causes
+                 }
+ 
 diff --git a/src/main/java/net/minecraft/server/packs/PathPackResources.java b/src/main/java/net/minecraft/server/packs/PathPackResources.java
 index 0232c29d96e1021a9f5a9678996993dc55fe7254..8ad8ad1189d7cdb58caaa39c482d32685afa3f9a 100644
 --- a/src/main/java/net/minecraft/server/packs/PathPackResources.java
