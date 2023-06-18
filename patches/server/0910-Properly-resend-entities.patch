@@ -8,16 +8,18 @@ Entities that are interacted with need to be resent to the client, so we resend 
 data to the player whilst making sure not to clear dirty entries from the tracker. This makes
 sure that values will be correctly updated to other players.
 
+This also adds utilities to aid in further preventing entity desyncs.
+
 See: https://github.com/PaperMC/Paper/pull/1896
 
 == AT ==
 public net.minecraft.server.level.ChunkMap$TrackedEntity serverEntity
 
 diff --git a/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java b/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
-index d088479d160dbd2fc90b48a30553be141db8eef2..bf6a70a69bb695ec1a202cd1e863c468329f80fc 100644
+index d088479d160dbd2fc90b48a30553be141db8eef2..15add3f4dfd718ec09bb1db4f22223466936879c 100644
 --- a/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
 +++ b/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
-@@ -253,14 +253,46 @@ public class SynchedEntityData {
+@@ -253,14 +253,60 @@ public class SynchedEntityData {
      // CraftBukkit start
      public void refresh(ServerPlayer to) {
          if (!this.isEmpty()) {
@@ -60,6 +62,20 @@ index d088479d160dbd2fc90b48a30553be141db8eef2..bf6a70a69bb695ec1a202cd1e863c468
 +        if (player.getBukkitEntity().canSee(entity.getBukkitEntity())) {
 +            serverEntity.sendPairingData(player, player.connection::send);
 +        }
++    }
++
++    // This method allows you to specifically resend certain data accessor keys to the client
++    public void resendPossiblyDesyncedDataValues(List<EntityDataAccessor<?>> keys, ServerPlayer to) {
++        if (!to.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
++            return;
++        }
++        List<SynchedEntityData.DataValue<?>> values = new ArrayList<>(keys.size());
++        for (EntityDataAccessor<?> key : keys) {
++            SynchedEntityData.DataItem<?> synchedValue = this.getItem(key);
++            values.add(synchedValue.value());
++        }
++
++        to.connection.send(new ClientboundSetEntityDataPacket(this.entity.getId(), values));
 +    }
 +    // Paper end
  
