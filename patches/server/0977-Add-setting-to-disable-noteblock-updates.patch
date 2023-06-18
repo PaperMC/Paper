@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boy <sivertpaulsen2@gmail.com>
+Date: Sun, 18 Jun 2023 13:34:48 +0200
+Subject: [PATCH] Add setting to disable noteblock updates
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index ffbab76e55807f04ebb25242eadbea114004b1b3..940ddc97c3d949b438a60335c37bec582ab8fc60 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -128,6 +128,8 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public boolean allowHeadlessPistons = false;
+         @Comment("This setting controls if grindstones should be able to output overstacked items (such as cursed books).")
+         public boolean allowGrindstoneOverstacking = false;
++        @Comment("This setting disables noteblocks from updating its instrument and note")
++        public boolean disableNoteblockUpdates = false;
+     }
+ 
+     public Commands commands;
+@@ -280,8 +282,8 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+         @Comment(
+             "The maximum rate at which chunks will load for any individual player. " +
+-            "Note that this setting also affects chunk generations, since a chunk load is always first issued to test if a" +
+-            "chunk is already generated. Set to -1 to disable this limit."
++                "Note that this setting also affects chunk generations, since a chunk load is always first issued to test if a" +
++                "chunk is already generated. Set to -1 to disable this limit."
+         )
+         public double playerMaxChunkLoadRate = 100.0;
+ 
+@@ -294,19 +296,19 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public class ChunkLoadingAdvanced extends ConfigurationPart {
+         @Comment(
+             "Set to true if the server will match the chunk send radius that clients have configured" +
+-            "in their view distance settings if the client is less-than the server's send distance."
++                "in their view distance settings if the client is less-than the server's send distance."
+         )
+         public boolean autoConfigSendDistance = true;
+ 
+         @Comment(
+             "Specifies the maximum amount of concurrent chunk loads that an individual player can have." +
+-            "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
++                "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
+         )
+         public int playerMaxConcurrentChunkLoads = 0;
+ 
+         @Comment(
+             "Specifies the maximum amount of concurrent chunk generations that an individual player can have." +
+-            "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
++                "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
+         )
+         public int playerMaxConcurrentChunkGenerates = 0;
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/NoteBlock.java b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
+index 910864cfeac085648e6c671b0f9480417324d36e..2040d34244ad43d32a4bdbacd4664d51fcdf8a45 100644
+--- a/src/main/java/net/minecraft/world/level/block/NoteBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
+@@ -58,11 +58,13 @@ public class NoteBlock extends Block {
+ 
+     @Override
+     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.disableNoteblockUpdates) return this.defaultBlockState(); // Paper - place without considering instrument
+         return this.setInstrument(ctx.getLevel(), ctx.getClickedPos(), this.defaultBlockState());
+     }
+ 
+     @Override
+     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.disableNoteblockUpdates) return state; // Paper - prevent noteblock instrument from updating
+         boolean flag = direction.getAxis() == Direction.Axis.Y;
+ 
+         return flag ? this.setInstrument(world, pos, state) : super.updateShape(state, direction, neighborState, world, pos, neighborPos);
+@@ -70,6 +72,7 @@ public class NoteBlock extends Block {
+ 
+     @Override
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.disableNoteblockUpdates) return; // Paper - prevent noteblock powered-state from updating
+         boolean flag1 = world.hasNeighborSignal(pos);
+ 
+         if (flag1 != (Boolean) state.getValue(NoteBlock.POWERED)) {
+@@ -107,7 +110,7 @@ public class NoteBlock extends Block {
+         } else if (world.isClientSide) {
+             return InteractionResult.SUCCESS;
+         } else {
+-            state = (BlockState) state.cycle(NoteBlock.NOTE);
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.disableNoteblockUpdates) state = (BlockState) state.cycle(NoteBlock.NOTE); // Paper - prevent noteblock note from updating
+             world.setBlock(pos, state, 3);
+             this.playNote(player, state, world, pos);
+             player.awardStat(Stats.TUNE_NOTEBLOCK);
