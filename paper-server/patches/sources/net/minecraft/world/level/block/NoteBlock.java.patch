@@ -1,6 +1,26 @@
 --- a/net/minecraft/world/level/block/NoteBlock.java
 +++ b/net/minecraft/world/level/block/NoteBlock.java
-@@ -85,6 +85,7 @@
+@@ -68,11 +68,13 @@
+ 
+     @Override
+     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return this.defaultBlockState(); // Paper - place without considering instrument
+         return this.setInstrument(ctx.getLevel(), ctx.getClickedPos(), this.defaultBlockState());
+     }
+ 
+     @Override
+     protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickView, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return state; // Paper - prevent noteblock instrument from updating
+         boolean flag = direction.getAxis() == Direction.Axis.Y;
+ 
+         return flag ? this.setInstrument(world, pos, state) : super.updateShape(state, world, tickView, pos, direction, neighborPos, neighborState, random);
+@@ -80,11 +82,13 @@
+ 
+     @Override
+     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return; // Paper - prevent noteblock powered-state from updating
+         boolean flag1 = world.hasNeighborSignal(pos);
+ 
          if (flag1 != (Boolean) state.getValue(NoteBlock.POWERED)) {
              if (flag1) {
                  this.playNote((Entity) null, state, world, pos);
@@ -8,7 +28,7 @@
              }
  
              world.setBlock(pos, (BlockState) state.setValue(NoteBlock.POWERED, flag1), 3);
-@@ -94,6 +95,13 @@
+@@ -94,6 +98,13 @@
  
      private void playNote(@Nullable Entity entity, BlockState state, Level world, BlockPos pos) {
          if (((NoteBlockInstrument) state.getValue(NoteBlock.INSTRUMENT)).worksAboveNoteBlock() || world.getBlockState(pos.above()).isAir()) {
@@ -22,7 +42,16 @@
              world.blockEvent(pos, this, 0, 0);
              world.gameEvent(entity, (Holder) GameEvent.NOTE_BLOCK_PLAY, pos);
          }
-@@ -132,10 +140,14 @@
+@@ -108,7 +119,7 @@
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            state = (BlockState) state.cycle(NoteBlock.NOTE);
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) state = (BlockState) state.cycle(NoteBlock.NOTE); // Paper - prevent noteblock note from updating
+             world.setBlock(pos, state, 3);
+             this.playNote(player, state, world, pos);
+             player.awardStat(Stats.TUNE_NOTEBLOCK);
+@@ -132,10 +143,14 @@
      @Override
      protected boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
          NoteBlockInstrument blockpropertyinstrument = (NoteBlockInstrument) state.getValue(NoteBlock.INSTRUMENT);
@@ -38,7 +67,7 @@
  
              f = NoteBlock.getPitchFromNote(k);
              world.addParticle(ParticleTypes.NOTE, (double) pos.getX() + 0.5D, (double) pos.getY() + 1.2D, (double) pos.getZ() + 0.5D, (double) k / 24.0D, 0.0D, 0.0D);
-@@ -154,7 +166,7 @@
+@@ -154,7 +169,7 @@
  
              holder = Holder.direct(SoundEvent.createVariableRangeEvent(minecraftkey));
          } else {
