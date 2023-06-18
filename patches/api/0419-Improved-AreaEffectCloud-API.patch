@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 17 Jun 2023 22:20:47 -0700
+Subject: [PATCH] Improved AreaEffectCloud API
+
+
+diff --git a/src/main/java/org/bukkit/entity/AreaEffectCloud.java b/src/main/java/org/bukkit/entity/AreaEffectCloud.java
+index c2096b5344d48d855d031538ec32e0154bd9054d..0642c64b075a1b7b241805ef0f7099f9be66f2c4 100644
+--- a/src/main/java/org/bukkit/entity/AreaEffectCloud.java
++++ b/src/main/java/org/bukkit/entity/AreaEffectCloud.java
+@@ -239,4 +239,23 @@ public interface AreaEffectCloud extends Entity {
+      * @param source the {@link ProjectileSource} that threw the LingeringPotion
+      */
+     public void setSource(@Nullable ProjectileSource source);
++
++    // Paper start - force apply effect API
++    /**
++     * Empty area effect clouds, those without any effects,
++     * do not calculate which players to apply effects to. This
++     * provides a way to force those to still happen, and therefor
++     * still fire the {@link org.bukkit.event.entity.AreaEffectCloudApplyEvent}.
++     *
++     * @param force true to force calculating the affected players
++     */
++    void forceApplyEffects(boolean force);
++
++    /**
++     * Gets if this cloud will force calculating the affected players.
++     *
++     * @return true if forcing is enabled
++     * @see #forceApplyEffects(boolean)
++     */
++    boolean willForceApplyEffects();
+ }
+diff --git a/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java b/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
+index 9cee218b9ee14688356f16b1f58512186286e7e9..126691393ddddcbb0a567f64b5923a65c4f416ac 100644
+--- a/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
++++ b/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
+@@ -15,6 +15,7 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
+     private static final HandlerList handlers = new HandlerList();
+     private final List<LivingEntity> affectedEntities;
+     private boolean cancelled = false;
++    private java.util.function.Predicate<LivingEntity> wasUsedOverride = null; // Paper
+ 
+     public AreaEffectCloudApplyEvent(@NotNull final AreaEffectCloud entity, @NotNull final List<LivingEntity> affectedEntities) {
+         super(entity);
+@@ -52,6 +53,29 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
+         return affectedEntities;
+     }
+ 
++    // Paper start - was used override
++    /**
++     * Gets the optional predicate used to override whether the cloud effect
++     * was "used" or not. Useful for having finer control over {@link AreaEffectCloud#getRadiusOnUse()}
++     * after an application of the effects.
++     *
++     * @return the living entity predicate
++     */
++    public java.util.function.@org.jetbrains.annotations.Nullable Predicate<LivingEntity> getWasUsedOverride() {
++        return this.wasUsedOverride;
++    }
++
++    /**
++     * Sets the predicate used to override the "use" tracker for the area effect cloud.
++     *
++     * @param wasUsedOverride the predicate or null to clear
++     * @see #getWasUsedOverride()
++     */
++    public void setWasUsedOverride(final java.util.function.@org.jetbrains.annotations.Nullable Predicate<LivingEntity> wasUsedOverride) {
++        this.wasUsedOverride = wasUsedOverride;
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
