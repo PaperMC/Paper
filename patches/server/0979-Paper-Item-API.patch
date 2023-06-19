@@ -3727,10 +3727,10 @@ index 716021520c228b5bbced525b751f5d4126d882eb..9176555d0fbc4c3ed3bd37bb5514048d
          @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index a9a58f0bb19e034cffdafcc38fdc9003744a5d6c..4c23118f46f7ddee0ca28cb33a692de05e7990f4 100644
+index 621b6a1cacb17fff578855cf2dab8142a5f321ed..65625f60021f52960ab8c65aea07ceb82e36ed3a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1591,8 +1591,7 @@ public class CraftEventFactory {
+@@ -1592,8 +1592,7 @@ public class CraftEventFactory {
                  if (editBookEvent.isSigning()) {
                      itemInHand.setItem(Items.WRITTEN_BOOK);
                  }
@@ -3741,21 +3741,19 @@ index a9a58f0bb19e034cffdafcc38fdc9003744a5d6c..4c23118f46f7ddee0ca28cb33a692de0
          }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index b88a29623c280fcf2e3dd6d16646c23ca809efe1..ab3df97847b517e14f08113836ba013c694f53de 100644
+index 849e93a8a0645de4c3e6ab8047815d78a722d4f6..0b0b61777b197501321fc1c86ec04f367dece761 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -42,21 +42,36 @@ public final class CraftItemFactory implements ItemFactory {
-         if (type == null || meta == null) {
+@@ -42,19 +42,34 @@ public final class CraftItemFactory implements ItemFactory {
              return false;
          }
--        if (!(meta instanceof CraftMetaItem)) {
-+        if (!(meta instanceof io.papermc.paper.item.meta.PaperMeta paperMeta)) { // Paper
-             throw new IllegalArgumentException("Meta of " + meta.getClass().toString() + " not created by " + CraftItemFactory.class.getName());
-         }
+ 
+-        Preconditions.checkArgument(meta instanceof CraftMetaItem, "Meta of %s not created by %s", meta.getClass().toString(), CraftItemFactory.class.getName());
++        Preconditions.checkArgument(meta instanceof io.papermc.paper.item.meta.PaperMeta, "Meta of %s not created by %s", meta.getClass().toString(), CraftItemFactory.class.getName()); // Paper
  
 -        return ((CraftMetaItem) meta).applicableTo(type);
 +        // Paper start
-+        ItemMeta metaCheck = CraftItemStack.getItemMeta(paperMeta.getPropertyHolder(), type);
++        ItemMeta metaCheck = CraftItemStack.getItemMeta(((io.papermc.paper.item.meta.PaperMeta) meta).getPropertyHolder(), type);
 +        if (metaCheck == null) {
 +            return false;
 +        }
@@ -3766,7 +3764,7 @@ index b88a29623c280fcf2e3dd6d16646c23ca809efe1..ab3df97847b517e14f08113836ba013c
  
      @Override
      public ItemMeta getItemMeta(Material material) {
-         Validate.notNull(material, "Material cannot be null");
+         Preconditions.checkArgument(material != null, "Material cannot be null");
 -        return this.getItemMeta(material, null);
 +        // Paper start
 +        material = CraftLegacy.fromLegacy(material); // This may be called from legacy item stacks, try to get the right material
@@ -3786,23 +3784,20 @@ index b88a29623c280fcf2e3dd6d16646c23ca809efe1..ab3df97847b517e14f08113836ba013c
          switch (material) {
          case AIR:
              return null;
-@@ -366,23 +381,22 @@ public final class CraftItemFactory implements ItemFactory {
-         if (meta1 == meta2) {
-             return true;
+@@ -366,20 +381,19 @@ public final class CraftItemFactory implements ItemFactory {
          }
--        if (meta1 != null && !(meta1 instanceof CraftMetaItem)) {
-+        if (meta1 != null && !(meta1 instanceof io.papermc.paper.item.meta.PaperMeta)) { // Paper
-             throw new IllegalArgumentException("First meta of " + meta1.getClass().getName() + " does not belong to " + CraftItemFactory.class.getName());
-         }
--        if (meta2 != null && !(meta2 instanceof CraftMetaItem)) {
-+        if (meta2 != null && !(meta2 instanceof io.papermc.paper.item.meta.PaperMeta)) { // Paper
-             throw new IllegalArgumentException("Second meta " + meta2.getClass().getName() + " does not belong to " + CraftItemFactory.class.getName());
-         }
-         if (meta1 == null) {
+ 
+         if (meta1 != null) {
+-            Preconditions.checkArgument(meta1 instanceof CraftMetaItem, "First meta of %s does not belong to %s", meta1.getClass().getName(), CraftItemFactory.class.getName());
++            Preconditions.checkArgument(meta1 instanceof io.papermc.paper.item.meta.PaperMeta, "First meta of %s does not belong to %s", meta1.getClass().getName(), CraftItemFactory.class.getName()); // Paper
+         } else {
 -            return ((CraftMetaItem) meta2).isEmpty();
 +            return ((io.papermc.paper.item.meta.PaperMeta) meta2).isEmpty(); // Paper
          }
-         if (meta2 == null) {
+         if (meta2 != null) {
+-            Preconditions.checkArgument(meta2 instanceof CraftMetaItem, "Second meta of %s does not belong to %s", meta2.getClass().getName(), CraftItemFactory.class.getName());
++            Preconditions.checkArgument(meta2 instanceof io.papermc.paper.item.meta.PaperMeta, "Second meta of %s does not belong to %s", meta2.getClass().getName(), CraftItemFactory.class.getName()); // Paper
+         } else {
 -            return ((CraftMetaItem) meta1).isEmpty();
 +            return ((io.papermc.paper.item.meta.PaperMeta) meta1).isEmpty(); // Paper
          }
@@ -3816,19 +3811,18 @@ index b88a29623c280fcf2e3dd6d16646c23ca809efe1..ab3df97847b517e14f08113836ba013c
          /*
           * This couldn't be done inside of the objects themselves, else force recursion.
           * This is a fairly clean way of implementing it, by dividing the methods into purposes and letting each method perform its own function.
-@@ -408,10 +422,19 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -405,8 +419,18 @@ public final class CraftItemFactory implements ItemFactory {
      @Override
      public ItemMeta asMetaFor(ItemMeta meta, Material material) {
-         Validate.notNull(material, "Material cannot be null");
--        if (!(meta instanceof CraftMetaItem)) {
-+        if (!(meta instanceof io.papermc.paper.item.meta.PaperMeta paperMeta)) { // Paper
-             throw new IllegalArgumentException("Meta of " + (meta != null ? meta.getClass().toString() : "null") + " not created by " + CraftItemFactory.class.getName());
-         }
+         Preconditions.checkArgument(material != null, "Material cannot be null");
+-        Preconditions.checkArgument(meta instanceof CraftMetaItem, "ItemMeta of %s not created by %s", (meta != null ? meta.getClass().toString() : "null"), CraftItemFactory.class.getName());
 -        return this.getItemMeta(material, (CraftMetaItem) meta);
++        Preconditions.checkArgument(meta instanceof io.papermc.paper.item.meta.PaperMeta, "ItemMeta of %s not created by %s", (meta != null ? meta.getClass().toString() : "null"), CraftItemFactory.class.getName()); // Paper
 +        // Paper start
++        io.papermc.paper.item.meta.PaperMeta paperMeta = (io.papermc.paper.item.meta.PaperMeta) meta;
 +        io.papermc.paper.property.MutablePropertyView holder = paperMeta.getPropertyHolder().clone();
 +        ItemMeta returned = CraftItemStack.getItemMeta(holder, material);
-+        
++
 +        // Migrate the meta instance only if they are not the same
 +        if (returned != null && meta.getClass() != returned.getClass()) {
 +            paperMeta.migrateFrom(holder);
@@ -3838,7 +3832,7 @@ index b88a29623c280fcf2e3dd6d16646c23ca809efe1..ab3df97847b517e14f08113836ba013c
      }
  
      @Override
-@@ -440,7 +463,7 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -435,7 +459,7 @@ public final class CraftItemFactory implements ItemFactory {
  
      @Override
      public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {
@@ -3848,10 +3842,10 @@ index b88a29623c280fcf2e3dd6d16646c23ca809efe1..ab3df97847b517e14f08113836ba013c
  
      // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 24fac69bc63f949001252811f792b21955a13e9d..5dcecef093c3249f79c84421af5d53c397a50606 100644
+index 8657736cdfe2d5d2a1c0851ca54dd26ce17e0a83..7affa77abc4cd5b23e44b4919c5688b650b47d3b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -100,7 +100,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -101,7 +101,7 @@ public final class CraftItemStack extends ItemStack {
      private CraftItemStack(Material type, int amount, short durability, ItemMeta itemMeta) {
          this.setType(type);
          this.setAmount(amount);
@@ -3860,7 +3854,7 @@ index 24fac69bc63f949001252811f792b21955a13e9d..5dcecef093c3249f79c84421af5d53c3
          this.setItemMeta(itemMeta);
      }
  
-@@ -280,13 +280,21 @@ public final class CraftItemStack extends ItemStack {
+@@ -281,13 +281,21 @@ public final class CraftItemStack extends ItemStack {
      }
      // Paper start
      public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta meta) {
@@ -3883,7 +3877,7 @@ index 24fac69bc63f949001252811f792b21955a13e9d..5dcecef093c3249f79c84421af5d53c3
          // Paper end
          if (!CraftItemStack.hasItemMeta(item)) {
              return CraftItemFactory.instance().getItemMeta(material); // Paper
-@@ -623,11 +631,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -624,11 +632,7 @@ public final class CraftItemStack extends ItemStack {
              item.setItem(newItem);
          }
  
@@ -3896,7 +3890,7 @@ index 24fac69bc63f949001252811f792b21955a13e9d..5dcecef093c3249f79c84421af5d53c3
          // SpigotCraft#463 this is required now by the Vanilla client, so mimic ItemStack constructor in ensuring it
          if (item.getItem() != null && item.getItem().canBeDepleted()) {
              item.setDamageValue(item.getDamageValue());
-@@ -664,10 +668,55 @@ public final class CraftItemStack extends ItemStack {
+@@ -665,10 +669,55 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public boolean hasItemMeta() {
@@ -3954,10 +3948,10 @@ index 24fac69bc63f949001252811f792b21955a13e9d..5dcecef093c3249f79c84421af5d53c3
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 4caf272f065a681bd7101d52fedf2642cc78d3bc..40dc237bc30780febffa4232b8b74287c3dd2524 100644
+index 1481c8ca684eddca3eb5db3aceac4877043b9fcd..15fe10c911c8d3bf2152bffb7e494854d337ac8c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -113,7 +113,7 @@ import java.util.Collections;
+@@ -112,7 +112,7 @@ import java.util.Collections;
   * <li> SerializableMeta.Deserializers deserializer()
   */
  @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
@@ -3966,7 +3960,7 @@ index 4caf272f065a681bd7101d52fedf2642cc78d3bc..40dc237bc30780febffa4232b8b74287
  
      static class ItemMetaKey {
  
-@@ -196,7 +196,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -195,7 +195,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
              String type = SerializableMeta.getString(map, SerializableMeta.TYPE_FIELD, false);
              Constructor<? extends CraftMetaItem> constructor = SerializableMeta.constructorMap.get(type);
@@ -3975,7 +3969,7 @@ index 4caf272f065a681bd7101d52fedf2642cc78d3bc..40dc237bc30780febffa4232b8b74287
              if (constructor == null) {
                  throw new IllegalArgumentException(type + " is not a valid " + SerializableMeta.TYPE_FIELD);
              }
-@@ -687,6 +687,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -686,6 +686,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
          return result;
      }
@@ -3987,7 +3981,7 @@ index 4caf272f065a681bd7101d52fedf2642cc78d3bc..40dc237bc30780febffa4232b8b74287
  
      @Overridden
      void applyToItem(CompoundTag itemTag) {
-@@ -1408,6 +1413,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1407,6 +1412,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public final Map<String, Object> serialize() {
@@ -3996,7 +3990,7 @@ index 4caf272f065a681bd7101d52fedf2642cc78d3bc..40dc237bc30780febffa4232b8b74287
          map.put(SerializableMeta.TYPE_FIELD, SerializableMeta.classMap.get(getClass()));
          this.serialize(map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index b059bb46b649cbf82debdb8d58fe4ba77d040276..0d3b720becc6a23251a66f4c74293586974a8857 100644
+index 83cef5ec27c31f133a23cd27349f722799c786ea..376624f37c3d02aa5223b610dcf4f95727a19e54 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -56,8 +56,8 @@ import org.bukkit.craftbukkit.CraftEquipmentSlot;
@@ -4009,7 +4003,7 @@ index b059bb46b649cbf82debdb8d58fe4ba77d040276..0d3b720becc6a23251a66f4c74293586
  import org.bukkit.craftbukkit.inventory.CraftItemStack;
  import org.bukkit.craftbukkit.legacy.CraftLegacy;
  import org.bukkit.entity.EntityType;
-@@ -624,6 +624,28 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -622,6 +622,28 @@ public final class CraftMagicNumbers implements UnsafeValues {
          net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biomeBase = cra.getHandle().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME).getHolderOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BIOME, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(biomeKey)));
          cra.setBiome(x, y, z, biomeBase);
      }
