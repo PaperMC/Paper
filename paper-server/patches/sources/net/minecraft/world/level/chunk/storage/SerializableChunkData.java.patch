@@ -109,20 +109,35 @@
          }
      }
  
-@@ -289,6 +317,12 @@
+@@ -287,7 +315,13 @@
+             if (this.chunkStatus.isOrAfter(ChunkStatus.INITIALIZE_LIGHT)) {
+                 protochunk.setLightEngine(levellightengine);
              }
-         }
- 
++        }
++
 +        // CraftBukkit start - load chunk persistent data from nbt - SPIGOT-6814: Already load PDC here to account for 1.17 to 1.18 chunk upgrading.
 +        if (this.persistentDataContainer instanceof CompoundTag) {
 +            ((ChunkAccess) object).persistentDataContainer.putAll((CompoundTag) this.persistentDataContainer);
-+        }
+         }
 +        // CraftBukkit end
-+
+ 
          ((ChunkAccess) object).setLightCorrect(this.lightCorrect);
          EnumSet<Heightmap.Types> enumset = EnumSet.noneOf(Heightmap.Types.class);
-         Iterator iterator1 = ((ChunkAccess) object).getPersistedStatus().heightmapsAfter().iterator();
-@@ -348,6 +382,12 @@
+@@ -329,6 +363,13 @@
+ 
+             while (iterator2.hasNext()) {
+                 nbttagcompound = (CompoundTag) iterator2.next();
++                // Paper start - do not read tile entities positioned outside the chunk
++                final BlockPos blockposition = BlockEntity.getPosFromTag(nbttagcompound);
++                if ((blockposition.getX() >> 4) != chunkPos.x || (blockposition.getZ() >> 4) != chunkPos.z) {
++                    LOGGER.warn("Tile entity serialized in chunk {} in world '{}' positioned at {} is located outside of the chunk", chunkPos, world.getWorld().getName(), blockposition);
++                    continue;
++                }
++                // Paper end - do not read tile entities positioned outside the chunk
+                 protochunk1.setBlockEntityNbt(nbttagcompound);
+             }
+ 
+@@ -348,6 +389,12 @@
          return PalettedContainer.codecRO(biomeRegistry.asHolderIdMap(), biomeRegistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, biomeRegistry.getOrThrow(Biomes.PLAINS));
      }
  
@@ -135,7 +150,7 @@
      public static SerializableChunkData copyOf(ServerLevel world, ChunkAccess chunk) {
          if (!chunk.canBeSerialized()) {
              throw new IllegalArgumentException("Chunk can't be serialized: " + String.valueOf(chunk));
-@@ -419,7 +459,14 @@
+@@ -419,7 +466,14 @@
              });
              CompoundTag nbttagcompound1 = packStructureData(StructurePieceSerializationContext.fromLevel(world), chunkcoordintpair, chunk.getAllStarts(), chunk.getAllReferences());
  
@@ -151,7 +166,7 @@
          }
      }
  
-@@ -432,7 +479,7 @@
+@@ -432,7 +486,7 @@
          nbttagcompound.putLong("LastUpdate", this.lastUpdateTime);
          nbttagcompound.putLong("InhabitedTime", this.inhabitedTime);
          nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
@@ -160,7 +175,7 @@
          Logger logger;
  
          if (this.blendingData != null) {
-@@ -513,6 +560,11 @@
+@@ -513,6 +567,11 @@
          });
          nbttagcompound.put("Heightmaps", nbttagcompound2);
          nbttagcompound.put("structures", this.structureData);
@@ -172,7 +187,21 @@
          return nbttagcompound;
      }
  
-@@ -623,6 +675,12 @@
+@@ -564,6 +623,13 @@
+                     chunk.setBlockEntityNbt(nbttagcompound);
+                 } else {
+                     BlockPos blockposition = BlockEntity.getPosFromTag(nbttagcompound);
++                    // Paper start - do not read tile entities positioned outside the chunk
++                    ChunkPos chunkPos = chunk.getPos();
++                    if ((blockposition.getX() >> 4) != chunkPos.x || (blockposition.getZ() >> 4) != chunkPos.z) {
++                        LOGGER.warn("Tile entity serialized in chunk " + chunkPos + " in world '" + world.getWorld().getName() + "' positioned at " + blockposition + " is located outside of the chunk");
++                        continue;
++                    }
++                    // Paper end - do not read tile entities positioned outside the chunk
+                     BlockEntity tileentity = BlockEntity.loadStatic(blockposition, chunk.getBlockState(blockposition), nbttagcompound, world.registryAccess());
+ 
+                     if (tileentity != null) {
+@@ -623,6 +689,12 @@
                  StructureStart structurestart = StructureStart.loadStaticStart(context, nbttagcompound1.getCompound(s), worldSeed);
  
                  if (structurestart != null) {
