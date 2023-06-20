@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TwoLeggedCat <80929284+TwoLeggedCat@users.noreply.github.com>
+Date: Sat, 29 May 2021 14:33:25 -0500
+Subject: [PATCH] Line Of Sight Changes
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index bce63453fb04db09b10550197f749c959b30a37e..62e8586d30950eed81868ccbb48212a426774da3 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3558,7 +3558,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             Vec3 vec3d = new Vec3(this.getX(), this.getEyeY(), this.getZ());
+             Vec3 vec3d1 = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
+ 
+-            return vec3d1.distanceTo(vec3d) > 128.0D ? false : this.level().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
++            // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location) and CraftWorld#lineOfSightExists
++            return vec3d1.distanceToSqr(vec3d) > 128D * 128D ? false : this.level().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index 4d2451ac57de1bb248169c266b111f102670c606..82de88fef79b2bffffce2264f3a62e946749768e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -994,5 +994,16 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+     public org.bukkit.NamespacedKey getKey() {
+         return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().location());
+     }
++
++    public boolean lineOfSightExists(Location from, Location to) {
++        Preconditions.checkArgument(from != null, "from parameter in lineOfSightExists cannot be null");
++        Preconditions.checkArgument(to != null, "to parameter in lineOfSightExists cannot be null");
++        if (from.getWorld() != to.getWorld()) return false;
++        net.minecraft.world.phys.Vec3 vec3d = new net.minecraft.world.phys.Vec3(from.getX(), from.getY(), from.getZ());
++        net.minecraft.world.phys.Vec3 vec3d1 = new net.minecraft.world.phys.Vec3(to.getX(), to.getY(), to.getZ());
++        if (vec3d1.distanceToSqr(vec3d) > 128D * 128D) return false; //Return early if the distance is greater than 128 blocks
++
++        return this.getHandle().clip(new net.minecraft.world.level.ClipContext(vec3d, vec3d1, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, null)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index df58ef33a9997c375e51838fba1c3c1a1ad5487e..7240a9bea74589be9e29e0e05d843ca14a361b45 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -573,6 +573,18 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return this.getHandle().hasLineOfSight(((CraftEntity) other).getHandle());
+     }
+ 
++    // Paper start
++    @Override
++    public boolean hasLineOfSight(Location loc) {
++        if (this.getHandle().level() != ((CraftWorld) loc.getWorld()).getHandle()) return false;
++        net.minecraft.world.phys.Vec3 vec3d = new net.minecraft.world.phys.Vec3(this.getHandle().getX(), this.getHandle().getEyeY(), this.getHandle().getZ());
++        net.minecraft.world.phys.Vec3 vec3d1 = new net.minecraft.world.phys.Vec3(loc.getX(), loc.getY(), loc.getZ());
++        if (vec3d1.distanceToSqr(vec3d) > 128D * 128D) return false; //Return early if the distance is greater than 128 blocks
++
++        return this.getHandle().level().clip(new net.minecraft.world.level.ClipContext(vec3d, vec3d1, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this.getHandle())).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
++    }
++    // Paper end
++
+     @Override
+     public boolean getRemoveWhenFarAway() {
+         return this.getHandle() instanceof Mob && !((Mob) this.getHandle()).isPersistenceRequired();

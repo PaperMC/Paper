@@ -10,7 +10,7 @@ This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/com/destroystokyo/paper/ParticleBuilder.java b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f05eb5dc6
+index 0000000000000000000000000000000000000000..f710167633a8ef1abc4aac2a1912514a959d414c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
 @@ -0,0 +1,485 @@
@@ -470,20 +470,20 @@ index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f
 +     */
 +    @NotNull
 +    public ParticleBuilder color(@Nullable Color color, float size) {
-+        if (particle != Particle.REDSTONE && color != null) {
++        if (this.particle != Particle.DUST && color != null) {
 +            throw new IllegalStateException("Color may only be set on REDSTONE");
 +        }
 +
 +        // We don't officially support reusing these objects, but here we go
 +        if (color == null) {
-+            if (data instanceof Particle.DustOptions) {
++            if (this.data instanceof Particle.DustOptions) {
 +                return data(null);
 +            } else {
 +                return this;
 +            }
 +        }
 +
-+        return data(new Particle.DustOptions(color, size));
++        return this.data(new Particle.DustOptions(color, size));
 +    }
 +
 +    /**
@@ -500,12 +500,12 @@ index 0000000000000000000000000000000000000000..f45b8cfd1611345e8d81ecb8297a586f
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Particle.java b/src/main/java/org/bukkit/Particle.java
-index 73b782c3975ad13159b6236976783fcfabd20493..819506712e9874c0142fc9e7d959bd7be97fc649 100644
+index 0f97cf9fd3aebbcda1531f2cfbb9e2e17ba14acf..31c2706e0f038c180821e7c4e543f1177789ce3d 100644
 --- a/src/main/java/org/bukkit/Particle.java
 +++ b/src/main/java/org/bukkit/Particle.java
-@@ -162,6 +162,17 @@ public enum Particle {
-         return dataType;
-     }
+@@ -140,6 +140,17 @@ public abstract class Particle<D> extends OldEnum<Particle<D>> implements Keyed
+     @NotNull
+     public abstract Class<D> getDataType();
  
 +    // Paper start - Particle API expansion
 +    /**
@@ -522,15 +522,19 @@ index 73b782c3975ad13159b6236976783fcfabd20493..819506712e9874c0142fc9e7d959bd7b
       * Options which can be applied to redstone dust particles - a particle
       * color and size.
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 0f76496471c50d5f18cedc735e667265e6c27422..0ed7a7db90856ff50ed1354f9914c0cc321d2d09 100644
+index 48e3e92820f59753df30e5d61f57fb71e2894aa6..61f5fd47381d21b268f58af2106fc8be5e2f1c73 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -2776,7 +2776,57 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -2756,7 +2756,62 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
       * @param data the data to use for the particle or null,
       *             the type of this depends on {@link Particle#getDataType()}
       */
--    public <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data);
-+    public default <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) { spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }// Paper start - Expand Particle API
+-    public <T> void spawnParticle(@NotNull Particle<T> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data);
++    // Paper start - Expand Particle API
++    default <T> void spawnParticle(@NotNull Particle<T> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) {
++        this.spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true);
++    }
++
 +    /**
 +     * Spawns the particle (the number of times specified by count)
 +     * at the target location. The position of each particle will be
@@ -553,7 +557,9 @@ index 0f76496471c50d5f18cedc735e667265e6c27422..0ed7a7db90856ff50ed1354f9914c0cc
 +     *             the type of this depends on {@link Particle#getDataType()}
 +     * @param <T> Type
 +     */
-+    public default <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @NotNull Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) { spawnParticle(particle, receivers, source, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }
++    default <T> void spawnParticle(@NotNull Particle<T> particle, @Nullable List<Player> receivers, @NotNull Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) {
++        this.spawnParticle(particle, receivers, source, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true);
++    }
 +    /**
 +     * Spawns the particle (the number of times specified by count)
 +     * at the target location. The position of each particle will be
@@ -578,9 +584,8 @@ index 0f76496471c50d5f18cedc735e667265e6c27422..0ed7a7db90856ff50ed1354f9914c0cc
 +     * @param force allows the particle to be seen further away from the player
 +     *              and shows to players using any vanilla client particle settings
 +     */
-+    public <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
++    <T> void spawnParticle(@NotNull Particle<T> particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
 +    // Paper end
-+
  
      /**
       * Spawns the particle (the number of times specified by count)

@@ -5,19 +5,16 @@ Subject: [PATCH] ItemStack repair check API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index e540a219e26ecb1b2f93df01a34dd754faea1f10..cab2f4ae154a6159ead1b95dbf02ebcbb1051dd8 100644
+index 2944ca24702bb5b8a3c548f5fda872ddb44e7573..d59368cc5d280935da1aac1d9322583527e8742d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -543,6 +543,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
-         return io.papermc.paper.inventory.ItemRarity.values()[getItem(itemStack.getType()).getRarity(CraftItemStack.asNMSCopy(itemStack)).ordinal()];
+@@ -593,6 +593,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return io.papermc.paper.inventory.ItemRarity.values()[((org.bukkit.craftbukkit.inventory.CraftItemType)itemStack.getType()).getHandle().getRarity(CraftItemStack.asNMSCopy(itemStack)).ordinal()];
      }
  
 +    @Override
 +    public boolean isValidRepairItemStack(org.bukkit.inventory.ItemStack itemToBeRepaired, org.bukkit.inventory.ItemStack repairMaterial) {
-+        if (!itemToBeRepaired.getType().isItem() || !repairMaterial.getType().isItem()) {
-+            return false;
-+        }
-+        return CraftMagicNumbers.getItem(itemToBeRepaired.getType()).isValidRepairItem(CraftItemStack.asNMSCopy(itemToBeRepaired), CraftItemStack.asNMSCopy(repairMaterial));
++        return ((org.bukkit.craftbukkit.inventory.CraftItemType) itemToBeRepaired.getType()).getHandle().isValidRepairItem(CraftItemStack.asNMSCopy(itemToBeRepaired), CraftItemStack.asNMSCopy(repairMaterial));
 +    }
 +
      @Override
@@ -25,55 +22,47 @@ index e540a219e26ecb1b2f93df01a34dd754faea1f10..cab2f4ae154a6159ead1b95dbf02ebcb
          return net.minecraft.SharedConstants.getCurrentVersion().getProtocolVersion();
 diff --git a/src/test/java/io/papermc/paper/util/ItemStackRepairCheckTest.java b/src/test/java/io/papermc/paper/util/ItemStackRepairCheckTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8d9c9b3bd53d407391d4fcb7fc773153d1a7b402
+index 0000000000000000000000000000000000000000..3cbdbc8c2ce21d90c8d0b60978d07590a3a76f7f
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/util/ItemStackRepairCheckTest.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.util;
 +
-+import org.bukkit.Material;
 +import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.ItemType;
 +import org.bukkit.support.AbstractTestingBase;
 +import org.junit.Test;
 +
 +import static org.junit.Assert.assertFalse;
-+import static org.junit.Assert.assertThrows;
 +import static org.junit.Assert.assertTrue;
 +
 +public class ItemStackRepairCheckTest extends AbstractTestingBase {
 +
 +    @Test
-+    public void testIsRepariableBy() {
-+        ItemStack diamondPick = new ItemStack(Material.DIAMOND_PICKAXE);
++    public void testIsRepairableBy() {
++        ItemStack diamondPick = ItemStack.of(ItemType.DIAMOND_PICKAXE);
 +
-+        assertTrue("diamond pick isn't repairable by a diamond", diamondPick.isRepairableBy(new ItemStack(Material.DIAMOND)));
++        assertTrue("diamond pick isn't repairable by a diamond", diamondPick.isRepairableBy(ItemStack.of(ItemType.DIAMOND)));
 +    }
 +
 +    @Test
 +    public void testCanRepair() {
-+        ItemStack diamond = new ItemStack(Material.DIAMOND);
++        ItemStack diamond = ItemStack.of(ItemType.DIAMOND);
 +
-+        assertTrue("diamond can't repair a diamond axe", diamond.canRepair(new ItemStack(Material.DIAMOND_AXE)));
++        assertTrue("diamond can't repair a diamond axe", diamond.canRepair(ItemStack.of(ItemType.DIAMOND_AXE)));
 +    }
 +
 +    @Test
 +    public void testIsNotRepairableBy() {
-+        ItemStack notDiamondPick = new ItemStack(Material.ACACIA_SAPLING);
++        ItemStack notDiamondPick = ItemStack.of(ItemType.ACACIA_SAPLING);
 +
-+        assertFalse("acacia sapling is repairable by a diamond", notDiamondPick.isRepairableBy(new ItemStack(Material.DIAMOND)));
++        assertFalse("acacia sapling is repairable by a diamond", notDiamondPick.isRepairableBy(ItemStack.of(ItemType.DIAMOND)));
 +    }
 +
 +    @Test
 +    public void testCanNotRepair() {
-+        ItemStack diamond = new ItemStack(Material.DIAMOND);
++        ItemStack diamond = ItemStack.of(ItemType.DIAMOND);
 +
-+        assertFalse("diamond can repair oak button", diamond.canRepair(new ItemStack(Material.OAK_BUTTON)));
-+    }
-+
-+    @Test
-+    public void testInvalidItem() {
-+        ItemStack badItemStack = new ItemStack(Material.ACACIA_WALL_SIGN);
-+
-+        assertFalse("acacia wall sign is repairable by diamond", badItemStack.isRepairableBy(new ItemStack(Material.DIAMOND)));
++        assertFalse("diamond can repair oak button", diamond.canRepair(ItemStack.of(ItemType.OAK_BUTTON)));
 +    }
 +}

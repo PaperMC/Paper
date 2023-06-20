@@ -9,11 +9,58 @@ public org.bukkit.craftbukkit.inventory.CraftMetaFirework getNBT(Lorg/bukkit/Fir
 
 Co-authored-by: MeFisto94 <MeFisto94@users.noreply.github.com>
 
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
+index 6ceb36931b98b4e205ac52211cfbae4337a4ff45..0571224316424980b726cdf1d5bbc25115975c94 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
+@@ -72,6 +72,13 @@ public class CraftAttribute extends Attribute {
+         return this.ordinal;
+     }
+ 
++    // Paper start - translation key
++    @Override
++    public String translationKey() {
++        return this.attributeBase.getDescriptionId();
++    }
++    // Paper end
++
+     @Override
+     public String toString() {
+         // For backwards compatibility
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBiome.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBiome.java
+index b350c4e30927bf020784f0fe39850f10e0fd9133..9cc5234409bdf71f3dbbf3947f365ce86634ade3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBiome.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBiome.java
+@@ -43,6 +43,7 @@ public class CraftBiome extends Biome {
+     private final net.minecraft.world.level.biome.Biome biome;
+     private final String name;
+     private final int ordinal;
++    private final net.minecraft.resources.ResourceLocation resourceLocation; // Paper
+ 
+     public CraftBiome(NamespacedKey key, net.minecraft.world.level.biome.Biome biome) {
+         this.key = key;
+@@ -57,8 +58,16 @@ public class CraftBiome extends Biome {
+             this.name = key.toString();
+         }
+         this.ordinal = CraftBiome.count++;
++        this.resourceLocation = CraftNamespacedKey.toMinecraft(this.key); // Paper
+     }
+ 
++    // Paper start - translation keys
++    @Override
++    public String translationKey() {
++        return this.resourceLocation.toLanguageKey("biome");
++    }
++    // Paper end
++
+     public net.minecraft.world.level.biome.Biome getHandle() {
+         return this.biome;
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index 5534348ddb3ac42b6b8a687816c2c8c1858e3b3e..d2d5a43cfdf294ccc9353258250f5a990e205b88 100644
+index c5e98a0147e6eed86fc02e8681d8b476ca8f13f6..16cec4f1dc9020074576a3c5fff95580520377f8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-@@ -694,5 +694,10 @@ public class CraftBlock implements Block {
+@@ -668,5 +668,10 @@ public class CraftBlock implements Block {
      public org.bukkit.SoundGroup getBlockSoundGroup() {
          return org.bukkit.craftbukkit.CraftSoundGroup.getSoundGroup(this.getNMS().getSoundType());
      }
@@ -24,11 +71,27 @@ index 5534348ddb3ac42b6b8a687816c2c8c1858e3b3e..d2d5a43cfdf294ccc9353258250f5a99
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockType.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockType.java
+index fab5edd8e40bb8dc4923034ee46528356334431b..719273eeaab49570ef7efd5197c2f241a875e434 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockType.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockType.java
+@@ -168,4 +168,11 @@ public class CraftBlockType<B extends BlockData> implements BlockType<B> {
+     public NamespacedKey getKey() {
+         return this.key;
+     }
++
++    // Paper start - translation key
++    @Override
++    public String translationKey() {
++        return this.block.getDescriptionId();
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
-index e8334e2264510f5101e80b4f130e7ae1442560d7..57decf4156f176ebcc988478c17856cbc555c5e4 100644
+index 62b75098ae26cbcc331d3b23940b7da46ccf2cfe..92cecdae6a4ab7c2876a42c7128453948a5a249a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
 +++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
-@@ -194,6 +194,11 @@ public class CraftEnchantment extends Enchantment {
+@@ -122,6 +122,11 @@ public class CraftEnchantment extends Enchantment {
      public net.kyori.adventure.text.Component displayName(int level) {
          return io.papermc.paper.adventure.PaperAdventure.asAdventure(getHandle().getFullname(level));
      }
@@ -40,8 +103,60 @@ index e8334e2264510f5101e80b4f130e7ae1442560d7..57decf4156f176ebcc988478c17856cb
      // Paper end
  
      public net.minecraft.world.item.enchantment.Enchantment getHandle() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
+index fbd436df49b2a5d356ba84a94828eb1bc2cd7d1b..33be9fa46c3bdb4958b32d30c730ceff075aaaea 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
+@@ -157,6 +157,13 @@ public class CraftEntityType<E extends Entity> extends EntityType<E> {
+         return this.entityType.getDescriptionId();
+     }
+ 
++    // Paper start - translation key
++    @Override
++    public String translationKey() {
++        return this.entityType.getDescriptionId();
++    }
++    // Paper end
++
+     public static class CraftEntityTypeRegistry extends CraftRegistry<EntityType<?>, net.minecraft.world.entity.EntityType<?>> {
+         private static final Map<NamespacedKey, Class<? extends Entity>> CLASS_MAP = new HashMap<>();
+         private static final Map<NamespacedKey, Boolean> SPAWNABLE = new HashMap<>();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
+index c5f3ed36957d52120ad95f28e655e63bb0a50ff4..eeca610110a058d704b72674e0f2df72982ca039 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
+@@ -281,6 +281,13 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
+             return this.key;
+         }
+ 
++        // Paper start - translation key
++        @Override
++        public String translationKey() {
++            return net.minecraft.world.entity.EntityType.VILLAGER.getDescriptionId() + "." + this.key().value();
++        }
++        // Paper end
++
+         @Override
+         public int compareTo(Profession profession) {
+             return this.ordinal - profession.ordinal();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+index e540f986a0da8002e669e9f1885ba601be3d1371..49be8074280d9840bb3d8e6880b4e0a8aa4ef0cb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+@@ -135,4 +135,11 @@ public class CraftItemType implements ItemType {
+     public NamespacedKey getKey() {
+         return this.key;
+     }
++
++    // Paper start - translation key
++    @Override
++    public String translationKey() {
++        return this.item.getDescriptionId();
++    }
++    // Paper end
+ }
 diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
-index fab3063fffa959ac7f0eb5937f2fae94d11b6591..4cc8ca5dd95e9cccd08ada057a9592a1421f434a 100644
+index fab3063fffa959ac7f0eb5937f2fae94d11b6591..daef5db580c6182ca10a5950eb1d4fb647910e63 100644
 --- a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 +++ b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 @@ -1,12 +1,23 @@
@@ -91,7 +206,7 @@ index fab3063fffa959ac7f0eb5937f2fae94d11b6591..4cc8ca5dd95e9cccd08ada057a9592a1
 +    @Test
 +    public void testAttributeKeys() {
 +        for (Attribute attribute : Attribute.values()) {
-+            Assert.assertEquals("translation key mismatch for " + attribute, org.bukkit.craftbukkit.attribute.CraftAttributeMap.toMinecraft(attribute).getDescriptionId(), attribute.translationKey());
++            Assert.assertEquals("translation key mismatch for " + attribute, org.bukkit.craftbukkit.attribute.CraftAttribute.bukkitToMinecraft(attribute).getDescriptionId(), attribute.translationKey());
 +        }
 +    }
 +

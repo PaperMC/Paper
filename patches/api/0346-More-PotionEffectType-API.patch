@@ -4,53 +4,22 @@ Date: Thu, 27 May 2021 21:58:33 -0700
 Subject: [PATCH] More PotionEffectType API
 
 
-diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index c21aefb63678d78a441436761373e9710c1e543a..1d96ed754be09b52a518967c870eba05bb3e99ee 100644
---- a/src/main/java/org/bukkit/Registry.java
-+++ b/src/main/java/org/bukkit/Registry.java
-@@ -236,6 +236,26 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
-      */
-     @Deprecated(forRemoval = true)
-     Registry<io.papermc.paper.world.structure.ConfiguredStructure> CONFIGURED_STRUCTURE = Bukkit.getRegistry(io.papermc.paper.world.structure.ConfiguredStructure.class);
-+
-+    /**
-+     * Potion effect types.
-+     *
-+     * @see org.bukkit.potion.PotionEffectType
-+     */
-+    Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = new Registry<org.bukkit.potion.PotionEffectType>() {
-+
-+        @Nullable
-+        @Override
-+        public org.bukkit.potion.PotionEffectType get(@NotNull NamespacedKey key) {
-+            return org.bukkit.potion.PotionEffectType.getByKey(key);
-+        }
-+
-+        @NotNull
-+        @Override
-+        public Iterator<org.bukkit.potion.PotionEffectType> iterator() {
-+            return Arrays.stream(org.bukkit.potion.PotionEffectType.values()).iterator();
-+        }
-+    };
-     // Paper end
- 
-     /**
 diff --git a/src/main/java/org/bukkit/potion/PotionEffectType.java b/src/main/java/org/bukkit/potion/PotionEffectType.java
-index 5f3aa6fd18d57055a6d8494938dff149d51b2803..84fd181ad897f620e450750246d9ea416dcbd48a 100644
+index 686e1cfec546fb2268d884e713a863c8fc967802..3c74bcb0349cf6b3448b08e2564ba16618f6ecaa 100644
 --- a/src/main/java/org/bukkit/potion/PotionEffectType.java
 +++ b/src/main/java/org/bukkit/potion/PotionEffectType.java
-@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a type of potion and its effect on an entity.
   */
 -public abstract class PotionEffectType implements Keyed {
 +public abstract class PotionEffectType implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - implement Translatable
+     protected static final BiMap<Integer, PotionEffectType> ID_MAP = HashBiMap.create();
+ 
      /**
-      * Increases movement speed.
-      */
-@@ -363,4 +363,56 @@ public abstract class PotionEffectType implements Keyed {
-     public static PotionEffectType[] values() {
-         return Arrays.copyOfRange(byId, 1, byId.length);
+@@ -351,4 +351,56 @@ public abstract class PotionEffectType implements Keyed {
+ 
+         return from;
      }
 +    // Paper start
 +    /**
@@ -58,7 +27,7 @@ index 5f3aa6fd18d57055a6d8494938dff149d51b2803..84fd181ad897f620e450750246d9ea41
 +     *
 +     * @return the attribute map
 +     */
-+    public abstract @NotNull Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes();
++    public abstract @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes();
 +
 +    /**
 +     * Gets the true modifier amount based on the effect amplifier.
@@ -106,19 +75,15 @@ index 5f3aa6fd18d57055a6d8494938dff149d51b2803..84fd181ad897f620e450750246d9ea41
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java b/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
-index c3a86bb1910158a8d13a675dfa7236dd6a3f397c..a7653806c0fa76f4b3342ea199fe892c514a4c27 100644
+index 7a2ee20d32fc39d6fe29c384975c208341552648..08cfe3c8d675fafdd6a38d27bdef2f1f3b68551a 100644
 --- a/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
 +++ b/src/main/java/org/bukkit/potion/PotionEffectTypeWrapper.java
-@@ -40,4 +40,30 @@ public class PotionEffectTypeWrapper extends PotionEffectType {
-     public Color getColor() {
-         return getType().getColor();
+@@ -53,4 +53,26 @@ public class PotionEffectTypeWrapper extends PotionEffectType {
+     public NamespacedKey getKey() {
+         return getType().getKey();
      }
-+    // Paper start
-+    @Override
-+    public @NotNull org.bukkit.NamespacedKey getKey() {
-+        return this.getType().getKey();
-+    }
 +
++    // Paper start
 +    @Override
 +    public @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes() {
 +        return this.getType().getEffectAttributes();

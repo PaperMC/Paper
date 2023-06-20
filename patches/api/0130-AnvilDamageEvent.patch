@@ -6,13 +6,15 @@ Subject: [PATCH] AnvilDamageEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/block/AnvilDamagedEvent.java b/src/main/java/com/destroystokyo/paper/event/block/AnvilDamagedEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a83c286c1c11af25fc4d16af7a42b95ce90b9dee
+index 0000000000000000000000000000000000000000..4b90dc67f75b05cb8a766025781b9eaa2fef2606
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/block/AnvilDamagedEvent.java
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,171 @@
 +package com.destroystokyo.paper.event.block;
 +
++import org.bukkit.Bukkit;
 +import org.bukkit.Material;
++import org.bukkit.block.BlockType;
 +import org.bukkit.block.data.BlockData;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
@@ -104,15 +106,15 @@ index 0000000000000000000000000000000000000000..a83c286c1c11af25fc4d16af7a42b95c
 +     * Represents the amount of damage on an anvil block
 +     */
 +    public enum DamageState {
-+        FULL(Material.ANVIL),
-+        CHIPPED(Material.CHIPPED_ANVIL),
-+        DAMAGED(Material.DAMAGED_ANVIL),
-+        BROKEN(Material.AIR);
++        FULL(BlockType.ANVIL),
++        CHIPPED(BlockType.CHIPPED_ANVIL),
++        DAMAGED(BlockType.DAMAGED_ANVIL),
++        BROKEN(BlockType.AIR);
 +
-+        private Material material;
++        private BlockType<?> blockType;
 +
-+        DamageState(@NotNull Material material) {
-+            this.material = material;
++        DamageState(@NotNull BlockType<?> blockType) {
++            this.blockType = blockType;
 +        }
 +
 +        /**
@@ -120,9 +122,18 @@ index 0000000000000000000000000000000000000000..a83c286c1c11af25fc4d16af7a42b95c
 +         *
 +         * @return Material
 +         */
-+        @NotNull
-+        public Material getMaterial() {
-+            return material;
++        @Deprecated
++        public @NotNull Material getMaterial() {
++            return Bukkit.getUnsafe().toMaterial(this.blockType);
++        }
++
++        /**
++         * Get the block type for this damage state.
++         *
++         * @return the block type
++         */
++        public @NotNull BlockType<?> getBlockType() {
++            return this.blockType;
 +        }
 +
 +        /**
@@ -134,7 +145,7 @@ index 0000000000000000000000000000000000000000..a83c286c1c11af25fc4d16af7a42b95c
 +         */
 +        @NotNull
 +        public static DamageState getState(@Nullable BlockData blockData) {
-+            return blockData == null ? BROKEN : getState(blockData.getMaterial());
++            return blockData == null ? BROKEN : getState(blockData.getBlockType());
 +        }
 +
 +        /**
@@ -143,14 +154,26 @@ index 0000000000000000000000000000000000000000..a83c286c1c11af25fc4d16af7a42b95c
 +         * @param material Block material
 +         * @return DamageState
 +         * @throws IllegalArgumentException If non anvil material is given
++         * @deprecated use {@link #getState(BlockType)}
 +         */
-+        @NotNull
-+        public static DamageState getState(@Nullable Material material) {
-+            if (material == null) {
++        @Deprecated
++        public static @NotNull DamageState getState(@Nullable Material material) {
++            return material == null ? BROKEN : getState(material.asBlockType());
++        }
++
++        /**
++         * Get damaged state by block type
++         *
++         * @param blockType Block type
++         * @return DamageState
++         * @throws IllegalArgumentException If non anvil block type is given
++         */
++        public static @NotNull DamageState getState(@Nullable BlockType<?> blockType) {
++            if (blockType == null) {
 +                return BROKEN;
 +            }
 +            for (DamageState state : values()) {
-+                if (state.material == material) {
++                if (state.blockType == blockType) {
 +                    return state;
 +                }
 +            }

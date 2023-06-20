@@ -47,7 +47,7 @@ index 0000000000000000000000000000000000000000..09837f6e6c6ab8a1df2aacdb86646993
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 4da303d7e15496f04f0e27bfb613176bc2a72b76..3c7920721914588a3e7eaf1faff46f7305823416 100644
+index f430589fc2cdda23b099b20ace9818e8a8eb7278..3a6cf81e349063e47dfa2c2d40a3c3fca50beaef 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 @@ -121,6 +121,24 @@ public abstract class ChunkGenerator {
@@ -57,7 +57,7 @@ index 4da303d7e15496f04f0e27bfb613176bc2a72b76..3c7920721914588a3e7eaf1faff46f73
 +        // Paper start - StructuresLocateEvent
 +        final org.bukkit.World bukkitWorld = world.getWorld();
 +        final org.bukkit.Location origin = io.papermc.paper.util.MCUtil.toLocation(world, center);
-+        final List<org.bukkit.generator.structure.Structure> apiStructures = structures.stream().map(Holder::value).map(nms -> org.bukkit.craftbukkit.generator.structure.CraftStructure.minecraftToBukkit(nms, world.registryAccess())).toList();
++        final List<org.bukkit.generator.structure.Structure> apiStructures = structures.stream().map(Holder::value).map(org.bukkit.craftbukkit.generator.structure.CraftStructure::minecraftToBukkit).toList();
 +        if (!apiStructures.isEmpty()) {
 +            final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, apiStructures, radius, skipReferencedStructures);
 +            if (!event.callEvent()) {
@@ -76,11 +76,11 @@ index 4da303d7e15496f04f0e27bfb613176bc2a72b76..3c7920721914588a3e7eaf1faff46f73
          Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap();
          Iterator iterator = structures.iterator();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 8e1a6206eafdf4160aef280710f0912a0664536f..15abd319ac51a97cdb07da85e815ea93ff45431a 100644
+index 32c1b8845e42c2dd74cf7ecf3d649923c6f99fdd..ecbe30582af8758a8b3cdf71bdbf8ed2e4d92d64 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -37,6 +37,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
-             return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.TRIM_PATTERN), CraftTrimPattern::new);
+@@ -132,6 +132,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+             return new CraftRegistry<>(registryHolder.registryOrThrow(Registries.INSTRUMENT), CraftMusicInstrument::new);
          }
          // TODO registry modification API
 +        // Paper start - remove this after a while along with all ConfiguredStructure stuff
@@ -193,3 +193,15 @@ index 0000000000000000000000000000000000000000..102b99691b53f5e3c14999d3c281b030
 +        System.setOut(out);
 +    }
 +}
+diff --git a/src/test/java/org/bukkit/PerRegistryTest.java b/src/test/java/org/bukkit/PerRegistryTest.java
+index cd764c9d78bef25148d79d471e7607d74c93ffcb..d7dfef5bde5a7eb62f09ded7abae7547aa3e3520 100644
+--- a/src/test/java/org/bukkit/PerRegistryTest.java
++++ b/src/test/java/org/bukkit/PerRegistryTest.java
+@@ -32,6 +32,7 @@ public class PerRegistryTest extends AbstractTestingBase {
+         for (Field registryField : registryFields) {
+             try {
+                 Object object = registryField.get(null);
++                if (object == org.bukkit.Registry.CONFIGURED_STRUCTURE) continue; // Paper - skip
+                 // Ignore Bukkit's default SimpleRegistry. It cannot be tested correctly
+                 if (!(object instanceof CraftRegistry<?, ?> registry)) {
+                     continue;

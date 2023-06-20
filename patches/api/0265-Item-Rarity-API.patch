@@ -39,10 +39,10 @@ index 0000000000000000000000000000000000000000..74ef8395cc040ce488c2acaa416db202
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 37898f36f859eda945471fa9b00fcabbc3d211df..85d19b0c659c75472aa91d18fdf17f25bd6a2e04 100644
+index ffcb8e24a553f0cd81ec8c48511f28d284dbbd42..d6c3c6b320e4996dfbc185d594d94efbedf453c9 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -4460,6 +4460,17 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+@@ -4464,6 +4464,20 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
              return Bukkit.getUnsafe().getBlockTranslationKey(this);
          }
      }
@@ -52,31 +52,25 @@ index 37898f36f859eda945471fa9b00fcabbc3d211df..85d19b0c659c75472aa91d18fdf17f25
 +     * Use {@link #isItem()} before this.
 +     *
 +     * @return the item rarity
++     * @deprecated use {@link ItemType#getItemRarity()}
 +     */
++    @Deprecated
 +    @NotNull
 +    public io.papermc.paper.inventory.ItemRarity getItemRarity() {
-+        return Bukkit.getUnsafe().getItemRarity(this);
++        Preconditions.checkArgument(this.isItem(), this + " must be an item");
++        return this.asItemType().getItemRarity();
 +    }
      // Paper end
  
      /**
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index a00d93eee9710bb0fdf0fb791ef1a9262f89ef60..f79784e1823f646181a434a6dbce3bac0eaf25c9 100644
+index 413085e6793a17762685198a5416cc3dfcc88995..4fbb9153c34ef95170e62e4e519ce4ea2e685558 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -142,5 +142,22 @@ public interface UnsafeValues {
+@@ -151,5 +151,13 @@ public interface UnsafeValues {
       * Just don't use it.
       */
      @org.jetbrains.annotations.NotNull String getMainLevelName();
-+
-+    /**
-+     * Gets the item rarity of a material. The material <b>MUST</b> be an item.
-+     * Use {@link Material#isItem()} before this.
-+     *
-+     * @param material the material to get the rarity of
-+     * @return the item rarity
-+     */
-+    public io.papermc.paper.inventory.ItemRarity getItemRarity(Material material);
 +
 +    /**
 +     * Gets the item rarity of the itemstack. The rarity can change based on enchantements.
@@ -88,10 +82,10 @@ index a00d93eee9710bb0fdf0fb791ef1a9262f89ef60..f79784e1823f646181a434a6dbce3bac
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index e4ad3a550050c4bf9cc7a2a1082bfdf668050efe..4f867ba2bc9b1a7c277e4a5f0ea8b452315f3272 100644
+index 89fe32de713df3a5f2a25d72cbfe316e5b6c3f1b..d4bc360cf7f0b0fbed07dc10b5778605fde7c219 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -877,5 +877,15 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -926,5 +926,15 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      public @NotNull String translationKey() {
          return Bukkit.getUnsafe().getTranslationKey(this);
      }
@@ -106,4 +100,23 @@ index e4ad3a550050c4bf9cc7a2a1082bfdf668050efe..4f867ba2bc9b1a7c277e4a5f0ea8b452
 +        return Bukkit.getUnsafe().getItemStackRarity(this);
 +    }
      // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
+index 834c6b0ba732a8f5c2bdb3163a74efb3aa687ba9..27a1d255b8fcbd6487e4d4eb1abf784b43eaf90e 100644
+--- a/src/main/java/org/bukkit/inventory/ItemType.java
++++ b/src/main/java/org/bukkit/inventory/ItemType.java
+@@ -1371,4 +1371,14 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
+      */
+     @Nullable
+     CreativeCategory getCreativeCategory();
++
++    // Paper start - Item Rarity API
++    /**
++     * Returns the item rarity for the item.
++     *
++     * @return the item rarity
++     */
++    @NotNull
++    io.papermc.paper.inventory.ItemRarity getItemRarity();
++    // Paper end
  }

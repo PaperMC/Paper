@@ -104,10 +104,19 @@ index ad52c3fc6210939a39ef77a382c640a24ee44838..6b7dd01778f0a5d3a96d2d04af4b525d
      }
  }
 diff --git a/src/test/java/org/bukkit/RegistryConstantsTest.java b/src/test/java/org/bukkit/RegistryConstantsTest.java
-index 34e6b84c63e50972c650c0e4bc17bc0749e1b7c3..cd96cbba4d495c18f984dec6f861f75baf4300cc 100644
+index 569aa9caac8407b52214dbec564dc8e9f08cacc9..c20fc9466649f16f1102978590780bb729c55bc9 100644
 --- a/src/test/java/org/bukkit/RegistryConstantsTest.java
 +++ b/src/test/java/org/bukkit/RegistryConstantsTest.java
-@@ -19,17 +19,17 @@ public class RegistryConstantsTest extends AbstractTestingBase {
+@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
+ import java.lang.reflect.Modifier;
+ import java.util.ArrayList;
+ import java.util.List;
+-import net.minecraft.core.Registry;
++// import net.minecraft.core.Registry; // Paper - remap fix
+ import net.minecraft.core.registries.Registries;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.resources.ResourceLocation;
+@@ -105,13 +105,13 @@ public class RegistryConstantsTest extends AbstractTestingBase {
  
      @Test
      public void testTrimMaterial() {
@@ -123,33 +132,56 @@ index 34e6b84c63e50972c650c0e4bc17bc0749e1b7c3..cd96cbba4d495c18f984dec6f861f75b
          this.testMissingConstants(TrimPattern.class, Registries.TRIM_PATTERN);
      }
  
+@@ -169,7 +169,7 @@ public class RegistryConstantsTest extends AbstractTestingBase {
+         this.testMissingConstants(MusicInstrument.class, Registries.INSTRUMENT);
+     }
+ 
 -    private <T extends Keyed> void testExcessConstants(Class<T> clazz, Registry<T> registry) {
-+    private <T extends Keyed> void testExcessConstants(Class<T> clazz, org.bukkit.Registry<T> registry) { // Paper - remap fix
++    private <T extends Keyed> void testExcessConstants(Class<T> clazz, Registry<T> registry) { // Paper - remap fix
          List<NamespacedKey> excessKeys = new ArrayList<>();
  
          for (Field field : clazz.getFields()) {
+@@ -198,10 +198,10 @@ public class RegistryConstantsTest extends AbstractTestingBase {
+         Assert.assertTrue(excessKeys.size() + " excess constants(s) in " + clazz.getSimpleName() + " that do not exist: " + excessKeys, excessKeys.isEmpty());
+     }
+ 
+-    private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<Registry<M>> nmsRegistryKey) {
++    private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<net.minecraft.core.Registry<M>> nmsRegistryKey) { // Paper - remap fix
+         List<ResourceLocation> missingKeys = new ArrayList<>();
+ 
+-        Registry<M> nmsRegistry = REGISTRY_CUSTOM.registryOrThrow(nmsRegistryKey);
++        net.minecraft.core.Registry<M> nmsRegistry = REGISTRY_CUSTOM.registryOrThrow(nmsRegistryKey); // Paper - remap fix
+         for (M nmsObject : nmsRegistry) {
+             ResourceLocation minecraftKey = nmsRegistry.getKey(nmsObject);
+ 
 diff --git a/src/test/java/org/bukkit/entity/EntityTypesTest.java b/src/test/java/org/bukkit/entity/EntityTypesTest.java
-index b1de312e902c83a2f95d80040abb9255e64431a9..aafa6f472c82f851fe7f5ae3111488bb732d0bcc 100644
+index db23efff71a5e680c05ba61b3f9db72d35e437c1..e410b06cf7082714e1733be47500950c54031c41 100644
 --- a/src/test/java/org/bukkit/entity/EntityTypesTest.java
 +++ b/src/test/java/org/bukkit/entity/EntityTypesTest.java
-@@ -5,7 +5,6 @@ import java.util.Set;
- import java.util.stream.Collectors;
- import net.minecraft.core.registries.BuiltInRegistries;
- import net.minecraft.resources.ResourceLocation;
--import net.minecraft.world.entity.EntityType;
- import org.bukkit.support.AbstractTestingBase;
- import org.junit.Assert;
- import org.junit.Test;
-@@ -16,8 +15,8 @@ public class EntityTypesTest extends AbstractTestingBase {
+@@ -15,8 +15,8 @@ public class EntityTypesTest extends AbstractTestingBase {
+ 
+     @Test
+     public void testClasses() {
+-       for (EntityType<?> entityType : Registry.ENTITY_TYPE) {
+-           if (entityType == EntityType.UNKNOWN) {
++       for (org.bukkit.entity.EntityType<?> entityType : Registry.ENTITY_TYPE) { // Paper - remap fix
++           if (entityType == org.bukkit.entity.EntityType.UNKNOWN) { // Paper - remap fix
+                continue;
+            }
+ 
+@@ -26,10 +26,10 @@ public class EntityTypesTest extends AbstractTestingBase {
+ 
+     @Test
      public void testMaps() {
-         Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
+-        Set<EntityType<?>> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b != EntityType.UNKNOWN).collect(Collectors.toSet());
++        Set<org.bukkit.entity.EntityType<?>> allBukkit = Arrays.stream(org.bukkit.entity.EntityType.values()).filter((b) -> b != org.bukkit.entity.EntityType.UNKNOWN).collect(Collectors.toSet()); // Paper - remap fix
  
 -        for (EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) {
 -            ResourceLocation key = EntityType.getKey(nms);
 +        for (net.minecraft.world.entity.EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) { // Paper - remap fix
 +            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms); // Paper - remap fix
  
-             org.bukkit.entity.EntityType bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());
+             org.bukkit.entity.EntityType<?> bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());
              Assert.assertNotNull("Missing nms->bukkit " + key, bukkit);
 diff --git a/src/test/java/org/bukkit/entity/PandaGeneTest.java b/src/test/java/org/bukkit/entity/PandaGeneTest.java
 index 76e2ad676ae68846bdff3c3ef711751445fb0f3c..feee17192bca55a9cf1b2fc5b9609b888db77763 100644
@@ -180,3 +212,33 @@ index 76e2ad676ae68846bdff3c3ef711751445fb0f3c..feee17192bca55a9cf1b2fc5b9609b88
              org.bukkit.entity.Panda.Gene bukkit = CraftPanda.fromNms(gene);
  
              Assert.assertNotNull("Bukkit gene null for " + gene, bukkit);
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+index 9227d8a2103d7c001c1cba5f96a9a2fcd8c7595c..a9535199b39d03652f1235d4a920b795306f4ec9 100644
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -81,7 +81,7 @@ public final class DummyServer {
+             Mockito.when(instance.getTag(Mockito.any(), Mockito.any(), Mockito.any())).then(mock -> {
+                 String registry = mock.getArgument(0);
+                 Class<?> clazz = mock.getArgument(2);
+-                MinecraftKey key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
++                net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - remap fix
+ 
+                 switch (registry) {
+                     case org.bukkit.Tag.REGISTRY_BLOCKS -> {
+@@ -100,14 +100,14 @@ public final class DummyServer {
+                     }
+                     case org.bukkit.Tag.REGISTRY_FLUIDS -> {
+                         Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
+-                        TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
++                        TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = TagKey.create(Registries.FLUID, key); // Paper - remap fix
+                         if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
+                             return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
+                         }
+                     }
+                     case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
+                         Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+-                        TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
++                        TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - remap fix
+                         if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
+                             return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
+                         }

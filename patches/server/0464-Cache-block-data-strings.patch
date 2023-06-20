@@ -17,10 +17,10 @@ index 56e98ea2964c2779537ac607b7c4677bc695d92a..0ed8add0a2acec7d109f9687b7d77967
  
          if (this.isSameThread()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-index c80aaa37b7d63acfb283641a4804dc2a32156eda..68dc8455427b6e3f60a4472db3a625028c413561 100644
+index 5af27d3ff909c62f50ec8a30f7c7b11b3579807a..2e898658548d350f850dc83295d5785269ce72e8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-@@ -527,9 +527,39 @@ public class CraftBlockData implements BlockData {
+@@ -530,7 +530,35 @@ public class CraftBlockData implements BlockData {
          Preconditions.checkState(CraftBlockData.MAP.put(nms, bukkit) == null, "Duplicate mapping %s->%s", nms, bukkit);
      }
  
@@ -39,24 +39,20 @@ index c80aaa37b7d63acfb283641a4804dc2a32156eda..68dc8455427b6e3f60a4472db3a62502
 +    }
 +    // Paper end
 +
-     public static CraftBlockData newData(Material material, String data) {
-         Preconditions.checkArgument(material == null || material.isBlock(), "Cannot get data for not block %s", material);
- 
+     public static <B extends BlockData> B newData(BlockType<B> blockType, String data) {
 +        // Paper start - cache block data strings
-+        if (material != null) {
-+            Block block = CraftMagicNumbers.getBlock(material);
-+            if (block != null) {
-+                net.minecraft.resources.ResourceLocation key = BuiltInRegistries.BLOCK.getKey(block);
-+                data = data == null ? key.toString() : key + data;
-+            }
++        if (blockType != null) {
++            Block block = ((CraftBlockType<B>) blockType).getHandle();
++            net.minecraft.resources.ResourceLocation key = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block);
++            data = data == null ? key.toString() : key + data;
 +        }
 +
 +        CraftBlockData cached = stringDataCache.computeIfAbsent(data, s -> createNewData(null, s));
-+        return (CraftBlockData) cached.clone();
++        return (B) cached.clone();
 +    }
 +
-+    private static CraftBlockData createNewData(Material material, String data) {
++    private static <B extends BlockData> B createNewData(BlockType<B> blockType, String data) {
 +        // Paper end - cache block data strings
          net.minecraft.world.level.block.state.BlockState blockData;
-         Block block = CraftMagicNumbers.getBlock(material);
+         Block block = blockType != null ? ((CraftBlockType<B>) blockType).getHandle() : null;
          Map<Property<?>, Comparable<?>> parsed = null;

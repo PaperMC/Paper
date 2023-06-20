@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 19 Jun 2023 20:17:56 -0700
+Subject: [PATCH] fix some weird issue?
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftParticle.java b/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
+index 0289c461eb7888cf52a4ef58b96b7dfaaf534afa..114ddc793f20b4e1452e1c152cb34e01e057d237 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
+@@ -150,7 +150,7 @@ public abstract class CraftParticle<D> extends Particle<D> {
+         private static final BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> voidFunction = (name, particle) -> new CraftParticle<>(name, particle, Void.class) {
+             @Override
+             public ParticleOptions createParticleParam(Void data) {
+-                return (SimpleParticleType) CraftParticle.this.getHandle();
++                return (SimpleParticleType) this.getHandle(); // Paper - TODO some issue?
+             }
+         };
+ 
+@@ -166,14 +166,14 @@ public abstract class CraftParticle<D> extends Particle<D> {
+             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> itemStackFunction = (name, particle) -> new CraftParticle<>(name, particle, ItemStack.class) {
+                 @Override
+                 public ParticleOptions createParticleParam(ItemStack data) {
+-                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) CraftParticle.this.getHandle(), CraftItemStack.asNMSCopy(data));
++                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) this.getHandle(), CraftItemStack.asNMSCopy(data)); // Paper - TODO some issue?
+                 }
+             };
+ 
+             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> blockDataFunction = (name, particle) -> new CraftParticle<>(name, particle, BlockData.class) {
+                 @Override
+                 public ParticleOptions createParticleParam(BlockData data) {
+-                    return new BlockParticleOption((net.minecraft.core.particles.ParticleType<BlockParticleOption>) CraftParticle.this.getHandle(), ((CraftBlockData) data).getState());
++                    return new BlockParticleOption((net.minecraft.core.particles.ParticleType<BlockParticleOption>) this.getHandle(), ((CraftBlockData) data).getState()); // Paper - TODO some issue?
+                 }
+             };
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/tag/CraftEntityTag.java b/src/main/java/org/bukkit/craftbukkit/tag/CraftEntityTag.java
+index ecb926ac6497bafd86ebc3c068aa46a29d3c0169..148c4538876d7aaba25ef188da83364a03bfbbf3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/tag/CraftEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/tag/CraftEntityTag.java
+@@ -24,6 +24,6 @@ public class CraftEntityTag extends CraftTag<net.minecraft.world.entity.EntityTy
+ 
+     @Override
+     public Set<EntityType<?>> getValues() {
+-        return getHandle().stream().map((nms) -> Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(net.minecraft.world.entity.EntityType.getKey(nms.value())))).filter(Objects::nonNull).collect(Collectors.toUnmodifiableSet());
++        return getHandle().stream().map((nms) -> (EntityType<?>) Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(net.minecraft.world.entity.EntityType.getKey(nms.value())))).filter(Objects::nonNull).collect(Collectors.toUnmodifiableSet()); // Paper - wtf is this?
+     }
+ }
