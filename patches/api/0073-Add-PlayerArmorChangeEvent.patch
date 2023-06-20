@@ -6,12 +6,13 @@ Subject: [PATCH] Add PlayerArmorChangeEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e406ce639a2e88b78f82f25e71678a669d0a958b
+index 0000000000000000000000000000000000000000..b1985f57d0e52df49304964797dfbbe9a7578ddd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,189 @@
 +package com.destroystokyo.paper.event.player;
 +
++import org.bukkit.Bukkit;
 +import org.bukkit.Material;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
@@ -22,10 +23,12 @@ index 0000000000000000000000000000000000000000..e406ce639a2e88b78f82f25e71678a66
 +import java.util.Collections;
 +import java.util.HashSet;
 +import java.util.Set;
++import org.bukkit.inventory.ItemType;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
 +
-+import static org.bukkit.Material.*;
++import static org.bukkit.inventory.ItemType.*;
 +
 +/**
 + * Called when the player themselves change their armor items
@@ -98,10 +101,12 @@ index 0000000000000000000000000000000000000000..e406ce639a2e88b78f82f25e71678a66
 +        LEGS(NETHERITE_LEGGINGS, DIAMOND_LEGGINGS, GOLDEN_LEGGINGS, IRON_LEGGINGS, CHAINMAIL_LEGGINGS, LEATHER_LEGGINGS),
 +        FEET(NETHERITE_BOOTS, DIAMOND_BOOTS, GOLDEN_BOOTS, IRON_BOOTS, CHAINMAIL_BOOTS, LEATHER_BOOTS);
 +
-+        private final Set<Material> mutableTypes = new HashSet<>();
-+        private Set<Material> immutableTypes;
++        private final Set<ItemType> mutableTypes = new HashSet<>();
++        private Set<ItemType> immutableTypes;
++        @Deprecated
++        private Set<Material> legacyTypes;
 +
-+        SlotType(Material... types) {
++        SlotType(ItemType... types) {
 +            this.mutableTypes.addAll(Arrays.asList(types));
 +        }
 +
@@ -110,14 +115,32 @@ index 0000000000000000000000000000000000000000..e406ce639a2e88b78f82f25e71678a66
 +         * armor slot.
 +         *
 +         * @return immutable set of material types
++         * @deprecated use {@link #getItemTypes()}
++         */
++        @Deprecated
++        public @NotNull @Unmodifiable Set<Material> getTypes() {
++            if (this.legacyTypes == null) {
++                this.legacyTypes = new HashSet<>();
++                for (final ItemType itemType : this.getItemTypes()) {
++                    this.legacyTypes.add(Bukkit.getUnsafe().toMaterial(itemType));
++                }
++            }
++            return Collections.unmodifiableSet(this.legacyTypes);
++        }
++
++        /**
++         * Gets an immutable set of all allowed item types that can be placed in an
++         * armor slot.
++         *
++         * @return immutable set of item types
 +         */
 +        @NotNull
-+        public Set<Material> getTypes() {
-+            if (immutableTypes == null) {
-+                immutableTypes = Collections.unmodifiableSet(mutableTypes);
++        public @Unmodifiable Set<ItemType> getItemTypes() {
++            if (this.immutableTypes == null) {
++                this.immutableTypes = Collections.unmodifiableSet(this.mutableTypes);
 +            }
 +
-+            return immutableTypes;
++            return this.immutableTypes;
 +        }
 +
 +        /**
@@ -125,8 +148,10 @@ index 0000000000000000000000000000000000000000..e406ce639a2e88b78f82f25e71678a66
 +         *
 +         * @param material material to get slot by
 +         * @return slot type the material will go in, or null if it won't
++         * @deprecated use {@link #getByItemType(ItemType)}
 +         */
 +        @Nullable
++        @Deprecated
 +        public static SlotType getByMaterial(@NotNull Material material) {
 +            for (SlotType slotType : values()) {
 +                if (slotType.getTypes().contains(material)) {
@@ -137,13 +162,40 @@ index 0000000000000000000000000000000000000000..e406ce639a2e88b78f82f25e71678a66
 +        }
 +
 +        /**
-+         * Gets whether or not this material can be equipped to a slot
++         * Gets the type of slot via the specified item type
++         *
++         * @param itemType item type to get slot by
++         * @return slot type the item type will go in, or null if it won't
++         */
++        @Nullable
++        public static SlotType getByItemType(@NotNull ItemType itemType) {
++            for (SlotType slotType : values()) {
++                if (slotType.getItemTypes().contains(itemType)) {
++                    return slotType;
++                }
++            }
++            return null;
++        }
++
++        /**
++         * Gets whether this material can be equipped to a slot
 +         *
 +         * @param material material to check
-+         * @return whether or not this material can be equipped
++         * @return whether this material can be equipped
 +         */
++        @Deprecated
 +        public static boolean isEquipable(@NotNull Material material) {
 +            return getByMaterial(material) != null;
++        }
++
++        /**
++         * Gets whether this item type can be equipped to a slot
++         *
++         * @param itemType item type to check
++         * @return whether this item type can be equipped
++         */
++        public static boolean isEquipable(@NotNull ItemType itemType) {
++            return getByItemType(itemType) != null;
 +        }
 +    }
 +}
