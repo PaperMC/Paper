@@ -3848,10 +3848,10 @@ index 0000000000000000000000000000000000000000..16a4a14e7ccf9e4d7fdf1166674fe8f5
 +}
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/util/IntegerUtil.java b/src/main/java/ca/spottedleaf/starlight/common/util/IntegerUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..177d0a969f3d72a34e773e8309c3719a235ee06d
+index 0000000000000000000000000000000000000000..fabf1e97c019c7365212f40018dcd08d3b828113
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/starlight/common/util/IntegerUtil.java
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,242 @@
 +package ca.spottedleaf.starlight.common.util;
 +
 +public final class IntegerUtil {
@@ -3951,7 +3951,7 @@ index 0000000000000000000000000000000000000000..177d0a969f3d72a34e773e8309c3719a
 +    // copied from hacker's delight (signed division magic value)
 +    // http://www.hackersdelight.org/hdcodetxt/magic.c.txt
 +    public static long getDivisorNumbers(final int d) {
-+        final int ad = IntegerUtil.branchlessAbs(d);
++        final int ad = branchlessAbs(d);
 +
 +        if (ad < 2) {
 +            throw new IllegalArgumentException("|number| must be in [2, 2^31 -1], not: " + d);
@@ -3960,11 +3960,27 @@ index 0000000000000000000000000000000000000000..177d0a969f3d72a34e773e8309c3719a
 +        final int two31 = 0x80000000;
 +        final long mask = 0xFFFFFFFFL; // mask for enforcing unsigned behaviour
 +
++        /*
++         Signed usage:
++         int number;
++         long magic = getDivisorNumbers(div);
++         long mul = magic >>> 32;
++         int sign = number >> 31;
++         int result = (int)(((long)number * mul) >>> magic) - sign;
++         */
++        /*
++         Unsigned usage:
++         int number;
++         long magic = getDivisorNumbers(div);
++         long mul = magic >>> 32;
++         int result = (int)(((long)number * mul) >>> magic);
++         */
++
 +        int p = 31;
 +
 +        // all these variables are UNSIGNED!
 +        int t = two31 + (d >>> 31);
-+        int anc = t - 1 - t%ad;
++        int anc = t - 1 - (int)((t & mask)%ad);
 +        int q1 = (int)((two31 & mask)/(anc & mask));
 +        int r1 = two31 - q1*anc;
 +        int q2 = (int)((two31 & mask)/(ad & mask));
@@ -3992,7 +4008,7 @@ index 0000000000000000000000000000000000000000..177d0a969f3d72a34e773e8309c3719a
 +        if (d < 0) {
 +            magicNum = -magicNum;
 +        }
-+        int shift = p - 32;
++        int shift = p;
 +        return ((long)magicNum << 32) | shift;
 +    }
 +
@@ -4917,10 +4933,10 @@ index e5e562f75e7d4b6a750f192842940c5e3af81e7d..2caac1a3d80e6c490aa16aa6bc106706
      public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biomeRegistry, long inhabitedTime, @Nullable LevelChunkSection[] sectionArray, @Nullable BlendingData blendingData) {
          this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-index 70a05fe758565131bbb39c18d6b674a6368ffa45..fb5a06a908d2b42bf0530b62ed648548499d9f87 100644
+index d5b1fd0ff3f64675f90dd9f7f328a106e0992d51..846ae3fd184a1d63b743aa25e045604576697c96 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-@@ -258,6 +258,17 @@ public class ChunkStatus {
+@@ -260,6 +260,17 @@ public class ChunkStatus {
          return this.chunkType;
      }
  

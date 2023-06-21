@@ -19,7 +19,7 @@ public net.minecraft.world.entity.LivingEntity getDeathSound()Lnet/minecraft/sou
 public net.minecraft.world.entity.LivingEntity getSoundVolume()F
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 0578d72681a0d45b6c8d1d6d04208eb14fb60083..2b4c0042b1971a9d922c8d32aa74c7f2e4c43341 100644
+index 8e2340ca473c8cacfe9d888091834986bad101ce..0282a467268564c55d9d6e10b0602f952b2ca7ae 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -243,6 +243,10 @@ public class ServerPlayer extends Player {
@@ -70,7 +70,7 @@ index 0578d72681a0d45b6c8d1d6d04208eb14fb60083..2b4c0042b1971a9d922c8d32aa74c7f2
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a164fcf834c 100644
+index f3af1c540b59819375f70ffbda6135601802cdbc..b712f505fd092e0366ffc74ff59345a7f8c701be 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -261,6 +261,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -108,7 +108,7 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
              if (this.deathScore >= 0 && entityliving != null) {
                  entityliving.awardKillScore(this, this.deathScore, damageSource);
              }
-@@ -1674,24 +1674,56 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1674,24 +1674,59 @@ public abstract class LivingEntity extends Entity implements Attackable {
              if (!this.level().isClientSide && this.hasCustomName()) {
                  if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
@@ -137,12 +137,12 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
 +                        this.clearedEquipmentSlots.clear();
 +                    }
 +                    // Paper end
-+
+ 
+-                if (entity == null || entity.killedEntity(worldserver, this)) {
 +                    if (this.isSleeping()) {
 +                        this.stopSleeping();
 +                    }
- 
--                if (entity == null || entity.killedEntity(worldserver, this)) {
++
 +                    if (!this.level().isClientSide && this.hasCustomName()) {
 +                        if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
 +                    }
@@ -154,6 +154,9 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
                      this.gameEvent(GameEvent.ENTITY_DIE);
 -                    this.dropAllDeathLoot(damageSource);
 -                    this.createWitherRose(entityliving);
++                } else {
++                    this.dead = false;
++                    this.setHealth((float) deathEvent.getReviveHealth());
                  }
  
 -                this.level().broadcastEntityEvent(this, (byte) 3);
@@ -170,7 +173,7 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
          }
      }
  
-@@ -1699,7 +1731,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1699,7 +1734,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
          if (!this.level().isClientSide) {
              boolean flag = false;
  
@@ -179,7 +182,7 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
                  if (this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                      BlockPos blockposition = this.blockPosition();
                      BlockState iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
-@@ -1728,7 +1760,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1728,7 +1763,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
          }
      }
  
@@ -192,7 +195,7 @@ index f3af1c540b59819375f70ffbda6135601802cdbc..5b093a5c4ac0218dbadd6d7045266a16
          Entity entity = source.getEntity();
          int i;
  
-@@ -1743,18 +1779,27 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1743,18 +1782,27 @@ public abstract class LivingEntity extends Entity implements Attackable {
          this.dropEquipment(); // CraftBukkit - from below
          if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
              this.dropFromLootTable(source, flag);
@@ -354,10 +357,10 @@ index 719f68f96e58ddcdd3592131c691d21263c81915..4413b609f1250cf9477fcb3fecd7b67a
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index a825805c4c1506628550864b8d1566727b15a10c..d5631eaed68b6745d8ee43751f6953094adc2c5e 100644
+index 56b7d7fb2a317a1a7a7f461ddb6667e01117ec90..dc0802c35836009d2411135d91a25de0746e64e6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -2294,7 +2294,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2248,7 +2248,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
  
      public void sendHealthUpdate() {
@@ -374,10 +377,10 @@ index a825805c4c1506628550864b8d1566727b15a10c..d5631eaed68b6745d8ee43751f695309
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index b77fefc9cf30fd438f557e5b56efb4c0251cb17a..68b1e24a497c052c8e20b946b5b5dabc59e7f539 100644
+index dff2623112aa09a585d5110e9039c2034b5f0928..3ab9346bfd4efc27abdaed69fba365c3fa262d47 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -824,9 +824,16 @@ public class CraftEventFactory {
+@@ -832,9 +832,16 @@ public class CraftEventFactory {
      public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops) {
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
          EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward());
@@ -394,7 +397,7 @@ index b77fefc9cf30fd438f557e5b56efb4c0251cb17a..68b1e24a497c052c8e20b946b5b5dabc
          victim.expToDrop = event.getDroppedExp();
  
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
-@@ -843,8 +850,15 @@ public class CraftEventFactory {
+@@ -851,8 +858,15 @@ public class CraftEventFactory {
          PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage, stringDeathMessage); // Paper - Adventure
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
@@ -410,7 +413,7 @@ index b77fefc9cf30fd438f557e5b56efb4c0251cb17a..68b1e24a497c052c8e20b946b5b5dabc
  
          victim.keepLevel = event.getKeepLevel();
          victim.newLevel = event.getNewLevel();
-@@ -861,6 +875,31 @@ public class CraftEventFactory {
+@@ -869,6 +883,31 @@ public class CraftEventFactory {
          return event;
      }
  
