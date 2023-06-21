@@ -582,10 +582,10 @@ index 0000000000000000000000000000000000000000..9ab4cb833c65d086122fc835217ce470
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/MCVersions.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/MCVersions.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dc62351262dc6e53935795ff0c5d03e3020f5ee2
+index 0000000000000000000000000000000000000000..2737b29fc872c64cd273182034eb22797ef4f900
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/MCVersions.java
-@@ -0,0 +1,471 @@
+@@ -0,0 +1,474 @@
 +package ca.spottedleaf.dataconverter.minecraft;
 +
 +@SuppressWarnings("unused")
@@ -1055,6 +1055,9 @@ index 0000000000000000000000000000000000000000..dc62351262dc6e53935795ff0c5d03e3
 +    public static final int V1_20_PRE6            = 3460;
 +    public static final int V1_20_PRE7            = 3461;
 +    public static final int V1_20_RC1             = 3462;
++    public static final int V1_20                 = 3463;
++    public static final int V1_20_1_RC1           = 3464;
++    public static final int V1_20_1               = 3465;
 +
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java
@@ -23273,10 +23276,10 @@ index 0000000000000000000000000000000000000000..de9d632489609136c712a9adaee941fd
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/util/IntegerUtil.java b/src/main/java/ca/spottedleaf/dataconverter/util/IntegerUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b5ebf6bbe1a3711111cf045ee8b46c934c7e4563
+index 0000000000000000000000000000000000000000..4bbf38c812feeb30d2aa5f3fcf482bfcbed79d05
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/util/IntegerUtil.java
-@@ -0,0 +1,223 @@
+@@ -0,0 +1,239 @@
 +package ca.spottedleaf.dataconverter.util;
 +
 +public final class IntegerUtil {
@@ -23373,7 +23376,7 @@ index 0000000000000000000000000000000000000000..b5ebf6bbe1a3711111cf045ee8b46c93
 +    }
 +
 +    public static long getDivisorNumbers(final int d) {
-+        final int ad = Math.abs(d);
++        final int ad = branchlessAbs(d);
 +
 +        if (ad < 2) {
 +            throw new IllegalArgumentException("|number| must be in [2, 2^31 -1], not: " + d);
@@ -23381,6 +23384,22 @@ index 0000000000000000000000000000000000000000..b5ebf6bbe1a3711111cf045ee8b46c93
 +
 +        final int two31 = 0x80000000;
 +        final long mask = 0xFFFFFFFFL; // mask for enforcing unsigned behaviour
++
++        /*
++         Signed usage:
++         int number;
++         long magic = getDivisorNumbers(div);
++         long mul = magic >>> 32;
++         int sign = number >> 31;
++         int result = (int)(((long)number * mul) >>> magic) - sign;
++         */
++        /*
++         Unsigned usage:
++         int number;
++         long magic = getDivisorNumbers(div);
++         long mul = magic >>> 32;
++         int result = (int)(((long)number * mul) >>> magic);
++         */
 +
 +        int p = 31;
 +
@@ -23414,7 +23433,7 @@ index 0000000000000000000000000000000000000000..b5ebf6bbe1a3711111cf045ee8b46c93
 +        if (d < 0) {
 +            magicNum = -magicNum;
 +        }
-+        int shift = p - 32;
++        int shift = p;
 +        return ((long)magicNum << 32) | shift;
 +    }
 +
