@@ -60,4 +60,5 @@ Luke Chambers <consolelogluke@gmail.com>
 Emily <emilia.lopezf.1999@gmail.com>
 dawon <dawon@dawon.eu>
 Ollie <69084614+olijeffers0n@users.noreply.github.com>
+TheRealRyGuy <ryan@ryguy.me>
 ```

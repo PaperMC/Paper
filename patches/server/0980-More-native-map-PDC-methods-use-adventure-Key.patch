@@ -1,0 +1,227 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RyGuy <git@ryguy.me>
+Date: Tue, 28 Mar 2023 16:39:06 -0400
+Subject: [PATCH] More native map PDC methods, use adventure Key
+
+This commit has PDC inherit Iterable<NamespacedKey>, replaces all
+NamespacedKey uses with adventure's key,
+and implements these methods
+- #setIfAbsent(NamespacedKey, PersistentDataType, Object)
+- #computeIfAbsent(NamespacedKey, PersistentDataType, Function)
+- #computeIfPresent(NamespacedKey, PersistentDataType, BiFunction)
+- #compute(NamespacedKey, PersistentDataType, BiFunction)
+- #getOrThrow(NamespacedKey, PersistentDataType, Supplier)
+- #getOrThrow(NamespacedKey, PersistentDataType)
+- #replace(NamespacedKey, PersistentDataType, Object, Object)
+- #replace(NamespacedKey, PersistentDataType, Object)
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+index 65013fd2ca24c4bf1cfd67e314927e72542d3e68..098663548a62b5ed7e9e1cce028cbba2ca4278bd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+@@ -7,6 +7,10 @@ import java.util.Map;
+ import java.util.Map.Entry;
+ import java.util.Objects;
+ import java.util.Set;
++import java.util.function.BiFunction;
++import java.util.function.Function;
++import java.util.function.Supplier;
++
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.Tag;
+ import org.bukkit.NamespacedKey;
+@@ -14,6 +18,7 @@ import org.bukkit.craftbukkit.util.CraftNBTTagConfigSerializer;
+ import org.bukkit.persistence.PersistentDataAdapterContext;
+ import org.bukkit.persistence.PersistentDataContainer;
+ import org.bukkit.persistence.PersistentDataType;
++import org.jetbrains.annotations.NotNull;
+ 
+ public class CraftPersistentDataContainer implements PersistentDataContainer {
+ 
+@@ -37,16 +42,33 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+         Preconditions.checkArgument(type != null, "The provided type cannot be null");
+         Preconditions.checkArgument(value != null, "The provided value cannot be null");
++        //Paper start
++        set(key.toString(), type, value);
++    }
++
++    private <T, Z> void set(String key, PersistentDataType<T, Z> type, Z value) {
++        //Paper end
++        Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
++        Preconditions.checkArgument(type != null, "The provided type for the custom value was null");
++        Preconditions.checkArgument(value != null, "The provided value for the custom value was null");
+ 
+-        this.customDataTags.put(key.toString(), this.registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext)));
++        this.customDataTags.put(key, this.registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext))); //Paper
+     }
+ 
+     @Override
+     public <T, Z> boolean has(NamespacedKey key, PersistentDataType<T, Z> type) {
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+         Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        //Paper start
++        return has(key.toString(), type);
++    }
++
++    private <T, Z> boolean has(String key, PersistentDataType<T, Z> type) {
++        //Paper end
++        Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
++        Preconditions.checkArgument(type != null, "The provided type for the custom value was null");
+ 
+-        Tag value = this.customDataTags.get(key.toString());
++        Tag value = this.customDataTags.get(key); //Paper
+         if (value == null) {
+             return false;
+         }
+@@ -58,8 +80,16 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     public <T, Z> Z get(NamespacedKey key, PersistentDataType<T, Z> type) {
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+         Preconditions.checkArgument(type != null, "The provided type cannot be null");
++        //Paper start
++        return get(key.toString(), type);
++    }
+ 
+-        Tag value = this.customDataTags.get(key.toString());
++    private <T, Z> Z get(String key, PersistentDataType<T, Z> type) {
++        //Paper end
++        Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
++        Preconditions.checkArgument(type != null, "The provided type for the custom value was null");
++
++        Tag value = this.customDataTags.get(key); //Paper
+         if (value == null) {
+             return null;
+         }
+@@ -90,8 +120,15 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     @Override
+     public void remove(NamespacedKey key) {
+         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
++        //Paper start
++        remove(key.toString());
++    }
+ 
+-        this.customDataTags.remove(key.toString());
++    private void remove(String key) {
++        //Paper end
++        Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
++
++        this.customDataTags.remove(key); //Paper
+     }
+ 
+     @Override
+@@ -189,5 +226,115 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+             this.putAll(compound);
+         }
+     }
++
++    @Override
++    public <T, Z> void setIfAbsent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
++        Z z = this.get(key.asString(), type);
++        if (z == null) {
++            this.set(key.asString(), type, value);
++        }
++    }
++
++    @Override
++    public <T, Z> Z computeIfAbsent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                                    @NotNull Function<net.kyori.adventure.key.Key, Z> mappingFunction) {
++        Preconditions.checkArgument(mappingFunction != null);
++            Z v;
++        Z newValue;
++        if ((v = this.get(key.asString(), type)) == null && (newValue = mappingFunction.apply(key)) != null) {
++            this.set(key.asString(), type, newValue);
++            return newValue;
++        } else {
++            return v;
++        }
++    }
++
++    @Override
++    public <T, Z> Z computeIfPresent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                                     @NotNull BiFunction<net.kyori.adventure.key.Key, Z, Z> remappingFunction) {
++        Preconditions.checkArgument(remappingFunction != null);
++        Z oldValue;
++        if ((oldValue = this.get(key.asString(), type)) != null) {
++            Z newValue = remappingFunction.apply(key, oldValue);
++            if (newValue != null) {
++                this.set(key.asString(), type, newValue);
++                return newValue;
++            } else {
++                this.remove(key.asString());
++                return null;
++            }
++        } else {
++            return null;
++        }
++    }
++
++    @Override
++    public <T, Z> Z compute(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                            @NotNull BiFunction<net.kyori.adventure.key.Key, Z, Z> remappingFunction) {
++        Preconditions.checkArgument(remappingFunction != null);
++        Z oldValue = this.get(key.asString(), type);
++        Z newValue = remappingFunction.apply(key, oldValue);
++        if (newValue == null) {
++            if (oldValue == null && !this.has(key.asString(), type)) {
++                return null;
++            } else {
++                this.remove(key.asString());
++                return null;
++            }
++        } else {
++            this.set(key.asString(), type, newValue);
++            return newValue;
++        }
++    }
++
++    @Override
++    public <T, Z, X extends Throwable> Z getOrThrow(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                                                    @NotNull Supplier<X> exceptionSupplier) throws X {
++        Preconditions.checkArgument(exceptionSupplier != null);
++        Z value = this.get(key.asString(), type);
++        if (value == null) {
++            throw exceptionSupplier.get();
++        } else {
++            return value;
++        }
++    }
++
++    @Override
++    public <T, Z> boolean replace(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                                  @NotNull Z oldValue, @NotNull Z newValue) {
++        Z curValue = this.get(key.asString(), type);
++        if (Objects.equals(curValue, oldValue) && (curValue != null || this.has(key.asString(), type))) {
++            this.set(key.asString(), type, newValue);
++            return true;
++        } else {
++            return false;
++        }
++    }
++
++    @Override
++    public <T, Z> Z replace(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
++        Z curValue;
++        if ((curValue = this.get(key.asString(), type)) != null || this.has(key.asString(), type)) {
++            set(key.asString(), type, value);
++        }
++
++        return curValue;
++    }
++
++    @Override
++    public Set<net.kyori.adventure.key.Key> keySet() {
++        Set<net.kyori.adventure.key.Key> keys = new HashSet<>();
++
++        this.customDataTags.keySet().forEach(k -> {
++            String[] keyData = k.split(":", 2);
++            if (keyData.length == 2) {
++                keys.add(net.kyori.adventure.key.Key.key(keyData[0], keyData[1]));
++            }
++        });
++
++        return keys;
++    }
++
++
+     // Paper end
+ }

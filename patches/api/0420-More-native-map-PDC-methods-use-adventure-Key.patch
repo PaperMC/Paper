@@ -1,0 +1,235 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RyGuy <git@ryguy.me>
+Date: Tue, 28 Mar 2023 01:27:28 -0400
+Subject: [PATCH] More native map PDC methods, use adventure Key
+
+This commit has PDC inherit Iterable<NamespacedKey>, replaces all NamespacedKey uses with adventure's key,
+and implements these methods
+- #setIfAbsent(NamespacedKey, PersistentDataType, Object)
+- #computeIfAbsent(NamespacedKey, PersistentDataType, Function)
+- #computeIfPresent(NamespacedKey, PersistentDataType, BiFunction)
+- #compute(NamespacedKey, PersistentDataType, BiFunction)
+- #getOrThrow(NamespacedKey, PersistentDataType, Supplier)
+- #getOrThrow(NamespacedKey, PersistentDataType)
+- #replace(NamespacedKey, PersistentDataType, Object, Object)
+- #replace(NamespacedKey, PersistentDataType, Object)
+
+diff --git a/src/main/java/org/bukkit/persistence/PersistentDataContainer.java b/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
+index 57609b7793122e135fa0c3b926500849379637b2..cc38aec898f408b157e8e32aa63cb71a445cbfcb 100644
+--- a/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
++++ b/src/main/java/org/bukkit/persistence/PersistentDataContainer.java
+@@ -1,15 +1,21 @@
+ package org.bukkit.persistence;
+ 
+-import java.util.Set;
+ import org.bukkit.NamespacedKey;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
++import java.util.Iterator;
++import java.util.NoSuchElementException;
++import java.util.Set;
++import java.util.function.BiFunction;
++import java.util.function.Function;
++import java.util.function.Supplier;
++
+ /**
+  * This interface represents a map like object, capable of storing custom tags
+  * in it.
+  */
+-public interface PersistentDataContainer {
++public interface PersistentDataContainer extends Iterable<net.kyori.adventure.key.Key> {
+ 
+     /**
+      * Stores a metadata value on the {@link PersistentDataHolder} instance.
+@@ -116,7 +122,7 @@ public interface PersistentDataContainer {
+     <T, Z> Z getOrDefault(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z defaultValue);
+ 
+     /**
+-     * Get a set of keys present on this {@link PersistentDataContainer}
++     * Get a set of {@link NamespacedKey}s present on this {@link PersistentDataContainer}
+      * instance.
+      *
+      * Any changes made to the returned set will not be reflected on the
+@@ -197,5 +203,181 @@ public interface PersistentDataContainer {
+     default void readFromBytes(byte @NotNull [] bytes) throws java.io.IOException {
+         this.readFromBytes(bytes, true);
+     }
++
++    /**
++     * @return The iterator bound to the set from {@link #keySet()}
++     */
++    @Override
++    default @NotNull Iterator<net.kyori.adventure.key.Key> iterator() {
++        return keySet().iterator();
++    }
++
++    /**
++     * Will set a metadata value on the {@link PersistentDataHolder} instance if the value is not currently set
++     *
++     * @param key   the key this value will be stored under
++     * @param type  the type this tag uses
++     * @param value the value stored in the tag
++     * @param <T>   the generic java type of the tag value
++     * @param <Z>   the generic type of the object to store
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws NullPointerException     if the value is null. Removing a tag should
++     *                                  be done using {@link #remove(NamespacedKey)}
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> void setIfAbsent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value);
++
++    /**
++     * Attempts to set a metadata value to your {@link PersistentDataHolder} instance if the supplied key isn't bound,
++     * or the current value is null. If your {@param mappingFunction} returns null, it will not set the value
++     *
++     * @param key             the key this value will be stored under
++     * @param type            the type this tag uses
++     * @param mappingFunction the function to compute your value
++     * @param <T>             the generic java type of the tag value
++     * @param <Z>             the generic type of the object to store
++     *
++     * @return The currently existing metadata within your {@link PersistentDataHolder} instance
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @NotNull Z computeIfAbsent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                                     @NotNull Function<net.kyori.adventure.key.Key, Z> mappingFunction);
++
++    /**
++     * Attempts to remap a current metadata value on your {@link PersistentDataHolder} instance if the value
++     * is currently present and the mapping function returns a non-null value
++     * The key is removed if your remapped value is null
++     *
++     * @param key               the key this value will be stored under
++     * @param type              the type this tag uses
++     * @param remappingFunction the function to compute your value
++     * @param <T>               the generic java type of the tag value
++     * @param <Z>               the generic type of the object to store
++     *
++     * @return The currently existing metadata within your {@link PersistentDataHolder} instance
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @Nullable Z computeIfPresent(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                                      @NotNull BiFunction<net.kyori.adventure.key.Key, Z, Z> remappingFunction);
++
++    /**
++     * Attempts to remap an {@link PersistentDataHolder} metadata value using a supplied mapping function
++     * Your key is removed if your remapped value is null
++     *
++     * @param key               the key this value will be stored under
++     * @param type              the type this tag uses
++     * @param remappingFunction the function to compute your value
++     * @param <T>               the generic java type of the tag value
++     * @param <Z>               the generic type of the object to store
++     *
++     * @return The currently existing metadata within your {@link PersistentDataHolder} instance
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @Nullable Z compute(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                             @NotNull BiFunction<net.kyori.adventure.key.Key, Z, Z> remappingFunction);
++
++    /**
++     * Attempts to retrieve a value from the metadata of your {@link PersistentDataHolder} instance. If there is
++     * no value, it will throw an exception
++     *
++     * @param key               the key this value will be stored under
++     * @param type              the type this tag uses
++     * @param exceptionSupplier supplies the exception you want to throw
++     * @param <T>               the generic java type of the tag value
++     * @param <Z>               the generic type of the object to store
++     * @param <X>               the exception type you want to throw
++     *
++     * @return The currently existing metadata within your {@link PersistentDataHolder} instance, if present
++     *
++     * @throws NullPointerException if the key is null
++     * @throws NullPointerException if the type is null
++     * @throws X                    If there was no metadata element bound to your key and type
++     */
++    <T, Z, X extends Throwable> @NotNull Z getOrThrow(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                                                     @NotNull Supplier<X> exceptionSupplier) throws X;
++
++    /**
++     * Attempts to retrieve a value from the metadata of your {@link PersistentDataHolder} instance. If there is
++     * no value, it will throw an exception
++     *
++     * @param key  the key this value will be stored under
++     * @param type the type this tag uses
++     * @param <T>  the generic java type of the tag value
++     * @param <Z>  the generic type of the object to store
++     *
++     * @return The currently existing metadata within your {@link PersistentDataHolder} instance, if present
++     *
++     * @throws NullPointerException   if the key is null
++     * @throws NullPointerException   if the type is null
++     * @throws NoSuchElementException If there was no metadata element bound to your key and type
++     */
++    default <T, Z> @NotNull Z getOrThrow(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type) {
++        return getOrThrow(key, type, () -> new NoSuchElementException("Key " + key.asString() + " not present in PDC " +
++            this.getClass().getName()));
++    }
++
++    /**
++     * Replaces the metadata value of your specified key and type if it is currently bound to your `oldValue`
++     *
++     * @param key      the key this value will be stored under
++     * @param type     the type this tag uses
++     * @param oldValue expected value bound to your specified key
++     * @param newValue value to bind to your specified key
++     * @param <T>      the generic java type of the tag value
++     * @param <Z>      the generic type of the object to store
++     *
++     * @return True if the mapped value was changed, false otherwise
++     *
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> boolean replace(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type,
++                                   @NotNull Z oldValue, @NotNull Z newValue);
++
++    /**
++     * Replaces any metadata value in your {@link PersistentDataHolder} if it is bound to your supplied key and type
++     *
++     * @param key   the key this value will be stored under
++     * @param type  the type this tag uses
++     * @param value Value to set
++     * @param <T>   the generic java type of the tag value
++     * @param <Z>   the generic type of the object to store
++     *
++     * @return The previous value bound to your key, or null if no value exists
++     * 
++     * @throws NullPointerException     if the key is null
++     * @throws NullPointerException     if the type is null
++     * @throws IllegalArgumentException if no suitable adapter will be found for
++     *                                  the {@link PersistentDataType#getPrimitiveType()}
++     */
++    <T, Z> @NotNull Z replace(@NotNull net.kyori.adventure.key.Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value);
++
++    /**
++     * Get a set of {@link net.kyori.adventure.key.Key}s present on this {@link PersistentDataContainer}
++     * instance.
++     *
++     * Any changes made to the returned set will not be reflected on the
++     * instance.
++     *
++     * @return the key set
++     */
++    @NotNull Set<net.kyori.adventure.key.Key> keySet();
+     // Paper end
+ }
