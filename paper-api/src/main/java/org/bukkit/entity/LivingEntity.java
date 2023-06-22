@@ -272,6 +272,30 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public void setNoDamageTicks(int ticks);
 
     /**
+     * Get the ticks that this entity has performed no action.
+     * <p>
+     * The details of what "no action ticks" entails varies from entity to entity
+     * and cannot be specifically defined. Some examples include squid using this
+     * value to determine when to swim, raiders for when they are to be expelled
+     * from raids, or creatures (such as withers) as a requirement to be despawned.
+     *
+     * @return amount of no action ticks
+     */
+    public int getNoActionTicks();
+
+    /**
+     * Set the ticks that this entity has performed no action.
+     * <p>
+     * The details of what "no action ticks" entails varies from entity to entity
+     * and cannot be specifically defined. Some examples include squid using this
+     * value to determine when to swim, raiders for when they are to be expelled
+     * from raids, or creatures (such as withers) as a requirement to be despawned.
+     *
+     * @param ticks amount of no action ticks
+     */
+    public void setNoActionTicks(int ticks);
+
+    /**
      * Gets the player identified as the killer of the living entity.
      * <p>
      * May be null.
