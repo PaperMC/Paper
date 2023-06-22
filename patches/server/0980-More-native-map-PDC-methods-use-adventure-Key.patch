@@ -16,7 +16,7 @@ and implements these methods
 - #replace(NamespacedKey, PersistentDataType, Object)
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
-index 65013fd2ca24c4bf1cfd67e314927e72542d3e68..098663548a62b5ed7e9e1cce028cbba2ca4278bd 100644
+index 65013fd2ca24c4bf1cfd67e314927e72542d3e68..795d6ad456c77ef5ca0c77f8b731d97a5c13f49a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
 @@ -7,6 +7,10 @@ import java.util.Map;
@@ -38,22 +38,17 @@ index 65013fd2ca24c4bf1cfd67e314927e72542d3e68..098663548a62b5ed7e9e1cce028cbba2
  
  public class CraftPersistentDataContainer implements PersistentDataContainer {
  
-@@ -37,16 +42,33 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+@@ -37,16 +42,24 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
          Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
          Preconditions.checkArgument(type != null, "The provided type cannot be null");
          Preconditions.checkArgument(value != null, "The provided value cannot be null");
 +        //Paper start
 +        set(key.toString(), type, value);
 +    }
-+
-+    private <T, Z> void set(String key, PersistentDataType<T, Z> type, Z value) {
-+        //Paper end
-+        Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
-+        Preconditions.checkArgument(type != null, "The provided type for the custom value was null");
-+        Preconditions.checkArgument(value != null, "The provided value for the custom value was null");
  
 -        this.customDataTags.put(key.toString(), this.registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext)));
-+        this.customDataTags.put(key, this.registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext))); //Paper
++    private <T, Z> void set(String key, PersistentDataType<T, Z> type, Z value) {
++        this.customDataTags.put(key, this.registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext))); //Paper end
      }
  
      @Override
@@ -63,18 +58,14 @@ index 65013fd2ca24c4bf1cfd67e314927e72542d3e68..098663548a62b5ed7e9e1cce028cbba2
 +        //Paper start
 +        return has(key.toString(), type);
 +    }
-+
-+    private <T, Z> boolean has(String key, PersistentDataType<T, Z> type) {
-+        //Paper end
-+        Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
-+        Preconditions.checkArgument(type != null, "The provided type for the custom value was null");
  
 -        Tag value = this.customDataTags.get(key.toString());
-+        Tag value = this.customDataTags.get(key); //Paper
++    private <T, Z> boolean has(String key, PersistentDataType<T, Z> type) {
++        Tag value = this.customDataTags.get(key); //Paper end
          if (value == null) {
              return false;
          }
-@@ -58,8 +80,16 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+@@ -58,8 +71,12 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
      public <T, Z> Z get(NamespacedKey key, PersistentDataType<T, Z> type) {
          Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
          Preconditions.checkArgument(type != null, "The provided type cannot be null");
@@ -84,15 +75,11 @@ index 65013fd2ca24c4bf1cfd67e314927e72542d3e68..098663548a62b5ed7e9e1cce028cbba2
  
 -        Tag value = this.customDataTags.get(key.toString());
 +    private <T, Z> Z get(String key, PersistentDataType<T, Z> type) {
-+        //Paper end
-+        Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
-+        Preconditions.checkArgument(type != null, "The provided type for the custom value was null");
-+
-+        Tag value = this.customDataTags.get(key); //Paper
++        Tag value = this.customDataTags.get(key); //Paper end
          if (value == null) {
              return null;
          }
-@@ -90,8 +120,15 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+@@ -90,8 +107,12 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
      @Override
      public void remove(NamespacedKey key) {
          Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
@@ -102,14 +89,11 @@ index 65013fd2ca24c4bf1cfd67e314927e72542d3e68..098663548a62b5ed7e9e1cce028cbba2
  
 -        this.customDataTags.remove(key.toString());
 +    private void remove(String key) {
-+        //Paper end
-+        Preconditions.checkArgument(key != null, "The provided key for the custom value was null");
-+
-+        this.customDataTags.remove(key); //Paper
++        this.customDataTags.remove(key); //Paper end
      }
  
      @Override
-@@ -189,5 +226,115 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+@@ -189,5 +210,115 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
              this.putAll(compound);
          }
      }
