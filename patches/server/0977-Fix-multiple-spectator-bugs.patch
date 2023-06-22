@@ -20,7 +20,7 @@ index 9209b598d7168b82574e4800056b8b9f84265dd0..2b37ccc8e2619677179b17a6c5bd758b
                  // CraftBukkit start - respect vanish API
                  if (!player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 9d46536f80b5b3e6641fd377c02166a431edfd77..a6b55a8a527816230f2d1853c023161c992ca1da 100644
+index 9d46536f80b5b3e6641fd377c02166a431edfd77..9943d0291ad05572f8fb0fb15d09eac18e942973 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -11,6 +11,7 @@ import com.mojang.serialization.Dynamic;
@@ -31,7 +31,7 @@ index 9d46536f80b5b3e6641fd377c02166a431edfd77..a6b55a8a527816230f2d1853c023161c
  import java.util.Iterator;
  import java.util.List;
  import java.util.Objects;
-@@ -732,8 +733,25 @@ public class ServerPlayer extends Player {
+@@ -732,8 +733,28 @@ public class ServerPlayer extends Player {
  
          if (entity != this) {
              if (entity.isAlive()) {
@@ -48,10 +48,13 @@ index 9d46536f80b5b3e6641fd377c02166a431edfd77..a6b55a8a527816230f2d1853c023161c
 +                    }
 +                    // Advise the client to start spectating again
 +                    this.connection.send(new ClientboundSetCameraPacket(entity));
-+                }else {
-+                    // Paper: We send the player an additional teleport packet here to indicate that the position of itself has been moved.
-+                    // Without this packet, if a player travels a too far distance, chunks will start to become invisible for our spectator. (MC-148993)
-+                    this.connection.internalTeleport(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot(), Collections.emptySet());
++                } else {
++                    // Paper: We send the player an additional teleport packet here to indicate that the position of itself has been moved when he moved to
++                    // another chunk. Without this packet, if a player travels a too far distance, chunks will start to become invisible for our spectator.
++                    // (MC-148993)
++                    if (!entity.chunkPosition().equals(this.chunkPosition())) {
++                        this.connection.internalTeleport(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot(), Collections.emptySet());
++                    }
 +                    this.absMoveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
 +                    this.serverLevel().getChunkSource().move(this);
 +                }
