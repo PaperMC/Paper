@@ -42,12 +42,22 @@ public class CraftSign<T extends TileEntitySign> extends CraftBlockEntityState<T
 
     @Override
     public boolean isEditable() {
-        return !getSnapshot().isWaxed() && getSnapshot().playerWhoMayEdit != null;
+        return !isWaxed();
     }
 
     @Override
     public void setEditable(boolean editable) {
-        getSnapshot().setWaxed(!editable);
+        this.setWaxed(!editable);
+    }
+
+    @Override
+    public boolean isWaxed() {
+        return getSnapshot().isWaxed();
+    }
+
+    @Override
+    public void setWaxed(boolean waxed) {
+        getSnapshot().setWaxed(waxed);
     }
 
     @Override
