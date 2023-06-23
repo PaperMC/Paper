@@ -182,9 +182,58 @@ public interface Sign extends TileState, Colorable {
     /**
      * Gets the player that is currently allowed to edit this sign. <br>
      * Edits from other players will be rejected if this value is not null.
+     * <br><br>You should prefer {@link #getAllowedEditorUniqueId()} if you don't
+     * need the player instance as this method will fetch the player from UUID.
      *
      * @return the player allowed to edit this sign, or null
      */
     @Nullable
     public Player getAllowedEditor();
+    // Paper start - More Sign Block API
+    /**
+     * Gets the allowed editor's UUID.
+     * <br>Edits from other players will be rejected if this value is not null.
+     *
+     * @return the allowed editor's UUID, or null
+     */
+    @Nullable java.util.UUID getAllowedEditorUniqueId();
+
+    /**
+     * Sets the allowed editor's UUID.
+     * <br><br><b>Note:</b> the server sets the UUID back to null if the player can't
+     * interact with the sign (is either offline or outside the allowed interaction range).
+     *
+     * @param uuid the allowed editor's UUID
+     */
+    void setAllowedEditorUniqueId(@Nullable java.util.UUID uuid);
+
+    /**
+     * Compute the side facing the specified entity.
+     *
+     * @param entity the entity
+     * @return the side it is facing
+     */
+    default @NotNull Side getInteractableSideFor(org.bukkit.entity.@NotNull Entity entity) {
+        return this.getInteractableSideFor(entity.getLocation());
+    }
+
+    /**
+     * Compute the side facing the specific position.
+     *
+     * @param position the position
+     * @return the side the position is facing
+     */
+    default @NotNull Side getInteractableSideFor(io.papermc.paper.math.@NotNull Position position) {
+        return this.getInteractableSideFor(position.x(), position.z());
+    }
+
+    /**
+     * Compute the side facing the specific x and z coordinates.
+     *
+     * @param x the x coord
+     * @param z the z coord
+     * @return the side the coordinates are facing
+     */
+    @NotNull Side getInteractableSideFor(double x, double z);
+    // Paper end - More Sign Block API
 }
