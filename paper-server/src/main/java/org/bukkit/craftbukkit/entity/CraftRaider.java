@@ -90,7 +90,7 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
 
     @Override
     public void setCelebrating(boolean celebrating) {
-        getHandle().setCelebrating(true);
+        getHandle().setCelebrating(celebrating);
     }
 
     @Override
