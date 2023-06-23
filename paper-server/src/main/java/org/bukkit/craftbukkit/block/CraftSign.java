@@ -198,6 +198,26 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     }
     // Paper end
 
+    // Paper start - More Sign Block API
+    @Override
+    public java.util.UUID getAllowedEditorUniqueId() {
+        this.ensureNoWorldGeneration();
+        return this.getTileEntity().getPlayerWhoMayEdit();
+    }
+
+    @Override
+    public void setAllowedEditorUniqueId(java.util.UUID uuid) {
+        this.ensureNoWorldGeneration();
+        this.getTileEntity().setAllowedPlayerEditor(uuid);
+    }
+
+    @Override
+    public Side getInteractableSideFor(final double x, final double z) {
+        this.requirePlaced();
+        return this.getSnapshot().isFacingFrontText(x, z) ? Side.FRONT : Side.BACK;
+    }
+    // Paper end - More Sign Block API
+
     public static Component[] sanitizeLines(String[] lines) {
         Component[] components = new Component[4];
 
