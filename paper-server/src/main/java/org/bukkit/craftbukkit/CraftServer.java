@@ -1722,7 +1722,7 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getBannedPlayers() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (GameProfileBanEntry entry : playerList.getBans().getValues()) {
+        for (GameProfileBanEntry entry : playerList.getBans().getEntries()) {
             result.add(getOfflinePlayer(entry.getUser()));
         }
 
@@ -1762,7 +1762,7 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getWhitelistedPlayers() {
         Set<OfflinePlayer> result = new LinkedHashSet<OfflinePlayer>();
 
-        for (WhiteListEntry entry : playerList.getWhiteList().getValues()) {
+        for (WhiteListEntry entry : playerList.getWhiteList().getEntries()) {
             result.add(getOfflinePlayer(entry.getUser()));
         }
 
@@ -1773,7 +1773,7 @@ public final class CraftServer implements Server {
     public Set<OfflinePlayer> getOperators() {
         Set<OfflinePlayer> result = new HashSet<OfflinePlayer>();
 
-        for (OpListEntry entry : playerList.getOps().getValues()) {
+        for (OpListEntry entry : playerList.getOps().getEntries()) {
             result.add(getOfflinePlayer(entry.getUser()));
         }
 

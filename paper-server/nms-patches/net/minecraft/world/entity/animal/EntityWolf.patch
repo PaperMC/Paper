@@ -1,52 +1,43 @@
 --- a/net/minecraft/world/entity/animal/EntityWolf.java
 +++ b/net/minecraft/world/entity/animal/EntityWolf.java
-@@ -69,6 +69,11 @@
+@@ -69,6 +69,12 @@
  import net.minecraft.world.level.pathfinder.PathType;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
++import org.bukkit.event.entity.EntityRegainHealthEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 +// CraftBukkit end
 +
  public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable {
  
      private static final DataWatcherObject<Boolean> DATA_INTERESTED_ID = DataWatcher.defineId(EntityWolf.class, DataWatcherRegistry.BOOLEAN);
-@@ -126,6 +131,24 @@
-         return EntityInsentient.createMobAttributes().add(GenericAttributes.MOVEMENT_SPEED, 0.30000001192092896D).add(GenericAttributes.MAX_HEALTH, 8.0D).add(GenericAttributes.ATTACK_DAMAGE, 2.0D);
-     }
- 
-+    // CraftBukkit - add overriden version
-+    @Override
-+    public boolean setTarget(EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fire) {
-+        if (!super.setTarget(entityliving, reason, fire)) {
-+            return false;
-+        }
-+        entityliving = getTarget();
-+        /* // PAIL
-+        if (entityliving == null) {
-+            this.setAngry(false);
-+        } else if (!this.isTamed()) {
-+            this.setAngry(true);
-+        }
-+        */
-+        return true;
-+    }
-+    // CraftBukkit end
-+
-     @Override
-     protected void defineSynchedData() {
-         super.defineSynchedData();
-@@ -298,7 +321,7 @@
+@@ -297,15 +303,19 @@
+         } else {
              Entity entity = damagesource.getEntity();
  
-             if (!this.level().isClientSide) {
+-            if (!this.level().isClientSide) {
 -                this.setOrderedToSit(false);
-+                // this.setOrderedToSit(false); // CraftBukkit - moved into EntityLiving.damageEntity(DamageSource, float)
-             }
+-            }
++            // CraftBukkit - move diff down
  
              if (entity != null && !(entity instanceof EntityHuman) && !(entity instanceof EntityArrow)) {
-@@ -325,7 +348,7 @@
+                 f = (f + 1.0F) / 2.0F;
+             }
+ 
+-            return super.hurt(damagesource, f);
++            // CraftBukkit start
++            boolean result = super.hurt(damagesource, f);
++            if (!this.level().isClientSide && result) {
++                this.setOrderedToSit(false);
++            }
++            return result;
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -325,7 +335,7 @@
          super.setTame(flag);
          if (flag) {
              this.getAttribute(GenericAttributes.MAX_HEALTH).setBaseValue(20.0D);
@@ -55,25 +46,25 @@
          } else {
              this.getAttribute(GenericAttributes.MAX_HEALTH).setBaseValue(8.0D);
          }
-@@ -348,7 +371,7 @@
+@@ -348,7 +358,7 @@
                      itemstack.shrink(1);
                  }
  
 -                this.heal((float) item.getFoodProperties().getNutrition());
-+                this.heal((float) item.getFoodProperties().getNutrition(), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
++                this.heal((float) item.getFoodProperties().getNutrition(), EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
                  return EnumInteractionResult.SUCCESS;
              } else {
                  if (item instanceof ItemDye) {
-@@ -376,7 +399,7 @@
+@@ -376,7 +386,7 @@
                      this.setOrderedToSit(!this.isOrderedToSit());
                      this.jumping = false;
                      this.navigation.stop();
 -                    this.setTarget((EntityLiving) null);
-+                    this.setTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
++                    this.setTarget((EntityLiving) null, EntityTargetEvent.TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
                      return EnumInteractionResult.SUCCESS;
                  } else {
                      return enuminteractionresult;
-@@ -387,7 +410,8 @@
+@@ -387,7 +397,8 @@
                  itemstack.shrink(1);
              }
  

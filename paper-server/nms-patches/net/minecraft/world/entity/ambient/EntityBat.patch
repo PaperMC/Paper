@@ -1,67 +1,47 @@
 --- a/net/minecraft/world/entity/ambient/EntityBat.java
 +++ b/net/minecraft/world/entity/ambient/EntityBat.java
-@@ -28,6 +28,8 @@
+@@ -28,6 +28,10 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.phys.Vec3D;
  
-+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
 +
  public class EntityBat extends EntityAmbient {
  
      public static final float FLAP_DEGREES_PER_TICK = 74.48451F;
-@@ -140,16 +142,24 @@
+@@ -139,13 +143,13 @@
+                     this.yHeadRot = (float) this.random.nextInt(360);
                  }
  
-                 if (this.level().getNearestPlayer(EntityBat.BAT_RESTING_TARGETING, this) != null) {
-+                    // CraftBukkit Start - Call BatToggleSleepEvent
-+                    if (CraftEventFactory.handleBatToggleSleepEvent(this, true)) {
-+                        this.setResting(false);
-+                        if (!flag) {
-+                            this.level().levelEvent((EntityHuman) null, 1025, blockposition, 0);
-+                        }
-+                    }
-+                    // CraftBukkit End
-+                }
-+            } else {
-+                // CraftBukkit Start - Call BatToggleSleepEvent
-+                if (CraftEventFactory.handleBatToggleSleepEvent(this, true)) {
+-                if (this.level().getNearestPlayer(EntityBat.BAT_RESTING_TARGETING, this) != null) {
++                if (this.level().getNearestPlayer(EntityBat.BAT_RESTING_TARGETING, this) != null && CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
                      this.setResting(false);
                      if (!flag) {
                          this.level().levelEvent((EntityHuman) null, 1025, blockposition, 0);
                      }
                  }
 -            } else {
--                this.setResting(false);
--                if (!flag) {
--                    this.level().levelEvent((EntityHuman) null, 1025, blockposition, 0);
--                }
-+                // CraftBukkit End - Call BatToggleSleepEvent
-             }
-         } else {
-             if (this.targetPosition != null && (!this.level().isEmptyBlock(this.targetPosition) || this.targetPosition.getY() <= this.level().getMinBuildHeight())) {
-@@ -173,7 +183,11 @@
++            } else if (CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
+                 this.setResting(false);
+                 if (!flag) {
+                     this.level().levelEvent((EntityHuman) null, 1025, blockposition, 0);
+@@ -172,7 +176,7 @@
+ 
              this.zza = 0.5F;
              this.setYRot(this.getYRot() + f1);
-             if (this.random.nextInt(100) == 0 && this.level().getBlockState(blockposition1).isRedstoneConductor(this.level(), blockposition1)) {
--                this.setResting(true);
-+                // CraftBukkit Start - Call BatToggleSleepEvent
-+                if (CraftEventFactory.handleBatToggleSleepEvent(this, false)) {
-+                    this.setResting(true);
-+                }
-+                // CraftBukkit End
+-            if (this.random.nextInt(100) == 0 && this.level().getBlockState(blockposition1).isRedstoneConductor(this.level(), blockposition1)) {
++            if (this.random.nextInt(100) == 0 && this.level().getBlockState(blockposition1).isRedstoneConductor(this.level(), blockposition1) && CraftEventFactory.handleBatToggleSleepEvent(this, false)) { // CraftBukkit - Call BatToggleSleepEvent
+                 this.setResting(true);
              }
          }
- 
-@@ -198,7 +212,11 @@
+@@ -197,7 +201,7 @@
+         if (this.isInvulnerableTo(damagesource)) {
              return false;
          } else {
-             if (!this.level().isClientSide && this.isResting()) {
--                this.setResting(false);
-+                // CraftBukkit Start - Call BatToggleSleepEvent
-+                if (CraftEventFactory.handleBatToggleSleepEvent(this, true)) {
-+                    this.setResting(false);
-+                }
-+                // CraftBukkit End - Call BatToggleSleepEvent
+-            if (!this.level().isClientSide && this.isResting()) {
++            if (!this.level().isClientSide && this.isResting() && CraftEventFactory.handleBatToggleSleepEvent(this, true)) { // CraftBukkit - Call BatToggleSleepEvent
+                 this.setResting(false);
              }
  
-             return super.hurt(damagesource, f);

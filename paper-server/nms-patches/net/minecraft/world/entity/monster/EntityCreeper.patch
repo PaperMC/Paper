@@ -4,28 +4,28 @@
  import net.minecraft.world.level.World;
  import net.minecraft.world.level.gameevent.GameEvent;
  
-+// CraftBukkit start
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit start;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.ExplosionPrimeEvent;
 +// CraftBukkit end
 +
  public class EntityCreeper extends EntityMonster implements PowerableMob {
  
      private static final DataWatcherObject<Integer> DATA_SWELL_DIR = DataWatcher.defineId(EntityCreeper.class, DataWatcherRegistry.INT);
-@@ -218,9 +224,19 @@
+@@ -218,9 +224,20 @@
      @Override
      public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
          super.thunderHit(worldserver, entitylightning);
--        this.entityData.set(EntityCreeper.DATA_IS_POWERED, true);
 +        // CraftBukkit start
 +        if (CraftEventFactory.callCreeperPowerEvent(this, entitylightning, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
 +            return;
 +        }
-+
-+        this.setPowered(true);
++        // CraftBukkit end
+         this.entityData.set(EntityCreeper.DATA_IS_POWERED, true);
      }
  
++    // CraftBukkit start
 +    public void setPowered(boolean powered) {
 +        this.entityData.set(EntityCreeper.DATA_IS_POWERED, powered);
 +    }
@@ -34,22 +34,20 @@
      @Override
      protected EnumInteractionResult mobInteract(EntityHuman entityhuman, EnumHand enumhand) {
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
-@@ -250,10 +266,18 @@
+@@ -250,10 +267,19 @@
          if (!this.level().isClientSide) {
              float f = this.isPowered() ? 2.0F : 1.0F;
  
--            this.dead = true;
--            this.level().explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionRadius * f, World.a.MOB);
--            this.discard();
--            this.spawnLingeringCloud();
 +            // CraftBukkit start
-+            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.explosionRadius * f, false);
-+            this.level().getCraftServer().getPluginManager().callEvent(event);
++            ExplosionPrimeEvent event = CraftEventFactory.callExplosionPrimeEvent(this, this.explosionRadius * f, false);
 +            if (!event.isCancelled()) {
-+                this.dead = true;
-+                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB);
-+                this.discard();
-+                this.spawnLingeringCloud();
++            // CraftBukkit end
+             this.dead = true;
+-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionRadius * f, World.a.MOB);
++            this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB); // CraftBukkit
+             this.discard();
+             this.spawnLingeringCloud();
++            // CraftBukkit start
 +            } else {
 +                swell = 0;
 +            }
@@ -57,7 +55,7 @@
          }
  
      }
-@@ -264,6 +288,7 @@
+@@ -264,6 +290,7 @@
          if (!collection.isEmpty()) {
              EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
  
@@ -65,7 +63,7 @@
              entityareaeffectcloud.setRadius(2.5F);
              entityareaeffectcloud.setRadiusOnUse(-0.5F);
              entityareaeffectcloud.setWaitTime(10);
-@@ -277,7 +302,7 @@
+@@ -277,7 +304,7 @@
                  entityareaeffectcloud.addEffect(new MobEffect(mobeffect));
              }
  

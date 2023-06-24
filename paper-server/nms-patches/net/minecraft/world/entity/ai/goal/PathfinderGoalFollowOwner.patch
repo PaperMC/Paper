@@ -6,28 +6,24 @@
  
 +// CraftBukkit start
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTeleportEvent;
 +// CraftBukkit end
 +
  public class PathfinderGoalFollowOwner extends PathfinderGoal {
  
      public static final int TELEPORT_WHEN_DISTANCE_IS = 12;
-@@ -122,7 +128,18 @@
+@@ -122,7 +128,14 @@
          } else if (!this.canTeleportTo(new BlockPosition(i, j, k))) {
              return false;
          } else {
 -            this.tamable.moveTo((double) i + 0.5D, (double) j, (double) k + 0.5D, this.tamable.getYRot(), this.tamable.getXRot());
 +            // CraftBukkit start
-+            CraftEntity entity = this.tamable.getBukkitEntity();
-+            Location to = new Location(entity.getWorld(), (double) i + 0.5D, (double) j, (double) k + 0.5D, this.tamable.getYRot(), this.tamable.getXRot());
-+            EntityTeleportEvent event = new EntityTeleportEvent(entity, entity.getLocation(), to);
-+            this.tamable.level().getCraftServer().getPluginManager().callEvent(event);
++            EntityTeleportEvent event = CraftEventFactory.callEntityTeleportEvent(this.tamable, (double) i + 0.5D, (double) j, (double) k + 0.5D);
 +            if (event.isCancelled()) {
 +                return false;
 +            }
-+            to = event.getTo();
-+
++            Location to = event.getTo();
 +            this.tamable.moveTo(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
 +            // CraftBukkit end
              this.navigation.stop();

@@ -529,7 +529,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         EntityArrow arrow;
         if (TippedArrow.class.isAssignableFrom(clazz)) {
             arrow = EntityTypes.ARROW.create(world);
-            ((EntityTippedArrow) arrow).setPotionType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
+            ((Arrow) arrow.getBukkitEntity()).setBasePotionData(new PotionData(PotionType.WATER, false, false));
         } else if (SpectralArrow.class.isAssignableFrom(clazz)) {
             arrow = EntityTypes.SPECTRAL_ARROW.create(world);
         } else if (Trident.class.isAssignableFrom(clazz)) {

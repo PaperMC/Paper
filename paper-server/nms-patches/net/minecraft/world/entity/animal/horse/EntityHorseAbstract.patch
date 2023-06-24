@@ -1,15 +1,19 @@
 --- a/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
 +++ b/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
-@@ -78,6 +78,8 @@
+@@ -78,6 +78,12 @@
  import net.minecraft.world.phys.Vec2F;
  import net.minecraft.world.phys.Vec3D;
  
-+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason; // CraftBukkit
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.entity.AbstractHorse;
++import org.bukkit.event.entity.EntityRegainHealthEvent;
++// CraftBukkit end
 +
  public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, HasCustomInventoryScreen, OwnableEntity, IJumpable, ISaddleable {
  
      public static final int EQUIPMENT_SLOT_OFFSET = 400;
-@@ -139,6 +141,7 @@
+@@ -139,6 +145,7 @@
      protected int gallopSoundCounter;
      @Nullable
      private UUID owner;
@@ -17,16 +21,16 @@
  
      protected EntityHorseAbstract(EntityTypes<? extends EntityHorseAbstract> entitytypes, World world) {
          super(entitytypes, world);
-@@ -334,7 +337,7 @@
+@@ -334,7 +341,7 @@
      public void createInventory() {
          InventorySubcontainer inventorysubcontainer = this.inventory;
  
 -        this.inventory = new InventorySubcontainer(this.getInventorySize());
-+        this.inventory = new InventorySubcontainer(this.getInventorySize(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
++        this.inventory = new InventorySubcontainer(this.getInventorySize(), (AbstractHorse) this.getBukkitEntity()); // CraftBukkit
          if (inventorysubcontainer != null) {
              inventorysubcontainer.removeListener(this);
              int i = Math.min(inventorysubcontainer.getContainerSize(), this.inventory.getContainerSize());
-@@ -442,7 +445,7 @@
+@@ -442,7 +449,7 @@
      }
  
      public int getMaxTemper() {
@@ -35,25 +39,25 @@
      }
  
      @Override
-@@ -513,7 +516,7 @@
+@@ -513,7 +520,7 @@
          }
  
          if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
 -            this.heal(f);
-+            this.heal(f, RegainReason.EATING); // CraftBukkit
++            this.heal(f, EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
              flag = true;
          }
  
-@@ -590,7 +593,7 @@
+@@ -590,7 +597,7 @@
          super.aiStep();
          if (!this.level().isClientSide && this.isAlive()) {
              if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
 -                this.heal(1.0F);
-+                this.heal(1.0F, RegainReason.REGEN); // CraftBukkit
++                this.heal(1.0F, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
              }
  
              if (this.canEatGrass()) {
-@@ -857,6 +860,7 @@
+@@ -857,6 +864,7 @@
          if (this.getOwnerUUID() != null) {
              nbttagcompound.putUUID("Owner", this.getOwnerUUID());
          }
@@ -61,7 +65,7 @@
  
          if (!this.inventory.getItem(0).isEmpty()) {
              nbttagcompound.put("SaddleItem", this.inventory.getItem(0).save(new NBTTagCompound()));
-@@ -884,6 +888,11 @@
+@@ -884,6 +892,11 @@
          if (uuid != null) {
              this.setOwnerUUID(uuid);
          }
@@ -73,7 +77,7 @@
  
          if (nbttagcompound.contains("SaddleItem", 10)) {
              ItemStack itemstack = ItemStack.of(nbttagcompound.getCompound("SaddleItem"));
-@@ -986,6 +995,18 @@
+@@ -986,6 +999,17 @@
  
      @Override
      public void handleStartJump(int i) {
@@ -84,8 +88,7 @@
 +        } else {
 +            power = 0.4F + 0.4F * (float) i / 90.0F;
 +        }
-+        org.bukkit.event.entity.HorseJumpEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callHorseJumpEvent(this, power);
-+        if (event.isCancelled()) {
++        if (!CraftEventFactory.callHorseJumpEvent(this, power)) {
 +            return;
 +        }
 +        // CraftBukkit end

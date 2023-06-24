@@ -432,16 +432,31 @@
              this.level().addFreshEntity(entityitem);
              return entityitem;
          }
-@@ -2013,7 +2300,7 @@
+@@ -2025,7 +2312,22 @@
+     }
  
-                 this.setPose(EntityPose.STANDING);
-                 this.vehicle = entity;
--                this.vehicle.addPassenger(this);
-+                if (!this.vehicle.addPassenger(this)) this.vehicle = null; // CraftBukkit
-                 entity.getIndirectPassengersStream().filter((entity2) -> {
-                     return entity2 instanceof EntityPlayer;
-                 }).forEach((entity2) -> {
-@@ -2044,7 +2331,7 @@
+     protected boolean canRide(Entity entity) {
+-        return !this.isShiftKeyDown() && this.boardingCooldown <= 0;
++        // CraftBukkit start
++        boolean result = !this.isShiftKeyDown() && this.boardingCooldown <= 0;
++        if (result) {
++            if (entity.getBukkitEntity() instanceof Vehicle && this.getBukkitEntity() instanceof LivingEntity) {
++                VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) entity.getBukkitEntity(), (LivingEntity) this.getBukkitEntity());
++                // Suppress during worldgen
++                if (this.valid) {
++                    Bukkit.getPluginManager().callEvent(event);
++                }
++                if (event.isCancelled()) {
++                    return false;
++                }
++            }
++        }
++        return result;
++        // CraftBukkit end
+     }
+ 
+     protected boolean canEnterPose(EntityPose entitypose) {
+@@ -2044,7 +2346,7 @@
              Entity entity = this.vehicle;
  
              this.vehicle = null;
@@ -450,44 +465,8 @@
          }
  
      }
-@@ -2053,10 +2340,31 @@
-         this.removeVehicle();
-     }
- 
--    protected void addPassenger(Entity entity) {
-+    protected boolean addPassenger(Entity entity) { // CraftBukkit
-         if (entity.getVehicle() != this) {
-             throw new IllegalStateException("Use x.startRiding(y), not y.addPassenger(x)");
-         } else {
-+            // CraftBukkit start
-+            com.google.common.base.Preconditions.checkState(!entity.passengers.contains(this), "Circular entity riding! %s %s", this, entity);
-+
-+            CraftEntity craft = (CraftEntity) entity.getBukkitEntity().getVehicle();
-+            Entity orig = craft == null ? null : craft.getHandle();
-+            if (getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity) {
-+                VehicleEnterEvent event = new VehicleEnterEvent(
-+                        (Vehicle) getBukkitEntity(),
-+                         entity.getBukkitEntity()
-+                );
-+                // Suppress during worldgen
-+                if (this.valid) {
-+                    Bukkit.getPluginManager().callEvent(event);
-+                }
-+                CraftEntity craftn = (CraftEntity) entity.getBukkitEntity().getVehicle();
-+                Entity n = craftn == null ? null : craftn.getHandle();
-+                if (event.isCancelled() || n != orig) {
-+                    return false;
-+                }
-+            }
-+            // CraftBukkit end
-             if (this.passengers.isEmpty()) {
-                 this.passengers = ImmutableList.of(entity);
-             } else {
-@@ -2073,12 +2381,32 @@
- 
-             this.gameEvent(GameEvent.ENTITY_MOUNT, entity);
+@@ -2075,10 +2377,29 @@
          }
-+        return true; // CraftBukkit
      }
  
 -    protected void removePassenger(Entity entity) {
@@ -517,7 +496,7 @@
              if (this.passengers.size() == 1 && this.passengers.get(0) == entity) {
                  this.passengers = ImmutableList.of();
              } else {
-@@ -2090,6 +2418,7 @@
+@@ -2090,6 +2411,7 @@
              entity.boardingCooldown = 60;
              this.gameEvent(GameEvent.ENTITY_DISMOUNT, entity);
          }
@@ -525,7 +504,7 @@
      }
  
      protected boolean canAddPassenger(Entity entity) {
-@@ -2156,14 +2485,20 @@
+@@ -2156,14 +2478,20 @@
  
              if (this.isInsidePortal) {
                  MinecraftServer minecraftserver = worldserver.getServer();
@@ -549,7 +528,7 @@
                      this.level().getProfiler().pop();
                  }
  
-@@ -2283,6 +2618,13 @@
+@@ -2283,6 +2611,13 @@
      }
  
      public void setSwimming(boolean flag) {
@@ -563,7 +542,7 @@
          this.setSharedFlag(4, flag);
      }
  
-@@ -2332,8 +2674,12 @@
+@@ -2332,8 +2667,12 @@
          return this.getTeam() != null ? this.getTeam().isAlliedTo(scoreboardteambase) : false;
      }
  
@@ -577,7 +556,7 @@
      }
  
      public boolean getSharedFlag(int i) {
-@@ -2352,7 +2698,7 @@
+@@ -2352,7 +2691,7 @@
      }
  
      public int getMaxAirSupply() {
@@ -586,7 +565,7 @@
      }
  
      public int getAirSupply() {
-@@ -2360,7 +2706,18 @@
+@@ -2360,7 +2699,18 @@
      }
  
      public void setAirSupply(int i) {
@@ -606,7 +585,7 @@
      }
  
      public int getTicksFrozen() {
-@@ -2387,11 +2744,41 @@
+@@ -2387,11 +2737,41 @@
  
      public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
@@ -650,7 +629,7 @@
      }
  
      public void onAboveBubbleCol(boolean flag) {
-@@ -2556,15 +2943,38 @@
+@@ -2556,15 +2936,38 @@
  
      @Nullable
      public Entity changeDimension(WorldServer worldserver) {
@@ -691,7 +670,7 @@
                  this.level().getProfiler().popPush("reloading");
                  Entity entity = this.getType().create(worldserver);
  
-@@ -2573,9 +2983,17 @@
+@@ -2573,9 +2976,17 @@
                      entity.moveTo(shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, entity.getXRot());
                      entity.setDeltaMovement(shapedetectorshape.speed);
                      worldserver.addDuringTeleport(entity);
@@ -711,7 +690,7 @@
                  }
  
                  this.removeAfterChangingDimensions();
-@@ -2596,20 +3014,34 @@
+@@ -2596,20 +3007,34 @@
  
      @Nullable
      protected ShapeDetectorShape findDimensionEntryPoint(WorldServer worldserver) {
@@ -751,7 +730,7 @@
                      IBlockData iblockdata = this.level().getBlockState(this.portalEntrancePos);
                      EnumDirection.EnumAxis enumdirection_enumaxis;
                      Vec3D vec3d;
-@@ -2626,8 +3058,8 @@
+@@ -2626,8 +3051,8 @@
                          vec3d = new Vec3D(0.5D, 0.0D, 0.0D);
                      }
  
@@ -762,7 +741,7 @@
              }
          } else {
              BlockPosition blockposition1;
-@@ -2637,8 +3069,14 @@
+@@ -2637,8 +3062,14 @@
              } else {
                  blockposition1 = worldserver.getHeightmapPos(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver.getSharedSpawnPos());
              }
@@ -778,7 +757,7 @@
          }
      }
  
-@@ -2646,8 +3084,23 @@
+@@ -2646,8 +3077,23 @@
          return BlockPortalShape.getRelativePosition(blockutil_rectangle, enumdirection_enumaxis, this.position(), this.getDimensions(this.getPose()));
      }
  
@@ -804,7 +783,7 @@
      }
  
      public boolean canChangeDimensions() {
-@@ -2767,6 +3220,12 @@
+@@ -2767,6 +3213,12 @@
          }
      }
  
@@ -817,7 +796,7 @@
      public boolean teleportTo(WorldServer worldserver, double d0, double d1, double d2, Set<RelativeMovement> set, float f, float f1) {
          float f2 = MathHelper.clamp(f1, -90.0F, 90.0F);
  
-@@ -2901,7 +3360,26 @@
+@@ -2901,7 +3353,26 @@
      }
  
      public final void setBoundingBox(AxisAlignedBB axisalignedbb) {
@@ -845,7 +824,7 @@
      }
  
      protected float getEyeHeight(EntityPose entitypose, EntitySize entitysize) {
-@@ -3212,6 +3690,11 @@
+@@ -3212,6 +3683,11 @@
                                      vec3d = vec3d.add(vec3d1);
                                      ++k1;
                                  }

@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
@@ -152,14 +154,14 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
             getHandle().effects.remove(existing);
         }
         getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
-        getHandle().refreshEffects();
+        getHandle().updateColor();
         return true;
     }
 
     @Override
     public void clearCustomEffects() {
         getHandle().effects.clear();
-        getHandle().refreshEffects();
+        getHandle().updateColor();
     }
 
     @Override
@@ -199,19 +201,19 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
             return false;
         }
         getHandle().effects.remove(existing);
-        getHandle().refreshEffects();
+        getHandle().updateColor();
         return true;
     }
 
     @Override
     public void setBasePotionData(PotionData data) {
         Preconditions.checkArgument(data != null, "PotionData cannot be null");
-        getHandle().setPotionType(CraftPotionUtil.fromBukkit(data));
+        getHandle().setPotion(BuiltInRegistries.POTION.get(new MinecraftKey(CraftPotionUtil.fromBukkit(data))));
     }
 
     @Override
     public PotionData getBasePotionData() {
-        return CraftPotionUtil.toBukkit(getHandle().getPotionType());
+        return CraftPotionUtil.toBukkit((BuiltInRegistries.POTION.getKey(getHandle().potion)).toString());
     }
 
     @Override

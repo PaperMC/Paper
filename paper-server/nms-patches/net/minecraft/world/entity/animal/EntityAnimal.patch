@@ -5,8 +5,8 @@
  import net.minecraft.world.level.pathfinder.PathType;
  
 +// CraftBukkit start
-+import net.minecraft.world.entity.EntityTameableAnimal;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityBreedEvent;
 +import org.bukkit.event.entity.EntityEnterLoveModeEvent;
 +// CraftBukkit end
 +
@@ -20,25 +20,22 @@
  
      protected EntityAnimal(EntityTypes<? extends EntityAnimal> entitytypes, World world) {
          super(entitytypes, world);
-@@ -72,6 +79,9 @@
- 
-     }
- 
-+    /* CraftBukkit start
-+    // Function disabled as it has no special function anymore after
-+    // setSitting is disabled.
-     @Override
-     public boolean hurt(DamageSource damagesource, float f) {
+@@ -77,8 +84,13 @@
          if (this.isInvulnerableTo(damagesource)) {
-@@ -81,6 +91,7 @@
-             return super.hurt(damagesource, f);
+             return false;
+         } else {
++            // CraftBukkit start
++            boolean result = super.hurt(damagesource, f);
++            if (result) {
+             this.inLove = 0;
+-            return super.hurt(damagesource, f);
++            }
++            return result;
++            // CraftBukkit end
          }
      }
-+    // CraftBukkit end */
  
-     @Override
-     public float getWalkTargetValue(BlockPosition blockposition, IWorldReader iworldreader) {
-@@ -175,10 +186,17 @@
+@@ -175,10 +187,17 @@
      }
  
      public void setInLove(@Nullable EntityHuman entityhuman) {
@@ -57,7 +54,7 @@
  
          this.level().broadcastEntityEvent(this, (byte) 18);
      }
-@@ -220,12 +238,29 @@
+@@ -220,12 +239,29 @@
          if (entityageable != null) {
              entityageable.setBaby(true);
              entityageable.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
@@ -68,7 +65,7 @@
 +                return Optional.ofNullable(entityanimal.getLoveCause());
 +            }).orElse(null);
 +            int experience = this.getRandom().nextInt(7) + 1;
-+            org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(entityageable, this, entityanimal, breeder, this.breedItem, experience);
++            EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(entityageable, this, entityanimal, breeder, this.breedItem, experience);
 +            if (entityBreedEvent.isCancelled()) {
 +                return;
 +            }
@@ -89,7 +86,7 @@
          Optional.ofNullable(this.getLoveCause()).or(() -> {
              return Optional.ofNullable(entityanimal.getLoveCause());
          }).ifPresent((entityplayer) -> {
-@@ -238,7 +273,11 @@
+@@ -238,7 +274,11 @@
          entityanimal.resetLove();
          worldserver.broadcastEntityEvent(this, (byte) 18);
          if (worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {

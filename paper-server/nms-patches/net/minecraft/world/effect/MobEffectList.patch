@@ -1,12 +1,13 @@
 --- a/net/minecraft/world/effect/MobEffectList.java
 +++ b/net/minecraft/world/effect/MobEffectList.java
-@@ -19,6 +19,13 @@
+@@ -19,6 +19,14 @@
  import net.minecraft.world.entity.ai.attributes.AttributeModifier;
  import net.minecraft.world.entity.player.EntityHuman;
  
 +// CraftBukkit start
 +import net.minecraft.network.protocol.game.PacketPlayOutUpdateHealth;
 +import net.minecraft.server.level.EntityPlayer;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 +// CraftBukkit end
@@ -14,7 +15,7 @@
  public class MobEffectList {
  
      private final Map<AttributeBase, AttributeModifier> attributeModifiers = Maps.newHashMap();
-@@ -55,26 +62,37 @@
+@@ -55,26 +63,35 @@
      public void applyEffectTick(EntityLiving entityliving, int i) {
          if (this == MobEffects.REGENERATION) {
              if (entityliving.getHealth() < entityliving.getMaxHealth()) {
@@ -37,14 +38,12 @@
 +                // CraftBukkit start
 +                EntityHuman entityhuman = (EntityHuman) entityliving;
 +                int oldFoodLevel = entityhuman.getFoodData().foodLevel;
-+
 +                org.bukkit.event.entity.FoodLevelChangeEvent event = CraftEventFactory.callFoodLevelChangeEvent(entityhuman, i + 1 + oldFoodLevel);
-+
 +                if (!event.isCancelled()) {
 +                    entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 1.0F);
 +                }
 +
-+                ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
++                ((CraftPlayer) entityhuman.getBukkitEntity()).sendHealthUpdate();
 +                // CraftBukkit end
              }
          } else if ((this != MobEffects.HEAL || entityliving.isInvertedHealAndHarm()) && (this != MobEffects.HARM || !entityliving.isInvertedHealAndHarm())) {
@@ -57,7 +56,7 @@
          }
  
      }
-@@ -95,7 +113,7 @@
+@@ -95,7 +112,7 @@
              }
          } else {
              j = (int) (d0 * (double) (4 << i) + 0.5D);

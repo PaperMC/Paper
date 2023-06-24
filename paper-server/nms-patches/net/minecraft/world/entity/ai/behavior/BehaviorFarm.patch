@@ -1,17 +1,18 @@
 --- a/net/minecraft/world/entity/ai/behavior/BehaviorFarm.java
 +++ b/net/minecraft/world/entity/ai/behavior/BehaviorFarm.java
-@@ -26,6 +26,10 @@
+@@ -26,6 +26,11 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.level.gameevent.GameEvent;
  
 +// CraftBukkit start
 +import net.minecraft.world.level.block.Blocks;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +// CraftBukkit end
 +
  public class BehaviorFarm extends Behavior<EntityVillager> {
  
      private static final int HARVEST_DURATION = 200;
-@@ -81,8 +85,8 @@
+@@ -81,8 +86,8 @@
  
      protected void start(WorldServer worldserver, EntityVillager entityvillager, long i) {
          if (i > this.nextOkStartTime && this.aboveFarmlandPos != null) {
@@ -22,37 +23,29 @@
          }
  
      }
-@@ -102,7 +106,11 @@
+@@ -102,7 +107,9 @@
                  Block block1 = worldserver.getBlockState(this.aboveFarmlandPos.below()).getBlock();
  
                  if (block instanceof BlockCrops && ((BlockCrops) block).isMaxAge(iblockdata)) {
--                    worldserver.destroyBlock(this.aboveFarmlandPos, true, entityvillager);
-+                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.aboveFarmlandPos, Blocks.AIR.defaultBlockState()).isCancelled()) {
-+                        worldserver.destroyBlock(this.aboveFarmlandPos, true, entityvillager);
-+                    }
-+                    // CraftBukkit end
++                    if (CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.aboveFarmlandPos, Blocks.AIR.defaultBlockState())) { // CraftBukkit
+                     worldserver.destroyBlock(this.aboveFarmlandPos, true, entityvillager);
++                    } // CraftBukkit
                  }
  
                  if (iblockdata.isAir() && block1 instanceof BlockSoil && entityvillager.hasFarmSeeds()) {
-@@ -119,9 +127,13 @@
+@@ -119,9 +126,11 @@
                                  ItemBlock itemblock = (ItemBlock) item;
                                  IBlockData iblockdata1 = itemblock.getBlock().defaultBlockState();
  
--                                worldserver.setBlockAndUpdate(this.aboveFarmlandPos, iblockdata1);
--                                worldserver.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.a.of(entityvillager, iblockdata1));
--                                flag = true;
-+                                // CraftBukkit start
-+                                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.aboveFarmlandPos, iblockdata1).isCancelled()) {
-+                                    worldserver.setBlockAndUpdate(this.aboveFarmlandPos, iblockdata1);
-+                                    worldserver.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.a.of(entityvillager, iblockdata1));
-+                                    flag = true;
-+                                }
-+                                // CraftBukkit end
++                                if (CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.aboveFarmlandPos, iblockdata1)) { // CraftBukkit
+                                 worldserver.setBlockAndUpdate(this.aboveFarmlandPos, iblockdata1);
+                                 worldserver.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.a.of(entityvillager, iblockdata1));
+                                 flag = true;
++                                } // CraftBukkit
                              }
                          }
  
-@@ -141,8 +153,8 @@
+@@ -141,8 +150,8 @@
                      this.aboveFarmlandPos = this.getValidFarmland(worldserver);
                      if (this.aboveFarmlandPos != null) {
                          this.nextOkStartTime = i + 20L;

@@ -1,15 +1,17 @@
 --- a/net/minecraft/world/entity/item/EntityFallingBlock.java
 +++ b/net/minecraft/world/entity/item/EntityFallingBlock.java
-@@ -49,6 +49,8 @@
+@@ -49,6 +49,10 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
-+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
++// CraftBukkit start;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
 +
  public class EntityFallingBlock extends Entity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -83,10 +85,17 @@
+@@ -83,10 +87,17 @@
      }
  
      public static EntityFallingBlock fall(World world, BlockPosition blockposition, IBlockData iblockdata) {
@@ -20,7 +22,7 @@
 +    public static EntityFallingBlock fall(World world, BlockPosition blockposition, IBlockData iblockdata, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        // CraftBukkit end
          EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, iblockdata.hasProperty(BlockProperties.WATERLOGGED) ? (IBlockData) iblockdata.setValue(BlockProperties.WATERLOGGED, false) : iblockdata);
-+        if (CraftEventFactory.callEntityChangeBlockEvent(entityfallingblock, blockposition, iblockdata.getFluidState().createLegacyBlock()).isCancelled()) return entityfallingblock; // CraftBukkit
++        if (!CraftEventFactory.callEntityChangeBlockEvent(entityfallingblock, blockposition, iblockdata.getFluidState().createLegacyBlock())) return entityfallingblock; // CraftBukkit
  
          world.setBlock(blockposition, iblockdata.getFluidState().createLegacyBlock(), 3);
 -        world.addFreshEntity(entityfallingblock);
@@ -28,12 +30,12 @@
          return entityfallingblock;
      }
  
-@@ -169,6 +178,12 @@
+@@ -169,6 +180,12 @@
                                      this.blockState = (IBlockData) this.blockState.setValue(BlockProperties.WATERLOGGED, true);
                                  }
  
 +                                // CraftBukkit start
-+                                if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.blockState).isCancelled()) {
++                                if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.blockState)) {
 +                                    this.discard(); // SPIGOT-6586 called before the event in previous versions
 +                                    return;
 +                                }
@@ -41,7 +43,7 @@
                                  if (this.level().setBlock(blockposition, this.blockState, 3)) {
                                      ((WorldServer) this.level()).getChunkSource().chunkMap.broadcast(this, new PacketPlayOutBlockChange(blockposition, this.level().getBlockState(blockposition)));
                                      this.discard();
-@@ -255,7 +270,9 @@
+@@ -255,7 +272,9 @@
                  float f2 = (float) Math.min(MathHelper.floor((float) i * this.fallDamagePerDistance), this.fallDamageMax);
  
                  this.level().getEntities((Entity) this, this.getBoundingBox(), predicate).forEach((entity) -> {

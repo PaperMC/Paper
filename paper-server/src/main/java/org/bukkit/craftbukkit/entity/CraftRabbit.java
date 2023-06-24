@@ -37,16 +37,6 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
 
     @Override
     public void setRabbitType(Type type) {
-        EntityRabbit entity = getHandle();
-        if (getRabbitType() == Type.THE_KILLER_BUNNY) {
-            // Reset goals and target finders.
-            World world = ((CraftWorld) this.getWorld()).getHandle();
-            entity.goalSelector = new PathfinderGoalSelector(world.getProfilerSupplier());
-            entity.targetSelector = new PathfinderGoalSelector(world.getProfilerSupplier());
-            entity.registerGoals();
-            entity.initializePathFinderGoals();
-        }
-
-        entity.setVariant(EntityRabbit.Variant.values()[type.ordinal()]);
+        getHandle().setVariant(EntityRabbit.Variant.values()[type.ordinal()]);
     }
 }

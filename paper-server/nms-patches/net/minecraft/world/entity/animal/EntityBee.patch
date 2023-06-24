@@ -1,51 +1,63 @@
 --- a/net/minecraft/world/entity/animal/EntityBee.java
 +++ b/net/minecraft/world/entity/animal/EntityBee.java
-@@ -242,7 +242,7 @@
+@@ -90,6 +90,12 @@
+ import net.minecraft.world.level.pathfinder.PathType;
+ import net.minecraft.world.phys.Vec3D;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityPotionEffectEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
++
+ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityBird {
+ 
+     public static final float FLAP_DEGREES_PER_TICK = 120.32113F;
+@@ -242,7 +248,7 @@
                  }
  
                  if (b0 > 0) {
 -                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0), this);
-+                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
++                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0), this, EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
                  }
              }
  
-@@ -640,11 +640,15 @@
+@@ -640,11 +646,14 @@
          if (this.isInvulnerableTo(damagesource)) {
              return false;
          } else {
 -            if (!this.level().isClientSide) {
-+            // CraftBukkit start
++            // CraftBukkit start - Only stop pollinating if entity was damaged
 +            boolean result = super.hurt(damagesource, f);
-+
 +            if (result && !this.level().isClientSide) {
++            // CraftBukkit end
                  this.beePollinateGoal.stopPollinating();
              }
  
 -            return super.hurt(damagesource, f);
-+            return result;
-+            // CraftBukkit end
++            return result; // CraftBukkit
          }
      }
  
-@@ -1216,7 +1220,7 @@
+@@ -1216,7 +1225,7 @@
                              }
                          }
  
 -                        if (iblockdata1 != null) {
-+                        if (iblockdata1 != null&& !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(EntityBee.this, blockposition, iblockdata1).isCancelled()) { // CraftBukkit
++                        if (iblockdata1 != null && CraftEventFactory.callEntityChangeBlockEvent(EntityBee.this, blockposition, iblockdata1)) { // CraftBukkit
                              EntityBee.this.level().levelEvent(2005, blockposition, 0);
                              EntityBee.this.level().setBlockAndUpdate(blockposition, iblockdata1);
                              EntityBee.this.incrementNumCropsGrownSincePollination();
-@@ -1289,7 +1293,7 @@
+@@ -1289,7 +1298,7 @@
          @Override
          protected void alertOther(EntityInsentient entityinsentient, EntityLiving entityliving) {
              if (entityinsentient instanceof EntityBee && this.mob.hasLineOfSight(entityliving)) {
 -                entityinsentient.setTarget(entityliving);
-+                entityinsentient.setTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit - reason
++                entityinsentient.setTarget(entityliving, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit - reason
              }
  
          }
-@@ -1298,7 +1302,7 @@
+@@ -1298,7 +1307,7 @@
      private static class c extends PathfinderGoalNearestAttackableTarget<EntityHuman> {
  
          c(EntityBee entitybee) {

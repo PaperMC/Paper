@@ -5,32 +5,30 @@
  import org.joml.Vector3f;
  
 +// CraftBukkit start
-+import org.bukkit.Location;
 +import org.bukkit.craftbukkit.util.CraftLocation;
 +import org.bukkit.event.entity.EntityTeleportEvent;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +// CraftBukkit end
 +
  public class EntityShulker extends EntityGolem implements VariantHolder<Optional<EnumColor>>, IMonster {
  
      private static final UUID COVERED_ARMOR_MODIFIER_UUID = UUID.fromString("7E0292F2-9434-48D5-A29F-9583AF7DF27F");
-@@ -408,6 +414,16 @@
+@@ -408,6 +414,14 @@
                      EnumDirection enumdirection = this.findAttachableSurface(blockposition1);
  
                      if (enumdirection != null) {
 +                        // CraftBukkit start
-+                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), CraftLocation.toBukkit(blockposition1, this.level().getWorld()));
-+                        this.level().getCraftServer().getPluginManager().callEvent(teleport);
-+                        if (!teleport.isCancelled()) {
-+                            Location to = teleport.getTo();
-+                            blockposition1 = BlockPosition.containing(to.getX(), to.getY(), to.getZ());
-+                        } else {
++                        EntityTeleportEvent teleportEvent = CraftEventFactory.callEntityTeleportEvent(this, blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
++                        if (teleportEvent.isCancelled()) {
 +                            return false;
++                        } else {
++                            blockposition1 = CraftLocation.toBlockPosition(teleportEvent.getTo());
 +                        }
 +                        // CraftBukkit end
                          this.unRide();
                          this.setAttachFace(enumdirection);
                          this.playSound(SoundEffects.SHULKER_TELEPORT, 1.0F, 1.0F);
-@@ -478,7 +494,7 @@
+@@ -478,7 +492,7 @@
                  if (entityshulker != null) {
                      entityshulker.setVariant(this.getVariant());
                      entityshulker.moveTo(vec3d);
