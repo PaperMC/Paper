@@ -83,6 +83,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeMapBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifiable;
 import net.minecraft.world.entity.ai.attributes.GenericAttributes;
 import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.food.FoodMetaData;
 import net.minecraft.world.inventory.Container;
 import net.minecraft.world.item.EnumColor;
 import net.minecraft.world.level.EnumGamemode;
@@ -1885,8 +1886,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().maxHealthCache = getMaxHealth();
     }
 
+    @Override
+    public void sendHealthUpdate(double health, int foodLevel, float saturation) {
+        getHandle().connection.send(new PacketPlayOutUpdateHealth((float) health, foodLevel, saturation));
+    }
+
+    @Override
     public void sendHealthUpdate() {
-        getHandle().connection.send(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
+        FoodMetaData foodData = getHandle().getFoodData();
+        sendHealthUpdate(getScaledHealth(), foodData.getFoodLevel(), foodData.getSaturationLevel());
     }
 
     public void injectScaledMaxHealth(Collection<AttributeModifiable> collection, boolean force) {
