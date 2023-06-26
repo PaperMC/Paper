@@ -1130,15 +1130,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
 +        // Paper start - Folia scheduler API
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
-+        getAllLevels().forEach(level -> level.getAllEntities().forEach(entity -> {
-+            if (entity.isRemoved()) {
-+                return;
++        getAllLevels().forEach(level -> {
++            for (final Entity entity : level.getEntityLookup().getAllCopy()) {
++                if (entity.isRemoved()) {
++                    continue;
++                }
++                final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
++                if (bukkit != null) {
++                    bukkit.taskScheduler.executeTick();
++                }
 +            }
-+            org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
-+            if (bukkit != null) {
-+                bukkit.taskScheduler.executeTick();
-+            }
-+        }));
++        });
 +        // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          this.profiler.push("commandFunctions");
