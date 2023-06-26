@@ -1403,6 +1403,25 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void setWorldBorder(@Nullable WorldBorder border);
 
     /**
+     * Send a health update to the player. This will adjust the health, food, and
+     * saturation on the client and will not affect the player's actual values on
+     * the server. As soon as any of these values change on the server, changes sent
+     * by this method will no longer be visible.
+     *
+     * @param health the health. If 0.0, the client will believe it is dead
+     * @param foodLevel the food level
+     * @param saturation the saturation
+     */
+    public void sendHealthUpdate(double health, int foodLevel, float saturation);
+
+    /**
+     * Send a health update to the player using its known server values. This will
+     * synchronize the health, food, and saturation on the client and therefore may
+     * be useful when changing a player's maximum health attribute.
+     */
+    public void sendHealthUpdate();
+
+    /**
      * Gets if the client is displayed a 'scaled' health, that is, health on a
      * scale from 0-{@link #getHealthScale()}.
      *
