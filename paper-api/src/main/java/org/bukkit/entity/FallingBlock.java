@@ -28,18 +28,52 @@ public interface FallingBlock extends Entity {
     BlockData getBlockData();
 
     /**
-     * Get if the falling block will break into an item if it cannot be placed
+     * Get if the falling block will break into an item if it cannot be placed.
+     * <p>
+     * Note that if {@link #getCancelDrop()} is {@code true}, the falling block
+     * will not drop an item regardless of whether or not the returned value is
+     * {@code true}.
      *
      * @return true if the block will break into an item when obstructed
      */
     boolean getDropItem();
 
     /**
-     * Set if the falling block will break into an item if it cannot be placed
+     * Set if the falling block will break into an item if it cannot be placed.
+     * <p>
+     * Note that if {@link #getCancelDrop()} is {@code true}, the falling block
+     * will not drop an item regardless of whether or not the value is set to
+     * {@code true}.
      *
      * @param drop true to break into an item when obstructed
      */
     void setDropItem(boolean drop);
+
+    /**
+     * Get if the falling block will not become a block upon landing and not drop
+     * an item.
+     * <p>
+     * Unlike {@link #getDropItem()}, this property will prevent the block from
+     * forming into a block when it lands, causing it to disappear. If this property
+     * is true and {@link #getDropItem()} is true, an item will <strong>NOT</strong>
+     * be dropped.
+     *
+     * @return true if the block will disappear
+     */
+    boolean getCancelDrop();
+
+    /**
+     * Get if the falling block will not become a block upon landing and not drop
+     * an item.
+     * <p>
+     * Unlike {@link #setDropItem(boolean)}, this property will prevent the block
+     * from forming into a block when it lands, causing it to disappear. If this
+     * property is true and {@link #getDropItem()} is true, an item will
+     * <strong>NOT</strong> be dropped.
+     *
+     * @param cancelDrop true to make the block disappear when landing
+     */
+    void setCancelDrop(boolean cancelDrop);
 
     /**
      * Get the HurtEntities state of this block.
