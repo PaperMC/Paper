@@ -1121,24 +1121,26 @@ index 0000000000000000000000000000000000000000..d306f911757a4d556c82c0070d4837db
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 80cf4852e4010eeeadaf920ab927a40df0179b40..912affb0ab1c4c40f7a655194e95ec6f0ebf1fcd 100644
+index 80cf4852e4010eeeadaf920ab927a40df0179b40..3238cbcba567b1242c77e41f6b6f19a8d157fb4e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1479,6 +1479,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1479,6 +1479,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
          this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
          MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
 +        // Paper start - Folia scheduler API
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
-+        getAllLevels().forEach(level -> level.getAllEntities().forEach(entity -> {
-+            if (entity.isRemoved()) {
-+                return;
++        getAllLevels().forEach(level -> {
++            for (final Entity entity : level.getEntityLookup().getAllCopy()) {
++                if (entity.isRemoved()) {
++                    continue;
++                }
++                final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
++                if (bukkit != null) {
++                    bukkit.taskScheduler.executeTick();
++                }
 +            }
-+            org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
-+            if (bukkit != null) {
-+                bukkit.taskScheduler.executeTick();
-+            }
-+        }));
++        });
 +        // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          this.profiler.push("commandFunctions");
