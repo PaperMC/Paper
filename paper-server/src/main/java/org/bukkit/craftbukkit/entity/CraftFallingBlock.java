@@ -51,6 +51,16 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
     }
 
     @Override
+    public boolean getCancelDrop() {
+        return getHandle().cancelDrop;
+    }
+
+    @Override
+    public void setCancelDrop(boolean cancelDrop) {
+        getHandle().cancelDrop = cancelDrop;
+    }
+
+    @Override
     public boolean canHurtEntities() {
         return getHandle().hurtEntities;
     }
