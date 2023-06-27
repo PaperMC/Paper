@@ -11,10 +11,11 @@
  public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider, GeneratingChunkMap {
  
      private static final ChunkResult<List<ChunkAccess>> UNLOADED_CHUNK_LIST_RESULT = ChunkResult.error("Unloaded chunks found in range");
-@@ -149,6 +153,33 @@
+@@ -148,7 +152,34 @@
+     private final AtomicInteger activeChunkWrites;
      public int serverViewDistance;
      private final WorldGenContext worldGenContext;
- 
++
 +    // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
 +    public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 +    public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
@@ -35,7 +36,7 @@
 +        }
 +    };
 +    // CraftBukkit end
-+
+ 
 +    // Paper start
 +    public final ChunkHolder getUnloadingChunkHolder(int chunkX, int chunkZ) {
 +        return this.pendingUnloads.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
@@ -378,7 +379,7 @@
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
              }
-@@ -1476,6 +1564,7 @@
+@@ -1476,17 +1564,37 @@
          }
  
          public void updatePlayer(ServerPlayer player) {
@@ -386,9 +387,21 @@
              if (player != this.entity) {
                  Vec3 vec3d = player.position().subtract(this.entity.position());
                  int i = ChunkMap.this.getPlayerViewDistance(player);
-@@ -1484,9 +1573,18 @@
+                 double d0 = (double) Math.min(this.getEffectiveRange(), i * 16);
+                 double d1 = vec3d.x * vec3d.x + vec3d.z * vec3d.z;
                  double d2 = d0 * d0;
-                 boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
+-                boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
++                // Paper start - Configurable entity tracking range by Y
++                boolean flag = d1 <= d2;
++                if (flag && level.paperConfig().entities.trackingRangeY.enabled) {
++                    double rangeY = level.paperConfig().entities.trackingRangeY.get(this.entity, -1);
++                    if (rangeY != -1) {
++                        double vec3d_dy = player.getY() - this.entity.getY();
++                        flag = vec3d_dy * vec3d_dy <= rangeY * rangeY;
++                    }
++                }
++                flag = flag && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
++                // Paper end - Configurable entity tracking range by Y
  
 +                // CraftBukkit start - respect vanish API
 +                if (!player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
@@ -405,7 +418,7 @@
                      }
                  } else if (this.seenBy.remove(player.connection)) {
                      this.serverEntity.removePairing(player);
-@@ -1506,6 +1604,7 @@
+@@ -1506,6 +1614,7 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
                  int j = entity.getType().clientTrackingRange() * 16;
