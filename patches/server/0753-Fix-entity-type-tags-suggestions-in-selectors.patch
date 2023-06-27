@@ -10,7 +10,7 @@ when if this was fixed on the client, that wouldn't be needed.
 Mojira Issue: https://bugs.mojang.com/browse/MC-235045
 
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index 308b3a36f063c401a447f9b7f0364700eee5a54c..22884a2b148b9a5af8655bb754ebe73618218a83 100644
+index 308b3a36f063c401a447f9b7f0364700eee5a54c..43c71d9bf2eac98023057b4483fdd143a8343e98 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -441,4 +441,20 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
@@ -21,13 +21,13 @@ index 308b3a36f063c401a447f9b7f0364700eee5a54c..22884a2b148b9a5af8655bb754ebe736
 +    @Override
 +    public Collection<String> getSelectedEntities() {
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
-+            double pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 5.0F : 4.5F;
-+            Vec3 min = player.getEyePosition(1.0F);
-+            Vec3 viewVector = player.getViewVector(1.0F);
-+            Vec3 max = min.add(viewVector.x * pickDistance, viewVector.y * pickDistance, viewVector.z * pickDistance);
-+            net.minecraft.world.phys.AABB aabb = player.getBoundingBox().expandTowards(viewVector.scale(pickDistance)).inflate(1.0D, 1.0D, 1.0D);
-+            pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 6.0F : pickDistance;
-+            net.minecraft.world.phys.EntityHitResult hitResult = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(player, min, max, aabb, (e) -> !e.isSpectator() && e.isPickable(), pickDistance);
++            final Entity cameraEntity = player.getCamera();
++            final double pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 6.0F : 4.5F;
++            final Vec3 min = cameraEntity.getEyePosition(1.0F);
++            final Vec3 viewVector = cameraEntity.getViewVector(1.0F);
++            final Vec3 max = min.add(viewVector.x * pickDistance, viewVector.y * pickDistance, viewVector.z * pickDistance);
++            final net.minecraft.world.phys.AABB aabb = cameraEntity.getBoundingBox().expandTowards(viewVector.scale(pickDistance)).inflate(1.0D, 1.0D, 1.0D);
++            final net.minecraft.world.phys.EntityHitResult hitResult = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(cameraEntity, min, max, aabb, (e) -> !e.isSpectator() && e.isPickable(), pickDistance * pickDistance);
 +            return hitResult != null ? java.util.Collections.singletonList(hitResult.getEntity().getStringUUID()) : SharedSuggestionProvider.super.getSelectedEntities();
 +        }
 +        return SharedSuggestionProvider.super.getSelectedEntities();
