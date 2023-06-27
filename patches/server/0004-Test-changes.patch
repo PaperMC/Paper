@@ -1,0 +1,273 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 13 Feb 2023 14:14:56 -0800
+Subject: [PATCH] Test changes
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 592d2cd1114ee9fbf7b16068ef729f7db4de83d1..f3f20b34a3ebcbb75004003892e903ee4fd0edd3 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -12,6 +12,7 @@ dependencies {
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
+     implementation("org.ow2.asm:asm:9.4")
+     implementation("org.ow2.asm:asm-commons:9.4") // Paper - ASM event executor generation
++    testImplementation("org.mockito:mockito-core:4.9.0") // Paper - switch to mockito
+     implementation("commons-lang:commons-lang:2.6")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
+diff --git a/src/test/java/io/papermc/paper/testing/DummyServer.java b/src/test/java/io/papermc/paper/testing/DummyServer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e944e9dca13883c57e93e480ae5adfe51c342532
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/testing/DummyServer.java
+@@ -0,0 +1,67 @@
++package io.papermc.paper.testing;
++
++import java.util.logging.Logger;
++import org.bukkit.Bukkit;
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Server;
++import org.bukkit.command.SimpleCommandMap;
++import org.bukkit.craftbukkit.CraftRegistry;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.inventory.CraftItemFactory;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.plugin.PluginManager;
++import org.bukkit.plugin.SimplePluginManager;
++import org.bukkit.support.AbstractTestingBase;
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.any;
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++public final class DummyServer {
++
++    @SuppressWarnings({"deprecation", "removal"})
++    public static void setup() {
++        //noinspection ConstantValue
++        if (Bukkit.getServer() != null) {
++            return;
++        }
++
++        final Server dummyServer = mock(Server.class, Mockito.withSettings().stubOnly());
++
++        final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
++        when(dummyServer.getLogger()).thenReturn(logger);
++        when(dummyServer.getName()).thenReturn(DummyServer.class.getSimpleName());
++        when(dummyServer.getVersion()).thenReturn("Version_" + DummyServer.class.getPackage().getImplementationVersion());
++        when(dummyServer.getBukkitVersion()).thenReturn("BukkitVersion_" + DummyServer.class.getPackage().getImplementationVersion());
++
++        final Thread currentThread = Thread.currentThread();
++        when(dummyServer.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
++
++        when(dummyServer.getItemFactory()).thenReturn(CraftItemFactory.instance());
++
++        when(dummyServer.getUnsafe()).thenAnswer(ignored -> CraftMagicNumbers.INSTANCE); // lambda for lazy load
++
++        when(dummyServer.createBlockData(any(Material.class))).thenAnswer(invocation -> {
++            return CraftBlockData.newData(invocation.getArgument(0, Material.class), null);
++        });
++
++        when(dummyServer.getLootTable(any(NamespacedKey.class))).thenAnswer(invocation -> {
++            final NamespacedKey key = invocation.getArgument(0, NamespacedKey.class);
++            return new org.bukkit.craftbukkit.CraftLootTable(key, AbstractTestingBase.DATA_PACK.getLootData().getLootTable(CraftNamespacedKey.toMinecraft(key)));
++        });
++
++        when(dummyServer.getRegistry(any())).thenAnswer(invocation -> {
++            // LazyRegistry because the vanilla data hasn't been bootstrapped yet.
++            return new LazyRegistry(() -> CraftRegistry.createRegistry(invocation.getArgument(0, Class.class), AbstractTestingBase.REGISTRY_CUSTOM));
++        });
++
++        final PluginManager pluginManager = new SimplePluginManager(dummyServer, new SimpleCommandMap(dummyServer));
++        when(dummyServer.getPluginManager()).thenReturn(pluginManager);
++
++        Bukkit.setServer(dummyServer);
++
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/testing/LazyRegistry.java b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8dd0df8c2cc25d37a2590a07872682230a9335f2
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/testing/LazyRegistry.java
+@@ -0,0 +1,23 @@
++package io.papermc.paper.testing;
++
++import java.util.Iterator;
++import java.util.function.Supplier;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public record LazyRegistry(Supplier<Registry<Keyed>> supplier) implements Registry<Keyed> {
++
++    @NotNull
++    @Override
++    public Iterator<Keyed> iterator() {
++        return this.supplier().get().iterator();
++    }
++
++    @Override
++    public @Nullable Keyed get(@NotNull final NamespacedKey key) {
++        return this.supplier().get().get(key);
++    }
++}
+diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+index 1b875fc4dc5550ffab21d11e0c2451a2b22250f9..c440dcf3cc2ddb8fd9094fe8495e820ae7797f5c 100644
+--- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
++++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+@@ -53,6 +53,7 @@ public abstract class AbstractTestingBase {
+         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
+         layers = WorldLoader.loadAndReplaceLayer(resourceManager, layers, RegistryLayer.WORLDGEN, RegistryDataLoader.WORLDGEN_REGISTRIES);
+         REGISTRY_CUSTOM = layers.compositeAccess().freeze();
++        io.papermc.paper.testing.DummyServer.setup(); // Paper
+         // Register vanilla pack
+         DATA_PACK = ReloadableServerResources.loadResources(resourceManager, REGISTRY_CUSTOM, FeatureFlags.REGISTRY.allFlags(), Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+         // Bind tags
+@@ -60,7 +61,6 @@ public abstract class AbstractTestingBase {
+         // Biome shortcut
+         BIOMES = REGISTRY_CUSTOM.registryOrThrow(Registries.BIOME);
+ 
+-        DummyServer.setup();
+         DummyEnchantments.setup();
+ 
+         ImmutableList.Builder<Material> builder = ImmutableList.builder();
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+deleted file mode 100644
+index e3197ea88b68de8f893f3fa986507b95b789645d..0000000000000000000000000000000000000000
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ /dev/null
+@@ -1,127 +0,0 @@
+-package org.bukkit.support;
+-
+-import java.lang.reflect.InvocationHandler;
+-import java.lang.reflect.Method;
+-import java.lang.reflect.Proxy;
+-import java.util.HashMap;
+-import java.util.logging.Logger;
+-import org.bukkit.Bukkit;
+-import org.bukkit.Material;
+-import org.bukkit.NamespacedKey;
+-import org.bukkit.Server;
+-import org.bukkit.craftbukkit.CraftLootTable;
+-import org.bukkit.craftbukkit.CraftRegistry;
+-import org.bukkit.craftbukkit.block.data.CraftBlockData;
+-import org.bukkit.craftbukkit.inventory.CraftItemFactory;
+-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+-import org.bukkit.craftbukkit.util.Versioning;
+-
+-public final class DummyServer implements InvocationHandler {
+-    private static interface MethodHandler {
+-        Object handle(DummyServer server, Object[] args);
+-    }
+-    private static final HashMap<Method, MethodHandler> methods = new HashMap<Method, MethodHandler>();
+-    static {
+-        try {
+-            methods.put(
+-                    Server.class.getMethod("getItemFactory"),
+-                    new MethodHandler() {
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            return CraftItemFactory.instance();
+-                        }
+-                    }
+-                );
+-            methods.put(
+-                    Server.class.getMethod("getName"),
+-                    new MethodHandler() {
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            return DummyServer.class.getName();
+-                        }
+-                    }
+-                );
+-            methods.put(
+-                    Server.class.getMethod("getVersion"),
+-                    new MethodHandler() {
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            return DummyServer.class.getPackage().getImplementationVersion();
+-                        }
+-                    }
+-                );
+-            methods.put(
+-                    Server.class.getMethod("getBukkitVersion"),
+-                    new MethodHandler() {
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            return Versioning.getBukkitVersion();
+-                        }
+-                    }
+-                );
+-            methods.put(
+-                    Server.class.getMethod("getLogger"),
+-                    new MethodHandler() {
+-                        final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            return logger;
+-                        }
+-                    }
+-                );
+-            methods.put(
+-                    Server.class.getMethod("getUnsafe"),
+-                    new MethodHandler() {
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            return CraftMagicNumbers.INSTANCE;
+-                        }
+-                    }
+-                );
+-            methods.put(
+-                    Server.class.getMethod("createBlockData", Material.class),
+-                    new MethodHandler() {
+-                        final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            return CraftBlockData.newData((Material) args[0], null);
+-                        }
+-                    }
+-                );
+-            methods.put(Server.class.getMethod("getLootTable", NamespacedKey.class),
+-                    new MethodHandler() {
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            NamespacedKey key = (NamespacedKey) args[0];
+-                            return new CraftLootTable(key, AbstractTestingBase.DATA_PACK.getLootData().getLootTable(CraftNamespacedKey.toMinecraft(key)));
+-                        }
+-                    }
+-                );
+-            methods.put(Server.class.getMethod("getRegistry", Class.class),
+-                    new MethodHandler() {
+-                        @Override
+-                        public Object handle(DummyServer server, Object[] args) {
+-                            return CraftRegistry.createRegistry((Class) args[0], AbstractTestingBase.REGISTRY_CUSTOM);
+-                        }
+-                    }
+-            );
+-            Bukkit.setServer(Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(new DummyServer()));
+-        } catch (Throwable t) {
+-            throw new Error(t);
+-        }
+-    }
+-
+-    public static void setup() {}
+-
+-    private DummyServer() {};
+-
+-    @Override
+-    public Object invoke(Object proxy, Method method, Object[] args) {
+-        MethodHandler handler = DummyServer.methods.get(method);
+-        if (handler != null) {
+-            return handler.handle(this, args);
+-        }
+-        throw new UnsupportedOperationException(String.valueOf(method));
+-    }
+-}

@@ -1,8 +1,11 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.1.11"
+    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
+    id("io.papermc.paperweight.core") version "1.5.5"
 }
 
 allprojects {
@@ -11,15 +14,17 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(16))
+            languageVersion.set(JavaLanguageVersion.of(17))
         }
     }
 }
 
+val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
+
 subprojects {
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
-        options.release.set(16)
+        options.release.set(17)
     }
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()
@@ -27,66 +32,71 @@ subprojects {
     tasks.withType<ProcessResources> {
         filteringCharset = Charsets.UTF_8.name()
     }
-
-    if (name == "Paper-MojangAPI") {
-        return@subprojects
+    tasks.withType<Test> {
+        testLogging {
+            showStackTraces = true
+            exceptionFormat = TestExceptionFormat.FULL
+            events(TestLogEvent.STANDARD_OUT)
+        }
     }
 
     repositories {
         mavenCentral()
-        maven("https://repo1.maven.org/maven2/")
-        maven("https://oss.sonatype.org/content/groups/public/")
-        maven("https://papermc.io/repo/repository/maven-public/")
-        maven("https://ci.emc.gs/nexus/content/groups/aikar/")
-        maven("https://repo.aikar.co/content/groups/aikar")
-        maven("https://repo.md-5.net/content/repositories/releases/")
-        maven("https://hub.spigotmc.org/nexus/content/groups/public/")
+        maven(paperMavenPublicUrl)
     }
 }
 
+val spigotDecompiler: Configuration by configurations.creating
+
 repositories {
     mavenCentral()
-    maven("https://papermc.io/repo/repository/maven-public/") {
+    maven(paperMavenPublicUrl) {
         content {
-            onlyForConfigurations("paperclip")
+            onlyForConfigurations(
+                configurations.paperclip.name,
+                spigotDecompiler.name,
+            )
         }
     }
 }
 
 dependencies {
-    paramMappings("org.quiltmc:yarn:1.17.1+build.1:mergedv2")
-    remapper("org.quiltmc:tiny-remapper:0.4.3:fat")
-    decompiler("net.minecraftforge:forgeflower:1.5.498.12")
-    paperclip("io.papermc:paperclip:2.0.1")
+    paramMappings("net.fabricmc:yarn:1.20.1+build.1:mergedv2")
+    remapper("net.fabricmc:tiny-remapper:0.8.6:fat")
+    decompiler("net.minecraftforge:forgeflower:2.0.627.2")
+    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.6")
+    paperclip("io.papermc:paperclip:3.0.3")
 }
 
 paperweight {
     minecraftVersion.set(providers.gradleProperty("mcVersion"))
-    serverProject.set(project(":Paper-Server"))
+    serverProject.set(project(":paper-server"))
+
+    paramMappingsRepo.set(paperMavenPublicUrl)
+    remapRepo.set(paperMavenPublicUrl)
+    decompileRepo.set(paperMavenPublicUrl)
+
+    craftBukkit {
+        fernFlowerJar.set(layout.file(spigotDecompiler.elements.map { it.single().asFile }))
+    }
 
     paper {
         spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))
         spigotServerPatchDir.set(layout.projectDirectory.dir("patches/server"))
 
-        paramMappingsRepo.set("https://maven.quiltmc.org/repository/release/")
-        remapRepo.set("https://maven.quiltmc.org/repository/release/")
-        decompileRepo.set("https://files.minecraftforge.net/maven/")
-
         mappingsPatch.set(layout.projectDirectory.file("build-data/mappings-patch.tiny"))
         reobfMappingsPatch.set(layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny"))
-
-        additionalSpigotMemberMappings.set(layout.projectDirectory.file("build-data/additional-spigot-member-mappings.csrg"))
-        craftBukkitPatchPatchesDir.set(layout.projectDirectory.dir("build-data/craftbukkit-patch-patches"))
 
         reobfPackagesToFix.addAll(
             "co.aikar.timings",
             "com.destroystokyo.paper",
             "com.mojang",
             "io.papermc.paper",
+            "ca.spottedleaf",
             "net.kyori.adventure.bossbar",
             "net.minecraft",
             "org.bukkit.craftbukkit",
-            "org.spigotmc"
+            "org.spigotmc",
         )
     }
 }
@@ -94,20 +104,14 @@ paperweight {
 tasks.generateDevelopmentBundle {
     apiCoordinates.set("io.papermc.paper:paper-api")
     mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
-    libraryRepositories.set(
-        listOf(
-            "https://libraries.minecraft.net/",
-            "https://maven.quiltmc.org/repository/release/",
-            "https://repo.aikar.co/content/groups/aikar",
-            "https://ci.emc.gs/nexus/content/groups/aikar/",
-            "https://papermc.io/repo/repository/maven-public/",
-            "https://repo.velocitypowered.com/snapshots/"
-        )
+    libraryRepositories.addAll(
+        "https://repo.maven.apache.org/maven2/",
+        paperMavenPublicUrl,
     )
 }
 
 publishing {
-    if (project.hasProperty("publishDevBundle")) {
+    if (project.providers.gradleProperty("publishDevBundle").isPresent) {
         publications.create<MavenPublication>("devBundle") {
             artifact(tasks.generateDevelopmentBundle) {
                 artifactId = "dev-bundle"
@@ -119,17 +123,32 @@ publishing {
 allprojects {
     publishing {
         repositories {
-            maven {
+            maven("https://repo.papermc.io/repository/maven-snapshots/") {
                 name = "paperSnapshots"
-                url = uri("https://papermc.io/repo/repository/maven-snapshots/")
                 credentials(PasswordCredentials::class)
             }
         }
     }
 }
 
+tasks.collectAtsFromPatches {
+    // Uncomment while updating for a new Minecraft version
+    // extraPatchDir.set(layout.projectDirectory.dir("patches/unapplied/server"))
+}
+
+// Uncomment while updating for a new Minecraft version
+// tasks.withType<io.papermc.paperweight.tasks.RebuildGitPatches> {
+//     filterPatches.set(false)
+// }
+
 tasks.register("printMinecraftVersion") {
     doLast {
         println(providers.gradleProperty("mcVersion").get().trim())
+    }
+}
+
+tasks.register("printPaperVersion") {
+    doLast {
+        println(project.version)
     }
 }

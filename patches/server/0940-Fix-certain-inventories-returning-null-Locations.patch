@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 15 Mar 2023 18:29:45 -0700
+Subject: [PATCH] Fix certain inventories returning null Locations
+
+Wandering Trader, AbstractHorse, and Beacon inventories returned null locations
+when a block or entity location is readily available
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index 7f238a9d98095806132c0d22ed7b0dfd25c45262..79b6e241f425622fdc575b77d8dce7061c0ab783 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -342,7 +342,15 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+     public void createInventory() {
+         SimpleContainer inventorysubcontainer = this.inventory;
+ 
+-        this.inventory = new SimpleContainer(this.getInventorySize(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
++        // Paper start
++        this.inventory = new SimpleContainer(this.getInventorySize(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()) // CraftBukkit
++        {
++            @Override
++            public org.bukkit.Location getLocation() {
++                return AbstractHorse.this.getBukkitEntity().getLocation();
++            }
++        };
++        // Paper end
+         if (inventorysubcontainer != null) {
+             inventorysubcontainer.removeListener(this);
+             int i = Math.min(inventorysubcontainer.getContainerSize(), this.inventory.getContainerSize());
+diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+index 335d0a85378c04dd466fafd42048b2474c815cb9..fb1d71143a0344432af9dc5c3085e217a2778f10 100644
+--- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+@@ -49,6 +49,12 @@ public class BeaconMenu extends AbstractContainerMenu {
+             public int getMaxStackSize() {
+                 return 1;
+             }
++            // Paper start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return context.getLocation();
++            }
++            // Paper end
+         };
+         checkContainerDataCount(propertyDelegate, 3);
+         this.beaconData = propertyDelegate;
+diff --git a/src/main/java/net/minecraft/world/inventory/MerchantContainer.java b/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
+index 083e50e27685f441ede4c75e913d671fe45d1d15..98cbcf67d8fdb1c80fb7ba8ba7734821e2818da6 100644
+--- a/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
++++ b/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
+@@ -65,7 +65,7 @@ public class MerchantContainer implements Container {
+ 
+     @Override
+     public Location getLocation() {
+-        return (this.merchant instanceof Villager) ? ((Villager) this.merchant).getBukkitEntity().getLocation() : null;
++        return (this.merchant instanceof AbstractVillager) ? ((AbstractVillager) this.merchant).getBukkitEntity().getLocation() : null; // Paper
+     }
+     // CraftBukkit end
+ 

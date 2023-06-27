@@ -1,0 +1,250 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 30 Mar 2016 19:36:20 -0400
+Subject: [PATCH] MC Dev fixes
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 2b7e2b7ecda6ac2b019c361163079fd747033719..90edfea7151f2ad259288545d512af7cd1b82f19 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -358,7 +358,7 @@ public class Util {
+     }
+ 
+     public static <K> Hash.Strategy<K> identityStrategy() {
+-        return Util.IdentityStrategy.INSTANCE;
++        return (Hash.Strategy<K>) Util.IdentityStrategy.INSTANCE; // Paper - decompile fix
+     }
+ 
+     public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> futures) {
+diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
+index e89fa618fa20e3e843d8de81629e6dc551777823..2bb5e51f71cbf66819d198505aa4a5ecffd246c6 100644
+--- a/src/main/java/net/minecraft/core/BlockPos.java
++++ b/src/main/java/net/minecraft/core/BlockPos.java
+@@ -383,12 +383,12 @@ public class BlockPos extends Vec3i {
+                     if (this.index == l) {
+                         return this.endOfData();
+                     } else {
+-                        int i = this.index % i;
+-                        int j = this.index / i;
+-                        int k = j % j;
+-                        int l = j / j;
++                        int offsetX = this.index % i; // Paper - decomp fix
++                        int u = this.index / i; // Paper - decomp fix
++                        int offsetY = u % j; // Paper - decomp fix
++                        int offsetZ = u / j; // Paper - decomp fix
+                         ++this.index;
+-                        return this.cursor.set(startX + i, startY + k, startZ + l);
++                        return this.cursor.set(startX + offsetX, startY + offsetY, startZ + offsetZ); // Paper - decomp fix
+                     }
+                 }
+             };
+diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
+index fe671ee23a5d364e20571dede6fc6bca7d83e98c..baa88201c4d08fb4f32f1198e187d7ca138b0f0e 100644
+--- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
++++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
+@@ -314,7 +314,7 @@ public class BuiltInRegistries {
+         LOADERS.put(resourceLocation, () -> {
+             return initializer.run(registry);
+         });
+-        WRITABLE_REGISTRY.register(key, registry, lifecycle);
++        WRITABLE_REGISTRY.register((ResourceKey) key, registry, lifecycle); // Paper - decompile fix
+         return registry;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+index c4c1fc4e082d4d35327735e0704ada4e96195db2..a30fa3d54b70ab63d24dd67a69f39742335aff1e 100644
+--- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
++++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+@@ -335,7 +335,7 @@ public enum ConnectionProtocol implements BundlerInfo.Provider {
+ 
+         public void listAllPackets(Consumer<Class<? extends Packet<?>>> consumer) {
+             this.classToId.keySet().stream().filter((type) -> {
+-                return type != BundleDelimiterPacket.class;
++                return !type.equals(BundleDelimiterPacket.class); // Paper - fix of some kind
+             }).forEach(consumer);
+             this.extraClasses.forEach(consumer);
+         }
+diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
+index 9ff8afe750bc469c11c70b2f44c8a78887a8cd00..ea30dad0134644a8ad292a892450404203f3535e 100644
+--- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
++++ b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
+@@ -138,9 +138,8 @@ public class ComponentUtils {
+             ComponentContents string = text.getContents();
+             if (string instanceof TranslatableContents) {
+                 TranslatableContents translatableContents = (TranslatableContents)string;
+-                String string = translatableContents.getKey();
+                 String string2 = translatableContents.getFallback();
+-                return string2 != null || Language.getInstance().has(string);
++                return string2 != null || Language.getInstance().has(translatableContents.getKey()); // Paper - decompile fix
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+index 41d6569c00db3d467f6e90d33ebd261529b89f4c..5f051cb22ae77f4d8994b07ac5b963bd0ff05673 100644
+--- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
++++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+@@ -91,7 +91,7 @@ public class RegistryDataLoader {
+         return new RegistryOps.RegistryInfoLookup() {
+             @Override
+             public <T> Optional<RegistryOps.RegistryInfo<T>> lookup(ResourceKey<? extends Registry<? extends T>> registryRef) {
+-                return Optional.ofNullable(map.get(registryRef));
++                return Optional.ofNullable((RegistryOps.RegistryInfo<T>) map.get(registryRef)); // Paper - decompile fix
+             }
+         };
+     }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8eb949b43e8b403f3d98e36066cabd7cb9ab0e63..a9e30b7b3a666d83b3c595a7975693ccfcf3e8f9 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1775,7 +1775,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             PackRepository resourcepackrepository = this.packRepository;
+ 
+             Objects.requireNonNull(this.packRepository);
+-            return stream.map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error
++            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
+         }, this).thenCompose((immutablelist) -> {
+             MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
+ 
+diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
+index 2f66abf62d303342f5fe614fb3e35e7844497ffc..b346fa94b23d81da7da073f71dd12e672e0f079c 100644
+--- a/src/main/java/net/minecraft/server/level/Ticket.java
++++ b/src/main/java/net/minecraft/server/level/Ticket.java
+@@ -21,7 +21,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
+             return i;
+         } else {
+             int j = Integer.compare(System.identityHashCode(this.type), System.identityHashCode(ticket.type));
+-            return j != 0 ? j : this.type.getComparator().compare(this.key, ticket.key);
++            return j != 0 ? j : this.type.getComparator().compare(this.key, (T)ticket.key); // Paper - decompile fix
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/java/net/minecraft/util/SortedArraySet.java
+index 2dc801061025888192c3bf2c4c38b928c16a0165..ca788f0dcec4a117b410fe8348969e056b138b1e 100644
+--- a/src/main/java/net/minecraft/util/SortedArraySet.java
++++ b/src/main/java/net/minecraft/util/SortedArraySet.java
+@@ -28,7 +28,7 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+     }
+ 
+     public static <T extends Comparable<T>> SortedArraySet<T> create(int initialCapacity) {
+-        return new SortedArraySet<>(initialCapacity, Comparator.naturalOrder());
++        return new SortedArraySet<>(initialCapacity, Comparator.<T>naturalOrder()); // Paper - decompile fix
+     }
+ 
+     public static <T> SortedArraySet<T> create(Comparator<T> comparator) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+index d6e25c7f5dc6c219e2590aa8b1ffd51a2120d50e..40cdff9eaa1e78e02060d970e477d96f960cfed3 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
++++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+@@ -151,7 +151,7 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Rider
+     @Override
+     protected void customServerAiStep() {
+         this.level().getProfiler().push("camelBrain");
+-        Brain<?> brain = this.getBrain();
++        Brain<Camel> brain = (Brain<Camel>) this.getBrain(); // Paper - decompile fix
+         brain.tick((ServerLevel)this.level(), this);
+         this.level().getProfiler().pop();
+         this.level().getProfiler().push("camelActivityUpdate");
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+index e8da5e51449d908de492b55dfa21e8d1108514fa..22eb0a8fc35baa04b34265b62aa29a71f3cc7343 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+@@ -99,7 +99,7 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
+ 
+     @Override
+     public Brain<Frog> getBrain() {
+-        return super.getBrain();
++        return (Brain<Frog>) super.getBrain(); // Paper - decompile fix
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index 555b52e2d9a6d4db7a527cda46ba6acf711da697..98c41e87b644f79ebfd45af2e0d7b887a3f5d00b 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -123,7 +123,7 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+ 
+     @Override
+     public Brain<Hoglin> getBrain() {
+-        return super.getBrain();
++        return (Brain<Hoglin>) super.getBrain(); // Paper - decompile fix
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+index 4d2d23ff118e9307d50ca2a5194b83450c91a752..ab6dc3449a1d3b7acf1d7bf5ac1c24224cc252c7 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -78,7 +78,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+         }
+ 
+         this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
+-            return (entry1.getValue()); // CraftBukkit
++            return entry1.getValue(); // CraftBukkit // Paper - decompile fix - *shrugs internally* // todo: is this needed anymore?
+         }));
+         this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
+         RecipeManager.LOGGER.info("Loaded {} recipes", map1.size());
+diff --git a/src/main/java/net/minecraft/world/level/block/SignBlock.java b/src/main/java/net/minecraft/world/level/block/SignBlock.java
+index 91bb294be2cd8ab3467a62006a5a2751e0bec4ba..5ab7df0042391cb621ed78a187dc20333e344186 100644
+--- a/src/main/java/net/minecraft/world/level/block/SignBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SignBlock.java
+@@ -76,18 +76,9 @@ public abstract class SignBlock extends BaseEntityBlock implements SimpleWaterlo
+     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+         ItemStack itemStack = player.getItemInHand(hand);
+         Item item = itemStack.getItem();
+-        Item signBlockEntity = itemStack.getItem();
+-        SignApplicator var10000;
+-        if (signBlockEntity instanceof SignApplicator signApplicator) {
+-            var10000 = signApplicator;
+-        } else {
+-            var10000 = null;
+-        }
+-
+-        SignApplicator signApplicator2 = var10000;
++        SignApplicator signApplicator2 = item instanceof SignApplicator signApplicator ? signApplicator : null; // Paper - decompile fixes
+         boolean bl = signApplicator2 != null && player.mayBuild();
+-        BlockEntity bl2 = world.getBlockEntity(pos);
+-        if (bl2 instanceof SignBlockEntity signBlockEntity) {
++        if (world.getBlockEntity(pos) instanceof SignBlockEntity signBlockEntity) { // Paper - decompile fixes
+             if (!world.isClientSide) {
+                 boolean bl2 = signBlockEntity.isFacingFrontText(player);
+                 SignText signText = signBlockEntity.getText(bl2);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+index b445f90b70d5a74f5bdc1b081500da4742e1c093..afba733824d84d650e669eda028bf4d28cf006b4 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -56,7 +56,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+     }
+ 
+     private static <T, C extends PalettedContainerRO<T>> Codec<C> codec(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy provider, T defaultValue, PalettedContainerRO.Unpacker<T, C> reader) {
+-        return RecordCodecBuilder.<PalettedContainerRO.PackedData>create((instance) -> {
++        return RecordCodecBuilder.<PalettedContainerRO.PackedData<T>>create((instance) -> { // Paper - decompile fix
+             return instance.group(entryCodec.mapResult(ExtraCodecs.orElsePartial(defaultValue)).listOf().fieldOf("palette").forGetter(PalettedContainerRO.PackedData::paletteEntries), Codec.LONG_STREAM.optionalFieldOf("data").forGetter(PalettedContainerRO.PackedData::storage)).apply(instance, PalettedContainerRO.PackedData::new);
+         }).comapFlatMap((serialized) -> {
+             return reader.read(idList, provider, serialized);
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+index 6b91771a4bf559881a4f3e6c98500e09b33d16e0..21a2800db22f287b9c6a8290326fdf3b94ae94b1 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+@@ -19,7 +19,7 @@ public class EntityLookup<T extends EntityAccess> {
+     public <U extends T> void getEntities(EntityTypeTest<T, U> filter, AbortableIterationConsumer<U> consumer) {
+         for(T entityAccess : this.byId.values()) {
+             U entityAccess2 = (U)((EntityAccess)filter.tryCast(entityAccess));
+-            if (entityAccess2 != null && consumer.accept((T)entityAccess2).shouldAbort()) {
++            if (entityAccess2 != null && consumer.accept(entityAccess2).shouldAbort()) { // Paper - decompile fix
+                 return;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySection.java b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+index 69a19dbf58cde41680d086e78b9a12ffee602dbf..5dcb7f9cab097990148f5a7c4ccbe1556afdd514 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntitySection.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+@@ -44,7 +44,7 @@ public class EntitySection<T extends EntityAccess> {
+         } else {
+             for(T entityAccess : collection) {
+                 U entityAccess2 = (U)((EntityAccess)type.tryCast(entityAccess));
+-                if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box) && consumer.accept((T)entityAccess2).shouldAbort()) {
++                if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box) && consumer.accept(entityAccess2).shouldAbort()) { // Paper - decompile fix
+                     return AbortableIterationConsumer.Continuation.ABORT;
+                 }
+             }

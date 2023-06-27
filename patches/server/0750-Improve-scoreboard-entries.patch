@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 4 Nov 2021 12:31:24 -0700
+Subject: [PATCH] Improve scoreboard entries
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+index de5f382656f9fd08f6ae1795c69743c604d62d5c..97cb29beea1d133f683d7cff7a26805b09f63096 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+@@ -146,6 +146,14 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
+         return new CraftScore(this, entry);
+     }
+ 
++    // Paper start
++    @Override
++    public Score getScoreFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException, IllegalStateException {
++        Preconditions.checkArgument(entity != null, "Entity cannot be null");
++        return getScore(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
++    }
++    // Paper end
++
+     @Override
+     public void unregister() throws IllegalStateException {
+         CraftScoreboard scoreboard = this.checkState();
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
+index e233eef291f64622947b0b6c4559639e510c087f..13190c4265bb83e682dede7e982ebcd19d80e334 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
+@@ -233,4 +233,23 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+     public Scoreboard getHandle() {
+         return this.board;
+     }
++    // Paper start
++    @Override
++    public ImmutableSet<Score> getScoresFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
++        Preconditions.checkArgument(entity != null, "Entity cannot be null");
++        return this.getScores(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
++    }
++
++    @Override
++    public void resetScoresFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
++        Preconditions.checkArgument(entity != null, "Entity cannot be null");
++        this.resetScores(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
++    }
++
++    @Override
++    public Team getEntityTeam(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
++        Preconditions.checkArgument(entity != null, "Entity cannot be null");
++        return this.getEntryTeam(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+index 772206a43950db2726bd79911438e2aec2d7189c..47031a6f1b7e261bb034968f83c0c496b89d1361 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+@@ -309,6 +309,26 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void addEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
++        Preconditions.checkArgument(entity != null, "Entity cannot be null");
++        this.addEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
++    }
++
++    @Override
++    public boolean removeEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
++        Preconditions.checkArgument(entity != null, "Entity cannot be null");
++        return this.removeEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
++    }
++
++    @Override
++    public boolean hasEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
++        Preconditions.checkArgument(entity != null, "Entity cannot be null");
++        return this.hasEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
++    }
++    // Paper end
++
+     public static Visibility bukkitToNotch(NameTagVisibility visibility) {
+         switch (visibility) {
+             case ALWAYS:

@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 18 Jun 2018 01:12:53 -0400
+Subject: [PATCH] PlayerReadyArrowEvent
+
+Called when a player is firing a bow and the server is choosing an arrow to use.
+Plugins can skip selection of certain arrows and control which is used.
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 10dd06a23b34b7c8515c9ccc3988a9e8182c460d..48ba8f67b93bed0cfa540d7cb94199b633a349e6 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -2260,18 +2260,29 @@ public abstract class Player extends LivingEntity {
+         return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
+     }
+ 
++    // Paper start
++    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
++        return !(this instanceof ServerPlayer) ||
++                new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
++                    ((ServerPlayer) this).getBukkitEntity(),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
++                ).callEvent();
++        // Paper end
++    }
++
+     @Override
+     public ItemStack getProjectile(ItemStack stack) {
+         if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
+             return ItemStack.EMPTY;
+         } else {
+-            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles();
++            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper
+             ItemStack itemstack1 = ProjectileWeaponItem.getHeldProjectile(this, predicate);
+ 
+             if (!itemstack1.isEmpty()) {
+                 return itemstack1;
+             } else {
+-                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles();
++                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper
+ 
+                 for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
+                     ItemStack itemstack2 = this.inventory.getItem(i);

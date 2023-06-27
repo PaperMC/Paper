@@ -1,0 +1,104 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 28 Jan 2014 19:13:57 -0500
+Subject: [PATCH] Add ItemStack Recipe API helper methods
+
+Allows using ExactChoice Recipes with easier methods
+
+Redirects some of upstream's APIs to these new methods to avoid
+usage of magic values and the deprecated RecipeChoice#getItemStack
+
+diff --git a/src/main/java/org/bukkit/inventory/RecipeChoice.java b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+index 90208bc96085f05a3b657b9467b1670d00b03104..523818cbb0d6c90481ec97123e7fe0e2ff4eea14 100644
+--- a/src/main/java/org/bukkit/inventory/RecipeChoice.java
++++ b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+@@ -146,8 +146,6 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+     /**
+      * Represents a choice that will be valid only one of the stacks is exactly
+      * matched (aside from stack size).
+-     * <br>
+-     * <b>Only valid for shaped recipes</b>
+      */
+     public static class ExactChoice implements RecipeChoice {
+ 
+diff --git a/src/main/java/org/bukkit/inventory/ShapedRecipe.java b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
+index be68263386a8faea7744f4de75d484e9358c87df..c2d224b6472a65cd362e1ab55ce7e3d0b5a3befc 100644
+--- a/src/main/java/org/bukkit/inventory/ShapedRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
+@@ -180,6 +180,13 @@ public class ShapedRecipe implements Recipe, Keyed {
+         return this;
+     }
+ 
++    // Paper start
++    @NotNull
++    public ShapedRecipe setIngredient(char key, @NotNull ItemStack item) {
++        return setIngredient(key, new RecipeChoice.ExactChoice(item));
++    }
++    // Paper end
++
+     /**
+      * Get a copy of the ingredients map.
+      *
+diff --git a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+index 05ef88225415cd30de36f4517b6fb40d826ce996..8bf26da12dcb03f22f842a57798948d5513c227d 100644
+--- a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+@@ -141,6 +141,40 @@ public class ShapelessRecipe implements Recipe, Keyed {
+         return this;
+     }
+ 
++    // Paper start
++    @NotNull
++    public ShapelessRecipe addIngredient(@NotNull ItemStack item) {
++        return addIngredient(item.getAmount(), item);
++    }
++
++    @NotNull
++    public ShapelessRecipe addIngredient(int count, @NotNull ItemStack item) {
++        Preconditions.checkArgument(ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
++        while (count-- > 0) {
++            ingredients.add(new RecipeChoice.ExactChoice(item));
++        }
++        return this;
++    }
++
++    @NotNull
++    public ShapelessRecipe removeIngredient(@NotNull ItemStack item) {
++        return removeIngredient(1, item);
++    }
++
++    @NotNull
++    public ShapelessRecipe removeIngredient(int count, @NotNull ItemStack item) {
++        Iterator<RecipeChoice> iterator = ingredients.iterator();
++        while (count > 0 && iterator.hasNext()) {
++            RecipeChoice choice = iterator.next();
++            if (choice.test(item)) {
++                iterator.remove();
++                count--;
++            }
++        }
++        return this;
++    }
++    // Paper end
++
+     /**
+      * Removes an ingredient from the list.
+      *
+@@ -164,7 +198,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
+      */
+     @NotNull
+     public ShapelessRecipe removeIngredient(@NotNull Material ingredient) {
+-        return removeIngredient(ingredient, 0);
++        return removeIngredient(new ItemStack(ingredient)); // Paper - avoid using deprecated methods (magic values; RecipeChoice#getItemStack)
+     }
+ 
+     /**
+@@ -191,7 +225,7 @@ public class ShapelessRecipe implements Recipe, Keyed {
+      */
+     @NotNull
+     public ShapelessRecipe removeIngredient(int count, @NotNull Material ingredient) {
+-        return removeIngredient(count, ingredient, 0);
++        return removeIngredient(count, new ItemStack(ingredient)); // Paper - avoid using deprecated methods (magic values; RecipeChoice#getItemStack)
+     }
+ 
+     /**

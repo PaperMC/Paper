@@ -5,50 +5,40 @@ Subject: [PATCH] Cache user authenticator threads
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index c8d8d766de86dc3e47b06a355b28d2279820c570..a60b40d8cc802456374625af216c27998f8348b3 100644
+index 7983033160b77e28eb8135f8709dacd6b806ebe3..9fd44505c33b7ad578d6a471aca8e1c2df5c7dcd 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -117,6 +117,18 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -112,6 +112,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
      }
  
-+    // Paper start - Cache authenticator threads
-+    private static final AtomicInteger threadId = new AtomicInteger(0);
-+    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(
-+            r -> {
-+                Thread ret = new Thread(r, "User Authenticator #" + threadId.incrementAndGet());
++    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
 +
-+                ret.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
-+
-+                return ret;
-+            }
-+    );
-+    // Paper end
      // Spigot start
      public void initUUID()
      {
-@@ -209,8 +221,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-             this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
-         } else {
-             // Spigot start
--            new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
+@@ -208,8 +210,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+                 this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
+             } else {
+                 // Spigot start
+-                new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
 -
 +            // Paper start - Cache authenticator threads
 +            authenticatorPool.execute(new Runnable() {
-                 @Override
-                 public void run() {
-                     try {
-@@ -221,7 +233,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-                         server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.gameProfile.getName(), ex);
+                     @Override
+                     public void run() {
+                         try {
+@@ -220,7 +222,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+                             server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.gameProfile.getName(), ex);
+                         }
                      }
-                 }
--            }.start();
+-                }.start();
 +            });
 +            // Paper end
-             // Spigot end
-         }
+                 // Spigot end
+             }
  
-@@ -250,7 +263,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -257,7 +260,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
              throw new IllegalStateException("Protocol error", cryptographyexception);
          }
  
@@ -58,7 +48,7 @@ index c8d8d766de86dc3e47b06a355b28d2279820c570..a60b40d8cc802456374625af216c2799
              public void run() {
                  GameProfile gameprofile = ServerLoginPacketListenerImpl.this.gameProfile;
  
-@@ -295,10 +309,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -302,10 +306,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
  
                  return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
              }
