@@ -42,7 +42,7 @@ index 18aac3da3c88f33b1a71a5920a8daa27e9723913..544dd0116113690fd8d68f4d6154c8af
  
      public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> filter, Predicate<? super T> predicate) {
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/SavedData.java b/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
-index 353e602d476beea23e591ad770227c5d6c1e97fa..a8342485dc53d43d8b3bba8954a773d2c1cdcdcb 100644
+index 353e602d476beea23e591ad770227c5d6c1e97fa..366930be719415b0674de2b41c4413e1208c2687 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
 +++ b/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
 @@ -27,16 +27,31 @@ public abstract class SavedData {
@@ -59,24 +59,20 @@ index 353e602d476beea23e591ad770227c5d6c1e97fa..a8342485dc53d43d8b3bba8954a773d2
              compoundTag.put("data", this.save(new CompoundTag()));
              NbtUtils.addCurrentDataVersion(compoundTag);
  
--            try {
--                NbtIo.writeCompressed(compoundTag, file);
--            } catch (IOException var4) {
--                LOGGER.error("Could not save data {}", this, var4);
 +            // Paper start
 +            Runnable writeRunnable = () -> {
-+                try {
-+                    NbtIo.writeCompressed(compoundTag, file);
-+                } catch (IOException var4) {
-+                    LOGGER.error("Could not save data {}", this, var4);
-+                }
+             try {
+                 NbtIo.writeCompressed(compoundTag, file);
+             } catch (IOException var4) {
+                 LOGGER.error("Could not save data {}", this, var4);
+             }
 +            };
 +
 +            if (async) {
 +                net.minecraft.Util.ioPool().execute(writeRunnable);
 +            } else {
 +                writeRunnable.run();
-             }
++            }
 +            // Paper end
  
              this.setDirty(false);
