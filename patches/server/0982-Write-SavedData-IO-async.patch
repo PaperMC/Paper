@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cryptite <cryptite@gmail.com>
+Date: Tue, 27 Jun 2023 11:35:52 -0500
+Subject: [PATCH] Write SavedData IO async
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 18aac3da3c88f33b1a71a5920a8daa27e9723913..544dd0116113690fd8d68f4d6154c8af750f03ca 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1429,7 +1429,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+         try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
+             if (doFull) {
+-                this.saveLevelData();
++                this.saveLevelData(true); // Paper
+             }
+ 
+             this.timings.worldSaveChunks.startTiming(); // Paper
+@@ -1465,7 +1465,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                 progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
+             }
+ 
+-            this.saveLevelData();
++            this.saveLevelData(!close); // Paper
+             if (progressListener != null) {
+                 progressListener.progressStage(Component.translatable("menu.savingChunks"));
+             }
+@@ -1488,12 +1488,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // CraftBukkit end
+     }
+ 
+-    private void saveLevelData() {
++    private void saveLevelData(boolean async) { // Paper
+         if (this.dragonFight != null) {
+             this.serverLevelData.setEndDragonFightData(this.dragonFight.saveData()); // CraftBukkit
+         }
+ 
+-        this.getChunkSource().getDataStorage().save();
++        this.getChunkSource().getDataStorage().save(async); // Paper
+     }
+ 
+     public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> filter, Predicate<? super T> predicate) {
+diff --git a/src/main/java/net/minecraft/world/level/saveddata/SavedData.java b/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
+index 353e602d476beea23e591ad770227c5d6c1e97fa..a8342485dc53d43d8b3bba8954a773d2c1cdcdcb 100644
+--- a/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
++++ b/src/main/java/net/minecraft/world/level/saveddata/SavedData.java
+@@ -27,16 +27,31 @@ public abstract class SavedData {
+     }
+ 
+     public void save(File file) {
++        // Paper start
++        save(file, false);
++    }
++
++    public void save(File file, boolean async) { // Paper end
+         if (this.isDirty()) {
+             CompoundTag compoundTag = new CompoundTag();
+             compoundTag.put("data", this.save(new CompoundTag()));
+             NbtUtils.addCurrentDataVersion(compoundTag);
+ 
+-            try {
+-                NbtIo.writeCompressed(compoundTag, file);
+-            } catch (IOException var4) {
+-                LOGGER.error("Could not save data {}", this, var4);
++            // Paper start
++            Runnable writeRunnable = () -> {
++                try {
++                    NbtIo.writeCompressed(compoundTag, file);
++                } catch (IOException var4) {
++                    LOGGER.error("Could not save data {}", this, var4);
++                }
++            };
++
++            if (async) {
++                net.minecraft.Util.ioPool().execute(writeRunnable);
++            } else {
++                writeRunnable.run();
+             }
++            // Paper end
+ 
+             this.setDirty(false);
+         }
