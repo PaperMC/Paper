@@ -152,7 +152,7 @@
              });
          }
      }
-@@ -370,32 +418,196 @@
+@@ -370,32 +418,198 @@
      }
  
      public InteractionResult useOn(UseOnContext context) {
@@ -169,7 +169,7 @@
 +            DataComponentPatch oldData = this.components.asPatch();
 +            int oldCount = this.getCount();
 +            ServerLevel world = (ServerLevel) context.getLevel();
-+
+ 
 +            if (!(item instanceof BucketItem/* || item instanceof SolidBucketItem*/)) { // if not bucket // Paper - Fix cancelled powdered snow bucket placement
 +                world.captureBlockStates = true;
 +                // special case bonemeal
@@ -200,7 +200,7 @@
 +                    structureEvent = new StructureGrowEvent(location, treeType, isBonemeal, (Player) entityhuman.getBukkitEntity(), (List< BlockState>) (List<? extends BlockState>) blocks);
 +                    org.bukkit.Bukkit.getPluginManager().callEvent(structureEvent);
 +                }
- 
++
 +                BlockFertilizeEvent fertilizeEvent = new BlockFertilizeEvent(CraftBlock.at(world, blockposition), (Player) entityhuman.getBukkitEntity(), (List< BlockState>) (List<? extends BlockState>) blocks);
 +                fertilizeEvent.setCancelled(structureEvent != null && structureEvent.isCancelled());
 +                org.bukkit.Bukkit.getPluginManager().callEvent(fertilizeEvent);
@@ -252,10 +252,12 @@
 +                        world.preventPoiUpdated = false;
 +
 +                        // Brute force all possible updates
-+                        BlockPos placedPos = ((CraftBlock) placeEvent.getBlock()).getPosition();
-+                        for (Direction dir : Direction.values()) {
-+                            ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, placedPos.relative(dir)));
-+                        }
++                        // Paper start - Don't resync blocks
++                        // BlockPos placedPos = ((CraftBlock) placeEvent.getBlock()).getPosition();
++                        // for (Direction dir : Direction.values()) {
++                        //     ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, placedPos.relative(dir)));
++                        // }
++                        // Paper end - Don't resync blocks
 +                        SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
 +                    } else {
 +                        // Change the stack to its new contents if it hasn't been tampered with.
@@ -354,7 +356,7 @@
          ItemStack itemstack = this.copy();
          boolean flag = this.getUseDuration(user) <= 0;
          InteractionResult enuminteractionresult = this.getItem().use(world, user, hand);
-@@ -490,8 +702,37 @@
+@@ -490,27 +704,66 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
@@ -372,7 +374,7 @@
 +        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
 +            PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), j, originalDamage); // Paper - Add EntityDamageItemEvent
 +            event.getPlayer().getServer().getPluginManager().callEvent(event);
-+
+ 
 +            if (j != event.getDamage() || event.isCancelled()) {
 +                event.getPlayer().updateInventory();
 +            }
@@ -391,10 +393,10 @@
 +            // Paper end - Add EntityDamageItemEvent
 +        }
 +        // CraftBukkit end
- 
++
          if (j != 0) {
              this.applyDamage(this.getDamageValue() + j, player, breakCallback);
-@@ -499,18 +740,28 @@
+         }
  
      }
  
@@ -428,7 +430,7 @@
  
              this.shrink(1);
              breakCallback.accept(item);
-@@ -518,7 +769,7 @@
+@@ -518,7 +771,7 @@
  
      }
  
@@ -437,7 +439,7 @@
          if (player instanceof ServerPlayer entityplayer) {
              int j = this.processDurabilityChange(amount, entityplayer.serverLevel(), entityplayer);
  
-@@ -535,6 +786,11 @@
+@@ -535,6 +788,11 @@
      }
  
      public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
@@ -449,7 +451,7 @@
          Level world = entity.level();
  
          if (world instanceof ServerLevel worldserver) {
-@@ -546,9 +802,9 @@
+@@ -546,9 +804,9 @@
                  entityplayer = null;
              }
  
@@ -462,7 +464,7 @@
          }
  
      }
-@@ -580,11 +836,11 @@
+@@ -580,11 +838,11 @@
          return this.getItem().getBarColor(this);
      }
  
@@ -476,7 +478,7 @@
          return this.getItem().overrideOtherStackedOnMe(this, stack, slot, clickType, player, cursorStackReference);
      }
  
-@@ -592,8 +848,8 @@
+@@ -592,8 +850,8 @@
          Item item = this.getItem();
  
          if (item.hurtEnemy(this, target, user)) {
@@ -487,7 +489,7 @@
  
                  entityhuman.awardStat(Stats.ITEM_USED.get(item));
              }
-@@ -608,7 +864,7 @@
+@@ -608,7 +866,7 @@
          this.getItem().postHurtEnemy(this, target, user);
      }
  
@@ -496,7 +498,7 @@
          Item item = this.getItem();
  
          if (item.mineBlock(this, world, state, pos, miner)) {
-@@ -617,11 +873,11 @@
+@@ -617,11 +875,11 @@
  
      }
  
@@ -510,7 +512,7 @@
          return this.getItem().interactLivingEntity(this, user, entity, hand);
      }
  
-@@ -736,7 +992,7 @@
+@@ -736,7 +994,7 @@
  
      }
  
@@ -519,7 +521,7 @@
          player.awardStat(Stats.ITEM_CRAFTED.get(this.getItem()), amount);
          this.getItem().onCraftedBy(this, world, player);
      }
-@@ -770,6 +1026,12 @@
+@@ -770,6 +1028,12 @@
          return this.getItem().useOnRelease(this);
      }
  
@@ -532,10 +534,13 @@
      @Nullable
      public <T> T set(DataComponentType<? super T> type, @Nullable T value) {
          return this.components.set(type, value);
-@@ -806,6 +1068,25 @@
-         }
-     }
- 
+@@ -803,8 +1067,27 @@
+             this.components.restorePatch(datacomponentpatch1);
+         } else {
+             this.getItem().verifyComponentsAfterLoad(this);
++        }
++    }
++
 +    // Paper start - (this is just a good no conflict location)
 +    public org.bukkit.inventory.ItemStack asBukkitMirror() {
 +        return CraftItemStack.asCraftMirror(this);
@@ -550,15 +555,14 @@
 +    public org.bukkit.inventory.ItemStack getBukkitStack() {
 +        if (bukkitStack == null || bukkitStack.handle != this) {
 +            bukkitStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
-+        }
+         }
 +        return bukkitStack;
-+    }
+     }
 +    // Paper end
-+
+ 
      public void applyComponents(DataComponentPatch changes) {
          this.components.applyPatch(changes);
-         this.getItem().verifyComponentsAfterLoad(this);
-@@ -858,7 +1139,7 @@
+@@ -858,7 +1141,7 @@
      }
  
      private <T extends TooltipProvider> void addToTooltip(DataComponentType<T> componentType, Item.TooltipContext context, Consumer<Component> textConsumer, TooltipFlag type) {
@@ -567,7 +571,7 @@
  
          if (t0 != null) {
              t0.addToTooltip(context, textConsumer, type);
-@@ -866,7 +1147,7 @@
+@@ -866,7 +1149,7 @@
  
      }
  
@@ -576,7 +580,7 @@
          boolean flag = this.getItem().shouldPrintOpWarning(this, player);
  
          if (!type.isCreative() && this.has(DataComponents.HIDE_TOOLTIP)) {
-@@ -941,7 +1222,7 @@
+@@ -941,7 +1224,7 @@
          }
      }
  
@@ -585,7 +589,7 @@
          ItemAttributeModifiers itemattributemodifiers = (ItemAttributeModifiers) this.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
  
          if (itemattributemodifiers.showInTooltip()) {
-@@ -966,7 +1247,7 @@
+@@ -966,7 +1249,7 @@
          }
      }
  
@@ -594,7 +598,7 @@
          double d0 = modifier.amount();
          boolean flag = false;
  
-@@ -1091,6 +1372,14 @@
+@@ -1091,6 +1374,14 @@
          EnchantmentHelper.forEachModifier(this, slot, attributeModifierConsumer);
      }
  
@@ -609,7 +613,7 @@
      public Component getDisplayName() {
          MutableComponent ichatmutablecomponent = Component.empty().append(this.getHoverName());
  
-@@ -1153,7 +1442,7 @@
+@@ -1153,7 +1444,7 @@
      }
  
      public void consume(int amount, @Nullable LivingEntity entity) {
