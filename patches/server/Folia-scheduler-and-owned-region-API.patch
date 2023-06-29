@@ -1195,11 +1195,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+             return;
+         }
+         // Paper end - rewrite chunk system
++        final boolean alreadyRemoved = this.removalReason != null;
+         if (this.removalReason == null) {
+             this.removalReason = reason;
+         }
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
  
          if (reason != RemovalReason.UNLOADED_TO_CHUNK) this.getPassengers().forEach(Entity::stopRiding); // Paper - chunk system - don't adjust passenger state when unloading, it's just not safe (and messes with our logic in entity chunk unload)
          this.levelCallback.onRemove(reason);
 +        // Paper start - Folia schedulers
-+        if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION) {
++        if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
 +            // Players need to be special cased, because they are regularly removed from the world
 +            this.retireScheduler();
 +        }
