@@ -1158,7 +1158,7 @@ index 8547e7ff2f1f5b7701fb0f3c3010c14601a5f83e..fff7ad7a45f310783ac96b44575ad3db
          this.players.remove(entityplayer);
          this.playersByName.remove(entityplayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..513c34aa02d63f7e3c178eade818e156af4541db 100644
+index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..6abaf7ef99800a238b29dbbb85de8c970c0806a7 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -246,11 +246,23 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
@@ -1194,12 +1194,20 @@ index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..513c34aa02d63f7e3c178eade818e156
          this.remove(Entity.RemovalReason.DISCARDED);
      }
  
-@@ -4678,12 +4691,28 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -4668,6 +4681,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+             return;
+         }
+         // Paper end - rewrite chunk system
++        final boolean alreadyRemoved = this.removalReason != null;
+         if (this.removalReason == null) {
+             this.removalReason = reason;
+         }
+@@ -4678,12 +4692,28 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
  
          if (reason != RemovalReason.UNLOADED_TO_CHUNK) this.getPassengers().forEach(Entity::stopRiding); // Paper - chunk system - don't adjust passenger state when unloading, it's just not safe (and messes with our logic in entity chunk unload)
          this.levelCallback.onRemove(reason);
 +        // Paper start - Folia schedulers
-+        if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION) {
++        if (!(this instanceof ServerPlayer) && reason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
 +            // Players need to be special cased, because they are regularly removed from the world
 +            this.retireScheduler();
 +        }
