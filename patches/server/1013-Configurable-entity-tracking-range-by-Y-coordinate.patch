@@ -1,22 +1,25 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: ruViolence <78062896+ruViolence@users.noreply.github.com>
 Date: Tue, 27 Jun 2023 15:38:18 +0800
-Subject: [PATCH] Configurable entity tracker check Y
+Subject: [PATCH] Configurable entity tracking range by Y coordinate
 
-Option to enable check of Y coordinate in entity tracker.
+Options to configure entity tracking by Y coordinate, also for each entity category.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 9209b598d7168b82574e4800056b8b9f84265dd0..9e3b20f9ecabf3929e22a2298742545b14700644 100644
+index a4bf4ed615653ce30d2416a62e680d74e87b53fa..01a98aa078a2c26c8cae0cc2fd5e1b67476fe655 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1535,6 +1535,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1554,6 +1554,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  double d1 = vec3d_dx * vec3d_dx + vec3d_dz * vec3d_dz; // Paper
                  double d2 = d0 * d0;
                  boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player);
 +                // Paper start - check Y
-+                if (flag && level.paperConfig().entities.trackerCheckY) {
-+                    double vec3d_dy = player.getY() - this.entity.getY();
-+                    flag = vec3d_dy * vec3d_dy <= d2;
++                if (flag && level.paperConfig().entities.trackingRangeY.enabled) {
++                    double rangeY = level.paperConfig().entities.trackingRangeY.get(this.entity, (int) d0);
++                    if (rangeY != -1) {
++                        double vec3d_dy = player.getY() - this.entity.getY();
++                        flag = vec3d_dy * vec3d_dy <= rangeY * rangeY;
++                    }
 +                }
 +                // Paper end - check Y
  
