@@ -25,10 +25,10 @@ Other changes:
 Co-Authored-By: Emilia Kond <emilia@rymiel.space>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 2cabc6126afe4ad83eed4c423ffa67b77fde7c2a..1c0d6aff62f653044a402f5914bc558c70a3ca46 100644
+index d67bfb162d122f6944aa16219b754d8d6ee40fb8..4e682e084a7f653ccb90756bab884499861f9060 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -6,9 +6,28 @@ plugins {
+@@ -6,9 +6,30 @@ plugins {
      id("com.github.johnrengelman.shadow")
  }
  
@@ -36,6 +36,7 @@ index 2cabc6126afe4ad83eed4c423ffa67b77fde7c2a..1c0d6aff62f653044a402f5914bc558c
 +configurations.named(log4jPlugins.compileClasspathConfigurationName) {
 +    extendsFrom(configurations.compileClasspath.get())
 +}
++val alsoShade: Configuration by configurations.creating
 +
  dependencies {
      implementation(project(":paper-api"))
@@ -54,10 +55,20 @@ index 2cabc6126afe4ad83eed4c423ffa67b77fde7c2a..1c0d6aff62f653044a402f5914bc558c
 +    runtimeOnly("org.apache.logging.log4j:log4j-core:2.19.0")
 +    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
 +    runtimeOnly(log4jPlugins.output)
++    alsoShade(log4jPlugins.output)
 +    // Paper end
      implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
      implementation("org.ow2.asm:asm:9.4")
      implementation("org.ow2.asm:asm-commons:9.4") // Paper - ASM event executor generation
+@@ -75,7 +96,7 @@ relocation {
+ }
+ 
+ tasks.shadowJar {
+-    configurations = listOf(project.configurations.vanillaServer.get())
++    configurations = listOf(project.configurations.vanillaServer.get(), alsoShade)
+     archiveClassifier.set("mojang-mapped")
+ 
+     for (relocation in relocation.relocations.get()) {
 diff --git a/src/log4jPlugins/java/io/papermc/paper/console/StripANSIConverter.java b/src/log4jPlugins/java/io/papermc/paper/console/StripANSIConverter.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..91547f6e6fe90006713beb2818da634304bdd236
