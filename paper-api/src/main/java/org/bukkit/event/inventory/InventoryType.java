@@ -1,6 +1,5 @@
 package org.bukkit.event.inventory;
 
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.NotNull;
 
@@ -83,9 +82,9 @@ public enum InventoryType {
      */
     ANVIL(3, "Repairing"),
     /**
-     * A smithing inventory, with 2 CRAFTING slots and 1 RESULT slot
+     * A smithing inventory, with 3 CRAFTING slots and 1 RESULT slot.
      */
-    SMITHING(3, "Upgrade Gear"),
+    SMITHING(4, "Upgrade Gear"),
     /**
      * A beacon inventory, with 1 CRAFTING slot
      */
@@ -146,9 +145,9 @@ public enum InventoryType {
     /**
      * The new smithing inventory, with 3 CRAFTING slots and 1 RESULT slot.
      *
-     * @apiNote draft, experimental 1.20 API
+     * @deprecated use {@link #SMITHING}
      */
-    @MinecraftExperimental
+    @Deprecated
     SMITHING_NEW(4, "Upgrade Gear"),
     ;
 
