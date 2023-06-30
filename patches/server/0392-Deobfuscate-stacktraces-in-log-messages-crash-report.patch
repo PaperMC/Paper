@@ -6,10 +6,10 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index f339777554b5917f69170d1bc89ff14b89e8f1e3..24cc85285f221cee63eb6feb2aabc3e193d76dd7 100644
+index 8e04a8a59fa0d242a6ac37cb8fe4f997ec3b50dd..79d3f2398751fa6660c77b4bdce7425ba492a4e4 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -29,6 +29,7 @@ dependencies {
+@@ -35,6 +35,7 @@ dependencies {
      testImplementation("org.mockito:mockito-core:4.9.0") // Paper - switch to mockito
      implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
@@ -17,7 +17,7 @@ index f339777554b5917f69170d1bc89ff14b89e8f1e3..24cc85285f221cee63eb6feb2aabc3e1
      runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.0")
      runtimeOnly("com.mysql:mysql-connector-j:8.0.33")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
-@@ -108,6 +109,18 @@ tasks.check {
+@@ -114,6 +115,18 @@ tasks.check {
  }
  // Paper end
  
@@ -36,28 +36,17 @@ index f339777554b5917f69170d1bc89ff14b89e8f1e3..24cc85285f221cee63eb6feb2aabc3e1
  tasks.test {
      exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
  }
-diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-index 0bb4aaa546939b67a5d22865190f30478a9337c1..d3e619655382e50e9ac9323ed942502d85c9599c 100644
---- a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-+++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-@@ -91,7 +91,7 @@ public class SyncLoadFinder {
- 
-                 final JsonArray traces = new JsonArray();
- 
--                for (StackTraceElement element : pair.getFirst().stacktrace) {
-+                for (StackTraceElement element : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(pair.getFirst().stacktrace)) {
-                     traces.add(String.valueOf(element));
-                 }
- 
-diff --git a/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java b/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
+diff --git a/src/log4jPlugins/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java b/src/log4jPlugins/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c701ef3c287f62aa0ebfbdbd6da6ed82a1c7793c
+index 0000000000000000000000000000000000000000..66b6011ee3684695b2ab9292961c80bf2a420ee9
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
-@@ -0,0 +1,38 @@
++++ b/src/log4jPlugins/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
+@@ -0,0 +1,66 @@
 +package io.papermc.paper.logging;
 +
-+import io.papermc.paper.util.StacktraceDeobfuscator;
++import java.lang.invoke.MethodHandle;
++import java.lang.invoke.MethodHandles;
++import java.lang.invoke.VarHandle;
 +import org.apache.logging.log4j.core.Core;
 +import org.apache.logging.log4j.core.LogEvent;
 +import org.apache.logging.log4j.core.appender.rewrite.RewritePolicy;
@@ -73,6 +62,22 @@ index 0000000000000000000000000000000000000000..c701ef3c287f62aa0ebfbdbd6da6ed82
 +    printObject = true
 +)
 +public final class StacktraceDeobfuscatingRewritePolicy implements RewritePolicy {
++    private static final MethodHandle DEOBFUSCATE_THROWABLE;
++
++    static {
++        try {
++            final Class<?> cls = Class.forName("io.papermc.paper.util.StacktraceDeobfuscator");
++            final MethodHandles.Lookup lookup = MethodHandles.lookup();
++            final VarHandle instanceHandle = lookup.findStaticVarHandle(cls, "INSTANCE", cls);
++            final Object deobfuscator = instanceHandle.get();
++            DEOBFUSCATE_THROWABLE = lookup
++                .unreflect(cls.getDeclaredMethod("deobfuscateThrowable", Throwable.class))
++                .bindTo(deobfuscator);
++        } catch (final ReflectiveOperationException ex) {
++            throw new IllegalStateException(ex);
++        }
++    }
++
 +    private StacktraceDeobfuscatingRewritePolicy() {
 +    }
 +
@@ -80,7 +85,7 @@ index 0000000000000000000000000000000000000000..c701ef3c287f62aa0ebfbdbd6da6ed82
 +    public @NonNull LogEvent rewrite(final @NonNull LogEvent rewrite) {
 +        final Throwable thrown = rewrite.getThrown();
 +        if (thrown != null) {
-+            StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thrown);
++            deobfuscateThrowable(thrown);
 +            return new Log4jLogEvent.Builder(rewrite)
 +                .setThrownProxy(null)
 +                .build();
@@ -88,11 +93,34 @@ index 0000000000000000000000000000000000000000..c701ef3c287f62aa0ebfbdbd6da6ed82
 +        return rewrite;
 +    }
 +
++    private static void deobfuscateThrowable(final Throwable thrown) {
++        try {
++            DEOBFUSCATE_THROWABLE.invoke(thrown);
++        } catch (final Error e) {
++            throw e;
++        } catch (final Throwable e) {
++            throw new RuntimeException(e);
++        }
++    }
++
 +    @PluginFactory
 +    public static @NonNull StacktraceDeobfuscatingRewritePolicy createPolicy() {
 +        return new StacktraceDeobfuscatingRewritePolicy();
 +    }
 +}
+diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+index 0bb4aaa546939b67a5d22865190f30478a9337c1..d3e619655382e50e9ac9323ed942502d85c9599c 100644
+--- a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
++++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+@@ -91,7 +91,7 @@ public class SyncLoadFinder {
+ 
+                 final JsonArray traces = new JsonArray();
+ 
+-                for (StackTraceElement element : pair.getFirst().stacktrace) {
++                for (StackTraceElement element : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(pair.getFirst().stacktrace)) {
+                     traces.add(String.valueOf(element));
+                 }
+ 
 diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..b8b17d046f836c8652ab094db00ab1af84971b2c
