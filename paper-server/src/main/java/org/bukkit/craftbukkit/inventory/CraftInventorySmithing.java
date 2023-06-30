@@ -29,12 +29,12 @@ public class CraftInventorySmithing extends CraftResultInventory implements Smit
 
     @Override
     public ItemStack getResult() {
-        return getItem(2);
+        return getItem(3);
     }
 
     @Override
     public void setResult(ItemStack item) {
-        setItem(2, item);
+        setItem(3, item);
     }
 
     @Override
