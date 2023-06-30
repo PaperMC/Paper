@@ -9,6 +9,18 @@ For example, items being consumed but never finishing, shields being put up, etc
 The underlying issue of this is that the client modifies their synced data values, and so we have to (forcibly) resend
 them in order for the client to reset their using item state.
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 1635fee928d64f4d2c336dca6675ed4641918830..d3cef6394b90048a28abb758f257dbc2198db6f8 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -562,6 +562,7 @@ public class ServerPlayerGameMode {
+             }
+             // Paper end - extend Player Interact cancellation
+             player.getBukkitEntity().updateInventory(); // SPIGOT-2867
++            this.player.resyncUsingItem(this.player); // Paper - Resend player's using item status
+             enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
+             MenuProvider itileinventory = iblockdata.getMenuProvider(world, blockposition);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 1d0e439c00ac4ab72dc656038c9271b1240acc88..b777547cb9f8edf4e7b3c2cfb894f8cd1b1a35a5 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
