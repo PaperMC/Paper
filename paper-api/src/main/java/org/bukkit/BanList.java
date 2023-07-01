@@ -7,8 +7,10 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A ban list, containing bans of some {@link Type}.
+ *
+ * @param <T> The ban target
  */
-public interface BanList {
+public interface BanList<T> {
 
     /**
      * Represents a ban-type that a {@link BanList} may track.
@@ -16,12 +18,19 @@ public interface BanList {
     public enum Type {
         /**
          * Banned player names
+         *
+         * @deprecated deprecated in favor of {@link #PROFILE}
          */
+        @Deprecated
         NAME,
         /**
-         * Banned player IP addresses
+         * Banned IP addresses
          */
         IP,
+        /**
+         * Banned player profiles
+         */
+        PROFILE,
         ;
     }
 
@@ -30,12 +39,40 @@ public interface BanList {
      *
      * @param target entry parameter to search for
      * @return the corresponding entry, or null if none found
+     * @deprecated see {@link #getBanEntry(Object)}
      */
+    @Deprecated
     @Nullable
-    public BanEntry getBanEntry(@NotNull String target);
+    public BanEntry<T> getBanEntry(@NotNull String target);
 
     /**
-     * Adds a ban to the this list. If a previous ban exists, this will
+     * Gets a {@link BanEntry} by target.
+     *
+     * @param target entry parameter to search for
+     * @return the corresponding entry, or null if none found
+     */
+    @Nullable
+    public BanEntry<T> getBanEntry(@NotNull T target);
+
+    /**
+     * Adds a ban to this list. If a previous ban exists, this will
+     * update the previous entry.
+     *
+     * @param target the target of the ban
+     * @param reason reason for the ban, null indicates implementation default
+     * @param expires date for the ban's expiration (unban), or null to imply
+     *     forever
+     * @param source source of the ban, null indicates implementation default
+     * @return the entry for the newly created ban, or the entry for the
+     *     (updated) previous ban
+     * @deprecated see {@link #addBan(Object, String, Date, String)}
+     */
+    @Deprecated
+    @Nullable
+    public BanEntry<T> addBan(@NotNull String target, @Nullable String reason, @Nullable Date expires, @Nullable String source);
+
+    /**
+     * Adds a ban to this list. If a previous ban exists, this will
      * update the previous entry.
      *
      * @param target the target of the ban
@@ -47,7 +84,7 @@ public interface BanList {
      *     (updated) previous ban
      */
     @Nullable
-    public BanEntry addBan(@NotNull String target, @Nullable String reason, @Nullable Date expires, @Nullable String source);
+    public BanEntry<T> addBan(@NotNull T target, @Nullable String reason, @Nullable Date expires, @Nullable String source);
 
     /**
      * Gets a set containing every {@link BanEntry} in this list.
@@ -55,16 +92,28 @@ public interface BanList {
      * @return an immutable set containing every entry tracked by this list
      */
     @NotNull
-    public Set<BanEntry> getBanEntries();
+    public Set<BanEntry<T>> getBanEntries();
 
     /**
      * Gets if a {@link BanEntry} exists for the target, indicating an active
      * ban status.
      *
      * @param target the target to find
-     * @return true if a {@link BanEntry} exists for the name, indicating an
+     * @return true if a {@link BanEntry} exists for the target, indicating an
      *     active ban status, false otherwise
      */
+    public boolean isBanned(@NotNull T target);
+
+    /**
+     * Gets if a {@link BanEntry} exists for the target, indicating an active
+     * ban status.
+     *
+     * @param target the target to find
+     * @return true if a {@link BanEntry} exists for the target, indicating an
+     *     active ban status, false otherwise
+     * @deprecated see {@link #isBanned(Object)}
+     */
+    @Deprecated
     public boolean isBanned(@NotNull String target);
 
     /**
@@ -73,5 +122,16 @@ public interface BanList {
      *
      * @param target the target to remove from this list
      */
+    public void pardon(@NotNull T target);
+
+    /**
+     * Removes the specified target from this list, therefore indicating a
+     * "not banned" status.
+     *
+     * @param target the target to remove from this list
+     *
+     * @deprecated see {@link #pardon(Object)}
+     */
+    @Deprecated
     public void pardon(@NotNull String target);
 }

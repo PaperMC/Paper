@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -1026,15 +1027,35 @@ public interface Server extends PluginMessageRecipient {
      * Bans the specified address from the server.
      *
      * @param address the IP address to ban
+     *
+     * @deprecated see {@link #banIP(InetSocketAddress)}
      */
+    @Deprecated
     public void banIP(@NotNull String address);
 
     /**
      * Unbans the specified address from the server.
      *
      * @param address the IP address to unban
+     *
+     * @deprecated see {@link #unbanIP(InetSocketAddress)}
      */
+    @Deprecated
     public void unbanIP(@NotNull String address);
+
+    /**
+     * Bans the specified address from the server.
+     *
+     * @param address the IP address to ban
+     */
+    public void banIP(@NotNull InetSocketAddress address);
+
+    /**
+     * Unbans the specified address from the server.
+     *
+     * @param address the IP address to unban
+     */
+    public void unbanIP(@NotNull InetSocketAddress address);
 
     /**
      * Gets a set containing all banned players.
@@ -1046,15 +1067,14 @@ public interface Server extends PluginMessageRecipient {
 
     /**
      * Gets a ban list for the supplied type.
-     * <p>
-     * Bans by name are no longer supported and this method will return
-     * null when trying to request them. The replacement is bans by UUID.
      *
      * @param type the type of list to fetch, cannot be null
+     * @param <T> The ban target
+     *
      * @return a ban list of the specified type
      */
     @NotNull
-    public BanList getBanList(@NotNull BanList.Type type);
+    public <T extends BanList<?>> T getBanList(@NotNull BanList.Type type);
 
     /**
      * Gets a set containing all player operators.

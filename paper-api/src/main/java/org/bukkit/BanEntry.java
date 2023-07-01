@@ -15,8 +15,8 @@ import org.jetbrains.annotations.Nullable;
  *     <th>Property</th>
  *     <th>Description</th>
  * </tr><tr>
- *     <td>Target Name / IP Address</td>
- *     <td>The target name or IP address</td>
+ *     <td>Target Profile / IP Address</td>
+ *     <td>The target profile or IP address</td>
  * </tr><tr>
  *     <td>Creation Date</td>
  *     <td>The creation date of the ban</td>
@@ -40,17 +40,29 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Likewise, changes to the associated {@link BanList} or other entries may or
  * may not be reflected in this entry.
+ *
+ * @param <T> The ban target
  */
-public interface BanEntry {
+public interface BanEntry<T> {
 
     /**
      * Gets the target involved. This may be in the form of an IP or a player
      * name.
      *
      * @return the target name or IP address
+     * @deprecated See {@link #getBanTarget()}
      */
+    @Deprecated
     @NotNull
     public String getTarget();
+
+    /**
+     * Gets the target involved.
+     *
+     * @return the target profile or IP address
+     */
+    @NotNull
+    public T getBanTarget();
 
     /**
      * Gets the date this ban entry was created.
@@ -132,4 +144,9 @@ public interface BanEntry {
      * banned once again.
      */
     public void save();
+
+    /**
+     * Removes this ban entry from the appropriate ban list.
+     */
+    public void remove();
 }
