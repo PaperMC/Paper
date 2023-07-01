@@ -1,14 +1,16 @@
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.ban;
 
 import com.mojang.authlib.GameProfile;
-import java.io.IOException;
+import java.time.Instant;
 import java.util.Date;
-import java.util.logging.Level;
 import net.minecraft.server.players.GameProfileBanEntry;
 import net.minecraft.server.players.GameProfileBanList;
-import org.bukkit.Bukkit;
+import org.bukkit.BanEntry;
+import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
+import org.bukkit.profile.PlayerProfile;
 
-public final class CraftProfileBanEntry implements org.bukkit.BanEntry {
+public final class CraftProfileBanEntry implements BanEntry<PlayerProfile> {
+    private static final Date minorDate = Date.from(Instant.parse("1899-12-31T04:00:00Z"));
     private final GameProfileBanList list;
     private final GameProfile profile;
     private Date created;
@@ -28,6 +30,11 @@ public final class CraftProfileBanEntry implements org.bukkit.BanEntry {
     @Override
     public String getTarget() {
         return this.profile.getName();
+    }
+
+    @Override
+    public PlayerProfile getBanTarget() {
+        return new CraftPlayerProfile(this.profile);
     }
 
     @Override
@@ -57,7 +64,7 @@ public final class CraftProfileBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public void setExpiration(Date expiration) {
-        if (expiration != null && expiration.getTime() == new Date(0, 0, 0, 0, 0, 0).getTime()) {
+        if (expiration != null && expiration.getTime() == minorDate.getTime()) {
             expiration = null; // Forces "forever"
         }
 
@@ -76,12 +83,12 @@ public final class CraftProfileBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public void save() {
-        GameProfileBanEntry entry = new GameProfileBanEntry(profile, this.created, this.source, this.expiration, this.reason);
+        GameProfileBanEntry entry = new GameProfileBanEntry(this.profile, this.created, this.source, this.expiration, this.reason);
         this.list.add(entry);
-        try {
-            this.list.save();
-        } catch (IOException ex) {
-            Bukkit.getLogger().log(Level.SEVERE, "Failed to save banned-players.json, {0}", ex.getMessage());
-        }
+    }
+
+    @Override
+    public void remove() {
+        this.list.remove(this.profile);
     }
 }

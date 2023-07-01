@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +34,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -150,6 +150,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.conversations.Conversable;
+import org.bukkit.craftbukkit.ban.CraftIpBanList;
+import org.bukkit.craftbukkit.ban.CraftProfileBanList;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftBossBar;
 import org.bukkit.craftbukkit.boss.CraftKeyedBossbar;
@@ -1706,16 +1708,30 @@ public final class CraftServer implements Server {
 
     @Override
     public void banIP(String address) {
-        Preconditions.checkArgument(address != null, "address cannot be null");
+        Preconditions.checkArgument(address != null && !address.isBlank(), "Address cannot be null or blank.");
 
         this.getBanList(org.bukkit.BanList.Type.IP).addBan(address, null, null, null);
     }
 
     @Override
     public void unbanIP(String address) {
-        Preconditions.checkArgument(address != null, "address cannot be null");
+        Preconditions.checkArgument(address != null && !address.isBlank(), "Address cannot be null or blank.");
 
         this.getBanList(org.bukkit.BanList.Type.IP).pardon(address);
+    }
+
+    @Override
+    public void banIP(InetSocketAddress address) {
+        Preconditions.checkArgument(address != null, "Address cannot be null.");
+
+        ((CraftIpBanList) this.getBanList(BanList.Type.IP)).addBan(address, null, null, null);
+    }
+
+    @Override
+    public void unbanIP(InetSocketAddress address) {
+        Preconditions.checkArgument(address != null, "Address cannot be null.");
+
+        ((CraftIpBanList) this.getBanList(BanList.Type.IP)).pardon(address);
     }
 
     @Override
@@ -1730,16 +1746,13 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public BanList getBanList(BanList.Type type) {
+    public <T extends BanList<?>> T getBanList(BanList.Type type) {
         Preconditions.checkArgument(type != null, "BanList.Type cannot be null");
 
-        switch (type) {
-        case IP:
-            return new CraftIpBanList(playerList.getIpBans());
-        case NAME:
-        default:
-            return new CraftProfileBanList(playerList.getBans());
-        }
+        return switch (type) {
+            case IP -> (T) new CraftIpBanList(this.playerList.getIpBans());
+            case PROFILE, NAME -> (T) new CraftProfileBanList(this.playerList.getBans());
+        };
     }
 
     @Override

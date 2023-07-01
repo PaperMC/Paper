@@ -1,13 +1,14 @@
-package org.bukkit.craftbukkit;
+package org.bukkit.craftbukkit.ban;
 
-import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.time.Instant;
 import java.util.Date;
-import java.util.logging.Level;
 import net.minecraft.server.players.IpBanEntry;
 import net.minecraft.server.players.IpBanList;
-import org.bukkit.Bukkit;
+import org.bukkit.BanEntry;
 
-public final class CraftIpBanEntry implements org.bukkit.BanEntry {
+public final class CraftIpBanEntry implements BanEntry<InetSocketAddress> {
+    private static final Date minorDate = Date.from(Instant.parse("1899-12-31T04:00:00Z"));
     private final IpBanList list;
     private final String target;
     private Date created;
@@ -27,6 +28,11 @@ public final class CraftIpBanEntry implements org.bukkit.BanEntry {
     @Override
     public String getTarget() {
         return this.target;
+    }
+
+    @Override
+    public InetSocketAddress getBanTarget() {
+        return new InetSocketAddress(this.target, 0);
     }
 
     @Override
@@ -56,7 +62,7 @@ public final class CraftIpBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public void setExpiration(Date expiration) {
-        if (expiration != null && expiration.getTime() == new Date(0, 0, 0, 0, 0, 0).getTime()) {
+        if (expiration != null && expiration.getTime() == minorDate.getTime()) {
             expiration = null; // Forces "forever"
         }
 
@@ -75,12 +81,12 @@ public final class CraftIpBanEntry implements org.bukkit.BanEntry {
 
     @Override
     public void save() {
-        IpBanEntry entry = new IpBanEntry(target, this.created, this.source, this.expiration, this.reason);
+        IpBanEntry entry = new IpBanEntry(this.target, this.created, this.source, this.expiration, this.reason);
         this.list.add(entry);
-        try {
-            this.list.save();
-        } catch (IOException ex) {
-            Bukkit.getLogger().log(Level.SEVERE, "Failed to save banned-ips.json, {0}", ex.getMessage());
-        }
+    }
+
+    @Override
+    public void remove() {
+        this.list.remove(target);
     }
 }

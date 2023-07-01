@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit;
 
 import com.mojang.authlib.GameProfile;
 import java.io.File;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.players.WhiteListEntry;
 import net.minecraft.stats.ServerStatisticManager;
 import net.minecraft.world.level.storage.WorldNBTStorage;
+import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -19,6 +21,7 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.Statistic;
+import org.bukkit.ban.ProfileBanList;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
@@ -104,22 +107,19 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public boolean isBanned() {
-        if (getName() == null) {
-            return false;
-        }
+        return ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).isBanned(getPlayerProfile());
+    }
 
-        return server.getBanList(BanList.Type.NAME).isBanned(getName());
+    @Override
+    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source) {
+        return ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(getPlayerProfile(), reason, expires, source);
     }
 
     public void setBanned(boolean value) {
-        if (getName() == null) {
-            return;
-        }
-
         if (value) {
-            server.getBanList(BanList.Type.NAME).addBan(getName(), null, null, null);
+            ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(getPlayerProfile(), null, null, null);
         } else {
-            server.getBanList(BanList.Type.NAME).pardon(getName());
+            ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).pardon(getPlayerProfile());
         }
     }
 
@@ -139,7 +139,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public Map<String, Object> serialize() {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
 
         result.put("UUID", profile.getId().toString());
 
@@ -167,11 +167,10 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof OfflinePlayer)) {
+        if (!(obj instanceof OfflinePlayer other)) {
             return false;
         }
 
-        OfflinePlayer other = (OfflinePlayer) obj;
         if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
             return false;
         }
