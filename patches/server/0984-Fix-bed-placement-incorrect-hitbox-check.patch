@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JNI <admin@hydraclient.com>
+Date: Fri, 30 Jun 2023 22:16:16 -0400
+Subject: [PATCH] Fix-bed-placement-incorrect-hitbox-check
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BedBlock.java b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+index d40500f9a807cab0b2fb6fa9032f33f4fb74c895..43a8d758d795748fe1f705d1ce864b46c9d28c2e 100644
+--- a/src/main/java/net/minecraft/world/level/block/BedBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+@@ -233,6 +233,14 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+         BlockPos blockposition1 = blockposition.relative(enumdirection);
+         Level world = ctx.getLevel();
+ 
++        // Paper start
++        Player entityhuman = ctx.getPlayer();
++        CollisionContext voxelshapecollision = entityhuman == null ? CollisionContext.empty() : CollisionContext.of(entityhuman);
++        if(!world.checkEntityCollision(this.defaultBlockState().setValue(BedBlock.FACING, enumdirection), entityhuman, voxelshapecollision, blockposition1, true)) { // check collision in the head block too (fix MC-123619)
++            return null;
++        }
++        // Paper end
++
+         return world.getBlockState(blockposition1).canBeReplaced(ctx) && world.getWorldBorder().isWithinBounds(blockposition1) ? (BlockState) this.defaultBlockState().setValue(BedBlock.FACING, enumdirection) : null;
+     }
+ 
