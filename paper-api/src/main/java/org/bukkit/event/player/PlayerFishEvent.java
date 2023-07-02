@@ -94,8 +94,9 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     /**
      * Get the hand that was used in this event.
      * <p>
-     * The hand used is only present when the event state is {@link State#FISHING}.
-     * In all other states, the hand is null.
+     * The hand used is only present for player interactions.
+     * This means it will be null if state is set
+     * to {@link State#BITE} or {@link State#FAILED_ATTEMPT}.
      *
      * @return the hand
      */
