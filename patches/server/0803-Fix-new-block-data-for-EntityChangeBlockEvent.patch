@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SoSeDiK <mrsosedik@gmail.com>
+Date: Mon, 21 Mar 2022 20:00:53 +0200
+Subject: [PATCH] Fix new block data for EntityChangeBlockEvent
+
+Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+index 9be4e715faefc5f7972abf064bfff3c1c980f7fc..77542bbdfdc2bf0ec1527ad8551493e1d89da40c 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+@@ -77,7 +77,7 @@ public class EatBlockGoal extends Goal {
+                 BlockPos blockposition1 = blockposition.below();
+ 
+                 if (this.level.getBlockState(blockposition1).is(Blocks.GRASS_BLOCK)) {
+-                    if (CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.AIR.defaultBlockState(), !this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit
++                    if (CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.DIRT.defaultBlockState(), !this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit // Paper - Fix wrong block state
+                         this.level.levelEvent(2001, blockposition1, Block.getId(Blocks.GRASS_BLOCK.defaultBlockState()));
+                         this.level.setBlock(blockposition1, Blocks.DIRT.defaultBlockState(), 2);
+                     }
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 703068eaff84bcce83f61d805afa6cc0fef909b1..1ea5b05405f115e5d77ff0b282075628e64fec3d 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -373,7 +373,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+ 
+                                 if (WitherBoss.canDestroy(iblockdata)) {
+                                     // CraftBukkit start
+-                                    if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState())) {
++                                    if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // Paper
+                                         continue;
+                                     }
+                                     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+index c245acdbaa84cc795e341ed042a0d8d90383f070..842146548fc42c3b67a1196620b096d6c500b88d 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+@@ -175,7 +175,7 @@ public class Ravager extends Raider {
+ 
+                     if (block instanceof LeavesBlock) {
+                         // CraftBukkit start
+-                        if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())) {
++                        if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // Paper - use correct block state
+                             continue;
+                         }
+                         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index 754bad0bd38b8a356403f4c90de26de445cbf3c7..0b2d9eb8b3ff06cc64aa5bc7a81d79769709ccf0 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -179,7 +179,10 @@ public class Silverfish extends Monster {
+ 
+                             if (block instanceof InfestedBlock) {
+                                 // CraftBukkit start
+-                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())) {
++                                // Paper start - use correct block state
++                                final BlockState afterState = world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? net.minecraft.world.level.block.Blocks.AIR.defaultBlockState() : ((InfestedBlock) block).hostStateByInfested(world.getBlockState(blockposition1));
++                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, afterState)) {
++                                    // Paper end - use correct block state
+                                     continue;
+                                 }
+                                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/PointedDripstoneBlock.java b/src/main/java/net/minecraft/world/level/block/PointedDripstoneBlock.java
+index 719c60316d6e22d8a6014fa491c904dec4bf2835..5355d9f3eb241be8101e8770c63cabbaf1e6d471 100644
+--- a/src/main/java/net/minecraft/world/level/block/PointedDripstoneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PointedDripstoneBlock.java
+@@ -129,7 +129,7 @@ public class PointedDripstoneBlock extends Block implements Fallable, SimpleWate
+ 
+         if (!world.isClientSide && projectile.mayInteract(world, blockposition) && projectile instanceof ThrownTrident && projectile.getDeltaMovement().length() > 0.6D) {
+             // CraftBukkit start
+-            if (!CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState())) {
++            if (!CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, state.getFluidState().createLegacyBlock())) { // Paper - use correct block state
+                 return;
+             }
+             // CraftBukkit end
