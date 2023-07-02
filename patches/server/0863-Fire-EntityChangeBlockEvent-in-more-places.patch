@@ -6,7 +6,7 @@ Subject: [PATCH] Fire EntityChangeBlockEvent in more places
 Co-authored-by: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
-index 611028d65925053c47510185abc526201e5df6bb..cdf1899f1e9978fcf58f05b1efb3165e55445f93 100644
+index 611028d65925053c47510185abc526201e5df6bb..abda99c124d142fdf3634827e8f68353820ade9e 100644
 --- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
 +++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
 @@ -98,7 +98,7 @@ public class LightningBolt extends Entity {
@@ -34,7 +34,7 @@ index 611028d65925053c47510185abc526201e5df6bb..cdf1899f1e9978fcf58f05b1efb3165e
 -            world.setBlockAndUpdate(blockposition1, WeatheringCopper.getFirst(world.getBlockState(blockposition1)));
 +            // Paper start - call EntityChangeBlockEvent
 +            BlockState newBlock = WeatheringCopper.getFirst(world.getBlockState(blockposition1));
-+            if (!CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1, newBlock).isCancelled()) {
++            if (!CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1, newBlock)) {
 +                world.setBlockAndUpdate(blockposition1, newBlock);
 +            }
 +            // Paper end
@@ -74,12 +74,12 @@ index 611028d65925053c47510185abc526201e5df6bb..cdf1899f1e9978fcf58f05b1efb3165e
  
          BlockPos blockposition1Final = blockposition1; // CraftBukkit - decompile error
          WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
-+            if (!CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1Final, iblockdata1).isCancelled()) // Paper - call EntityChangeBlockEvent
++            if (CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1Final, iblockdata1)) // Paper - call EntityChangeBlockEvent
              world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
          });
          world.levelEvent(3002, blockposition1, -1);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/TryLaySpawnOnWaterNearLand.java b/src/main/java/net/minecraft/world/entity/ai/behavior/TryLaySpawnOnWaterNearLand.java
-index 2c443b421e342ebfbdf941a431ba20560521920b..72cab38ab1f16f7ccc85258266d4c58cf3287d7d 100644
+index 2c443b421e342ebfbdf941a431ba20560521920b..91b68ee3605afdb845405e455c869e48a7fc9aab 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/TryLaySpawnOnWaterNearLand.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/TryLaySpawnOnWaterNearLand.java
 @@ -27,6 +27,12 @@ public class TryLaySpawnOnWaterNearLand {
@@ -87,7 +87,7 @@ index 2c443b421e342ebfbdf941a431ba20560521920b..72cab38ab1f16f7ccc85258266d4c58c
                                  if (world.getBlockState(blockPos3).isAir()) {
                                      BlockState blockState = frogSpawn.defaultBlockState();
 +                                    // Paper start
-+                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPos3, blockState).isCancelled()) {
++                                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPos3, blockState)) {
 +                                        isPregnant.erase(); // forgot pregnant memory
 +                                        return true;
 +                                    }
@@ -96,7 +96,7 @@ index 2c443b421e342ebfbdf941a431ba20560521920b..72cab38ab1f16f7ccc85258266d4c58c
                                      world.gameEvent(GameEvent.BLOCK_PLACE, blockPos3, GameEvent.Context.of(entity, blockState));
                                      world.playSound((Player)null, entity, SoundEvents.FROG_LAY_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
 diff --git a/src/main/java/net/minecraft/world/item/AxeItem.java b/src/main/java/net/minecraft/world/item/AxeItem.java
-index 2f8ae1786a4c4438515c59fa56acaefdff60703d..9c7d0b9cc2fa98d5785c914c0183f7d4b5b1c1ea 100644
+index 2f8ae1786a4c4438515c59fa56acaefdff60703d..18898e16ec42f6b694b06e09d9174b60d62450d7 100644
 --- a/src/main/java/net/minecraft/world/item/AxeItem.java
 +++ b/src/main/java/net/minecraft/world/item/AxeItem.java
 @@ -54,6 +54,11 @@ public class AxeItem extends DiggerItem {
@@ -104,7 +104,7 @@ index 2f8ae1786a4c4438515c59fa56acaefdff60703d..9c7d0b9cc2fa98d5785c914c0183f7d4
  
          if (optional4.isPresent()) {
 +            // Paper start - EntityChangeBlockEvent
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, optional4.get()).isCancelled()) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, optional4.get())) {
 +                return InteractionResult.PASS;
 +            }
 +            // Paper end
@@ -112,7 +112,7 @@ index 2f8ae1786a4c4438515c59fa56acaefdff60703d..9c7d0b9cc2fa98d5785c914c0183f7d4
                  CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
              }
 diff --git a/src/main/java/net/minecraft/world/item/EnderEyeItem.java b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
-index 1fddc9025a9e5079f05dd6c86f6ca43c5d51d9c3..2735e139fd2b5ab11e4311848e9676ee203b1a6b 100644
+index 1fddc9025a9e5079f05dd6c86f6ca43c5d51d9c3..6d45e3ebea6721b9c168fea572e9bd610eb54431 100644
 --- a/src/main/java/net/minecraft/world/item/EnderEyeItem.java
 +++ b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
 @@ -43,6 +43,11 @@ public class EnderEyeItem extends Item {
@@ -120,7 +120,7 @@ index 1fddc9025a9e5079f05dd6c86f6ca43c5d51d9c3..2735e139fd2b5ab11e4311848e9676ee
              } else {
                  BlockState iblockdata1 = (BlockState) iblockdata.setValue(EndPortalFrameBlock.HAS_EYE, true);
 +                // Paper start
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockposition, iblockdata1).isCancelled()) {
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockposition, iblockdata1)) {
 +                    return InteractionResult.PASS;
 +                }
 +                // Paper end
@@ -128,7 +128,7 @@ index 1fddc9025a9e5079f05dd6c86f6ca43c5d51d9c3..2735e139fd2b5ab11e4311848e9676ee
                  Block.pushEntitiesUp(iblockdata, iblockdata1, world, blockposition);
                  world.setBlock(blockposition, iblockdata1, 2);
 diff --git a/src/main/java/net/minecraft/world/item/HoneycombItem.java b/src/main/java/net/minecraft/world/item/HoneycombItem.java
-index 5ab115834cddb9ab3209c11bd0fe657b06a02eb2..744ee7633e10c68a830e7513993e4c307c8984d2 100644
+index 5ab115834cddb9ab3209c11bd0fe657b06a02eb2..eaa263db594d5cf8758c8205ea06bbd37d56cdd4 100644
 --- a/src/main/java/net/minecraft/world/item/HoneycombItem.java
 +++ b/src/main/java/net/minecraft/world/item/HoneycombItem.java
 @@ -39,6 +39,14 @@ public class HoneycombItem extends Item implements SignApplicator {
@@ -136,7 +136,7 @@ index 5ab115834cddb9ab3209c11bd0fe657b06a02eb2..744ee7633e10c68a830e7513993e4c30
              Player player = context.getPlayer();
              ItemStack itemStack = context.getItemInHand();
 +            // Paper start - EntityChangeBlockEvent
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, state).isCancelled()) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, state)) {
 +                if (!player.isCreative()) {
 +                    player.containerMenu.sendAllDataToRemote();
 +                }
@@ -147,7 +147,7 @@ index 5ab115834cddb9ab3209c11bd0fe657b06a02eb2..744ee7633e10c68a830e7513993e4c30
                  CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
              }
 diff --git a/src/main/java/net/minecraft/world/item/PotionItem.java b/src/main/java/net/minecraft/world/item/PotionItem.java
-index 8c79ca75089e739d4899421106833e42e4e57280..f8b201f8a8019bc9b85ed013cbe7f20b4f07ec85 100644
+index 8c79ca75089e739d4899421106833e42e4e57280..88df7093c47f2a90f79a55797a04d7e4f51ed549 100644
 --- a/src/main/java/net/minecraft/world/item/PotionItem.java
 +++ b/src/main/java/net/minecraft/world/item/PotionItem.java
 @@ -107,6 +107,12 @@ public class PotionItem extends Item {
@@ -155,7 +155,7 @@ index 8c79ca75089e739d4899421106833e42e4e57280..f8b201f8a8019bc9b85ed013cbe7f20b
  
          if (context.getClickedFace() != Direction.DOWN && iblockdata.is(BlockTags.CONVERTABLE_TO_MUD) && PotionUtils.getPotion(itemstack) == Potions.WATER) {
 +            // Paper start
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState()).isCancelled()) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState())) {
 +                entityhuman.containerMenu.sendAllDataToRemote();
 +                return InteractionResult.PASS;
 +            }
@@ -164,7 +164,7 @@ index 8c79ca75089e739d4899421106833e42e4e57280..f8b201f8a8019bc9b85ed013cbe7f20b
              entityhuman.setItemInHand(context.getHand(), ItemUtils.createFilledResult(itemstack, entityhuman, new ItemStack(Items.GLASS_BOTTLE)));
              entityhuman.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
 diff --git a/src/main/java/net/minecraft/world/item/ShovelItem.java b/src/main/java/net/minecraft/world/item/ShovelItem.java
-index 32995cb5efdad0bc34ecacacb78cccd21220ba8d..c7195f2e12bbd6545f7bffcc2b4ba5cc3d48df20 100644
+index 32995cb5efdad0bc34ecacacb78cccd21220ba8d..21212462e6b415e96536a27b2c009d1562f18946 100644
 --- a/src/main/java/net/minecraft/world/item/ShovelItem.java
 +++ b/src/main/java/net/minecraft/world/item/ShovelItem.java
 @@ -36,20 +36,29 @@ public class ShovelItem extends DiggerItem {
@@ -190,7 +190,7 @@ index 32995cb5efdad0bc34ecacacb78cccd21220ba8d..c7195f2e12bbd6545f7bffcc2b4ba5cc
              if (blockState3 != null) {
                  if (!level.isClientSide) {
 +                    // Paper start
-+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockPos, blockState3).isCancelled()) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockPos, blockState3)) {
 +                        return InteractionResult.PASS;
 +                    }
 +                    afterAction.run();
