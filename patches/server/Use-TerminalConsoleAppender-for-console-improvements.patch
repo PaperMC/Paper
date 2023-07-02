@@ -29,7 +29,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -0,0 +0,0 @@ plugins {
+     id("com.github.johnrengelman.shadow")
+ }
  
++val log4jPlugins = sourceSets.create("log4jPlugins")
++configurations.named(log4jPlugins.compileClasspathConfigurationName) {
++    extendsFrom(configurations.compileClasspath.get())
++}
++val alsoShade: Configuration by configurations.creating
++
  dependencies {
      implementation(project(":paper-api"))
 -    implementation("jline:jline:2.12.1")
@@ -44,12 +52,80 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +          all its classes to check if they are plugins.
 +          Scanning takes about 1-2 seconds so adding this speeds up the server start.
 +     */
-+    runtimeOnly("org.apache.logging.log4j:log4j-core:2.14.1")
-+    annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - Needed to generate meta for our Log4j plugins
++    runtimeOnly("org.apache.logging.log4j:log4j-core:2.19.0")
++    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
++    runtimeOnly(log4jPlugins.output)
++    alsoShade(log4jPlugins.output)
 +    // Paper end
      implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
      implementation("org.ow2.asm:asm:9.4")
      implementation("org.ow2.asm:asm-commons:9.4") // Paper - ASM event executor generation
+@@ -0,0 +0,0 @@ relocation {
+ }
+ 
+ tasks.shadowJar {
+-    configurations = listOf(project.configurations.vanillaServer.get())
++    configurations = listOf(project.configurations.vanillaServer.get(), alsoShade)
+     archiveClassifier.set("mojang-mapped")
+ 
+     for (relocation in relocation.relocations.get()) {
+diff --git a/src/log4jPlugins/java/io/papermc/paper/console/StripANSIConverter.java b/src/log4jPlugins/java/io/papermc/paper/console/StripANSIConverter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/log4jPlugins/java/io/papermc/paper/console/StripANSIConverter.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.console;
++
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.config.Configuration;
++import org.apache.logging.log4j.core.config.plugins.Plugin;
++import org.apache.logging.log4j.core.layout.PatternLayout;
++import org.apache.logging.log4j.core.pattern.ConverterKeys;
++import org.apache.logging.log4j.core.pattern.LogEventPatternConverter;
++import org.apache.logging.log4j.core.pattern.PatternConverter;
++import org.apache.logging.log4j.core.pattern.PatternFormatter;
++import org.apache.logging.log4j.core.pattern.PatternParser;
++
++import java.util.List;
++import java.util.regex.Pattern;
++
++@Plugin(name = "stripAnsi", category = PatternConverter.CATEGORY)
++@ConverterKeys({"stripAnsi"})
++public final class StripANSIConverter extends LogEventPatternConverter {
++    final private Pattern ANSI_PATTERN = Pattern.compile("\\e\\[[\\d;]*[^\\d;]");
++
++    private final List<PatternFormatter> formatters;
++
++    private StripANSIConverter(List<PatternFormatter> formatters) {
++        super("stripAnsi", null);
++        this.formatters = formatters;
++    }
++
++    @Override
++    public void format(LogEvent event, StringBuilder toAppendTo) {
++        int start = toAppendTo.length();
++        for (PatternFormatter formatter : formatters) {
++            formatter.format(event, toAppendTo);
++        }
++        String content = toAppendTo.substring(start);
++        content = ANSI_PATTERN.matcher(content).replaceAll("");
++
++        toAppendTo.setLength(start);
++        toAppendTo.append(content);
++    }
++
++    public static StripANSIConverter newInstance(Configuration config, String[] options) {
++        if (options.length != 1) {
++            LOGGER.error("Incorrect number of options on stripAnsi. Expected exactly 1, received " + options.length);
++            return null;
++        }
++
++        PatternParser parser = PatternLayout.createPatternParser(config);
++        List<PatternFormatter> formatters = parser.parse(options[0]);
++        return new StripANSIConverter(formatters);
++    }
++}
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -175,63 +251,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return PaperAdventure.ANSI_SERIALIZER.serialize(GlobalTranslator.render(message, Locale.getDefault()));
      }
  }
-diff --git a/src/main/java/io/papermc/paper/console/StripANSIConverter.java b/src/main/java/io/papermc/paper/console/StripANSIConverter.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/console/StripANSIConverter.java
-@@ -0,0 +0,0 @@
-+package io.papermc.paper.console;
-+
-+import org.apache.logging.log4j.core.LogEvent;
-+import org.apache.logging.log4j.core.config.Configuration;
-+import org.apache.logging.log4j.core.config.plugins.Plugin;
-+import org.apache.logging.log4j.core.layout.PatternLayout;
-+import org.apache.logging.log4j.core.pattern.ConverterKeys;
-+import org.apache.logging.log4j.core.pattern.LogEventPatternConverter;
-+import org.apache.logging.log4j.core.pattern.PatternConverter;
-+import org.apache.logging.log4j.core.pattern.PatternFormatter;
-+import org.apache.logging.log4j.core.pattern.PatternParser;
-+
-+import java.util.List;
-+import java.util.regex.Pattern;
-+
-+@Plugin(name = "stripAnsi", category = PatternConverter.CATEGORY)
-+@ConverterKeys({"stripAnsi"})
-+public final class StripANSIConverter extends LogEventPatternConverter {
-+    final private Pattern ANSI_PATTERN = Pattern.compile("\\e\\[[\\d;]*[^\\d;]");
-+
-+    private final List<PatternFormatter> formatters;
-+
-+    private StripANSIConverter(List<PatternFormatter> formatters) {
-+        super("stripAnsi", null);
-+        this.formatters = formatters;
-+    }
-+
-+    @Override
-+    public void format(LogEvent event, StringBuilder toAppendTo) {
-+        int start = toAppendTo.length();
-+        for (PatternFormatter formatter : formatters) {
-+            formatter.format(event, toAppendTo);
-+        }
-+        String content = toAppendTo.substring(start);
-+        content = ANSI_PATTERN.matcher(content).replaceAll("");
-+
-+        toAppendTo.setLength(start);
-+        toAppendTo.append(content);
-+    }
-+
-+    public static StripANSIConverter newInstance(Configuration config, String[] options) {
-+        if (options.length != 1) {
-+            LOGGER.error("Incorrect number of options on stripAnsi. Expected exactly 1, received " + options.length);
-+            return null;
-+        }
-+
-+        PatternParser parser = PatternLayout.createPatternParser(config);
-+        List<PatternFormatter> formatters = parser.parse(options[0]);
-+        return new StripANSIConverter(formatters);
-+    }
-+}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
