@@ -22,10 +22,11 @@
  public class FishingHook extends Projectile {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -68,6 +74,18 @@
+@@ -67,6 +73,18 @@
+     public FishingHook.FishHookState currentState;
      private final int luck;
      private final int lureSpeed;
- 
++
 +    // CraftBukkit start - Extra variables to enable modification of fishing wait time, values are minecraft defaults
 +    public int minWaitTime = 100;
 +    public int maxWaitTime = 600;
@@ -37,10 +38,9 @@
 +    public boolean rainInfluenced = true;
 +    public boolean skyInfluenced = true;
 +    // CraftBukkit end
-+
+ 
      private FishingHook(EntityType<? extends FishingHook> type, Level world, int luckBonus, int waitTimeReductionTicks) {
          super(type, world);
-         this.syncronizedRandom = RandomSource.create();
 @@ -75,13 +93,17 @@
          this.currentState = FishingHook.FishHookState.FLYING;
          this.luck = Math.max(0, luckBonus);
@@ -175,19 +175,28 @@
  
      public boolean calculateOpenWater(BlockPos pos) {
          FishingHook.OpenWaterType entityfishinghook_waterposition = FishingHook.OpenWaterType.INVALID;
-@@ -446,12 +488,20 @@
+@@ -445,13 +487,29 @@
+     @Override
      public void readAdditionalSaveData(CompoundTag nbt) {}
  
++    // Paper start - Add hand parameter to PlayerFishEvent
++    @Deprecated
++    @io.papermc.paper.annotation.DoNotUse
      public int retrieve(ItemStack usedItem) {
 -        Player entityhuman = this.getPlayerOwner();
-+        net.minecraft.world.entity.player.Player entityhuman = this.getPlayerOwner();
++        return this.retrieve(net.minecraft.world.InteractionHand.MAIN_HAND, usedItem);
++    }
  
++    public int retrieve(net.minecraft.world.InteractionHand hand, ItemStack usedItem) {
++        // Paper end - Add hand parameter to PlayerFishEvent
++        net.minecraft.world.entity.player.Player entityhuman = this.getPlayerOwner();
++
          if (!this.level().isClientSide && entityhuman != null && !this.shouldStopFishing(entityhuman)) {
              int i = 0;
  
              if (this.hookedIn != null) {
 +                // CraftBukkit start
-+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), this.hookedIn.getBukkitEntity(), (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_ENTITY);
++                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), this.hookedIn.getBukkitEntity(), (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.CAUGHT_ENTITY); // Paper - Add hand parameter to PlayerFishEvent
 +                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +
 +                if (playerFishEvent.isCancelled()) {
@@ -197,7 +206,7 @@
                  this.pullEntity(this.hookedIn);
                  CriteriaTriggers.FISHING_ROD_HOOKED.trigger((ServerPlayer) entityhuman, usedItem, this, Collections.emptyList());
                  this.level().broadcastEntityEvent(this, (byte) 31);
-@@ -466,15 +516,38 @@
+@@ -466,15 +524,38 @@
  
                  while (iterator.hasNext()) {
                      ItemStack itemstack1 = (ItemStack) iterator.next();
@@ -210,7 +219,7 @@
 +                    }
 +                    // Paper end
 +                    // CraftBukkit start
-+                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem != null ? entityitem.getBukkitEntity() : null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_FISH); // Paper - entityitem may be null
++                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem != null ? entityitem.getBukkitEntity() : null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.CAUGHT_FISH); // Paper - entityitem may be null // Paper - Add hand parameter to PlayerFishEvent
 +                    playerFishEvent.setExpToDrop(this.random.nextInt(6) + 1);
 +                    this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +
@@ -240,12 +249,12 @@
                      if (itemstack1.is(ItemTags.FISHES)) {
                          entityhuman.awardStat(Stats.FISH_CAUGHT, 1);
                      }
-@@ -484,10 +557,27 @@
+@@ -484,10 +565,27 @@
              }
  
              if (this.onGround()) {
 +                // CraftBukkit start
-+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.IN_GROUND);
++                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.IN_GROUND); // Paper - Add hand parameter to PlayerFishEvent
 +                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +
 +                if (playerFishEvent.isCancelled()) {
@@ -256,7 +265,7 @@
              }
 +            // CraftBukkit start
 +            if (i == 0) {
-+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.REEL_IN);
++                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.REEL_IN); // Paper - Add hand parameter to PlayerFishEvent
 +                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +                if (playerFishEvent.isCancelled()) {
 +                    return 0;
@@ -269,7 +278,7 @@
              return i;
          } else {
              return 0;
-@@ -496,7 +586,7 @@
+@@ -496,7 +594,7 @@
  
      @Override
      public void handleEntityEvent(byte status) {
@@ -278,7 +287,7 @@
              this.pullEntity(this.hookedIn);
          }
  
-@@ -520,8 +610,15 @@
+@@ -520,8 +618,15 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -295,7 +304,7 @@
      }
  
      @Override
-@@ -536,7 +633,7 @@
+@@ -536,7 +641,7 @@
      }
  
      private void updateOwnerInfo(@Nullable FishingHook fishingBobber) {
@@ -304,7 +313,7 @@
  
          if (entityhuman != null) {
              entityhuman.fishing = fishingBobber;
-@@ -545,10 +642,10 @@
+@@ -545,10 +650,10 @@
      }
  
      @Nullable
@@ -317,7 +326,7 @@
      }
  
      @Nullable
-@@ -575,7 +672,7 @@
+@@ -575,7 +680,7 @@
              int i = packet.getData();
  
              FishingHook.LOGGER.error("Failed to recreate fishing hook on client. {} (id: {}) is not a valid owner.", this.level().getEntity(i), i);
