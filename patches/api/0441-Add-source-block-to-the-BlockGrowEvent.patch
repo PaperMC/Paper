@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Sun, 9 Jul 2023 18:42:33 +0200
+Subject: [PATCH] Add source block to the BlockGrowEvent
+
+
+diff --git a/src/main/java/org/bukkit/event/block/BlockFormEvent.java b/src/main/java/org/bukkit/event/block/BlockFormEvent.java
+index 0106780414abf8cdacd07b8e1435d619bf96bdb3..512d432b91a1a66919bdad1a049b8c6ad7be206b 100644
+--- a/src/main/java/org/bukkit/event/block/BlockFormEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockFormEvent.java
+@@ -30,6 +30,14 @@ public class BlockFormEvent extends BlockGrowEvent {
+         super(block, newState);
+     }
+ 
++    // Paper start
++    @org.jetbrains.annotations.Contract("-> null")
++    @org.jetbrains.annotations.Nullable
++    public Block getSource() {
++        return super.getSource();
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+diff --git a/src/main/java/org/bukkit/event/block/BlockGrowEvent.java b/src/main/java/org/bukkit/event/block/BlockGrowEvent.java
+index 73d5375d2f67ee00204d80308828cd9f2b2f17e8..e3f9a6e5cbeda977545dede8bc59fdeacb3a3e2a 100644
+--- a/src/main/java/org/bukkit/event/block/BlockGrowEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockGrowEvent.java
+@@ -24,12 +24,21 @@ import org.jetbrains.annotations.NotNull;
+ public class BlockGrowEvent extends BlockEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private final BlockState newState;
++    private final Block source; // Paper
+     private boolean cancelled = false;
+ 
+     public BlockGrowEvent(@NotNull final Block block, @NotNull final BlockState newState) {
++        this(block, null, newState); // Paper
++    }
++
++    // Paper start
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public BlockGrowEvent(@NotNull final Block block, @org.jetbrains.annotations.Nullable final Block source, @NotNull final BlockState newState) { // Paper
+         super(block);
++        this.source = source;
+         this.newState = newState;
+     }
++    // Paper end
+ 
+     /**
+      * Gets the state of the block where it will form or spread to.
+@@ -41,6 +50,20 @@ public class BlockGrowEvent extends BlockEvent implements Cancellable {
+         return newState;
+     }
+ 
++    // Paper start
++    /**
++     * Gets the source block involved in this event.
++     * The block can be null when the block grows without
++     * creating a new block but instead ageing itself.
++     *
++     * @return the source block involved in this event.
++     */
++    @org.jetbrains.annotations.Nullable
++    public Block getSource() {
++        return this.source;
++    }
++    // Paper end
++
+     @Override
+     public boolean isCancelled() {
+         return cancelled;

@@ -1,0 +1,343 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Fri, 9 Jun 2023 13:04:42 +0200
+Subject: [PATCH] Call BlockGrowEvent for missing blocks
+
+Fixes some cancellability issues for sugar cane, cactus and melon/pumkin stems
+Include the source block when available
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index 55026e1731e41b4e3e4c6a8fef5d96a32051a556..98d1104fa42512264d72ddc3c9801a44013091ab 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -1247,8 +1247,8 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+                         }
+ 
+                         if (iblockdata1 != null && CraftEventFactory.callEntityChangeBlockEvent(Bee.this, blockposition, iblockdata1)) { // CraftBukkit
++                            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(Bee.this.level(), blockposition, iblockdata1, 3)) continue; // Paper
+                             Bee.this.level().levelEvent(2005, blockposition, 0);
+-                            Bee.this.level().setBlockAndUpdate(blockposition, iblockdata1);
+                             Bee.this.incrementNumCropsGrownSincePollination();
+                         }
+                     }
+diff --git a/src/main/java/net/minecraft/world/level/block/BigDripleafBlock.java b/src/main/java/net/minecraft/world/level/block/BigDripleafBlock.java
+index 5921f7ebb56e1d5d3004ae327271873093cff357..db4149443608a278fb34661eebefa95be30e39d3 100644
+--- a/src/main/java/net/minecraft/world/level/block/BigDripleafBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BigDripleafBlock.java
+@@ -106,7 +106,7 @@ public class BigDripleafBlock extends HorizontalDirectionalBlock implements Bone
+     }
+ 
+     protected static boolean place(LevelAccessor world, BlockPos pos, FluidState fluidState, Direction direction) {
+-        BlockState iblockdata = (BlockState) ((BlockState) Blocks.BIG_DRIPLEAF.defaultBlockState().setValue(BigDripleafBlock.WATERLOGGED, fluidState.isSourceOfType(Fluids.WATER))).setValue(BigDripleafBlock.FACING, direction);
++        BlockState iblockdata = (BlockState) ((BlockState) Blocks.BIG_DRIPLEAF.defaultBlockState().setValue(BigDripleafBlock.WATERLOGGED, fluidState.isSourceOfType(Fluids.WATER))).setValue(BigDripleafBlock.FACING, direction); // Paper - diff on change
+ 
+         return world.setBlock(pos, iblockdata, 3);
+     }
+@@ -161,9 +161,13 @@ public class BigDripleafBlock extends HorizontalDirectionalBlock implements Bone
+ 
+         if (BigDripleafBlock.canPlaceAt(world, blockposition1, iblockdata1)) {
+             Direction enumdirection = (Direction) state.getValue(BigDripleafBlock.FACING);
++            // Paper start
++            BlockState newLeaf = (BlockState) ((BlockState) Blocks.BIG_DRIPLEAF.defaultBlockState().setValue(BigDripleafBlock.WATERLOGGED, iblockdata1.getFluidState().isSourceOfType(Fluids.WATER))).setValue(BigDripleafBlock.FACING, enumdirection); // from BigDripleafBlock#place
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockposition1, pos, newLeaf, 3)) return;
++            // Paper end
+ 
+             BigDripleafStemBlock.place(world, pos, state.getFluidState(), enumdirection);
+-            BigDripleafBlock.place(world, blockposition1, iblockdata1.getFluidState(), enumdirection);
++            // BigDripleafBlock.place(world, blockposition1, iblockdata1.getFluidState(), enumdirection); // Paper - handled in the event call
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/BigDripleafStemBlock.java b/src/main/java/net/minecraft/world/level/block/BigDripleafStemBlock.java
+index f19e2e0e0551e2bf5b9871ef21a5d56e656a5be3..8cf5eb19aba26fa80b55df1be1726e6a97ee53ef 100644
+--- a/src/main/java/net/minecraft/world/level/block/BigDripleafStemBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BigDripleafStemBlock.java
+@@ -118,8 +118,12 @@ public class BigDripleafStemBlock extends HorizontalDirectionalBlock implements
+             BlockPos blockPos = optional.get();
+             BlockPos blockPos2 = blockPos.above();
+             Direction direction = state.getValue(FACING);
++            // Paper start
++            BlockState newLeaf = (BlockState) ((BlockState) Blocks.BIG_DRIPLEAF.defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, world.getFluidState(blockPos2).isSourceOfType(Fluids.WATER))).setValue(BigDripleafBlock.FACING, direction); // from BigDripleafBlock#place
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockPos2, blockPos, newLeaf, 3)) return;
++            // Paper end
+             place(world, blockPos, world.getFluidState(blockPos), direction);
+-            BigDripleafBlock.place(world, blockPos2, world.getFluidState(blockPos2), direction);
++            // BigDripleafBlock.place(world, blockPos2, world.getFluidState(blockPos2), direction); // Paper - handled in the event call
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/BuddingAmethystBlock.java b/src/main/java/net/minecraft/world/level/block/BuddingAmethystBlock.java
+index 51d86da2bc9eb6168dcb1ca4f32f2f2659eba5a2..d398d10323a95c21f9614300482232f0f4823f3c 100644
+--- a/src/main/java/net/minecraft/world/level/block/BuddingAmethystBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BuddingAmethystBlock.java
+@@ -38,11 +38,11 @@ public class BuddingAmethystBlock extends AmethystBlock {
+             if (block != null) {
+                 BlockState iblockdata2 = (BlockState) ((BlockState) block.defaultBlockState().setValue(AmethystClusterBlock.FACING, enumdirection)).setValue(AmethystClusterBlock.WATERLOGGED, iblockdata1.getFluidState().getType() == Fluids.WATER);
+ 
+-                // Paper start - Have Amethyst throw both spread and grow events
++                // Paper start - Have Amethyst throw both spread and grow events, add source block for the grow event and ensure proper flag
+                 if (block == Blocks.SMALL_AMETHYST_BUD) {
+-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, iblockdata2); // CraftBukkit
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, iblockdata2, 3); // CraftBukkit
+                 } else {
+-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockposition1, iblockdata2);
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockposition1, pos, iblockdata2, 3);
+                 }
+                 // Paper end
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/CactusBlock.java b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+index 0003fb51ae3a6575575e10b4c86719f3061e2577..c02f7b0dbf8aaafa76da99a76f1ff87e1a1f0274 100644
+--- a/src/main/java/net/minecraft/world/level/block/CactusBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+@@ -59,13 +59,13 @@ public class CactusBlock extends Block {
+ 
+                 int modifier = world.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+                 if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    CraftEventFactory.handleBlockGrowEvent(world, blockposition1, this.defaultBlockState()); // CraftBukkit
++                    if (!CraftEventFactory.handleBlockGrowEvent(world, blockposition1, pos, this.defaultBlockState(), 3)) return; // CraftBukkit // Paper - properly cancel
+                     BlockState iblockdata1 = (BlockState) state.setValue(CactusBlock.AGE, 0);
+ 
+                     world.setBlock(pos, iblockdata1, 4);
+                     world.neighborChanged(iblockdata1, blockposition1, this, pos, false);
+                 } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    world.setBlock(pos, (BlockState) state.setValue(CactusBlock.AGE, j + 1), 4);
++                    CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(CactusBlock.AGE, j + 1), 4); // Paper
+                 }
+ 
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
+index 18b5bce1138d50be32e5da013221be69dc47e21f..2ecdd8a9a7b56d50de40743b2df12a8d32e92d27 100644
+--- a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
+@@ -86,6 +86,6 @@ public class CaveVinesBlock extends GrowingPlantHeadBlock implements Bonemealabl
+ 
+     @Override
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
+-        world.setBlock(pos, state.setValue(BERRIES, Boolean.valueOf(true)), 2);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(BERRIES, Boolean.valueOf(true)), 2); // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/CaveVinesPlantBlock.java b/src/main/java/net/minecraft/world/level/block/CaveVinesPlantBlock.java
+index 487c473127299a6243797792c26df5d65f3f8000..118238c0525b06e37040431ade5299d333ba046a 100644
+--- a/src/main/java/net/minecraft/world/level/block/CaveVinesPlantBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CaveVinesPlantBlock.java
+@@ -60,6 +60,6 @@ public class CaveVinesPlantBlock extends GrowingPlantBodyBlock implements Boneme
+ 
+     @Override
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
+-        world.setBlock(pos, state.setValue(BERRIES, Boolean.valueOf(true)), 2);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(BERRIES, Boolean.valueOf(true)), 2); // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+index 9db66b393e057d93a8025b803ae0ad2a1bca61f6..36f8e5ef10cdaa9d8978b6026b95c5761d1c7be2 100644
+--- a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+@@ -71,6 +71,12 @@ public class DoublePlantBlock extends BushBlock {
+         world.setBlock(blockposition1, DoublePlantBlock.copyWaterloggedFrom(world, blockposition1, (BlockState) state.setValue(DoublePlantBlock.HALF, DoubleBlockHalf.UPPER)), flags);
+     }
+ 
++    // Paper start - sync with above
++    public static void placeLowerPartAt(LevelAccessor world, BlockState state, BlockPos pos, int flags) {
++        world.setBlock(pos, DoublePlantBlock.copyWaterloggedFrom(world, pos, (BlockState) state.setValue(DoublePlantBlock.HALF, DoubleBlockHalf.LOWER)), flags);
++    }
++    // Paper end
++
+     public static BlockState copyWaterloggedFrom(LevelReader world, BlockPos pos, BlockState state) {
+         return state.hasProperty(BlockStateProperties.WATERLOGGED) ? (BlockState) state.setValue(BlockStateProperties.WATERLOGGED, world.isWaterAt(pos)) : state;
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
+index 3a1aa4e2405090ccebefb7f5944f36462929e221..229db301bb22d46dd9a299cab4d93a150d48df86 100644
+--- a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
+@@ -123,7 +123,7 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
+         int j = this.getBlocksToGrowWhenBonemealed(random);
+ 
+         for (int k = 0; k < j && this.canGrowInto(world.getBlockState(blockposition1)); ++k) {
+-            world.setBlockAndUpdate(blockposition1, (BlockState) state.setValue(GrowingPlantHeadBlock.AGE, i));
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockposition1, pos, state.setValue(GrowingPlantHeadBlock.AGE, i), 3)) break; // Paper
+             blockposition1 = blockposition1.relative(this.growthDirection);
+             i = Math.min(i + 1, 25);
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java b/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
+index 44c78f0d56c3459c063c104e401a521e3df7d8e5..69df3ac280c539f761e73049fb529a94d5b095d8 100644
+--- a/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
+@@ -95,7 +95,7 @@ public class MangrovePropaguleBlock extends SaplingBlock implements SimpleWaterl
+ 
+         } else {
+             if (!isFullyGrown(state)) {
+-                world.setBlock(pos, state.cycle(AGE), 2);
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.cycle(AGE), 2); // Paper
+             }
+ 
+         }
+@@ -114,7 +114,7 @@ public class MangrovePropaguleBlock extends SaplingBlock implements SimpleWaterl
+     @Override
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
+         if (isHanging(state) && !isFullyGrown(state)) {
+-            world.setBlock(pos, state.cycle(AGE), 2);
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.cycle(AGE), 2); // Paper
+         } else {
+             super.performBonemeal(world, random, pos, state);
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+index 849c0ae6ca30691134f51e5d4d5da372e0e728bd..fb77e0b73e3932adb49b684fd2189ca69ce07f4e 100644
+--- a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+@@ -126,11 +126,16 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+     private void grow(ServerLevel world, BlockState state, BlockPos pos, int amount) {
+         int i = Math.min(state.getValue(AGE) + amount, 4);
+         if (this.canGrow(world, pos, state, i)) {
+-            world.setBlock(pos, state.setValue(AGE, Integer.valueOf(i)), 2);
+             if (i >= 3) {
+                 BlockPos blockPos = pos.above();
+-                world.setBlock(blockPos, copyWaterloggedFrom(world, pos, this.defaultBlockState().setValue(AGE, Integer.valueOf(i)).setValue(HALF, DoubleBlockHalf.UPPER)), 3);
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockPos, pos, copyWaterloggedFrom(world, pos, this.defaultBlockState().setValue(AGE, Integer.valueOf(i)).setValue(HALF, DoubleBlockHalf.UPPER)), 2)) return; // Paper
++                world.setBlock(pos, state.setValue(AGE, Integer.valueOf(i)), 2); // Paper - moved from above
+             }
++            // Paper start
++            else {
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(AGE, Integer.valueOf(i)), 2);
++            }
++            // Paper end
+ 
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+index d5ec1e5909c03a58add7f4597b140f787600c09a..1e6e96dda1c4186ee1fbe2198d6a8a1ae8e69cd5 100644
+--- a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+@@ -50,7 +50,7 @@ public class SaplingBlock extends BushBlock implements BonemealableBlock {
+ 
+     public void advanceTree(ServerLevel world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, RandomSource random) {
+         if ((Integer) state.getValue(SaplingBlock.STAGE) == 0) {
+-            world.setBlock(pos, (net.minecraft.world.level.block.state.BlockState) state.cycle(SaplingBlock.STAGE), 4);
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.cycle(SaplingBlock.STAGE), 4); // Paper
+         } else {
+             // CraftBukkit start
+             if (world.captureTreeGeneration) {
+diff --git a/src/main/java/net/minecraft/world/level/block/SeagrassBlock.java b/src/main/java/net/minecraft/world/level/block/SeagrassBlock.java
+index 510c34090e3b4c8efe61ff9f69ffee606733756f..1f1cb0d661b12c8f26637609baa879d0ac192732 100644
+--- a/src/main/java/net/minecraft/world/level/block/SeagrassBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SeagrassBlock.java
+@@ -76,8 +76,8 @@ public class SeagrassBlock extends BushBlock implements BonemealableBlock, Liqui
+         BlockState blockState2 = blockState.setValue(TallSeagrassBlock.HALF, DoubleBlockHalf.UPPER);
+         BlockPos blockPos = pos.above();
+         if (world.getBlockState(blockPos).is(Blocks.WATER)) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, blockPos, pos, blockState2, 2)) return; // Paper
+             world.setBlock(pos, blockState, 2);
+-            world.setBlock(blockPos, blockState2, 2);
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
+index ecb8224beb0ee65855c7529b69ea56b7b6674664..fab44502b3e22eb8d1311068f88290ce31adb437 100644
+--- a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
+@@ -65,8 +65,13 @@ public class SnifferEggBlock extends Block {
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (!this.isReadyToHatch(state)) {
++            // Paper start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(HATCH, Integer.valueOf(this.getHatchLevel(state) + 1)), 2)) {
++                rescheduleTick(world, pos);
++                return;
++            }
++            // Paper end
+             world.playSound((Player)null, pos, SoundEvents.SNIFFER_EGG_CRACK, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+-            world.setBlock(pos, state.setValue(HATCH, Integer.valueOf(this.getHatchLevel(state) + 1)), 2);
+         } else {
+             // Paper start - Call BlockFadeEvent
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, state.getFluidState().createLegacyBlock()).isCancelled()) {
+diff --git a/src/main/java/net/minecraft/world/level/block/StemBlock.java b/src/main/java/net/minecraft/world/level/block/StemBlock.java
+index d95d5cd224b229fc34e271b56ca1dc9be13d6268..9ee4cf6b96fecd3ae6a1aac6ad8a6cebf7d7cfeb 100644
+--- a/src/main/java/net/minecraft/world/level/block/StemBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/StemBlock.java
+@@ -66,7 +66,7 @@ public class StemBlock extends BushBlock implements BonemealableBlock {
+ 
+                     if (world.getBlockState(blockposition1).isAir() && (iblockdata1.is(Blocks.FARMLAND) || iblockdata1.is(BlockTags.DIRT))) {
+                         // CraftBukkit start
+-                        if (!CraftEventFactory.handleBlockGrowEvent(world, blockposition1, this.fruit.defaultBlockState())) {
++                        if (!CraftEventFactory.handleBlockGrowEvent(world, blockposition1, pos, this.fruit.defaultBlockState(), 3)) { // Paper
+                             return;
+                         }
+                         // CraftBukkit end
+@@ -98,8 +98,7 @@ public class StemBlock extends BushBlock implements BonemealableBlock {
+         int i = Math.min(7, (Integer) state.getValue(StemBlock.AGE) + Mth.nextInt(world.random, 2, 5));
+         BlockState iblockdata1 = (BlockState) state.setValue(StemBlock.AGE, i);
+ 
+-        CraftEventFactory.handleBlockGrowEvent(world, pos, iblockdata1, 2); // CraftBukkit
+-        if (i == 7) {
++        if (CraftEventFactory.handleBlockGrowEvent(world, pos, iblockdata1, 2) && i == 7) { // Paper - properly cancel
+             iblockdata1.randomTick(world, pos, world.random);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+index c3f500580d257e1397f2eb7c47b063a6fe6bb405..152cd69550c1cdbeb98687d23b1b32d079083812 100644
+--- a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+@@ -57,10 +57,10 @@ public class SugarCaneBlock extends Block {
+ 
+                 int modifier = world.spigotConfig.caneModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+                 if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos.above(), this.defaultBlockState()); // CraftBukkit
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos.above(), pos, this.defaultBlockState(), 3)) return; // CraftBukkit // Paper - properly cancel
+                     world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, 0), 4);
+                 } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    world.setBlock(pos, (BlockState) state.setValue(SugarCaneBlock.AGE, j + 1), 4);
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(SugarCaneBlock.AGE, j + 1), 4); // Paper
+                 }
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/SweetBerryBushBlock.java b/src/main/java/net/minecraft/world/level/block/SweetBerryBushBlock.java
+index 08a11888133b97e52535cb49cad218a1b6c6ac97..611cf3ac546409849db0542067a3eaf58298ec76 100644
+--- a/src/main/java/net/minecraft/world/level/block/SweetBerryBushBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SweetBerryBushBlock.java
+@@ -143,6 +143,6 @@ public class SweetBerryBushBlock extends BushBlock implements BonemealableBlock
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
+         int i = Math.min(3, (Integer) state.getValue(SweetBerryBushBlock.AGE) + 1);
+ 
+-        world.setBlock(pos, (BlockState) state.setValue(SweetBerryBushBlock.AGE, i), 2);
++        CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(SweetBerryBushBlock.AGE, i), 2); // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/TallGrassBlock.java b/src/main/java/net/minecraft/world/level/block/TallGrassBlock.java
+index f3f470da4bcb0788348e091f02fc17bd7add0bff..3d4d22a3440972478d9057d43e65717568d3016c 100644
+--- a/src/main/java/net/minecraft/world/level/block/TallGrassBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TallGrassBlock.java
+@@ -38,7 +38,10 @@ public class TallGrassBlock extends BushBlock implements BonemealableBlock {
+     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
+         DoublePlantBlock doublePlantBlock = (DoublePlantBlock)(state.is(Blocks.FERN) ? Blocks.LARGE_FERN : Blocks.TALL_GRASS);
+         if (doublePlantBlock.defaultBlockState().canSurvive(world, pos) && world.isEmptyBlock(pos.above())) {
+-            DoublePlantBlock.placeAt(world, doublePlantBlock.defaultBlockState(), pos, 2);
++            // Paper start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos.above(), pos, doublePlantBlock.defaultBlockState().setValue(DoublePlantBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER), 2)) return;
++            DoublePlantBlock.placeLowerPartAt(world, doublePlantBlock.defaultBlockState(), pos, 2);
++            // Paper end
+         }
+ 
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 36027749504b239285c57630c0500dfb5a6126ef..34e4efdf6ccff38ffcccacee9a9ff7735d74f17f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1318,11 +1318,17 @@ public class CraftEventFactory {
+     }
+ 
+     public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState newData, int flag) {
++        // Paper start
++        return handleBlockGrowEvent(world, pos, null, newData, flag);
++    }
++
++    public static boolean handleBlockGrowEvent(Level world, BlockPos pos, BlockPos sourcePos, net.minecraft.world.level.block.state.BlockState newData, int flags) {
++        // Paper end
+         Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
+         CraftBlockState state = (CraftBlockState) block.getState();
+         state.setData(newData);
+ 
+-        BlockGrowEvent event = new BlockGrowEvent(block, state);
++        BlockGrowEvent event = new BlockGrowEvent(block, sourcePos == null ? null : CraftBlock.at(world, sourcePos), state); // Paper
+         Bukkit.getPluginManager().callEvent(event);
+ 
+         if (!event.isCancelled()) {
