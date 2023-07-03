@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.Serializable;
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -1028,7 +1028,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @param address the IP address to ban
      *
-     * @deprecated see {@link #banIP(InetSocketAddress)}
+     * @deprecated see {@link #banIP(InetAddress)}
      */
     @Deprecated
     public void banIP(@NotNull String address);
@@ -1038,7 +1038,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @param address the IP address to unban
      *
-     * @deprecated see {@link #unbanIP(InetSocketAddress)}
+     * @deprecated see {@link #unbanIP(InetAddress)}
      */
     @Deprecated
     public void unbanIP(@NotNull String address);
@@ -1048,14 +1048,14 @@ public interface Server extends PluginMessageRecipient {
      *
      * @param address the IP address to ban
      */
-    public void banIP(@NotNull InetSocketAddress address);
+    public void banIP(@NotNull InetAddress address);
 
     /**
      * Unbans the specified address from the server.
      *
      * @param address the IP address to unban
      */
-    public void unbanIP(@NotNull InetSocketAddress address);
+    public void unbanIP(@NotNull InetAddress address);
 
     /**
      * Gets a set containing all banned players.

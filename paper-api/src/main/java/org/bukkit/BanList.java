@@ -90,9 +90,19 @@ public interface BanList<T> {
      * Gets a set containing every {@link BanEntry} in this list.
      *
      * @return an immutable set containing every entry tracked by this list
+     * @deprecated This return a generic class, prefer use {@link #getEntries()}
+     */
+    @Deprecated
+    @NotNull
+    public Set<BanEntry> getBanEntries();
+
+    /**
+     * Gets a set containing every {@link BanEntry} in this list.
+     *
+     * @return an immutable set containing every entry tracked by this list
      */
     @NotNull
-    public Set<BanEntry<T>> getBanEntries();
+    public Set<BanEntry<T>> getEntries();
 
     /**
      * Gets if a {@link BanEntry} exists for the target, indicating an active
