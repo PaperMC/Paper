@@ -548,6 +548,15 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public void swingOffHand();
 
     /**
+     * Makes this entity flash red as if they were damaged.
+     *
+     * @param yaw The direction the damage is coming from in relation to the
+     * entity, where 0 is in front of the player, 90 is to the right, 180 is
+     * behind, and 270 is to the left
+     */
+    public void playHurtAnimation(float yaw);
+
+    /**
      * Set if this entity will be subject to collisions with other entities.
      * <p>
      * Exemptions to this rule can be managed with

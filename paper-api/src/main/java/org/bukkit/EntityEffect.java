@@ -37,7 +37,10 @@ public enum EntityEffect {
     RABBIT_JUMP(1, Rabbit.class),
     /**
      * When mobs get hurt.
+     *
+     * @deprecated Use {@link LivingEntity#playHurtAnimation(float)}
      */
+    @Deprecated
     HURT(2, LivingEntity.class),
     /**
      * When a mob dies.
