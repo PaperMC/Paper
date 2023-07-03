@@ -12,8 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * Cancelling the event will cause the event to be delayed
  */
 public class EntityBreakDoorEvent extends EntityChangeBlockEvent {
-    public EntityBreakDoorEvent(@NotNull final LivingEntity entity, @NotNull final Block targetBlock) {
-        super(entity, targetBlock, Material.AIR.createBlockData());
+    public EntityBreakDoorEvent(@NotNull final LivingEntity entity, @NotNull final Block targetBlock, @NotNull final org.bukkit.block.data.BlockData to) { // Paper
+        super(entity, targetBlock, to); // Paper
     }
 
     @NotNull
