@@ -432,31 +432,26 @@
              this.level().addFreshEntity(entityitem);
              return entityitem;
          }
-@@ -2025,7 +2312,22 @@
-     }
- 
-     protected boolean canRide(Entity entity) {
--        return !this.isShiftKeyDown() && this.boardingCooldown <= 0;
-+        // CraftBukkit start
-+        boolean result = !this.isShiftKeyDown() && this.boardingCooldown <= 0;
-+        if (result) {
-+            if (entity.getBukkitEntity() instanceof Vehicle && this.getBukkitEntity() instanceof LivingEntity) {
-+                VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) entity.getBukkitEntity(), (LivingEntity) this.getBukkitEntity());
-+                // Suppress during worldgen
-+                if (this.valid) {
-+                    Bukkit.getPluginManager().callEvent(event);
+@@ -2007,6 +2294,18 @@
+             if (!flag && (!this.canRide(entity) || !entity.canAddPassenger(this))) {
+                 return false;
+             } else {
++                // CraftBukkit start
++                if (entity.getBukkitEntity() instanceof Vehicle && this.getBukkitEntity() instanceof LivingEntity) {
++                    VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) entity.getBukkitEntity(), this.getBukkitEntity());
++                    // Suppress during worldgen
++                    if (this.valid) {
++                        Bukkit.getPluginManager().callEvent(event);
++                    }
++                    if (event.isCancelled()) {
++                        return false;
++                    }
 +                }
-+                if (event.isCancelled()) {
-+                    return false;
-+                }
-+            }
-+        }
-+        return result;
-+        // CraftBukkit end
-     }
- 
-     protected boolean canEnterPose(EntityPose entitypose) {
-@@ -2044,7 +2346,7 @@
++                // CraftBukkit end
+                 if (this.isPassenger()) {
+                     this.stopRiding();
+                 }
+@@ -2044,7 +2343,7 @@
              Entity entity = this.vehicle;
  
              this.vehicle = null;
@@ -465,7 +460,7 @@
          }
  
      }
-@@ -2075,10 +2377,29 @@
+@@ -2075,10 +2374,29 @@
          }
      }
  
@@ -496,7 +491,7 @@
              if (this.passengers.size() == 1 && this.passengers.get(0) == entity) {
                  this.passengers = ImmutableList.of();
              } else {
-@@ -2090,6 +2411,7 @@
+@@ -2090,6 +2408,7 @@
              entity.boardingCooldown = 60;
              this.gameEvent(GameEvent.ENTITY_DISMOUNT, entity);
          }
@@ -504,7 +499,7 @@
      }
  
      protected boolean canAddPassenger(Entity entity) {
-@@ -2156,14 +2478,20 @@
+@@ -2156,14 +2475,20 @@
  
              if (this.isInsidePortal) {
                  MinecraftServer minecraftserver = worldserver.getServer();
@@ -528,7 +523,7 @@
                      this.level().getProfiler().pop();
                  }
  
-@@ -2283,6 +2611,13 @@
+@@ -2283,6 +2608,13 @@
      }
  
      public void setSwimming(boolean flag) {
@@ -542,7 +537,7 @@
          this.setSharedFlag(4, flag);
      }
  
-@@ -2332,8 +2667,12 @@
+@@ -2332,8 +2664,12 @@
          return this.getTeam() != null ? this.getTeam().isAlliedTo(scoreboardteambase) : false;
      }
  
@@ -556,7 +551,7 @@
      }
  
      public boolean getSharedFlag(int i) {
-@@ -2352,7 +2691,7 @@
+@@ -2352,7 +2688,7 @@
      }
  
      public int getMaxAirSupply() {
@@ -565,7 +560,7 @@
      }
  
      public int getAirSupply() {
-@@ -2360,7 +2699,18 @@
+@@ -2360,7 +2696,18 @@
      }
  
      public void setAirSupply(int i) {
@@ -585,7 +580,7 @@
      }
  
      public int getTicksFrozen() {
-@@ -2387,11 +2737,41 @@
+@@ -2387,11 +2734,41 @@
  
      public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
@@ -629,7 +624,7 @@
      }
  
      public void onAboveBubbleCol(boolean flag) {
-@@ -2556,15 +2936,38 @@
+@@ -2556,15 +2933,38 @@
  
      @Nullable
      public Entity changeDimension(WorldServer worldserver) {
@@ -670,7 +665,7 @@
                  this.level().getProfiler().popPush("reloading");
                  Entity entity = this.getType().create(worldserver);
  
-@@ -2573,9 +2976,17 @@
+@@ -2573,9 +2973,17 @@
                      entity.moveTo(shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, entity.getXRot());
                      entity.setDeltaMovement(shapedetectorshape.speed);
                      worldserver.addDuringTeleport(entity);
@@ -690,7 +685,7 @@
                  }
  
                  this.removeAfterChangingDimensions();
-@@ -2596,20 +3007,34 @@
+@@ -2596,20 +3004,34 @@
  
      @Nullable
      protected ShapeDetectorShape findDimensionEntryPoint(WorldServer worldserver) {
@@ -730,7 +725,7 @@
                      IBlockData iblockdata = this.level().getBlockState(this.portalEntrancePos);
                      EnumDirection.EnumAxis enumdirection_enumaxis;
                      Vec3D vec3d;
-@@ -2626,8 +3051,8 @@
+@@ -2626,8 +3048,8 @@
                          vec3d = new Vec3D(0.5D, 0.0D, 0.0D);
                      }
  
@@ -741,7 +736,7 @@
              }
          } else {
              BlockPosition blockposition1;
-@@ -2637,8 +3062,14 @@
+@@ -2637,8 +3059,14 @@
              } else {
                  blockposition1 = worldserver.getHeightmapPos(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver.getSharedSpawnPos());
              }
@@ -757,7 +752,7 @@
          }
      }
  
-@@ -2646,8 +3077,23 @@
+@@ -2646,8 +3074,23 @@
          return BlockPortalShape.getRelativePosition(blockutil_rectangle, enumdirection_enumaxis, this.position(), this.getDimensions(this.getPose()));
      }
  
@@ -783,7 +778,7 @@
      }
  
      public boolean canChangeDimensions() {
-@@ -2767,6 +3213,12 @@
+@@ -2767,6 +3210,12 @@
          }
      }
  
@@ -796,7 +791,7 @@
      public boolean teleportTo(WorldServer worldserver, double d0, double d1, double d2, Set<RelativeMovement> set, float f, float f1) {
          float f2 = MathHelper.clamp(f1, -90.0F, 90.0F);
  
-@@ -2901,7 +3353,26 @@
+@@ -2901,7 +3350,26 @@
      }
  
      public final void setBoundingBox(AxisAlignedBB axisalignedbb) {
@@ -824,7 +819,7 @@
      }
  
      protected float getEyeHeight(EntityPose entitypose, EntitySize entitysize) {
-@@ -3212,6 +3683,11 @@
+@@ -3212,6 +3680,11 @@
                                      vec3d = vec3d.add(vec3d1);
                                      ++k1;
                                  }
