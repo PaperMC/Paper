@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
+import net.minecraft.server.level.WorldServer;
 import net.minecraft.sounds.SoundEffect;
 import net.minecraft.world.EnumHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -680,6 +682,20 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         Preconditions.checkState(!getHandle().generation, "Cannot swing hand during world generation");
 
         getHandle().swing(EnumHand.OFF_HAND, true);
+    }
+
+    @Override
+    public void playHurtAnimation(float yaw) {
+        if (getHandle().level() instanceof WorldServer world) {
+            /*
+             * Vanilla degrees state that 0 = left, 90 = front, 180 = right, and 270 = behind.
+             * This makes no sense. We'll add 90 to it so that 0 = front, clockwise from there.
+             */
+            float actualYaw = yaw + 90;
+            ClientboundHurtAnimationPacket packet = new ClientboundHurtAnimationPacket(getEntityId(), actualYaw);
+
+            world.getChunkSource().broadcastAndSend(getHandle(), packet);
+        }
     }
 
     @Override
