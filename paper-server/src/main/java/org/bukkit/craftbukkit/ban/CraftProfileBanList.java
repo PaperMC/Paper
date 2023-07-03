@@ -51,7 +51,18 @@ public class CraftProfileBanList implements ProfileBanList {
     }
 
     @Override
-    public Set<BanEntry<PlayerProfile>> getBanEntries() {
+    public Set<BanEntry> getBanEntries() {
+        ImmutableSet.Builder<BanEntry> builder = ImmutableSet.builder();
+        for (GameProfileBanEntry entry : list.getEntries()) {
+            GameProfile profile = entry.getUser();
+            builder.add(new CraftProfileBanEntry(profile, entry, list));
+        }
+
+        return builder.build();
+    }
+
+    @Override
+    public Set<BanEntry<PlayerProfile>> getEntries() {
         ImmutableSet.Builder<BanEntry<PlayerProfile>> builder = ImmutableSet.builder();
         for (GameProfileBanEntry entry : list.getEntries()) {
             GameProfile profile = entry.getUser();
