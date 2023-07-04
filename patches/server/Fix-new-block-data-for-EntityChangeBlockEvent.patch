@@ -10,11 +10,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
 @@ -0,0 +0,0 @@ public class EatBlockGoal extends Goal {
+                 BlockPos blockposition1 = blockposition.below();
  
                  if (this.level.getBlockState(blockposition1).is(Blocks.GRASS_BLOCK)) {
-                     // CraftBukkit
--                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.AIR.defaultBlockState(), !this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)).isCancelled()) {
-+                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.DIRT.defaultBlockState(), !this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)).isCancelled()) { // Paper - Fix wrong block state
+-                    if (CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.AIR.defaultBlockState(), !this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit
++                    if (CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.DIRT.defaultBlockState(), !this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit // Paper - Fix wrong block state
                          this.level.levelEvent(2001, blockposition1, Block.getId(Blocks.GRASS_BLOCK.defaultBlockState()));
                          this.level.setBlock(blockposition1, Blocks.DIRT.defaultBlockState(), 2);
                      }
@@ -26,8 +26,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                                  if (WitherBoss.canDestroy(iblockdata)) {
                                      // CraftBukkit start
--                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
-+                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock()).isCancelled()) { // Paper
+-                                    if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState())) {
++                                    if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // Paper
                                          continue;
                                      }
                                      // CraftBukkit end
@@ -36,14 +36,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
 @@ -0,0 +0,0 @@ public class Ravager extends Raider {
-                     BlockState iblockdata = this.level().getBlockState(blockposition);
-                     Block block = iblockdata.getBlock();
  
--                    if (block instanceof LeavesBlock && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()).isCancelled()) { // CraftBukkit
-+                    if (block instanceof LeavesBlock && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock()).isCancelled()) { // CraftBukkit // Paper
-                         flag = this.level().destroyBlock(blockposition, true, this) || flag;
-                     }
-                 }
+                     if (block instanceof LeavesBlock) {
+                         // CraftBukkit start
+-                        if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())) {
++                        if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // Paper - use correct block state
+                             continue;
+                         }
+                         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
@@ -52,12 +52,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                              if (block instanceof InfestedBlock) {
                                  // CraftBukkit start
--                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()).isCancelled()) {
-+                                // Paper start
-+                                BlockState afterState = world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? net.minecraft.world.level.block.Blocks.AIR.defaultBlockState() : ((InfestedBlock) block).hostStateByInfested(world.getBlockState(blockposition1));
-+                                org.bukkit.event.entity.EntityChangeBlockEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, afterState);
-+                                if (event.isCancelled()) {
-+                                // Paper end
+-                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())) {
++                                // Paper start - use correct block state
++                                final BlockState afterState = world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? net.minecraft.world.level.block.Blocks.AIR.defaultBlockState() : ((InfestedBlock) block).hostStateByInfested(world.getBlockState(blockposition1));
++                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, afterState)) {
++                                    // Paper end - use correct block state
                                      continue;
                                  }
                                  // CraftBukkit end
@@ -69,8 +68,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (!world.isClientSide && projectile.mayInteract(world, blockposition) && projectile instanceof ThrownTrident && projectile.getDeltaMovement().length() > 0.6D) {
              // CraftBukkit start
--            if (CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
-+            if (CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, state.getFluidState().createLegacyBlock()).isCancelled()) { // Paper
+-            if (!CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState())) {
++            if (!CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, state.getFluidState().createLegacyBlock())) { // Paper - use correct block state
                  return;
              }
              // CraftBukkit end
