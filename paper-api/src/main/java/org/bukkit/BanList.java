@@ -48,7 +48,7 @@ public interface BanList<T> {
      */
     @Deprecated(since = "1.20.1")
     @Nullable
-    public BanEntry<T> getBanEntry(@NotNull String target);
+    public <E extends BanEntry<? super T>> E getBanEntry(@NotNull String target); // Paper
 
     /**
      * Gets a {@link BanEntry} by target.
@@ -77,7 +77,7 @@ public interface BanList<T> {
      */
     @Deprecated(since = "1.20.1")
     @Nullable
-    public BanEntry<T> addBan(@NotNull String target, @Nullable String reason, @Nullable Date expires, @Nullable String source);
+    public <E extends BanEntry<? super T>> E addBan(@NotNull String target, @Nullable String reason, @Nullable Date expires, @Nullable String source); // Paper
 
     /**
      * Adds a ban to this list. If a previous ban exists, this will
@@ -140,7 +140,7 @@ public interface BanList<T> {
      * @return an immutable set containing every entry tracked by this list
      */
     @NotNull
-    public Set<BanEntry<T>> getEntries();
+    public <E extends BanEntry<? super T>> Set<E> getEntries(); // Paper
 
     /**
      * Gets if a {@link BanEntry} exists for the target, indicating an active

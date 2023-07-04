@@ -359,7 +359,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     (updated) previous ban
      */
     @Nullable
-    public BanEntry<PlayerProfile> ban(@Nullable String reason, @Nullable Date expires, @Nullable String source, boolean kickPlayer);
+    public <E extends BanEntry<? super com.destroystokyo.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Date expires, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
 
     /**
      * Adds this user to the {@link ProfileBanList}. If a previous ban exists, this will
@@ -375,7 +375,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     (updated) previous ban
      */
     @Nullable
-    public BanEntry<PlayerProfile> ban(@Nullable String reason, @Nullable Instant expires, @Nullable String source, boolean kickPlayer);
+    public <E extends BanEntry<? super com.destroystokyo.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Instant expires, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
 
     /**
      * Adds this user to the {@link ProfileBanList}. If a previous ban exists, this will
@@ -391,7 +391,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     (updated) previous ban
      */
     @Nullable
-    public BanEntry<PlayerProfile> ban(@Nullable String reason, @Nullable Duration duration, @Nullable String source, boolean kickPlayer);
+    public <E extends BanEntry<? super com.destroystokyo.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Duration duration, @Nullable String source, boolean kickPlayer); // Paper - fix ban list API
 
     /**
      * Adds this user's current IP address to the {@link IpBanList}. If a previous ban exists, this will
