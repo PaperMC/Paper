@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Mon, 3 Sep 2018 18:20:03 -0500
+Subject: [PATCH] Add ray tracing methods to LivingEntity
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index fee4567b670ceda5e1004957567ad8f99adad3f3..48f8a506326b8978f6d933e008c3c7464e61d9d9 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3771,6 +3771,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     // Paper start
++
++    public HitResult getRayTrace(int maxDistance, ClipContext.Fluid fluidCollisionOption) {
++        if (maxDistance < 1 || maxDistance > 120) {
++            throw new IllegalArgumentException("maxDistance must be between 1-120");
++        }
++
++        Vec3 start = new Vec3(getX(), getY() + getEyeHeight(), getZ());
++        org.bukkit.util.Vector dir = getBukkitEntity().getLocation().getDirection().multiply(maxDistance);
++        Vec3 end = new Vec3(start.x + dir.getX(), start.y + dir.getY(), start.z + dir.getZ());
++        ClipContext raytrace = new ClipContext(start, end, ClipContext.Block.OUTLINE, fluidCollisionOption, this);
++
++        return this.level().clip(raytrace);
++    }
++
+     public int shieldBlockingDelay = this.level().paperConfig().misc.shieldBlockingDelay;
+ 
+     public int getShieldBlockingDelay() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 2139f10af54f0a2e2101145fa7b21a3b1af4b9a2..adb1aced3e1a0bd3a4f286b5708fc020b1c35c4c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -201,6 +201,33 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return blocks.get(0);
+     }
+ 
++    // Paper start
++    @Override
++    public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
++        return this.getTargetBlockExact(maxDistance, fluidMode.bukkit);
++    }
++
++    @Override
++    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
++        return this.getTargetBlockFace(maxDistance, fluidMode.bukkit);
++    }
++
++    @Override
++    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, org.bukkit.FluidCollisionMode fluidMode) {
++        RayTraceResult result = this.rayTraceBlocks(maxDistance, fluidMode);
++        return result != null ? result.getHitBlockFace() : null;
++    }
++
++    @Override
++    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
++        RayTraceResult result = this.rayTraceBlocks(maxDistance, fluidMode.bukkit);
++        if (result != null && result.getHitBlock() != null && result.getHitBlockFace() != null) {
++            return new com.destroystokyo.paper.block.TargetBlockInfo(result.getHitBlock(), result.getHitBlockFace());
++        }
++        return null;
++    }
++    // Paper end
++
+     @Override
+     public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance) {
+         return this.getLineOfSight(transparent, maxDistance, 2);

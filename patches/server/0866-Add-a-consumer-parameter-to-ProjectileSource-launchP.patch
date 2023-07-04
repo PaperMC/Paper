@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MelnCat <melncatuwu@gmail.com>
+Date: Mon, 19 Sep 2022 14:16:10 -0700
+Subject: [PATCH] Add a consumer parameter to ProjectileSource#launchProjectile
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index c29067c513531b819e4d48cd8cab3ed036ae1668..877d3eba8fead8793258f762058121a68e627378 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -509,8 +509,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     }
+ 
+     @Override
+-    @SuppressWarnings("unchecked")
+     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
++        // Paper start - launchProjectile consumer
++        return this.launchProjectile(projectile, velocity, null);
++    }
++
++    @Override
++    @SuppressWarnings("unchecked")
++    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, org.bukkit.util.Consumer<T> function) {
++        // Paper end - launchProjectile consumer
+         Preconditions.checkState(!this.getHandle().generation, "Cannot launch projectile during world generation");
+ 
+         net.minecraft.world.level.Level world = ((CraftWorld) getWorld()).getHandle();
+@@ -593,6 +600,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         if (velocity != null) {
+             ((T) launch.getBukkitEntity()).setVelocity(velocity);
+         }
++        // Paper start - launchProjectile consumer
++        if (function != null) {
++            function.accept((T) launch.getBukkitEntity());
++        }
++        // Paper end - launchProjectile consumer
+ 
+         world.addFreshEntity(launch);
+         return (T) launch.getBukkitEntity();
+diff --git a/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java b/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
+index 9d5194676f1d84c69ddc756a94ae6e5ca628727b..1cb5875ae9a55fba589697ec66d3e95c35e0e6a0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
++++ b/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
+@@ -57,6 +57,13 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
+ 
+     @Override
+     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
++        // Paper start - launchProjectile consumer
++        return this.launchProjectile(projectile, velocity, null);
++    }
++
++    @Override
++    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, org.bukkit.util.Consumer<T> function) {
++        // Paper end - launchProjectile consumer
+         Preconditions.checkArgument(this.getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
+         // Copied from BlockDispenser.dispense()
+         BlockSourceImpl isourceblock = new BlockSourceImpl((ServerLevel) this.dispenserBlock.getLevel(), this.dispenserBlock.getBlockPos());
+@@ -147,6 +154,11 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
+         if (velocity != null) {
+             ((T) launch.getBukkitEntity()).setVelocity(velocity);
+         }
++        // Paper start
++        if (function != null) {
++            function.accept((T) launch.getBukkitEntity());
++        }
++        // Paper end
+ 
+         world.addFreshEntity(launch);
+         return (T) launch.getBukkitEntity();

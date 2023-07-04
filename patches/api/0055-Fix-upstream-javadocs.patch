@@ -6,10 +6,10 @@ Subject: [PATCH] Fix upstream javadocs
 Upstream still refuses to use Java 8 with the API so they are likely unaware these are even issues.
 
 diff --git a/src/main/java/org/bukkit/BanList.java b/src/main/java/org/bukkit/BanList.java
-index 96ef22fe879c7be4f67bbb4d60c45ad11764dd5b..5dc9f9ede98d93925c99ee382e93f15f33589583 100644
+index ce35cf91d4a5156e08cd5100fd65db28e38c30e6..c229d3bc37c4e454a4b5a93eda1fe6466a4f4e8b 100644
 --- a/src/main/java/org/bukkit/BanList.java
 +++ b/src/main/java/org/bukkit/BanList.java
-@@ -27,6 +27,9 @@ public interface BanList {
+@@ -36,6 +36,9 @@ public interface BanList<T> {
  
      /**
       * Gets a {@link BanEntry} by target.
@@ -19,12 +19,9 @@ index 96ef22fe879c7be4f67bbb4d60c45ad11764dd5b..5dc9f9ede98d93925c99ee382e93f15f
       *
       * @param target entry parameter to search for
       * @return the corresponding entry, or null if none found
-@@ -35,8 +38,11 @@ public interface BanList {
-     public BanEntry getBanEntry(@NotNull String target);
- 
+@@ -57,6 +60,9 @@ public interface BanList<T> {
      /**
--     * Adds a ban to the this list. If a previous ban exists, this will
-+     * Adds a ban to this list. If a previous ban exists, this will
+      * Adds a ban to this list. If a previous ban exists, this will
       * update the previous entry.
 +     * <p>
 +     * Bans by name for ban type {@link Type#NAME NAME} are no longer supported and this method will return
@@ -32,7 +29,7 @@ index 96ef22fe879c7be4f67bbb4d60c45ad11764dd5b..5dc9f9ede98d93925c99ee382e93f15f
       *
       * @param target the target of the ban
       * @param reason reason for the ban, null indicates implementation default
-@@ -60,6 +66,9 @@ public interface BanList {
+@@ -107,6 +113,9 @@ public interface BanList<T> {
      /**
       * Gets if a {@link BanEntry} exists for the target, indicating an active
       * ban status.
@@ -41,8 +38,8 @@ index 96ef22fe879c7be4f67bbb4d60c45ad11764dd5b..5dc9f9ede98d93925c99ee382e93f15f
 +     * The replacement is bans by UUID.
       *
       * @param target the target to find
-      * @return true if a {@link BanEntry} exists for the name, indicating an
-@@ -70,6 +79,9 @@ public interface BanList {
+      * @return true if a {@link BanEntry} exists for the target, indicating an
+@@ -129,6 +138,9 @@ public interface BanList<T> {
      /**
       * Removes the specified target from this list, therefore indicating a
       * "not banned" status.
@@ -53,22 +50,10 @@ index 96ef22fe879c7be4f67bbb4d60c45ad11764dd5b..5dc9f9ede98d93925c99ee382e93f15f
       * @param target the target to remove from this list
       */
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 68a79316cec0c4ab83c6f986e3a9561440994319..316fc8348445b99af7ffc7c4ad24948a1115dfe6 100644
+index add298a1a0b6f6dbd72fe9e8f87794d193760fb7..b21f90f291a087b6282cd7b55e0075a01729f0ba 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -1299,10 +1299,7 @@ public final class Bukkit {
-     }
- 
-     /**
--     * Gets a ban list for the supplied type.
--     * <p>
--     * Bans by name are no longer supported and this method will return
--     * null when trying to request them. The replacement is bans by UUID.
-+     * Gets a ban list for the supplied type. <!-- Paper Remove notice: wrong place -->
-      *
-      * @param type the type of list to fetch, cannot be null
-      * @return a ban list of the specified type
-@@ -1364,6 +1361,8 @@ public final class Bukkit {
+@@ -1388,6 +1388,8 @@ public final class Bukkit {
  
      /**
       * Gets every player that has ever played on this server.
@@ -130,10 +115,10 @@ index 43f5aab2fe70af5f570de1f21eca83905f1e2f57..05c29cbd2ae1ca0434a90f8389479bd6
       * @param statePredicate The predicate which should get used to test if a block should be set or not.
       * @return true if the tree was created successfully, otherwise false
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 0cf214c45078d83d678f12f6cb350e50fc5f1e94..d7b081ac72d7d2aa3b675c6cbb8fb66f73facc99 100644
+index 22d508a6c80d7e19352bceb57009fdbcb16bc723..3c1862b9a9293155f756615b5bd23cc810a6df5e 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -542,13 +542,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -543,13 +543,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
       * </ul>
       * <p>
       * <b>Note:</b> If set to 0, {@link SpawnCategory} mobs spawning will be disabled.
@@ -148,19 +133,7 @@ index 0cf214c45078d83d678f12f6cb350e50fc5f1e94..d7b081ac72d7d2aa3b675c6cbb8fb66f
       */
      public int getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
  
-@@ -1108,10 +1105,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
-     public Set<OfflinePlayer> getBannedPlayers();
- 
-     /**
--     * Gets a ban list for the supplied type.
--     * <p>
--     * Bans by name are no longer supported and this method will return
--     * null when trying to request them. The replacement is bans by UUID.
-+     * Gets a ban list for the supplied type. <!-- Paper Remove notice: wrong place -->
-      *
-      * @param type the type of list to fetch, cannot be null
-      * @return a ban list of the specified type
-@@ -1161,6 +1155,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -1181,6 +1178,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
  
      /**
       * Gets every player that has ever played on this server.
@@ -414,10 +387,10 @@ index ae9eaaa8e38e1d9dfc459926c7fc51ddb89de84a..b2ec535bb1b0ce0c114ddd7638b90218
      @Override
      public int getConversionTime();
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 5b9480a3d06155c391f1347cb56fde9612d75ed8..26236250f4418def6f65c811800063588b43fa84 100644
+index 96ca3feb93b949f1b052fc9d85f583e25f87ace7..77b2e935b823b302a7221cd5be6441ec10557908 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -327,15 +327,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -365,15 +365,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
  
      /**
       * Saves the players current location, health, inventory, motion, and
@@ -437,7 +410,7 @@ index 5b9480a3d06155c391f1347cb56fde9612d75ed8..26236250f4418def6f65c81180006358
       * <p>
       * Note: This will overwrite the players current inventory, health,
       * motion, etc, with the state from the saved dat file.
-@@ -570,7 +570,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -608,7 +608,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      /**
       * Plays an effect to just this player.
       *
@@ -446,7 +419,7 @@ index 5b9480a3d06155c391f1347cb56fde9612d75ed8..26236250f4418def6f65c81180006358
       * @param loc the location to play the effect at
       * @param effect the {@link Effect}
       * @param data a data bit needed for some effects
-@@ -933,7 +933,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -971,7 +971,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * Use supplied alternative character to the section symbol to represent legacy color codes.
       *
@@ -455,7 +428,7 @@ index 5b9480a3d06155c391f1347cb56fde9612d75ed8..26236250f4418def6f65c81180006358
       * @param message The message to send
       * @deprecated use {@link #sendActionBar(net.kyori.adventure.text.Component)}
       */
-@@ -1399,7 +1399,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1437,7 +1437,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
  
      /**
       * Allows this player to see a player that was previously hidden. If
@@ -464,7 +437,7 @@ index 5b9480a3d06155c391f1347cb56fde9612d75ed8..26236250f4418def6f65c81180006358
       * remain hidden until the other plugin calls this method too.
       *
       * @param plugin Plugin that wants to show the player
-@@ -1428,7 +1428,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1466,7 +1466,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
  
      /**
       * Allows this player to see an entity that was previously hidden. If

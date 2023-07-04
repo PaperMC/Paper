@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Denery <dorofeevij@gmail.com>
+Date: Mon, 31 Oct 2022 14:20:52 +0300
+Subject: [PATCH] Fix EntityCombustEvent cancellation cant fully prevent
+ entities from being set on fire
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 5bc44f88ec3ad6e25c2df6e6829c1d9a1f8f836d..869062266419beca820d95a40b6a8a5ce8a31e1f 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3291,6 +3291,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+             pluginManager.callEvent(entityCombustEvent);
+             if (!entityCombustEvent.isCancelled()) {
+                 this.setSecondsOnFire(entityCombustEvent.getDuration(), false);
++            // Paper start - fix EntityCombustEvent cancellation.
++            } else {
++                this.setRemainingFireTicks(this.remainingFireTicks - 1);
++            // Paper end
+             }
+             // CraftBukkit end
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
+index f89234dbfd03ba5192423bb75d58f8951f289761..c8f935efdfd48d4440828a7b2f0e25449fe90688 100644
+--- a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
+@@ -130,6 +130,10 @@ public abstract class BaseFireBlock extends Block {
+ 
+                 if (!event.isCancelled()) {
+                     entity.setSecondsOnFire(event.getDuration(), false);
++                    // Paper start - fix EntityCombustEvent cancellation.
++                } else {
++                    entity.setRemainingFireTicks(entity.getRemainingFireTicks() - 1);
++                    // Paper end
+                 }
+                 // CraftBukkit end
+             }
