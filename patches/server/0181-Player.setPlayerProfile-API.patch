@@ -1,0 +1,200 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 18 Mar 2018 12:29:48 -0400
+Subject: [PATCH] Player.setPlayerProfile API
+
+This can be useful for changing name or skins after a player has logged in.
+
+== AT ==
+public-f net.minecraft.world.entity.player.Player gameProfile
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 1d593c32abbae6ca59bad0075993c58e18a01c72..da4c4e917cb850d03a4eb51ec9777e93932b552c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1538,7 +1538,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         this.internalTeleport(dest.getX(), dest.getY(), dest.getZ(), dest.getYaw(), dest.getPitch(), Collections.emptySet());
+     }
+ 
+-    private void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set) {
++    public void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set) { // Paper
+         // CraftBukkit start
+         if (Float.isNaN(f)) {
+             f = 0;
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 6b31b0894e52ad6fc397624e50587ec04e46c099..0c7f280bae81bbb492d5780a43e5ffda0f58756a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -330,11 +330,11 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+                         final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
+ 
+                         // Paper start
+-                        com.destroystokyo.paper.profile.PlayerProfile profile = org.bukkit.Bukkit.createProfile(uniqueId, playerName);
++                        com.destroystokyo.paper.profile.PlayerProfile profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(ServerLoginPacketListenerImpl.this.gameProfile);
+                         AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
+                         server.getPluginManager().callEvent(asyncEvent);
+                         profile = asyncEvent.getPlayerProfile();
+-                        profile.complete();
++                        profile.complete(true); // Paper - setPlayerProfileAPI
+                         gameProfile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
+                         playerName = gameProfile.getName();
+                         uniqueId = gameProfile.getId();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+index f0a81fa99f5923813858b77c9a1c682418c928ff..712006c27570dcbcefe173484e74d1bb0763e926 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+@@ -79,8 +79,8 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+     }
+ 
+     @Override
+-    public PlayerProfile getPlayerProfile() {
+-        return new CraftPlayerProfile(this.profile);
++    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() { // Paper
++        return new com.destroystokyo.paper.profile.CraftPlayerProfile(this.profile); // Paper
+     }
+ 
+     public Server getServer() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 3abaf7072089b06287f959cbc356acc4c912605b..39bf1e520f54abdf83dd9fd16d2f1aec58cc551b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -86,6 +86,7 @@ import net.minecraft.world.food.FoodData;
+ import net.minecraft.world.inventory.AbstractContainerMenu;
+ import net.minecraft.world.level.GameType;
+ import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.biome.BiomeManager;
+ import net.minecraft.world.level.block.entity.SignBlockEntity;
+ import net.minecraft.world.level.block.entity.SignText;
+ import net.minecraft.world.level.border.BorderChangeListener;
+@@ -267,11 +268,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return server.getPlayer(getUniqueId()) != null;
+     }
+ 
+-    @Override
+-    public PlayerProfile getPlayerProfile() {
+-        return new CraftPlayerProfile(this.getProfile());
+-    }
+-
+     @Override
+     public InetSocketAddress getAddress() {
+         if (this.getHandle().connection == null) return null;
+@@ -1656,8 +1652,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     private void untrackAndHideEntity(org.bukkit.entity.Entity entity) {
+         // Remove this entity from the hidden player's EntityTrackerEntry
+-        ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
++        // Paper start
+         Entity other = ((CraftEntity) entity).getHandle();
++        unregisterEntity(other);
++
++        server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
++    }
++    private void unregisterEntity(Entity other) {
++        // Paper end
++        ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
+         ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
+         if (entry != null) {
+             entry.removePlayer(this.getHandle());
+@@ -1670,8 +1673,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+                 this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
+             }
+         }
+-
+-        server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
+     }
+ 
+     void resetAndHideEntity(org.bukkit.entity.Entity entity) {
+@@ -1748,8 +1749,38 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
+             entry.updatePlayer(this.getHandle());
+         }
++        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity)); // Paper
++    }
++    // Paper start
++    @Override
++    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
++        ServerPlayer self = this.getHandle();
++        GameProfile gameProfile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
++        if (!self.sentListPacket) {
++            self.gameProfile = gameProfile;
++            return;
++        }
++        List<ServerPlayer> players = this.server.getServer().getPlayerList().players;
++        // First unregister the player for all players with the OLD game profile
++        for (ServerPlayer player : players) {
++            CraftPlayer bukkitPlayer = player.getBukkitEntity();
++            if (bukkitPlayer.canSee(this)) {
++                bukkitPlayer.unregisterEntity(self);
++            }
++        }
++
++        // Set the game profile here, we should have unregistered the entity via iterating all player entities above.
++        self.gameProfile = gameProfile;
+ 
+-        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
++        // Re-register the game profile for all players
++        for (ServerPlayer player : players) {
++            CraftPlayer bukkitPlayer = player.getBukkitEntity();
++            if (bukkitPlayer.canSee(this)) {
++                bukkitPlayer.trackAndShowEntity(self.getBukkitEntity());
++            }
++        }
++        // Refresh misc player things AFTER sending game profile
++        this.refreshPlayer();
+     }
+ 
+     void resetAndShowEntity(org.bukkit.entity.Entity entity) {
+@@ -1762,6 +1793,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             this.trackAndShowEntity(entity);
+         }
+     }
++    // Paper start
++    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
++        return new com.destroystokyo.paper.profile.CraftPlayerProfile(this).clone();
++    }
++
++    private void refreshPlayer() {
++        ServerPlayer handle = this.getHandle();
++        Location loc = this.getLocation();
++
++        ServerGamePacketListenerImpl connection = handle.connection;
++
++        //Respawn the player then update their position and selected slot
++        ServerLevel worldserver = handle.serverLevel();
++        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(worldserver.dimensionTypeId(), worldserver.dimension(), net.minecraft.world.level.biome.BiomeManager.obfuscateSeed(worldserver.getSeed()), handle.gameMode.getGameModeForPlayer(), handle.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA, this.getHandle().getLastDeathLocation(), handle.getPortalCooldown()));
++        handle.onUpdateAbilities();
++        connection.internalTeleport(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), java.util.Collections.emptySet());
++        net.minecraft.server.MinecraftServer.getServer().getPlayerList().sendAllPlayerInfo(handle);
++
++        // Resend their XP and effects because the respawn packet resets it
++        connection.send(new net.minecraft.network.protocol.game.ClientboundSetExperiencePacket(handle.experienceProgress, handle.totalExperience, handle.experienceLevel));
++        for (net.minecraft.world.effect.MobEffectInstance mobEffect : handle.getActiveEffects()) {
++            connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(handle.getId(), mobEffect));
++        }
++
++        if (this.isOp()) {
++            this.setOp(false);
++            this.setOp(true);
++        }
++    }
++    // Paper end
+ 
+     public void onEntityRemove(Entity entity) {
+         this.invertedVisibilityEntities.remove(entity.getUUID());
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index 173a2832f029e3d568208a1b56419c1b8501483c..48cdd483c25825571043800f3cfa41a4d723f649 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -329,6 +329,12 @@ public class Commodore
+                             return;
+                         }
+ 
++                        // Paper start - Rewrite plugins
++                        if ((owner.equals("org/bukkit/OfflinePlayer") || owner.equals("org/bukkit/entity/Player")) && name.equals("getPlayerProfile") && desc.equals("()Lorg/bukkit/profile/PlayerProfile;")) {
++                            super.visitMethodInsn(opcode, owner, name, "()Lcom/destroystokyo/paper/profile/PlayerProfile;", itf);
++                            return;
++                        }
++                        // Paper end
+                         if ( modern )
+                         {
+                             if ( owner.equals( "org/bukkit/Material" ) )
