@@ -31,7 +31,7 @@ import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.ApiStatus;
 
 @SerializableAs("PlayerProfile")
-public final class CraftPlayerProfile implements PlayerProfile, com.destroystokyo.paper.profile.SharedPlayerProfile { // Paper
+public final class CraftPlayerProfile implements PlayerProfile, com.destroystokyo.paper.profile.SharedPlayerProfile, com.destroystokyo.paper.profile.PlayerProfile { // Paper
 
     @Nonnull
     public static GameProfile validateSkullProfile(@Nonnull GameProfile gameProfile) {
@@ -162,7 +162,7 @@ public final class CraftPlayerProfile implements PlayerProfile, com.destroystoky
     }
 
     @Override
-    public CompletableFuture<PlayerProfile> update() {
+    public CompletableFuture update() { // Paper - have to remove generic to avoid clashing between bukkit.PlayerProfile and paper.PlayerProfile
         return CompletableFuture.supplyAsync(this::getUpdatedProfile, Util.PROFILE_EXECUTOR); // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
     }
 
@@ -320,5 +320,72 @@ public final class CraftPlayerProfile implements PlayerProfile, com.destroystoky
         }
         // Paper - diff on change
         return profile;
+    }
+
+    // Paper start - This must implement our PlayerProfile so generic casts succeed from cb.CraftPlayerProfile to paper.PlayerProfile
+    // The methods don't actually have to be implemented, because the profile should immediately be cast to SharedPlayerProfile
+    @Override
+    public String setName(final String name) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public UUID getId() {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public UUID setId(final UUID uuid) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public java.util.Set<com.destroystokyo.paper.profile.ProfileProperty> getProperties() {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public boolean hasProperty(final String property) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public void setProperty(final com.destroystokyo.paper.profile.ProfileProperty property) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public void setProperties(final java.util.Collection<com.destroystokyo.paper.profile.ProfileProperty> properties) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public void clearProperties() {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public boolean completeFromCache() {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public boolean completeFromCache(final boolean onlineMode) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public boolean completeFromCache(final boolean lookupUUID, final boolean onlineMode) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public boolean complete(final boolean textures) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
+    }
+
+    @Override
+    public boolean complete(final boolean textures, final boolean onlineMode) {
+        throw new UnsupportedOperationException("Do not cast to com.destroystokyo.paper.profile.PlayerProfile");
     }
 }

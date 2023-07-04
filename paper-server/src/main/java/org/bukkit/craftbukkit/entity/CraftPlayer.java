@@ -1759,23 +1759,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source) {
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
         return this.ban(reason, expires, source, true);
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Instant expires, String source) {
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
         return this.ban(reason, expires != null ? Date.from(expires) : null, source);
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source) {
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
         return this.ban(reason, duration != null ? Instant.now().plus(duration) : null, source);
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) {
-        BanEntry<PlayerProfile> banEntry = ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source);
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) { // Paper - fix ban list API
+        BanEntry<com.destroystokyo.paper.profile.PlayerProfile> banEntry = ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source); // Paper - fix ban list API
         if (kickPlayer) {
             this.kickPlayer(reason);
         }
@@ -1783,12 +1783,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Instant instant, String source, boolean kickPlayer) {
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant instant, String source, boolean kickPlayer) { // Paper - fix ban list API
         return this.ban(reason, instant != null ? Date.from(instant) : null, source, kickPlayer);
     }
 
     @Override
-    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source, boolean kickPlayer) {
+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source, boolean kickPlayer) { // Paper - fix ban list API
         return this.ban(reason, duration != null ? Instant.now().plus(duration) : null, source, kickPlayer);
     }
 
