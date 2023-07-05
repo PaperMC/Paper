@@ -61,7 +61,7 @@
 +// CraftBukkit end
  
  public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, ScoreHolder {
- 
++
 +    // CraftBukkit start
 +    private static final int CURRENT_LEVEL = 2;
 +    public boolean preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; keep initial motion on first setPositionRotation
@@ -93,7 +93,7 @@
 +        public net.minecraft.world.level.levelgen.PositionalRandomFactory forkPositional() {
 +            return new net.minecraft.world.level.levelgen.LegacyRandomSource.LegacyPositionalRandomFactory(this.nextLong());
 +        }
-+
+ 
 +        // these below are added to fix reobf issues that I don't wanna deal with right now
 +        @Override
 +        public int next(int bits) {
@@ -394,19 +394,21 @@
      }
  
      protected final AABB makeBoundingBox() {
-@@ -462,10 +717,20 @@
-         this.baseTick();
-     }
+@@ -460,12 +715,22 @@
  
+     public void tick() {
+         this.baseTick();
++    }
++
 +    // CraftBukkit start
 +    public void postTick() {
 +        // No clean way to break out of ticking once the entity has been copied to a new world, so instead we move the portalling later in the tick cycle
 +        if (!(this instanceof ServerPlayer) && this.isAlive()) { // Paper - don't attempt to teleport dead entities
 +            this.handlePortal();
 +        }
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public void baseTick() {
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
@@ -545,13 +547,10 @@
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
-@@ -747,8 +1054,30 @@
+@@ -750,6 +1057,28 @@
+                     }
+                 }
  
-                     if (movement.y != vec3d1.y) {
-                         block.updateEntityMovementAfterFallOn(this.level(), this);
-+                    }
-+                }
-+
 +                // CraftBukkit start
 +                if (this.horizontalCollision && this.getBukkitEntity() instanceof Vehicle) {
 +                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -570,18 +569,26 @@
 +                    if (!bl.getType().isAir()) {
 +                        VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, bl, org.bukkit.craftbukkit.util.CraftVector.toBukkit(originalMovement)); // Paper - Expose pre-collision velocity
 +                        this.level.getCraftServer().getPluginManager().callEvent(event);
-                     }
-                 }
++                    }
++                }
 +                // CraftBukkit end
- 
++
                  if (!this.level().isClientSide() || this.isControlledByLocalInstance()) {
                      Entity.MovementEmission entity_movementemission = this.getMovementEmission();
-@@ -1131,8 +1460,22 @@
  
-     protected SoundEvent getSwimHighSpeedSplashSound() {
+@@ -913,7 +1242,7 @@
+     }
+ 
+     protected BlockPos getOnPos(float offset) {
+-        if (this.mainSupportingBlockPos.isPresent()) {
++        if (this.mainSupportingBlockPos.isPresent() && this.level().getChunkIfLoadedImmediately(this.mainSupportingBlockPos.get()) != null) { // Paper - ensure no loads
+             BlockPos blockposition = (BlockPos) this.mainSupportingBlockPos.get();
+ 
+             if (offset <= 1.0E-5F) {
+@@ -1133,6 +1462,20 @@
          return SoundEvents.GENERIC_SPLASH;
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - Add delegate methods
 +    public SoundEvent getSwimSound0() {
 +        return this.getSwimSound();
@@ -589,8 +596,8 @@
 +
 +    public SoundEvent getSwimSplashSound0() {
 +        return this.getSwimSplashSound();
-     }
- 
++    }
++
 +    public SoundEvent getSwimHighSpeedSplashSound0() {
 +        return this.getSwimHighSpeedSplashSound();
 +    }
@@ -978,20 +985,19 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being loaded");
-@@ -2099,7 +2630,13 @@
-         ResourceLocation minecraftkey = EntityType.getKey(entitytypes);
- 
+@@ -2101,6 +2632,12 @@
          return entitytypes.canSerialize() && minecraftkey != null ? minecraftkey.toString() : null;
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - allow excluding certain data when saving
 +    protected void addAdditionalSaveData(CompoundTag nbttagcompound, boolean includeAll) {
 +        this.addAdditionalSaveData(nbttagcompound);
-     }
++    }
 +    // CraftBukkit end
- 
++
      protected abstract void readAdditionalSaveData(CompoundTag nbt);
  
+     protected abstract void addAdditionalSaveData(CompoundTag nbt);
 @@ -2153,9 +2690,31 @@
          if (stack.isEmpty()) {
              return null;
