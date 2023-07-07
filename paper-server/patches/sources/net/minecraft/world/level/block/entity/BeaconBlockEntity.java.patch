@@ -77,7 +77,7 @@
  
          if (blockEntity.lastCheckY >= l) {
              blockEntity.lastCheckY = world.getMinY() - 1;
-@@ -247,43 +291,108 @@
+@@ -247,43 +291,123 @@
  
      @Override
      public void setRemoved() {
@@ -108,6 +108,7 @@
  
 -            int j = (9 + beaconLevel * 2) * 20;
 -            AABB axisalignedbb = (new AABB(pos)).inflate(d0).expandTowards(0.0D, (double) world.getHeight(), 0.0D);
+-            List<Player> list = world.getEntitiesOfClass(Player.class, axisalignedbb);
 +            return b0;
 +        }
 +    }
@@ -129,7 +130,22 @@
 +            double d0 = blockEntity != null ? blockEntity.getEffectRange() : (i * 10 + 10); // Paper - Custom beacon ranges
 +
 +            AABB axisalignedbb = (new AABB(blockposition)).inflate(d0).expandTowards(0.0D, (double) world.getHeight(), 0.0D);
-             List<Player> list = world.getEntitiesOfClass(Player.class, axisalignedbb);
++            // Paper start - Perf: optimize player lookup for beacons
++            List<Player> list;
++            if (d0 <= 128.0) {
++                list = world.getEntitiesOfClass(Player.class, axisalignedbb);
++            } else {
++                list = new java.util.ArrayList<>();
++                for (Player player : world.players()) {
++                    if (player.isSpectator()) {
++                        continue;
++                    }
++                    if (player.getBoundingBox().intersects(axisalignedbb)) {
++                        list.add(player);
++                    }
++                }
++            }
++            // Paper end - Perf: optimize player lookup for beacons
 +
 +            return list;
 +        }
@@ -201,7 +217,7 @@
      public static void playSound(Level world, BlockPos pos, SoundEvent sound) {
          world.playSound((Player) null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
      }
-@@ -316,7 +425,7 @@
+@@ -316,7 +440,7 @@
          if (nbt.contains(key, 8)) {
              ResourceLocation minecraftkey = ResourceLocation.tryParse(nbt.getString(key));
  
@@ -210,7 +226,7 @@
          } else {
              return null;
          }
-@@ -327,11 +436,13 @@
+@@ -327,11 +451,13 @@
          super.loadAdditional(nbt, registries);
          this.primaryPower = BeaconBlockEntity.loadEffect(nbt, "primary_effect");
          this.secondaryPower = BeaconBlockEntity.loadEffect(nbt, "secondary_effect");
@@ -224,7 +240,7 @@
      }
  
      @Override
-@@ -345,6 +456,7 @@
+@@ -345,6 +471,7 @@
          }
  
          this.lockKey.addToTag(nbt, registries);
@@ -232,7 +248,7 @@
      }
  
      public void setCustomName(@Nullable Component customName) {
-@@ -360,7 +472,7 @@
+@@ -360,7 +487,7 @@
      @Nullable
      @Override
      public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
