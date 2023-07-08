@@ -84,8 +84,12 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
 
     /**
      * Get the {@link DragonBattle} associated with this EnderDragon.
-     *
-     * This will return null if the EnderDragon is not in the End dimension.
+     * <br>
+     * This will return null for the following reasons:
+     * <ul>
+     *     <li>The EnderDragon is not in the End dimension</li>
+     *     <li>The EnderDragon was summoned by command/API</li>
+     * </ul>
      *
      * @return the dragon battle
      *
