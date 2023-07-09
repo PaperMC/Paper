@@ -1259,4 +1259,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return !this.getHandle().level().noCollision(this.getHandle(), aabb);
     }
     // Paper end - Collision API
+
+    // Paper start - entity scoreboard name
+    @Override
+    public String getScoreboardEntryName() {
+        return this.getHandle().getScoreboardName();
+    }
+    // Paper end - entity scoreboard name
 }
