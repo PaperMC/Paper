@@ -1112,4 +1112,15 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull io.papermc.paper.threadedregions.scheduler.EntityScheduler getScheduler();
     // Paper end - Folia schedulers
+
+    // Paper start - entity scoreboard name
+    /**
+     * Gets the string name of the entity used to track it in {@link org.bukkit.scoreboard.Scoreboard Scoreboards}.
+     *
+     * @return the scoreboard entry name
+     * @see org.bukkit.scoreboard.Scoreboard#getScores(String)
+     * @see org.bukkit.scoreboard.Scoreboard#getEntries()
+     */
+    @NotNull String getScoreboardEntryName();
+    // Paper end - entity scoreboard name
 }
