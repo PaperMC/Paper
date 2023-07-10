@@ -35,8 +35,8 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
         this.entityTag = armorStand.entityTag;
     }
 
-    CraftMetaArmorStand(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaArmorStand(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaArmorStand.ENTITY_TAG).ifPresent((nbt) -> {
             this.entityTag = nbt.copyTag();

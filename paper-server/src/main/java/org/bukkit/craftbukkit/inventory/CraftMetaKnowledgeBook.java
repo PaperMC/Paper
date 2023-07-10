@@ -32,8 +32,8 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
         }
     }
 
-    CraftMetaKnowledgeBook(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaKnowledgeBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaKnowledgeBook.BOOK_RECIPES).ifPresent((pages) -> {
             for (int i = 0; i < pages.size(); i++) {

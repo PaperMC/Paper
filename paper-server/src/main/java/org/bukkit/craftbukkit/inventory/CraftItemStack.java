@@ -173,10 +173,11 @@ public final class CraftItemStack extends ItemStack {
         } else if (this.handle == null) {
             this.handle = new net.minecraft.world.item.ItemStack(CraftItemType.bukkitToMinecraft(type), 1);
         } else {
+            final Material oldType = CraftMagicNumbers.getMaterial(this.handle.getItem()); // Paper
             this.handle.setItem(CraftItemType.bukkitToMinecraft(type));
             if (this.hasItemMeta()) {
                 // This will create the appropriate item meta, which will contain all the data we intend to keep
-                CraftItemStack.setItemMeta(this.handle, CraftItemStack.getItemMeta(this.handle));
+                this.adjustTagForItemMeta(oldType); // Paper
             }
         }
         this.setData(null);
@@ -337,6 +338,19 @@ public final class CraftItemStack extends ItemStack {
     public ItemMeta getItemMeta() {
         return CraftItemStack.getItemMeta(this.handle);
     }
+    // Paper start - improve handled tags on type change
+    public void adjustTagForItemMeta(final Material oldType) {
+        final CraftMetaItem oldMeta = (CraftMetaItem) CraftItemFactory.instance().getItemMeta(oldType);
+        final ItemMeta newMeta;
+        if (oldMeta == null) {
+            newMeta = getItemMeta(this.handle);
+        } else {
+            final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts = new java.util.HashSet<>(CraftMetaItem.getTopLevelHandledDcts(oldMeta.getClass()));
+            newMeta = getItemMeta(this.handle, CraftItemType.minecraftToBukkitNew(this.handle.getItem()), extraHandledDcts);
+        }
+        this.setItemMeta(newMeta);
+    }
+    // Paper end - improve handled tags on type change
     // Paper start
     public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta itemMeta) {
         final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
@@ -349,12 +363,17 @@ public final class CraftItemStack extends ItemStack {
     }
     public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, org.bukkit.inventory.ItemType metaForType) {
         // Paper end
+        // Paper start - handled tags on type change
+        return getItemMeta(item, metaForType, null);
+    }
+    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, org.bukkit.inventory.ItemType metaForType, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
+        // Paper end - handled tags on type change
         if (!CraftItemStack.hasItemMeta(item)) {
             return CraftItemFactory.instance().getItemMeta(CraftItemStack.getType(item));
         }
 
-        if (metaForType != null) { return ((CraftItemType<?>) metaForType).getItemMeta(item); } // Paper
-        return ((CraftItemType<?>) CraftItemType.minecraftToBukkitNew(item.getItem())).getItemMeta(item);
+        if (metaForType != null) { return ((CraftItemType<?>) metaForType).getItemMeta(item, extraHandledDcts); } // Paper
+        return ((CraftItemType<?>) CraftItemType.minecraftToBukkitNew(item.getItem())).getItemMeta(item, extraHandledDcts); // Paper
     }
 
     static Material getType(net.minecraft.world.item.ItemStack item) {

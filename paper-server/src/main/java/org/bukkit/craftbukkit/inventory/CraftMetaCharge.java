@@ -29,8 +29,8 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
         this.setEffect(SerializableMeta.getObject(FireworkEffect.class, map, CraftMetaCharge.EXPLOSION.BUKKIT, true));
     }
 
-    CraftMetaCharge(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaCharge(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaCharge.EXPLOSION).ifPresent((f) -> {
             try {

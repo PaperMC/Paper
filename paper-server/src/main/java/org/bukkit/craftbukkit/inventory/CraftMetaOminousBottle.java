@@ -24,8 +24,8 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
         this.ominousBottleAmplifier = bottleMeta.ominousBottleAmplifier;
     }
 
-    CraftMetaOminousBottle(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaOminousBottle(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
         getOrEmpty(tag, CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
             this.ominousBottleAmplifier = amplifier.value();
         });

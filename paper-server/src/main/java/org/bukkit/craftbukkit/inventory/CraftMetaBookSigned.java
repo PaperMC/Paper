@@ -78,8 +78,8 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         }
     }
 
-    CraftMetaBookSigned(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaBookSigned(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaBookSigned.BOOK_CONTENT).ifPresent((written) -> {
             this.title = written.title().raw();

@@ -32,8 +32,8 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
         }
     }
 
-    CraftMetaEnchantedBook(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaEnchantedBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS).ifPresent((itemEnchantments) -> {
             this.enchantments = buildEnchantments(itemEnchantments);

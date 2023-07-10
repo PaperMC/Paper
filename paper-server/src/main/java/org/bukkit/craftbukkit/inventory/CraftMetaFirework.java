@@ -60,8 +60,8 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         }
     }
 
-    CraftMetaFirework(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaFirework(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaFirework.FIREWORKS).ifPresent((fireworks) -> {
             this.power = fireworks.flightDuration();

@@ -97,7 +97,7 @@ public class DeprecatedItemMetaCustomValueTest {
         CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
         itemMeta.applyToItem(compound);
 
-        assertEquals(itemMeta, new CraftMetaItem(compound.build()));
+        assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
     }
 
     @Test

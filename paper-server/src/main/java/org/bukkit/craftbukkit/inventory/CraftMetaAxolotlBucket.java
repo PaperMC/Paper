@@ -36,8 +36,8 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         this.bucketEntityTag = bucket.bucketEntityTag;
     }
 
-    CraftMetaAxolotlBucket(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaAxolotlBucket(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaAxolotlBucket.ENTITY_TAG).ifPresent((nbt) -> {
             this.entityTag = nbt.copyTag();

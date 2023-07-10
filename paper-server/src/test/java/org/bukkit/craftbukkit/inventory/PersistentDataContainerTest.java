@@ -131,7 +131,7 @@ public class PersistentDataContainerTest {
         CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
         itemMeta.applyToItem(compound);
 
-        assertEquals(itemMeta, new CraftMetaItem(compound.build()));
+        assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
     }
 
     @Test
@@ -464,7 +464,7 @@ public class PersistentDataContainerTest {
 
     @Test
     public void testEmptyListApplicationToAnyType() throws IOException {
-        final CraftMetaItem craftItem = new CraftMetaItem(DataComponentPatch.EMPTY);
+        final CraftMetaItem craftItem = new CraftMetaItem(DataComponentPatch.EMPTY, null); // Paper
         final PersistentDataContainer container = craftItem.getPersistentDataContainer();
 
         container.set(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings(), List.of());
@@ -477,7 +477,7 @@ public class PersistentDataContainerTest {
         final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator();
         craftItem.applyToItem(storage);
 
-        final CraftMetaItem readItem = new CraftMetaItem(storage.build());
+        final CraftMetaItem readItem = new CraftMetaItem(storage.build(), null); // Paper
         final PersistentDataContainer readContainer = readItem.getPersistentDataContainer();
 
         assertTrue(readContainer.has(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings()));

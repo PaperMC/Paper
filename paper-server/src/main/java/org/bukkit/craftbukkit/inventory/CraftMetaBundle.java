@@ -34,8 +34,8 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
         }
     }
 
-    CraftMetaBundle(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaBundle(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaBundle.ITEMS).ifPresent((bundle) -> {
             bundle.items().forEach((item) -> {

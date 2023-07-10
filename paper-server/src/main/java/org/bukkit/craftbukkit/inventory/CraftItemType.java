@@ -114,8 +114,8 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         return this.item;
     }
 
-    public M getItemMeta(net.minecraft.world.item.ItemStack itemStack) {
-        return this.itemMetaData.get().fromItemStack().apply(itemStack);
+    public M getItemMeta(net.minecraft.world.item.ItemStack itemStack, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
+        return this.itemMetaData.get().fromItemStack().apply(itemStack, extraHandledDcts);
     }
 
     public M getItemMeta(ItemMeta itemMeta) {

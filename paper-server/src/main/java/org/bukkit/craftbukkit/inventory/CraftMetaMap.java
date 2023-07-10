@@ -44,8 +44,8 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         this.color = map.color;
     }
 
-    CraftMetaMap(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaMap(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaMap.MAP_ID).ifPresent((mapId) -> {
             this.mapId = mapId.id();

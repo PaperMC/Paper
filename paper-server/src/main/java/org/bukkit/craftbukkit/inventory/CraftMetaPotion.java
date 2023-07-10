@@ -54,8 +54,8 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         }
     }
 
-    CraftMetaPotion(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaPotion(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
         getOrEmpty(tag, CraftMetaPotion.POTION_CONTENTS).ifPresent((potionContents) -> {
             potionContents.potion().ifPresent((potion) -> {
                 this.type = CraftPotionType.minecraftHolderToBukkit(potion);

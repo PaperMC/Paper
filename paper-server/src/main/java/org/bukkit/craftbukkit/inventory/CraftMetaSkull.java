@@ -48,8 +48,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         this.noteBlockSound = skullMeta.noteBlockSound;
     }
 
-    CraftMetaSkull(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaSkull(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaSkull.SKULL_PROFILE).ifPresent(this::setProfile);
 

@@ -393,7 +393,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         // Paper end
     }
 
-    CraftMetaItem(DataComponentPatch tag) {
+    CraftMetaItem(DataComponentPatch tag, Set<DataComponentType<?>> extraHandledTags) { // Paper - improve handled tags on type changes
         CraftMetaItem.getOrEmpty(tag, CraftMetaItem.NAME).ifPresent((component) -> {
             this.displayName = component;
         });
@@ -525,9 +525,16 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         });
         // Paper end - fix ItemFlags
 
+        // Paper start - improve checking handled data component types
+        Set<DataComponentType<?>> handledTags = getTopLevelHandledDcts(this.getClass());
+        if (extraHandledTags != null) {
+            extraHandledTags.addAll(handledTags);
+            handledTags = extraHandledTags;
+        }
+        // Paper end - improve checking handled data component types
         Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = tag.entrySet();
         for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
-            if (!CraftMetaItem.getHandledTags().contains(key.getKey())) {
+            if (!handledTags.contains(key.getKey())) { // Paper - improve checking handled data component types
                 key.getValue().ifPresent((value) -> {
                     this.unhandledTags.set((DataComponentType) key.getKey(), value);
                 });
@@ -2372,75 +2379,83 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.version = version;
     }
 
-    public static Set<DataComponentType> getHandledTags() {
-        synchronized (CraftMetaItem.HANDLED_TAGS) {
-            if (CraftMetaItem.HANDLED_TAGS.isEmpty()) {
-                CraftMetaItem.HANDLED_TAGS.addAll(Arrays.asList(
-                        CraftMetaItem.NAME.TYPE,
-                        CraftMetaItem.ITEM_NAME.TYPE,
-                        CraftMetaItem.LORE.TYPE,
-                        CraftMetaItem.CUSTOM_MODEL_DATA.TYPE,
-                        CraftMetaItem.ENCHANTABLE.TYPE,
-                        CraftMetaItem.BLOCK_DATA.TYPE,
-                        CraftMetaItem.REPAIR.TYPE,
-                        CraftMetaItem.ENCHANTMENTS.TYPE,
-                        CraftMetaItem.HIDE_ADDITIONAL_TOOLTIP.TYPE,
-                        CraftMetaItem.HIDE_TOOLTIP.TYPE,
-                        CraftMetaItem.TOOLTIP_STYLE.TYPE,
-                        CraftMetaItem.ITEM_MODEL.TYPE,
-                        CraftMetaItem.UNBREAKABLE.TYPE,
-                        CraftMetaItem.ENCHANTMENT_GLINT_OVERRIDE.TYPE,
-                        CraftMetaItem.GLIDER.TYPE,
-                        CraftMetaItem.DAMAGE_RESISTANT.TYPE,
-                        CraftMetaItem.MAX_STACK_SIZE.TYPE,
-                        CraftMetaItem.RARITY.TYPE,
-                        CraftMetaItem.USE_REMAINDER.TYPE,
-                        CraftMetaItem.USE_COOLDOWN.TYPE,
-                        CraftMetaItem.FOOD.TYPE,
-                        CraftMetaItem.TOOL.TYPE,
-                        CraftMetaItem.EQUIPPABLE.TYPE,
-                        CraftMetaItem.JUKEBOX_PLAYABLE.TYPE,
-                        CraftMetaItem.DAMAGE.TYPE,
-                        CraftMetaItem.MAX_DAMAGE.TYPE,
-                        CraftMetaItem.CUSTOM_DATA.TYPE,
-                        CraftMetaItem.ATTRIBUTES.TYPE,
-                        CraftMetaItem.CAN_PLACE_ON.TYPE, // Paper
-                        CraftMetaItem.CAN_BREAK.TYPE, // Paper
-                        CraftMetaArmor.TRIM.TYPE,
-                        CraftMetaArmorStand.ENTITY_TAG.TYPE,
-                        CraftMetaBanner.PATTERNS.TYPE,
-                        CraftMetaEntityTag.ENTITY_TAG.TYPE,
-                        CraftMetaLeatherArmor.COLOR.TYPE,
-                        CraftMetaMap.MAP_POST_PROCESSING.TYPE,
-                        CraftMetaMap.MAP_COLOR.TYPE,
-                        CraftMetaMap.MAP_ID.TYPE,
-                        CraftMetaPotion.POTION_CONTENTS.TYPE,
-                        CraftMetaShield.BASE_COLOR.TYPE,
-                        CraftMetaSkull.SKULL_PROFILE.TYPE,
-                        CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE,
-                        CraftMetaSpawnEgg.ENTITY_TAG.TYPE,
-                        CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE,
-                        CraftMetaBook.BOOK_CONTENT.TYPE,
-                        CraftMetaBookSigned.BOOK_CONTENT.TYPE,
-                        CraftMetaFirework.FIREWORKS.TYPE,
-                        CraftMetaEnchantedBook.STORED_ENCHANTMENTS.TYPE,
-                        CraftMetaCharge.EXPLOSION.TYPE,
-                        CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE,
-                        CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE,
-                        CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE,
-                        CraftMetaAxolotlBucket.ENTITY_TAG.TYPE,
-                        CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE,
-                        CraftMetaCrossbow.CHARGED_PROJECTILES.TYPE,
-                        CraftMetaSuspiciousStew.EFFECTS.TYPE,
-                        CraftMetaCompass.LODESTONE_TARGET.TYPE,
-                        CraftMetaBundle.ITEMS.TYPE,
-                        CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE,
-                        CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE
-                ));
+    // Paper start - improve checking handled tags
+    @org.jetbrains.annotations.VisibleForTesting
+    public static final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> HANDLED_DCTS_PER_TYPE = new HashMap<>();
+    private static final Set<DataComponentType<?>> DEFAULT_HANDLED_DCTS = Set.of(
+        CraftMetaItem.NAME.TYPE,
+        CraftMetaItem.ITEM_NAME.TYPE,
+        CraftMetaItem.LORE.TYPE,
+        CraftMetaItem.CUSTOM_MODEL_DATA.TYPE,
+        CraftMetaItem.ENCHANTABLE.TYPE,
+        CraftMetaItem.BLOCK_DATA.TYPE,
+        CraftMetaItem.REPAIR.TYPE,
+        CraftMetaItem.ENCHANTMENTS.TYPE,
+        CraftMetaItem.HIDE_ADDITIONAL_TOOLTIP.TYPE,
+        CraftMetaItem.HIDE_TOOLTIP.TYPE,
+        CraftMetaItem.TOOLTIP_STYLE.TYPE,
+        CraftMetaItem.ITEM_MODEL.TYPE,
+        CraftMetaItem.UNBREAKABLE.TYPE,
+        CraftMetaItem.ENCHANTMENT_GLINT_OVERRIDE.TYPE,
+        CraftMetaItem.GLIDER.TYPE,
+        CraftMetaItem.DAMAGE_RESISTANT.TYPE,
+        CraftMetaItem.MAX_STACK_SIZE.TYPE,
+        CraftMetaItem.RARITY.TYPE,
+        CraftMetaItem.USE_REMAINDER.TYPE,
+        CraftMetaItem.USE_COOLDOWN.TYPE,
+        CraftMetaItem.FOOD.TYPE,
+        CraftMetaItem.TOOL.TYPE,
+        CraftMetaItem.EQUIPPABLE.TYPE,
+        CraftMetaItem.JUKEBOX_PLAYABLE.TYPE,
+        CraftMetaItem.DAMAGE.TYPE,
+        CraftMetaItem.MAX_DAMAGE.TYPE,
+        CraftMetaItem.CUSTOM_DATA.TYPE,
+        CraftMetaItem.ATTRIBUTES.TYPE,
+        CraftMetaItem.CAN_PLACE_ON.TYPE, // Paper
+        CraftMetaItem.CAN_BREAK.TYPE // Paper
+    );
+    public static Set<DataComponentType<?>> getTopLevelHandledDcts(final Class<? extends CraftMetaItem> clazz) {
+        synchronized (HANDLED_DCTS_PER_TYPE) {
+            if (HANDLED_DCTS_PER_TYPE.isEmpty()) {
+                final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> map = new HashMap<>();
+                map.put(CraftMetaArmor.class, Set.of(CraftMetaArmor.TRIM.TYPE));
+                map.put(CraftMetaArmorStand.class, Set.of(CraftMetaArmorStand.ENTITY_TAG.TYPE));
+                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE));
+                map.put(CraftMetaBanner.class, Set.of(CraftMetaBanner.PATTERNS.TYPE)); // banner uses same tag as block state
+                map.put(CraftMetaShield.class, Set.of(CraftMetaShield.BASE_COLOR.TYPE, CraftMetaBanner.PATTERNS.TYPE));
+                map.put(CraftMetaBlockState.class, Set.of(CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE));
+                map.put(CraftMetaBook.class, Set.of(CraftMetaBook.BOOK_CONTENT.TYPE));
+                map.put(CraftMetaBookSigned.class, Set.of(CraftMetaBookSigned.BOOK_CONTENT.TYPE));
+                map.put(CraftMetaBundle.class, Set.of(CraftMetaBundle.ITEMS.TYPE));
+                map.put(CraftMetaCharge.class, Set.of(CraftMetaCharge.EXPLOSION.TYPE));
+                map.put(CraftMetaColorableArmor.class, Set.of(CraftMetaArmor.TRIM.TYPE, CraftMetaLeatherArmor.COLOR.TYPE));
+                map.put(CraftMetaCompass.class, Set.of(CraftMetaCompass.LODESTONE_TARGET.TYPE));
+                map.put(CraftMetaCrossbow.class, Set.of(CraftMetaCrossbow.CHARGED_PROJECTILES.TYPE));
+                map.put(CraftMetaEnchantedBook.class, Set.of(CraftMetaEnchantedBook.STORED_ENCHANTMENTS.TYPE));
+                map.put(CraftMetaEntityTag.class, Set.of(CraftMetaEntityTag.ENTITY_TAG.TYPE));
+                map.put(CraftMetaFirework.class, Set.of(CraftMetaFirework.FIREWORKS.TYPE));
+                map.put(CraftMetaKnowledgeBook.class, Set.of(CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE));
+                map.put(CraftMetaLeatherArmor.class, Set.of(CraftMetaLeatherArmor.COLOR.TYPE));
+                map.put(CraftMetaMap.class, Set.of(CraftMetaMap.MAP_COLOR.TYPE, CraftMetaMap.MAP_POST_PROCESSING.TYPE, CraftMetaMap.MAP_ID.TYPE));
+                map.put(CraftMetaMusicInstrument.class, Set.of(CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE));
+                map.put(CraftMetaOminousBottle.class, Set.of(CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE));
+                map.put(CraftMetaPotion.class, Set.of(CraftMetaPotion.POTION_CONTENTS.TYPE));
+                map.put(CraftMetaSkull.class, Set.of(CraftMetaSkull.SKULL_PROFILE.TYPE, CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE));
+                map.put(CraftMetaSpawnEgg.class, Set.of(CraftMetaSpawnEgg.ENTITY_TAG.TYPE));
+                map.put(CraftMetaSuspiciousStew.class, Set.of(CraftMetaSuspiciousStew.EFFECTS.TYPE));
+                map.put(CraftMetaTropicalFishBucket.class, Set.of(CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE));
+
+                for (final Map.Entry<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> entry : map.entrySet()) {
+                    final ArrayList<DataComponentType<?>> topLevelTags = new ArrayList<>(entry.getValue());
+                    // add tags common to CraftMetaItem to all
+                    topLevelTags.addAll(DEFAULT_HANDLED_DCTS);
+                    HANDLED_DCTS_PER_TYPE.put(entry.getKey(), Set.copyOf(topLevelTags));
+                }
             }
-            return CraftMetaItem.HANDLED_TAGS;
+            return HANDLED_DCTS_PER_TYPE.getOrDefault(clazz, DEFAULT_HANDLED_DCTS);
         }
     }
+    // Paper end - improve checking handled data component types
 
     protected static <T> Optional<? extends T> getOrEmpty(DataComponentPatch tag, ItemMetaKeyType<T> type) {
         Optional<? extends T> result = tag.get(type.TYPE);

@@ -42,8 +42,8 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
         }
     }
 
-    CraftMetaShield(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaShield(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper - improve checking handled tags in item meta
+        super(tag, extraHandledDcts); // Paper - improve checking handled tags in item meta
 
         getOrEmpty(tag, CraftMetaShield.BASE_COLOR).ifPresent((color) -> {
             this.banner = CraftMetaShield.getBlockState(DyeColor.getByWoolData((byte) color.getId()));

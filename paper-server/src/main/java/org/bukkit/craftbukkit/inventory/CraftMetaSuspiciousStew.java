@@ -33,8 +33,8 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
         }
     }
 
-    CraftMetaSuspiciousStew(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaSuspiciousStew(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
         getOrEmpty(tag, CraftMetaSuspiciousStew.EFFECTS).ifPresent((suspiciousStewEffects) -> {
             List<SuspiciousStewEffects.Entry> list = suspiciousStewEffects.effects();
             int length = list.size();

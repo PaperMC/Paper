@@ -18,8 +18,8 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
         CraftMetaLeatherArmor.readColor(this, meta);
     }
 
-    CraftMetaColorableArmor(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaColorableArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
         CraftMetaLeatherArmor.readColor(this, tag);
     }
 

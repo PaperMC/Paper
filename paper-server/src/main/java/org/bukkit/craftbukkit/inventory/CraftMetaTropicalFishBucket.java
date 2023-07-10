@@ -38,8 +38,8 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         this.bucketEntityTag = bucket.bucketEntityTag;
     }
 
-    CraftMetaTropicalFishBucket(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaTropicalFishBucket(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaTropicalFishBucket.ENTITY_TAG).ifPresent((nbt) -> {
             this.entityTag = nbt.copyTag();

@@ -25,8 +25,8 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         CraftMetaLeatherArmor.readColor(this, meta);
     }
 
-    CraftMetaLeatherArmor(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaLeatherArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
         CraftMetaLeatherArmor.readColor(this, tag);
     }
 

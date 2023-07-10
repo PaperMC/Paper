@@ -39,8 +39,8 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         this.entityTag = entity.entityTag;
     }
 
-    CraftMetaEntityTag(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaEntityTag(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaEntityTag.ENTITY_TAG).ifPresent((nbt) -> {
             this.entityTag = nbt.copyTag();

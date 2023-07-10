@@ -50,8 +50,8 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         this.tracked = compassMeta.tracked;
     }
 
-    CraftMetaCompass(DataComponentPatch tag) {
-        super(tag);
+    CraftMetaCompass(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+        super(tag, extraHandledDcts); // Paper
         getOrEmpty(tag, CraftMetaCompass.LODESTONE_TARGET).ifPresent((lodestoneTarget) -> {
             lodestoneTarget.target().ifPresent((target) -> {
                 this.lodestoneWorld = target.dimension();
