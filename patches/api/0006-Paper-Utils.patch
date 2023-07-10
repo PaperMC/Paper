@@ -1,8 +1,9 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Aikar <aikar@aikar.co>
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Sat, 23 Feb 2019 11:26:21 -0500
 Subject: [PATCH] Paper Utils
 
+Co-authored-by: Aikar <aikar@aikar.co>
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/SneakyThrow.java b/src/main/java/com/destroystokyo/paper/util/SneakyThrow.java
 new file mode 100644
@@ -25,4 +26,539 @@ index 0000000000000000000000000000000000000000..9db0056ab94145819628b3ad8d8d2613
 +        throw (T) exception;
 +    }
 +
++}
+diff --git a/src/main/java/io/papermc/paper/util/PluginNag.java b/src/main/java/io/papermc/paper/util/PluginNag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f36e8f8d9dd81f7b13cba73c330938a148960ec2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/PluginNag.java
+@@ -0,0 +1,89 @@
++package io.papermc.paper.util;
++
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentMap;
++import java.util.function.Function;
++import org.bukkit.Bukkit;
++import org.bukkit.plugin.Plugin;
++import org.bukkit.plugin.java.JavaPlugin;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++@DefaultQualifier(NonNull.class)
++public final class PluginNag {
++
++    private static final boolean SUPPRESS_NAGS = Boolean.getBoolean("io.papermc.paper.suppress.sout.nags");
++
++    private final long timeout;
++    private final long interval;
++    private final Function<? super Plugin, String> errorFactory;
++    private final StackTrace stackTraceOption;
++    private final Map<String, NagRecord> nagRecords = new ConcurrentHashMap<>(64);
++
++    /**
++     * Creates a nag instance to warn plugins about incorrect behavior.
++     *
++     * @param timeout          timeout in nanoseconds between nags
++     * @param interval         max count before nagging again
++     * @param errorFactory     create error message
++     * @param stackTraceOption how to handle stack traces
++     */
++    public PluginNag(long timeout, long interval, final Function<? super Plugin, String> errorFactory, final StackTrace stackTraceOption) {
++        this.timeout = timeout;
++        this.interval = interval;
++        this.errorFactory = errorFactory;
++        this.stackTraceOption = stackTraceOption;
++    }
++
++    public boolean trigger(final Class<?> callerClass) {
++        return this.trigger(JavaPlugin.getProvidingPlugin(callerClass));
++    }
++
++    public boolean trigger(final JavaPlugin plugin) {
++        if (SUPPRESS_NAGS) {
++            return true;
++        }
++        try {
++            final boolean first = !this.nagRecords.containsKey(plugin.getName());
++            if (this.interval > 0 || this.timeout > 0) {
++                final NagRecord nagRecord = this.nagRecords.computeIfAbsent(plugin.getName(), k -> new NagRecord());
++                final boolean hasTimePassed = this.timeout > 0 && (nagRecord.lastNagTimestamp == Long.MIN_VALUE || nagRecord.lastNagTimestamp + this.timeout <= System.nanoTime());
++                final boolean hasMessagesPassed = this.interval > 0 && (nagRecord.messagesSinceNag == Long.MIN_VALUE || ++nagRecord.messagesSinceNag >= this.interval);
++                if (!hasMessagesPassed && !hasTimePassed) {
++                    return true;
++                }
++                nagRecord.lastNagTimestamp = System.nanoTime();
++                nagRecord.messagesSinceNag = 0;
++            }
++            Bukkit.getLogger().warning(this.errorFactory.apply(plugin));
++            switch (this.stackTraceOption) {
++                case ALWAYS -> Thread.dumpStack();
++                case FIRST -> {
++                    if (first) {
++                        Thread.dumpStack();
++                    }
++                }
++                default -> {
++                }
++            }
++            return true;
++        } catch (final IllegalArgumentException | IllegalStateException e) {
++            return false;
++        }
++    }
++
++    private static final class NagRecord {
++        private long lastNagTimestamp = Long.MIN_VALUE;
++        private long messagesSinceNag = Long.MIN_VALUE;
++    }
++
++    public enum StackTrace {
++        ALWAYS,
++        NEVER,
++        FIRST,
++        ;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/collections/ImmutableLoggingList.java b/src/main/java/io/papermc/paper/util/collections/ImmutableLoggingList.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4d24629ec41f75896a749d541d2bf79984b0663b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/collections/ImmutableLoggingList.java
+@@ -0,0 +1,237 @@
++package io.papermc.paper.util.collections;
++
++import com.google.common.collect.ForwardingIterator;
++import com.google.common.collect.ForwardingListIterator;
++import io.papermc.paper.util.PluginNag;
++import java.util.Collection;
++import java.util.Comparator;
++import java.util.Iterator;
++import java.util.List;
++import java.util.ListIterator;
++import java.util.RandomAccess;
++import java.util.function.UnaryOperator;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++@DefaultQualifier(NonNull.class)
++public class ImmutableLoggingList<T> implements List<T>, RandomAccess {
++
++    private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
++    private static final PluginNag NAG = new PluginNag(1_000_000_000L, 0L, plugin -> {
++        return String.format("Nag author(s): '%s' of '%s' about their mutating a list that shouldn't be changed. %n",
++            plugin.getPluginMeta().getAuthors(),
++            plugin.getPluginMeta().getDisplayName()
++        );
++    }, PluginNag.StackTrace.FIRST);
++
++    private final List<T> delegate;
++    private final @Nullable Class<?> callerClassOverride;
++
++    public ImmutableLoggingList(final List<T> delegate) {
++        this(delegate, null);
++    }
++
++    public ImmutableLoggingList(final List<T> delegate, final @Nullable Class<?> callerClassOverride) {
++        this.delegate = delegate;
++        this.callerClassOverride = callerClassOverride;
++    }
++
++    @Override
++    public int size() {
++        return this.delegate.size();
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.delegate.isEmpty();
++    }
++
++    @Override
++    public boolean contains(final Object o) {
++        return this.delegate.contains(o);
++    }
++
++    @Override
++    public Iterator<T> iterator() {
++        return new ImmutableLoggingIterator<>(ImmutableLoggingList.this.callerClassOverride != null ? ImmutableLoggingList.this.callerClassOverride : STACK_WALKER.getCallerClass(), this.delegate.iterator());
++    }
++
++    @Override
++    public Object[] toArray() {
++        return this.delegate.toArray();
++    }
++
++    @Override
++    public <T1> T1[] toArray(final T1[] a) {
++        return this.delegate.toArray(a);
++    }
++
++    @Override
++    public boolean add(final T t) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        return this.delegate.add(t);
++    }
++
++    @Override
++    public boolean remove(final Object o) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        return this.delegate.remove(o);
++    }
++
++    @SuppressWarnings("SlowListContainsAll")
++    @Override
++    public boolean containsAll(final Collection<?> c) {
++        return this.delegate.containsAll(c);
++    }
++
++    @Override
++    public boolean addAll(final Collection<? extends T> c) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        return this.delegate.addAll(c);
++    }
++
++    @Override
++    public boolean addAll(final int index, final Collection<? extends T> c) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        return this.delegate.addAll(index, c);
++    }
++
++    @Override
++    public boolean removeAll(final Collection<?> c) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        return this.delegate.removeAll(c);
++    }
++
++    @Override
++    public boolean retainAll(final Collection<?> c) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        return this.delegate.retainAll(c);
++    }
++
++    @Override
++    public void clear() {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        this.delegate.clear();
++    }
++
++    @Override
++    public T get(final int index) {
++        return this.delegate.get(index);
++    }
++
++    @Override
++    public T set(final int index, final T element) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        return this.delegate.set(index, element);
++    }
++
++    @Override
++    public void add(final int index, final T element) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        this.delegate.add(index, element);
++    }
++
++    @Override
++    public T remove(final int index) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        return this.delegate.remove(index);
++    }
++
++    @Override
++    public int indexOf(final Object o) {
++        return this.delegate.indexOf(o);
++    }
++
++    @Override
++    public int lastIndexOf(final Object o) {
++        return this.delegate.lastIndexOf(o);
++    }
++
++    @Override
++    public ListIterator<T> listIterator() {
++        return new ImmutableLoggingListIterator<>(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass(), this.delegate.listIterator());
++    }
++
++    @Override
++    public ListIterator<T> listIterator(final int index) {
++        return new ImmutableLoggingListIterator<>(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass(), this.delegate.listIterator(index));
++    }
++
++    @Override
++    public List<T> subList(final int fromIndex, final int toIndex) {
++        return new ImmutableLoggingList<>(this.delegate.subList(fromIndex, toIndex), this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++    }
++
++    @Override
++    public void replaceAll(final UnaryOperator<T> operator) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        List.super.replaceAll(operator);
++    }
++
++    @Override
++    public void sort(final Comparator<? super T> c) {
++        NAG.trigger(this.callerClassOverride != null ? this.callerClassOverride : STACK_WALKER.getCallerClass());
++        List.super.sort(c);
++    }
++
++    @ApiStatus.Internal
++    private static final class ImmutableLoggingIterator<E> extends ForwardingIterator<E> {
++
++        private final Class<?> callerClass;
++        private final Iterator<E> delegate;
++
++        private ImmutableLoggingIterator(final Class<?> callerClass, final Iterator<E> delegate) {
++            this.callerClass = callerClass;
++            this.delegate = delegate;
++        }
++
++        @Override
++        protected Iterator<E> delegate() {
++            return this.delegate;
++        }
++
++        @Override
++        public void remove() {
++            ImmutableLoggingList.NAG.trigger(this.callerClass);
++            super.remove();
++        }
++    }
++
++    @ApiStatus.Internal
++    private static final class ImmutableLoggingListIterator<E> extends ForwardingListIterator<E> {
++
++        private final Class<?> callerClass;
++        private final ListIterator<E> delegate;
++
++        private ImmutableLoggingListIterator(final Class<?> callerClass, final ListIterator<E> delegate) {
++            this.callerClass = callerClass;
++            this.delegate = delegate;
++        }
++
++        @Override
++        protected ListIterator<E> delegate() {
++            return this.delegate;
++        }
++
++        @Override
++        public void add(final E element) {
++            ImmutableLoggingList.NAG.trigger(this.callerClass);
++            super.add(element);
++        }
++
++        @Override
++        public void set(final E element) {
++            ImmutableLoggingList.NAG.trigger(this.callerClass);
++            super.set(element);
++        }
++
++        @Override
++        public void remove() {
++            ImmutableLoggingList.NAG.trigger(this.callerClass);
++            super.remove();
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/collections/NonNullTransformingFixedSizeList.java b/src/main/java/io/papermc/paper/util/collections/NonNullTransformingFixedSizeList.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d3868b6f7d997c89b456ca830da01f30730c0a1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/collections/NonNullTransformingFixedSizeList.java
+@@ -0,0 +1,50 @@
++package io.papermc.paper.util.collections;
++
++import java.util.List;
++import java.util.RandomAccess;
++import java.util.function.Supplier;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++@DefaultQualifier(NonNull.class)
++public class NonNullTransformingFixedSizeList<T> extends NonNullTransformingList<T> implements RandomAccess {
++
++    private final int fixedSize;
++    private final boolean supportRemove;
++
++    public NonNullTransformingFixedSizeList(final List<T> delegate, final Supplier<? extends T> emptyInstanceSupplier, final boolean supportRemove) {
++        super(delegate, emptyInstanceSupplier);
++        this.fixedSize = delegate.size();
++        this.supportRemove = supportRemove;
++    }
++
++    @Override
++    public int size() {
++        return this.fixedSize;
++    }
++
++    @Override
++    public void add(final int index, final @Nullable T element) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public T remove(final int index) {
++        if (!this.supportRemove) {
++            throw new UnsupportedOperationException();
++        }
++        final T removed = super.remove(index);
++        this.refill();
++        return removed;
++    }
++
++    private void refill() {
++        // use delegate to get direct info
++        for (int i = this.delegate.size(); i < this.fixedSize; i++) {
++            this.delegate.add(this.emptySupplier.get());
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/collections/NonNullTransformingList.java b/src/main/java/io/papermc/paper/util/collections/NonNullTransformingList.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..059518e3a8b02991a5f106dd2cbb72252bf86bc9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/collections/NonNullTransformingList.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.util.collections;
++
++import java.util.AbstractList;
++import java.util.List;
++import java.util.RandomAccess;
++import java.util.function.Supplier;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.ApiStatus;
++
++
++@ApiStatus.Internal
++@DefaultQualifier(NonNull.class)
++public class NonNullTransformingList<T> extends AbstractList<T> implements RandomAccess {
++
++    protected final List<T> delegate;
++    protected final Supplier<? extends T> emptySupplier;
++
++    public NonNullTransformingList(final List<T> delegate, final Supplier<? extends T> emptySupplier) {
++        this.delegate = delegate;
++        this.emptySupplier = emptySupplier;
++    }
++
++    @Override
++    public T get(final int index) {
++        return this.delegate.get(index);
++    }
++
++    @Override
++    public int size() {
++        return this.delegate.size();
++    }
++
++    @Override
++    public T set(final int index, final @Nullable T element) {
++        return this.delegate.set(index, element != null ? element : this.emptySupplier.get());
++    }
++
++    @Override
++    public void add(final int index, final @Nullable T element) {
++        this.delegate.add(index, element != null ? element : this.emptySupplier.get());
++    }
++
++    @Override
++    public T remove(final int index) {
++        return this.delegate.remove(index);
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/util/NonNullTransformingFixedSizeListTest.java b/src/test/java/io/papermc/paper/util/NonNullTransformingFixedSizeListTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..be3ff308cecd5b3c8166c6291428a5e38f695b29
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/util/NonNullTransformingFixedSizeListTest.java
+@@ -0,0 +1,80 @@
++package io.papermc.paper.util;
++
++import io.papermc.paper.util.collections.NonNullTransformingFixedSizeList;
++import java.util.ArrayList;
++import java.util.Iterator;
++import java.util.List;
++import java.util.ListIterator;
++import junit.framework.TestCase;
++import net.kyori.adventure.text.Component;
++
++import static net.kyori.adventure.text.Component.empty;
++import static net.kyori.adventure.text.Component.text;
++import static org.junit.Assert.assertThrows;
++
++public class NonNullTransformingFixedSizeListTest extends TestCase {
++
++    private static final int SIZE = 4;
++
++    static final Component EMPTY = empty();
++    static final Component HELLO = text("Hello");
++    static final Component WORLD = text("World");
++
++    List<Component> delegate;
++    List<Component> fixedSizeList;
++
++    private void checkSize() {
++        assertEquals(SIZE, this.delegate.size());
++    }
++
++    @Override
++    protected void setUp() {
++        this.delegate = new ArrayList<>(List.of(HELLO, empty(), WORLD, empty()));
++        this.fixedSizeList = new NonNullTransformingFixedSizeList<>(this.delegate, Component::empty, true);
++    }
++
++    public void testAdd() {
++        assertThrows(UnsupportedOperationException.class, () -> this.fixedSizeList.add(text("Error")));
++        assertThrows(UnsupportedOperationException.class, () -> this.fixedSizeList.add(2, text("Error")));
++    }
++
++    public void testAddAll() {
++        assertThrows(UnsupportedOperationException.class, () -> this.fixedSizeList.addAll(List.of(text("Error"))));
++        assertThrows(UnsupportedOperationException.class, () -> this.fixedSizeList.addAll(2, List.of(text("Error"))));
++    }
++
++    public void testSet() {
++        assertEquals(HELLO, this.fixedSizeList.set(0, null));
++        assertEquals(EMPTY, this.delegate.get(0));
++    }
++
++    public void testRemove() {
++        this.checkSize();
++        assertFalse(this.fixedSizeList.remove(text("Not in list")));
++        this.checkSize();
++        assertTrue(this.fixedSizeList.remove(HELLO));
++        this.checkSize();
++        assertEquals(WORLD, this.fixedSizeList.remove(1));
++        this.checkSize();
++    }
++
++    public void testClear() {
++        this.fixedSizeList.clear();
++        this.checkSize();
++    }
++
++    public void testIterator() {
++        final Iterator<Component> iterator = this.fixedSizeList.iterator();
++        assertEquals(HELLO, iterator.next());
++        iterator.remove();
++        this.checkSize();
++    }
++
++    public void testListIterator() {
++        final ListIterator<Component> iterator = this.fixedSizeList.listIterator();
++        assertThrows(UnsupportedOperationException.class, () -> iterator.add(text("Error")));
++        assertEquals(HELLO, iterator.next());
++        iterator.set(null);
++        assertEquals(EMPTY, this.delegate.get(0));
++    }
 +}
