@@ -38,4 +38,20 @@ public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlock
     public CraftSculkCatalyst copy(Location location) {
         return new CraftSculkCatalyst(this, location);
     }
+
+    // Paper start - SculkCatalyst bloom API
+    @Override
+    public void bloom(@org.jetbrains.annotations.NotNull io.papermc.paper.math.Position position, int charge) {
+        com.google.common.base.Preconditions.checkNotNull(position);
+        requirePlaced();
+
+        getTileEntity().getListener().bloom(
+            world.getHandle(),
+            getTileEntity().getBlockPos(),
+            getTileEntity().getBlockState(),
+            world.getHandle().getRandom()
+        );
+        getTileEntity().getListener().getSculkSpreader().addCursors(io.papermc.paper.util.MCUtil.toBlockPos(position), charge);
+    }
+    // Paper end
 }
