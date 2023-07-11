@@ -19,6 +19,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
             Material.COD_BUCKET,
             Material.PUFFERFISH_BUCKET,
             Material.SALMON_BUCKET,
+            Material.TADPOLE_BUCKET, // Paper
             Material.ITEM_FRAME,
             Material.GLOW_ITEM_FRAME,
             Material.PAINTING

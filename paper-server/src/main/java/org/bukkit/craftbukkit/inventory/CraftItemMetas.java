@@ -265,7 +265,7 @@ public final class CraftItemMetas {
         if (itemType == ItemType.SUSPICIOUS_STEW) {
             return CraftItemMetas.asType(CraftItemMetas.SUSPICIOUS_STEW_META_DATA);
         }
-        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET
+        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET // Paper
                 || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.ITEM_FRAME
                 || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) {
             return CraftItemMetas.asType(CraftItemMetas.ENTITY_TAG_META_DATA);

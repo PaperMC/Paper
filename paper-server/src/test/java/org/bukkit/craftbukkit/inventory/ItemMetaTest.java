@@ -209,6 +209,27 @@ public class ItemMetaTest {
         }
     }
 
+    // Paper start - check entity tag metas
+    private static final java.util.Set<Class<?>> ENTITY_TAG_METAS = java.util.Set.of(
+        CraftMetaEntityTag.class,
+        CraftMetaTropicalFishBucket.class,
+        CraftMetaAxolotlBucket.class
+    );
+    @Test
+    public void testEntityTagMeta() {
+        for (final Item item : BuiltInRegistries.ITEM) {
+            if (item instanceof net.minecraft.world.item.HangingEntityItem || item instanceof net.minecraft.world.item.MobBucketItem) {
+                ItemStack stack = new ItemStack(CraftItemType.minecraftToBukkit(item));
+                assertTrue(ENTITY_TAG_METAS.contains(stack.getItemMeta().getClass()), "missing entity tag meta handling for " + item);
+                stack = CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.STONE);
+                stack.editMeta(meta -> meta.displayName(net.kyori.adventure.text.Component.text("hello")));
+                stack.setType(CraftItemType.minecraftToBukkit(item));
+                assertTrue(ENTITY_TAG_METAS.contains(stack.getItemMeta().getClass()), "missing entity tag meta handling for " + item);
+            }
+        }
+    }
+    // Paper end
+
     @Test
     public void testEachExtraData() {
         final List<StackProvider> providers = Arrays.asList(
