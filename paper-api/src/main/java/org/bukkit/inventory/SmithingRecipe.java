@@ -21,7 +21,12 @@ public class SmithingRecipe implements Recipe, Keyed {
      * @param result The item you want the recipe to create.
      * @param base The base ingredient
      * @param addition The addition ingredient
+     * @deprecated as of Minecraft 1.20, smithing recipes are now separated into two
+     * distinct recipe types, {@link SmithingTransformRecipe} and {@link SmithingTrimRecipe}.
+     * This class now acts as a base class to these two classes and will do nothing when
+     * added to the server.
      */
+    @Deprecated
     public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
         this.key = key;
         this.result = result;
