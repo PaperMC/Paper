@@ -6,10 +6,10 @@ Subject: [PATCH] Paper Item API
 
 diff --git a/src/main/java/io/papermc/paper/item/PaperMetaRegistry.java b/src/main/java/io/papermc/paper/item/PaperMetaRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..67cdea38f18381db61ce1aeaf96cb52b429cf099
+index 0000000000000000000000000000000000000000..adf671e79baa29b4775d5d0ebc923515e5041fd3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/PaperMetaRegistry.java
-@@ -0,0 +1,371 @@
+@@ -0,0 +1,372 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.item.meta.MetaArmor;
@@ -344,7 +344,8 @@ index 0000000000000000000000000000000000000000..67cdea38f18381db61ce1aeaf96cb52b
 +            Material.SCULK_SENSOR,
 +            Material.CHISELED_BOOKSHELF,
 +            Material.DECORATED_POT,
-+            Material.SUSPICIOUS_SAND
++            Material.SUSPICIOUS_SAND,
++            Material.SUSPICIOUS_GRAVEL
 +        ), MetaBlockState::new);
 +        register(Material.SHIELD, MetaShield::new); // Paper has a custom banner type... for clean purposes
 +
@@ -3741,10 +3742,10 @@ index 44a3273584a571be705875cff521b3e82a8e9cdf..4db93437d990ab4208229f074925550c
          }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 849e93a8a0645de4c3e6ab8047815d78a722d4f6..0b0b61777b197501321fc1c86ec04f367dece761 100644
+index 849e93a8a0645de4c3e6ab8047815d78a722d4f6..12163aa1b06b922ffbb2dcf54dd4fec16f590c2e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -42,19 +42,34 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -42,19 +42,35 @@ public final class CraftItemFactory implements ItemFactory {
              return false;
          }
  
@@ -3769,7 +3770,8 @@ index 849e93a8a0645de4c3e6ab8047815d78a722d4f6..0b0b61777b197501321fc1c86ec04f36
 +        // Paper start
 +        material = CraftLegacy.fromLegacy(material); // This may be called from legacy item stacks, try to get the right material
 +        // Paper start
-+        net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(org.bukkit.craftbukkit.util.CraftMagicNumbers.getItem(material));
++        net.minecraft.world.item.Item item = org.bukkit.craftbukkit.util.CraftMagicNumbers.getItem(material);
++        net.minecraft.world.item.ItemStack itemStack = item == null ? net.minecraft.world.item.ItemStack.EMPTY : new net.minecraft.world.item.ItemStack(item);
 +        return CraftItemStack.getItemMeta(itemStack, material);
 +        // Paper end
      }
@@ -3784,7 +3786,7 @@ index 849e93a8a0645de4c3e6ab8047815d78a722d4f6..0b0b61777b197501321fc1c86ec04f36
          switch (material) {
          case AIR:
              return null;
-@@ -366,20 +381,19 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -366,20 +382,19 @@ public final class CraftItemFactory implements ItemFactory {
          }
  
          if (meta1 != null) {
@@ -3811,7 +3813,7 @@ index 849e93a8a0645de4c3e6ab8047815d78a722d4f6..0b0b61777b197501321fc1c86ec04f36
          /*
           * This couldn't be done inside of the objects themselves, else force recursion.
           * This is a fairly clean way of implementing it, by dividing the methods into purposes and letting each method perform its own function.
-@@ -405,8 +419,18 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -405,8 +420,18 @@ public final class CraftItemFactory implements ItemFactory {
      @Override
      public ItemMeta asMetaFor(ItemMeta meta, Material material) {
          Preconditions.checkArgument(material != null, "Material cannot be null");
@@ -3832,7 +3834,7 @@ index 849e93a8a0645de4c3e6ab8047815d78a722d4f6..0b0b61777b197501321fc1c86ec04f36
      }
  
      @Override
-@@ -435,7 +459,7 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -435,7 +460,7 @@ public final class CraftItemFactory implements ItemFactory {
  
      @Override
      public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {

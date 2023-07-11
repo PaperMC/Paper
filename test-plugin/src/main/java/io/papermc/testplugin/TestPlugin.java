@@ -10,7 +10,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.inventory.meta.SuspiciousStewMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 public final class TestPlugin extends JavaPlugin implements Listener {
 
@@ -32,14 +35,12 @@ public final class TestPlugin extends JavaPlugin implements Listener {
             event.getPlayer().getInventory().addItem(itemStack);
         }
         {
-            ItemStack itemStack = Bukkit.getUnsafe().newItem(Material.PLAYER_HEAD, 1);
+            ItemStack itemStack = new ItemStack(Material.SUSPICIOUS_STEW, 1);
             itemStack.editMeta(meta -> {
-                PlayerProfile profile = Bukkit.createProfile("Owen1212055");
-                profile.complete();
-                ((SkullMeta) meta).setPlayerProfile(profile);
-
-                meta.displayName(Component.text("GET REAL!"));
+                SuspiciousStewMeta stewMeta = (SuspiciousStewMeta) meta;
+                stewMeta.addCustomEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, 20, 1, true, true), true);
             });
+
             event.getPlayer().getInventory().addItem(itemStack);
         }
     }
