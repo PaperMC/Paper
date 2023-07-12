@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 12 Jul 2023 17:38:26 -0400
+Subject: [PATCH] Don't tick signs
+
+Minecraft now ticks signs in order to validate the playerWhoMayEdit field. This is a horrible idea, as this means that even waxed signs are ticked for essentially no reason. This moves the logic lazily onto the getter.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/CeilingHangingSignBlock.java b/src/main/java/net/minecraft/world/level/block/CeilingHangingSignBlock.java
+index 6c9d163b9f857806461dc72e54713f1a4f3a5c31..0bd8ea3143b2e9755d492af4596622d1dca1afaf 100644
+--- a/src/main/java/net/minecraft/world/level/block/CeilingHangingSignBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CeilingHangingSignBlock.java
+@@ -144,6 +144,6 @@ public class CeilingHangingSignBlock extends SignBlock {
+     @Nullable
+     @Override
+     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state, BlockEntityType<T> type) {
+-        return createTickerHelper(type, BlockEntityType.HANGING_SIGN, SignBlockEntity::tick);
++        return null; // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/SignBlock.java b/src/main/java/net/minecraft/world/level/block/SignBlock.java
+index f7fda6fb4e908869310c783e68f7ad7025840592..14e393e252ffe7d04e0aafb85bd319bed76c330d 100644
+--- a/src/main/java/net/minecraft/world/level/block/SignBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SignBlock.java
+@@ -166,6 +166,6 @@ public abstract class SignBlock extends BaseEntityBlock implements SimpleWaterlo
+     @Nullable
+     @Override
+     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state, BlockEntityType<T> type) {
+-        return createTickerHelper(type, BlockEntityType.SIGN, SignBlockEntity::tick);
++        return null; // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/WallHangingSignBlock.java b/src/main/java/net/minecraft/world/level/block/WallHangingSignBlock.java
+index db48010e633165972d2eac339dd7d1fd5a2f5bd8..c92dfc3acd81d3bd0b3d9e9d1ba78c9795fd3f8d 100644
+--- a/src/main/java/net/minecraft/world/level/block/WallHangingSignBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/WallHangingSignBlock.java
+@@ -165,6 +165,6 @@ public class WallHangingSignBlock extends SignBlock {
+     @Nullable
+     @Override
+     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state, BlockEntityType<T> type) {
+-        return createTickerHelper(type, BlockEntityType.HANGING_SIGN, SignBlockEntity::tick);
++        return null; // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+index f356196aaeb498a6d2c9ad2112329cef5a3103d6..674b6738be256447742f8eb3a63b404316ed9c95 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -367,6 +367,12 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+ 
+     @Nullable
+     public UUID getPlayerWhoMayEdit() {
++        // Paper start
++        if (this.hasLevel()) {
++            // Manually invalidate the value lazily.
++            tick(this.getLevel(), this.getBlockPos(), this.getBlockState(), this);
++        }
++        // Paper end
+         return this.playerWhoMayEdit;
+     }
+ 
+@@ -401,7 +407,7 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+         if (uuid != null) {
+             blockEntity.clearInvalidPlayerWhoMayEdit(blockEntity, world, uuid);
+         }
+-
++        // Paper - Diff on change
+     }
+ 
+     private void clearInvalidPlayerWhoMayEdit(SignBlockEntity blockEntity, Level world, UUID uuid) {
