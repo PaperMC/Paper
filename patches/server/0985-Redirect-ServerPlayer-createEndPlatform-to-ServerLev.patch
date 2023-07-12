@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: nostalfinals <yuu8583@proton.me>
+Date: Wed, 12 Jul 2023 16:34:25 +0800
+Subject: [PATCH] Redirect ServerPlayer#createEndPlatform to
+ ServerLevel#makeObsidianPlatform
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 18aac3da3c88f33b1a71a5920a8daa27e9723913..3f589628d922e06dd5721e37e1b510c3121fae8f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2533,12 +2533,19 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         ServerLevel.makeObsidianPlatform(world, null);
+     }
+ 
++    // Paper start
+     public static void makeObsidianPlatform(ServerLevel worldserver, Entity entity) {
++        makeObsidianPlatform(worldserver, END_SPAWN_POINT, entity);
++    }
++    // Paper end
++
++    public static void makeObsidianPlatform(ServerLevel worldserver, BlockPos centerPos, Entity entity) { // Paper
+         // CraftBukkit end
+-        BlockPos blockposition = ServerLevel.END_SPAWN_POINT;
+-        int i = blockposition.getX();
+-        int j = blockposition.getY() - 2;
+-        int k = blockposition.getZ();
++        // Paper start
++        int i = centerPos.getX();
++        int j = centerPos.getY() - 2;
++        int k = centerPos.getZ();
++        // Paper end
+ 
+         // CraftBukkit start
+         org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(worldserver);
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 9d46536f80b5b3e6641fd377c02166a431edfd77..a6054fc8bfab504bcada017e2b6f881b6a65d6c2 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1294,26 +1294,9 @@ public class ServerPlayer extends Player {
+     // CraftBukkit end
+ 
+     private void createEndPlatform(ServerLevel world, BlockPos centerPos) {
+-        BlockPos.MutableBlockPos blockposition_mutableblockposition = centerPos.mutable();
+-        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(world); // CraftBukkit
+-
+-        for (int i = -2; i <= 2; ++i) {
+-            for (int j = -2; j <= 2; ++j) {
+-                for (int k = -1; k < 3; ++k) {
+-                    BlockState iblockdata = k == -1 ? Blocks.OBSIDIAN.defaultBlockState() : Blocks.AIR.defaultBlockState();
+-
+-                    blockList.setBlock(blockposition_mutableblockposition.set(centerPos).move(j, k, i), iblockdata, 3); // CraftBukkit
+-                }
+-            }
+-        }
+-        // CraftBukkit start - call portal event
+-        org.bukkit.event.world.PortalCreateEvent portalEvent = new org.bukkit.event.world.PortalCreateEvent((List<org.bukkit.block.BlockState>) (List) blockList.getList(), world.getWorld(), this.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.END_PLATFORM);
+-        world.getCraftServer().getPluginManager().callEvent(portalEvent);
+-        if (!portalEvent.isCancelled()) {
+-            blockList.updateList();
+-        }
+-        // CraftBukkit end
+-
++        // Paper start
++        ServerLevel.makeObsidianPlatform(world, centerPos, this);
++        // Paper end
+     }
+ 
+     @Override
