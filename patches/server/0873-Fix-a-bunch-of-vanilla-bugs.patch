@@ -37,6 +37,9 @@ https://bugs.mojang.com/browse/MC-262422
 https://bugs.mojang.com/browse/MC-224454
   Fix mobs attempting to pathfind through azalea blocks
 
+https://bugs.mojang.com/browse/MC-263999
+  Fix mobs breaking doors not spawning block break particles
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -120,6 +123,22 @@ index effe4c4fb37fe13aece70cdef4966047d4719af9..7152674d3f3fb98198585cb5ece2bb88
  
      default SoundEvent getSaddleSoundEvent() {
          return SoundEvents.HORSE_SADDLE;
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+index 4253b3b1263a7ae5a2f5f3a34674dfea615a81ea..704a4ef1f89c0f3a5a9cf1367563ba305eabdbaf 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+@@ -77,9 +77,10 @@ public class BreakDoorGoal extends DoorInteractGoal {
+                 return;
+             }
+             // CraftBukkit end
++            final net.minecraft.world.level.block.state.BlockState oldState = this.mob.level().getBlockState(this.doorPos); // Paper - fix MC-263999
+             this.mob.level().removeBlock(this.doorPos, false);
+             this.mob.level().levelEvent(1021, this.doorPos, 0);
+-            this.mob.level().levelEvent(2001, this.doorPos, Block.getId(this.mob.level().getBlockState(this.doorPos)));
++            this.mob.level().levelEvent(2001, this.doorPos, Block.getId(oldState)); // Paper - fix MC-263999
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
 index 19540fd4a7f992888fadb6501d0c8a5a7e71fcf6..e241ae250f4f04a17ef2c583d00b065a4ca56a4c 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
