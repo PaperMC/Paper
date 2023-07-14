@@ -12,6 +12,37 @@ Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
 
+diff --git a/src/main/java/net/minecraft/world/level/block/CactusBlock.java b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+index 0003fb51ae3a6575575e10b4c86719f3061e2577..08047eb3abad49e388c99520146e3aa8e2620da6 100644
+--- a/src/main/java/net/minecraft/world/level/block/CactusBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+@@ -57,15 +57,22 @@ public class CactusBlock extends Block {
+             if (i < world.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable growth height
+                 int j = (Integer) state.getValue(CactusBlock.AGE);
+ 
+-                int modifier = world.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+-                if (j >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
++                // Paper start - fix block creating growth modifiers
++                final int ageToProgress = world.spigotConfig.computeBlockGrowingAgeProgression(
++                    random,
++                    world.spigotConfig.cactusModifier
++                );
++                if (ageToProgress > 0 && j < CactusBlock.MAX_AGE) {
++                    // Moved up from below's if, now deleted, else.
++                    world.setBlock(pos, state.setValue(CactusBlock.AGE, Math.min(CactusBlock.MAX_AGE, j + ageToProgress)), 4);
++                }
++                if (j + ageToProgress > 15) {
++                // Paper end - fix block creating growth modifiers
+                     CraftEventFactory.handleBlockGrowEvent(world, blockposition1, this.defaultBlockState()); // CraftBukkit
+                     BlockState iblockdata1 = (BlockState) state.setValue(CactusBlock.AGE, 0);
+ 
+                     world.setBlock(pos, iblockdata1, 4);
+                     world.neighborChanged(iblockdata1, blockposition1, this, pos, false);
+-                } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    world.setBlock(pos, (BlockState) state.setValue(CactusBlock.AGE, j + 1), 4);
+                 }
+ 
+             }
 diff --git a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
 index e628b4d6683eb0bc4f83c12480ab750ecbc1599b..ead7b37122c76d43af2cdd17af7f0da8014efb26 100644
 --- a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
@@ -129,12 +160,22 @@ index 11ac344ef113732fa717b67c51f76692b9b247e7..62c1434018be5b5fb70f7019b3c06d4d
          this.wheatModifier = this.getAndValidateGrowth( "Wheat" );
          this.wartModifier = this.getAndValidateGrowth( "NetherWart" );
          this.vineModifier = this.getAndValidateGrowth( "Vine" );
-@@ -139,6 +143,8 @@ public class SpigotWorldConfig
+@@ -139,7 +143,18 @@ public class SpigotWorldConfig
          this.twistingVinesModifier = this.getAndValidateGrowth( "TwistingVines" );
          this.weepingVinesModifier = this.getAndValidateGrowth( "WeepingVines" );
          this.caveVinesModifier = this.getAndValidateGrowth( "CaveVines" );
 +        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry"); // Paper
 +        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant"); // Paper
      }
++    // Paper start - fix block creating growth modifiers
++    public int computeBlockGrowingAgeProgression(final net.minecraft.util.RandomSource random, final int modifier) {
++        final double modifierScaled = modifier / 100D;
++        final int baseGrowth = (int) modifierScaled;
++        final double chanceOfDoubleGrowth = modifierScaled - baseGrowth;
++
++        return baseGrowth + (random.nextFloat() < chanceOfDoubleGrowth ? 1 : 0);
++    }
++    // Paper end - fix block creating growth modifiers
  
      public double itemMerge;
+     private void itemMerge()
