@@ -6,21 +6,29 @@ Subject: [PATCH] Custom Potion Mixes
 
 diff --git a/src/main/java/io/papermc/paper/potion/PaperPotionMix.java b/src/main/java/io/papermc/paper/potion/PaperPotionMix.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6b0bed550763f34e18c9e92f9a47ec0c945b2c8b
+index 0000000000000000000000000000000000000000..7ea357ac2f3a93db4ebdf24b5072be7d1cad3e33
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/potion/PaperPotionMix.java
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,21 @@
 +package io.papermc.paper.potion;
 +
++import java.util.function.Predicate;
 +import net.minecraft.world.item.ItemStack;
-+import net.minecraft.world.item.crafting.Ingredient;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.inventory.CraftRecipe;
++import org.bukkit.inventory.RecipeChoice;
 +
-+public record PaperPotionMix(ItemStack result, Ingredient input, Ingredient ingredient) {
++public record PaperPotionMix(ItemStack result, Predicate<ItemStack> input, Predicate<ItemStack> ingredient) {
 +
 +    public PaperPotionMix(PotionMix potionMix) {
-+        this(CraftItemStack.asNMSCopy(potionMix.getResult()), CraftRecipe.toIngredient(potionMix.getInput(), true), CraftRecipe.toIngredient(potionMix.getIngredient(), true));
++        this(CraftItemStack.asNMSCopy(potionMix.getResult()), convert(potionMix.getInput()), convert(potionMix.getIngredient()));
++    }
++
++    static Predicate<ItemStack> convert(final RecipeChoice choice) {
++        if (choice instanceof PredicateRecipeChoice predicateRecipeChoice) {
++            return stack -> predicateRecipeChoice.test(CraftItemStack.asBukkitCopy(stack));
++        }
++        return CraftRecipe.toIngredient(choice, true);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
