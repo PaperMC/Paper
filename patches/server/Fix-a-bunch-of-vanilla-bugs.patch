@@ -40,6 +40,14 @@ https://bugs.mojang.com/browse/MC-224454
 https://bugs.mojang.com/browse/MC-263999
   Fix mobs breaking doors not spawning block break particles
 
+https://bugs.mojang.com/browse/MC-210802
+  by: BillyGalbreath <Blake.Galbreath@Gmail.com>
+  Fixes sheep eating blocks outside of ticking range
+
+https://bugs.mojang.com/browse/MC-123848
+  by: BillyGalbreath <blake.galbreath@gmail.com>
+  Fixes item frames dropping items above when pointing down
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -81,6 +89,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }, true);
              }
          }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+     // Paper end
+ 
+-    boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
++    public boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) { // Paper - public
+         // Spigot start
+         return this.anyPlayerCloseEnoughForSpawning(pos, false);
+     }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -139,6 +160,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
      }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+@@ -0,0 +0,0 @@ public class EatBlockGoal extends Goal {
+ 
+     @Override
+     public boolean canUse() {
++        // Paper start - Fix MC-210802
++        if (!((net.minecraft.server.level.ServerLevel) this.level).chunkSource.chunkMap.anyPlayerCloseEnoughForSpawning(this.mob.chunkPosition())) {
++            return false;
++        }
++        // Paper end
+         if (this.mob.getRandom().nextInt(this.mob.isBaby() ? 50 : 1000) != 0) {
+             return false;
+         } else {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
@@ -192,6 +229,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void equipArmor(Player player, ItemStack stack) {
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -0,0 +0,0 @@ public class ItemFrame extends HangingEntity {
+         }
+     }
+ 
++    // Paper start - Fix MC-123848 (spawn item frame drops above block)
++    @Nullable
++    @Override
++    public net.minecraft.world.entity.item.ItemEntity spawnAtLocation(ItemStack stack) {
++        return this.spawnAtLocation(stack, getDirection().equals(Direction.DOWN) ? -0.6F : 0.0F);
++    }
++    // Paper end
++
+     private void removeFramedMap(ItemStack itemstack) {
+         this.getFramedMapId().ifPresent((i) -> {
+             MapItemSavedData worldmap = MapItem.getSavedData(i, this.level());
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
