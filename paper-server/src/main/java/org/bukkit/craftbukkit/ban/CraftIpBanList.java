@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import java.net.InetAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Set;
 import net.minecraft.server.players.IpBanEntry;
@@ -50,6 +52,18 @@ public class CraftIpBanList implements org.bukkit.ban.IpBanList {
     @Override
     public BanEntry<InetAddress> addBan(InetAddress target, String reason, Date expires, String source) {
         return this.addBan(this.getIpFromAddress(target), reason, expires, source);
+    }
+
+    @Override
+    public BanEntry<InetAddress> addBan(InetAddress target, String reason, Instant expires, String source) {
+        Date date = expires != null ? Date.from(expires) : null;
+        return addBan(target, reason, date, source);
+    }
+
+    @Override
+    public BanEntry<InetAddress> addBan(InetAddress target, String reason, Duration duration, String source) {
+        Instant instant = duration != null ? Instant.now().plus(duration) : null;
+        return addBan(target, reason, instant, source);
     }
 
     @Override

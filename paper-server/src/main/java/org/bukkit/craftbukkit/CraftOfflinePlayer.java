@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit;
 
 import com.mojang.authlib.GameProfile;
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -115,9 +117,19 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(getPlayerProfile(), reason, expires, source);
     }
 
+    @Override
+    public BanEntry<PlayerProfile> ban(String reason, Instant expires, String source) {
+        return ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(getPlayerProfile(), reason, expires, source);
+    }
+
+    @Override
+    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source) {
+        return ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(getPlayerProfile(), reason, duration, source);
+    }
+
     public void setBanned(boolean value) {
         if (value) {
-            ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(getPlayerProfile(), null, null, null);
+            ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(getPlayerProfile(), null, (Date) null, null);
         } else {
             ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).pardon(getPlayerProfile());
         }
