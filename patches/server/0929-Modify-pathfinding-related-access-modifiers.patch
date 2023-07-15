@@ -1,0 +1,165 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kihz17 <mitchdawdy@gmail.com>
+Date: Sun, 10 Jul 2022 22:47:23 -0400
+Subject: [PATCH] Modify pathfinding related access modifiers.
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 3646b969fa51b9683ab4137e530c3a6f6fc6c465..2a7823e15b7ae994bfc69abbd71f2256b512c90e 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -107,7 +107,7 @@ public abstract class Mob extends LivingEntity {
+     protected LookControl lookControl;
+     protected MoveControl moveControl;
+     protected JumpControl jumpControl;
+-    private final BodyRotationControl bodyRotationControl;
++    protected final BodyRotationControl bodyRotationControl;
+     protected PathNavigation navigation;
+     public GoalSelector goalSelector;
+     @Nullable public net.minecraft.world.entity.ai.goal.FloatGoal goalFloat; // Paper
+@@ -834,7 +834,7 @@ public abstract class Mob extends LivingEntity {
+     }
+ 
+     @Override
+-    protected final void serverAiStep() {
++    protected void serverAiStep() {
+         ++this.noActionTime;
+         if (!this.aware) { // Paper start - Allow nerfed mobs to jump, float and take water damage
+             if (goalFloat != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+index 3f672d7c2377fca16a6d8d31cf7aaae4f009fdce..4fd60afc2ce56eb36ba23027e6022f0c7842a84c 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+@@ -28,7 +28,7 @@ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
+ 
+ public abstract class PathNavigation {
+-    private static final int MAX_TIME_RECOMPUTE = 20;
++    protected static final int MAX_TIME_RECOMPUTE = 20;
+     protected final Mob mob; public final Mob getEntity() { return this.mob; } // Paper - public accessor
+     protected final Level level;
+     @Nullable
+@@ -46,11 +46,11 @@ public abstract class PathNavigation {
+     protected long timeLastRecompute;
+     protected NodeEvaluator nodeEvaluator;
+     @Nullable
+-    private BlockPos targetPos;
+-    private int reachRange;
+-    private float maxVisitedNodesMultiplier = 1.0F;
++    protected BlockPos targetPos;
++    protected int reachRange;
++    protected float maxVisitedNodesMultiplier = 1.0F;
+     public final PathFinder pathFinder;
+-    private boolean isStuck;
++    protected boolean isStuck;
+ 
+     public PathNavigation(Mob entity, Level world) {
+         this.mob = entity;
+@@ -192,8 +192,8 @@ public abstract class PathNavigation {
+     }
+ 
+     // Paper start - optimise pathfinding
+-    private int lastFailure = 0;
+-    private int pathfindFailures = 0;
++    protected int lastFailure = 0;
++    protected int pathfindFailures = 0;
+     // Paper end
+ 
+     public boolean moveTo(Entity entity, double speed) {
+@@ -292,7 +292,7 @@ public abstract class PathNavigation {
+         this.doStuckDetection(vec3);
+     }
+ 
+-    private boolean shouldTargetNextNodeInDirection(Vec3 currentPos) {
++    protected boolean shouldTargetNextNodeInDirection(Vec3 currentPos) {
+         if (this.path.getNextNodeIndex() + 1 >= this.path.getNodeCount()) {
+             return false;
+         } else {
+@@ -342,12 +342,12 @@ public abstract class PathNavigation {
+ 
+     }
+ 
+-    private void timeoutPath() {
++    protected void timeoutPath() {
+         this.resetStuckTimeout();
+         this.stop();
+     }
+ 
+-    private void resetStuckTimeout() {
++    protected void resetStuckTimeout() {
+         this.timeoutCachedNode = Vec3i.ZERO;
+         this.timeoutTimer = 0L;
+         this.timeoutLimit = 0.0D;
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Path.java b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
+index 2a335f277bd0e4b8ad0f60d8226eb8aaa80a871f..fc84245551d5f65c83001321cabd6d57185e317e 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/Path.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
+@@ -13,14 +13,14 @@ import net.minecraft.world.phys.Vec3;
+ 
+ public class Path {
+     public final List<Node> nodes;
+-    private Node[] openSet = new Node[0];
+-    private Node[] closedSet = new Node[0];
++    protected Node[] openSet = new Node[0];
++    protected Node[] closedSet = new Node[0];
+     @Nullable
+-    private Set<Target> targetNodes;
+-    private int nextNodeIndex;
+-    private final BlockPos target;
+-    private final float distToTarget;
+-    private final boolean reached;
++    protected Set<Target> targetNodes;
++    protected int nextNodeIndex;
++    protected final BlockPos target;
++    protected final float distToTarget;
++    protected final boolean reached;
+     public boolean hasNext() { return getNextNodeIndex() < this.nodes.size(); } // Paper
+ 
+     public Path(List<Node> nodes, BlockPos target, boolean reachesTarget) {
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
+index d23481453717f715124156b5d83f6448f720d049..63101177e1380a645933e3a7f9c118c96f2cde08 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
+@@ -19,11 +19,11 @@ import net.minecraft.world.level.PathNavigationRegion;
+ 
+ public class PathFinder {
+     private static final float FUDGING = 1.5F;
+-    private final Node[] neighbors = new Node[32];
+-    private final int maxVisitedNodes;
++    protected final Node[] neighbors = new Node[32];
++    protected final int maxVisitedNodes;
+     public final NodeEvaluator nodeEvaluator;
+-    private static final boolean DEBUG = false;
+-    private final BinaryHeap openSet = new BinaryHeap();
++    protected static final boolean DEBUG = false;
++    protected final BinaryHeap openSet = new BinaryHeap();
+ 
+     public PathFinder(NodeEvaluator pathNodeMaker, int range) {
+         this.nodeEvaluator = pathNodeMaker;
+@@ -52,7 +52,7 @@ public class PathFinder {
+ 
+     @Nullable
+     // Paper start - optimize collection
+-    private Path findPath(ProfilerFiller profiler, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
++    protected Path findPath(ProfilerFiller profiler, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
+         profiler.push("find_path");
+         profiler.markForCharting(MetricCategory.PATH_FINDING);
+         // Set<Target> set = positions.keySet();
+@@ -131,7 +131,7 @@ public class PathFinder {
+         return a.distanceTo(b);
+     }
+ 
+-    private float getBestH(Node node, List<Map.Entry<Target, BlockPos>> targets) { // Paper - optimize collection - Set<Target> -> List<Map.Entry<Target, BlockPos>>
++    protected float getBestH(Node node, List<Map.Entry<Target, BlockPos>> targets) { // Paper - optimize collection - Set<Target> -> List<Map.Entry<Target, BlockPos>>
+         float f = Float.MAX_VALUE;
+ 
+         // Paper start - optimize collection
+@@ -146,7 +146,7 @@ public class PathFinder {
+         return f;
+     }
+ 
+-    private Path reconstructPath(Node endNode, BlockPos target, boolean reachesTarget) {
++    protected Path reconstructPath(Node endNode, BlockPos target, boolean reachesTarget) {
+         List<Node> list = Lists.newArrayList();
+         Node node = endNode;
+         list.add(0, endNode);

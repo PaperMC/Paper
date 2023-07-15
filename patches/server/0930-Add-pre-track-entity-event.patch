@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kihz17 <mitchdawdy@gmail.com>
+Date: Fri, 15 Jul 2022 00:29:15 -0400
+Subject: [PATCH] Add pre track entity event
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/events/PlayerPreTrackEntityEvent.java b/src/main/java/com/destroystokyo/paper/events/PlayerPreTrackEntityEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b772ea7d725f7acd2e9a5ce0d967bd8ee78ba36a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/events/PlayerPreTrackEntityEvent.java
+@@ -0,0 +1,43 @@
++package com.destroystokyo.paper.events;
++
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++
++public class PlayerPreTrackEntityEvent extends PlayerEvent {
++    private final TrackType type;
++    private final Entity tracked;
++
++    private static final HandlerList handlers = new HandlerList();
++
++    public PlayerPreTrackEntityEvent(@NotNull Player who, @NotNull Entity tracked, TrackType type) {
++        super(who);
++        this.tracked = tracked;
++        this.type = type;
++    }
++
++    public Entity getTracked() {
++        return tracked;
++    }
++
++    public TrackType getTrackType() {
++        return type;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    public enum TrackType {
++        START,
++        STOP
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 6796d724ffa328766ee5e579f23d3b5197696e50..bb620a21f382fabf72efd78c33011294ce9df37b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -260,6 +260,9 @@ public class ServerEntity {
+     }
+ 
+     public void removePairing(ServerPlayer player) {
++        PlayerPreTrackEntityEvent preEvt = new PlayerPreTrackEntityEvent(player.getBukkitEntity(), this.entity.getBukkitEntity(), PlayerPreTrackEntityEvent.TrackType.STOP);
++        level.getCraftServer().getPluginManager().callEvent(preEvt);
++
+         this.entity.stopSeenByPlayer(player);
+         player.removeEntityInLOS(this.entity.getUUID());
+         player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}));
+@@ -272,6 +275,10 @@ public class ServerEntity {
+         ServerGamePacketListenerImpl playerconnection = player.connection;
+ 
+         Objects.requireNonNull(player.connection);
++
++        PlayerPreTrackEntityEvent preEvt = new PlayerPreTrackEntityEvent(player.getBukkitEntity(), this.entity.getBukkitEntity(), PlayerPreTrackEntityEvent.TrackType.START);
++        level.getCraftServer().getPluginManager().callEvent(preEvt);
++
+         this.sendPairingData(playerconnection::send, player); // CraftBukkit - add player
+         this.entity.startSeenByPlayer(player);
+ 
