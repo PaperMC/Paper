@@ -60,10 +60,12 @@
      }
  
      public void setDragonFight(EndDragonFight fight) {
-@@ -126,6 +147,19 @@
-         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 200.0D);
-     }
+@@ -124,7 +145,20 @@
  
+     public static AttributeSupplier.Builder createAttributes() {
+         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 200.0D);
++    }
++
 +    // Paper start - Allow changing the EnderDragon podium
 +    public BlockPos getPodium() {
 +        if (this.podium == null) {
@@ -74,12 +76,11 @@
 +
 +    public void setPodium(@Nullable BlockPos blockPos) {
 +        this.podium = blockPos;
-+    }
+     }
 +    // Paper end - Allow changing the EnderDragon podium
-+
+ 
      @Override
      public boolean isFlapping() {
-         float f = Mth.cos(this.flapTime * 6.2831855F);
 @@ -218,7 +252,7 @@
  
                      Vec3 vec3d1 = idragoncontroller.getFlyTargetLocation();
@@ -163,7 +164,7 @@
 +                org.bukkit.Material blockId = block.getType();
 +                if (blockId.isAir()) {
 +                    continue;
-                 }
++                }
 +
 +                CraftBlock craftBlock = ((CraftBlock) block);
 +                BlockPos blockposition = craftBlock.getPosition();
@@ -177,7 +178,7 @@
 +                        Block.popResource(this.level(), blockposition, itemstack);
 +                    });
 +                    craftBlock.getNMS().spawnAfterBreak((ServerLevel) this.level(), blockposition, ItemStack.EMPTY, false);
-+                }
+                 }
 +                // Paper start - TNTPrimeEvent
 +                org.bukkit.block.Block tntBlock = CraftBlock.at(this.level(), blockposition);
 +                if (!new com.destroystokyo.paper.event.block.TNTPrimeEvent(tntBlock, com.destroystokyo.paper.event.block.TNTPrimeEvent.PrimeReason.EXPLOSION, explosionSource.getIndirectSourceEntity().getBukkitEntity()).callEvent())
@@ -192,16 +193,24 @@
  
          if (flag1) {
              BlockPos blockposition1 = new BlockPos(i + this.random.nextInt(l - i + 1), j + this.random.nextInt(i1 - j + 1), k + this.random.nextInt(j1 - k + 1));
-@@ -531,7 +627,7 @@
+@@ -531,7 +627,15 @@
  
      @Override
      public void kill(ServerLevel world) {
 -        this.remove(Entity.RemovalReason.KILLED);
++        // Paper start - Fire entity death event
++        this.silentDeath = true;
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.damageSources().genericKill());
++        if (deathEvent.isCancelled()) {
++            this.silentDeath = false; // Reset to default if event was cancelled
++            return;
++        }
++        // Paper end - Fire entity death event
 +        this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -540,7 +636,22 @@
+@@ -540,7 +644,22 @@
  
      }
  
@@ -224,7 +233,7 @@
      protected void tickDeath() {
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -555,21 +666,44 @@
+@@ -555,21 +674,44 @@
              this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, this.getX() + (double) f, this.getY() + 2.0D + (double) f1, this.getZ() + (double) f2, 0.0D, 0.0D, 0.0D);
          }
  
@@ -272,7 +281,7 @@
              }
          }
  
-@@ -592,15 +726,15 @@
+@@ -592,15 +734,15 @@
              if (world1 instanceof ServerLevel) {
                  ServerLevel worldserver1 = (ServerLevel) world1;
  
@@ -291,7 +300,7 @@
                  this.gameEvent(GameEvent.ENTITY_DIE);
              }
          }
-@@ -814,6 +948,7 @@
+@@ -814,6 +956,7 @@
          super.addAdditionalSaveData(nbt);
          nbt.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          nbt.putInt("DragonDeathTime", this.dragonDeathTime);
@@ -299,7 +308,7 @@
      }
  
      @Override
-@@ -827,6 +962,11 @@
+@@ -827,6 +970,11 @@
              this.dragonDeathTime = nbt.getInt("DragonDeathTime");
          }
  
@@ -311,7 +320,7 @@
      }
  
      @Override
-@@ -879,7 +1019,7 @@
+@@ -879,7 +1027,7 @@
                  vec3d = this.getViewVector(tickDelta);
              }
          } else {
