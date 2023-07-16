@@ -234,9 +234,7 @@ public interface Criteria {
      *
      * @param statistic the statistic for which to get a criteria
      * @param material the relevant material
-     *
      * @return the criteria
-     *
      * @throws IllegalArgumentException if {@link Statistic#getType()} is anything other than
      * {@link Type#BLOCK} or {@link Type#ITEM}
      * @throws IllegalArgumentException if {@link Statistic#getType()} is {@link Type#BLOCK}, but
@@ -298,9 +296,7 @@ public interface Criteria {
      *
      * @param statistic the statistic for which to get a criteria
      * @param entityType the relevant entity type
-     *
      * @return the criteria
-     *
      * @throws IllegalArgumentException if {@link Statistic#getType()} is not {@link Type#ENTITY}
      */
     @NotNull
@@ -334,7 +330,6 @@ public interface Criteria {
      * and for entity-related statistics, see {@link #statistic(Statistic, EntityType)}
      *
      * @param statistic the statistic for which to get a criteria
-     *
      * @return the criteria
      */
     @NotNull
@@ -347,7 +342,6 @@ public interface Criteria {
      * Get (or create) a new {@link Criteria} by its name.
      *
      * @param name the criteria name
-     *
      * @return the created criteria
      */
     @NotNull
