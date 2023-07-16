@@ -48,6 +48,9 @@ https://bugs.mojang.com/browse/MC-123848
   by: BillyGalbreath <blake.galbreath@gmail.com>
   Fixes item frames dropping items above when pointing down
 
+https://bugs.mojang.com/browse/MC-65198
+  Fixes ITEM_CRAFTED statistic isn't always incremented correctly
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -284,6 +287,56 @@ index 380afb885e85e4cf80e746d217033345a7514443..41457c9f27b18fa2734a6cca297ec518
                      if (!raid.hasFirstWaveSpawned()) {
                          player.awardStat(Stats.RAID_TRIGGER);
                          CriteriaTriggers.BAD_OMEN.trigger(player);
+diff --git a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
+index ff770b9ce68a62418de0c7ed389650626fa1dcb2..8859ae60a65f86728f9cc4d198e729916e71c028 100644
+--- a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
+@@ -73,6 +73,14 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+             public void onTake(Player player, ItemStack stack) {
+                 ItemCombinerMenu.this.onTake(player, stack);
+             }
++
++            // Paper start - fix MC-65198 shift clicking in result slot of a smiting table
++            @Override
++            protected void onQuickCraft(ItemStack stack, int amount) {
++                if (ItemCombinerMenu.this instanceof SmithingMenu)
++                    stack.onCraftedBy(player.level(), player, amount);
++            }
++            // Paper end
+         });
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/inventory/ResultSlot.java b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
+index ddf87ef1979c4ae4f14cd6aa220f9146d5e20909..4a8529ebb1bfce015bd77a35076fcc3bee33fa90 100644
+--- a/src/main/java/net/minecraft/world/inventory/ResultSlot.java
++++ b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
+@@ -45,7 +45,7 @@ public class ResultSlot extends Slot {
+     @Override
+     protected void checkTakeAchievements(ItemStack stack) {
+         if (this.removeCount > 0) {
+-            stack.onCraftedBy(this.player.level(), this.player, this.removeCount);
++            stack.onCraftedBy(this.player.level(), this.player, stack.getCount()); // Paper - fix MC-65198 for drop action in result slot
+         }
+ 
+         Container var3 = this.container;
+diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+index 1b1f814770d1a906ed880df578845be2e9a14f46..ae1b53e1e7185a6af326c274255803fc31b6ca36 100644
+--- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -114,6 +114,13 @@ public class StonecutterMenu extends AbstractContainerMenu {
+                 super.onTake(player, stack);
+             }
+ 
++            // Paper start - fix MC-65198 shift clicking in the result slot of StoneCutter
++            @Override
++            protected void onQuickCraft(ItemStack stack, int amount) {
++                stack.onCraftedBy(level, playerInventory.player, amount);
++            }
++            // Paper end
++
+             private List<ItemStack> getRelevantItems() {
+                 return List.of(StonecutterMenu.this.inputSlot.getItem());
+             }
 diff --git a/src/main/java/net/minecraft/world/item/SaddleItem.java b/src/main/java/net/minecraft/world/item/SaddleItem.java
 index 11e8f2bf261abcb75d4dd011702c8f396e9f5be4..7234010d81078d357ab9bca422e44864a9e269bb 100644
 --- a/src/main/java/net/minecraft/world/item/SaddleItem.java
