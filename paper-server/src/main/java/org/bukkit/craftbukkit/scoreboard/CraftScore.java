@@ -40,7 +40,7 @@ final class CraftScore implements Score {
     }
 
     @Override
-    public int getScore() throws IllegalStateException {
+    public int getScore() {
         Scoreboard board = objective.checkState().board;
 
         if (board.getTrackedPlayers().contains(entry)) { // Lazy
@@ -55,12 +55,12 @@ final class CraftScore implements Score {
     }
 
     @Override
-    public void setScore(int score) throws IllegalStateException {
+    public void setScore(int score) {
         objective.checkState().board.getOrCreatePlayerScore(entry, objective.getHandle()).setScore(score);
     }
 
     @Override
-    public boolean isScoreSet() throws IllegalStateException {
+    public boolean isScoreSet() {
         Scoreboard board = objective.checkState().board;
 
         return board.getTrackedPlayers().contains(entry) && board.getPlayerScores(entry).containsKey(objective.getHandle());

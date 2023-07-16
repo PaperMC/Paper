@@ -53,7 +53,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     }
 
     // CraftBukkit method
-    public void setPlayerBoard(CraftPlayer player, org.bukkit.scoreboard.Scoreboard bukkitScoreboard) throws IllegalArgumentException {
+    public void setPlayerBoard(CraftPlayer player, org.bukkit.scoreboard.Scoreboard bukkitScoreboard) {
         Preconditions.checkArgument(bukkitScoreboard instanceof CraftScoreboard, "Cannot set player scoreboard to an unregistered Scoreboard");
 
         CraftScoreboard scoreboard = (CraftScoreboard) bukkitScoreboard;

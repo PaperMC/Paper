@@ -26,51 +26,50 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     }
 
     @Override
-    public String getName() throws IllegalStateException {
+    public String getName() {
         checkState();
 
         return objective.getName();
     }
 
     @Override
-    public String getDisplayName() throws IllegalStateException {
+    public String getDisplayName() {
         checkState();
 
         return CraftChatMessage.fromComponent(objective.getDisplayName());
     }
 
     @Override
-    public void setDisplayName(String displayName) throws IllegalStateException, IllegalArgumentException {
+    public void setDisplayName(String displayName) {
         Preconditions.checkArgument(displayName != null, "Display name cannot be null");
-        Preconditions.checkArgument(displayName.length() <= 128, "Display name '" + displayName + "' is longer than the limit of 128 characters");
         checkState();
 
         objective.setDisplayName(CraftChatMessage.fromString(displayName)[0]); // SPIGOT-4112: not nullable
     }
 
     @Override
-    public String getCriteria() throws IllegalStateException {
+    public String getCriteria() {
         checkState();
 
         return criteria.bukkitName;
     }
 
     @Override
-    public Criteria getTrackedCriteria() throws IllegalStateException {
+    public Criteria getTrackedCriteria() {
         checkState();
 
         return criteria;
     }
 
     @Override
-    public boolean isModifiable() throws IllegalStateException {
+    public boolean isModifiable() {
         checkState();
 
         return !criteria.criteria.isReadOnly();
     }
 
     @Override
-    public void setDisplaySlot(DisplaySlot slot) throws IllegalStateException {
+    public void setDisplaySlot(DisplaySlot slot) {
         CraftScoreboard scoreboard = checkState();
         Scoreboard board = scoreboard.board;
         ScoreboardObjective objective = this.objective;
@@ -87,7 +86,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     }
 
     @Override
-    public DisplaySlot getDisplaySlot() throws IllegalStateException {
+    public DisplaySlot getDisplaySlot() {
         CraftScoreboard scoreboard = checkState();
         Scoreboard board = scoreboard.board;
         ScoreboardObjective objective = this.objective;
@@ -101,7 +100,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     }
 
     @Override
-    public void setRenderType(RenderType renderType) throws IllegalStateException {
+    public void setRenderType(RenderType renderType) {
         Preconditions.checkArgument(renderType != null, "RenderType cannot be null");
         checkState();
 
@@ -109,14 +108,14 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     }
 
     @Override
-    public RenderType getRenderType() throws IllegalStateException {
+    public RenderType getRenderType() {
         checkState();
 
         return CraftScoreboardTranslations.toBukkitRender(this.objective.getRenderType());
     }
 
     @Override
-    public Score getScore(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
+    public Score getScore(OfflinePlayer player) {
         Preconditions.checkArgument(player != null, "Player cannot be null");
         checkState();
 
@@ -124,7 +123,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     }
 
     @Override
-    public Score getScore(String entry) throws IllegalArgumentException, IllegalStateException {
+    public Score getScore(String entry) {
         Preconditions.checkArgument(entry != null, "Entry cannot be null");
         Preconditions.checkArgument(entry.length() <= Short.MAX_VALUE, "Score '" + entry + "' is longer than the limit of 32767 characters");
         checkState();
@@ -133,14 +132,14 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     }
 
     @Override
-    public void unregister() throws IllegalStateException {
+    public void unregister() {
         CraftScoreboard scoreboard = checkState();
 
         scoreboard.board.removeObjective(objective);
     }
 
     @Override
-    CraftScoreboard checkState() throws IllegalStateException {
+    CraftScoreboard checkState() {
         Preconditions.checkState(getScoreboard().board.getObjective(objective.getName()) != null, "Unregistered scoreboard component");
 
         return getScoreboard();
