@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: No-Eul <noeul1243@gmail.com>
+Date: Mon, 17 Jul 2023 14:39:15 +0900
+Subject: [PATCH] Add allowDirectConnection to Velocity proxy config
+
+Each Paper server can enable or disable this feature, which allows clients to connect to the server without having to connect to the Velocity proxy server.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 2ff578e4a953ffcf5176815ba8e3f06f73499989..a81982f92b462803f71e3f56606e6ca7758a391c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -432,7 +432,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && packet.getTransactionId() == this.velocityLoginMessageId) {
+             net.minecraft.network.FriendlyByteBuf buf = packet.getData();
+             if (buf == null) {
+-                this.disconnect("This server requires you to connect with Velocity.");
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.allowDirectConnection && !this.connection.isMemoryConnection()) {
++                    this.state = ServerLoginPacketListenerImpl.State.KEY;
++                    this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
++                } else this.disconnect("This server requires you to connect with Velocity.");
+                 return;
+             }
+ 
