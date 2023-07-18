@@ -4,6 +4,7 @@ import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -159,4 +160,15 @@ public interface ItemFactory {
     @Deprecated
     @NotNull
     Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
+
+    /**
+     * Gets a {@link Material} representing the spawn egg for the provided
+     * {@link EntityType}. <br>
+     * Will return null for EntityTypes that do not have a corresponding spawn egg.
+     *
+     * @param type the entity type
+     * @return the Material of this EntityTypes spawn egg or null
+     */
+    @Nullable
+    Material getSpawnEgg(@NotNull EntityType type);
 }
