@@ -18,10 +18,10 @@ movement statistics of the player will not increase
 without any real move.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index aa287d7f37f38d938d195114408cb6dbda59063d..c53115187cb08b20566802422457d49973da290f 100644
+index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..b467e0a777f6315a28a19d5a332700a534ee2b6c 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -689,7 +689,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -696,7 +696,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  Location curPos = this.getCraftPlayer().getLocation(); // Spigot
  
                  entity.absMoveTo(d3, d4, d5, f, f1);
@@ -30,7 +30,7 @@ index aa287d7f37f38d938d195114408cb6dbda59063d..c53115187cb08b20566802422457d499
  
                  // Paper start - optimise out extra getCubes
                  boolean teleportBack = flag2; // violating this is always a fail
-@@ -702,7 +702,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -709,7 +709,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  }
                  if (teleportBack) { // Paper end - optimise out extra getCubes
                      entity.absMoveTo(d0, d1, d2, f, f1);
@@ -39,7 +39,7 @@ index aa287d7f37f38d938d195114408cb6dbda59063d..c53115187cb08b20566802422457d499
                      this.connection.send(new ClientboundMoveVehiclePacket(entity));
                      return;
                  }
-@@ -710,7 +710,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -717,7 +717,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  // CraftBukkit start - fire PlayerMoveEvent
                  Player player = this.getCraftPlayer();
                  // Spigot Start
@@ -48,7 +48,7 @@ index aa287d7f37f38d938d195114408cb6dbda59063d..c53115187cb08b20566802422457d499
                  {
                      this.lastPosX = curPos.getX();
                      this.lastPosY = curPos.getY();
-@@ -725,7 +725,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -732,7 +732,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
                  // If the packet contains movement information then we update the To location with the correct XYZ.
                  to.setX(packet.getX());
@@ -57,7 +57,7 @@ index aa287d7f37f38d938d195114408cb6dbda59063d..c53115187cb08b20566802422457d499
                  to.setZ(packet.getZ());
  
  
-@@ -747,6 +747,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -754,6 +754,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                      // Skip the first time we do this
                      if (true) { // Spigot - don't skip any move events
                          Location oldTo = to.clone();
@@ -65,7 +65,7 @@ index aa287d7f37f38d938d195114408cb6dbda59063d..c53115187cb08b20566802422457d499
                          PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
                          this.cserver.getPluginManager().callEvent(event);
  
-@@ -766,7 +767,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -773,7 +774,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
                          // Check to see if the Players Location has some how changed during the call of the event.
                          // This can happen due to a plugin teleporting the player instead of using .setTo()
@@ -74,3 +74,20 @@ index aa287d7f37f38d938d195114408cb6dbda59063d..c53115187cb08b20566802422457d499
                              this.justTeleported = false;
                              return;
                          }
+@@ -1603,6 +1604,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                                     // Skip the first time we do this
+                                     if (from.getX() != Double.MAX_VALUE) {
+                                         Location oldTo = to.clone();
++                                        Location currentPos = player.getLocation(); // Paper
+                                         PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
+                                         this.cserver.getPluginManager().callEvent(event);
+ 
+@@ -1622,7 +1624,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                                         // Check to see if the Players Location has some how changed during the call of the event.
+                                         // This can happen due to a plugin teleporting the player instead of using .setTo()
+-                                        if (!from.equals(this.getCraftPlayer().getLocation()) && this.justTeleported) {
++                                        if (!currentPos.equals(this.getCraftPlayer().getLocation()) && this.justTeleported) { // Paper - fix this being triggered for almost any teleportation (outside the event)
+                                             this.justTeleported = false;
+                                             return;
+                                         }
