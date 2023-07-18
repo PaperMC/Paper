@@ -6,11 +6,16 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.arguments.item.ArgumentParserItemStack;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemMonsterEgg;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.craftbukkit.util.CraftLegacy;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -436,5 +441,20 @@ public final class CraftItemFactory implements ItemFactory {
     @Override
     public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {
         return ((CraftMetaItem) meta).updateMaterial(material);
+    }
+
+    @Override
+    public Material getSpawnEgg(EntityType type) {
+        if (type == EntityType.UNKNOWN) {
+            return null;
+        }
+        EntityTypes<?> nmsType = BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey()));
+        Item nmsItem = ItemMonsterEgg.byId(nmsType);
+
+        if (nmsItem == null) {
+            return null;
+        }
+
+        return CraftMagicNumbers.getMaterial(nmsItem);
     }
 }
