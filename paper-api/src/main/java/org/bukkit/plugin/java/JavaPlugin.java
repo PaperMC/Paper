@@ -48,6 +48,11 @@ public abstract class JavaPlugin extends PluginBase {
     private FileConfiguration newConfig = null;
     private File configFile = null;
     private Logger logger = null; // Paper - PluginLogger -> Logger
+    // Paper start - lifecycle events
+    @SuppressWarnings("deprecation")
+    private final io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> lifecycleEventManager = org.bukkit.Bukkit.getUnsafe().createPluginLifecycleEventManager(this, () -> this.allowsLifecycleRegistration);
+    private boolean allowsLifecycleRegistration = true;
+    // Paper end
 
     public JavaPlugin() {
         // Paper start
@@ -279,7 +284,9 @@ public abstract class JavaPlugin extends PluginBase {
             isEnabled = enabled;
 
             if (isEnabled) {
+                try { // Paper - lifecycle events
                 onEnable();
+                } finally { this.allowsLifecycleRegistration = false; } // Paper - lifecycle events
             } else {
                 onDisable();
             }
@@ -457,4 +464,11 @@ public abstract class JavaPlugin extends PluginBase {
         }
         return plugin;
     }
+
+    // Paper start - lifecycle events
+    @Override
+    public final io.papermc.paper.plugin.lifecycle.event.@NotNull LifecycleEventManager<org.bukkit.plugin.Plugin> getLifecycleManager() {
+        return this.lifecycleEventManager;
+    }
+    // Paper end - lifecycle events
 }

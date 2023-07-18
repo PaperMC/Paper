@@ -133,4 +133,11 @@ public class TestPlugin extends PluginBase {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         throw new UnsupportedOperationException("Not supported.");
     }
+
+    // Paper start - lifecycle events
+    @Override
+    public io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<Plugin> getLifecycleManager() {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+    // Paper end - lifecycle events
 }

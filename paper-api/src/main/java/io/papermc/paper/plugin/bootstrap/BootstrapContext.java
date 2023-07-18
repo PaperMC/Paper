@@ -1,5 +1,7 @@
 package io.papermc.paper.plugin.bootstrap;
 
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -12,5 +14,13 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.Experimental
 @NullMarked
 @ApiStatus.NonExtendable
-public interface BootstrapContext extends PluginProviderContext {
+public interface BootstrapContext extends PluginProviderContext, LifecycleEventOwner {
+
+    /**
+     * Get the lifecycle event manager for registering handlers
+     * for lifecycle events allowed on the {@link BootstrapContext}.
+     *
+     * @return the lifecycle event manager
+     */
+    LifecycleEventManager<BootstrapContext> getLifecycleManager();
 }

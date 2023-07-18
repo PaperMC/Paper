@@ -271,4 +271,12 @@ public interface UnsafeValues {
      */
     @Nullable org.bukkit.Color getSpawnEggLayerColor(org.bukkit.entity.EntityType entityType, int layer);
     // Paper end - spawn egg color visibility
+
+    // Paper start - lifecycle event API
+    /**
+     * @hidden
+     */
+    @org.jetbrains.annotations.ApiStatus.Internal
+    io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck);
+    // Paper end - lifecycle event API
 }

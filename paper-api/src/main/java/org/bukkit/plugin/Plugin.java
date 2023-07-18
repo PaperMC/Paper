@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * The use of {@link PluginBase} is recommended for actual Implementation
  */
-public interface Plugin extends TabExecutor {
+public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner { // Paper
     /**
      * Returns the folder that the plugin data files are located in. The
      * folder may not yet exist.
@@ -224,4 +224,14 @@ public interface Plugin extends TabExecutor {
      */
     @NotNull
     public String getName();
+
+    // Paper start - lifecycle events
+    /**
+     * Get the lifecycle event manager for registering handlers
+     * for lifecycle events allowed on the {@link Plugin}.
+     *
+     * @return the lifecycle event manager
+     */
+    io.papermc.paper.plugin.lifecycle.event.@NotNull LifecycleEventManager<Plugin> getLifecycleManager();
+    // Paper end - lifecycle events
 }
