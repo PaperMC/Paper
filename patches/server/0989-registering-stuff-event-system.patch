@@ -4,6 +4,26 @@ Date: Tue, 18 Jul 2023 17:49:38 -0700
 Subject: [PATCH] registering stuff event system
 
 
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+index 9c7552968b8c017c71a7a77557a66a03ed89f125..60da6dc2c263ef6a0ec606794edc64b7eff4595f 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+@@ -261,6 +261,15 @@ class PaperPluginInstanceManager {
+                 + pluginName + " (Is it up to date?)", ex, plugin); // Paper
+         }
+ 
++        // Paper start - register event system
++        try {
++            io.papermc.paper.plugin.resource.hook.HookRunner.unregisterAllHooksFor(plugin);
++        } catch (Throwable ex) {
++            this.handlePluginException("Error occurred (in the plugin loader) while unregistering register hooks for "
++                + pluginName + " (Is it up to date?)", ex, plugin);
++        }
++        // Paper end
++
+         try {
+             this.server.getMessenger().unregisterIncomingPluginChannel(plugin);
+             this.server.getMessenger().unregisterOutgoingPluginChannel(plugin);
 diff --git a/src/main/java/io/papermc/paper/plugin/resource/event/ReloadableRegisterEventImpl.java b/src/main/java/io/papermc/paper/plugin/resource/event/ReloadableRegisterEventImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..58c8ff8483587074b2cc6d71791c16032f44c75a
@@ -33,18 +53,19 @@ index 0000000000000000000000000000000000000000..6601a472c250b1d40d1c07ea943818c7
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/HookRunner.java b/src/main/java/io/papermc/paper/plugin/resource/hook/HookRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b277c3c3c12de2bb6428c5e890d4d38073b0183b
+index 0000000000000000000000000000000000000000..0dd197632b542cc6476052758c4bfe9cd00540d7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/resource/hook/HookRunner.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.plugin.resource.hook;
 +
 +import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.resource.event.RegisterEvent;
-+import io.papermc.paper.plugin.resource.event.ReloadableRegisterEventImpl;
 +import io.papermc.paper.plugin.resource.ResourceRegistrar;
-+import io.papermc.paper.plugin.resource.event.StaticRegisterEventImpl;
++import io.papermc.paper.plugin.resource.event.RegisterEvent;
 +import io.papermc.paper.plugin.resource.event.RegistrarEvent;
++import io.papermc.paper.plugin.resource.event.ReloadableRegisterEventImpl;
++import io.papermc.paper.plugin.resource.event.StaticRegisterEventImpl;
++import org.bukkit.plugin.Plugin;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.slf4j.Logger;
@@ -63,6 +84,16 @@ index 0000000000000000000000000000000000000000..b277c3c3c12de2bb6428c5e890d4d380
 +                LOGGER.error("Could not run '{}' hook from {}", registerHookType.name, registerHookType.getPluginMeta.apply(registeredHook.owner()).getDisplayName(), ex);
 +            }
 +        }
++    }
++
++    public static void unregisterAllHooksFor(final Plugin plugin) {
++        for (final RegisterHookTypeImpl<?, ?> hookType : RegisterHooks.ALL_HOOKS) {
++            removeHooksOwnedByPlugin(hookType, plugin);
++        }
++    }
++
++    private static <O> void removeHooksOwnedByPlugin(final RegisterHookTypeImpl<O, ?> hookType, final Plugin possibleOwner) {
++        hookType.hooks.removeIf(registeredHook -> hookType.getPluginMeta.apply(registeredHook.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
 +    }
 +
 +    public static <O, R extends ResourceRegistrar> void runStaticRegistrarHook(final RegisterHookType<O, RegistrarEvent.Static<R>> hookType, final R registrar) {
