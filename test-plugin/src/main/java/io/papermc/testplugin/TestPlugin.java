@@ -1,5 +1,7 @@
 package io.papermc.testplugin;
 
+import io.papermc.paper.plugin.resource.dummy.DummyStaticResourceRegistrar;
+import io.papermc.paper.plugin.resource.hook.RegisterHooks;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -8,5 +10,9 @@ public final class TestPlugin extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         this.getServer().getPluginManager().registerEvents(this, this);
+
+        RegisterHooks.DUMMY_STATIC.add(this, event -> {
+            final DummyStaticResourceRegistrar registrar = event.registrar();
+        });
     }
 }
