@@ -144,35 +144,32 @@ index 0000000000000000000000000000000000000000..e04d866f0f6173d7cfff6f9fc88c2aab
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c17e6450b274c21975037b394f5a7918d96ec747
+index 0000000000000000000000000000000000000000..55080ed514f088c953308f682b672df4c3fce4b4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.plugin.event.hook;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.event.RegisterEvent;
-+import java.util.ArrayList;
 +import java.util.List;
-+import java.util.function.Function;
 +import org.jetbrains.annotations.ApiStatus;
 +
-+public final class RegisterHook<O extends RegisterEventOwner<O>, E extends RegisterEvent> {
-+
-+    final String name;
-+    final List<RegisterHook.RegisteredHook<O, E>> hooks = new ArrayList<>();
-+    final Function<? super O, PluginMeta> getPluginMeta;
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public abstract class RegisterHook<O extends RegisterEventOwner<O>, E extends RegisterEvent> {
 +
 +    @ApiStatus.Internal
-+    RegisterHook(final String name, final Function<? super O, PluginMeta> getPluginMeta) {
-+        this.name = name;
-+        this.getPluginMeta = getPluginMeta;
-+    }
++    abstract void add(final O owner, final Hook<? super E> hook);
 +
 +    @ApiStatus.Internal
-+    void add(final O owner, final Hook<? super E> hook) {
-+        this.hooks.add(new RegisteredHook<>(owner, hook));
-+    }
++    abstract String name();
++
++    @ApiStatus.Internal
++    abstract PluginMeta getPluginMeta(O owner);
++
++    @ApiStatus.Internal
++    abstract List<RegisteredHook<O, E>> hooks();
 +
 +    @ApiStatus.Internal
 +    record RegisteredHook<O, E extends RegisterEvent>(O owner, Hook<? super E> hook) {
@@ -180,7 +177,7 @@ index 0000000000000000000000000000000000000000..c17e6450b274c21975037b394f5a7918
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..06138544656a17f16ea957bfa72ed6a8acd98073
+index 0000000000000000000000000000000000000000..3e6296d68fcc7781ee69754536e68f53ba9a9f0a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java
 @@ -0,0 +1,43 @@
@@ -209,22 +206,70 @@ index 0000000000000000000000000000000000000000..06138544656a17f16ea957bfa72ed6a8
 +
 +    @ApiStatus.Internal
 +    private static <E extends RegisterEvent> RegisterHook<Plugin, E> plugin(final String name) {
-+        return create(name, Plugin::getPluginMeta);
++        return createSimple(name, Plugin::getPluginMeta);
 +    }
 +
 +    @ApiStatus.Internal
 +    private static <E extends RegisterEvent> RegisterHook<BootstrapContext, E> bootstrap(final String name) {
-+        return create(name, BootstrapContext::getConfiguration);
++        return createSimple(name, BootstrapContext::getConfiguration);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <O extends RegisterEventOwner<O>, E extends RegisterEvent> RegisterHook<O, E> create(final String name, final Function<O, PluginMeta> getPluginMeta) {
-+        final RegisterHook<O, E> registerHookType = new RegisterHook<>(name, getPluginMeta);
++    private static <O extends RegisterEventOwner<O>, E extends RegisterEvent> RegisterHook<O, E> createSimple(final String name, final Function<O, PluginMeta> getPluginMeta) {
++        final RegisterHook<O, E> registerHookType = new SimpleRegisterHook<>(name, getPluginMeta);
 +        ALL_HOOKS.add(registerHookType);
 +        return registerHookType;
 +    }
 +
 +    private RegisterHooks() {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/SimpleRegisterHook.java b/src/main/java/io/papermc/paper/plugin/event/hook/SimpleRegisterHook.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9a3337b1415a62807cf0196fd296e2083ce07d32
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/event/hook/SimpleRegisterHook.java
+@@ -0,0 +1,42 @@
++package io.papermc.paper.plugin.event.hook;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.event.RegisterEvent;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Function;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++class SimpleRegisterHook<O extends RegisterEventOwner<O>, E extends RegisterEvent> extends RegisterHook<O, E> {
++
++    final String name;
++    final List<RegisteredHook<O, E>> hooks = new ArrayList<>();
++    final Function<? super O, PluginMeta> getPluginMeta;
++
++    @ApiStatus.Internal
++    SimpleRegisterHook(final String name, final Function<? super O, PluginMeta> getPluginMeta) {
++        this.name = name;
++        this.getPluginMeta = getPluginMeta;
++    }
++
++    @Override
++    void add(final O owner, final Hook<? super E> hook) {
++        this.hooks.add(new RegisteredHook<>(owner, hook));
++    }
++
++    @Override
++    String name() {
++        return this.name;
++    }
++
++    @Override
++    PluginMeta getPluginMeta(final O owner) {
++        return this.getPluginMeta.apply(owner);
++    }
++
++    @Override
++    List<RegisteredHook<O, E>> hooks() {
++        return this.hooks;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/package-info.java b/src/main/java/io/papermc/paper/plugin/event/hook/package-info.java
