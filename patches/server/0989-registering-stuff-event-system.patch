@@ -24,40 +24,20 @@ index 9c7552968b8c017c71a7a77557a66a03ed89f125..313a454066419cfe5dcb5a8c6d0c65f4
          try {
              this.server.getMessenger().unregisterIncomingPluginChannel(plugin);
              this.server.getMessenger().unregisterOutgoingPluginChannel(plugin);
-diff --git a/src/main/java/io/papermc/paper/plugin/register/ReloadableRegisterEventImpl.java b/src/main/java/io/papermc/paper/plugin/register/ReloadableRegisterEventImpl.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..95249dca784855c2a406b22c4a3efe15936afe61
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/register/ReloadableRegisterEventImpl.java
-@@ -0,0 +1,4 @@
-+package io.papermc.paper.plugin.register;
-+
-+public record ReloadableRegisterEventImpl<R extends ResourceRegistrar>(R registrar, Cause cause) implements RegistrarEvent.Reloadable<R> {
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/register/StaticRegisterEventImpl.java b/src/main/java/io/papermc/paper/plugin/register/StaticRegisterEventImpl.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..41415fe2ca7fefc52c93e997049854423f84418a
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/register/StaticRegisterEventImpl.java
-@@ -0,0 +1,4 @@
-+package io.papermc.paper.plugin.register;
-+
-+public record StaticRegisterEventImpl<R extends ResourceRegistrar>(R registrar) implements RegistrarEvent<R> {
-+}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e005e860dfe92ff84ea005b181dc2094502d03d2
+index 0000000000000000000000000000000000000000..84c7087e6a15a8c5605f9a21a56ffd4f892f4d76
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java
 @@ -0,0 +1,49 @@
 +package io.papermc.paper.plugin.register.event;
 +
 +import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.register.ResourceRegistrar;
++import io.papermc.paper.plugin.register.event.registrar.ResourceRegistrar;
 +import io.papermc.paper.plugin.register.RegisterEvent;
-+import io.papermc.paper.plugin.register.RegistrarEvent;
-+import io.papermc.paper.plugin.register.ReloadableRegisterEventImpl;
-+import io.papermc.paper.plugin.register.StaticRegisterEventImpl;
++import io.papermc.paper.plugin.register.event.registrar.RegistrarEvent;
++import io.papermc.paper.plugin.register.event.registrar.ReloadableRegistrarEventImpl;
++import io.papermc.paper.plugin.register.event.registrar.StaticRegistrarEventImpl;
 +import org.bukkit.plugin.Plugin;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -88,16 +68,36 @@ index 0000000000000000000000000000000000000000..e005e860dfe92ff84ea005b181dc2094
 +        hookType.hooks().removeIf(registeredHook -> hookType.getPluginMeta(registeredHook.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
 +    }
 +
-+    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void runStaticRegistrarEventHandler(final RegisterEventType<O, RegistrarEvent<R>> hookType, final R registrar) {
-+        callEvent(hookType, new StaticRegisterEventImpl<>(registrar));
++    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void callStaticRegistrarEvent(final RegisterEventType<O, RegistrarEvent<R>> hookType, final R registrar) {
++        callEvent(hookType, new StaticRegistrarEventImpl<>(registrar));
 +    }
 +
-+    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void runReloadableRegistrarEventHandler(final RegisterEventType<O, RegistrarEvent.Reloadable<R>> hookType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
-+        callEvent(hookType, new ReloadableRegisterEventImpl<>(registrar, cause));
++    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void callReloadableRegistrarEvent(final RegisterEventType<O, RegistrarEvent.Reloadable<R>> hookType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
++        callEvent(hookType, new ReloadableRegistrarEventImpl<>(registrar, cause));
 +    }
 +
 +    private RegisterEventRunner() {
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/register/event/registrar/ReloadableRegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/register/event/registrar/ReloadableRegistrarEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7dad845cc8a5a0125e31095b0466e1f058dd4da1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/register/event/registrar/ReloadableRegistrarEventImpl.java
+@@ -0,0 +1,4 @@
++package io.papermc.paper.plugin.register.event.registrar;
++
++public record ReloadableRegistrarEventImpl<R extends ResourceRegistrar>(R registrar, Cause cause) implements RegistrarEvent.Reloadable<R> {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/register/event/registrar/StaticRegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/register/event/registrar/StaticRegistrarEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..14dacd7ad1d25ee7686b06276e72ea45002aa021
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/register/event/registrar/StaticRegistrarEventImpl.java
+@@ -0,0 +1,4 @@
++package io.papermc.paper.plugin.register.event.registrar;
++
++public record StaticRegistrarEventImpl<R extends ResourceRegistrar>(R registrar) implements RegistrarEvent<R> {
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/package-info.java b/src/main/java/io/papermc/paper/plugin/register/package-info.java
 new file mode 100644
@@ -123,28 +123,28 @@ index 31ec730e63adf82bf9ac02331bc7f186b98c35cf..98aa8cb5053a02fcd575dedd8ab4020c
                  } catch (Throwable e) {
                      LOGGER.error("Failed to run bootstrapper for %s. This plugin will not be loaded.".formatted(provider.getSource()), e);
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index dae36c6452ccd57a436dd918547b64d59957ab0a..1b185c2482c4b33a3972bb535543ff939f9aa827 100644
+index dae36c6452ccd57a436dd918547b64d59957ab0a..b68b2693da925b4b8a5225ec6fc1b4b295ebf253 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -130,6 +130,9 @@ public class Main {
              Path path1 = Paths.get("server.properties");
              DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
  
-+            io.papermc.paper.plugin.register.event.RegisterEventRunner.runReloadableRegistrarEventHandler(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY,new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.register.RegistrarEvent.Reloadable.Cause.INITIAL); // Paper
++            io.papermc.paper.plugin.register.event.RegisterEventRunner.callReloadableRegistrarEvent(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY,new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.register.event.registrar.RegistrarEvent.Reloadable.Cause.INITIAL); // Paper
 +            io.papermc.paper.plugin.register.event.RegisterEventRunner.callEvent(io.papermc.paper.plugin.register.event.RegisterEvents.NON_REGISTRAR_RELATED_EVENT, new io.papermc.paper.plugin.register.dummy.NonRegistrarEvent()); // Paper
 +
              dedicatedserversettings.forceSave();
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..e46a852730dbd41b7de9b2af0d0bba80e3ffb122 100644
+index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..02b5e6b6dc378533246ce005d15b7769a3513046 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -635,6 +635,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
-+        io.papermc.paper.plugin.register.event.RegisterEventRunner.runStaticRegistrarEventHandler(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY_STATIC, new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar()); // Paper
++        io.papermc.paper.plugin.register.event.RegisterEventRunner.callStaticRegistrarEvent(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY_STATIC, new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar()); // Paper
          this.connection.acceptConnections();
      }
      // CraftBukkit end
@@ -152,7 +152,7 @@ index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..e46a852730dbd41b7de9b2af0d0bba80
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
              org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
-+            io.papermc.paper.plugin.register.event.RegisterEventRunner.runReloadableRegistrarEventHandler(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY,new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.register.RegistrarEvent.Reloadable.Cause.RELOAD); // Paper
++            io.papermc.paper.plugin.register.event.RegisterEventRunner.callReloadableRegistrarEvent(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY,new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.register.event.registrar.RegistrarEvent.Reloadable.Cause.RELOAD); // Paper
              new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - fire after everything has been reloaded
          }, this);
  

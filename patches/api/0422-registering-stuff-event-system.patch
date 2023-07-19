@@ -29,63 +29,15 @@ index 0000000000000000000000000000000000000000..d5c008dd10b3a39da30ed0a1a6c792cc
 +@ApiStatus.NonExtendable
 +public interface RegisterEvent {
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/register/RegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/register/RegistrarEvent.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..4a3a6e18dd88fd630ebec4c612a938fc54d71297
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/register/RegistrarEvent.java
-@@ -0,0 +1,24 @@
-+package io.papermc.paper.plugin.register;
-+
-+import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+
-+@ApiStatus.Experimental
-+@ApiStatus.NonExtendable
-+public interface RegistrarEvent<R extends ResourceRegistrar> extends RegisterEvent {
-+
-+    @NotNull R registrar();
-+
-+    @ApiStatus.Experimental
-+    @ApiStatus.NonExtendable
-+    interface Reloadable<R extends ResourceRegistrar> extends RegistrarEvent<R> {
-+
-+        @NotNull Cause cause();
-+
-+        @ApiStatus.Experimental
-+        enum Cause {
-+            INITIAL,
-+            RELOAD
-+        }
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/register/ResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/register/ResourceRegistrar.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..416d04d62eee14577089c52f74493130dd7ae547
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/register/ResourceRegistrar.java
-@@ -0,0 +1,12 @@
-+package io.papermc.paper.plugin.register;
-+
-+import org.jetbrains.annotations.ApiStatus;
-+
-+/**
-+ * To be implemented by types that provide ways to register types
-+ * either on server start or during a reload
-+ */
-+@ApiStatus.Experimental
-+@ApiStatus.NonExtendable
-+public interface ResourceRegistrar {
-+}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/dummy/DummyResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/register/dummy/DummyResourceRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a4008af5140568fd08698123102a8deb5e9d77e9
+index 0000000000000000000000000000000000000000..51898f162719bf357d790eb987d124f0a4004b06
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/register/dummy/DummyResourceRegistrar.java
 @@ -0,0 +1,6 @@
 +package io.papermc.paper.plugin.register.dummy;
 +
-+import io.papermc.paper.plugin.register.ResourceRegistrar;
++import io.papermc.paper.plugin.register.event.registrar.ResourceRegistrar;
 +
 +public class DummyResourceRegistrar implements ResourceRegistrar {
 +}
@@ -177,7 +129,7 @@ index 0000000000000000000000000000000000000000..7438dbcea3d1a998f9bb7e78afa4b3dc
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/event/RegisterEvents.java b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEvents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0b169b9dc8b34d10daed329cedc726973a9317f
+index 0000000000000000000000000000000000000000..584af7c75555a55f3d8498b6dfd1dfd9de59e059
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEvents.java
 @@ -0,0 +1,43 @@
@@ -186,7 +138,7 @@ index 0000000000000000000000000000000000000000..c0b169b9dc8b34d10daed329cedc7269
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.register.RegisterEvent;
-+import io.papermc.paper.plugin.register.RegistrarEvent;
++import io.papermc.paper.plugin.register.event.registrar.RegistrarEvent;
 +import io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar;
 +import io.papermc.paper.plugin.register.dummy.NonRegistrarEvent;
 +import java.util.ArrayList;
@@ -283,6 +235,55 @@ index 0000000000000000000000000000000000000000..5cb779749ce166be978bdddfe975e62f
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
+diff --git a/src/main/java/io/papermc/paper/plugin/register/event/registrar/RegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/register/event/registrar/RegistrarEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..de99ed0d7a42cac3e063351b5188f6203b355ef3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/register/event/registrar/RegistrarEvent.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.plugin.register.event.registrar;
++
++import io.papermc.paper.plugin.register.RegisterEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface RegistrarEvent<R extends ResourceRegistrar> extends RegisterEvent {
++
++    @NotNull R registrar();
++
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Reloadable<R extends ResourceRegistrar> extends RegistrarEvent<R> {
++
++        @NotNull Cause cause();
++
++        @ApiStatus.Experimental
++        enum Cause {
++            INITIAL,
++            RELOAD
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/register/event/registrar/ResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/register/event/registrar/ResourceRegistrar.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9bafe9955155e773cf7bca21d65d2611c93a6368
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/register/event/registrar/ResourceRegistrar.java
+@@ -0,0 +1,12 @@
++package io.papermc.paper.plugin.register.event.registrar;
++
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * To be implemented by types that provide ways to register types
++ * either on server start or during a reload
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface ResourceRegistrar {
++}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/package-info.java b/src/main/java/io/papermc/paper/plugin/register/package-info.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..cfbcbf45329ebfc6077b2b5c3c2a6bf12d6351d2

@@ -4,7 +4,7 @@ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar;
 import io.papermc.paper.plugin.register.dummy.NonRegistrarEvent;
-import io.papermc.paper.plugin.register.RegistrarEvent;
+import io.papermc.paper.plugin.register.event.registrar.RegistrarEvent;
 import io.papermc.paper.plugin.register.event.RegisterEvents;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,7 +19,7 @@ public class TestPluginBootstrap implements PluginBootstrap {
             System.out.println("dummy hook: " + cause);
         });
 
-        final io.papermc.paper.plugin.register.event.RegisterEventHandler<io.papermc.paper.plugin.register.RegistrarEvent<io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar>> handle = this::handle;
+        final io.papermc.paper.plugin.register.event.RegisterEventHandler<RegistrarEvent<DummyResourceRegistrar>> handle = this::handle;
         context.registerHook(RegisterEvents.DUMMY, handle);
 
         context.registerHook(RegisterEvents.NON_REGISTRAR_RELATED_EVENT, NonRegistrarEvent::someNonRegistrarRelatedThing);
