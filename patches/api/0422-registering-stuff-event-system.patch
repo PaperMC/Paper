@@ -4,13 +4,57 @@ Date: Tue, 18 Jul 2023 14:47:02 -0700
 Subject: [PATCH] registering stuff event system
 
 
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/ResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/resource/ResourceRegistrar.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/RegisterEvent.java b/src/main/java/io/papermc/paper/plugin/event/RegisterEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9dfd42060be6c37b20a1adcb12598eadbd7265a4
+index 0000000000000000000000000000000000000000..e8fd963704e0530f1464fbfa7130f87c9f572bf0
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/ResourceRegistrar.java
++++ b/src/main/java/io/papermc/paper/plugin/event/RegisterEvent.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.plugin.event;
++
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface RegisterEvent {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/event/RegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/event/RegistrarEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b2f21f0d88cb67300f69f13582d8c98d9bf4e760
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/event/RegistrarEvent.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.plugin.event;
++
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface RegistrarEvent<R extends ResourceRegistrar> extends RegisterEvent {
++
++    @NotNull R registrar();
++
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Reloadable<R extends ResourceRegistrar> extends RegistrarEvent<R> {
++
++        @NotNull Cause cause();
++
++        @ApiStatus.Experimental
++        enum Cause {
++            INITIAL,
++            RELOAD
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/event/ResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/event/ResourceRegistrar.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..19a2293b2c4d33e45b0dc8bb25790ecd84aee413
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/event/ResourceRegistrar.java
 @@ -0,0 +1,12 @@
-+package io.papermc.paper.plugin.resource;
++package io.papermc.paper.plugin.event;
 +
 +import org.jetbrains.annotations.ApiStatus;
 +
@@ -22,27 +66,27 @@ index 0000000000000000000000000000000000000000..9dfd42060be6c37b20a1adcb12598ead
 +@ApiStatus.NonExtendable
 +public interface ResourceRegistrar {
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyResourceRegistrar.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/dummy/DummyResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/event/dummy/DummyResourceRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6ca9ce66e64bf0fdec50895a4b17b014535e4727
+index 0000000000000000000000000000000000000000..c989f73fff722aec159649bfd7b69cb7e90469fb
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyResourceRegistrar.java
++++ b/src/main/java/io/papermc/paper/plugin/event/dummy/DummyResourceRegistrar.java
 @@ -0,0 +1,6 @@
-+package io.papermc.paper.plugin.resource.dummy;
++package io.papermc.paper.plugin.event.dummy;
 +
-+import io.papermc.paper.plugin.resource.ResourceRegistrar;
++import io.papermc.paper.plugin.event.ResourceRegistrar;
 +
 +public class DummyResourceRegistrar implements ResourceRegistrar {
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/dummy/NonRegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/resource/dummy/NonRegistrarEvent.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/dummy/NonRegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/event/dummy/NonRegistrarEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c48d6891ac5fdf323cf3d0a70d8d329109dad954
+index 0000000000000000000000000000000000000000..08b2058d97db892537e5d1533507a9e40236ad42
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/dummy/NonRegistrarEvent.java
++++ b/src/main/java/io/papermc/paper/plugin/event/dummy/NonRegistrarEvent.java
 @@ -0,0 +1,10 @@
-+package io.papermc.paper.plugin.resource.dummy;
++package io.papermc.paper.plugin.event.dummy;
 +
-+import io.papermc.paper.plugin.resource.event.RegisterEvent;
++import io.papermc.paper.plugin.event.RegisterEvent;
 +
 +public class NonRegistrarEvent implements RegisterEvent {
 +
@@ -50,76 +94,15 @@ index 0000000000000000000000000000000000000000..c48d6891ac5fdf323cf3d0a70d8d3291
 +        System.out.println("non registrar event");
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/event/RegisterEvent.java b/src/main/java/io/papermc/paper/plugin/resource/event/RegisterEvent.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/Hook.java b/src/main/java/io/papermc/paper/plugin/event/hook/Hook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0e73eebe3e4bc2a8a3b670c6f4098d63f30653b3
+index 0000000000000000000000000000000000000000..06d3a3e9937374d8202fb8c4aab144f6b45e037d
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/event/RegisterEvent.java
-@@ -0,0 +1,9 @@
-+package io.papermc.paper.plugin.resource.event;
-+
-+import org.jetbrains.annotations.ApiStatus;
-+
-+@ApiStatus.Experimental
-+@ApiStatus.NonExtendable
-+public interface RegisterEvent {
-+
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/event/RegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/resource/event/RegistrarEvent.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..bebd3a8e70f98456cc43c6e03d3c333371f6467b
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/event/RegistrarEvent.java
-@@ -0,0 +1,29 @@
-+package io.papermc.paper.plugin.resource.event;
-+
-+import io.papermc.paper.plugin.resource.ResourceRegistrar;
-+import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+
-+public sealed interface RegistrarEvent<R extends ResourceRegistrar> extends RegisterEvent {
-+
-+    @NotNull R registrar();
-+
-+    @ApiStatus.Experimental
-+    @ApiStatus.NonExtendable
-+    non-sealed interface Reloadable<R extends ResourceRegistrar> extends RegistrarEvent<R> {
-+
-+        @NotNull Cause cause();
-+
-+        @ApiStatus.Experimental
-+        enum Cause {
-+            INITIAL,
-+            RELOAD
-+        }
-+    }
-+
-+    @ApiStatus.Experimental
-+    @ApiStatus.NonExtendable
-+    non-sealed interface Static<R extends ResourceRegistrar> extends RegistrarEvent<R> {
-+
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/event/package-info.java b/src/main/java/io/papermc/paper/plugin/resource/event/package-info.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..15b24a6327e0146bc585a873fca393b0c7b3b743
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/event/package-info.java
-@@ -0,0 +1,5 @@
-+@DefaultQualifier(NonNull.class)
-+package io.papermc.paper.plugin.resource.event;
-+
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/Hook.java b/src/main/java/io/papermc/paper/plugin/resource/hook/Hook.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..458b3dc462d1d841365b2752eb984bd61860b2ca
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/hook/Hook.java
++++ b/src/main/java/io/papermc/paper/plugin/event/hook/Hook.java
 @@ -0,0 +1,10 @@
-+package io.papermc.paper.plugin.resource.hook;
++package io.papermc.paper.plugin.event.hook;
 +
-+import io.papermc.paper.plugin.resource.event.RegisterEvent;
++import io.papermc.paper.plugin.event.RegisterEvent;
 +import org.jetbrains.annotations.NotNull;
 +
 +@FunctionalInterface
@@ -127,76 +110,74 @@ index 0000000000000000000000000000000000000000..458b3dc462d1d841365b2752eb984bd6
 +
 +    void run(@NotNull E event);
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookType.java b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookType.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4b85ab8a0c60b446686158ec914bc1875efb67dd
+index 0000000000000000000000000000000000000000..24a7d2aceb37379d15a1bd22826f1d0058a48363
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookType.java
-@@ -0,0 +1,12 @@
-+package io.papermc.paper.plugin.resource.hook;
++++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.plugin.event.hook;
 +
-+import io.papermc.paper.plugin.resource.event.RegisterEvent;
++import io.papermc.paper.plugin.event.RegisterEvent;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +@ApiStatus.Experimental
-+@ApiStatus.NonExtendable
-+public sealed interface RegisterHookType<O, E extends RegisterEvent> permits RegisterHookTypeImpl {
++public sealed interface RegisterHook<O, E extends RegisterEvent> permits RegisterHookImpl {
 +
-+    void add(@NotNull O owner, @NotNull Hook<E> hook);
++    void add(@NotNull O owner, @NotNull Hook<? super E> hook);
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookTypeImpl.java b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookTypeImpl.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHookImpl.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHookImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7bc3a88238d9db4c92524619c44302fd322a4efa
+index 0000000000000000000000000000000000000000..81a368977db64bcf18f7286243be1202dc896055
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookTypeImpl.java
++++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHookImpl.java
 @@ -0,0 +1,31 @@
-+package io.papermc.paper.plugin.resource.hook;
++package io.papermc.paper.plugin.event.hook;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.resource.event.RegisterEvent;
++import io.papermc.paper.plugin.event.RegisterEvent;
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.function.Function;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +@ApiStatus.Internal
-+final class RegisterHookTypeImpl<O, E extends RegisterEvent> implements RegisterHookType<O, E> {
++final class RegisterHookImpl<O, E extends RegisterEvent> implements RegisterHook<O, E> {
 +
 +    final String name;
 +    final List<RegisteredHook<O, E>> hooks = new ArrayList<>();
-+    final Function<O, PluginMeta> getPluginMeta;
++    final Function<? super O, PluginMeta> getPluginMeta;
 +
-+    RegisterHookTypeImpl(final String name, final Function<O, PluginMeta> getPluginMeta) {
++    RegisterHookImpl(final String name, final Function<? super O, PluginMeta> getPluginMeta) {
 +        this.name = name;
 +        this.getPluginMeta = getPluginMeta;
 +    }
 +
 +    @Override
-+    public void add(final O owner, final Hook<E> hook) {
++    public void add(final O owner, final Hook<? super E> hook) {
 +        this.hooks.add(new RegisteredHook<>(owner, hook));
 +    }
 +
 +    @ApiStatus.Internal
-+    record RegisteredHook<O, E extends RegisterEvent>(O owner, Hook<E> hook) {
++    record RegisteredHook<O, E extends RegisterEvent>(O owner, Hook<? super E> hook) {
 +    }
 +
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHooks.java b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHooks.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..34ed947629cf4b160ae57e70e18e37c9f6862532
+index 0000000000000000000000000000000000000000..8eaa9b3a11503cb31720a13c400e053ded57ba03
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHooks.java
-@@ -0,0 +1,44 @@
-+package io.papermc.paper.plugin.resource.hook;
++++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.plugin.event.hook;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.resource.ResourceRegistrar;
-+import io.papermc.paper.plugin.resource.dummy.DummyResourceRegistrar;
-+import io.papermc.paper.plugin.resource.dummy.NonRegistrarEvent;
-+import io.papermc.paper.plugin.resource.event.RegisterEvent;
-+import io.papermc.paper.plugin.resource.event.RegistrarEvent;
++import io.papermc.paper.plugin.event.RegisterEvent;
++import io.papermc.paper.plugin.event.RegistrarEvent;
++import io.papermc.paper.plugin.event.dummy.DummyResourceRegistrar;
++import io.papermc.paper.plugin.event.dummy.NonRegistrarEvent;
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.function.Function;
@@ -206,25 +187,15 @@ index 0000000000000000000000000000000000000000..34ed947629cf4b160ae57e70e18e37c9
 +@ApiStatus.Experimental
 +public final class RegisterHooks {
 +
-+    static final List<RegisterHookTypeImpl<?, ?>> ALL_HOOKS = new ArrayList<>();
++    static final List<RegisterHookImpl<?, ?>> ALL_HOOKS = new ArrayList<>();
 +
-+    public static final RegisterHookType<BootstrapContext, RegistrarEvent.Reloadable<DummyResourceRegistrar>> DUMMY = reloadableRegistrar("dummy", BootstrapContext::getConfiguration);
-+    public static final RegisterHookType<JavaPlugin, RegistrarEvent.Static<DummyResourceRegistrar>> DUMMY_STATIC = staticRegistrar("dummy_static", JavaPlugin::getPluginMeta);
-+    public static final RegisterHookType<BootstrapContext, NonRegistrarEvent> NON_REGISTRAR_RELATED_EVENT = create("non_registrar", BootstrapContext::getConfiguration);
-+
-+    @ApiStatus.Internal
-+    private static <O, R extends ResourceRegistrar> RegisterHookType<O, RegistrarEvent.Reloadable<R>> reloadableRegistrar(final String name, final Function<O, PluginMeta> getPluginMeta) {
-+        return create(name, getPluginMeta);
-+    }
++    public static final RegisterHook<BootstrapContext, RegistrarEvent.Reloadable<DummyResourceRegistrar>> DUMMY = create("dummy", BootstrapContext::getConfiguration);
++    public static final RegisterHook<JavaPlugin, RegistrarEvent<DummyResourceRegistrar>> DUMMY_STATIC = create("dummy_static", JavaPlugin::getPluginMeta);
++    public static final RegisterHook<BootstrapContext, NonRegistrarEvent> NON_REGISTRAR_RELATED_EVENT = create("non_registrar", BootstrapContext::getConfiguration);
 +
 +    @ApiStatus.Internal
-+    private static <O, R extends ResourceRegistrar> RegisterHookType<O, RegistrarEvent.Static<R>> staticRegistrar(final String name, final Function<O, PluginMeta> getPluginMeta) {
-+        return create(name, getPluginMeta);
-+    }
-+
-+    @ApiStatus.Internal
-+    private static <O, E extends RegisterEvent> RegisterHookType<O, E> create(final String name, final Function<O, PluginMeta> getPluginMeta) {
-+        final RegisterHookTypeImpl<O, E> registerHookType = new RegisterHookTypeImpl<>(name, getPluginMeta);
++    private static <O, E extends RegisterEvent> RegisterHook<O, E> create(final String name, final Function<O, PluginMeta> getPluginMeta) {
++        final RegisterHookImpl<O, E> registerHookType = new RegisterHookImpl<>(name, getPluginMeta);
 +        ALL_HOOKS.add(registerHookType);
 +        return registerHookType;
 +    }
@@ -232,25 +203,29 @@ index 0000000000000000000000000000000000000000..34ed947629cf4b160ae57e70e18e37c9
 +    private RegisterHooks() {
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/package-info.java b/src/main/java/io/papermc/paper/plugin/resource/hook/package-info.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/package-info.java b/src/main/java/io/papermc/paper/plugin/event/hook/package-info.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3e5f5740629ee43feebf81ffd93aff29a334b293
+index 0000000000000000000000000000000000000000..ad5e26fcd1de96b9404b2c92572a235bb7159f4c
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/hook/package-info.java
++++ b/src/main/java/io/papermc/paper/plugin/event/hook/package-info.java
 @@ -0,0 +1,5 @@
 +@DefaultQualifier(NonNull.class)
-+package io.papermc.paper.plugin.resource.hook;
++package io.papermc.paper.plugin.event.hook;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/package-info.java b/src/main/java/io/papermc/paper/plugin/resource/package-info.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/package-info.java b/src/main/java/io/papermc/paper/plugin/event/package-info.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c94b499f3eb86d4754e341df9209003b44be8471
+index 0000000000000000000000000000000000000000..2089570e3bd508e3d705a1d903ef17d2f0000b08
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/package-info.java
-@@ -0,0 +1,5 @@
++++ b/src/main/java/io/papermc/paper/plugin/event/package-info.java
+@@ -0,0 +1,9 @@
++/**
++ * A separate event system meant for registering values
++ * in both the bootstrap and regular plugin contexts.
++ */
 +@DefaultQualifier(NonNull.class)
-+package io.papermc.paper.plugin.resource;
++package io.papermc.paper.plugin.event;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;

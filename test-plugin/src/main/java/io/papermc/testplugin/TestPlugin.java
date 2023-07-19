@@ -1,7 +1,7 @@
 package io.papermc.testplugin;
 
-import io.papermc.paper.plugin.resource.dummy.DummyResourceRegistrar;
-import io.papermc.paper.plugin.resource.hook.RegisterHooks;
+import io.papermc.paper.plugin.event.dummy.DummyResourceRegistrar;
+import io.papermc.paper.plugin.event.hook.RegisterHooks;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
