@@ -6,7 +6,7 @@ Subject: [PATCH] registering stuff event system
 
 diff --git a/src/main/java/io/papermc/paper/plugin/resource/RegisterEvent.java b/src/main/java/io/papermc/paper/plugin/resource/RegisterEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f4642e5cd21ceb4c76f2350d84ae929856f5f265
+index 0000000000000000000000000000000000000000..272f1e9b05cb90387fc05bdde5e760d56f57eb6b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/resource/RegisterEvent.java
 @@ -0,0 +1,30 @@
@@ -17,13 +17,13 @@ index 0000000000000000000000000000000000000000..f4642e5cd21ceb4c76f2350d84ae9298
 +
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
-+public sealed interface RegisterEvent<O, R extends ResourceRegistrar<O>> permits RegisterEvent.Reloadable, RegisterEvent.Static {
++public sealed interface RegisterEvent<R extends ResourceRegistrar> permits RegisterEvent.Reloadable, RegisterEvent.Static {
 +
 +    @NotNull R registrar();
 +
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
-+    non-sealed interface Reloadable<O, R extends ResourceRegistrar.Reloadable<O>> extends RegisterEvent<O, R> {
++    non-sealed interface Reloadable<R extends ResourceRegistrar> extends RegisterEvent<R> {
 +
 +        @NotNull Cause cause();
 +
@@ -36,16 +36,16 @@ index 0000000000000000000000000000000000000000..f4642e5cd21ceb4c76f2350d84ae9298
 +
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
-+    non-sealed interface Static<O, R extends ResourceRegistrar.Static<O>> extends RegisterEvent<O, R> {
++    non-sealed interface Static<R extends ResourceRegistrar> extends RegisterEvent<R> {
 +
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/resource/ResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/resource/ResourceRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3788bfab3db4bbd33ada35cc9d13ad406dddbb59
+index 0000000000000000000000000000000000000000..9dfd42060be6c37b20a1adcb12598eadbd7265a4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/resource/ResourceRegistrar.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,12 @@
 +package io.papermc.paper.plugin.resource;
 +
 +import org.jetbrains.annotations.ApiStatus;
@@ -53,52 +53,22 @@ index 0000000000000000000000000000000000000000..3788bfab3db4bbd33ada35cc9d13ad40
 +/**
 + * To be implemented by types that provide ways to register types
 + * either on server start or during a reload
-+ * @param <O>
 + */
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
-+public sealed interface ResourceRegistrar<O> permits ResourceRegistrar.Reloadable, ResourceRegistrar.Static {
-+
-+    @ApiStatus.Experimental
-+    @ApiStatus.NonExtendable
-+    non-sealed interface Reloadable<O> extends ResourceRegistrar<O> {
-+
-+    }
-+
-+    @ApiStatus.Experimental
-+    @ApiStatus.NonExtendable
-+    non-sealed interface Static<O> extends ResourceRegistrar<O> {
-+
-+    }
++public interface ResourceRegistrar {
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyReloadableResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyReloadableResourceRegistrar.java
+diff --git a/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyResourceRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..48208f6f691ade57af1d399c9e46aaab07ac4638
+index 0000000000000000000000000000000000000000..cee507565a79a0c7b9a6ed17106db3d35a9c1535
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyReloadableResourceRegistrar.java
-@@ -0,0 +1,9 @@
-+package io.papermc.paper.plugin.resource.dummy;
-+
-+import io.papermc.paper.plugin.bootstrap.BootstrapContext;
-+import io.papermc.paper.plugin.resource.ResourceRegistrar;
-+
-+public class DummyReloadableResourceRegistrar implements ResourceRegistrar.Reloadable<BootstrapContext> {
-+
-+
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyStaticResourceRegistrar.java b/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyStaticResourceRegistrar.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0c910c49a13125c5674c1f36249c923b915b175f
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyStaticResourceRegistrar.java
-@@ -0,0 +1,10 @@
++++ b/src/main/java/io/papermc/paper/plugin/resource/dummy/DummyResourceRegistrar.java
+@@ -0,0 +1,8 @@
 +package io.papermc.paper.plugin.resource.dummy;
 +
 +import io.papermc.paper.plugin.resource.ResourceRegistrar;
-+import org.bukkit.plugin.java.JavaPlugin;
-+import org.jetbrains.annotations.NotNull;
 +
-+public class DummyStaticResourceRegistrar implements ResourceRegistrar.Static<JavaPlugin> {
++public class DummyResourceRegistrar implements ResourceRegistrar {
 +
 +
 +}
@@ -115,7 +85,7 @@ index 0000000000000000000000000000000000000000..15b24a6327e0146bc585a873fca393b0
 +import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/Hook.java b/src/main/java/io/papermc/paper/plugin/resource/hook/Hook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..46ef0a080922b9cec14ee5b16514a8fd11aea43b
+index 0000000000000000000000000000000000000000..a20fc15b6f2e58da462376c6670fa8c115ad96d2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/resource/hook/Hook.java
 @@ -0,0 +1,10 @@
@@ -125,13 +95,13 @@ index 0000000000000000000000000000000000000000..46ef0a080922b9cec14ee5b16514a8fd
 +import io.papermc.paper.plugin.resource.RegisterEvent;
 +
 +@FunctionalInterface
-+public interface Hook<O, R extends ResourceRegistrar<O>, E extends RegisterEvent<O, R>> {
++public interface Hook<O, R extends ResourceRegistrar, E extends RegisterEvent<R>> {
 +
 +    void run(E event);
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookType.java b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a0868aa8a0030179c4c7eee3088184896ada8186
+index 0000000000000000000000000000000000000000..8b71b44614de8a8369ffff00ddc43b29ab28e7bd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookType.java
 @@ -0,0 +1,25 @@
@@ -144,25 +114,25 @@ index 0000000000000000000000000000000000000000..a0868aa8a0030179c4c7eee308818489
 +
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
-+public sealed interface RegisterHookType<O, R extends ResourceRegistrar<O>, E extends RegisterEvent<O, R>> permits RegisterHookType.Reloadable, RegisterHookType.Static, RegisterHookTypeImpl {
++public sealed interface RegisterHookType<O, R extends ResourceRegistrar, E extends RegisterEvent<R>> permits RegisterHookType.Reloadable, RegisterHookType.Static, RegisterHookTypeImpl {
 +
 +    void add(@NotNull O owner, @NotNull Hook<O, R, E> hook);
 +
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
-+    non-sealed interface Reloadable<O, R extends ResourceRegistrar.Reloadable<O>> extends RegisterHookType<O, R, RegisterEvent.Reloadable<O, R>> {
++    non-sealed interface Reloadable<O, R extends ResourceRegistrar> extends RegisterHookType<O, R, RegisterEvent.Reloadable<R>> {
 +
 +    }
 +
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
-+    non-sealed interface Static<O, R extends ResourceRegistrar.Static<O>> extends RegisterHookType<O, R, RegisterEvent.Static<O, R>> {
++    non-sealed interface Static<O, R extends ResourceRegistrar> extends RegisterHookType<O, R, RegisterEvent.Static<R>> {
 +
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookTypeImpl.java b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookTypeImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8419253fb94fdfe4ec62cd913cff92ef94345996
+index 0000000000000000000000000000000000000000..e64796e804201d780a9ca321e6256c8ddbb66de8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHookTypeImpl.java
 @@ -0,0 +1,48 @@
@@ -177,13 +147,13 @@ index 0000000000000000000000000000000000000000..8419253fb94fdfe4ec62cd913cff92ef
 +import org.jetbrains.annotations.ApiStatus;
 +
 +@ApiStatus.Internal
-+abstract sealed class RegisterHookTypeImpl<O, R extends ResourceRegistrar<O>, E extends RegisterEvent<O, R>> implements RegisterHookType<O, R, E> {
++abstract sealed class RegisterHookTypeImpl<O, R extends ResourceRegistrar, E extends RegisterEvent<R>> implements RegisterHookType<O, R, E> {
 +
 +    final String name;
 +    final List<RegisteredHook<O, R, E>> hooks = new ArrayList<>();
 +    final Function<O, PluginMeta> getPluginMeta;
 +
-+    RegisterHookTypeImpl(final String name, final Function<O, PluginMeta> getPluginMeta) {
++    private RegisterHookTypeImpl(final String name, final Function<O, PluginMeta> getPluginMeta) {
 +        this.name = name;
 +        this.getPluginMeta = getPluginMeta;
 +    }
@@ -194,11 +164,11 @@ index 0000000000000000000000000000000000000000..8419253fb94fdfe4ec62cd913cff92ef
 +    }
 +
 +    @ApiStatus.Internal
-+    record RegisteredHook<O, R extends ResourceRegistrar<O>, E extends RegisterEvent<O, R>>(O owner, Hook<O, R, E> hook) {
++    record RegisteredHook<O, R extends ResourceRegistrar, E extends RegisterEvent<R>>(O owner, Hook<O, R, E> hook) {
 +    }
 +
 +    @ApiStatus.Internal
-+    static final class StaticImpl<O, R extends ResourceRegistrar.Static<O>> extends RegisterHookTypeImpl<O, R, RegisterEvent.Static<O, R>> implements RegisterHookType.Static<O, R> {
++    static final class StaticImpl<O, R extends ResourceRegistrar> extends RegisterHookTypeImpl<O, R, RegisterEvent.Static<R>> implements RegisterHookType.Static<O, R> {
 +
 +        StaticImpl(final String name, final Function<O, PluginMeta> getPluginMeta) {
 +            super(name, getPluginMeta);
@@ -206,7 +176,7 @@ index 0000000000000000000000000000000000000000..8419253fb94fdfe4ec62cd913cff92ef
 +    }
 +
 +    @ApiStatus.Internal
-+    static final class ReloadableImpl<O, R extends ResourceRegistrar.Reloadable<O>> extends RegisterHookTypeImpl<O, R, RegisterEvent.Reloadable<O, R>> implements RegisterHookType.Reloadable<O, R> {
++    static final class ReloadableImpl<O, R extends ResourceRegistrar> extends RegisterHookTypeImpl<O, R, RegisterEvent.Reloadable<R>> implements RegisterHookType.Reloadable<O, R> {
 +
 +        ReloadableImpl(final String name, final Function<O, PluginMeta> getPluginMeta) {
 +            super(name, getPluginMeta);
@@ -216,17 +186,16 @@ index 0000000000000000000000000000000000000000..8419253fb94fdfe4ec62cd913cff92ef
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHooks.java b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHooks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8cb9ce4d9e8554b18c83ec9f9286538505636d4c
+index 0000000000000000000000000000000000000000..dc3aee281c8207ed9b3fad5f7094555bb4bbc333
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/resource/hook/RegisterHooks.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.plugin.resource.hook;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.resource.ResourceRegistrar;
-+import io.papermc.paper.plugin.resource.dummy.DummyReloadableResourceRegistrar;
-+import io.papermc.paper.plugin.resource.dummy.DummyStaticResourceRegistrar;
++import io.papermc.paper.plugin.resource.dummy.DummyResourceRegistrar;
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.function.Function;
@@ -238,18 +207,18 @@ index 0000000000000000000000000000000000000000..8cb9ce4d9e8554b18c83ec9f92865385
 +
 +    static final List<RegisterHookTypeImpl<?, ?, ?>> ALL_HOOKS = new ArrayList<>();
 +
-+    public static final RegisterHookType.Reloadable<BootstrapContext, DummyReloadableResourceRegistrar> DUMMY = reloadableHook("dummy", BootstrapContext::getConfiguration);
-+    public static final RegisterHookType.Static<JavaPlugin, DummyStaticResourceRegistrar> DUMMY_STATIC = staticHook("dummy_static", JavaPlugin::getPluginMeta);
++    public static final RegisterHookType.Reloadable<BootstrapContext, DummyResourceRegistrar> DUMMY = reloadableHook("dummy", BootstrapContext::getConfiguration);
++    public static final RegisterHookType.Static<JavaPlugin, DummyResourceRegistrar> DUMMY_STATIC = staticHook("dummy_static", JavaPlugin::getPluginMeta);
 +
 +    @ApiStatus.Internal
-+    private static <O, R extends ResourceRegistrar.Reloadable<O>> RegisterHookType.Reloadable<O, R> reloadableHook(final String name, final Function<O, PluginMeta> getPluginMeta) {
++    private static <O, R extends ResourceRegistrar> RegisterHookType.Reloadable<O, R> reloadableHook(final String name, final Function<O, PluginMeta> getPluginMeta) {
 +        final RegisterHookTypeImpl.ReloadableImpl<O, R> reloadable = new RegisterHookTypeImpl.ReloadableImpl<>(name, getPluginMeta);
 +        ALL_HOOKS.add(reloadable);
 +        return reloadable;
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <O, R extends ResourceRegistrar.Static<O>> RegisterHookType.Static<O, R> staticHook(final String name, final Function<O, PluginMeta> getPluginMeta) {
++    private static <O, R extends ResourceRegistrar> RegisterHookType.Static<O, R> staticHook(final String name, final Function<O, PluginMeta> getPluginMeta) {
 +        final RegisterHookTypeImpl.StaticImpl<O, R> staticHook = new RegisterHookTypeImpl.StaticImpl<>(name, getPluginMeta);
 +        ALL_HOOKS.add(staticHook);
 +        return staticHook;
