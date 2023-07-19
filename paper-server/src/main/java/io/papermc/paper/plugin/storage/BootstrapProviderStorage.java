@@ -32,8 +32,9 @@ public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootst
             @Override
             public boolean load(PluginProvider<PluginBootstrap> provider, PluginBootstrap provided) {
                 try {
-                    BootstrapContext context = PluginBootstrapContextImpl.create(provider, PluginInitializerManager.instance().pluginDirectoryPath());
+                    PluginBootstrapContextImpl context = PluginBootstrapContextImpl.create(provider, PluginInitializerManager.instance().pluginDirectoryPath()); // Paper - lifecycle events
                     provided.bootstrap(context);
+                    context.lockLifecycleEventRegistration(); // Paper - lifecycle events
                     return true;
                 } catch (Throwable e) {
                     LOGGER.error("Failed to run bootstrapper for %s. This plugin will not be loaded.".formatted(provider.getSource()), e);

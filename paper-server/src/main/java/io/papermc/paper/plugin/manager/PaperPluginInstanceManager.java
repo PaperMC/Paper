@@ -293,6 +293,15 @@ class PaperPluginInstanceManager {
                 + pluginName + " (Is it up to date?)", ex, plugin); // Paper
         }
 
+        // Paper start - lifecycle event system
+        try {
+            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.unregisterAllEventHandlersFor(plugin);
+        } catch (Throwable ex) {
+            this.handlePluginException("Error occurred (in the plugin loader) while unregistering lifecycle event handlers for "
+                + pluginName + " (Is it up to date?)", ex, plugin);
+        }
+        // Paper end
+
         try {
             this.server.getMessenger().unregisterIncomingPluginChannel(plugin);
             this.server.getMessenger().unregisterOutgoingPluginChannel(plugin);

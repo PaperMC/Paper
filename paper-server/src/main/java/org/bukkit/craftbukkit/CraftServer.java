@@ -1062,6 +1062,11 @@ public final class CraftServer implements Server {
 
     @Override
     public void reload() {
+        // Paper start - lifecycle events
+        if (io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.blocksPluginReloading()) {
+            throw new IllegalStateException("A lifecycle event handler has been registered which makes reloading plugins not possible");
+        }
+        // Paper end - lifecycle events
         org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
         this.reloadCount++;
         this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());

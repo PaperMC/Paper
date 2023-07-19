@@ -649,6 +649,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
     // Paper end - spawn egg color visibility
 
+    // Paper start - lifecycle event API
+    @Override
+    public io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck) {
+        return new io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager<>(plugin, registrationCheck);
+    }
+    // Paper end - lifecycle event API
+
     /**
      * This helper class represents the different NBT Tags.
      * <p>
