@@ -180,10 +180,10 @@ index 0000000000000000000000000000000000000000..c17e6450b274c21975037b394f5a7918
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eae74645a9ced4dc4ec5755e2178df96c38c8fd7
+index 0000000000000000000000000000000000000000..06138544656a17f16ea957bfa72ed6a8acd98073
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,43 @@
 +package io.papermc.paper.plugin.event.hook;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
@@ -203,9 +203,19 @@ index 0000000000000000000000000000000000000000..eae74645a9ced4dc4ec5755e2178df96
 +
 +    static final List<RegisterHook<?, ?>> ALL_HOOKS = new ArrayList<>();
 +
-+    public static final RegisterHook<BootstrapContext, RegistrarEvent.Reloadable<DummyResourceRegistrar>> DUMMY = create("dummy", BootstrapContext::getConfiguration);
-+    public static final RegisterHook<Plugin, RegistrarEvent<DummyResourceRegistrar>> DUMMY_STATIC = create("dummy_static", Plugin::getPluginMeta);
-+    public static final RegisterHook<BootstrapContext, NonRegistrarEvent> NON_REGISTRAR_RELATED_EVENT = create("non_registrar", BootstrapContext::getConfiguration);
++    public static final RegisterHook<BootstrapContext, RegistrarEvent.Reloadable<DummyResourceRegistrar>> DUMMY = bootstrap("dummy");
++    public static final RegisterHook<Plugin, RegistrarEvent<DummyResourceRegistrar>> DUMMY_STATIC = plugin("dummy_static");
++    public static final RegisterHook<BootstrapContext, NonRegistrarEvent> NON_REGISTRAR_RELATED_EVENT = bootstrap("non_registrar");
++
++    @ApiStatus.Internal
++    private static <E extends RegisterEvent> RegisterHook<Plugin, E> plugin(final String name) {
++        return create(name, Plugin::getPluginMeta);
++    }
++
++    @ApiStatus.Internal
++    private static <E extends RegisterEvent> RegisterHook<BootstrapContext, E> bootstrap(final String name) {
++        return create(name, BootstrapContext::getConfiguration);
++    }
 +
 +    @ApiStatus.Internal
 +    private static <O extends RegisterEventOwner<O>, E extends RegisterEvent> RegisterHook<O, E> create(final String name, final Function<O, PluginMeta> getPluginMeta) {
@@ -256,3 +266,32 @@ index 4eb639fbb46a0848be207149ea433455550fae1c..8152939a72c96fdbb87c1e57673a9fb3
      /**
       * Returns the folder that the plugin data's files are located in. The
       * folder may not yet exist.
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+index 5cd236965de12392d8c7aa81307c0ff1cc8673b1..fb4032a513ee3ad38f9af7580df13857b4b83e62 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+@@ -279,8 +279,10 @@ public abstract class JavaPlugin extends PluginBase {
+ 
+             if (isEnabled) {
+                 onEnable();
++                this.allowHookRegistering = false; // Paper
+             } else {
+                 onDisable();
++                this.allowHookRegistering = true; // Paper
+             }
+         }
+     }
+@@ -456,4 +458,13 @@ public abstract class JavaPlugin extends PluginBase {
+         }
+         return plugin;
+     }
++
++    // Paper start - register hooks
++    private boolean allowHookRegistering = true;
++    @Override
++    public <E extends io.papermc.paper.plugin.event.RegisterEvent> void registerHook(final io.papermc.paper.plugin.event.hook.@NotNull RegisterHook<org.bukkit.plugin.Plugin, E> registerHook, final io.papermc.paper.plugin.event.hook.@NotNull Hook<? super E> hook) {
++        Preconditions.checkState(this.allowHookRegistering, "Cannot register hooks after onEnable");
++        super.registerHook(registerHook, hook);
++    }
++    // Paper end - register hooks
+ }
