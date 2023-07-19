@@ -48,6 +48,9 @@ https://bugs.mojang.com/browse/MC-123848
   by: BillyGalbreath <blake.galbreath@gmail.com>
   Fixes item frames dropping items above when pointing down
 
+https://bugs.mojang.com/browse/MC-264285
+  Fix unbreakable flint and steel being consumed when igniting creepers
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -248,6 +251,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private void removeFramedMap(ItemStack itemstack) {
          this.getFramedMapId().ifPresent((i) -> {
              MapItemSavedData worldmap = MapItem.getSavedData(i, this.level());
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -0,0 +0,0 @@ public class Creeper extends Monster implements PowerableMob {
+             this.level().playSound(player, this.getX(), this.getY(), this.getZ(), soundeffect, this.getSoundSource(), 1.0F, this.random.nextFloat() * 0.4F + 0.8F);
+             if (!this.level().isClientSide) {
+                 this.ignite();
+-                if (!itemstack.isDamageableItem()) {
++                if (itemstack.getItem().getMaxDamage() == 0) { // Paper - fix MC-264285, only shrink the stack if the item type actually has no durability
+                     itemstack.shrink(1);
+                 } else {
+                     itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
