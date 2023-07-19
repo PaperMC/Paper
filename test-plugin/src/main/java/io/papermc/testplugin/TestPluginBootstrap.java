@@ -15,16 +15,16 @@ public class TestPluginBootstrap implements PluginBootstrap {
     @Override
     public void bootstrap(@NotNull BootstrapContext context) {
 
-        RegisterHooks.DUMMY.add(context, event -> {
+        context.registerHook(RegisterHooks.DUMMY, event -> {
             final DummyResourceRegistrar registrar = event.registrar();
             final RegistrarEvent.Reloadable.Cause cause = event.cause();
             System.out.println("dummy hook: " + cause);
         });
 
         final Hook<RegistrarEvent<DummyResourceRegistrar>> handle = this::handle;
-        RegisterHooks.DUMMY.add(context, handle);
+        context.registerHook(RegisterHooks.DUMMY, handle);
 
-        RegisterHooks.NON_REGISTRAR_RELATED_EVENT.add(context, NonRegistrarEvent::someNonRegistrarRelatedThing);
+        context.registerHook(RegisterHooks.NON_REGISTRAR_RELATED_EVENT, NonRegistrarEvent::someNonRegistrarRelatedThing);
     }
 
     private void handle(RegistrarEvent<DummyResourceRegistrar> event) {

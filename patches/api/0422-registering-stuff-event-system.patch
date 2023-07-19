@@ -4,6 +4,17 @@ Date: Tue, 18 Jul 2023 14:47:02 -0700
 Subject: [PATCH] registering stuff event system
 
 
+diff --git a/src/main/java/io/papermc/paper/plugin/bootstrap/BootstrapContext.java b/src/main/java/io/papermc/paper/plugin/bootstrap/BootstrapContext.java
+index 08f2050356acaf74e3210416760e3873c2dafd2c..c4163c12460d402cb86974a510c655901264d513 100644
+--- a/src/main/java/io/papermc/paper/plugin/bootstrap/BootstrapContext.java
++++ b/src/main/java/io/papermc/paper/plugin/bootstrap/BootstrapContext.java
+@@ -10,5 +10,5 @@ import org.jetbrains.annotations.ApiStatus;
+  */
+ @ApiStatus.Experimental
+ @ApiStatus.NonExtendable
+-public interface BootstrapContext extends PluginProviderContext {
++public interface BootstrapContext extends PluginProviderContext, io.papermc.paper.plugin.event.hook.RegisterEventOwner<BootstrapContext> {
+ }
 diff --git a/src/main/java/io/papermc/paper/plugin/event/RegisterEvent.java b/src/main/java/io/papermc/paper/plugin/event/RegisterEvent.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..e8fd963704e0530f1464fbfa7130f87c9f572bf0
@@ -110,12 +121,12 @@ index 0000000000000000000000000000000000000000..06d3a3e9937374d8202fb8c4aab144f6
 +
 +    void run(@NotNull E event);
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterEventOwner.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterEventOwner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..24a7d2aceb37379d15a1bd22826f1d0058a48363
+index 0000000000000000000000000000000000000000..e04d866f0f6173d7cfff6f9fc88c2aab96e1b42f
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java
-@@ -0,0 +1,11 @@
++++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterEventOwner.java
+@@ -0,0 +1,15 @@
 +package io.papermc.paper.plugin.event.hook;
 +
 +import io.papermc.paper.plugin.event.RegisterEvent;
@@ -123,16 +134,20 @@ index 0000000000000000000000000000000000000000..24a7d2aceb37379d15a1bd22826f1d00
 +import org.jetbrains.annotations.NotNull;
 +
 +@ApiStatus.Experimental
-+public sealed interface RegisterHook<O, E extends RegisterEvent> permits RegisterHookImpl {
-+
-+    void add(@NotNull O owner, @NotNull Hook<? super E> hook);
++@ApiStatus.NonExtendable
++public interface RegisterEventOwner<O extends RegisterEventOwner<O>> {
++    
++    @SuppressWarnings("unchecked")
++    default <E extends RegisterEvent> void registerHook(final @NotNull RegisterHook<O, E> registerHook, @NotNull Hook<? super E> hook) {
++        registerHook.add((O) this, hook);
++    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHookImpl.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHookImpl.java
+diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..81a368977db64bcf18f7286243be1202dc896055
+index 0000000000000000000000000000000000000000..c17e6450b274c21975037b394f5a7918d96ec747
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHookImpl.java
-@@ -0,0 +1,31 @@
++++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHook.java
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.plugin.event.hook;
 +
 +import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -142,31 +157,30 @@ index 0000000000000000000000000000000000000000..81a368977db64bcf18f7286243be1202
 +import java.util.function.Function;
 +import org.jetbrains.annotations.ApiStatus;
 +
-+@ApiStatus.Internal
-+final class RegisterHookImpl<O, E extends RegisterEvent> implements RegisterHook<O, E> {
++public final class RegisterHook<O extends RegisterEventOwner<O>, E extends RegisterEvent> {
 +
 +    final String name;
-+    final List<RegisteredHook<O, E>> hooks = new ArrayList<>();
++    final List<RegisterHook.RegisteredHook<O, E>> hooks = new ArrayList<>();
 +    final Function<? super O, PluginMeta> getPluginMeta;
 +
-+    RegisterHookImpl(final String name, final Function<? super O, PluginMeta> getPluginMeta) {
++    @ApiStatus.Internal
++    RegisterHook(final String name, final Function<? super O, PluginMeta> getPluginMeta) {
 +        this.name = name;
 +        this.getPluginMeta = getPluginMeta;
 +    }
 +
-+    @Override
-+    public void add(final O owner, final Hook<? super E> hook) {
++    @ApiStatus.Internal
++    void add(final O owner, final Hook<? super E> hook) {
 +        this.hooks.add(new RegisteredHook<>(owner, hook));
 +    }
 +
 +    @ApiStatus.Internal
 +    record RegisteredHook<O, E extends RegisterEvent>(O owner, Hook<? super E> hook) {
 +    }
-+
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8eaa9b3a11503cb31720a13c400e053ded57ba03
+index 0000000000000000000000000000000000000000..eae74645a9ced4dc4ec5755e2178df96c38c8fd7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/event/hook/RegisterHooks.java
 @@ -0,0 +1,33 @@
@@ -181,21 +195,21 @@ index 0000000000000000000000000000000000000000..8eaa9b3a11503cb31720a13c400e053d
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.function.Function;
-+import org.bukkit.plugin.java.JavaPlugin;
++import org.bukkit.plugin.Plugin;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +@ApiStatus.Experimental
 +public final class RegisterHooks {
 +
-+    static final List<RegisterHookImpl<?, ?>> ALL_HOOKS = new ArrayList<>();
++    static final List<RegisterHook<?, ?>> ALL_HOOKS = new ArrayList<>();
 +
 +    public static final RegisterHook<BootstrapContext, RegistrarEvent.Reloadable<DummyResourceRegistrar>> DUMMY = create("dummy", BootstrapContext::getConfiguration);
-+    public static final RegisterHook<JavaPlugin, RegistrarEvent<DummyResourceRegistrar>> DUMMY_STATIC = create("dummy_static", JavaPlugin::getPluginMeta);
++    public static final RegisterHook<Plugin, RegistrarEvent<DummyResourceRegistrar>> DUMMY_STATIC = create("dummy_static", Plugin::getPluginMeta);
 +    public static final RegisterHook<BootstrapContext, NonRegistrarEvent> NON_REGISTRAR_RELATED_EVENT = create("non_registrar", BootstrapContext::getConfiguration);
 +
 +    @ApiStatus.Internal
-+    private static <O, E extends RegisterEvent> RegisterHook<O, E> create(final String name, final Function<O, PluginMeta> getPluginMeta) {
-+        final RegisterHookImpl<O, E> registerHookType = new RegisterHookImpl<>(name, getPluginMeta);
++    private static <O extends RegisterEventOwner<O>, E extends RegisterEvent> RegisterHook<O, E> create(final String name, final Function<O, PluginMeta> getPluginMeta) {
++        final RegisterHook<O, E> registerHookType = new RegisterHook<>(name, getPluginMeta);
 +        ALL_HOOKS.add(registerHookType);
 +        return registerHookType;
 +    }
@@ -229,3 +243,16 @@ index 0000000000000000000000000000000000000000..2089570e3bd508e3d705a1d903ef17d2
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
+diff --git a/src/main/java/org/bukkit/plugin/Plugin.java b/src/main/java/org/bukkit/plugin/Plugin.java
+index 4eb639fbb46a0848be207149ea433455550fae1c..8152939a72c96fdbb87c1e57673a9fb3a1b950f3 100644
+--- a/src/main/java/org/bukkit/plugin/Plugin.java
++++ b/src/main/java/org/bukkit/plugin/Plugin.java
+@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
+  * <p>
+  * The use of {@link PluginBase} is recommended for actual Implementation
+  */
+-public interface Plugin extends TabExecutor {
++public interface Plugin extends TabExecutor, io.papermc.paper.plugin.event.hook.RegisterEventOwner<Plugin> { // Paper
+     /**
+      * Returns the folder that the plugin data's files are located in. The
+      * folder may not yet exist.

@@ -26,10 +26,10 @@ index 0000000000000000000000000000000000000000..09497a079ba27bc04315b8d6eeced14e
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/HookRunner.java b/src/main/java/io/papermc/paper/plugin/event/hook/HookRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3474a3cf70fff47f1e32d2d99456149c305b6ed1
+index 0000000000000000000000000000000000000000..34ab84221c5a5cfa702ee5e7a3866299398287b0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/event/hook/HookRunner.java
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,49 @@
 +package io.papermc.paper.plugin.event.hook;
 +
 +import com.mojang.logging.LogUtils;
@@ -48,32 +48,31 @@ index 0000000000000000000000000000000000000000..3474a3cf70fff47f1e32d2d99456149c
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
-+    public static <O, E extends RegisterEvent> void runHook(final RegisterHook<O, E> hookType, final E event) {
-+        final RegisterHookImpl<O, E> registerHookType = (RegisterHookImpl<O, E>) hookType;
-+        for (final RegisterHookImpl.RegisteredHook<O, E> registeredHook : registerHookType.hooks) {
++    public static <O extends RegisterEventOwner<O>, E extends RegisterEvent> void runHook(final RegisterHook<O, E> registerHook, final E event) {
++        for (final RegisterHook.RegisteredHook<O, E> registeredHook : registerHook.hooks) {
 +            try {
 +                registeredHook.hook().run(event);
 +            } catch (Throwable ex) {
-+                LOGGER.error("Could not run '{}' hook from {}", registerHookType.name, registerHookType.getPluginMeta.apply(registeredHook.owner()).getDisplayName(), ex);
++                LOGGER.error("Could not run '{}' hook from {}", registerHook.name, registerHook.getPluginMeta.apply(registeredHook.owner()).getDisplayName(), ex);
 +            }
 +        }
 +    }
 +
 +    public static void unregisterAllHooksFor(final Plugin plugin) {
-+        for (final RegisterHookImpl<?, ?> hookType : RegisterHooks.ALL_HOOKS) {
++        for (final RegisterHook<?, ?> hookType : RegisterHooks.ALL_HOOKS) {
 +            removeHooksOwnedByPlugin(hookType, plugin);
 +        }
 +    }
 +
-+    private static <O> void removeHooksOwnedByPlugin(final RegisterHookImpl<O, ?> hookType, final Plugin possibleOwner) {
++    private static <O extends RegisterEventOwner<O>> void removeHooksOwnedByPlugin(final RegisterHook<O, ?> hookType, final Plugin possibleOwner) {
 +        hookType.hooks.removeIf(registeredHook -> hookType.getPluginMeta.apply(registeredHook.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
 +    }
 +
-+    public static <O, R extends ResourceRegistrar> void runStaticRegistrarHook(final RegisterHook<O, RegistrarEvent<R>> hookType, final R registrar) {
++    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void runStaticRegistrarHook(final RegisterHook<O, RegistrarEvent<R>> hookType, final R registrar) {
 +        runHook(hookType, new StaticRegisterEventImpl<>(registrar));
 +    }
 +
-+    public static <O, R extends ResourceRegistrar> void runReloadableRegistrarHook(final RegisterHook<O, RegistrarEvent.Reloadable<R>> hookType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
++    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void runReloadableRegistrarHook(final RegisterHook<O, RegistrarEvent.Reloadable<R>> hookType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
 +        runHook(hookType, new ReloadableRegisterEventImpl<>(registrar, cause));
 +    }
 +
