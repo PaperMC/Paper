@@ -4,94 +4,8 @@ Date: Tue, 18 Jul 2023 17:49:38 -0700
 Subject: [PATCH] registering stuff event system
 
 
-diff --git a/src/main/java/io/papermc/paper/plugin/event/ReloadableRegisterEventImpl.java b/src/main/java/io/papermc/paper/plugin/event/ReloadableRegisterEventImpl.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..f4ee182106258ac05f667173466569e2a399a82e
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/event/ReloadableRegisterEventImpl.java
-@@ -0,0 +1,4 @@
-+package io.papermc.paper.plugin.event;
-+
-+public record ReloadableRegisterEventImpl<R extends ResourceRegistrar>(R registrar, Cause cause) implements RegistrarEvent.Reloadable<R> {
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/event/StaticRegisterEventImpl.java b/src/main/java/io/papermc/paper/plugin/event/StaticRegisterEventImpl.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..09497a079ba27bc04315b8d6eeced14ef779cd9c
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/event/StaticRegisterEventImpl.java
-@@ -0,0 +1,4 @@
-+package io.papermc.paper.plugin.event;
-+
-+public record StaticRegisterEventImpl<R extends ResourceRegistrar>(R registrar) implements RegistrarEvent<R> {
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/event/hook/HookRunner.java b/src/main/java/io/papermc/paper/plugin/event/hook/HookRunner.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..087faf5ec3ac9bcab0cfdbe60f60571b72c23d7c
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/event/hook/HookRunner.java
-@@ -0,0 +1,49 @@
-+package io.papermc.paper.plugin.event.hook;
-+
-+import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.event.ResourceRegistrar;
-+import io.papermc.paper.plugin.event.RegisterEvent;
-+import io.papermc.paper.plugin.event.RegistrarEvent;
-+import io.papermc.paper.plugin.event.ReloadableRegisterEventImpl;
-+import io.papermc.paper.plugin.event.StaticRegisterEventImpl;
-+import org.bukkit.plugin.Plugin;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.slf4j.Logger;
-+
-+@DefaultQualifier(NonNull.class)
-+public final class HookRunner {
-+
-+    private static final Logger LOGGER = LogUtils.getClassLogger();
-+
-+    public static <O extends RegisterEventOwner<O>, E extends RegisterEvent> void runHook(final RegisterHook<O, E> registerHook, final E event) {
-+        for (final RegisterHook.RegisteredHook<O, E> registeredHook : registerHook.hooks()) {
-+            try {
-+                registeredHook.hook().run(event);
-+            } catch (Throwable ex) {
-+                LOGGER.error("Could not run '{}' hook from {}", registerHook.name(), registerHook.getPluginMeta(registeredHook.owner()).getDisplayName(), ex);
-+            }
-+        }
-+    }
-+
-+    public static void unregisterAllHooksFor(final Plugin plugin) {
-+        for (final RegisterHook<?, ?> hookType : RegisterHooks.ALL_HOOKS) {
-+            removeHooksOwnedByPlugin(hookType, plugin);
-+        }
-+    }
-+
-+    private static <O extends RegisterEventOwner<O>> void removeHooksOwnedByPlugin(final RegisterHook<O, ?> hookType, final Plugin possibleOwner) {
-+        hookType.hooks().removeIf(registeredHook -> hookType.getPluginMeta(registeredHook.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
-+    }
-+
-+    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void runStaticRegistrarHook(final RegisterHook<O, RegistrarEvent<R>> hookType, final R registrar) {
-+        runHook(hookType, new StaticRegisterEventImpl<>(registrar));
-+    }
-+
-+    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void runReloadableRegistrarHook(final RegisterHook<O, RegistrarEvent.Reloadable<R>> hookType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
-+        runHook(hookType, new ReloadableRegisterEventImpl<>(registrar, cause));
-+    }
-+
-+    private HookRunner() {
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/event/package-info.java b/src/main/java/io/papermc/paper/plugin/event/package-info.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..5f6d7f3a32e16d72652c7ca9c7a1104e8be42cb4
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/event/package-info.java
-@@ -0,0 +1,5 @@
-+@DefaultQualifier(NonNull.class)
-+package io.papermc.paper.plugin.event;
-+
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-index 9c7552968b8c017c71a7a77557a66a03ed89f125..8e85366023fbd1cf4264dad3a736f4d315e4c23d 100644
+index 9c7552968b8c017c71a7a77557a66a03ed89f125..313a454066419cfe5dcb5a8c6d0c65f49ed341f1 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 @@ -261,6 +261,15 @@ class PaperPluginInstanceManager {
@@ -100,7 +14,7 @@ index 9c7552968b8c017c71a7a77557a66a03ed89f125..8e85366023fbd1cf4264dad3a736f4d3
  
 +        // Paper start - register event system
 +        try {
-+            io.papermc.paper.plugin.event.hook.HookRunner.unregisterAllHooksFor(plugin);
++            io.papermc.paper.plugin.register.event.RegisterEventRunner.unregisterAllEventHandlersFor(plugin);
 +        } catch (Throwable ex) {
 +            this.handlePluginException("Error occurred (in the plugin loader) while unregistering register hooks for "
 +                + pluginName + " (Is it up to date?)", ex, plugin);
@@ -110,6 +24,92 @@ index 9c7552968b8c017c71a7a77557a66a03ed89f125..8e85366023fbd1cf4264dad3a736f4d3
          try {
              this.server.getMessenger().unregisterIncomingPluginChannel(plugin);
              this.server.getMessenger().unregisterOutgoingPluginChannel(plugin);
+diff --git a/src/main/java/io/papermc/paper/plugin/register/ReloadableRegisterEventImpl.java b/src/main/java/io/papermc/paper/plugin/register/ReloadableRegisterEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..95249dca784855c2a406b22c4a3efe15936afe61
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/register/ReloadableRegisterEventImpl.java
+@@ -0,0 +1,4 @@
++package io.papermc.paper.plugin.register;
++
++public record ReloadableRegisterEventImpl<R extends ResourceRegistrar>(R registrar, Cause cause) implements RegistrarEvent.Reloadable<R> {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/register/StaticRegisterEventImpl.java b/src/main/java/io/papermc/paper/plugin/register/StaticRegisterEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..41415fe2ca7fefc52c93e997049854423f84418a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/register/StaticRegisterEventImpl.java
+@@ -0,0 +1,4 @@
++package io.papermc.paper.plugin.register;
++
++public record StaticRegisterEventImpl<R extends ResourceRegistrar>(R registrar) implements RegistrarEvent<R> {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e005e860dfe92ff84ea005b181dc2094502d03d2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.plugin.register.event;
++
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.register.ResourceRegistrar;
++import io.papermc.paper.plugin.register.RegisterEvent;
++import io.papermc.paper.plugin.register.RegistrarEvent;
++import io.papermc.paper.plugin.register.ReloadableRegisterEventImpl;
++import io.papermc.paper.plugin.register.StaticRegisterEventImpl;
++import org.bukkit.plugin.Plugin;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.slf4j.Logger;
++
++@DefaultQualifier(NonNull.class)
++public final class RegisterEventRunner {
++
++    private static final Logger LOGGER = LogUtils.getClassLogger();
++
++    public static <O extends RegisterEventOwner<O>, E extends RegisterEvent> void callEvent(final RegisterEventType<O, E> registerEventType, final E event) {
++        for (final RegisterEventType.RegisteredHook<O, E> registeredHook : registerEventType.hooks()) {
++            try {
++                registeredHook.registerEventHandler().run(event);
++            } catch (Throwable ex) {
++                LOGGER.error("Could not run '{}' hook from {}", registerEventType.name(), registerEventType.getPluginMeta(registeredHook.owner()).getDisplayName(), ex);
++            }
++        }
++    }
++
++    public static void unregisterAllEventHandlersFor(final Plugin plugin) {
++        for (final RegisterEventType<?, ?> hookType : RegisterEvents.ALL_HOOKS) {
++            removeEventHandlersOwnedBy(hookType, plugin);
++        }
++    }
++
++    private static <O extends RegisterEventOwner<O>> void removeEventHandlersOwnedBy(final RegisterEventType<O, ?> hookType, final Plugin possibleOwner) {
++        hookType.hooks().removeIf(registeredHook -> hookType.getPluginMeta(registeredHook.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
++    }
++
++    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void runStaticRegistrarEventHandler(final RegisterEventType<O, RegistrarEvent<R>> hookType, final R registrar) {
++        callEvent(hookType, new StaticRegisterEventImpl<>(registrar));
++    }
++
++    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void runReloadableRegistrarEventHandler(final RegisterEventType<O, RegistrarEvent.Reloadable<R>> hookType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
++        callEvent(hookType, new ReloadableRegisterEventImpl<>(registrar, cause));
++    }
++
++    private RegisterEventRunner() {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/register/package-info.java b/src/main/java/io/papermc/paper/plugin/register/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4afa99311dc959cd0fa84e8d97e77879ee226a91
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/register/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.plugin.register;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 index 31ec730e63adf82bf9ac02331bc7f186b98c35cf..98aa8cb5053a02fcd575dedd8ab4020c411623d7 100644
 --- a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
@@ -123,28 +123,28 @@ index 31ec730e63adf82bf9ac02331bc7f186b98c35cf..98aa8cb5053a02fcd575dedd8ab4020c
                  } catch (Throwable e) {
                      LOGGER.error("Failed to run bootstrapper for %s. This plugin will not be loaded.".formatted(provider.getSource()), e);
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index dae36c6452ccd57a436dd918547b64d59957ab0a..251b6c038746ea72ac71483b508d3dbf9be694a1 100644
+index dae36c6452ccd57a436dd918547b64d59957ab0a..1b185c2482c4b33a3972bb535543ff939f9aa827 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -130,6 +130,9 @@ public class Main {
              Path path1 = Paths.get("server.properties");
              DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
  
-+            io.papermc.paper.plugin.event.hook.HookRunner.runReloadableRegistrarHook(io.papermc.paper.plugin.event.hook.RegisterHooks.DUMMY,new io.papermc.paper.plugin.event.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.event.RegistrarEvent.Reloadable.Cause.INITIAL); // Paper
-+            io.papermc.paper.plugin.event.hook.HookRunner.runHook(io.papermc.paper.plugin.event.hook.RegisterHooks.NON_REGISTRAR_RELATED_EVENT, new io.papermc.paper.plugin.event.dummy.NonRegistrarEvent()); // Paper
++            io.papermc.paper.plugin.register.event.RegisterEventRunner.runReloadableRegistrarEventHandler(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY,new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.register.RegistrarEvent.Reloadable.Cause.INITIAL); // Paper
++            io.papermc.paper.plugin.register.event.RegisterEventRunner.callEvent(io.papermc.paper.plugin.register.event.RegisterEvents.NON_REGISTRAR_RELATED_EVENT, new io.papermc.paper.plugin.register.dummy.NonRegistrarEvent()); // Paper
 +
              dedicatedserversettings.forceSave();
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..721e6c4f101beb732f8abd3d32679c2cc30f4e62 100644
+index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..e46a852730dbd41b7de9b2af0d0bba80e3ffb122 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -635,6 +635,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
-+        io.papermc.paper.plugin.event.hook.HookRunner.runStaticRegistrarHook(io.papermc.paper.plugin.event.hook.RegisterHooks.DUMMY_STATIC, new io.papermc.paper.plugin.event.dummy.DummyResourceRegistrar()); // Paper
++        io.papermc.paper.plugin.register.event.RegisterEventRunner.runStaticRegistrarEventHandler(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY_STATIC, new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar()); // Paper
          this.connection.acceptConnections();
      }
      // CraftBukkit end
@@ -152,7 +152,7 @@ index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..721e6c4f101beb732f8abd3d32679c2c
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
              org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
-+            io.papermc.paper.plugin.event.hook.HookRunner.runReloadableRegistrarHook(io.papermc.paper.plugin.event.hook.RegisterHooks.DUMMY,new io.papermc.paper.plugin.event.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.event.RegistrarEvent.Reloadable.Cause.RELOAD); // Paper
++            io.papermc.paper.plugin.register.event.RegisterEventRunner.runReloadableRegistrarEventHandler(io.papermc.paper.plugin.register.event.RegisterEvents.DUMMY,new io.papermc.paper.plugin.register.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.register.RegistrarEvent.Reloadable.Cause.RELOAD); // Paper
              new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - fire after everything has been reloaded
          }, this);
  
