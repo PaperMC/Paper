@@ -236,13 +236,13 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
             delegate.applyCarvers(regionlimitedworldaccess, seed, randomstate, biomemanager, structuremanager, ichunkaccess, worldgenstage_features);
         }
 
-        if (worldgenstage_features == WorldGenStage.Features.LIQUID) { // stage check ensures that the method is only called once
-            CraftChunkData chunkData = new CraftChunkData(this.world.getWorld(), ichunkaccess);
-            random.setDecorationSeed(seed, 0, 0);
+        // Minecraft removed the LIQUID_CARVERS stage from world generation, without removing the LIQUID Carving enum.
+        // Meaning this method is only called once for each chunk, so no check is required.
+        CraftChunkData chunkData = new CraftChunkData(this.world.getWorld(), ichunkaccess);
+        random.setDecorationSeed(seed, 0, 0);
 
-            generator.generateCaves(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z, chunkData);
-            chunkData.breakLink();
-        }
+        generator.generateCaves(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z, chunkData);
+        chunkData.breakLink();
     }
 
     @Override
