@@ -5,7 +5,7 @@ Subject: [PATCH] registering stuff event system
 
 
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-index 9c7552968b8c017c71a7a77557a66a03ed89f125..313a454066419cfe5dcb5a8c6d0c65f49ed341f1 100644
+index 9c7552968b8c017c71a7a77557a66a03ed89f125..240cca5fe8e9e7d525600cfd406e203d9308eb22 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 @@ -261,6 +261,15 @@ class PaperPluginInstanceManager {
@@ -16,7 +16,7 @@ index 9c7552968b8c017c71a7a77557a66a03ed89f125..313a454066419cfe5dcb5a8c6d0c65f4
 +        try {
 +            io.papermc.paper.plugin.register.event.RegisterEventRunner.unregisterAllEventHandlersFor(plugin);
 +        } catch (Throwable ex) {
-+            this.handlePluginException("Error occurred (in the plugin loader) while unregistering register hooks for "
++            this.handlePluginException("Error occurred (in the plugin loader) while unregistering register event handlers for "
 +                + pluginName + " (Is it up to date?)", ex, plugin);
 +        }
 +        // Paper end
@@ -26,7 +26,7 @@ index 9c7552968b8c017c71a7a77557a66a03ed89f125..313a454066419cfe5dcb5a8c6d0c65f4
              this.server.getMessenger().unregisterOutgoingPluginChannel(plugin);
 diff --git a/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..84c7087e6a15a8c5605f9a21a56ffd4f892f4d76
+index 0000000000000000000000000000000000000000..c39f248ea0aae10618e0531e68ff6cff3fb19f29
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventRunner.java
 @@ -0,0 +1,49 @@
@@ -49,31 +49,31 @@ index 0000000000000000000000000000000000000000..84c7087e6a15a8c5605f9a21a56ffd4f
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    public static <O extends RegisterEventOwner<O>, E extends RegisterEvent> void callEvent(final RegisterEventType<O, E> registerEventType, final E event) {
-+        for (final RegisterEventType.RegisteredHook<O, E> registeredHook : registerEventType.hooks()) {
++        for (final RegisterEventType.RegisteredHandler<O, E> registeredHandler : registerEventType.handlers()) {
 +            try {
-+                registeredHook.registerEventHandler().run(event);
++                registeredHandler.registerEventHandler().run(event);
 +            } catch (Throwable ex) {
-+                LOGGER.error("Could not run '{}' hook from {}", registerEventType.name(), registerEventType.getPluginMeta(registeredHook.owner()).getDisplayName(), ex);
++                LOGGER.error("Could not run '{}' register event handler from {}", registerEventType.name(), registerEventType.getPluginMeta(registeredHandler.owner()).getDisplayName(), ex);
 +            }
 +        }
 +    }
 +
 +    public static void unregisterAllEventHandlersFor(final Plugin plugin) {
-+        for (final RegisterEventType<?, ?> hookType : RegisterEvents.ALL_HOOKS) {
-+            removeEventHandlersOwnedBy(hookType, plugin);
++        for (final RegisterEventType<?, ?> registerEventType : RegisterEvents.REGISTER_EVENT_TYPES) {
++            removeEventHandlersOwnedBy(registerEventType, plugin);
 +        }
 +    }
 +
-+    private static <O extends RegisterEventOwner<O>> void removeEventHandlersOwnedBy(final RegisterEventType<O, ?> hookType, final Plugin possibleOwner) {
-+        hookType.hooks().removeIf(registeredHook -> hookType.getPluginMeta(registeredHook.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
++    private static <O extends RegisterEventOwner<O>> void removeEventHandlersOwnedBy(final RegisterEventType<O, ?> registerEventType, final Plugin possibleOwner) {
++        registerEventType.handlers().removeIf(registeredHandler -> registerEventType.getPluginMeta(registeredHandler.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
 +    }
 +
-+    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void callStaticRegistrarEvent(final RegisterEventType<O, RegistrarEvent<R>> hookType, final R registrar) {
-+        callEvent(hookType, new StaticRegistrarEventImpl<>(registrar));
++    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void callStaticRegistrarEvent(final RegisterEventType<O, RegistrarEvent<R>> registerEventType, final R registrar) {
++        callEvent(registerEventType, new StaticRegistrarEventImpl<>(registrar));
 +    }
 +
-+    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void callReloadableRegistrarEvent(final RegisterEventType<O, RegistrarEvent.Reloadable<R>> hookType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
-+        callEvent(hookType, new ReloadableRegistrarEventImpl<>(registrar, cause));
++    public static <O extends RegisterEventOwner<O>, R extends ResourceRegistrar> void callReloadableRegistrarEvent(final RegisterEventType<O, RegistrarEvent.Reloadable<R>> registerEventType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
++        callEvent(registerEventType, new ReloadableRegistrarEventImpl<>(registrar, cause));
 +    }
 +
 +    private RegisterEventRunner() {
@@ -111,14 +111,14 @@ index 0000000000000000000000000000000000000000..4afa99311dc959cd0fa84e8d97e77879
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
-index 31ec730e63adf82bf9ac02331bc7f186b98c35cf..98aa8cb5053a02fcd575dedd8ab4020c411623d7 100644
+index 31ec730e63adf82bf9ac02331bc7f186b98c35cf..d56d6bcac3c5f6dd66d852f3489873ae96b489de 100644
 --- a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 +++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
 @@ -32,6 +32,7 @@ public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootst
                  try {
                      BootstrapContext context = PluginBootstrapContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
                      provided.bootstrap(context);
-+                    // TODO somehow lock registering hooks for this BootstrapContext object (might require changing it away from a record)
++                    // TODO somehow lock register event handler creation for this BootstrapContext object (might require changing it away from a record)
                      return true;
                  } catch (Throwable e) {
                      LOGGER.error("Failed to run bootstrapper for %s. This plugin will not be loaded.".formatted(provider.getSource()), e);

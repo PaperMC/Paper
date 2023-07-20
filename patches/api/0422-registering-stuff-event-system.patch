@@ -75,7 +75,7 @@ index 0000000000000000000000000000000000000000..cb9961934dcaf06198990432bf668339
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventOwner.java b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventOwner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8f35b94f6fe13b63735c4632c1e49f59c71fde2d
+index 0000000000000000000000000000000000000000..2765d7424c22ff6b91590ff794c22eb2c9a1aed1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventOwner.java
 @@ -0,0 +1,15 @@
@@ -90,13 +90,13 @@ index 0000000000000000000000000000000000000000..8f35b94f6fe13b63735c4632c1e49f59
 +public interface RegisterEventOwner<O extends RegisterEventOwner<O>> {
 +    
 +    @SuppressWarnings("unchecked")
-+    default <E extends RegisterEvent> void registerHook(final @NotNull RegisterEventType<? super O, E> registerEventType, @NotNull RegisterEventHandler<? super E> registerEventHandler) {
++    default <E extends RegisterEvent> void handleRegisterEvent(final @NotNull RegisterEventType<? super O, E> registerEventType, final @NotNull RegisterEventHandler<? super E> registerEventHandler) {
 +        registerEventType.add((O) this, registerEventHandler);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventType.java b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7438dbcea3d1a998f9bb7e78afa4b3dc3516f3f1
+index 0000000000000000000000000000000000000000..b0cd63d759003cc75b6aacc4ef36dccd232d78b2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEventType.java
 @@ -0,0 +1,27 @@
@@ -121,15 +121,15 @@ index 0000000000000000000000000000000000000000..7438dbcea3d1a998f9bb7e78afa4b3dc
 +    abstract PluginMeta getPluginMeta(O owner);
 +
 +    @ApiStatus.Internal
-+    abstract List<RegisteredHook<O, E>> hooks();
++    abstract List<RegisteredHandler<O, E>> handlers();
 +
 +    @ApiStatus.Internal
-+    record RegisteredHook<O, E extends RegisterEvent>(O owner, RegisterEventHandler<? super E> registerEventHandler) {
++    record RegisteredHandler<O, E extends RegisterEvent>(O owner, RegisterEventHandler<? super E> registerEventHandler) {
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/event/RegisterEvents.java b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEvents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..584af7c75555a55f3d8498b6dfd1dfd9de59e059
+index 0000000000000000000000000000000000000000..d32ffe8ce3a8e59a4b0e33adc6fa47d5e5c2c765
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/register/event/RegisterEvents.java
 @@ -0,0 +1,43 @@
@@ -150,7 +150,7 @@ index 0000000000000000000000000000000000000000..584af7c75555a55f3d8498b6dfd1dfd9
 +@ApiStatus.Experimental
 +public final class RegisterEvents {
 +
-+    static final List<RegisterEventType<?, ?>> ALL_HOOKS = new ArrayList<>();
++    static final List<RegisterEventType<?, ?>> REGISTER_EVENT_TYPES = new ArrayList<>();
 +
 +    public static final RegisterEventType<BootstrapContext, RegistrarEvent.Reloadable<DummyResourceRegistrar>> DUMMY = bootstrap("dummy");
 +    public static final RegisterEventType<Plugin, RegistrarEvent<DummyResourceRegistrar>> DUMMY_STATIC = plugin("dummy_static");
@@ -169,7 +169,7 @@ index 0000000000000000000000000000000000000000..584af7c75555a55f3d8498b6dfd1dfd9
 +    @ApiStatus.Internal
 +    private static <O extends RegisterEventOwner<O>, E extends RegisterEvent> RegisterEventType<O, E> createSimple(final String name, final Function<O, PluginMeta> getPluginMeta) {
 +        final RegisterEventType<O, E> registerEventType = new SimpleRegisterEventType<>(name, getPluginMeta);
-+        ALL_HOOKS.add(registerEventType);
++        REGISTER_EVENT_TYPES.add(registerEventType);
 +        return registerEventType;
 +    }
 +
@@ -178,7 +178,7 @@ index 0000000000000000000000000000000000000000..584af7c75555a55f3d8498b6dfd1dfd9
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/event/SimpleRegisterEventType.java b/src/main/java/io/papermc/paper/plugin/register/event/SimpleRegisterEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d20969b8fe93f71a34055f3b0af7420b627b791e
+index 0000000000000000000000000000000000000000..b54619f628277a6b06cf4c36e0b7e8b59f13aed2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/register/event/SimpleRegisterEventType.java
 @@ -0,0 +1,42 @@
@@ -195,7 +195,7 @@ index 0000000000000000000000000000000000000000..d20969b8fe93f71a34055f3b0af7420b
 +class SimpleRegisterEventType<O extends RegisterEventOwner<O>, E extends RegisterEvent> extends RegisterEventType<O, E> {
 +
 +    final String name;
-+    final List<RegisteredHook<O, E>> hooks = new ArrayList<>();
++    final List<RegisteredHandler<O, E>> handlers = new ArrayList<>();
 +    final Function<? super O, ? extends PluginMeta> getPluginMeta;
 +
 +    @ApiStatus.Internal
@@ -206,7 +206,7 @@ index 0000000000000000000000000000000000000000..d20969b8fe93f71a34055f3b0af7420b
 +
 +    @Override
 +    void add(final O owner, final RegisterEventHandler<? super E> registerEventHandler) {
-+        this.hooks.add(new RegisteredHook<>(owner, registerEventHandler));
++        this.handlers.add(new RegisteredHandler<>(owner, registerEventHandler));
 +    }
 +
 +    @Override
@@ -220,8 +220,8 @@ index 0000000000000000000000000000000000000000..d20969b8fe93f71a34055f3b0af7420b
 +    }
 +
 +    @Override
-+    List<RegisteredHook<O, E>> hooks() {
-+        return this.hooks;
++    List<RegisteredHandler<O, E>> handlers() {
++        return this.handlers;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/register/event/package-info.java b/src/main/java/io/papermc/paper/plugin/register/event/package-info.java
@@ -313,7 +313,7 @@ index 4eb639fbb46a0848be207149ea433455550fae1c..b2c8a5e17cae813886be6cff4552acc8
       * Returns the folder that the plugin data's files are located in. The
       * folder may not yet exist.
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index 5cd236965de12392d8c7aa81307c0ff1cc8673b1..17f398845692f3f8d60eced1b1dacacb031cf524 100644
+index 5cd236965de12392d8c7aa81307c0ff1cc8673b1..6c2135c1ff2653bb77f5b1dbac5f8152e2d9f1fd 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 @@ -2,6 +2,8 @@ package org.bukkit.plugin.java;
@@ -341,10 +341,10 @@ index 5cd236965de12392d8c7aa81307c0ff1cc8673b1..17f398845692f3f8d60eced1b1dacacb
  
              if (isEnabled) {
                  onEnable();
-+                this.allowHookRegistering = false; // Paper
++                this.allowRegisterEventHandlerRegistration = false; // Paper
              } else {
                  onDisable();
-+                this.allowHookRegistering = true; // Paper
++                this.allowRegisterEventHandlerRegistration = true; // Paper
              }
          }
      }
@@ -354,11 +354,11 @@ index 5cd236965de12392d8c7aa81307c0ff1cc8673b1..17f398845692f3f8d60eced1b1dacacb
      }
 +
 +    // Paper start - register hooks
-+    private boolean allowHookRegistering = true;
++    private boolean allowRegisterEventHandlerRegistration = true;
 +    @Override
-+    public <E extends io.papermc.paper.plugin.register.RegisterEvent> void registerHook(final @NotNull RegisterEventType<? super Plugin, E> registerEventType, final @NotNull RegisterEventHandler<? super E> registerEventHandler) {
-+        Preconditions.checkState(this.allowHookRegistering, "Cannot register hooks after onEnable");
-+        super.registerHook(registerEventType, registerEventHandler);
++    public <E extends io.papermc.paper.plugin.register.RegisterEvent> void handleRegisterEvent(final @NotNull RegisterEventType<? super Plugin, E> registerEventType, final @NotNull RegisterEventHandler<? super E> registerEventHandler) {
++        Preconditions.checkState(this.allowRegisterEventHandlerRegistration, "Cannot add register event handlers after onEnable");
++        super.handleRegisterEvent(registerEventType, registerEventHandler);
 +    }
 +    // Paper end - register hooks
  }

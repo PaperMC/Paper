@@ -13,16 +13,16 @@ public class TestPluginBootstrap implements PluginBootstrap {
     @Override
     public void bootstrap(@NotNull BootstrapContext context) {
 
-        context.registerHook(RegisterEvents.DUMMY, event -> {
+        context.handleRegisterEvent(RegisterEvents.DUMMY, event -> {
             final DummyResourceRegistrar registrar = event.registrar();
             final RegistrarEvent.Reloadable.Cause cause = event.cause();
             System.out.println("dummy hook: " + cause);
         });
 
         final io.papermc.paper.plugin.register.event.RegisterEventHandler<RegistrarEvent<DummyResourceRegistrar>> handle = this::handle;
-        context.registerHook(RegisterEvents.DUMMY, handle);
+        context.handleRegisterEvent(RegisterEvents.DUMMY, handle);
 
-        context.registerHook(RegisterEvents.NON_REGISTRAR_RELATED_EVENT, NonRegistrarEvent::someNonRegistrarRelatedThing);
+        context.handleRegisterEvent(RegisterEvents.NON_REGISTRAR_RELATED_EVENT, NonRegistrarEvent::someNonRegistrarRelatedThing);
     }
 
     private void handle(RegistrarEvent<DummyResourceRegistrar> event) {
