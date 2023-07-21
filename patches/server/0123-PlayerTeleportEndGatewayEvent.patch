@@ -4,20 +4,18 @@ Date: Sat, 31 Dec 2016 21:44:50 -0500
 Subject: [PATCH] PlayerTeleportEndGatewayEvent
 
 Allows you to access the Gateway being used in a teleport event
+Fix the offset used for player teleportation
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-index 97c57619ebcf31f17f8430ffb68043771d1377f9..9f685b4fe6d57d921e9e7a4d817e0913b863c0ad 100644
+index 97c57619ebcf31f17f8430ffb68043771d1377f9..020314dded2c6305bd5e9013b108bc74be25ccc1 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-@@ -12,6 +12,7 @@ import net.minecraft.data.worldgen.features.EndFeatures;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.NbtUtils;
- import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-+import io.papermc.paper.util.MCUtil;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.util.Mth;
-@@ -211,7 +212,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+@@ -207,11 +207,11 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+                 // CraftBukkit start - Fire PlayerTeleportEvent
+                 if (entity1 instanceof ServerPlayer) {
+                     org.bukkit.craftbukkit.entity.CraftPlayer player = (CraftPlayer) entity1.getBukkitEntity();
+-                    org.bukkit.Location location = CraftLocation.toBukkit(blockposition1, world.getWorld()).add(0.5D, 0.5D, 0.5D);
++                    org.bukkit.Location location = CraftLocation.toBukkit(blockposition1, world.getWorld()).add(0.5D, 0, 0.5D); // Paper - use the right Y offset
                      location.setPitch(player.getLocation().getPitch());
                      location.setYaw(player.getLocation().getYaw());
  
@@ -26,3 +24,12 @@ index 97c57619ebcf31f17f8430ffb68043771d1377f9..9f685b4fe6d57d921e9e7a4d817e0913
                      Bukkit.getPluginManager().callEvent(teleEvent);
                      if (teleEvent.isCancelled()) {
                          return;
+@@ -226,7 +226,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+                 // CraftBukkit end
+ 
+                 entity1.setPortalCooldown();
+-                entity1.teleportToWithTicket((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D);
++                entity1.teleportToWithTicket((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D); // Paper - diff on change
+             }
+ 
+             TheEndGatewayBlockEntity.triggerCooldown(world, pos, state, blockEntity);
