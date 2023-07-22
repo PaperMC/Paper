@@ -5,6 +5,9 @@ Subject: [PATCH] Don't tick signs
 
 Minecraft now ticks signs in order to validate the playerWhoMayEdit field. This is a horrible idea, as this means that even waxed signs are ticked for essentially no reason. This moves the logic lazily onto the getter.
 
+== AT ==
+private net.minecraft.world.level.block.entity.SignBlockEntity playerWhoMayEdit
+
 diff --git a/src/main/java/net/minecraft/world/level/block/CeilingHangingSignBlock.java b/src/main/java/net/minecraft/world/level/block/CeilingHangingSignBlock.java
 index 6c9d163b9f857806461dc72e54713f1a4f3a5c31..0bd8ea3143b2e9755d492af4596622d1dca1afaf 100644
 --- a/src/main/java/net/minecraft/world/level/block/CeilingHangingSignBlock.java
@@ -42,43 +45,19 @@ index d818d3ea6d28aa6ffb62127d4efd585d6f2935d1..ae232311f12c72ff62d3d18f25e3ebf4
      }
  }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index f356196aaeb498a6d2c9ad2112329cef5a3103d6..c7a0e9a8ff4adbc4f46c5b21f2d2ff0c7a8dd80a 100644
+index 9eea2982e92e9bc7a53962dc6b21de60f9e5a4c7..38cde466714e5663cd416b6afd5d2558e139ec09 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-@@ -44,7 +44,7 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
-     private static final int MAX_TEXT_LINE_WIDTH = 90;
-     private static final int TEXT_LINE_HEIGHT = 10;
-     @Nullable
--    public UUID playerWhoMayEdit;
-+    private UUID playerWhoMayEdit; // Paper - private
-     private SignText frontText;
-     private SignText backText;
-     private boolean isWaxed;
 @@ -367,6 +367,12 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
  
      @Nullable
      public UUID getPlayerWhoMayEdit() {
 +        // Paper start
-+        if (this.hasLevel()) {
++        if (this.hasLevel() && this.playerWhoMayEdit != null) {
 +            // Manually invalidate the value lazily.
-+            tick(this.getLevel(), this.getBlockPos(), this.getBlockState(), this);
++            this.clearInvalidPlayerWhoMayEdit(this, this.getLevel(), this.playerWhoMayEdit);
 +        }
 +        // Paper end
          return this.playerWhoMayEdit;
      }
  
-@@ -396,12 +402,12 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
-     }
- 
-     public static void tick(Level world, BlockPos pos, BlockState state, SignBlockEntity blockEntity) {
--        UUID uuid = blockEntity.getPlayerWhoMayEdit();
-+        UUID uuid = blockEntity.playerWhoMayEdit; // Paper - Refer directly
- 
-         if (uuid != null) {
-             blockEntity.clearInvalidPlayerWhoMayEdit(blockEntity, world, uuid);
-         }
--
-+        // Paper - Diff on change
-     }
- 
-     private void clearInvalidPlayerWhoMayEdit(SignBlockEntity blockEntity, Level world, UUID uuid) {
