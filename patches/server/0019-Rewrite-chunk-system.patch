@@ -2310,10 +2310,10 @@ index 95eac2e12a16938d81ab512b00e90c5234b42834..8f7bf1f0400aeab8b7801d113d244d07
      private ChunkSystem() {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d0e76600626d75c88956838aa72e2f88b41946ce
+index 0000000000000000000000000000000000000000..92ecacb45101630f570aa01c53bea49324f63bb2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1429 @@
+@@ -0,0 +1,1431 @@
 +package io.papermc.paper.chunk.system;
 +
 +import ca.spottedleaf.concurrentutil.collection.SRSWLinkedQueue;
@@ -2842,12 +2842,9 @@ index 0000000000000000000000000000000000000000..d0e76600626d75c88956838aa72e2f88
 +                    return;
 +                }
 +
-+                // Delay unload chunk patch - see comment in ChunkHolderManager#addTicketAtLevel
-+                final TicketType<ChunkPos> addType = PlayerChunkLoaderData.this.world.paperConfig().chunks.delayChunkUnloadsBy.seconds() > 0 ? TicketType.DELAY_UNLOAD : TicketType.UNKNOWN;
-+
 +                parameter.pushDelayedTicketOp(ChunkHolderManager.TicketOperation.addAndRemove(
 +                    chunk,
-+                    addType, level, new ChunkPos(chunkX, chunkZ),
++                    PlayerChunkLoaderData.this.delayDowngradeTicketType(), level, new ChunkPos(chunkX, chunkZ),
 +                    REGION_PLAYER_TICKET, level, parameter.idBoxed
 +                ));
 +            }
@@ -2867,11 +2864,11 @@ index 0000000000000000000000000000000000000000..d0e76600626d75c88956838aa72e2f88
 +                    return;
 +                }
 +
-+                // Since we are possibly downgrading the ticket level, we add an unknown ticket so that
++                // Since we are possibly downgrading the ticket level, we add an UNKNOWN ticket so that
 +                // the level is kept until tick().
 +                parameter.pushDelayedTicketOp(ChunkHolderManager.TicketOperation.addAndRemove(
 +                    chunk,
-+                    TicketType.UNKNOWN, TICK_TICKET_LEVEL, new ChunkPos(chunkX, chunkZ),
++                    PlayerChunkLoaderData.this.delayDowngradeTicketType(), TICK_TICKET_LEVEL, new ChunkPos(chunkX, chunkZ),
 +                    REGION_PLAYER_TICKET, TICK_TICKET_LEVEL, parameter.idBoxed
 +                ));
 +                // keep chunk at new generated level
@@ -2881,6 +2878,11 @@ index 0000000000000000000000000000000000000000..d0e76600626d75c88956838aa72e2f88
 +                ));
 +            }
 +        };
++
++        private TicketType<ChunkPos> delayDowngradeTicketType() {
++            // Delay unload chunk patch - see comment in ChunkHolderManager#addTicketAtLevel
++            return PlayerChunkLoaderData.this.world.paperConfig().chunks.delayChunkUnloadsBy.seconds() > 0 ? TicketType.DELAY_UNLOAD : TicketType.UNKNOWN;
++        }
 +
 +        private static boolean wantChunkLoaded(final int centerX, final int centerZ, final int chunkX, final int chunkZ,
 +                                               final int sendRadius) {
