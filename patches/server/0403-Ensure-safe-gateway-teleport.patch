@@ -3,24 +3,18 @@ From: kickash32 <kickash32@gmail.com>
 Date: Fri, 15 May 2020 01:10:03 -0400
 Subject: [PATCH] Ensure safe gateway teleport
 
+== AT ==
+public net.minecraft.world.entity.Entity teleportPassengers()V
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-index d3e2a78f4e562fac7f42687629a4807aec85037f..115553877c222c101bdea0978e1fa6ec8322702e 100644
+index 85914124014b4e6f0a561cf560918af68682b6f5..4bd3279f750e5d40d7aee935a4c285ef8764c0f8 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-@@ -105,7 +105,14 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
-             List<Entity> list = world.getEntitiesOfClass(Entity.class, new AABB(pos), TheEndGatewayBlockEntity::canEntityTeleport);
+@@ -219,6 +219,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
  
-             if (!list.isEmpty()) {
--                TheEndGatewayBlockEntity.teleportEntity(world, pos, state, (Entity) list.get(world.random.nextInt(list.size())), blockEntity);
-+                // Paper start
-+                for (Entity entity : list) {
-+                    if (entity.canChangeDimensions()) {
-+                        TheEndGatewayBlockEntity.teleportEntity(world, pos, state, entity, blockEntity);
-+                        break;
-+                    }
-+                }
-+                // Paper end
-             }
+                     entity1.setPortalCooldown();
+                     ((ServerPlayer) entity1).connection.teleport(teleEvent.getTo());
++                    entity1.teleportPassengers(); // Paper - teleport passengers as well, preventing invisible passengers post teleport.
+                     TheEndGatewayBlockEntity.triggerCooldown(world, pos, state, blockEntity); // CraftBukkit - call at end of method
+                     return;
  
-             if (blockEntity.age % 2400L == 0L) {
