@@ -68,10 +68,10 @@ index 5bdad1866386908b9fef74d15862eb107fabe68f..370a25d2deb54f10a35ee24d9e7e92fb
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f448d3c79f 100644
+index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..b11f51762ca289d99eaa49e66e31e58595bcea4e 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-@@ -193,6 +193,201 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -193,6 +193,202 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          return false;
      }
  
@@ -129,6 +129,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
 +        ItemStack movedItem = origItemStack;
 +        final int originalItemCount = origItemStack.getCount();
 +        final int movedItemCount = Math.min(level.spigotConfig.hopperAmount, originalItemCount);
++        container.setChanged(); // original logic always marks source inv as changed even if no move happens.
 +        movedItem.setCount(movedItemCount);
 +
 +        if (!skipPullModeEventFire) {
@@ -273,7 +274,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
      private static boolean ejectItems(Level world, BlockPos blockposition, BlockState iblockdata, Container iinventory, HopperBlockEntity hopper) { // CraftBukkit
          Container iinventory1 = HopperBlockEntity.getAttachedContainer(world, blockposition, iblockdata);
  
-@@ -204,46 +399,49 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -204,46 +400,49 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
              if (HopperBlockEntity.isFullContainer(iinventory1, enumdirection)) {
                  return false;
              } else {
@@ -359,7 +360,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
              }
          }
      }
-@@ -253,17 +451,11 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -253,17 +452,11 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      private static boolean isFullContainer(Container inventory, Direction direction) {
@@ -379,7 +380,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
      }
  
      public static boolean suckInItems(Level world, Hopper hopper) {
-@@ -272,8 +464,16 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -272,8 +465,16 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          if (iinventory != null) {
              Direction enumdirection = Direction.DOWN;
  
@@ -398,7 +399,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
              });
          } else {
              Iterator iterator = HopperBlockEntity.getItemsAtAndAbove(world, hopper).iterator();
-@@ -292,48 +492,52 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -292,48 +493,52 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          }
      }
  
@@ -490,7 +491,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
          }
  
          return false;
-@@ -342,7 +546,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -342,7 +547,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      public static boolean addItem(Container inventory, ItemEntity itemEntity) {
          boolean flag = false;
          // CraftBukkit start
@@ -499,7 +500,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
          itemEntity.level().getCraftServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              return false;
-@@ -442,7 +646,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -442,7 +647,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
                      stack = stack.split(to.getMaxStackSize());
                  }
                  // Spigot end
@@ -509,7 +510,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
                  stack = leftover; // Paper
                  flag = true;
              } else if (HopperBlockEntity.canMergeItems(itemstack1, stack)) {
-@@ -516,19 +722,47 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -516,19 +723,47 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          // CraftBukkit end
      }
  
@@ -561,7 +562,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
          Object object = null;
          BlockPos blockposition = BlockPos.containing(x, y, z);
          if ( !world.spigotConfig.hopperCanLoadChunks && !world.hasChunkAt( blockposition ) ) return null; // Spigot
-@@ -548,7 +782,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -548,7 +783,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
              }
          }
  
@@ -570,7 +571,7 @@ index 6907e647ef4d3f5c9c46edb4cf0905844dd1cea9..a8a26a0a37a08b6bbeb5a1fde417d6f4
              List<Entity> list = world.getEntities((Entity) null, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR);
  
              if (!list.isEmpty()) {
-@@ -560,7 +794,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -560,7 +795,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      private static boolean canMergeItems(ItemStack first, ItemStack second) {
