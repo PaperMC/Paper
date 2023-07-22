@@ -2310,10 +2310,10 @@ index 95eac2e12a16938d81ab512b00e90c5234b42834..8f7bf1f0400aeab8b7801d113d244d07
      private ChunkSystem() {
 diff --git a/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..924539d4ac50c70178ba220424ffacd6ff277c8b
+index 0000000000000000000000000000000000000000..d0e76600626d75c88956838aa72e2f88b41946ce
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1426 @@
+@@ -0,0 +1,1429 @@
 +package io.papermc.paper.chunk.system;
 +
 +import ca.spottedleaf.concurrentutil.collection.SRSWLinkedQueue;
@@ -2842,9 +2842,12 @@ index 0000000000000000000000000000000000000000..924539d4ac50c70178ba220424ffacd6
 +                    return;
 +                }
 +
++                // Delay unload chunk patch - see comment in ChunkHolderManager#addTicketAtLevel
++                final TicketType<ChunkPos> addType = PlayerChunkLoaderData.this.world.paperConfig().chunks.delayChunkUnloadsBy.seconds() > 0 ? TicketType.DELAY_UNLOAD : TicketType.UNKNOWN;
++
 +                parameter.pushDelayedTicketOp(ChunkHolderManager.TicketOperation.addAndRemove(
 +                    chunk,
-+                    TicketType.UNKNOWN, level, new ChunkPos(chunkX, chunkZ),
++                    addType, level, new ChunkPos(chunkX, chunkZ),
 +                    REGION_PLAYER_TICKET, level, parameter.idBoxed
 +                ));
 +            }
@@ -6586,10 +6589,10 @@ index 0000000000000000000000000000000000000000..300700477ee34bc22b31315825c0e40f
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8e52ebe8d12f5da3d877b0e4ff3723229fb47db1
+index 0000000000000000000000000000000000000000..6573a488327b26982901cc492fd55b3964e8d0a3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1499 @@
+@@ -0,0 +1,1495 @@
 +package io.papermc.paper.chunk.system.scheduling;
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
 +import ca.spottedleaf.concurrentutil.lock.ReentrantAreaLock;
@@ -7109,9 +7112,17 @@ index 0000000000000000000000000000000000000000..8e52ebe8d12f5da3d877b0e4ff372322
 +    }
 +
 +    <T> boolean addTicketAtLevel(final TicketType<T> type, final long chunk, final int level, final T identifier, final boolean lock) {
-+        final long removeDelay = type.timeout <= 0 ? NO_TIMEOUT_MARKER : type.timeout;
 +        if (level > MAX_TICKET_LEVEL) {
 +            return false;
++        }
++        final long removeDelay;
++        // Delay unload chunk patch originally by Aikar, updated to 1.20 by jpenilla
++        // these days, the patch is mostly useful to keep chunks ticking when players teleport
++        // so that their pets can teleport with them as well.
++        if (type == TicketType.DELAY_UNLOAD) {
++            removeDelay = Math.max(1, this.world.paperConfig().chunks.delayChunkUnloadsBy.ticks()); // should always be >1 at this point, but just to be sure
++        } else {
++            removeDelay = type.timeout <= 0 ? NO_TIMEOUT_MARKER : type.timeout;
 +        }
 +
 +        final int chunkX = CoordinateUtils.getChunkX(chunk);
@@ -7196,21 +7207,9 @@ index 0000000000000000000000000000000000000000..8e52ebe8d12f5da3d877b0e4ff372322
 +            final int newLevel = getTicketLevelAt(ticketsAtChunk);
 +            // we should not change the ticket levels while the target region may be ticking
 +            if (oldLevel != newLevel) {
-+                // Delay unload chunk patch originally by Aikar, updated to 1.20 by jpenilla
-+                // these days, the patch is mostly useful to keep chunks ticking when players teleport
-+                // so that their pets can teleport with them as well.
-+                final long delayTimeout = this.world.paperConfig().chunks.delayChunkUnloadsBy.ticks();
-+                final TicketType<ChunkPos> toAdd;
-+                final long timeout;
-+                if (type == RegionizedPlayerChunkLoader.REGION_PLAYER_TICKET && delayTimeout > 0) {
-+                    toAdd = TicketType.DELAY_UNLOAD;
-+                    timeout = delayTimeout;
-+                } else {
-+                    toAdd = TicketType.UNKNOWN;
-+                    // always expect UNKNOWN to be > 1, but just in case
-+                    timeout = Math.max(1, toAdd.timeout);
-+                }
-+                final Ticket<ChunkPos> unknownTicket = new Ticket<>(toAdd, level, new ChunkPos(chunk), timeout);
++                // always expect UNKNOWN to be > 1, but just in case
++                final long timeout = Math.max(1, TicketType.UNKNOWN.timeout);
++                final Ticket<ChunkPos> unknownTicket = new Ticket<>(TicketType.UNKNOWN, level, new ChunkPos(chunk), timeout);
 +                if (ticketsAtChunk.add(unknownTicket)) {
 +                    this.addExpireCount(chunkX, chunkZ);
 +                } else {
