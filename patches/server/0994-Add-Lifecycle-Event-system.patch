@@ -1,0 +1,161 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 18 Jul 2023 17:49:38 -0700
+Subject: [PATCH] Add Lifecycle Event system
+
+This event system is separate from Bukkit's event system and is
+meant for managing resources across reloads and from points in the
+PluginBootstrap.
+
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f41710c08f4cbe53969118b5f90713097fa6df22
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.plugin.lifecycle.event;
++
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.plugin.lifecycle.event.registrar.ResourceRegistrar;
++import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
++import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEventImpl;
++import io.papermc.paper.plugin.lifecycle.event.registrar.StaticRegistrarEventImpl;
++import org.bukkit.plugin.Plugin;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.slf4j.Logger;
++
++@DefaultQualifier(NonNull.class)
++public final class LifecycleEventRunner {
++
++    private static final Logger LOGGER = LogUtils.getClassLogger();
++
++    public static <O extends LifecycleEventOwner<O>, E extends LifecycleEvent> void callEvent(final LifecycleEventType<O, E> lifecycleEventType, final E event) {
++        for (final LifecycleEventType.RegisteredHandler<O, E> registeredHandler : lifecycleEventType.handlers()) {
++            try {
++                registeredHandler.lifecycleEventHandler().run(event);
++            } catch (Throwable ex) {
++                LOGGER.error("Could not run '{}' lifecycle event handler from {}", lifecycleEventType.name(), lifecycleEventType.getPluginMeta(registeredHandler.owner()).getDisplayName(), ex);
++            }
++        }
++    }
++
++    public static void unregisterAllEventHandlersFor(final Plugin plugin) {
++        for (final LifecycleEventType<?, ?> lifecycleEventType : LifecycleEvents.LIFECYCLE_EVENT_TYPES) {
++            removeEventHandlersOwnedBy(lifecycleEventType, plugin);
++        }
++    }
++
++    private static <O extends LifecycleEventOwner<O>> void removeEventHandlersOwnedBy(final LifecycleEventType<O, ?> lifecycleEventType, final Plugin possibleOwner) {
++        lifecycleEventType.handlers().removeIf(registeredHandler -> lifecycleEventType.getPluginMeta(registeredHandler.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
++    }
++
++    public static <O extends LifecycleEventOwner<O>, R extends ResourceRegistrar> void callStaticRegistrarEvent(final LifecycleEventType<O, RegistrarEvent<R>> lifecycleEventType, final R registrar) {
++        callEvent(lifecycleEventType, new StaticRegistrarEventImpl<>(registrar));
++    }
++
++    public static <O extends LifecycleEventOwner<O>, R extends ResourceRegistrar> void callReloadableRegistrarEvent(final LifecycleEventType<O, RegistrarEvent.Reloadable<R>> lifecycleEventType, final R registrar, final RegistrarEvent.Reloadable.Cause cause) {
++        callEvent(lifecycleEventType, new ReloadableRegistrarEventImpl<>(registrar, cause));
++    }
++
++    private LifecycleEventRunner() {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2983f4135cad909901a665573776fbc330704891
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEventImpl.java
+@@ -0,0 +1,4 @@
++package io.papermc.paper.plugin.lifecycle.event.registrar;
++
++public record ReloadableRegistrarEventImpl<R extends ResourceRegistrar>(R registrar, Cause cause) implements RegistrarEvent.Reloadable<R> {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/StaticRegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/StaticRegistrarEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..41c23d28f97af4ad8124783f8b41a9f42309cbfe
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/StaticRegistrarEventImpl.java
+@@ -0,0 +1,4 @@
++package io.papermc.paper.plugin.lifecycle.event.registrar;
++
++public record StaticRegistrarEventImpl<R extends ResourceRegistrar>(R registrar) implements RegistrarEvent<R> {
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/package-info.java b/src/main/java/io/papermc/paper/plugin/lifecycle/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7b6d67d8dd53af3aa9add193035d72f0ec3eee3e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.plugin.lifecycle;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+index 9c7552968b8c017c71a7a77557a66a03ed89f125..773060422cc89778c2696d5c7f1361d9e52ee9bc 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+@@ -261,6 +261,15 @@ class PaperPluginInstanceManager {
+                 + pluginName + " (Is it up to date?)", ex, plugin); // Paper
+         }
+ 
++        // Paper start - lifecycle event system
++        try {
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.unregisterAllEventHandlersFor(plugin);
++        } catch (Throwable ex) {
++            this.handlePluginException("Error occurred (in the plugin loader) while unregistering lifecycle event handlers for "
++                + pluginName + " (Is it up to date?)", ex, plugin);
++        }
++        // Paper end
++
+         try {
+             this.server.getMessenger().unregisterIncomingPluginChannel(plugin);
+             this.server.getMessenger().unregisterOutgoingPluginChannel(plugin);
+diff --git a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
+index 31ec730e63adf82bf9ac02331bc7f186b98c35cf..f7fca2c07cbd193eceb2d49a4f1ed3face0180c2 100644
+--- a/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
++++ b/src/main/java/io/papermc/paper/plugin/storage/BootstrapProviderStorage.java
+@@ -32,6 +32,7 @@ public class BootstrapProviderStorage extends SimpleProviderStorage<PluginBootst
+                 try {
+                     BootstrapContext context = PluginBootstrapContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
+                     provided.bootstrap(context);
++                    // TODO somehow lock lifecycle event handler creation for this BootstrapContext object (might require changing it away from a record)
+                     return true;
+                 } catch (Throwable e) {
+                     LOGGER.error("Failed to run bootstrapper for %s. This plugin will not be loaded.".formatted(provider.getSource()), e);
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index dae36c6452ccd57a436dd918547b64d59957ab0a..7ab5397a7696989d7ef03eec346ea534ce6681ff 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -130,6 +130,9 @@ public class Main {
+             Path path1 = Paths.get("server.properties");
+             DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
+ 
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.DUMMY,new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent.Reloadable.Cause.INITIAL); // Paper
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.callEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.NON_REGISTRAR_RELATED_EVENT, new io.papermc.paper.plugin.lifecycle.dummy.NonRegistrarEvent()); // Paper
++
+             dedicatedserversettings.forceSave();
+             Path path2 = Paths.get("eula.txt");
+             Eula eula = new Eula(path2);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..843aae6790834a43d5e16eab9db52dde55c78728 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -635,6 +635,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
++        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.callStaticRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.DUMMY_STATIC, new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar()); // Paper
+         this.connection.acceptConnections();
+     }
+     // CraftBukkit end
+@@ -2092,6 +2093,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
+             this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
+             org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.LifecycleEvents.DUMMY,new io.papermc.paper.plugin.lifecycle.dummy.DummyResourceRegistrar(), io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent.Reloadable.Cause.RELOAD); // Paper
+             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - fire after everything has been reloaded
+         }, this);
+ 
