@@ -200,10 +200,10 @@ index 0000000000000000000000000000000000000000..2ad76b1751ba707f7ae0d283aa1cbaf6
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e7e13011c76285681ad420e6f356f6b83045d31a
+index 0000000000000000000000000000000000000000..ed8e885f226b02b9875b23ae2294a9056d2e8b29
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,125 @@
 +package io.papermc.paper.event.player;
 +
 +import io.papermc.paper.chat.ChatRenderer;
@@ -213,6 +213,7 @@ index 0000000000000000000000000000000000000000..e7e13011c76285681ad420e6f356f6b8
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +import java.util.Set;
@@ -222,6 +223,7 @@ index 0000000000000000000000000000000000000000..e7e13011c76285681ad420e6f356f6b8
 +/**
 + * An abstract implementation of a chat event, handling shared logic.
 + */
++@ApiStatus.NonExtendable
 +public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
 +    private final Set<Audience> viewers;
 +    private final Component originalMessage;
@@ -242,15 +244,10 @@ index 0000000000000000000000000000000000000000..e7e13011c76285681ad420e6f356f6b8
 +    /**
 +     * Gets a set of {@link Audience audiences} that this chat message will be displayed to.
 +     *
-+     * <p>The set returned is not guaranteed to be mutable and may auto-populate
-+     * on access. Any listener accessing the returned set should be aware that
++     * <p>The set returned may auto-populate on access. Any listener accessing the returned set should be aware that
 +     * it may reduce performance for a lazy set implementation.</p>
 +     *
-+     * <p>Listeners should be aware that modifying the list may throw {@link
-+     * UnsupportedOperationException} if the event caller provides an
-+     * unmodifiable set.</p>
-+     *
-+     * @return a set of {@link Audience audiences} who will receive the chat message
++     * @return a mutable set of {@link Audience audiences} who will receive the chat message
 +     */
 +    @NotNull
 +    public final Set<Audience> viewers() {
@@ -491,10 +488,10 @@ index 0000000000000000000000000000000000000000..667bfa6afc35f8a8f475431171ee474a
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..975a767313247d3b1c2a6cfd42c7fa6cd1525c53
+index 0000000000000000000000000000000000000000..4eada40b8abb1833ce623ccee0789555e370d024
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.event.player;
 +
 +import java.util.Set;
@@ -504,6 +501,7 @@ index 0000000000000000000000000000000000000000..975a767313247d3b1c2a6cfd42c7fa6c
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -512,6 +510,10 @@ index 0000000000000000000000000000000000000000..975a767313247d3b1c2a6cfd42c7fa6c
 +public final class AsyncChatEvent extends AbstractChatEvent {
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
++    /**
++     * @param viewers A mutable set of viewers
++     */
++    @ApiStatus.Internal
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
 +        super(async, player, viewers, renderer, message, originalMessage, signedMessage);
 +    }
@@ -529,10 +531,10 @@ index 0000000000000000000000000000000000000000..975a767313247d3b1c2a6cfd42c7fa6c
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..46c209f61135c7d37ccfbbc7bb1d74e608fac9d3
+index 0000000000000000000000000000000000000000..af025704e978dc0b11be277ab4646da77eb3a60b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,42 @@
 +package io.papermc.paper.event.player;
 +
 +import java.util.Set;
@@ -543,6 +545,7 @@ index 0000000000000000000000000000000000000000..46c209f61135c7d37ccfbbc7bb1d74e6
 +import org.bukkit.Warning;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -555,6 +558,10 @@ index 0000000000000000000000000000000000000000..46c209f61135c7d37ccfbbc7bb1d74e6
 +public final class ChatEvent extends AbstractChatEvent {
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
++    /**
++     * @param viewers A mutable set of viewers
++     */
++    @ApiStatus.Internal
 +    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
 +        super(false, player, viewers, renderer, message, originalMessage, signedMessage);
 +    }
