@@ -106,40 +106,49 @@ index 0000000000000000000000000000000000000000..7349d713a0d731c58291e6589d8539d5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9f90e6823091850b15b89350181079327c0e39f8
+index 0000000000000000000000000000000000000000..59cfa3396c808da5f7b86bca9e73c10994cd2510
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventType.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,13 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
-+import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
-+import java.util.List;
 +import org.jetbrains.annotations.ApiStatus;
 +
++@SuppressWarnings("unused")
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
 +public abstract class LifecycleEventType<O extends LifecycleEventOwner<O>, E extends LifecycleEvent> {
 +
 +    @ApiStatus.Internal
 +    abstract void add(final O owner, final LifecycleEventHandler<? super E> lifecycleEventHandler);
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProvider.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..376867c2d65b9817d4a20b89f0996122f8ee8b6d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProvider.java
+@@ -0,0 +1,17 @@
++package io.papermc.paper.plugin.lifecycle.event;
 +
-+    @ApiStatus.Internal
-+    abstract String name();
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import java.util.ServiceLoader;
++import java.util.function.Function;
++import org.jetbrains.annotations.ApiStatus;
 +
-+    @ApiStatus.Internal
-+    abstract PluginMeta getPluginMeta(O owner);
++@ApiStatus.Internal
++interface LifecycleEventTypeProvider {
 +
-+    @ApiStatus.Internal
-+    abstract List<RegisteredHandler<O, E>> handlers();
++    LifecycleEventTypeProvider PROVIDER = ServiceLoader.load(LifecycleEventTypeProvider.class)
++        .findFirst()
++        .orElseThrow();
 +
-+    @ApiStatus.Internal
-+    record RegisteredHandler<O, E extends LifecycleEvent>(O owner, LifecycleEventHandler<? super E> lifecycleEventHandler) {
-+    }
++    <O extends LifecycleEventOwner<O>, E extends LifecycleEvent> LifecycleEventType<O, E> simple(String name, Function<? super O, ? extends PluginMeta> getPluginMeta);
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEvents.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEvents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..348bc4af6b70d7ac7f94fba9557be181ecc55a32
+index 0000000000000000000000000000000000000000..004e7ee68ea6099f5469f27c5e22859265b8468b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEvents.java
 @@ -0,0 +1,43 @@
@@ -177,8 +186,8 @@ index 0000000000000000000000000000000000000000..348bc4af6b70d7ac7f94fba9557be181
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <O extends LifecycleEventOwner<O>, E extends LifecycleEvent> LifecycleEventType<O, E> createSimple(final String name, final Function<O, PluginMeta> getPluginMeta) {
-+        final LifecycleEventType<O, E> lifecycleEventType = new SimpleLifecycleEventType<>(name, getPluginMeta);
++    private static <O extends LifecycleEventOwner<O>, E extends LifecycleEvent> LifecycleEventType<O, E> createSimple(final String name, final Function<O, ? extends PluginMeta> getPluginMeta) {
++        final LifecycleEventType<O, E> lifecycleEventType = LifecycleEventTypeProvider.PROVIDER.simple(name, getPluginMeta);
 +        LIFECYCLE_EVENT_TYPES.add(lifecycleEventType);
 +        return lifecycleEventType;
 +    }
@@ -186,65 +195,6 @@ index 0000000000000000000000000000000000000000..348bc4af6b70d7ac7f94fba9557be181
 +    private LifecycleEvents() {
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/SimpleLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/SimpleLifecycleEventType.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..81caa8b178fa2c4a48ce5780d859941663d1abfa
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/SimpleLifecycleEventType.java
-@@ -0,0 +1,42 @@
-+package io.papermc.paper.plugin.lifecycle.event;
-+
-+import io.papermc.paper.plugin.configuration.PluginMeta;
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
-+import java.util.ArrayList;
-+import java.util.List;
-+import java.util.function.Function;
-+import org.jetbrains.annotations.ApiStatus;
-+
-+@ApiStatus.Internal
-+class SimpleLifecycleEventType<O extends LifecycleEventOwner<O>, E extends LifecycleEvent> extends LifecycleEventType<O, E> {
-+
-+    final String name;
-+    final List<RegisteredHandler<O, E>> handlers = new ArrayList<>();
-+    final Function<? super O, ? extends PluginMeta> getPluginMeta;
-+
-+    @ApiStatus.Internal
-+    SimpleLifecycleEventType(final String name, final Function<? super O, ? extends PluginMeta> getPluginMeta) {
-+        this.name = name;
-+        this.getPluginMeta = getPluginMeta;
-+    }
-+
-+    @Override
-+    void add(final O owner, final LifecycleEventHandler<? super E> lifecycleEventHandler) {
-+        this.handlers.add(new RegisteredHandler<>(owner, lifecycleEventHandler));
-+    }
-+
-+    @Override
-+    String name() {
-+        return this.name;
-+    }
-+
-+    @Override
-+    PluginMeta getPluginMeta(final O owner) {
-+        return this.getPluginMeta.apply(owner);
-+    }
-+
-+    @Override
-+    List<RegisteredHandler<O, E>> handlers() {
-+        return this.handlers;
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/package-info.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/package-info.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..da506a24a1c22f41a844d6b113751128e19b67fb
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/package-info.java
-@@ -0,0 +1,5 @@
-+@DefaultQualifier(NonNull.class)
-+package io.papermc.paper.plugin.lifecycle.event;
-+
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEvent.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/RegistrarEvent.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..679974e4680d75c59077862fcbbf3867a1fb0989
@@ -294,21 +244,6 @@ index 0000000000000000000000000000000000000000..6bebcd6e61b98f218aa464b1005c7daa
 +@ApiStatus.NonExtendable
 +public interface ResourceRegistrar {
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/package-info.java b/src/main/java/io/papermc/paper/plugin/lifecycle/package-info.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..85209f38cc654cc3a63d83f599cf828c341076fe
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/package-info.java
-@@ -0,0 +1,9 @@
-+/**
-+ * A separate event system meant for registering values
-+ * in both the bootstrap and regular plugin contexts.
-+ */
-+@DefaultQualifier(NonNull.class)
-+package io.papermc.paper.plugin.lifecycle;
-+
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/org/bukkit/plugin/Plugin.java b/src/main/java/org/bukkit/plugin/Plugin.java
 index 4eb639fbb46a0848be207149ea433455550fae1c..178b58b9d593384e3cf74ec1630f651d21aeed7f 100644
 --- a/src/main/java/org/bukkit/plugin/Plugin.java
@@ -330,53 +265,35 @@ index 4eb639fbb46a0848be207149ea433455550fae1c..178b58b9d593384e3cf74ec1630f651d
       * Returns the folder that the plugin data's files are located in. The
       * folder may not yet exist.
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index 5cd236965de12392d8c7aa81307c0ff1cc8673b1..602543f3f3dd0e9e91a7c3ac69c48c59046840af 100644
+index 5cd236965de12392d8c7aa81307c0ff1cc8673b1..c20005adc13e27fa0e1e55021a517a8c027432b5 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-@@ -2,6 +2,9 @@ package org.bukkit.plugin.java;
- 
- import com.google.common.base.Charsets;
- import com.google.common.base.Preconditions;
-+import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
-+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventHandler;
-+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventType;
- import java.io.File;
- import java.io.FileOutputStream;
- import java.io.IOException;
-@@ -22,10 +25,10 @@ import org.bukkit.configuration.file.FileConfiguration;
- import org.bukkit.configuration.file.YamlConfiguration;
- import org.bukkit.generator.BiomeProvider;
- import org.bukkit.generator.ChunkGenerator;
-+import org.bukkit.plugin.Plugin;
- import org.bukkit.plugin.PluginBase;
- import org.bukkit.plugin.PluginDescriptionFile;
- import org.bukkit.plugin.PluginLoader;
--import org.bukkit.plugin.PluginLogger;
- import org.jetbrains.annotations.NotNull;
- import org.jetbrains.annotations.Nullable;
- 
-@@ -279,8 +282,10 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -278,7 +278,14 @@ public abstract class JavaPlugin extends PluginBase {
+             isEnabled = enabled;
  
              if (isEnabled) {
++                try { // Paper
++                this.allowLifecycleEventHandlerRegistration = true; // Paper - only allow registration during onEnable
                  onEnable();
-+                this.allowLifecycleEventHandlerRegistration = false; // Paper
++                // Paper start - only allow registration during onEnable
++                } finally {
++                    this.allowLifecycleEventHandlerRegistration = false;
++                }
++                // Paper end
              } else {
                  onDisable();
-+                this.allowLifecycleEventHandlerRegistration = true; // Paper
              }
-         }
-     }
-@@ -456,4 +461,13 @@ public abstract class JavaPlugin extends PluginBase {
+@@ -456,4 +463,13 @@ public abstract class JavaPlugin extends PluginBase {
          }
          return plugin;
      }
 +
-+    // Paper start - lifecycle hooks
++    // Paper start - lifecycle events
 +    private boolean allowLifecycleEventHandlerRegistration = true;
 +    @Override
-+    public <E extends LifecycleEvent> void handleLifecycleEvent(final @NotNull LifecycleEventType<? super Plugin, E> lifecycleEventType, final @NotNull LifecycleEventHandler<? super E> lifecycleEventHandler) {
++    public <E extends io.papermc.paper.plugin.lifecycle.LifecycleEvent> void handleLifecycleEvent(final @NotNull io.papermc.paper.plugin.lifecycle.event.LifecycleEventType<? super org.bukkit.plugin.Plugin, E> lifecycleEventType, final @NotNull io.papermc.paper.plugin.lifecycle.event.LifecycleEventHandler<? super E> lifecycleEventHandler) {
 +        Preconditions.checkState(this.allowLifecycleEventHandlerRegistration, "Cannot add lifecycle event handlers after onEnable");
 +        super.handleLifecycleEvent(lifecycleEventType, lifecycleEventHandler);
 +    }
-+    // Paper end - lifecycle hooks
++    // Paper end - lifecycle events
  }

@@ -9,10 +9,10 @@ PluginBootstrap.
 
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f41710c08f4cbe53969118b5f90713097fa6df22
+index 0000000000000000000000000000000000000000..ac2c05410c00c3d2d9045596583343dbd2ea2e97
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
 +import com.mojang.logging.LogUtils;
@@ -31,12 +31,13 @@ index 0000000000000000000000000000000000000000..f41710c08f4cbe53969118b5f9071309
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
-+    public static <O extends LifecycleEventOwner<O>, E extends LifecycleEvent> void callEvent(final LifecycleEventType<O, E> lifecycleEventType, final E event) {
-+        for (final LifecycleEventType.RegisteredHandler<O, E> registeredHandler : lifecycleEventType.handlers()) {
++    public static <O extends LifecycleEventOwner<O>, E extends LifecycleEvent> void callEvent(final LifecycleEventType<O, E> eventType, final E event) {
++        final SimpleLifecycleEventType<O, E> lifecycleEventType = (SimpleLifecycleEventType<O, E>) eventType;
++        for (final SimpleLifecycleEventType.RegisteredHandler<O, E> registeredHandler : lifecycleEventType.handlers) {
 +            try {
 +                registeredHandler.lifecycleEventHandler().run(event);
 +            } catch (Throwable ex) {
-+                LOGGER.error("Could not run '{}' lifecycle event handler from {}", lifecycleEventType.name(), lifecycleEventType.getPluginMeta(registeredHandler.owner()).getDisplayName(), ex);
++                LOGGER.error("Could not run '{}' lifecycle event handler from {}", lifecycleEventType.name, lifecycleEventType.getPluginMeta(registeredHandler.owner()).getDisplayName(), ex);
 +            }
 +        }
 +    }
@@ -47,8 +48,9 @@ index 0000000000000000000000000000000000000000..f41710c08f4cbe53969118b5f9071309
 +        }
 +    }
 +
-+    private static <O extends LifecycleEventOwner<O>> void removeEventHandlersOwnedBy(final LifecycleEventType<O, ?> lifecycleEventType, final Plugin possibleOwner) {
-+        lifecycleEventType.handlers().removeIf(registeredHandler -> lifecycleEventType.getPluginMeta(registeredHandler.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
++    private static <O extends LifecycleEventOwner<O>> void removeEventHandlersOwnedBy(final LifecycleEventType<O, ?> eventType, final Plugin possibleOwner) {
++        final SimpleLifecycleEventType<O, ?> lifecycleEventType = (SimpleLifecycleEventType<O, ?>) eventType;
++        lifecycleEventType.handlers.removeIf(registeredHandler -> lifecycleEventType.getPluginMeta(registeredHandler.owner()).getName().equals(possibleOwner.getPluginMeta().getName()));
 +    }
 +
 +    public static <O extends LifecycleEventOwner<O>, R extends ResourceRegistrar> void callStaticRegistrarEvent(final LifecycleEventType<O, RegistrarEvent<R>> lifecycleEventType, final R registrar) {
@@ -62,6 +64,73 @@ index 0000000000000000000000000000000000000000..f41710c08f4cbe53969118b5f9071309
 +    private LifecycleEventRunner() {
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..33941943d173aaf951bc7de12de07c89b829f2d8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventTypeProviderImpl.java
+@@ -0,0 +1,13 @@
++package io.papermc.paper.plugin.lifecycle.event;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import java.util.function.Function;
++
++public class LifecycleEventTypeProviderImpl implements LifecycleEventTypeProvider {
++
++    @Override
++    public <O extends LifecycleEventOwner<O>, E extends LifecycleEvent> LifecycleEventType<O, E> simple(final String name, final Function<? super O, ? extends PluginMeta> getPluginMeta) {
++        return new SimpleLifecycleEventType<O, E>(name, getPluginMeta);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/SimpleLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/SimpleLifecycleEventType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4faf858cc731558728271f2637f22b0bedeb600d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/SimpleLifecycleEventType.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.plugin.lifecycle.event;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.lifecycle.LifecycleEvent;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Function;
++
++public class SimpleLifecycleEventType<O extends LifecycleEventOwner<O>, E extends LifecycleEvent> extends LifecycleEventType<O, E> {
++
++    final String name;
++    final List<RegisteredHandler<O, E>> handlers = new ArrayList<>();
++    private final Function<? super O, ? extends PluginMeta> getPluginMeta;
++
++    protected SimpleLifecycleEventType(final String name, final Function<? super O, ? extends PluginMeta> getPluginMeta) {
++        this.name = name;
++        this.getPluginMeta = getPluginMeta;
++    }
++
++    @Override
++    void add(final O owner, final LifecycleEventHandler<? super E> lifecycleEventHandler) {
++        this.handlers.add(new RegisteredHandler<>(owner, lifecycleEventHandler));
++    }
++
++    PluginMeta getPluginMeta(final O owner) {
++        return this.getPluginMeta.apply(owner);
++    }
++
++    record RegisteredHandler<O, E extends LifecycleEvent>(O owner, LifecycleEventHandler<? super E> lifecycleEventHandler) {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/package-info.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..da506a24a1c22f41a844d6b113751128e19b67fb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.plugin.lifecycle.event;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEventImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/ReloadableRegistrarEventImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2983f4135cad909901a665573776fbc330704891
@@ -82,6 +151,17 @@ index 0000000000000000000000000000000000000000..41c23d28f97af4ad8124783f8b41a9f4
 +
 +public record StaticRegistrarEventImpl<R extends ResourceRegistrar>(R registrar) implements RegistrarEvent<R> {
 +}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/package-info.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..624d3aa3c81f15c10eb3115a2bc7c316b254df91
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/registrar/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.plugin.lifecycle.event.registrar;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/package-info.java b/src/main/java/io/papermc/paper/plugin/lifecycle/package-info.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..7b6d67d8dd53af3aa9add193035d72f0ec3eee3e
@@ -140,7 +220,7 @@ index dae36c6452ccd57a436dd918547b64d59957ab0a..7ab5397a7696989d7ef03eec346ea534
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..843aae6790834a43d5e16eab9db52dde55c78728 100644
+index 435f5ee3388f5da93df938c43ea2578f7d586407..383fe5696e066a4993e357eb2286de1a74fde5a3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -635,6 +635,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -159,3 +239,10 @@ index 3238cbcba567b1242c77e41f6b6f19a8d157fb4e..843aae6790834a43d5e16eab9db52dde
              new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - fire after everything has been reloaded
          }, this);
  
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.plugin.lifecycle.event.LifecycleEventTypeProvider b/src/main/resources/META-INF/services/io.papermc.paper.plugin.lifecycle.event.LifecycleEventTypeProvider
+new file mode 100644
+index 0000000000000000000000000000000000000000..c647fd9cef4f82b6ef17a942c208cc37bf5e99c2
+--- /dev/null
++++ b/src/main/resources/META-INF/services/io.papermc.paper.plugin.lifecycle.event.LifecycleEventTypeProvider
+@@ -0,0 +1 @@
++io.papermc.paper.plugin.lifecycle.event.LifecycleEventTypeProviderImpl
