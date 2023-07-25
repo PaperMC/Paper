@@ -4144,6 +4144,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return true;
 +    }
 +
++    public boolean canRemoveEntity(final Entity entity) {
++        if (entity.updatingSectionStatus) {
++            return false;
++        }
++
++        final int sectionX = entity.sectionX;
++        final int sectionZ = entity.sectionZ;
++        final ChunkEntitySlices slices = this.getChunk(sectionX, sectionZ);
++        return slices == null || !slices.isPreventingStatusUpdates();
++    }
++
 +    private void removeEntity(final Entity entity) {
 +        final int sectionX = entity.sectionX;
 +        final int sectionY = entity.sectionY;
@@ -4157,6 +4168,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (slices == null) {
 +            LOGGER.warn("Cannot remove entity " + entity + " from null entity slices (" + sectionX + "," + sectionZ + ")");
 +        } else {
++            if (slices.isPreventingStatusUpdates()) {
++                throw new IllegalStateException("Attempting to remove entity " + entity + " from entity slices (" + sectionX + "," + sectionZ + ") that is receiving status updates");
++            }
 +            if (!slices.removeEntity(entity, sectionY)) {
 +                LOGGER.warn("Failed to remove entity " + entity + " from entity slices (" + sectionX + "," + sectionZ + ")");
 +            }
@@ -16307,6 +16321,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return ret;
 +    }
 +
++    public boolean isPreventingStatusUpdates() {
++        return this.preventStatusUpdates;
++    }
++
 +    public void stopPreventingStatusUpdates(final boolean prev) {
 +        this.preventStatusUpdates = prev;
 +    }
@@ -20748,8 +20766,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final void setRemoved(Entity.RemovalReason reason) {
 +        // Paper start - rewrite chunk system
 +        io.papermc.paper.util.TickThread.ensureTickThread(this, "Cannot remove entity off-main");
-+        if (this.updatingSectionStatus) {
-+            LOGGER.warn("Entity " + this + " is currently prevented from being added/removed to world since it is processing section status updates", new Throwable());
++        if (!((ServerLevel)this.level).getEntityLookup().canRemoveEntity(this)) {
++            LOGGER.warn("Entity " + this + " is currently prevented from being removed from the world since it is processing section status updates", new Throwable());
 +            return;
 +        }
 +        // Paper end - rewrite chunk system
