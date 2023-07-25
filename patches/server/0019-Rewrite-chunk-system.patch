@@ -3742,10 +3742,10 @@ index 0000000000000000000000000000000000000000..924539d4ac50c70178ba220424ffacd6
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..41791c7331c80d496cde4e3d1846a178bef0bbe3
+index 0000000000000000000000000000000000000000..ff7198a03ab0da79c98513f4a1507e854484f4c2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/entity/EntityLookup.java
-@@ -0,0 +1,845 @@
+@@ -0,0 +1,859 @@
 +package io.papermc.paper.chunk.system.entity;
 +
 +import com.destroystokyo.paper.util.maplist.EntityList;
@@ -4144,6 +4144,17 @@ index 0000000000000000000000000000000000000000..41791c7331c80d496cde4e3d1846a178
 +        return true;
 +    }
 +
++    public boolean canRemoveEntity(final Entity entity) {
++        if (entity.updatingSectionStatus) {
++            return false;
++        }
++
++        final int sectionX = entity.sectionX;
++        final int sectionZ = entity.sectionZ;
++        final ChunkEntitySlices slices = this.getChunk(sectionX, sectionZ);
++        return slices == null || !slices.isPreventingStatusUpdates();
++    }
++
 +    private void removeEntity(final Entity entity) {
 +        final int sectionX = entity.sectionX;
 +        final int sectionY = entity.sectionY;
@@ -4157,6 +4168,9 @@ index 0000000000000000000000000000000000000000..41791c7331c80d496cde4e3d1846a178
 +        if (slices == null) {
 +            LOGGER.warn("Cannot remove entity " + entity + " from null entity slices (" + sectionX + "," + sectionZ + ")");
 +        } else {
++            if (slices.isPreventingStatusUpdates()) {
++                throw new IllegalStateException("Attempting to remove entity " + entity + " from entity slices (" + sectionX + "," + sectionZ + ") that is receiving status updates");
++            }
 +            if (!slices.removeEntity(entity, sectionY)) {
 +                LOGGER.warn("Failed to remove entity " + entity + " from entity slices (" + sectionX + "," + sectionZ + ")");
 +            }
@@ -16125,10 +16139,10 @@ index d59885ee9c8b29d5bac34dce0597e345e5358c77..f9063e2282f89e97a378f06822cde0a6
  }
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ce449b7b6f615f2c8240e4207f06d4e54ae0083e
+index 0000000000000000000000000000000000000000..7e8dc9e8f381abfdcce2746edc93122d623622d1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
-@@ -0,0 +1,602 @@
+@@ -0,0 +1,606 @@
 +package io.papermc.paper.world;
 +
 +import com.destroystokyo.paper.util.maplist.EntityList;
@@ -16305,6 +16319,10 @@ index 0000000000000000000000000000000000000000..ce449b7b6f615f2c8240e4207f06d4e5
 +        final boolean ret = this.preventStatusUpdates;
 +        this.preventStatusUpdates = true;
 +        return ret;
++    }
++
++    public boolean isPreventingStatusUpdates() {
++        return this.preventStatusUpdates;
 +    }
 +
 +    public void stopPreventingStatusUpdates(final boolean prev) {
@@ -20636,7 +20654,7 @@ index 12e72ad737b1219fcdf88d344d41621d9fd5feec..e0bfeebeaac1aaea64bc07cdfdf7790e
                          if (flag1) {
                              ++this.converted;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index bbc5ef297b740ab769e8c030e5af6f573259d953..88a84f453c38040933071ea61debcbb196ef10cf 100644
+index bbc5ef297b740ab769e8c030e5af6f573259d953..17841455d5afd60eca367591b06e22f69ee23ae4 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -327,6 +327,58 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
@@ -20748,8 +20766,8 @@ index bbc5ef297b740ab769e8c030e5af6f573259d953..88a84f453c38040933071ea61debcbb1
      public final void setRemoved(Entity.RemovalReason reason) {
 +        // Paper start - rewrite chunk system
 +        io.papermc.paper.util.TickThread.ensureTickThread(this, "Cannot remove entity off-main");
-+        if (this.updatingSectionStatus) {
-+            LOGGER.warn("Entity " + this + " is currently prevented from being added/removed to world since it is processing section status updates", new Throwable());
++        if (!((ServerLevel)this.level).getEntityLookup().canRemoveEntity(this)) {
++            LOGGER.warn("Entity " + this + " is currently prevented from being removed from the world since it is processing section status updates", new Throwable());
 +            return;
 +        }
 +        // Paper end - rewrite chunk system
