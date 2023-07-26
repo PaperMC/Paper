@@ -4,24 +4,67 @@ Date: Mon, 12 Jun 2023 12:56:46 -0400
 Subject: [PATCH] Add event for player editing sign
 
 
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack {
+                         try {
+                             if (world.getBlockEntity(SignItem.openSign) instanceof SignBlockEntity tileentitysign) {
+                                 if (world.getBlockState(SignItem.openSign).getBlock() instanceof SignBlock blocksign) {
+-                                    blocksign.openTextEdit(entityhuman, tileentitysign, true);
++                                    blocksign.openTextEdit(entityhuman, tileentitysign, true, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLACE); // Paper
+                                 }
+                             }
+                         } finally {
 diff --git a/src/main/java/net/minecraft/world/level/block/SignBlock.java b/src/main/java/net/minecraft/world/level/block/SignBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/SignBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/SignBlock.java
 @@ -0,0 +0,0 @@ public abstract class SignBlock extends BaseEntityBlock implements SimpleWaterlo
+                 } else if (bl3) {
+                     return InteractionResult.SUCCESS;
+                 } else if (!this.otherPlayerIsEditingSign(player, signBlockEntity) && player.mayBuild() && this.hasEditableText(player, signBlockEntity, bl2)) {
+-                    this.openTextEdit(player, signBlockEntity, bl2);
++                    this.openTextEdit(player, signBlockEntity, bl2, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.INTERACT); // Paper
+                     return InteractionResult.SUCCESS;
+                 } else {
+                     return InteractionResult.PASS;
+@@ -0,0 +0,0 @@ public abstract class SignBlock extends BaseEntityBlock implements SimpleWaterlo
+         return woodType;
      }
  
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
      public void openTextEdit(Player player, SignBlockEntity blockEntity, boolean front) {
 +        // Paper start
++        this.openTextEdit(player, blockEntity, front, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.UNKNOWN);
++    }
++    public void openTextEdit(Player player, SignBlockEntity blockEntity, boolean front, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause cause) {
 +        org.bukkit.entity.Player bukkitPlayer = (org.bukkit.entity.Player) player.getBukkitEntity();
 +        org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(blockEntity.getLevel(), blockEntity.getBlockPos());
 +        org.bukkit.craftbukkit.block.CraftSign<?> bukkitSign = (org.bukkit.craftbukkit.block.CraftSign<?>) org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(bukkitBlock);
 +        io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PlayerOpenSignEvent(
 +            bukkitPlayer,
 +            bukkitSign,
-+            front ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK);
++            front ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK,
++            cause);
 +        if (!event.callEvent()) return;
 +        // Paper end
          blockEntity.setAllowedPlayerEditor(player.getUUID());
          player.openTextEdit(blockEntity, front);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
+@@ -0,0 +0,0 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
+ 
+         SignBlockEntity handle = ((CraftSign<?>) sign).getTileEntity();
+ 
++        // Paper start
++        io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PlayerOpenSignEvent((Player) player, sign, side, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLUGIN);
++        if (!event.callEvent()) return;
++        // Paper end
+         handle.setAllowedPlayerEditor(player.getUniqueId()); // Paper
+         ((org.bukkit.craftbukkit.entity.CraftHumanEntity) player).getHandle().openTextEdit(handle, Side.FRONT == side); // Paper - change move open sign to HumanEntity
      }
