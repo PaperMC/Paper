@@ -5,24 +5,18 @@ Subject: [PATCH] Implement PlayerFailMoveEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..e17fea7e89e22bb5e9e3f350be4ec964cadea5cf 100644
+index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..c6521916145fce15342570fb415c4d052d09b261 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1471,8 +1471,20 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1471,8 +1471,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                              }
                              // Paper start - Prevent moving into unloaded chunks
                              if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position())))) {
 -                                this.internalTeleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot(), Collections.emptySet());
 -                                return;
 +                                // Paper start - Add fail move event
-+                                Player player = this.getCraftPlayer();
-+                                Location from = player.getLocation().clone();
-+                                Location to = new Location(player.getWorld(), toX, toY, toZ, f, f1);
-+                                io.papermc.paper.event.player.PlayerFailMoveEvent event = new io.papermc.paper.event.player.PlayerFailMoveEvent(player,
-+                                    io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_INTO_UNLOADED_CHUNK,
-+                                    false, false, from, to);
-+                                event.callEvent();
-+
++                                var event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_INTO_UNLOADED_CHUNK,
++                                    toX, toY, toZ, f, f1, false);
 +                                if (!event.isAllowed()) {
 +                                    this.internalTeleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot(), Collections.emptySet());
 +                                    return;
@@ -31,7 +25,7 @@ index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..e17fea7e89e22bb5e9e3f350be4ec964
                              }
                              // Paper end
  
-@@ -1481,9 +1493,23 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1481,9 +1487,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
                                  if (d10 - d9 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
                                  // CraftBukkit end
@@ -39,14 +33,8 @@ index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..e17fea7e89e22bb5e9e3f350be4ec964
 -                                    this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
 -                                    return;
 +                                    // Paper start - Add fail move event
-+                                    Player player = this.getCraftPlayer();
-+                                    Location from = player.getLocation().clone();
-+                                    Location to = new Location(player.getWorld(), toX, toY, toZ, f, f1);
-+                                    io.papermc.paper.event.player.PlayerFailMoveEvent event = new io.papermc.paper.event.player.PlayerFailMoveEvent(player,
-+                                        io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
-+                                        false, true, from, to);
-+                                    event.callEvent();
-+
++                                    var event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
++                                        toX, toY, toZ, f, f1, true);
 +                                    if (!event.isAllowed()) {
 +                                        if (event.getLogWarning()) {
 +                                            ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d6, d7, d8});
@@ -58,21 +46,15 @@ index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..e17fea7e89e22bb5e9e3f350be4ec964
                                  }
                              }
  
-@@ -1548,8 +1574,22 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1548,8 +1562,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                              boolean flag2 = false;
  
                              if (!this.player.isChangingDimension() && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot
 -                                flag2 = true; // Paper - diff on change, this should be moved wrongly
 -                                ServerGamePacketListenerImpl.LOGGER.warn("{} moved wrongly!", this.player.getName().getString());
 +                                // Paper start - Add fail move event
-+                                Player player = this.getCraftPlayer();
-+                                Location from = new Location(player.getWorld(), this.lastPosX, this.lastPosY, this.lastPosZ, this.lastYaw, this.lastPitch);
-+                                Location to = new Location(player.getWorld(), toX, toY, toZ, f, f1);
-+                                io.papermc.paper.event.player.PlayerFailMoveEvent event = new io.papermc.paper.event.player.PlayerFailMoveEvent(player,
-+                                    io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_WRONGLY,
-+                                    false, true, from, to);
-+                                event.callEvent();
-+
++                                var event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_WRONGLY,
++                                    toX, toY, toZ, f, f1, true);
 +                                if (!event.isAllowed()) {
 +                                    flag2 = true; // Paper - diff on change, this should be moved wrongly
 +                                    if (event.getLogWarning()) {
@@ -83,20 +65,14 @@ index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..e17fea7e89e22bb5e9e3f350be4ec964
                              }
  
                              // Paper start - optimise out extra getCubes
-@@ -1562,6 +1602,21 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1562,6 +1584,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                                  if (didCollide || !axisalignedbb.equals(newBox)) {
                                      // note: only call after setLocation, or else getBoundingBox is wrong
                                      teleportBack = this.hasNewCollision(worldserver, this.player, axisalignedbb, newBox);
 +                                    // Paper start - Add fail move event
 +                                    if (teleportBack) {
-+                                        Player player = this.getCraftPlayer();
-+                                        Location from = new Location(player.getWorld(), this.lastPosX, this.lastPosY, this.lastPosZ, this.lastYaw, this.lastPitch);
-+                                        Location to = new Location(player.getWorld(), toX, toY, toZ, f, f1);
-+                                        io.papermc.paper.event.player.PlayerFailMoveEvent event = new io.papermc.paper.event.player.PlayerFailMoveEvent(player,
-+                                            io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
-+                                            false, false, from, to);
-+                                        event.callEvent();
-+
++                                        var event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
++                                            toX, toY, toZ, f, f1, false);
 +                                        if (event.isAllowed()) {
 +                                            teleportBack = false;
 +                                        }
@@ -105,3 +81,22 @@ index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..e17fea7e89e22bb5e9e3f350be4ec964
                                  } // else: no collision at all detected, why do we care?
                              }
                              if (!this.player.noPhysics && !this.player.isSleeping() && teleportBack) { // Paper end - optimise out extra getCubes
+@@ -1650,6 +1681,18 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+         }
+     }
+ 
++    // Paper start - Add fail move event
++    private io.papermc.paper.event.player.PlayerFailMoveEvent fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason failReason,
++               double toX, double toY, double toZ, float toYaw, float toPitch, boolean logWarning) {
++        Player player = this.getCraftPlayer();
++        Location from = new Location(player.getWorld(), this.lastPosX, this.lastPosY, this.lastPosZ, this.lastYaw, this.lastPitch);
++        Location to = new Location(player.getWorld(), toX, toY, toZ, toYaw, toPitch);
++        var event = new io.papermc.paper.event.player.PlayerFailMoveEvent(player, failReason,
++            false, logWarning, from, to);
++        event.callEvent();
++        return event;
++    }
++    // Paper end
+     // Paper start - optimise out extra getCubes
+     private boolean hasNewCollision(final ServerLevel world, final Entity entity, final AABB oldBox, final AABB newBox) {
+         final List<AABB> collisions = io.papermc.paper.util.CachedLists.getTempCollisionList();
