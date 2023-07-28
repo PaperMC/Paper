@@ -15,6 +15,14 @@ public class CraftEffect {
     public static <T> int getDataValue(Effect effect, T data) {
         int datavalue;
         switch (effect) {
+        // Paper start - add missing effects
+        case PARTICLES_SCULK_CHARGE:
+        case TRIAL_SPAWNER_DETECT_PLAYER:
+        case BEE_GROWTH:
+        case TURTLE_EGG_PLACEMENT:
+        case SMASH_ATTACK:
+        case TRIAL_SPAWNER_DETECT_PLAYER_OMINOUS:
+        // Paper end - add missing effects
         case VILLAGER_PLANT_GROW:
             datavalue = (Integer) data;
             break;
@@ -26,6 +34,13 @@ public class CraftEffect {
             Preconditions.checkArgument(data == Material.AIR || ((Material) data).isRecord(), "Invalid record type for Material %s!", data);
             datavalue = Item.getId(CraftItemType.bukkitToMinecraft((Material) data));
             break;
+        // Paper start - handle shoot white smoke event
+        case SHOOT_WHITE_SMOKE:
+            final BlockFace face = (BlockFace) data;
+            Preconditions.checkArgument(face.isCartesian(), face + " isn't cartesian");
+            datavalue = org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(face).get3DDataValue();
+            break;
+        // Paper end - handle shoot white smoke event
         case SMOKE:
             switch ((BlockFace) data) {
             case DOWN:
@@ -57,10 +72,25 @@ public class CraftEffect {
             }
             break;
         case STEP_SOUND:
+            if (data instanceof Material) { // Paper - support BlockData
             Preconditions.checkArgument(((Material) data).isBlock(), "Material %s is not a block!", data);
             datavalue = Block.getId(CraftBlockType.bukkitToMinecraft((Material) data).defaultBlockState());
+            // Paper start - support BlockData
+                break;
+            }
+        case PARTICLES_AND_SOUND_BRUSH_BLOCK_COMPLETE:
+            datavalue = Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) data).getState());
+            // Paper end
             break;
         case COMPOSTER_FILL_ATTEMPT:
+        // Paper start - add missing effects
+        case TRIAL_SPAWNER_SPAWN:
+        case TRIAL_SPAWNER_SPAWN_MOB_AT:
+        case VAULT_ACTIVATE:
+        case VAULT_DEACTIVATE:
+        case TRIAL_SPAWNER_BECOME_OMINOUS:
+        case TRIAL_SPAWNER_SPAWN_ITEM:
+        // Paper end - add missing effects
             datavalue = ((Boolean) data) ? 1 : 0;
             break;
         case BONE_MEAL_USE:
