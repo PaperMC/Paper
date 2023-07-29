@@ -83,29 +83,33 @@
      public static ItemStack of(NBTTagCompound nbttagcompound) {
          try {
              return new ItemStack(nbttagcompound);
-@@ -237,12 +292,187 @@
-         if (entityhuman != null && !entityhuman.getAbilities().mayBuild && !this.hasAdventureModePlaceTagForBlock(itemactioncontext.getLevel().registryAccess().registryOrThrow(Registries.BLOCK), shapedetectorblock)) {
+@@ -238,11 +293,190 @@
              return EnumInteractionResult.PASS;
          } else {
+             Item item = this.getItem();
+-            EnumInteractionResult enuminteractionresult = item.useOn(itemactioncontext);
 +            // CraftBukkit start - handle all block place event logic here
 +            NBTTagCompound oldData = this.getTagClone();
 +            int oldCount = this.getCount();
 +            WorldServer world = (WorldServer) itemactioncontext.getLevel();
 +
-+            if (!(this.getItem() instanceof ItemBucket || this.getItem() instanceof SolidBucketItem)) { // if not bucket
++            if (!(item instanceof ItemBucket || item instanceof SolidBucketItem)) { // if not bucket
 +                world.captureBlockStates = true;
 +                // special case bonemeal
-+                if (this.getItem() == Items.BONE_MEAL) {
++                if (item == Items.BONE_MEAL) {
 +                    world.captureTreeGeneration = true;
 +                }
 +            }
-             Item item = this.getItem();
-             EnumInteractionResult enuminteractionresult = item.useOn(itemactioncontext);
++            EnumInteractionResult enuminteractionresult;
++            try {
++                enuminteractionresult = item.useOn(itemactioncontext);
++            } finally {
++                world.captureBlockStates = false;
++            }
 +            NBTTagCompound newData = this.getTagClone();
 +            int newCount = this.getCount();
 +            this.setCount(oldCount);
 +            this.setTagClone(oldData);
-+            world.captureBlockStates = false;
 +            if (enuminteractionresult.consumesAction() && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
 +                world.captureTreeGeneration = false;
 +                Location location = CraftLocation.toBukkit(blockposition, world.getWorld());
@@ -272,7 +276,7 @@
  
              return enuminteractionresult;
          }
-@@ -323,6 +553,21 @@
+@@ -323,6 +557,21 @@
                  }
  
                  i -= k;
@@ -294,7 +298,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -344,6 +589,11 @@
+@@ -344,6 +593,11 @@
                  if (this.hurt(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -306,7 +310,7 @@
  
                      this.shrink(1);
                      if (t0 instanceof EntityHuman) {
-@@ -492,6 +742,17 @@
+@@ -492,6 +746,17 @@
          return this.tag;
      }
  
@@ -324,7 +328,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -862,6 +1123,12 @@
+@@ -862,6 +1127,12 @@
      }
  
      public void setRepairCost(int i) {
@@ -337,7 +341,7 @@
          this.getOrCreateTag().putInt("RepairCost", i);
      }
  
-@@ -911,6 +1178,13 @@
+@@ -911,6 +1182,13 @@
          nbttaglist.add(nbttagcompound);
      }
  
