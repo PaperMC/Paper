@@ -253,6 +253,7 @@ public final class CraftEntityTypes {
         Vector direction = spawnData.location().getDirection();
         entity.assignDirectionalMovement(new Vec3(direction.getX(), direction.getY(), direction.getZ()), 1.0);
     };
+    private static final BiConsumer<SpawnData, net.minecraft.world.entity.Entity> ROT = (spawnData, entity) -> entity.setRot(spawnData.yaw(), spawnData.pitch()); // Paper
     private static final Map<Class<?>, EntityTypeData<?, ?>> CLASS_TYPE_DATA = new HashMap<>();
     private static final Map<EntityType, EntityTypeData<?, ?>> ENTITY_TYPE_DATA = new HashMap<>();
 
@@ -413,10 +414,10 @@ public final class CraftEntityTypes {
 
         // Set pos
         register(new EntityTypeData<>(EntityType.MARKER, Marker.class, CraftMarker::new, createAndSetPos(net.minecraft.world.entity.EntityType.MARKER)));
-        register(new EntityTypeData<>(EntityType.BLOCK_DISPLAY, BlockDisplay.class, CraftBlockDisplay::new, createAndSetPos(net.minecraft.world.entity.EntityType.BLOCK_DISPLAY)));
+        register(new EntityTypeData<>(EntityType.BLOCK_DISPLAY, BlockDisplay.class, CraftBlockDisplay::new, combine(createAndSetPos(net.minecraft.world.entity.EntityType.BLOCK_DISPLAY), ROT))); // Paper
         register(new EntityTypeData<>(EntityType.INTERACTION, Interaction.class, CraftInteraction::new, createAndSetPos(net.minecraft.world.entity.EntityType.INTERACTION)));
-        register(new EntityTypeData<>(EntityType.ITEM_DISPLAY, ItemDisplay.class, CraftItemDisplay::new, createAndSetPos(net.minecraft.world.entity.EntityType.ITEM_DISPLAY)));
-        register(new EntityTypeData<>(EntityType.TEXT_DISPLAY, TextDisplay.class, CraftTextDisplay::new, createAndSetPos(net.minecraft.world.entity.EntityType.TEXT_DISPLAY)));
+        register(new EntityTypeData<>(EntityType.ITEM_DISPLAY, ItemDisplay.class, CraftItemDisplay::new, combine(createAndSetPos(net.minecraft.world.entity.EntityType.ITEM_DISPLAY), ROT))); // Paper
+        register(new EntityTypeData<>(EntityType.TEXT_DISPLAY, TextDisplay.class, CraftTextDisplay::new, combine(createAndSetPos(net.minecraft.world.entity.EntityType.TEXT_DISPLAY), ROT))); // Paper
 
         // MISC
         register(new EntityTypeData<>(EntityType.ITEM, Item.class, CraftItem::new, spawnData -> {
