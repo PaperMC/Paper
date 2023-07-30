@@ -154,6 +154,7 @@ public class CraftContainer extends Container {
                 return Containers.GRINDSTONE;
             case STONECUTTER:
                 return Containers.STONECUTTER;
+            case SMITHING:
             case SMITHING_NEW:
                 return Containers.SMITHING;
             case CREATIVE:
