@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RedGaming98 <51047087+viciscat@users.noreply.github.com>
+Date: Mon, 31 Jul 2023 21:02:59 +0200
+Subject: [PATCH] Implementation of getFluid method
+
+method getBukkitFluid was added to BlockState to have it similar to
+getBukkitMaterial.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockState.java b/src/main/java/net/minecraft/world/level/block/state/BlockState.java
+index a9b0f5950b6f97ea4c2a1075946b92008b62c9d9..eaa088e03f1e6f4f92c6ed22f42bf01838cdb516 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockState.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockState.java
+@@ -21,6 +21,16 @@ public class BlockState extends BlockBehaviour.BlockStateBase {
+         return this.cachedMaterial;
+     }
+     // Paper end - optimise getType calls
++    // Paper start
++    org.bukkit.Fluid cachedFluid;
++
++    public final org.bukkit.Fluid getBukkitFluid() {
++        if (this.cachedFluid == null) {
++            this.cachedFluid = org.bukkit.craftbukkit.util.CraftMagicNumbers.getFluid(this.getFluidState().getType());
++        }
++        return this.cachedFluid;
++    }
++    // Paper end
+     public BlockState(Block block, ImmutableMap<Property<?>, Comparable<?>> propertyMap, MapCodec<BlockState> codec) {
+         super(block, propertyMap, codec);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index 5401ab9f8f6ce12e1c5368dbc3acc78a250b3822..9ab42880fae58601f57959ed91bb8faea9eb160d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -28,14 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+-import org.bukkit.Bukkit;
+-import org.bukkit.Chunk;
+-import org.bukkit.FluidCollisionMode;
+-import org.bukkit.Location;
+-import org.bukkit.Material;
+-import org.bukkit.Registry;
+-import org.bukkit.TreeType;
+-import org.bukkit.World;
++import org.bukkit.*;
+ import org.bukkit.block.Biome;
+ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+@@ -64,6 +57,7 @@ import org.bukkit.util.BlockVector;
+ import org.bukkit.util.BoundingBox;
+ import org.bukkit.util.RayTraceResult;
+ import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
+ 
+ public class CraftBlock implements Block {
+     private final net.minecraft.world.level.LevelAccessor world;
+@@ -227,6 +221,13 @@ public class CraftBlock implements Block {
+         return this.world.getBlockState(this.position).getBukkitMaterial(); // Paper - optimise getType calls
+     }
+ 
++    // Paper start
++    @Override
++    public @NotNull Fluid getFluid() {
++        return this.world.getBlockState(this.position).getBukkitFluid();
++    }
++    // Paper end
++
+     @Override
+     public byte getLightLevel() {
+         return (byte) this.world.getMinecraftWorld().getMaxLocalRawBrightness(position);
