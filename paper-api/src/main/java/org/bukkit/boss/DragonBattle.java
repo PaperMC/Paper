@@ -1,6 +1,8 @@
 package org.bukkit.boss;
 
+import java.util.Collection;
 import org.bukkit.Location;
+import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.EnderDragon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +14,7 @@ public interface DragonBattle {
 
     /**
      * Get the {@link EnderDragon} active in this battle.
-     *
+     * <br>
      * Will return null if the dragon has been slain.
      *
      * @return the ender dragon. null if dead
@@ -30,7 +32,7 @@ public interface DragonBattle {
 
     /**
      * Get the location of the end portal.
-     *
+     * <br>
      * This location will be at the center of the base (bottom) of the portal.
      *
      * @return the end portal location or null if not generated
@@ -41,24 +43,36 @@ public interface DragonBattle {
     /**
      * Generate the end portal.
      *
-     * @param withPortals whether or not end portal blocks should be generated
+     * @param withPortals whether end portal blocks should be generated
      *
      * @return true if generated, false if already present
      */
     public boolean generateEndPortal(boolean withPortals);
 
     /**
-     * Check whether or not the first dragon has been killed already.
+     * Check whether the first dragon has been killed already.
      *
      * @return true if killed before, false otherwise
      */
     public boolean hasBeenPreviouslyKilled();
 
     /**
-     * Initiate a respawn sequence to summon the dragon as though a player has
+     * Try to initiate a respawn sequence to summon the dragon as though a player has
      * placed 4 end crystals on the portal.
      */
     public void initiateRespawn();
+
+    /**
+     * Try to initiate a respawn sequence to summon the dragon.
+     *
+     * @param enderCrystals the {@link EnderCrystal EnderCrystals} to use in the
+     * respawn, or a null or empty list to render the respawn sequence
+     * uncancellable. null entries or crystals that do not reside in the same
+     * world as this dragon battle will be ignored.
+     *
+     * @return true if the respawn was initiated, false otherwise.
+     */
+    public boolean initiateRespawn(@Nullable Collection<EnderCrystal> enderCrystals);
 
     /**
      * Get this battle's current respawn phase.
@@ -70,7 +84,7 @@ public interface DragonBattle {
 
     /**
      * Set the dragon's respawn phase.
-     *
+     * <br>
      * This method will is unsuccessful if a dragon respawn is not in progress.
      *
      * @param phase the phase to set
