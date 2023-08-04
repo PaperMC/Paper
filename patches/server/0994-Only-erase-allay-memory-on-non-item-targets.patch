@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Fri, 4 Aug 2023 15:53:36 +0200
+Subject: [PATCH] Only erase allay memory on non-item targets
+
+Spigot incorrectly instanceOf checks the EntityTargetEvent#getTarget
+against the internal ItemEntity type and removes the nearest wanted item
+memory if said instanceOf check fails, (which is always the case)
+causing allays to behave differently as they constantly loose their
+target item.
+
+This commit fixes the faulty behaviour by instance performing a check
+against the CraftItem type.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GoToWantedItem.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GoToWantedItem.java
+index bd9aa4a5443da862be3403c1941113373741a87c..cdd8a4bb43054063fc14d3d8c82c75e80f2cfc13 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/GoToWantedItem.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GoToWantedItem.java
+@@ -35,11 +35,15 @@ public class GoToWantedItem {
+                             if (event.isCancelled()) {
+                                 return false;
+                             }
+-                            if (!(event.getTarget() instanceof ItemEntity)) {
++                            // Paper start - only erase allay memory on non-item targets
++                            final org.bukkit.entity.Entity target = event.getTarget();
++                            if (!(target instanceof final org.bukkit.craftbukkit.entity.CraftItem craftTarget)) {
+                                 memoryaccessor2.erase();
++                                return false;
+                             }
+ 
+-                            entityitem = (ItemEntity) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();
++                            entityitem = (ItemEntity) craftTarget.getHandle();
++                            // Paper end - only erase allay memory on non-item targets
+                         }
+                         // CraftBukkit end
+                         WalkTarget memorytarget = new WalkTarget(new EntityTracker(entityitem, false), speed, 0);
