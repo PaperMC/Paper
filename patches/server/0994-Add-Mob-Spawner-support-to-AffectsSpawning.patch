@@ -5,17 +5,45 @@ Subject: [PATCH] Add Mob Spawner support to AffectsSpawning
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 18aac3da3c88f33b1a71a5920a8daa27e9723913..ceacb821d11290e6f0d8a624c910666e8a055908 100644
+index 18aac3da3c88f33b1a71a5920a8daa27e9723913..9f621fe7bd33a0d9f2d68237eebc1130f8f09f9b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -565,6 +565,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -83,13 +83,7 @@ import net.minecraft.util.valueproviders.UniformInt;
+ import net.minecraft.world.DifficultyInstance;
+ import net.minecraft.world.RandomSequences;
+ import net.minecraft.world.damagesource.DamageSource;
+-import net.minecraft.world.entity.Entity;
+-import net.minecraft.world.entity.EntityType;
+-import net.minecraft.world.entity.LightningBolt;
+-import net.minecraft.world.entity.LivingEntity;
+-import net.minecraft.world.entity.Mob;
+-import net.minecraft.world.entity.MobCategory;
+-import net.minecraft.world.entity.ReputationEventHandler;
++import net.minecraft.world.entity.*;
+ import net.minecraft.world.entity.ai.navigation.PathNavigation;
+ import net.minecraft.world.entity.ai.village.ReputationEventType;
+ import net.minecraft.world.entity.ai.village.poi.PoiManager;
+@@ -565,6 +559,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
      // Paper start - optimise checkDespawn
      public final List<ServerPlayer> playersAffectingSpawning = new java.util.ArrayList<>();
-+    public final List<ServerPlayer> playersAffectingNaturalSpawning = new java.util.ArrayList<>();
++    public final List<ServerPlayer> playersAffectingMobSpawnerSpawning = new java.util.ArrayList<>();
      // Paper end - optimise checkDespawn
      // Paper start - optimise get nearest players for entity AI
      @Override
+@@ -773,6 +768,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                 this.playersAffectingSpawning.add(player);
+             }
+         }
++        this.playersAffectingMobSpawnerSpawning.clear();
++        for (ServerPlayer player : this.players) {
++            if (net.minecraft.world.entity.EntitySelector.PLAYER_AFFECTS_MOB_SPAWNER_SPAWNING.test(player)) {
++                this.playersAffectingMobSpawnerSpawning.add(player);
++            }
++        }
+         // Paper end - optimise checkDespawn
+         ProfilerFiller gameprofilerfiller = this.getProfiler();
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 index 3ff999734d14e2b6e7828e117f5ee32a60c26bc1..430d61bd36197879b13cf592eac9e9c3b3d3025f 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
