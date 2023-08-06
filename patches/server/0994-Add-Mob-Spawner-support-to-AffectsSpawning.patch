@@ -5,7 +5,7 @@ Subject: [PATCH] Add Mob Spawner support to AffectsSpawning
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 18aac3da3c88f33b1a71a5920a8daa27e9723913..9f621fe7bd33a0d9f2d68237eebc1130f8f09f9b 100644
+index 18aac3da3c88f33b1a71a5920a8daa27e9723913..fa1bb5f4939c8bd75ce297d34ee4e79717d041e4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -83,13 +83,7 @@ import net.minecraft.util.valueproviders.UniformInt;
@@ -23,15 +23,18 @@ index 18aac3da3c88f33b1a71a5920a8daa27e9723913..9f621fe7bd33a0d9f2d68237eebc1130
  import net.minecraft.world.entity.ai.navigation.PathNavigation;
  import net.minecraft.world.entity.ai.village.ReputationEventType;
  import net.minecraft.world.entity.ai.village.poi.PoiManager;
-@@ -565,6 +559,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -565,6 +559,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
      // Paper start - optimise checkDespawn
      public final List<ServerPlayer> playersAffectingSpawning = new java.util.ArrayList<>();
 +    public final List<ServerPlayer> playersAffectingMobSpawnerSpawning = new java.util.ArrayList<>();
++    public final List<ServerPlayer> playersAffectingNaturalSpawning = new java.util.ArrayList<>();
++
++
      // Paper end - optimise checkDespawn
      // Paper start - optimise get nearest players for entity AI
      @Override
-@@ -773,6 +768,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -773,6 +771,19 @@ public class ServerLevel extends Level implements WorldGenLevel {
                  this.playersAffectingSpawning.add(player);
              }
          }
@@ -41,19 +44,30 @@ index 18aac3da3c88f33b1a71a5920a8daa27e9723913..9f621fe7bd33a0d9f2d68237eebc1130
 +                this.playersAffectingMobSpawnerSpawning.add(player);
 +            }
 +        }
++        this.playersAffectingNaturalSpawning.clear();
++        for (ServerPlayer player : this.players) {
++            if (net.minecraft.world.entity.EntitySelector.PLAYER_AFFECTS_NATURAL_SPAWNING.test(player)) {
++                this.playersAffectingNaturalSpawning.add(player);
++            }
++        }
++
          // Paper end - optimise checkDespawn
          ProfilerFiller gameprofilerfiller = this.getProfiler();
  
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index 3ff999734d14e2b6e7828e117f5ee32a60c26bc1..430d61bd36197879b13cf592eac9e9c3b3d3025f 100644
+index 3ff999734d14e2b6e7828e117f5ee32a60c26bc1..3a65c0100ac3a073ce93e91d499d78fe1359eca0 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-@@ -45,8 +45,13 @@ public final class EntitySelector {
+@@ -45,8 +45,17 @@ public final class EntitySelector {
      public static final Predicate<Entity> PLAYER_AFFECTS_SPAWNING = (entity) -> {
          return !entity.isSpectator() && entity.isAlive() && entity instanceof Player player && player.affectsSpawning;
      };
 +
 +    public static final Predicate<Entity> PLAYER_AFFECTS_MOB_SPAWNER_SPAWNING = (entity) -> {
++        return !entity.isSpectator() && entity.isAlive() && entity instanceof Player player && player.affectsSpawning;
++    };
++
++    public static final Predicate<Entity> PLAYER_AFFECTS_NATURAL_SPAWNING = (entity) -> {
 +        return !entity.isSpectator() && entity.isAlive() && entity instanceof Player player && player.affectsSpawning;
 +    };
      // Paper end
@@ -62,15 +76,42 @@ index 3ff999734d14e2b6e7828e117f5ee32a60c26bc1..430d61bd36197879b13cf592eac9e9c3
      public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
          double d4 = max * max;
  
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index 8d1f99f95a08eac98c6a03c6e534fc1997f8fe71..628d03ea8f2f49b179eab94c6dc66c60f54bcd7d 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -130,7 +130,7 @@ public class Silverfish extends Monster {
+         if (checkAnyLightMonsterSpawnRules(type, world, spawnReason, pos, random)) {
+             Player entityhuman = world.getNearestPlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, 5.0D, true);
+ 
+-            return !(entityhuman != null && !entityhuman.affectsSpawning) && entityhuman == null; // Paper - Affects Spawning API
++            return !(entityhuman != null && !entityhuman.affectsSpawning && !entityhuman.affectsNaturalSpawning && !entityhuman.affectsMobSpawnersSpawning) && entityhuman == null; // Paper - Affects Spawning API
+         } else {
+             return false;
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 3f8c1d1d3c408fc4f15c4b5680bc22c86f104a9d..11e6cee5d6fc0f87765c533973753da834af4971 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -343,7 +343,7 @@ public class Zombie extends Monster {
+ 
+                     if (NaturalSpawner.isSpawnPositionOk(entitypositiontypes_surface, this.level(), blockposition, entitytypes) && SpawnPlacements.checkSpawnRules(entitytypes, worldserver, MobSpawnType.REINFORCEMENT, blockposition, this.level().random)) {
+                         entityzombie.setPos((double) i1, (double) j1, (double) k1);
+-                        if (!this.level().hasNearbyAlivePlayerThatAffectsSpawning((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) { // Paper - Affects Spawning API
++                        if (!this.level().hasNearbyAlivePlayerThatAffectsMobSpawnerSpawning((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) { // Paper - Affects Spawning API
+                             entityzombie.setTarget(entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET, true); // CraftBukkit
+                             entityzombie.finalizeSpawn(worldserver, this.level().getCurrentDifficultyAt(entityzombie.blockPosition()), MobSpawnType.REINFORCEMENT, (SpawnGroupData) null, (CompoundTag) null);
+                             worldserver.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 58152160d609d0e9d105153aeb166a56a7955603..499623b2e724fdfd294b2f38f046f2527aa85f8f 100644
+index 58152160d609d0e9d105153aeb166a56a7955603..d871855fdd512de13b33f0eb81ecfe90af43f319 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -185,6 +185,7 @@ public abstract class Player extends LivingEntity {
+@@ -185,6 +185,8 @@ public abstract class Player extends LivingEntity {
      public float hurtDir; // Paper - protected -> public
      // Paper start
      public boolean affectsSpawning = true;
 +    public boolean affectsMobSpawnersSpawning = true;
++    public boolean affectsNaturalSpawning = true;
      public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET;
      // Paper end
  
@@ -88,51 +129,42 @@ index 633500aefd515df5dadda3802b94079f75a03fa0..72ddc1bf13c7e9599c505d3d9b9a4dbb
  
      public void clientTick(Level world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index 3b959f42d958bf0f426853aee56753d6c455fcdb..dc35c8e8bb5977485d3f06b4331e41953cf6aafb 100644
+index 3b959f42d958bf0f426853aee56753d6c455fcdb..743fc158211c60bb5ea22d8373597a3adbb87589 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
-@@ -150,6 +150,18 @@ public interface EntityGetter {
-         }
-         return false;
-     }
-+
-+    default boolean hasNearbyAlivePlayerThatAffectsMobSpawnerSpawning(double x, double y, double z, double range) {
-+        for (Player player : this.players()) {
-+            if (EntitySelector.PLAYER_AFFECTS_MOB_SPAWNER_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects mob spawner spawning" check
-+                double distanceSqr = player.distanceToSqr(x, y, z);
-+                if (range < 0.0D || distanceSqr < range * range) {
-+                    return true;
-+                }
-+            }
-+        }
-+        return false;
-+    }
-     // Paper end
- 
-     default boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index dbdeb913e228651cadf5dbd7ec98afc738c80522..8aad21384d71dedb4930453f6a9c61c66da4662c 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -2682,8 +2682,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -139,9 +139,9 @@ public interface EntityGetter {
      }
  
      // Paper start
--    public void setAffectsSpawning(boolean affects) {
-+    public void setAffectsSpawning(boolean affects, boolean affectsMobSpawners) {
-         this.getHandle().affectsSpawning = affects;
-+        this.getHandle().affectsMobSpawnersSpawning = affectsMobSpawners;
-     }
- 
-     @Override
-@@ -2691,6 +2692,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+-    default boolean hasNearbyAlivePlayerThatAffectsSpawning(double x, double y, double z, double range) {
++    default boolean hasNearbyAlivePlayerThatAffectsMobSpawnerSpawning(double x, double y, double z, double range) {
+         for (Player player : this.players()) {
+-            if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
++            if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player) || EntitySelector.PLAYER_AFFECTS_MOB_SPAWNER_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
+                 double distanceSqr = player.distanceToSqr(x, y, z);
+                 if (range < 0.0D || distanceSqr < range * range) {
+                     return true;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index dbdeb913e228651cadf5dbd7ec98afc738c80522..7d63ecea4e3d33aa626113702f73e2c1864b844a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2691,6 +2691,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().affectsSpawning;
      }
  
-+    @Override
-+    public boolean getAffectsMobSpawnerSpawning(){
-+        return this.getHandle().affectsMobSpawnersSpawning;
++    public void setAffectsNaturalSpawning(boolean affects){
++        this.getHandle().affectsNaturalSpawning = affects;
 +    }
++
++    @Override
++    public boolean getAffectsNaturalSpawning(){ return this.getHandle().affectsNaturalSpawning; }
++
++    public void setAffectsMobSpawnerSpawning(boolean affects){
++        this.getHandle().affectsMobSpawnersSpawning = affects;
++    }
++
++    @Override
++    public boolean getAffectsMobSpawnerSpawning(){ return this.getHandle().affectsMobSpawnersSpawning; }
 +
      @Override
      public void setResourcePack(@NotNull String url, @NotNull String hash) {
