@@ -11,10 +11,10 @@ Subject: [PATCH] Fix interact event not being called sometimes
 Co-authored-by: Moulberry <james.jenour@protonmail.com>
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 15e98935d333a5538438ed239fe8f4a590d4fe97..9e8f22b9c5d445afb20a467e94d54c1da3549d50 100644
+index c1636c313994dc4b3ae4c19fc66137bd080a501c..ec1d92a71518b9329e81f12bc8ccef846fefc168 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1837,7 +1837,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1839,7 +1839,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                                  MutableComponent ichatmutablecomponent = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
  
                                  this.player.sendSystemMessage(ichatmutablecomponent, true);
@@ -23,13 +23,15 @@ index 15e98935d333a5538438ed239fe8f4a590d4fe97..9e8f22b9c5d445afb20a467e94d54c1d
                                  this.player.swing(enumhand, true);
                              }
                          }
-@@ -2471,11 +2471,18 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
- 
+@@ -2468,13 +2468,20 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
          double d3 = player.gameMode.getGameModeForPlayer() == GameType.CREATIVE ? 5.0D : 4.5D;
          // SPIGOT-5607: Only call interact event if no block or entity is being clicked. Use bukkit ray trace method, because it handles blocks and entities at the same time
--        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.1, entity -> entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity));
-+        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.0, entity -> entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity)); // Paper - change raySize from 0.1 to 0.0
- 
+         // SPIGOT-7429: Make sure to call PlayerInteractEvent for spectators and non-pickable entities
+-        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.1, entity -> {
++        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.0, entity -> { // Paper - change raySize from 0.1 to 0.0
+             Entity handle = ((CraftEntity) entity).getHandle();
+             return entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity) && !handle.isSpectator() && handle.isPickable() && !handle.isPassengerOfSameVehicle(player);
+         });
          if (result == null) {
              CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
 -        }
