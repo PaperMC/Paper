@@ -13,8 +13,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 -    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source) {
-+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source) { // Paper
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
          return ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source);
+     }
+ 
+     @Override
+-    public BanEntry<PlayerProfile> ban(String reason, Instant expires, String source) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
+         return ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source);
+     }
+ 
+     @Override
+-    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
+         return ((ProfileBanList) this.server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, duration, source);
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/ban/CraftProfileBanEntry.java b/src/main/java/org/bukkit/craftbukkit/ban/CraftProfileBanEntry.java
@@ -64,7 +76,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        return this.getBanEntry(((CraftPlayerProfile) target).buildGameProfile());
 +        return this.getBanEntry(((com.destroystokyo.paper.profile.SharedPlayerProfile) target).buildGameProfile()); // Paper
 +    }
-+    // Paper start
++    // Paper start - fix ban list API
 +    @Override
 +    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> getBanEntry(final com.destroystokyo.paper.profile.PlayerProfile target) {
 +        Preconditions.checkArgument(target != null, "target cannot be null");
@@ -78,10 +90,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Preconditions.checkArgument(target.getId() != null, "The PlayerProfile UUID cannot be null");
 +
 +        return this.addBan(((com.destroystokyo.paper.profile.SharedPlayerProfile) target).buildGameProfile(), reason, expires, source);
-     }
- 
-     @Override
--    public BanEntry<PlayerProfile> addBan(String target, String reason, Date expires, String source) {
++    }
++
++    @Override
 +    public boolean isBanned(final com.destroystokyo.paper.profile.PlayerProfile target) {
 +        return this.isBanned((com.destroystokyo.paper.profile.SharedPlayerProfile) target);
 +    }
@@ -89,11 +100,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void pardon(final com.destroystokyo.paper.profile.PlayerProfile target) {
 +        this.pardon((com.destroystokyo.paper.profile.SharedPlayerProfile) target);
+     }
+ 
+     @Override
+-    public BanEntry<PlayerProfile> addBan(String target, String reason, Date expires, String source) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(final com.destroystokyo.paper.profile.PlayerProfile target, final String reason, final Instant expires, final String source) {
++        Date date = expires != null ? Date.from(expires) : null;
++        return this.addBan(target, reason, date, source);
 +    }
-+    // Paper end
 +
 +    @Override
-+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(String target, String reason, Date expires, String source) { // Paper
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(final com.destroystokyo.paper.profile.PlayerProfile target, final String reason, final Duration duration, final String source) {
++        Instant instant = duration != null ? Instant.now().plus(duration) : null;
++        return this.addBan(target, reason, instant, source);
++    }
++    // Paper end - fix ban list API
++
++    @Override
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(String target, String reason, Date expires, String source) { // Paper - fix ban list API
          Preconditions.checkArgument(target != null, "Ban target cannot be null");
  
          return this.addBan(CraftProfileBanList.getProfileByName(target), reason, expires, source);
@@ -101,7 +125,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 -    public BanEntry<PlayerProfile> addBan(PlayerProfile target, String reason, Date expires, String source) {
-+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(PlayerProfile target, String reason, Date expires, String source) { // Paper
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(PlayerProfile target, String reason, Date expires, String source) { // Paper - fix ban list API
          Preconditions.checkArgument(target != null, "PlayerProfile cannot be null");
          Preconditions.checkArgument(target.getUniqueId() != null, "The PlayerProfile UUID cannot be null");
  
@@ -110,6 +134,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
+-    public BanEntry<PlayerProfile> addBan(PlayerProfile target, String reason, Instant expires, String source) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(PlayerProfile target, String reason, Instant expires, String source) { // Paper - fix ban list API
+         Date date = expires != null ? Date.from(expires) : null;
+         return this.addBan(target, reason, date, source);
+     }
+ 
+     @Override
+-    public BanEntry<PlayerProfile> addBan(PlayerProfile target, String reason, Duration duration, String source) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(PlayerProfile target, String reason, Duration duration, String source) { // Paper - fix ban list API
+         Instant instant = duration != null ? Instant.now().plus(duration) : null;
+         return this.addBan(target, reason, instant, source);
+     }
 @@ -0,0 +0,0 @@ public class CraftProfileBanList implements ProfileBanList {
      }
  
@@ -180,18 +216,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 -    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source) {
-+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source) { // Paper
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source) { // Paper - fix ban list API
          return this.ban(reason, expires, source, true);
+     }
+ 
+     @Override
+-    public BanEntry<PlayerProfile> ban(String reason, Instant expires, String source) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant expires, String source) { // Paper - fix ban list API
+         return this.ban(reason, expires != null ? Date.from(expires) : null, source);
+     }
+ 
+     @Override
+-    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source) { // Paper - fix ban list API
+         return this.ban(reason, duration != null ? Instant.now().plus(duration) : null, source);
      }
  
      @Override
 -    public BanEntry<PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) {
 -        BanEntry<PlayerProfile> banEntry = ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source);
-+    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) { // Paper
-+        BanEntry<com.destroystokyo.paper.profile.PlayerProfile> banEntry = ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source); // Paper
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Date expires, String source, boolean kickPlayer) { // Paper - fix ban list API
++        BanEntry<com.destroystokyo.paper.profile.PlayerProfile> banEntry = ((ProfileBanList) server.getBanList(BanList.Type.PROFILE)).addBan(this.getPlayerProfile(), reason, expires, source); // Paper - fix ban list API
          if (kickPlayer) {
              this.kickPlayer(reason);
          }
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     @Override
+-    public BanEntry<PlayerProfile> ban(String reason, Instant instant, String source, boolean kickPlayer) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Instant instant, String source, boolean kickPlayer) { // Paper - fix ban list API
+         return this.ban(reason, instant != null ? Date.from(instant) : null, source, kickPlayer);
+     }
+ 
+     @Override
+-    public BanEntry<PlayerProfile> ban(String reason, Duration duration, String source, boolean kickPlayer) {
++    public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> ban(String reason, Duration duration, String source, boolean kickPlayer) { // Paper - fix ban list API
+         return this.ban(reason, duration != null ? Instant.now().plus(duration) : null, source, kickPlayer);
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java

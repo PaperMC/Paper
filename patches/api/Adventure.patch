@@ -2474,6 +2474,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       *     pack. The string must contain only US-ASCII characters and should
       *     be encoded as per RFC 1738.
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     pack correctly.
+      * </ul>
+      *
++     * @deprecated in favour of {@link #setResourcePack(String, byte[], Component, boolean)}
+      * @param url The URL from which the client will download the resource
+      *     pack. The string must contain only US-ASCII characters and should
+      *     be encoded as per RFC 1738.
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
       */
@@ -2531,14 +2539,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      /**
       * Request that the player's client download and switch resource packs.
       * <p>
-@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      *     pack correctly.
-      * </ul>
-      *
-+     * @deprecated in favour of {@link #setResourcePack(String, byte[], Component, boolean)}
-      * @param url The URL from which the client will download the resource
-      *     pack. The string must contain only US-ASCII characters and should
-      *     be encoded as per RFC 1738.
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
       *     long.
@@ -3992,11 +3992,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/inventory/ItemFactory.java
 +++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
 @@ -0,0 +0,0 @@ public interface ItemFactory {
-     @Deprecated
-     @NotNull
-     Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
+      */
+     @Nullable
+     Material getSpawnEgg(@NotNull EntityType type);
 +
-+    // Paper start
++    // Paper start - Adventure
 +    /**
 +     * Creates a hover event for the given item.
 +     *
@@ -4014,7 +4014,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @NotNull
 +    net.kyori.adventure.text.Component displayName(@NotNull ItemStack itemStack);
-+    // Paper end
++    // Paper end - Adventure
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -4621,17 +4621,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/scoreboard/Objective.java
 +++ b/src/main/java/org/bukkit/scoreboard/Objective.java
 @@ -0,0 +0,0 @@ public interface Objective {
-      */
      @NotNull
-     String getName() throws IllegalStateException;
-+    // Paper start
+     String getName();
+ 
++    // Paper start - Adventure
 +    /**
-+     * Gets the name displayed to players for this objective
++     * Gets the display name for this objective
 +     *
 +     * @return this objective's display name
 +     * @throws IllegalStateException if this objective has been unregistered
 +     */
-+    net.kyori.adventure.text.@NotNull Component displayName() throws IllegalStateException;
++    net.kyori.adventure.text.@NotNull Component displayName();
 +    /**
 +     * Sets the name displayed to players for this objective.
 +     *
@@ -4641,9 +4641,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @throws IllegalArgumentException if displayName is longer than 128
 +     *     characters.
 +     */
-+    void displayName(net.kyori.adventure.text.@Nullable Component displayName) throws IllegalStateException, IllegalArgumentException;
-+    // Paper end
- 
++    void displayName(net.kyori.adventure.text.@Nullable Component displayName);
++    // Paper end - Adventure
++
      /**
       * Gets the name displayed to players for this objective
       *
@@ -4653,17 +4653,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      @NotNull
 +    @Deprecated // Paper
-     String getDisplayName() throws IllegalStateException;
+     String getDisplayName();
  
      /**
 @@ -0,0 +0,0 @@ public interface Objective {
-      * @throws IllegalArgumentException if displayName is null
-      * @throws IllegalArgumentException if displayName is longer than 128
-      *     characters.
+      *
+      * @param displayName Display name to set
+      * @throws IllegalStateException if this objective has been unregistered
 +     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
       */
 +    @Deprecated // Paper
-     void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
+     void setDisplayName(@NotNull String displayName);
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Scoreboard.java b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
@@ -4671,23 +4671,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/scoreboard/Scoreboard.java
 +++ b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
 @@ -0,0 +0,0 @@ public interface Scoreboard {
-     @Deprecated
      @NotNull
-     Objective registerNewObjective(@NotNull String name, @NotNull String criteria) throws IllegalArgumentException;
-+    // Paper start
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria);
+ 
++    // Paper start - Adventure
 +    /**
 +     * Registers an Objective on this Scoreboard
 +     *
 +     * @param name Name of the Objective
 +     * @param criteria Criteria for the Objective
-+     * @param displayName Name displayed to players for the Objective.
++     * @param displayName display name for the Objective.
 +     * @return The registered Objective
-+     * @throws IllegalArgumentException if name is null
 +     * @throws IllegalArgumentException if name is longer than 32767
-+     *     characters.
-+     * @throws IllegalArgumentException if criteria is null
-+     * @throws IllegalArgumentException if displayName is null
-+     * @throws IllegalArgumentException if displayName is longer than 128
 +     *     characters.
 +     * @throws IllegalArgumentException if an objective by that name already
 +     *     exists
@@ -4695,7 +4690,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @NotNull
 +    @Deprecated
-+    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, net.kyori.adventure.text.@Nullable Component displayName) throws IllegalArgumentException;
++    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, net.kyori.adventure.text.@Nullable Component displayName);
 +    /**
 +     * Registers an Objective on this Scoreboard
 +     *
@@ -4704,14 +4699,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param displayName Name displayed to players for the Objective.
 +     * @param renderType Manner of rendering the Objective
 +     * @return The registered Objective
-+     * @throws IllegalArgumentException if name is null
 +     * @throws IllegalArgumentException if name is longer than 32767
 +     *     characters.
-+     * @throws IllegalArgumentException if criteria is null
-+     * @throws IllegalArgumentException if displayName is null
-+     * @throws IllegalArgumentException if displayName is longer than 128
-+     *     characters.
-+     * @throws IllegalArgumentException if renderType is null
 +     * @throws IllegalArgumentException if an objective by that name already
 +     *     exists
 +     * @deprecated use {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component, RenderType)}
@@ -4726,12 +4715,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param criteria Criteria for the Objective
 +     * @param displayName Name displayed to players for the Objective.
 +     * @return The registered Objective
-+     * @throws IllegalArgumentException if name is null
 +     * @throws IllegalArgumentException if name is longer than 32767
-+     *     characters.
-+     * @throws IllegalArgumentException if criteria is null
-+     * @throws IllegalArgumentException if displayName is null
-+     * @throws IllegalArgumentException if displayName is longer than 128
 +     *     characters.
 +     * @throws IllegalArgumentException if an objective by that name already
 +     *     exists
@@ -4746,37 +4730,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param displayName Name displayed to players for the Objective.
 +     * @param renderType Manner of rendering the Objective
 +     * @return The registered Objective
-+     * @throws IllegalArgumentException if name is null
 +     * @throws IllegalArgumentException if name is longer than 32767
 +     *     characters.
-+     * @throws IllegalArgumentException if criteria is null
-+     * @throws IllegalArgumentException if displayName is null
-+     * @throws IllegalArgumentException if displayName is longer than 128
-+     *     characters.
-+     * @throws IllegalArgumentException if renderType is null
 +     * @throws IllegalArgumentException if an objective by that name already
 +     *     exists
 +     */
 +    @NotNull
 +    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, net.kyori.adventure.text.@Nullable Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
-+    // Paper end
- 
++    // Paper end - Adventure
++
      /**
       * Registers an Objective on this Scoreboard
+      *
 @@ -0,0 +0,0 @@ public interface Scoreboard {
-      * @deprecated use {@link #registerNewObjective(String, Criteria, String)}
+      *     characters.
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
+-     * @deprecated use {@link #registerNewObjective(String, Criteria, String)}
++     * @deprecated use {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component)}
       */
      @NotNull
 +    @Deprecated // Paper
-     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName) throws IllegalArgumentException;
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName);
  
      /**
 @@ -0,0 +0,0 @@ public interface Scoreboard {
-      * @deprecated use {@link #registerNewObjective(String, Criteria, String, RenderType)}
+      *     characters.
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
+-     * @deprecated use {@link #registerNewObjective(String, Criteria, String, RenderType)}
++     * @deprecated use {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component, RenderType)}
       */
      @NotNull
 +    @Deprecated // Paper
-     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType);
  
      /**
 @@ -0,0 +0,0 @@ public interface Scoreboard {
@@ -4787,18 +4774,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      @NotNull
 +    @Deprecated // Paper
-     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName) throws IllegalArgumentException;
+     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName);
  
      /**
 @@ -0,0 +0,0 @@ public interface Scoreboard {
-      * @throws IllegalArgumentException if renderType is null
+      *     characters.
       * @throws IllegalArgumentException if an objective by that name already
       *     exists
 +     * @deprecated in favour of {@link #registerNewObjective(String, Criteria, net.kyori.adventure.text.Component, RenderType)}
       */
      @NotNull
 +    @Deprecated // Paper
-     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName, @NotNull RenderType renderType);
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
@@ -4806,17 +4793,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/scoreboard/Team.java
 +++ b/src/main/java/org/bukkit/scoreboard/Team.java
 @@ -0,0 +0,0 @@ public interface Team {
-      */
      @NotNull
-     String getName() throws IllegalStateException;
-+    // Paper start
+     String getName();
+ 
++    // Paper start - Adventure
 +    /**
-+     * Gets the name displayed to entries for this team
++     * Gets the display name for this team
 +     *
 +     * @return Team display name
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
-+    net.kyori.adventure.text.@NotNull Component displayName() throws IllegalStateException;
++    net.kyori.adventure.text.@NotNull Component displayName();
 +
 +    /**
 +     * Sets the name displayed to entries for this team
@@ -4824,7 +4811,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param displayName New display name
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
-+    void displayName(net.kyori.adventure.text.@Nullable Component displayName) throws IllegalStateException, IllegalArgumentException;
++    void displayName(net.kyori.adventure.text.@Nullable Component displayName);
 +
 +    /**
 +     * Gets the prefix prepended to the display of entries on this team.
@@ -4832,17 +4819,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return Team prefix
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
-+    net.kyori.adventure.text.@NotNull Component prefix() throws IllegalStateException;
++    net.kyori.adventure.text.@NotNull Component prefix();
 +
 +    /**
 +     * Sets the prefix prepended to the display of entries on this team.
 +     *
 +     * @param prefix New prefix
-+     * @throws IllegalArgumentException if prefix is null
-+     *     characters
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
-+    void prefix(net.kyori.adventure.text.@Nullable Component prefix) throws IllegalStateException, IllegalArgumentException;
++    void prefix(net.kyori.adventure.text.@Nullable Component prefix);
 +
 +    /**
 +     * Gets the suffix appended to the display of entries on this team.
@@ -4850,17 +4835,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return the team's current suffix
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
-+    net.kyori.adventure.text.@NotNull Component suffix() throws IllegalStateException;
++    net.kyori.adventure.text.@NotNull Component suffix();
 +
 +    /**
 +     * Sets the suffix appended to the display of entries on this team.
 +     *
 +     * @param suffix the new suffix for this team.
-+     * @throws IllegalArgumentException if suffix is null
-+     *     characters
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
-+    void suffix(net.kyori.adventure.text.@Nullable Component suffix) throws IllegalStateException, IllegalArgumentException;
++    void suffix(net.kyori.adventure.text.@Nullable Component suffix);
 +
 +    /**
 +     * Checks if the team has a color specified
@@ -4881,7 +4864,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @throws IllegalStateException if the team doesn't have a color
 +     * @see #hasColor()
 +     */
-+    net.kyori.adventure.text.format.@NotNull TextColor color() throws IllegalStateException;
++    net.kyori.adventure.text.format.@NotNull TextColor color();
 +
 +    /**
 +     * Sets the color of the team.
@@ -4892,8 +4875,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param color new color, null for no color
 +     */
 +    void color(net.kyori.adventure.text.format.@Nullable NamedTextColor color);
-+    // Paper end
- 
++    // Paper end - Adventure
++
      /**
       * Gets the name displayed to entries for this team
       *
@@ -4903,17 +4886,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      @NotNull
 +    @Deprecated // Paper
-     String getDisplayName() throws IllegalStateException;
+     String getDisplayName();
  
      /**
 @@ -0,0 +0,0 @@ public interface Team {
-      * @throws IllegalArgumentException if displayName is longer than 128
-      *     characters.
+      *
+      * @param displayName New display name
       * @throws IllegalStateException if this team has been unregistered
 +     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
       */
 +    @Deprecated // Paper
-     void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
+     void setDisplayName(@NotNull String displayName);
  
      /**
 @@ -0,0 +0,0 @@ public interface Team {
@@ -4924,17 +4907,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      @NotNull
 +    @Deprecated // Paper
-     String getPrefix() throws IllegalStateException;
+     String getPrefix();
  
      /**
 @@ -0,0 +0,0 @@ public interface Team {
-      * @throws IllegalArgumentException if prefix is longer than 64
-      *     characters
+      *
+      * @param prefix New prefix
       * @throws IllegalStateException if this team has been unregistered
 +     * @deprecated in favour of {@link #prefix(net.kyori.adventure.text.Component)}
       */
 +    @Deprecated // Paper
-     void setPrefix(@NotNull String prefix) throws IllegalStateException, IllegalArgumentException;
+     void setPrefix(@NotNull String prefix);
  
      /**
 @@ -0,0 +0,0 @@ public interface Team {
@@ -4945,17 +4928,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      @NotNull
 +    @Deprecated // Paper
-     String getSuffix() throws IllegalStateException;
+     String getSuffix();
  
      /**
 @@ -0,0 +0,0 @@ public interface Team {
-      * @throws IllegalArgumentException if suffix is longer than 64
-      *     characters
+      *
+      * @param suffix the new suffix for this team.
       * @throws IllegalStateException if this team has been unregistered
 +     * @deprecated in favour of {@link #suffix(net.kyori.adventure.text.Component)}
       */
 +    @Deprecated // Paper
-     void setSuffix(@NotNull String suffix) throws IllegalStateException, IllegalArgumentException;
+     void setSuffix(@NotNull String suffix);
  
      /**
 @@ -0,0 +0,0 @@ public interface Team {
@@ -4966,7 +4949,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      @NotNull
 +    @Deprecated // Paper
-     ChatColor getColor() throws IllegalStateException;
+     ChatColor getColor();
  
      /**
 @@ -0,0 +0,0 @@ public interface Team {

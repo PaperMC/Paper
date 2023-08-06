@@ -9,12 +9,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -0,0 +0,0 @@ public final class CraftItemFactory implements ItemFactory {
-             entity.getUniqueId().toString(),
              new net.md_5.bungee.api.chat.TextComponent(customName));
      }
+     // Paper end - bungee hover events
 +
-+    @Override
-+    public ItemStack getSpawnEgg(org.bukkit.entity.EntityType type) {
++    // Paper start - old getSpawnEgg API
++    // @Override // used to override, upstream added conflicting method, is called via Commodore now
++    @Deprecated
++    public ItemStack getSpawnEgg0(org.bukkit.entity.EntityType type) {
 +        if (type == null) {
 +            return null;
 +        }
@@ -24,5 +26,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
 +        return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
 +    }
-     // Paper end
++    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -0,0 +0,0 @@ public class Commodore
+                             return;
+                         }
+                         // Paper end
++
++                        // Paper start - ItemFactory#getSpawnEgg (paper had original method that returned ItemStack, upstream added identical but returned Material)
++                        if (owner.equals("org/bukkit/inventory/ItemFactory") && name.equals("getSpawnEgg") && desc.equals("(Lorg/bukkit/entity/EntityType;)Lorg/bukkit/inventory/ItemStack;")) {
++                            super.visitInsn(Opcodes.SWAP); // has 1 param, this moves the owner instance to the top for the checkcast
++                            super.visitTypeInsn(Opcodes.CHECKCAST, CB_PACKAGE + "/inventory/CraftItemFactory");
++                            super.visitInsn(Opcodes.SWAP); // moves param back to the the top of stack
++                            super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, CB_PACKAGE + "/inventory/CraftItemFactory", "getSpawnEgg0", desc, false);
++                            return;
++                        }
++                        // Paper end - ItemFactory#getSpawnEgg
+                         if ( modern )
+                         {
+                             if ( owner.equals( "org/bukkit/Material" ) )
