@@ -55,7 +55,7 @@ index b17fe83bcd7bde44ee8c1f872fffa8bf40707c50..aac78c13361b19efa7b43a0c95458390
  
      public Server getServer() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 063150563e35a3eeb6999f1b5b34de3f60318f66..f0c07965f129c17a3258964b7bf73f9f9b6fc63e 100644
+index 063150563e35a3eeb6999f1b5b34de3f60318f66..2680e1b52fb04e6d8e63047666ac7b298455be78 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -88,6 +88,7 @@ import net.minecraft.world.food.FoodData;
@@ -104,7 +104,32 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..f0c07965f129c17a3258964b7bf73f9f
      }
  
      void resetAndHideEntity(org.bukkit.entity.Entity entity) {
-@@ -1780,8 +1781,45 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1768,20 +1769,66 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     private void trackAndShowEntity(org.bukkit.entity.Entity entity) {
++        // Paper start - uuid override
++        this.trackAndShowEntity(entity, null);
++    }
++    private void trackAndShowEntity(org.bukkit.entity.Entity entity, final @Nullable UUID uuidOverride) {
++        // Paper end
+         ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
+         Entity other = ((CraftEntity) entity).getHandle();
+ 
+         if (other instanceof ServerPlayer) {
+             ServerPlayer otherPlayer = (ServerPlayer) other;
++            // Paper start - uuid override
++            UUID original = null;
++            if (uuidOverride != null) {
++                original = otherPlayer.getUUID();
++                otherPlayer.setUUID(uuidOverride);
++            }
++            // Paper end
+             this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer)));
++            if (original != null) otherPlayer.setUUID(original); // Paper - uuid override
+         }
+ 
+         ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
          if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
              entry.updatePlayer(this.getHandle());
          }
@@ -127,12 +152,8 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..f0c07965f129c17a3258964b7bf73f9f
 +                bukkitPlayer.unregisterEntity(self);
 +            }
 +        }
- 
--        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
-+        // Paper start - fix setPlayerProfile makes players invisible
-+        UUID original = self.getUUID();
-+        self.setUUID(gameProfile.getId());
 +
++        // Paper start - fix setPlayerProfile makes players invisible
 +        // Set the game profile here, we should have unregistered the entity via iterating all player entities above.
 +        self.gameProfile = gameProfile;
 +
@@ -140,18 +161,18 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..f0c07965f129c17a3258964b7bf73f9f
 +        for (ServerPlayer player : players) {
 +            CraftPlayer bukkitPlayer = player.getBukkitEntity();
 +            if (bukkitPlayer.canSee(this)) {
-+                bukkitPlayer.trackAndShowEntity(self.getBukkitEntity());
++                bukkitPlayer.trackAndShowEntity(self.getBukkitEntity(), gameProfile.getId());
 +            }
 +        }
-+        self.setUUID(original);
 +        // Paper end
-+
+ 
+-        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
 +        // Refresh misc player things AFTER sending game profile
 +        this.refreshPlayer();
      }
  
      void resetAndShowEntity(org.bukkit.entity.Entity entity) {
-@@ -1794,6 +1825,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1794,6 +1841,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              this.trackAndShowEntity(entity);
          }
      }
