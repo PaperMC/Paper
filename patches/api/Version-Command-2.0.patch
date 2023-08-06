@@ -76,18 +76,21 @@ diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-@@ -0,0 +0,0 @@
- package org.bukkit.command.defaults;
- 
-+import com.destroystokyo.paper.util.VersionFetcher; // Paper - version supplier
- import com.google.common.base.Charsets;
- import com.google.common.base.Preconditions;
- import com.google.common.collect.ImmutableList;
-@@ -0,0 +0,0 @@ import org.bukkit.util.StringUtil;
+@@ -0,0 +0,0 @@ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.PluginDescriptionFile;
+ import org.bukkit.util.StringUtil;
  import org.jetbrains.annotations.NotNull;
++// Paper start - version command 2.0
++import com.destroystokyo.paper.util.VersionFetcher;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.format.TextDecoration;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
++// Paper end - version command 2.0
  
  public class VersionCommand extends BukkitCommand {
-+    private VersionFetcher versionFetcher;
++    private VersionFetcher versionFetcher; // Paper - version command 2.0
 +    private VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration
 +        if (versionFetcher == null) {
 +            versionFetcher = Bukkit.getUnsafe().getVersionFetcher();
@@ -110,10 +113,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              StringBuilder name = new StringBuilder();
 @@ -0,0 +0,0 @@ public class VersionCommand extends BukkitCommand {
  
+     private void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
+         PluginDescriptionFile desc = plugin.getDescription();
+-        sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
+-
++        // Paper start - version command 2.0
++        sender.sendMessage(
++            Component.text()
++                .append(Component.text(desc.getName(), NamedTextColor.GREEN))
++                .append(Component.text(" version "))
++                .append(Component.text(desc.getVersion(), NamedTextColor.GREEN)
++                    .hoverEvent(Component.text("Click to copy to clipboard", NamedTextColor.WHITE))
++                    .clickEvent(ClickEvent.copyToClipboard(desc.getVersion()))
++                )
++        );
++        // Paper end - version command 2.0
+         if (desc.getDescription() != null) {
+             sender.sendMessage(desc.getDescription());
+         }
+@@ -0,0 +0,0 @@ public class VersionCommand extends BukkitCommand {
+ 
      private final ReentrantLock versionLock = new ReentrantLock();
      private boolean hasVersion = false;
 -    private String versionMessage = null;
-+    private net.kyori.adventure.text.Component versionMessage = null; // Paper
++    private Component versionMessage = null; // Paper
      private final Set<CommandSender> versionWaiters = new HashSet<CommandSender>();
      private boolean versionTaskStarted = false;
      private long lastCheck = 0;
@@ -130,7 +153,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
              versionWaiters.add(sender);
 -            sender.sendMessage("Checking version, please wait...");
-+            sender.sendMessage(net.kyori.adventure.text.Component.text("Checking version, please wait...", net.kyori.adventure.text.format.NamedTextColor.WHITE, net.kyori.adventure.text.format.TextDecoration.ITALIC)); // Paper
++            sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC)); // Paper
              if (!versionTaskStarted) {
                  versionTaskStarted = true;
                  new Thread(new Runnable() {
@@ -140,7 +163,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          String version = Bukkit.getVersion();
 +        // Paper start
 +        if (version.startsWith("null")) { // running from ide?
-+            setVersionMessage(net.kyori.adventure.text.Component.text("Unknown version, custom build?", net.kyori.adventure.text.format.NamedTextColor.YELLOW));
++            setVersionMessage(Component.text("Unknown version, custom build?", NamedTextColor.YELLOW));
 +            return;
 +        }
 +        setVersionMessage(getVersionFetcher().getVersionMessage(version));
@@ -158,18 +181,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    private void setVersionMessage(@NotNull String msg) {
 +    // Paper start
-+    private void setVersionMessage(final @NotNull net.kyori.adventure.text.Component msg) {
++    private void setVersionMessage(final @NotNull Component msg) {
          lastCheck = System.currentTimeMillis();
 -        versionMessage = msg;
-+        final net.kyori.adventure.text.Component message = net.kyori.adventure.text.TextComponent.ofChildren(
-+            net.kyori.adventure.text.Component.text("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")", net.kyori.adventure.text.format.NamedTextColor.WHITE),
-+            net.kyori.adventure.text.Component.newline(),
++        final Component message = Component.textOfChildren(
++            Component.text("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")", NamedTextColor.WHITE),
++            Component.newline(),
 +            msg
 +        );
-+        this.versionMessage = net.kyori.adventure.text.Component.text()
++        this.versionMessage = Component.text()
 +            .append(message)
-+            .hoverEvent(net.kyori.adventure.text.Component.text("Click to copy to clipboard", net.kyori.adventure.text.format.NamedTextColor.WHITE))
-+            .clickEvent(net.kyori.adventure.text.event.ClickEvent.copyToClipboard(net.kyori.adventure.text.serializer.plain.PlainComponentSerializer.plain().serialize(message)))
++            .hoverEvent(Component.text("Click to copy to clipboard", NamedTextColor.WHITE))
++            .clickEvent(ClickEvent.copyToClipboard(PlainTextComponentSerializer.plainText().serialize(message)))
 +            .build();
 +        // Paper end
          versionLock.lock();
