@@ -8,7 +8,15 @@
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.core.component.DataComponents;
-@@ -91,9 +92,15 @@
+@@ -50,6 +51,7 @@
+     private static final float HEIGHT = 0.75F;
+     public float dropChance;
+     public boolean fixed;
++    public @Nullable MapId cachedMapId; // Paper - Perf: Cache map ids on item frames
+ 
+     public ItemFrame(EntityType<? extends ItemFrame> type, Level world) {
+         super(type, world);
+@@ -91,9 +93,15 @@
  
      @Override
      protected AABB calculateBoundingBox(BlockPos pos, Direction side) {
@@ -26,7 +34,7 @@
          double d0 = enumdirection_enumaxis == Direction.Axis.X ? 0.0625D : 0.75D;
          double d1 = enumdirection_enumaxis == Direction.Axis.Y ? 0.0625D : 0.75D;
          double d2 = enumdirection_enumaxis == Direction.Axis.Z ? 0.0625D : 0.75D;
-@@ -123,9 +130,9 @@
+@@ -123,9 +131,9 @@
      }
  
      @Override
@@ -38,7 +46,7 @@
          }
  
      }
-@@ -155,6 +162,18 @@
+@@ -155,6 +163,18 @@
              if (this.isInvulnerableToBase(source)) {
                  return false;
              } else if (this.shouldDamageDropItem(source)) {
@@ -57,7 +65,7 @@
                  this.dropItem(world, source.getEntity(), false);
                  this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
-@@ -251,7 +270,15 @@
+@@ -251,7 +271,15 @@
  
      public ItemStack getItem() {
          return (ItemStack) this.getEntityData().get(ItemFrame.DATA_ITEM);
@@ -73,7 +81,7 @@
  
      @Nullable
      public MapId getFramedMapId(ItemStack stack) {
-@@ -267,17 +294,23 @@
+@@ -267,17 +295,23 @@
      }
  
      public void setItem(ItemStack value, boolean update) {
@@ -103,7 +111,15 @@
              this.level().updateNeighbourForOutputSignal(this.pos, Blocks.AIR);
          }
  
-@@ -386,7 +419,13 @@
+@@ -301,6 +335,7 @@
+     }
+ 
+     private void onItemChanged(ItemStack stack) {
++        this.cachedMapId = stack.getComponents().get(net.minecraft.core.component.DataComponents.MAP_ID); // Paper - Perf: Cache map ids on item frames
+         if (!stack.isEmpty() && stack.getFrame() != this) {
+             stack.setEntityRepresentation(this);
+         }
+@@ -386,7 +421,13 @@
                      if (worldmap != null && worldmap.isTrackedCountOverLimit(256)) {
                          return InteractionResult.FAIL;
                      } else {
@@ -118,7 +134,7 @@
                          this.gameEvent(GameEvent.BLOCK_CHANGE, player);
                          itemstack.consume(1, player);
                          return InteractionResult.SUCCESS;
-@@ -395,6 +434,13 @@
+@@ -395,6 +436,13 @@
                      return InteractionResult.PASS;
                  }
              } else {
