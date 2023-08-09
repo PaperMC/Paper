@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?L=C3=A9o=20Moriceau?= <thisis41@protonmail.com>
+Date: Wed, 9 Aug 2023 13:55:23 +0200
+Subject: [PATCH] Increase vanilla mushroom spread limit
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+index a33de97340f14219291c4175e9194914cdf441db..aa25c7a7df84c3b99af5b5b2b80198f53c698a2b 100644
+--- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+@@ -354,6 +354,12 @@ public class WorldConfiguration extends ConfigurationPart {
+         public boolean portalSearchVanillaDimensionScaling = true;
+         public boolean disableTeleportationSuffocationCheck = false;
+         public IntOr.Disabled netherCeilingVoidDamageHeight = IntOr.Disabled.DISABLED;
++
++        public Mushroom mushroom;
++
++        public class Mushroom extends ConfigurationPart {
++            public int spreadLimit = 5;
++        }
+     }
+ 
+     public Spawn spawn;
+diff --git a/src/main/java/net/minecraft/world/level/block/MushroomBlock.java b/src/main/java/net/minecraft/world/level/block/MushroomBlock.java
+index 5238b23cd3bca21e2b14c9be15699b95ad267e24..7294d268a04486952389282a0d27f2737f302bd1 100644
+--- a/src/main/java/net/minecraft/world/level/block/MushroomBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/MushroomBlock.java
+@@ -40,10 +40,17 @@ public class MushroomBlock extends BushBlock implements BonemealableBlock {
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (random.nextFloat() < (world.spigotConfig.mushroomModifier / (100.0f * 25))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-            int i = 5;
++            io.papermc.paper.configuration.WorldConfiguration.Environment.Mushroom mushroomSettings = world.paperConfig().environment.mushroom; // Paper - Increase vanilla mushroom spread
++
+             boolean flag = true;
+             Iterator iterator = BlockPos.betweenClosed(pos.offset(-4, -1, -4), pos.offset(4, 1, 4)).iterator();
+ 
++            int mushroomSpreadLimit = world.paperConfig().environment.mushroom.spreadLimit;
++            if(mushroomSpreadLimit == -1) {
++                mushroomSpreadLimit = 9 * 9 * 3; // Paper - 9x9x3 Vanilla SHAPE sum
++            }
++            int i = mushroomSpreadLimit;
++
+             while (iterator.hasNext()) {
+                 BlockPos blockposition1 = (BlockPos) iterator.next();
+ 
