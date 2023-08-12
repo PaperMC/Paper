@@ -20,9 +20,9 @@ import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.command.RemoteConsoleCommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftMinecartCommand;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.minecart.CommandMinecart;
 
 public final class VanillaCommandWrapper extends BukkitCommand {
@@ -64,14 +64,15 @@ public final class VanillaCommandWrapper extends BukkitCommand {
     }
 
     public static CommandListenerWrapper getListener(CommandSender sender) {
-        if (sender instanceof Player) {
-            return ((CraftPlayer) sender).getHandle().createCommandSourceStack();
+        if (sender instanceof Entity) {
+            if (sender instanceof CommandMinecart) {
+                return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).getCommandBlock().createCommandSourceStack();
+            }
+
+            return ((CraftEntity) sender).getHandle().createCommandSourceStack();
         }
         if (sender instanceof BlockCommandSender) {
             return ((CraftBlockCommandSender) sender).getWrapper();
-        }
-        if (sender instanceof CommandMinecart) {
-            return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).getCommandBlock().createCommandSourceStack();
         }
         if (sender instanceof RemoteConsoleCommandSender) {
             return ((DedicatedServer) MinecraftServer.getServer()).rconConsoleSource.createCommandSourceStack();
