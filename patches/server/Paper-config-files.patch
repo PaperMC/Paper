@@ -978,6 +978,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
++import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
@@ -1166,6 +1167,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    .register(DoubleOrDefault.SERIALIZER)
 +                    .register(BooleanOrDefault.SERIALIZER)
 +                    .register(Duration.SERIALIZER)
++                    .register(DurationOrDisabled.SERIALIZER)
 +                    .register(EngineMode.SERIALIZER)
 +                    .register(NbtPathSerializer.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
@@ -1496,6 +1498,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
++import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
@@ -1775,6 +1778,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public class Lootables extends ConfigurationPart {
 +        public boolean autoReplenish = false;
 +        public boolean restrictPlayerReloot = true;
++        public DurationOrDisabled restrictPlayerRelootTime = DurationOrDisabled.USE_DISABLED;
 +        public boolean resetSeedOnFill = true;
 +        public int maxRefills = -1;
 +        public Duration refreshMin = Duration.of("12h");
@@ -4021,7 +4025,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return (int) num;
 +    }
 +
-+    private static final class Serializer extends ScalarSerializer<Duration> {
++    static final class Serializer extends ScalarSerializer<Duration> {
 +        private Serializer() {
 +            super(Duration.class);
 +        }
@@ -4034,6 +4038,66 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        @Override
 +        protected Object serialize(Duration item, Predicate<Class<?>> typeSupported) {
 +            return item.value();
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java b/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.type;
++
++import java.lang.reflect.Type;
++import java.util.Optional;
++import java.util.function.Predicate;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
++
++@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
++public final class DurationOrDisabled {
++    private static final String DISABLE_VALUE = "disabled";
++    public static final DurationOrDisabled USE_DISABLED = new DurationOrDisabled(Optional.empty());
++    public static final ScalarSerializer<DurationOrDisabled> SERIALIZER = new Serializer();
++
++    private Optional<Duration> value;
++
++    public DurationOrDisabled(final Optional<Duration> value) {
++        this.value = value;
++    }
++
++    public Optional<Duration> value() {
++        return this.value;
++    }
++
++    public void value(final Optional<Duration> value) {
++        this.value = value;
++    }
++
++    public Duration or(final Duration fallback) {
++        return this.value.orElse(fallback);
++    }
++
++    private static final class Serializer extends ScalarSerializer<DurationOrDisabled> {
++        Serializer() {
++            super(DurationOrDisabled.class);
++        }
++
++        @Override
++        public DurationOrDisabled deserialize(final Type type, final Object obj) throws SerializationException {
++            if (obj instanceof final String string) {
++                if (DISABLE_VALUE.equalsIgnoreCase(string)) {
++                    return USE_DISABLED;
++                }
++                return new DurationOrDisabled(Optional.of(Duration.SERIALIZER.deserialize(string)));
++            }
++            throw new SerializationException(obj + "(" + type + ") is not a duration or '" + DISABLE_VALUE + "'");
++        }
++
++        @Override
++        protected Object serialize(final DurationOrDisabled item, final Predicate<Class<?>> typeSupported) {
++            return item.value.map(Duration::value).orElse(DISABLE_VALUE);
 +        }
 +    }
 +}

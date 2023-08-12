@@ -196,6 +196,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
++    default boolean canPlayerLoot(final UUID player) {
++        return getLootableData().canPlayerLoot(player, this.getNMSWorld().paperConfig());
++    }
++
++    @Override
 +    default Long getLastLooted(UUID player) {
 +        return getLootableData().getLastLooted(player);
 +    }
@@ -242,6 +247,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package com.destroystokyo.paper.loottable;
 +
 +import io.papermc.paper.configuration.WorldConfiguration;
++import io.papermc.paper.configuration.type.DurationOrDisabled;
++import java.time.temporal.ChronoUnit;
++import java.util.concurrent.TimeUnit;
 +import org.bukkit.entity.Player;
 +import org.bukkit.loot.LootTable;
 +import javax.annotation.Nullable;
@@ -318,9 +326,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        final Player bukkitPlayer = (Player) player.getBukkitEntity();
 +        LootableInventoryReplenishEvent event = new LootableInventoryReplenishEvent(bukkitPlayer, lootable.getAPILootableInventory());
-+        if (paperConfig.lootables.restrictPlayerReloot && hasPlayerLooted(player.getUUID())) {
-+            event.setCancelled(true);
-+        }
++        event.setCancelled(!canPlayerLoot(player.getUUID(), paperConfig));
 +        return event.callEvent();
 +    }
 +    public void processRefill(@Nullable net.minecraft.world.entity.player.Player player) {
@@ -402,12 +408,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.lootedPlayers = new HashMap<>();
 +        }
 +        if (looted) {
-+            if (!this.lootedPlayers.containsKey(player)) {
-+                this.lootedPlayers.put(player, System.currentTimeMillis());
-+            }
++            this.lootedPlayers.put(player, System.currentTimeMillis());
 +        } else if (this.lootedPlayers != null) {
 +            this.lootedPlayers.remove(player);
 +        }
++    }
++
++    boolean canPlayerLoot(final UUID player, final WorldConfiguration worldConfiguration) {
++        final Long lastLooted = getLastLooted(player);
++        if (!worldConfiguration.lootables.restrictPlayerReloot || lastLooted == null) return true;
++
++        final DurationOrDisabled restrictPlayerRelootTime = worldConfiguration.lootables.restrictPlayerRelootTime;
++        if (restrictPlayerRelootTime.value().isEmpty()) return true;
++
++        return TimeUnit.SECONDS.toMillis(restrictPlayerRelootTime.value().get().seconds()) + lastLooted < System.currentTimeMillis();
 +    }
 +
 +    boolean hasPlayerLooted(UUID player) {
