@@ -9,6 +9,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/Effect.java
 +++ b/src/main/java/org/bukkit/Effect.java
 @@ -0,0 +0,0 @@ public enum Effect {
+     /**
+      * Sound of a block breaking. Needs block ID as additional info.
+      */
+-    STEP_SOUND(2001, Type.SOUND, Material.class),
++    STEP_SOUND(2001, Type.SOUND, org.bukkit.block.data.BlockData.class, Material.class), // Paper - block data is more correct, but the impl of the mtehods will still work with Material
+     /**
+-     * Visual effect of a splash potion breaking. Needs potion data value as
++     * Visual effect of a splash potion breaking. Needs color data value as
+      * additional info.
+      */
+-    POTION_BREAK(2002, Type.VISUAL, Potion.class),
++    POTION_BREAK(2002, Type.VISUAL, Color.class, Potion.class), // Paper - color is correct
+     /**
+      * Visual effect of an instant splash potion breaking. Needs color data
+      * value as additional info.
+@@ -0,0 +0,0 @@ public enum Effect {
       * block.
       */
      OXIDISED_COPPER_SCRAPE(3005, Type.VISUAL),
@@ -103,12 +119,68 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @Deprecated(forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.21")
 +    WET_SPONGE_VAPORIZES_IN_NETHER(2009, Type.VISUAL),
++
++    SOUND_STOP_JUKEBOX_SONG(1011, Type.SOUND),
++
++    PARTICLES_SCULK_CHARGE(3006, Type.VISUAL, Integer.class),
++
++    PARTICLES_SCULK_SHRIEK(3007, Type.SOUND),
++
++    PARTICLES_AND_SOUND_BRUSH_BLOCK_COMPLETE(3008, Type.VISUAL, org.bukkit.block.data.BlockData.class),
++
++    PARTICLES_EGG_CRACK(3009, Type.VISUAL)
      ;
 +    private static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
 +    // Paper end
  
      private final int id;
      private final Type type;
+-    private final Class<?> data;
++    private final java.util.List<Class<?>> data; // Paper - support multiple data types
+     private static final Map<Integer, Effect> BY_ID = Maps.newHashMap();
+ 
+     Effect(int id, /*@NotNull*/ Type type) {
+-        this(id, type, null);
++        this(id, type, (Class<?>[]) null); // Paper - support multiple data types
+     }
+ 
+-    Effect(int id, /*@NotNull*/ Type type, /*@Nullable*/ Class<?> data) {
++    Effect(int id, /*@NotNull*/ Type type, /*@Nullable*/ Class<?>...data) { // Paper - support multiple data types
+         this.id = id;
+         this.type = type;
+-        this.data = data;
++        this.data = data != null ? java.util.List.of(data) : null; // Paper - support multiple data types
+     }
+ 
+     /**
+@@ -0,0 +0,0 @@ public enum Effect {
+ 
+     /**
+      * @return The type of the effect.
++     * @deprecated some effects can be both or neither
+      */
+     @NotNull
++    @Deprecated // Paper - both
+     public Type getType() {
+         return this.type;
+     }
+@@ -0,0 +0,0 @@ public enum Effect {
+      */
+     @Nullable
+     public Class<?> getData() {
+-        return this.data;
++        return this.data == null ? null : this.data.get(0); // Paper
++    }
++
++    // Paper start - support deprecated data types
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public boolean isApplicable(Object obj) {
++        return this.data != null && com.google.common.collect.Iterables.any(this.data, aClass -> aClass.isAssignableFrom(obj.getClass()));
+     }
++    // Paper end - support deprecated data types
+ 
+     /**
+      * Gets the Effect associated with the given ID.
 @@ -0,0 +0,0 @@ public enum Effect {
  
      static {
@@ -131,7 +203,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      /**
       * Represents the type of an effect.
++     * @deprecated not representative of what Effect does
       */
++    @Deprecated // Paper
+     public enum Type { SOUND, VISUAL }
+ }
 diff --git a/src/test/java/org/bukkit/EffectTest.java b/src/test/java/org/bukkit/EffectTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/EffectTest.java
