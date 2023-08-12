@@ -58,14 +58,6 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.food.FoodData;
- import net.minecraft.world.inventory.AbstractContainerMenu;
- import net.minecraft.world.level.GameType;
- import net.minecraft.world.level.block.Blocks;
-+import net.minecraft.world.level.biome.BiomeManager;
- import net.minecraft.world.level.block.entity.SignBlockEntity;
- import net.minecraft.world.level.block.entity.SignText;
- import net.minecraft.world.level.border.BorderChangeListener;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return server.getPlayer(getUniqueId()) != null;
      }
@@ -105,11 +97,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      void resetAndHideEntity(org.bukkit.entity.Entity entity) {
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
-             entry.updatePlayer(this.getHandle());
-         }
-+        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity)); // Paper
+     }
+ 
+     private void trackAndShowEntity(org.bukkit.entity.Entity entity) {
++        // Paper start - uuid override
++        this.trackAndShowEntity(entity, null);
 +    }
++    private void trackAndShowEntity(org.bukkit.entity.Entity entity, final @Nullable UUID uuidOverride) {
++        // Paper end
+         ChunkMap tracker = ((ServerLevel) this.getHandle().level()).getChunkSource().chunkMap;
+         Entity other = ((CraftEntity) entity).getHandle();
+ 
+         if (other instanceof ServerPlayer) {
+             ServerPlayer otherPlayer = (ServerPlayer) other;
++            // Paper start - uuid override
++            UUID original = null;
++            if (uuidOverride != null) {
++                original = otherPlayer.getUUID();
++                otherPlayer.setUUID(uuidOverride);
++            }
++            // Paper end
+             this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer)));
++            if (original != null) otherPlayer.setUUID(original); // Paper - uuid override
+         }
+ 
+         ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+         server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
+     }
 +    // Paper start
 +    @Override
 +    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
@@ -130,20 +146,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        // Set the game profile here, we should have unregistered the entity via iterating all player entities above.
 +        self.gameProfile = gameProfile;
- 
--        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
++
 +        // Re-register the game profile for all players
 +        for (ServerPlayer player : players) {
 +            CraftPlayer bukkitPlayer = player.getBukkitEntity();
 +            if (bukkitPlayer.canSee(this)) {
-+                bukkitPlayer.trackAndShowEntity(self.getBukkitEntity());
++                bukkitPlayer.trackAndShowEntity(self.getBukkitEntity(), gameProfile.getId());
 +            }
 +        }
++
 +        // Refresh misc player things AFTER sending game profile
 +        this.refreshPlayer();
-     }
++    }
++    // Paper end
  
      void resetAndShowEntity(org.bukkit.entity.Entity entity) {
+         // SPIGOT-7312: Can't show/hide self
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              this.trackAndShowEntity(entity);
          }
