@@ -608,6 +608,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public void setBiomeKey(org.bukkit.RegionAccessor accessor, int x, int y, int z, org.bukkit.NamespacedKey biomeKey) {
         accessor.setBiome(x, y, z, org.bukkit.Registry.BIOME.getOrThrow(biomeKey));
     }
+
+    @Override
+    public String getStatisticCriteriaKey(org.bukkit.Statistic statistic) {
+        if (statistic.getType() != org.bukkit.Statistic.Type.UNTYPED) return "minecraft.custom:minecraft." + statistic.getKey().getKey();
+        return org.bukkit.craftbukkit.CraftStatistic.getNMSStatistic(statistic).getName();
+    }
     // Paper end
 
     /**
