@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.monster.EntitySilverfish;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Silverfish;
 
 public class CraftSilverfish extends CraftMonster implements Silverfish {
@@ -18,10 +17,5 @@ public class CraftSilverfish extends CraftMonster implements Silverfish {
     @Override
     public String toString() {
         return "CraftSilverfish";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.SILVERFISH;
     }
 }

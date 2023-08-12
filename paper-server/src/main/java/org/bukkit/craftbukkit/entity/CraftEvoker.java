@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.world.entity.monster.EntityEvoker;
 import net.minecraft.world.entity.monster.EntityIllagerWizard;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Evoker;
 
 public class CraftEvoker extends CraftSpellcaster implements Evoker {
@@ -20,11 +19,6 @@ public class CraftEvoker extends CraftSpellcaster implements Evoker {
     @Override
     public String toString() {
         return "CraftEvoker";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.EVOKER;
     }
 
     @Override

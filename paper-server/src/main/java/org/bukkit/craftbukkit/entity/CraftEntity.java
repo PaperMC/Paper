@@ -23,6 +23,7 @@ import net.minecraft.world.entity.EntityFlying;
 import net.minecraft.world.entity.EntityLightning;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTameableAnimal;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.Interaction;
 import net.minecraft.world.entity.Marker;
@@ -163,6 +164,7 @@ import net.minecraft.world.entity.vehicle.EntityMinecartTNT;
 import net.minecraft.world.phys.AxisAlignedBB;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
+import org.bukkit.Registry;
 import org.bukkit.Server;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -176,8 +178,10 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.craftbukkit.util.CraftVector;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
@@ -200,12 +204,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     protected final CraftServer server;
     protected Entity entity;
+    private final EntityType entityType;
     private EntityDamageEvent lastDamageEvent;
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 
     public CraftEntity(final CraftServer server, final Entity entity) {
         this.server = server;
         this.entity = entity;
+        EntityType type = Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(EntityTypes.getKey(entity.getType())));
+        this.entityType = (type != null) ? type : EntityType.UNKNOWN;
     }
 
     public static CraftEntity getEntity(CraftServer server, Entity entity) {
@@ -753,6 +760,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public Entity getHandle() {
         return entity;
+    }
+
+    @Override
+    public final EntityType getType() {
+        return entityType;
     }
 
     @Override

@@ -6,7 +6,6 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 
 public class CraftFallingBlock extends CraftEntity implements FallingBlock {
@@ -23,11 +22,6 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
     @Override
     public String toString() {
         return "CraftFallingBlock";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.FALLING_BLOCK;
     }
 
     @Override

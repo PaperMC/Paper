@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import org.bukkit.Color;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Display;
-import org.bukkit.entity.EntityType;
 import org.bukkit.util.Transformation;
 
 public class CraftDisplay extends CraftEntity implements Display {
@@ -21,11 +20,6 @@ public class CraftDisplay extends CraftEntity implements Display {
     @Override
     public String toString() {
         return "CraftDisplay";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.UNKNOWN;
     }
 
     @Override

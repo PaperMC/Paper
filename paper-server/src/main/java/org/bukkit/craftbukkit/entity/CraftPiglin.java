@@ -10,7 +10,6 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Piglin;
 import org.bukkit.inventory.Inventory;
 
@@ -80,11 +79,6 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin {
     @Override
     public EntityPiglin getHandle() {
         return (EntityPiglin) super.getHandle();
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.PIGLIN;
     }
 
     @Override

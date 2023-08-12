@@ -4,7 +4,6 @@ import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.item.EntityTNTPrimed;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.TNTPrimed;
 
@@ -52,11 +51,6 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     @Override
     public String toString() {
         return "CraftTNTPrimed";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.PRIMED_TNT;
     }
 
     @Override

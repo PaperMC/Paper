@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.monster.EntitySkeleton;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Skeleton;
 
 public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
@@ -41,11 +40,6 @@ public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
     @Override
     public String toString() {
         return "CraftSkeleton";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.SKELETON;
     }
 
     @Override

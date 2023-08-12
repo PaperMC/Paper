@@ -7,7 +7,6 @@ import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 
 public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
@@ -23,11 +22,6 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
     @Override
     public String toString() {
         return "CraftFrog";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.FROG;
     }
 
     @Override

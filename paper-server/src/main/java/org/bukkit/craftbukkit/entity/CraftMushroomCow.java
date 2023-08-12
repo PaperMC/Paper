@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.animal.EntityMushroomCow;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.MushroomCow;
 import org.bukkit.entity.MushroomCow.Variant;
 
@@ -32,10 +31,5 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow {
     @Override
     public String toString() {
         return "CraftMushroomCow";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.MUSHROOM_COW;
     }
 }

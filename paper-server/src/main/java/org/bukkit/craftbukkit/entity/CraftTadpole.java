@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.animal.frog.Tadpole;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 
 public class CraftTadpole extends CraftFish implements org.bukkit.entity.Tadpole {
 
@@ -18,11 +17,6 @@ public class CraftTadpole extends CraftFish implements org.bukkit.entity.Tadpole
     @Override
     public String toString() {
         return "CraftTadpole";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.TADPOLE;
     }
 
     @Override

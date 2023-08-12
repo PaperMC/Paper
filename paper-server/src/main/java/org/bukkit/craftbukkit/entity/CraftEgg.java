@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.world.entity.projectile.EntityEgg;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Egg;
-import org.bukkit.entity.EntityType;
 
 public class CraftEgg extends CraftThrowableProjectile implements Egg {
     public CraftEgg(CraftServer server, EntityEgg entity) {
@@ -18,10 +17,5 @@ public class CraftEgg extends CraftThrowableProjectile implements Egg {
     @Override
     public String toString() {
         return "CraftEgg";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.EGG;
     }
 }

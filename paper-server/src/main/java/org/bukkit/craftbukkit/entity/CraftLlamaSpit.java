@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.projectile.EntityLlamaSpit;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LlamaSpit;
 import org.bukkit.projectiles.ProjectileSource;
 
@@ -20,11 +19,6 @@ public class CraftLlamaSpit extends AbstractProjectile implements LlamaSpit {
     @Override
     public String toString() {
         return "CraftLlamaSpit";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.LLAMA_SPIT;
     }
 
     @Override

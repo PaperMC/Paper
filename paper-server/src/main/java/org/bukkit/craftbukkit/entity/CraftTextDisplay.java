@@ -5,7 +5,6 @@ import net.minecraft.world.entity.Display;
 import org.bukkit.Color;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.TextDisplay;
 
 public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
@@ -22,11 +21,6 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
     @Override
     public String toString() {
         return "CraftTextDisplay";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.TEXT_DISPLAY;
     }
 
     @Override

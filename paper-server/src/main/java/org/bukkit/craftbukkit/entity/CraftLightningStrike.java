@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.EntityLightning;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LightningStrike;
 
 public class CraftLightningStrike extends CraftEntity implements LightningStrike {
@@ -23,10 +22,5 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
     @Override
     public String toString() {
         return "CraftLightningStrike";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.LIGHTNING;
     }
 }

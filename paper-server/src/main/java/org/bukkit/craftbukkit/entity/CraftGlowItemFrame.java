@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.GlowItemFrame;
 
 public class CraftGlowItemFrame extends CraftItemFrame implements GlowItemFrame {
@@ -13,11 +12,6 @@ public class CraftGlowItemFrame extends CraftItemFrame implements GlowItemFrame 
     @Override
     public net.minecraft.world.entity.decoration.GlowItemFrame getHandle() {
         return (net.minecraft.world.entity.decoration.GlowItemFrame) super.getHandle();
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.GLOW_ITEM_FRAME;
     }
 
     @Override

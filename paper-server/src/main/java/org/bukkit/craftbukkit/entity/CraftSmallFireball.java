@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.projectile.EntitySmallFireball;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.SmallFireball;
 
 public class CraftSmallFireball extends CraftSizedFireball implements SmallFireball {
@@ -18,10 +17,5 @@ public class CraftSmallFireball extends CraftSizedFireball implements SmallFireb
     @Override
     public String toString() {
         return "CraftSmallFireball";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.SMALL_FIREBALL;
     }
 }

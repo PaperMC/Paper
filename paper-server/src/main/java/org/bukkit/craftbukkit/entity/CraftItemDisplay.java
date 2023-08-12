@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.item.ItemDisplayContext;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 
@@ -22,11 +21,6 @@ public class CraftItemDisplay extends CraftDisplay implements ItemDisplay {
     @Override
     public String toString() {
         return "CraftItemDisplay";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.ITEM_DISPLAY;
     }
 
     @Override

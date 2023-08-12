@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.world.entity.monster.EntityBlaze;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Blaze;
-import org.bukkit.entity.EntityType;
 
 public class CraftBlaze extends CraftMonster implements Blaze {
     public CraftBlaze(CraftServer server, EntityBlaze entity) {
@@ -18,10 +17,5 @@ public class CraftBlaze extends CraftMonster implements Blaze {
     @Override
     public String toString() {
         return "CraftBlaze";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.BLAZE;
     }
 }

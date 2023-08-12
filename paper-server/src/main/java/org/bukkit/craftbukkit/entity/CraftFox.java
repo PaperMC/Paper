@@ -6,7 +6,6 @@ import java.util.UUID;
 import net.minecraft.world.entity.animal.EntityFox;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.AnimalTamer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Fox.Type;
 
@@ -19,11 +18,6 @@ public class CraftFox extends CraftAnimals implements Fox {
     @Override
     public EntityFox getHandle() {
         return (EntityFox) super.getHandle();
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.FOX;
     }
 
     @Override

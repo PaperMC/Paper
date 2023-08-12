@@ -8,7 +8,6 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Sniffer;
 
 public class CraftSniffer extends CraftAnimals implements Sniffer {
@@ -25,11 +24,6 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
     @Override
     public String toString() {
         return "CraftSniffer";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.SNIFFER;
     }
 
     @Override

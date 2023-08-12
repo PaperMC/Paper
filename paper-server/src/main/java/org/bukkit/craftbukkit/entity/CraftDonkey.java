@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.world.entity.animal.horse.EntityHorseDonkey;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Donkey;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse.Variant;
 
 public class CraftDonkey extends CraftChestedHorse implements Donkey {
@@ -15,11 +14,6 @@ public class CraftDonkey extends CraftChestedHorse implements Donkey {
     @Override
     public String toString() {
         return "CraftDonkey";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.DONKEY;
     }
 
     @Override

@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.monster.EntityPhantom;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Phantom;
 
 public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
@@ -29,10 +28,5 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
     @Override
     public String toString() {
         return "CraftPhantom";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.PHANTOM;
     }
 }

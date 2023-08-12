@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.projectile.EntityShulkerBullet;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ShulkerBullet;
 import org.bukkit.projectiles.ProjectileSource;
 
@@ -44,11 +43,6 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
     @Override
     public String toString() {
         return "CraftShulkerBullet";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.SHULKER_BULLET;
     }
 
     @Override

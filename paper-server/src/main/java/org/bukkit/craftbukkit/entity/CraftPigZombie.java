@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.monster.EntityPigZombie;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.PigZombie;
 
 public class CraftPigZombie extends CraftZombie implements PigZombie {
@@ -39,11 +38,6 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
     @Override
     public String toString() {
         return "CraftPigZombie";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.ZOMBIFIED_PIGLIN;
     }
 
     @Override

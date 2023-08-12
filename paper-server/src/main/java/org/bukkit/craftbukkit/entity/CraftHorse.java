@@ -6,7 +6,6 @@ import net.minecraft.world.entity.animal.horse.HorseColor;
 import net.minecraft.world.entity.animal.horse.HorseStyle;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryHorse;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse;
 import org.bukkit.inventory.HorseInventory;
 
@@ -66,10 +65,5 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
     @Override
     public String toString() {
         return "CraftHorse{variant=" + getVariant() + ", owner=" + getOwner() + '}';
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.HORSE;
     }
 }

@@ -64,7 +64,6 @@ import org.bukkit.entity.Egg;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityCategory;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.FishHook;
@@ -505,11 +504,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         world.addFreshEntity(launch);
         return (T) launch.getBukkitEntity();
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.UNKNOWN;
     }
 
     @Override

@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.vehicle.EntityMinecartTNT;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 
 public final class CraftMinecartTNT extends CraftMinecart implements ExplosiveMinecart {
@@ -51,10 +50,5 @@ public final class CraftMinecartTNT extends CraftMinecart implements ExplosiveMi
     @Override
     public String toString() {
         return "CraftMinecartTNT";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.MINECART_TNT;
     }
 }

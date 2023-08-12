@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.entity;
 import net.minecraft.world.entity.monster.EntityEndermite;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Endermite;
-import org.bukkit.entity.EntityType;
 
 public class CraftEndermite extends CraftMonster implements Endermite {
 
@@ -19,11 +18,6 @@ public class CraftEndermite extends CraftMonster implements Endermite {
     @Override
     public String toString() {
         return "CraftEndermite";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.ENDERMITE;
     }
 
     @Override

@@ -7,7 +7,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.loot.LootTable;
 
@@ -28,11 +27,6 @@ public class CraftChestBoat extends CraftBoat implements org.bukkit.entity.Chest
     @Override
     public String toString() {
         return "CraftChestBoat";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.CHEST_BOAT;
     }
 
     @Override

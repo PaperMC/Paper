@@ -14,7 +14,6 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.ZombieVillager;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -33,11 +32,6 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     @Override
     public String toString() {
         return "CraftVillager";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.VILLAGER;
     }
 
     @Override

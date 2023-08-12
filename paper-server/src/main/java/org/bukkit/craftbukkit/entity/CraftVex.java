@@ -6,7 +6,6 @@ import net.minecraft.world.entity.monster.EntityVex;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Vex;
 
 public class CraftVex extends CraftMonster implements Vex {
@@ -23,11 +22,6 @@ public class CraftVex extends CraftMonster implements Vex {
     @Override
     public String toString() {
         return "CraftVex";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.VEX;
     }
 
     @Override

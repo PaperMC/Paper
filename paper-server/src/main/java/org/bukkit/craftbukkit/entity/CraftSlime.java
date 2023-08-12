@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.monster.EntitySlime;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Slime;
 
 public class CraftSlime extends CraftMob implements Slime, CraftEnemy {
@@ -29,10 +28,5 @@ public class CraftSlime extends CraftMob implements Slime, CraftEnemy {
     @Override
     public String toString() {
         return "CraftSlime";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.SLIME;
     }
 }

@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.world.entity.projectile.EntityFishingHook;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FishHook;
 
 public class CraftFishHook extends CraftProjectile implements FishHook {
@@ -23,11 +22,6 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     @Override
     public String toString() {
         return "CraftFishingHook";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.FISHING_HOOK;
     }
 
     @Override

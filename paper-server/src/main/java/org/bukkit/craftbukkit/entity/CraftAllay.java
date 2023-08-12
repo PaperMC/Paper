@@ -8,7 +8,6 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.Inventory;
 
 public class CraftAllay extends CraftCreature implements org.bukkit.entity.Allay {
@@ -25,11 +24,6 @@ public class CraftAllay extends CraftCreature implements org.bukkit.entity.Allay
     @Override
     public String toString() {
         return "CraftAllay";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.ALLAY;
     }
 
     @Override

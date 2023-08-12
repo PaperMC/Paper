@@ -5,7 +5,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.entity.BlockDisplay;
-import org.bukkit.entity.EntityType;
 
 public class CraftBlockDisplay extends CraftDisplay implements BlockDisplay {
 
@@ -21,11 +20,6 @@ public class CraftBlockDisplay extends CraftDisplay implements BlockDisplay {
     @Override
     public String toString() {
         return "CraftBlockDisplay";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.BLOCK_DISPLAY;
     }
 
     @Override

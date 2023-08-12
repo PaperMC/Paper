@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.monster.EntityStrider;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Strider;
 
 public class CraftStrider extends CraftAnimals implements Strider {
@@ -75,10 +74,5 @@ public class CraftStrider extends CraftAnimals implements Strider {
     @Override
     public String toString() {
         return "CraftStrider";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.STRIDER;
     }
 }

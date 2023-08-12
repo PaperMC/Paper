@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.monster.EntityCreeper;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Creeper;
-import org.bukkit.entity.EntityType;
 import org.bukkit.event.entity.CreeperPowerEvent;
 
 public class CraftCreeper extends CraftMonster implements Creeper {
@@ -89,10 +88,5 @@ public class CraftCreeper extends CraftMonster implements Creeper {
     @Override
     public String toString() {
         return "CraftCreeper";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.CREEPER;
     }
 }

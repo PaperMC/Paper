@@ -5,7 +5,6 @@ import java.util.Map;
 import net.minecraft.world.entity.animal.EntityTropicalFish;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.entity.TropicalFish.Pattern;
 
@@ -23,11 +22,6 @@ public class CraftTropicalFish extends CraftFish implements TropicalFish {
     @Override
     public String toString() {
         return "CraftTropicalFish";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.TROPICAL_FISH;
     }
 
     @Override

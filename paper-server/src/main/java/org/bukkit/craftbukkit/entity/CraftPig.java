@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.animal.EntityPig;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Pig;
 
 public class CraftPig extends CraftAnimals implements Pig {
@@ -65,10 +64,5 @@ public class CraftPig extends CraftAnimals implements Pig {
     @Override
     public String toString() {
         return "CraftPig";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.PIG;
     }
 }

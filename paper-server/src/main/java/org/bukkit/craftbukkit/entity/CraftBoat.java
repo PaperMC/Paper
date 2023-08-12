@@ -7,7 +7,6 @@ import org.bukkit.TreeSpecies;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 
 public class CraftBoat extends CraftVehicle implements Boat {
 
@@ -94,11 +93,6 @@ public class CraftBoat extends CraftVehicle implements Boat {
     @Override
     public String toString() {
         return "CraftBoat{boatType=" + getBoatType() + ",status=" + getStatus() + ",passengers=" + getPassengers().stream().map(Entity::toString).collect(Collectors.joining("-", "{", "}")) + "}";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.BOAT;
     }
 
     public static Boat.Type boatTypeFromNms(EntityBoat.EnumBoatType boatType) {

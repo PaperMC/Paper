@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.decoration.EntityLeash;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LeashHitch;
 
 public class CraftLeash extends CraftHanging implements LeashHitch {
@@ -33,10 +32,5 @@ public class CraftLeash extends CraftHanging implements LeashHitch {
     @Override
     public String toString() {
         return "CraftLeash";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.LEASH_HITCH;
     }
 }
