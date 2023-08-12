@@ -55,18 +55,10 @@ index b17fe83bcd7bde44ee8c1f872fffa8bf40707c50..aac78c13361b19efa7b43a0c95458390
  
      public Server getServer() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 063150563e35a3eeb6999f1b5b34de3f60318f66..8620d2a7f3ba54eecc30d914c0ff667024aa61b5 100644
+index 063150563e35a3eeb6999f1b5b34de3f60318f66..699413ec5f26f3ff175f8032357e334b97bb8f94 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -88,6 +88,7 @@ import net.minecraft.world.food.FoodData;
- import net.minecraft.world.inventory.AbstractContainerMenu;
- import net.minecraft.world.level.GameType;
- import net.minecraft.world.level.block.Blocks;
-+import net.minecraft.world.level.biome.BiomeManager;
- import net.minecraft.world.level.block.entity.SignBlockEntity;
- import net.minecraft.world.level.block.entity.SignText;
- import net.minecraft.world.level.border.BorderChangeListener;
-@@ -269,11 +270,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -269,11 +269,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return server.getPlayer(getUniqueId()) != null;
      }
  
@@ -78,7 +70,7 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..8620d2a7f3ba54eecc30d914c0ff6670
      @Override
      public InetSocketAddress getAddress() {
          if (this.getHandle().connection == null) return null;
-@@ -1688,8 +1684,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1688,8 +1683,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      private void untrackAndHideEntity(org.bukkit.entity.Entity entity) {
          // Remove this entity from the hidden player's EntityTrackerEntry
@@ -95,7 +87,7 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..8620d2a7f3ba54eecc30d914c0ff6670
          ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
          if (entry != null) {
              entry.removePlayer(this.getHandle());
-@@ -1702,8 +1705,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1702,8 +1704,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                  this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
              }
          }
@@ -104,7 +96,7 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..8620d2a7f3ba54eecc30d914c0ff6670
      }
  
      void resetAndHideEntity(org.bukkit.entity.Entity entity) {
-@@ -1768,20 +1769,65 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1768,12 +1768,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
  
      private void trackAndShowEntity(org.bukkit.entity.Entity entity) {
@@ -130,11 +122,10 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..8620d2a7f3ba54eecc30d914c0ff6670
          }
  
          ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
-         if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
-             entry.updatePlayer(this.getHandle());
-         }
-+        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity)); // Paper
-+    }
+@@ -1783,6 +1796,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+         server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
+     }
 +    // Paper start
 +    @Override
 +    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
@@ -163,14 +154,14 @@ index 063150563e35a3eeb6999f1b5b34de3f60318f66..8620d2a7f3ba54eecc30d914c0ff6670
 +                bukkitPlayer.trackAndShowEntity(self.getBukkitEntity(), gameProfile.getId());
 +            }
 +        }
- 
--        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
++
 +        // Refresh misc player things AFTER sending game profile
 +        this.refreshPlayer();
++    }
 +    // Paper end
-     }
  
      void resetAndShowEntity(org.bukkit.entity.Entity entity) {
+         // SPIGOT-7312: Can't show/hide self
 @@ -1794,6 +1840,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              this.trackAndShowEntity(entity);
          }
