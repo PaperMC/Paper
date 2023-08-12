@@ -948,10 +948,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ad2177cdbc61a6f41c7e2ed81af262d4ffe7d861
+index 0000000000000000000000000000000000000000..e471960e0443392f6f54732b052a4debf2a8fd97
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,440 @@
+@@ -0,0 +1,442 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -978,6 +978,7 @@ index 0000000000000000000000000000000000000000..ad2177cdbc61a6f41c7e2ed81af262d4
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
++import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
@@ -1166,6 +1167,7 @@ index 0000000000000000000000000000000000000000..ad2177cdbc61a6f41c7e2ed81af262d4
 +                    .register(DoubleOrDefault.SERIALIZER)
 +                    .register(BooleanOrDefault.SERIALIZER)
 +                    .register(Duration.SERIALIZER)
++                    .register(DurationOrDisabled.SERIALIZER)
 +                    .register(EngineMode.SERIALIZER)
 +                    .register(NbtPathSerializer.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
@@ -1477,10 +1479,10 @@ index 0000000000000000000000000000000000000000..f0d4ec73bc8872a85e34f5c6b4d342e7
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914cdf441db
+index 0000000000000000000000000000000000000000..d47c57afafc01e25b965f1844938b2516a7bd031
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,482 @@
+@@ -0,0 +1,484 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1496,6 +1498,7 @@ index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
++import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
@@ -1775,6 +1778,7 @@ index 0000000000000000000000000000000000000000..a33de97340f14219291c4175e9194914
 +    public class Lootables extends ConfigurationPart {
 +        public boolean autoReplenish = false;
 +        public boolean restrictPlayerReloot = true;
++        public DurationOrDisabled restrictPlayerRelootTime = DurationOrDisabled.USE_DISABLED;
 +        public boolean resetSeedOnFill = true;
 +        public int maxRefills = -1;
 +        public Duration refreshMin = Duration.of("12h");
@@ -3936,7 +3940,7 @@ index 0000000000000000000000000000000000000000..193709f1d08e489fc51cbe11d4325297
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/Duration.java b/src/main/java/io/papermc/paper/configuration/type/Duration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b793deb70
+index 0000000000000000000000000000000000000000..422ccb0b332b3e94be228b9b94f379467d6461a5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/Duration.java
 @@ -0,0 +1,97 @@
@@ -4021,7 +4025,7 @@ index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b
 +        return (int) num;
 +    }
 +
-+    private static final class Serializer extends ScalarSerializer<Duration> {
++    static final class Serializer extends ScalarSerializer<Duration> {
 +        private Serializer() {
 +            super(Duration.class);
 +        }
@@ -4034,6 +4038,66 @@ index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b
 +        @Override
 +        protected Object serialize(Duration item, Predicate<Class<?>> typeSupported) {
 +            return item.value();
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java b/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3f17e75e08e1cb4359b96a78c5b8d5284c484e43
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java
+@@ -0,0 +1,54 @@
++package io.papermc.paper.configuration.type;
++
++import java.lang.reflect.Type;
++import java.util.Optional;
++import java.util.function.Predicate;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
++
++@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
++public final class DurationOrDisabled {
++    private static final String DISABLE_VALUE = "disabled";
++    public static final DurationOrDisabled USE_DISABLED = new DurationOrDisabled(Optional.empty());
++    public static final ScalarSerializer<DurationOrDisabled> SERIALIZER = new Serializer();
++
++    private Optional<Duration> value;
++
++    public DurationOrDisabled(final Optional<Duration> value) {
++        this.value = value;
++    }
++
++    public Optional<Duration> value() {
++        return this.value;
++    }
++
++    public void value(final Optional<Duration> value) {
++        this.value = value;
++    }
++
++    public Duration or(final Duration fallback) {
++        return this.value.orElse(fallback);
++    }
++
++    private static final class Serializer extends ScalarSerializer<DurationOrDisabled> {
++        Serializer() {
++            super(DurationOrDisabled.class);
++        }
++
++        @Override
++        public DurationOrDisabled deserialize(final Type type, final Object obj) throws SerializationException {
++            if (obj instanceof final String string) {
++                if (DISABLE_VALUE.equalsIgnoreCase(string)) {
++                    return USE_DISABLED;
++                }
++                return new DurationOrDisabled(Optional.of(Duration.SERIALIZER.deserialize(string)));
++            }
++            throw new SerializationException(obj + "(" + type + ") is not a duration or '" + DISABLE_VALUE + "'");
++        }
++
++        @Override
++        protected Object serialize(final DurationOrDisabled item, final Predicate<Class<?>> typeSupported) {
++            return item.value.map(Duration::value).orElse(DISABLE_VALUE);
 +        }
 +    }
 +}
@@ -4474,7 +4538,7 @@ index e7240acad17dc9c0d93f2792cc0d90c1855ac436..35e7f8e7b19c217fa5f3f55abb0f8b9c
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 49eaa50c5e83e47022a1d126c62f6984f2d16f46..8eb949b43e8b403f3d98e36066cabd7cb9ab0e63 100644
+index c7d90803c302fc3cb06f44abf12d86c7e02944cd..a6e12acf65068a2eaea75a7df877f6145a229195 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -295,6 +295,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa

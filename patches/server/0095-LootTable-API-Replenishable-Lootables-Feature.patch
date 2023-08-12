@@ -159,10 +159,10 @@ index 0000000000000000000000000000000000000000..2fba5bc0f982e143ad5f5bda55d768ed
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ce135d990c785b02df468391ea622aa236290f07
+index 0000000000000000000000000000000000000000..8e6dac2cef7af26ad74928eff631c1826c2980bb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventory.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,75 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.loot.Lootable;
@@ -193,6 +193,11 @@ index 0000000000000000000000000000000000000000..ce135d990c785b02df468391ea622aa2
 +    @Override
 +    default boolean hasPlayerLooted(UUID player) {
 +        return getLootableData().hasPlayerLooted(player);
++    }
++
++    @Override
++    default boolean canPlayerLoot(final UUID player) {
++        return getLootableData().canPlayerLoot(player, this.getNMSWorld().paperConfig());
 +    }
 +
 +    @Override
@@ -235,13 +240,16 @@ index 0000000000000000000000000000000000000000..ce135d990c785b02df468391ea622aa2
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e5ea9f27a1936ed9e329e74317c91c5df89b9fbd
+index 0000000000000000000000000000000000000000..87c5f8a43b8643486ba898e1cea33873398f3b1c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,188 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import io.papermc.paper.configuration.WorldConfiguration;
++import io.papermc.paper.configuration.type.DurationOrDisabled;
++import java.time.temporal.ChronoUnit;
++import java.util.concurrent.TimeUnit;
 +import org.bukkit.entity.Player;
 +import org.bukkit.loot.LootTable;
 +import javax.annotation.Nullable;
@@ -318,9 +326,7 @@ index 0000000000000000000000000000000000000000..e5ea9f27a1936ed9e329e74317c91c5d
 +
 +        final Player bukkitPlayer = (Player) player.getBukkitEntity();
 +        LootableInventoryReplenishEvent event = new LootableInventoryReplenishEvent(bukkitPlayer, lootable.getAPILootableInventory());
-+        if (paperConfig.lootables.restrictPlayerReloot && hasPlayerLooted(player.getUUID())) {
-+            event.setCancelled(true);
-+        }
++        event.setCancelled(!canPlayerLoot(player.getUUID(), paperConfig));
 +        return event.callEvent();
 +    }
 +    public void processRefill(@Nullable net.minecraft.world.entity.player.Player player) {
@@ -402,12 +408,20 @@ index 0000000000000000000000000000000000000000..e5ea9f27a1936ed9e329e74317c91c5d
 +            this.lootedPlayers = new HashMap<>();
 +        }
 +        if (looted) {
-+            if (!this.lootedPlayers.containsKey(player)) {
-+                this.lootedPlayers.put(player, System.currentTimeMillis());
-+            }
++            this.lootedPlayers.put(player, System.currentTimeMillis());
 +        } else if (this.lootedPlayers != null) {
 +            this.lootedPlayers.remove(player);
 +        }
++    }
++
++    boolean canPlayerLoot(final UUID player, final WorldConfiguration worldConfiguration) {
++        final Long lastLooted = getLastLooted(player);
++        if (!worldConfiguration.lootables.restrictPlayerReloot || lastLooted == null) return true;
++
++        final DurationOrDisabled restrictPlayerRelootTime = worldConfiguration.lootables.restrictPlayerRelootTime;
++        if (restrictPlayerRelootTime.value().isEmpty()) return true;
++
++        return TimeUnit.SECONDS.toMillis(restrictPlayerRelootTime.value().get().seconds()) + lastLooted < System.currentTimeMillis();
 +    }
 +
 +    boolean hasPlayerLooted(UUID player) {
@@ -490,7 +504,7 @@ index 0000000000000000000000000000000000000000..9cfa5d36a6991067a3866e0d437749fa
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 9fadfb41a41b575aa1ca1c28e34118708eded498..fbd28a3f571766e6ed4ba73f337b2e835ef50453 100644
+index 2f15c9df59ebfbe7619e190b8d6ef1fe122809f8..069fe5df02806103c9bbef396c2e39ca3be90101 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -235,6 +235,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
