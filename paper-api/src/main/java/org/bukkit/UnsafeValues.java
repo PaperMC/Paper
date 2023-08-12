@@ -256,4 +256,6 @@ public interface UnsafeValues {
     @Deprecated(since = "1.21.3", forRemoval = true)
     void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey);
     // Paper end - namespaced key biome methods
+
+    String getStatisticCriteriaKey(@NotNull org.bukkit.Statistic statistic); // Paper - fix custom stats criteria creation
 }

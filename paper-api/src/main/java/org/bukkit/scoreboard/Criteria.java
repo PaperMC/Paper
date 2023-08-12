@@ -335,7 +335,7 @@ public interface Criteria {
     @NotNull
     public static Criteria statistic(@NotNull Statistic statistic) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
-        return Bukkit.getScoreboardCriteria("minecraft.custom:minecraft." + statistic.getKey().getKey());
+        return Bukkit.getScoreboardCriteria(org.bukkit.Bukkit.getUnsafe().getStatisticCriteriaKey(statistic)); // Paper
     }
 
     /**
