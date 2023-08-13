@@ -4,7 +4,7 @@ Paper [![Paper Build Status](https://img.shields.io/github/actions/workflow/stat
 [![Open Collective](https://img.shields.io/opencollective/all/papermc?label=OpenCollective%20Sponsors)](https://opencollective.com/papermc)
 ===========
 
-High-performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
+The most widely used, high-performance Minecraft server that aims to fix gameplay and mechanics inconsistencies.
 
 
 **Support and Project Discussion:**
