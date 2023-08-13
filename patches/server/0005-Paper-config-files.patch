@@ -948,10 +948,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e471960e0443392f6f54732b052a4debf2a8fd97
+index 0000000000000000000000000000000000000000..ad2177cdbc61a6f41c7e2ed81af262d4ffe7d861
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,442 @@
+@@ -0,0 +1,440 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -978,7 +978,6 @@ index 0000000000000000000000000000000000000000..e471960e0443392f6f54732b052a4deb
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
-+import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
@@ -1167,7 +1166,6 @@ index 0000000000000000000000000000000000000000..e471960e0443392f6f54732b052a4deb
 +                    .register(DoubleOrDefault.SERIALIZER)
 +                    .register(BooleanOrDefault.SERIALIZER)
 +                    .register(Duration.SERIALIZER)
-+                    .register(DurationOrDisabled.SERIALIZER)
 +                    .register(EngineMode.SERIALIZER)
 +                    .register(NbtPathSerializer.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
@@ -1479,10 +1477,10 @@ index 0000000000000000000000000000000000000000..f0d4ec73bc8872a85e34f5c6b4d342e7
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8550600818842fa6c9a934dff8cb3282b8ec7d4f
+index 0000000000000000000000000000000000000000..0ec8828f2c3a1ddc1973b34fba512375394d84ee
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,490 @@
+@@ -0,0 +1,489 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1498,7 +1496,6 @@ index 0000000000000000000000000000000000000000..8550600818842fa6c9a934dff8cb3282
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
-+import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
 +import io.papermc.paper.configuration.type.IntOr;
 +import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
@@ -1778,7 +1775,6 @@ index 0000000000000000000000000000000000000000..8550600818842fa6c9a934dff8cb3282
 +    public class Lootables extends ConfigurationPart {
 +        public boolean autoReplenish = false;
 +        public boolean restrictPlayerReloot = true;
-+        public DurationOrDisabled restrictPlayerRelootTime = DurationOrDisabled.USE_DISABLED;
 +        public boolean resetSeedOnFill = true;
 +        public int maxRefills = -1;
 +        public Duration refreshMin = Duration.of("12h");
@@ -1843,6 +1839,7 @@ index 0000000000000000000000000000000000000000..8550600818842fa6c9a934dff8cb3282
 +        public IntOr.Disabled netherCeilingVoidDamageHeight = IntOr.Disabled.DISABLED;
 +
 +        public Mushroom mushroom;
++
 +        public class Mushroom extends ConfigurationPart {
 +            public BooleanOrDefault disableLimit = BooleanOrDefault.USE_DEFAULT;
 +            public IntOr.Default spreadLimit = IntOr.Default.USE_DEFAULT;
@@ -3946,7 +3943,7 @@ index 0000000000000000000000000000000000000000..193709f1d08e489fc51cbe11d4325297
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/Duration.java b/src/main/java/io/papermc/paper/configuration/type/Duration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..422ccb0b332b3e94be228b9b94f379467d6461a5
+index 0000000000000000000000000000000000000000..fdc906b106a5c6fff2675d5399650f5b793deb70
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/Duration.java
 @@ -0,0 +1,97 @@
@@ -4031,7 +4028,7 @@ index 0000000000000000000000000000000000000000..422ccb0b332b3e94be228b9b94f37946
 +        return (int) num;
 +    }
 +
-+    static final class Serializer extends ScalarSerializer<Duration> {
++    private static final class Serializer extends ScalarSerializer<Duration> {
 +        private Serializer() {
 +            super(Duration.class);
 +        }
@@ -4044,66 +4041,6 @@ index 0000000000000000000000000000000000000000..422ccb0b332b3e94be228b9b94f37946
 +        @Override
 +        protected Object serialize(Duration item, Predicate<Class<?>> typeSupported) {
 +            return item.value();
-+        }
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java b/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..3f17e75e08e1cb4359b96a78c5b8d5284c484e43
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/configuration/type/DurationOrDisabled.java
-@@ -0,0 +1,54 @@
-+package io.papermc.paper.configuration.type;
-+
-+import java.lang.reflect.Type;
-+import java.util.Optional;
-+import java.util.function.Predicate;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+
-+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-+public final class DurationOrDisabled {
-+    private static final String DISABLE_VALUE = "disabled";
-+    public static final DurationOrDisabled USE_DISABLED = new DurationOrDisabled(Optional.empty());
-+    public static final ScalarSerializer<DurationOrDisabled> SERIALIZER = new Serializer();
-+
-+    private Optional<Duration> value;
-+
-+    public DurationOrDisabled(final Optional<Duration> value) {
-+        this.value = value;
-+    }
-+
-+    public Optional<Duration> value() {
-+        return this.value;
-+    }
-+
-+    public void value(final Optional<Duration> value) {
-+        this.value = value;
-+    }
-+
-+    public Duration or(final Duration fallback) {
-+        return this.value.orElse(fallback);
-+    }
-+
-+    private static final class Serializer extends ScalarSerializer<DurationOrDisabled> {
-+        Serializer() {
-+            super(DurationOrDisabled.class);
-+        }
-+
-+        @Override
-+        public DurationOrDisabled deserialize(final Type type, final Object obj) throws SerializationException {
-+            if (obj instanceof final String string) {
-+                if (DISABLE_VALUE.equalsIgnoreCase(string)) {
-+                    return USE_DISABLED;
-+                }
-+                return new DurationOrDisabled(Optional.of(Duration.SERIALIZER.deserialize(string)));
-+            }
-+            throw new SerializationException(obj + "(" + type + ") is not a duration or '" + DISABLE_VALUE + "'");
-+        }
-+
-+        @Override
-+        protected Object serialize(final DurationOrDisabled item, final Predicate<Class<?>> typeSupported) {
-+            return item.value.map(Duration::value).orElse(DISABLE_VALUE);
 +        }
 +    }
 +}
