@@ -14731,10 +14731,10 @@ index 0000000000000000000000000000000000000000..287240ed3b440f2f5733c368416e4276
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/queue/RadiusAwarePrioritisedExecutor.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/queue/RadiusAwarePrioritisedExecutor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3272f73013ea7d4efdd0ae2903925cc543be7075
+index 0000000000000000000000000000000000000000..f7b0e2564ac4bd2db1d2b2bdc230c9f52f8a21b7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/queue/RadiusAwarePrioritisedExecutor.java
-@@ -0,0 +1,668 @@
+@@ -0,0 +1,667 @@
 +package io.papermc.paper.chunk.system.scheduling.queue;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -14960,7 +14960,7 @@ index 0000000000000000000000000000000000000000..3272f73013ea7d4efdd0ae2903925cc5
 +                // no dependencies, add straight to awaiting
 +                this.awaiting.add(node);
 +            } else {
-+                node.parents = parents;
++                node.parents = parents.size();
 +                // we will be added to awaiting once we have no parents
 +            }
 +        }
@@ -15033,14 +15033,13 @@ index 0000000000000000000000000000000000000000..3272f73013ea7d4efdd0ae2903925cc5
 +            if (children != null) {
 +                for (int i = 0, len = children.size(); i < len; ++i) {
 +                    final DependencyNode child = children.get(i);
-+                    if (!child.parents.remove(node)) {
-+                        throw new IllegalStateException();
-+                    }
-+                    if (child.parents.isEmpty()) {
++                    int newParents = --child.parents;
++                    if (newParents == 0) {
 +                        // no more dependents, we can push to awaiting
-+                        child.parents = null;
 +                        // even if the child is purged, we need to push it so that its children will be pushed
 +                        this.awaiting.add(child);
++                    } else if (newParents < 0) {
++                        throw new IllegalStateException();
 +                    }
 +                }
 +            }
@@ -15052,7 +15051,7 @@ index 0000000000000000000000000000000000000000..3272f73013ea7d4efdd0ae2903925cc5
 +                return ret;
 +            }
 +
-+            if (ret.parents != null) {
++            if (ret.parents != 0) {
 +                throw new IllegalStateException();
 +            }
 +
@@ -15127,8 +15126,8 @@ index 0000000000000000000000000000000000000000..3272f73013ea7d4efdd0ae2903925cc5
 +        // (must hold lock on the scheduler to use)
 +        // null is the same as empty, we just use it so that we don't allocate the set unless we need to
 +        private List<DependencyNode> children;
-+        // null is the same as empty, indicating that this task is considered "awaiting"
-+        private ReferenceOpenHashSet<DependencyNode> parents;
++        // 0 indicates that this task is considered "awaiting"
++        private int parents;
 +        // false -> scheduled and not cancelled
 +        // true -> scheduled but cancelled
 +        private boolean purged;
