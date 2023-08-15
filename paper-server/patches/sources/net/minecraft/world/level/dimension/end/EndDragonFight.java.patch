@@ -78,7 +78,7 @@
  
              this.previouslyKilled = true;
              this.dragonKilled = true;
-@@ -419,8 +440,26 @@
+@@ -419,7 +440,25 @@
      @VisibleForTesting
      public void removeAllGateways() {
          this.gateways.clear();
@@ -91,20 +91,19 @@
 +            return true;
 +        }
 +        return false;
-     }
- 
++    }
++
 +    public List<EndCrystal> getSpikeCrystals() {
 +        final List<EndCrystal> endCrystals = new java.util.ArrayList<>();
 +        for (final SpikeFeature.EndSpike spike : SpikeFeature.getSpikesForLevel(this.level)) {
 +            endCrystals.addAll(this.level.getEntitiesOfClass(EndCrystal.class, spike.getTopBoundingBox()));
 +        }
 +        return endCrystals;
-+    }
+     }
 +    // Paper end - More DragonBattle API
-+
+ 
      private void spawnNewGateway() {
          if (!this.gateways.isEmpty()) {
-             int i = (Integer) this.gateways.remove(this.gateways.size() - 1);
 @@ -449,6 +488,11 @@
              }
          }
@@ -136,16 +135,45 @@
              }
          }
  
-@@ -513,7 +562,7 @@
+@@ -513,7 +562,13 @@
          return this.previouslyKilled;
      }
  
 -    public void tryRespawn() {
 +    public boolean tryRespawn() { // CraftBukkit - return boolean
++        // Paper start - Perf: Do crystal-portal proximity check before entity lookup
++        return this.tryRespawn(null);
++    }
++
++    public boolean tryRespawn(@Nullable BlockPos placedEndCrystalPos) { // placedEndCrystalPos is null if the tryRespawn() call was not caused by a placed end crystal
++        // Paper end - Perf: Do crystal-portal proximity check before entity lookup
          if (this.dragonKilled && this.respawnStage == null) {
              BlockPos blockposition = this.portalLocation;
  
-@@ -540,19 +589,19 @@
+@@ -531,6 +586,22 @@
+                 blockposition = this.portalLocation;
+             }
+ 
++            // Paper start - Perf: Do crystal-portal proximity check before entity lookup
++            if (placedEndCrystalPos != null) {
++                // The end crystal must be 0 or 1 higher than the portal origin
++                int dy = placedEndCrystalPos.getY() - blockposition.getY();
++                if (dy != 0 && dy != 1) {
++                    return false;
++                }
++                // The end crystal must be within a distance of 1 in one planar direction, and 3 in the other
++                int dx = placedEndCrystalPos.getX() - blockposition.getX();
++                int dz = placedEndCrystalPos.getZ() - blockposition.getZ();
++                if (!((dx >= -1 && dx <= 1 && dz >= -3 && dz <= 3) || (dx >= -3 && dx <= 3 && dz >= -1 && dz <= 1))) {
++                    return false;
++                }
++            }
++            // Paper end - Perf: Do crystal-portal proximity check before entity lookup
++
+             List<EndCrystal> list = Lists.newArrayList();
+             BlockPos blockposition1 = blockposition.above(1);
+             Iterator iterator = Direction.Plane.HORIZONTAL.iterator();
+@@ -540,19 +611,19 @@
                  List<EndCrystal> list1 = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockposition1.relative(enumdirection, 2)));
  
                  if (list1.isEmpty()) {
@@ -169,7 +197,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              for (BlockPattern.BlockPatternMatch shapedetector_shapedetectorcollection = this.findExitPortal(); shapedetector_shapedetectorcollection != null; shapedetector_shapedetectorcollection = this.findExitPortal()) {
                  for (int i = 0; i < this.exitPortalPattern.getWidth(); ++i) {
-@@ -571,9 +620,10 @@
+@@ -571,9 +642,10 @@
              this.respawnStage = DragonRespawnAnimation.START;
              this.respawnTime = 0;
              this.spawnExitPortal(false);
