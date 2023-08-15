@@ -54,6 +54,18 @@ https://bugs.mojang.com/browse/MC-264285
 https://bugs.mojang.com/browse/MC-84789
   Fix wild wolves not considering bones interesting
 
+https://bugs.mojang.com/browse/MC-245603
+  Fix powdered snow not extinguishing fire arrows
+
+https://bugs.mojang.com/browse/MC-214647
+  Fix arrows not making a sound when extinguished
+
+https://bugs.mojang.com/browse/MC-245680
+  Fix placing powdered snow on a flaming arrow not consuming it
+
+== AT ==
+public net/minecraft/world/entity/Entity playEntityOnFireExtinguishedSound()V
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -134,6 +146,18 @@ index 6cc9c28032cafd15d884223a01208ce6f027c151..14bbc86bbaad49b2af16f3b171eb667c
              this.player.onUpdateAbilities();
              this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 8b8237a4e8d29f8d4f432e4727d6302645286d0e..255e4818fe25ed59db88a5eb4b1b72f47c92e0a9 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1841,6 +1841,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+ 
+             this.resetFallDistance();
+             this.wasTouchingWater = true;
++            if (this.getRemainingFireTicks() > 0 && this instanceof net.minecraft.world.entity.projectile.AbstractArrow) this.playEntityOnFireExtinguishedSound(); // Paper - fix MC-214647
+             this.clearFire();
+         } else {
+             this.wasTouchingWater = false;
 diff --git a/src/main/java/net/minecraft/world/entity/Saddleable.java b/src/main/java/net/minecraft/world/entity/Saddleable.java
 index effe4c4fb37fe13aece70cdef4966047d4719af9..7152674d3f3fb98198585cb5ece2bb88877345f9 100644
 --- a/src/main/java/net/minecraft/world/entity/Saddleable.java
@@ -294,6 +318,25 @@ index f174094febfdfdc309f1b50877be60bae8a98156..5f407535298a31a34cfe114dd863fd6a
              world.addFreshEntityWithPassengers(cat);
              return 1;
          }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 7226be19248a1ffb8ff2c89b55882529d33a6c0c..e1e6075778d54e7507c7e57c60db4747939dfa67 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -188,6 +188,14 @@ public abstract class AbstractArrow extends Projectile {
+         }
+ 
+         if (this.isInWaterOrRain() || iblockdata.is(Blocks.POWDER_SNOW)) {
++            // Paper start - fix MC-214647 & MC-245680
++            if (this.getRemainingFireTicks() > 0) {
++                this.playEntityOnFireExtinguishedSound();
++
++                if (iblockdata.is(Blocks.POWDER_SNOW) && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState()))
++                    this.level().destroyBlock(blockposition, false);
++            }
++            // Paper end
+             this.clearFire();
+         }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/raid/Raids.java b/src/main/java/net/minecraft/world/entity/raid/Raids.java
 index 380afb885e85e4cf80e746d217033345a7514443..41457c9f27b18fa2734a6cca297ec5186470e82f 100644
 --- a/src/main/java/net/minecraft/world/entity/raid/Raids.java
@@ -358,6 +401,23 @@ index 2932419b7ca3f066b1db329829af36ba31e17c65..e11eced0bf15dfecaf64f5e1c28e973c
                  if (!this.handleEntityOnFireInsideWithEvent(state, world, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
                      return;
                  }
+diff --git a/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java b/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java
+index 7e04ecba2a14be0f0d47c917368abd2a2bd64a05..be06dadba271bc6c60f1e94d5c37e9d5f07f841e 100644
+--- a/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java
+@@ -77,6 +77,12 @@ public class PowderSnowBlock extends Block implements BucketPickup {
+                 }
+                 // CraftBukkit end
+                 world.destroyBlock(pos, false);
++                // Paper start - fix MC-245603
++                if (entity instanceof net.minecraft.world.entity.projectile.AbstractArrow) {
++                    entity.clearFire();
++                    entity.playEntityOnFireExtinguishedSound(); // Manually play the extinguish sound, Entity#extinguishFire does this too but wasOnFire is false
++                }
++                // Paper end
+             }
+ 
+             entity.setSharedFlagOnFire(false);
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 index 436290eaa0dab05a642b67b265117dbe5eceb8b7..5ccc419b904aec590c5624438da61ca6724b20d6 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java

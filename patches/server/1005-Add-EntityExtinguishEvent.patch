@@ -1,0 +1,251 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aurora <aurora@relanet.eu>
+Date: Sat, 20 Mar 2021 18:14:43 +0100
+Subject: [PATCH] Add EntityExtinguishEvent
+
+Co-authored-by: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index dc5fda83a66afbfeb7897fc20b4742899d8aca08..93baa100020b2a17651771794360d40a4233f8da 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1034,7 +1034,7 @@ public class ServerPlayer extends Player {
+         this.awardStat(Stats.DEATHS);
+         this.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH));
+         this.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_REST));
+-        this.clearFire();
++        this.clearFire(io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.DEATH); // Paper - add EntityExtinguishEvent
+         this.setTicksFrozen(0);
+         this.setSharedFlagOnFire(false);
+         this.getCombatTracker().recheckStatus();
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index b295a43d8a062ade570f0a69b220051e2d09d865..9a2d436f1c26804d509114306e3a8561d8216e0a 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -834,19 +834,25 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         this.updateFluidOnEyes();
+         this.updateSwimming();
+         if (this.level().isClientSide) {
+-            this.clearFire();
++            this.clearFire(null); // Paper - add EntityExtinguishEvent
+         } else if (this.remainingFireTicks > 0) {
+             if (this.fireImmune()) {
+                 this.setRemainingFireTicks(this.remainingFireTicks - 4);
+                 if (this.remainingFireTicks < 0) {
+-                    this.clearFire();
++                    this.clearFire(null); // Paper - add EntityExtinguishEvent
+                 }
+             } else {
+                 if (this.remainingFireTicks % 20 == 0 && !this.isInLava()) {
+                     this.hurt(this.damageSources().onFire(), 1.0F);
+                 }
+ 
++                // Paper start - add EntityExtinguishEvent
++                if (getRemainingFireTicks() - 1 == 0 && !new io.papermc.paper.event.entity.EntityExtinguishEvent(this.getBukkitEntity(), io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.TIME).callEvent()) {
++                    setRemainingFireTicks(20);
++                } else {
+                 this.setRemainingFireTicks(this.remainingFireTicks - 1);
++                }
++                // Paper end
+             }
+ 
+             if (this.getTicksFrozen() > 0 && !freezeLocked) { // Paper - Freeze Tick Lock API
+@@ -979,10 +985,40 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         return this.remainingFireTicks;
+     }
+ 
++    // Paper start - Add EntityExtinguishEvent
++    @io.papermc.paper.annotation.DoNotUse
+     public void clearFire() {
+-        this.setRemainingFireTicks(0);
++        clearFire(null);
++    }
++
++    public boolean clearFire(final @Nullable io.papermc.paper.event.entity.EntityExtinguishEvent.Cause cause) {
++        final boolean onFire = this.getRemainingFireTicks() > 0;
++        if (cause == null || !onFire || new io.papermc.paper.event.entity.EntityExtinguishEvent(this.getBukkitEntity(), cause).callEvent()) {
++            this.setRemainingFireTicks(0);
++            return onFire;
++        }
++        return false;
+     }
+ 
++    @Nullable
++    public io.papermc.paper.event.entity.EntityExtinguishEvent.Cause getExtinguishCause(@Nullable BlockState state) {
++        final boolean onFire = getRemainingFireTicks() > 0;
++        if (!onFire) {
++            return null;
++        } else if (this.isInPowderSnow || (state != null && state.is(Blocks.POWDER_SNOW))) {
++            return io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.POWDER_SNOW;
++        } else if (this.isInWater()) {
++            return io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.WATER;
++        } else if (this.isInRain()) {
++            return io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.RAIN;
++        } else if (this.isInBubbleColumn()) {
++            return io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.BUBBLE_COLUMN;
++        } else {
++            return null;
++        }
++    }
++    // Paper end
++
+     protected void onBelowWorld() {
+         this.discard();
+     }
+@@ -1274,7 +1310,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+                 }
+ 
+                 if (this.isOnFire() && (this.isInPowderSnow || this.isInWaterRainOrBubble())) {
++                    // Paper start - add EntityExtinguishEvent
++                    final io.papermc.paper.event.entity.EntityExtinguishEvent.Cause cause = getExtinguishCause(iblockdata);
++                    if (cause == null || new io.papermc.paper.event.entity.EntityExtinguishEvent(this.getBukkitEntity(), cause).callEvent()) {
+                     this.setRemainingFireTicks(-this.getFireImmuneTicks());
++                    }
++                    // Paper end
+                 }
+ 
+                 this.level().getProfiler().pop();
+@@ -1335,12 +1376,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         this.playSound(SoundEvents.GENERIC_EXTINGUISH_FIRE, 0.7F, 1.6F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+     }
+ 
++    // Paper start - add EntityExtinguishEvent
++    @io.papermc.paper.annotation.DoNotUse
+     public void extinguishFire() {
++        extinguishFire(null);
++    }
++    public void extinguishFire(final @Nullable io.papermc.paper.event.entity.EntityExtinguishEvent.Cause cause) {
+         if (!this.level().isClientSide && this.wasOnFire) {
+             this.playEntityOnFireExtinguishedSound();
+         }
+ 
+-        this.clearFire();
++        this.clearFire(cause);
++        // Paper end
+     }
+ 
+     protected void processFlappingMovement() {
+@@ -1855,8 +1902,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+ 
+             this.resetFallDistance();
+             this.wasTouchingWater = true;
+-            if (this.getRemainingFireTicks() > 0 && this instanceof net.minecraft.world.entity.projectile.AbstractArrow) this.playEntityOnFireExtinguishedSound(); // Paper - fix MC-214647
+-            this.clearFire();
++            if (this.clearFire(io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.WATER) && this instanceof net.minecraft.world.entity.projectile.AbstractArrow) this.playEntityOnFireExtinguishedSound(); // Paper - fix MC-214647 // Paper - add EntityExtinguishEvent
+         } else {
+             this.wasTouchingWater = false;
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index e11d7283662834047b2ff81a2fd25a4263792deb..623e7e031b2e9a54d8aecbe33608ee8c431cac16 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -407,7 +407,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         super.baseTick();
+         this.level().getProfiler().push("livingEntityBaseTick");
+         if (this.fireImmune() || this.level().isClientSide) {
+-            this.clearFire();
++            this.clearFire(null); // Paper - add EntityExtinguishEvent
+         }
+ 
+         if (this.isAlive()) {
+@@ -468,7 +468,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         }
+ 
+         if (this.isAlive() && (this.isInWaterRainOrBubble() || this.isInPowderSnow)) {
+-            this.extinguishFire();
++            this.extinguishFire(this.getExtinguishCause(null)); // Paper - add EntityExtinguishEvent
+         }
+ 
+         if (this.hurtTime > 0) {
+@@ -1719,6 +1719,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                         entity.killedEntity((ServerLevel) this.level(), this);
+                     }
+                     this.gameEvent(GameEvent.ENTITY_DIE);
++                    if (this.getRemainingFireTicks() > 0) new io.papermc.paper.event.entity.EntityExtinguishEvent(this.getBukkitEntity(), io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.DEATH).callEvent(); // Paper - add EntityExtinguishEvent
+                 } else {
+                     this.dead = false;
+                     this.setHealth((float) deathEvent.getReviveHealth());
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 58152160d609d0e9d105153aeb166a56a7955603..f3b2fcd3bd45e4ac6548ab0ddf6f7ece754d8a2e 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -672,7 +672,7 @@ public abstract class Player extends LivingEntity {
+         this.awardStat(Stats.DEATHS);
+         this.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH));
+         this.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_REST));
+-        this.clearFire();
++        this.clearFire(io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.DEATH); // Paper - add EntityExtinguishEvent
+         this.setSharedFlagOnFire(false);
+         this.setLastDeathLocation(Optional.of(GlobalPos.of(this.level().dimension(), this.blockPosition())));
+     }
+@@ -1442,7 +1442,7 @@ public abstract class Player extends LivingEntity {
+                     } else {
+                         sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                         if (flag4) {
+-                            target.clearFire();
++                            target.clearFire(null); // Paper - add EntityExtinguishEvent - don't fire event when undoing combust from earlier
+                         }
+                         // CraftBukkit start - resync on cancelled event
+                         if (this instanceof ServerPlayer) {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index e1e6075778d54e7507c7e57c60db4747939dfa67..3ee126ccbc504071afb7ab0998b3ef8656451e11 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -188,15 +188,16 @@ public abstract class AbstractArrow extends Projectile {
+         }
+ 
+         if (this.isInWaterOrRain() || iblockdata.is(Blocks.POWDER_SNOW)) {
++            final boolean wasOnFire = this.getRemainingFireTicks() > 0; // Paper - add EntityExtinguishEvent
+             // Paper start - fix MC-214647 & MC-245680
+-            if (this.getRemainingFireTicks() > 0) {
++            if (this.clearFire(this.getExtinguishCause(iblockdata))) { // Paper - add EntityExtinguishEvent
+                 this.playEntityOnFireExtinguishedSound();
+ 
++            } if (wasOnFire) { // Paper - add EntityExtinguishEvent - always remove powder snow
+                 if (iblockdata.is(Blocks.POWDER_SNOW) && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState()))
+                     this.level().destroyBlock(blockposition, false);
+             }
+             // Paper end
+-            this.clearFire();
+         }
+ 
+         if (this.inGround && !flag) {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+index 29ea746b6df87e996081149000c6db0b562f7e97..59b203725d17e665c254bbb69e0dfb5088cddb91 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+@@ -166,7 +166,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+                 ((CraftLivingEntity) affectedEntity).getHandle().hurt(this.damageSources().indirectMagic(this, this.getOwner()), 1.0F);
+             }
+             for (LivingEntity toExtinguish : event.getToExtinguish()) {
+-                ((CraftLivingEntity) toExtinguish).getHandle().extinguishFire();
++                ((CraftLivingEntity) toExtinguish).getHandle().extinguishFire(io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.WATER_BOTTLE);
+             }
+             for (LivingEntity toRehydrate : event.getToRehydrate()) {
+                 if (((CraftLivingEntity) toRehydrate).getHandle() instanceof Axolotl axolotl) {
+diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+index e11eced0bf15dfecaf64f5e1c28e973c38746095..5fcff16160ad7a5cdf3df668391be74b848d4d18 100644
+--- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+@@ -68,7 +68,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+                     return;
+                 }
+             }
+-            entity.clearFire();
++            entity.clearFire(io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.CAULDRON); // Paper - add EntityExtinguishEvent
+             // CraftBukkit end
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java b/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java
+index be06dadba271bc6c60f1e94d5c37e9d5f07f841e..3a3fda49e334b8dd1853cfc5401798137d91ecf4 100644
+--- a/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java
+@@ -79,7 +79,7 @@ public class PowderSnowBlock extends Block implements BucketPickup {
+                 world.destroyBlock(pos, false);
+                 // Paper start - fix MC-245603
+                 if (entity instanceof net.minecraft.world.entity.projectile.AbstractArrow) {
+-                    entity.clearFire();
++                    if (!entity.clearFire(io.papermc.paper.event.entity.EntityExtinguishEvent.Cause.POWDER_SNOW)) return; // Paper - add EntityExtinguishEvent
+                     entity.playEntityOnFireExtinguishedSound(); // Manually play the extinguish sound, Entity#extinguishFire does this too but wasOnFire is false
+                 }
+                 // Paper end
