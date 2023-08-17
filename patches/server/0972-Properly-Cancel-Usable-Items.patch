@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Tue, 23 May 2023 22:33:36 -0400
+Subject: [PATCH] Properly Cancel Usable Items
+
+This fixes the bug causing cancelling PlayerInteractEvent to cause items to continue to be used despite being cancelled on the server.
+
+For example, items being consumed but never finishing, shields being put up, etc.
+The underlying issue of this is that the client modifies their synced data values, and so we have to (forcibly) resend
+them in order for the client to reset their using item state.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 34ecfb89372f459117db99d57a7edd6f681bbe8a..baf3e79489e310f443788bc917c553ae7ea86c89 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -562,6 +562,7 @@ public class ServerPlayerGameMode {
+             }
+             // Paper end - extend Player Interact cancellation
+             player.getBukkitEntity().updateInventory(); // SPIGOT-2867
++            this.player.resyncUsingItem(this.player); // Paper - Resend player's using item status
+             enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
+             MenuProvider itileinventory = iblockdata.getMenuProvider(world, blockposition);
+@@ -605,6 +606,11 @@ public class ServerPlayerGameMode {
+ 
+                 return enuminteractionresult1;
+             }
++            // Paper start - Cancel only if cancelled + if the interact result is different from default response
++            else if (this.interactResult && this.interactResult != cancelledItem) {
++                this.player.resyncUsingItem(this.player);
++            }
++            // Paper end
+         }
+         return enuminteractionresult;
+         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 3876bcddb3ab69aee1feb0fe19cb343e097a6824..f61b6e0eea4132347ced3c7c18d027337f8e6b15 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2031,6 +2031,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             }
+ 
+             if (cancelled) {
++                this.player.resyncUsingItem(this.player); // Paper - Resend player's using item status
+                 this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
+                 return;
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index dee49691dcaac57ab56195a4dd299a5c23a56bbb..e11d7283662834047b2ff81a2fd25a4263792deb 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3748,6 +3748,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+     }
+ 
++    // Paper start
++    public void resyncUsingItem(ServerPlayer serverPlayer) {
++        this.getEntityData().resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
++    }
++    // Paper end
++
+     // Paper start - lag compensate eating
+     protected long eatStartTime;
+     protected int totalEatTimeTicks;
