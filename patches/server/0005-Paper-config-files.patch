@@ -440,15 +440,16 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5cfd0bd7c09aacd7313575e30cf0a171c597e2bd
+index 0000000000000000000000000000000000000000..81d816bba5580664a05a71f0c6c6478835a91cfa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -0,0 +1,291 @@
+@@ -0,0 +1,293 @@
 +package io.papermc.paper.configuration;
 +
 +import co.aikar.timings.MinecraftTimings;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
++import io.papermc.paper.configuration.type.ComponentOrDefault;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.minecraft.network.protocol.Packet;
@@ -490,6 +491,7 @@ index 0000000000000000000000000000000000000000..5cfd0bd7c09aacd7313575e30cf0a171
 +        }
 +
 +        public Component noPermission = Component.text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", NamedTextColor.RED);
++        public ComponentOrDefault motd = ComponentOrDefault.USE_DEFAULT;
 +        public boolean useDisplayNameInQuitMessage = false;
 +    }
 +
@@ -948,10 +950,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e471960e0443392f6f54732b052a4debf2a8fd97
+index 0000000000000000000000000000000000000000..8df7344a632bcb954fccaa911061525e0aeb0128
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,442 @@
+@@ -0,0 +1,445 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -976,6 +978,7 @@ index 0000000000000000000000000000000000000000..e471960e0443392f6f54732b052a4deb
 +import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
 +import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
++import io.papermc.paper.configuration.type.ComponentOrDefault;
 +import io.papermc.paper.configuration.type.DoubleOrDefault;
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.DurationOrDisabled;
@@ -1128,7 +1131,9 @@ index 0000000000000000000000000000000000000000..e471960e0443392f6f54732b052a4deb
 +    private static ConfigurationOptions defaultGlobalOptions(ConfigurationOptions options) {
 +        return options
 +            .header(GLOBAL_HEADER)
-+            .serializers(builder -> builder.register(new PacketClassSerializer()));
++            .serializers(builder -> builder
++                .register(new PacketClassSerializer())
++                .register(ComponentOrDefault.SERIALIZER));
 +    }
 +
 +    @Override
@@ -3861,6 +3866,61 @@ index 0000000000000000000000000000000000000000..33ae915b2462faf1705be3b195e113c1
 +            final @Nullable Boolean value = item.value;
 +            if (value != null) {
 +                return value.toString();
++            } else {
++                return DEFAULT_VALUE;
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/ComponentOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/ComponentOrDefault.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b367bc19bb3666768cba3af56b103dad81df1bca
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/ComponentOrDefault.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.configuration.type;
++
++import io.papermc.paper.configuration.serializer.ComponentSerializer;
++import net.kyori.adventure.text.Component;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
++
++import java.lang.reflect.Type;
++import java.util.function.Predicate;
++
++public record ComponentOrDefault(@Nullable Component value, @NotNull String input) {
++    private static final String DEFAULT_VALUE = "default";
++    public static final ComponentOrDefault USE_DEFAULT = new ComponentOrDefault(null, DEFAULT_VALUE);
++    public static final ScalarSerializer<ComponentOrDefault> SERIALIZER = new Serializer();
++
++    public Component or(Component fallback) {
++        return this.value == null ? fallback : this.value;
++    }
++
++    private static final class Serializer extends ScalarSerializer<ComponentOrDefault> {
++        private static final ComponentSerializer COMPONENT_SERIALIZER = new ComponentSerializer();
++
++        Serializer() {
++            super(ComponentOrDefault.class);
++        }
++
++        @Override
++        public ComponentOrDefault deserialize(Type type, Object obj) throws SerializationException {
++            final String string = obj.toString();
++
++            if (DEFAULT_VALUE.equalsIgnoreCase(string))
++                return USE_DEFAULT;
++            else
++                return new ComponentOrDefault(COMPONENT_SERIALIZER.deserialize(type, obj), string);
++        }
++
++        @Override
++        protected Object serialize(ComponentOrDefault item, Predicate<Class<?>> typeSupported) {
++            final @Nullable Component value = item.value;
++            if (value != null) {
++                return item.input;
 +            } else {
 +                return DEFAULT_VALUE;
 +            }
