@@ -14960,7 +14960,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // no dependencies, add straight to awaiting
 +                this.awaiting.add(node);
 +            } else {
-+                node.parents = parents;
++                node.parents = parents.size();
 +                // we will be added to awaiting once we have no parents
 +            }
 +        }
@@ -15033,14 +15033,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (children != null) {
 +                for (int i = 0, len = children.size(); i < len; ++i) {
 +                    final DependencyNode child = children.get(i);
-+                    if (!child.parents.remove(node)) {
-+                        throw new IllegalStateException();
-+                    }
-+                    if (child.parents.isEmpty()) {
++                    int newParents = --child.parents;
++                    if (newParents == 0) {
 +                        // no more dependents, we can push to awaiting
-+                        child.parents = null;
 +                        // even if the child is purged, we need to push it so that its children will be pushed
 +                        this.awaiting.add(child);
++                    } else if (newParents < 0) {
++                        throw new IllegalStateException();
 +                    }
 +                }
 +            }
@@ -15052,7 +15051,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return ret;
 +            }
 +
-+            if (ret.parents != null) {
++            if (ret.parents != 0) {
 +                throw new IllegalStateException();
 +            }
 +
@@ -15127,8 +15126,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // (must hold lock on the scheduler to use)
 +        // null is the same as empty, we just use it so that we don't allocate the set unless we need to
 +        private List<DependencyNode> children;
-+        // null is the same as empty, indicating that this task is considered "awaiting"
-+        private ReferenceOpenHashSet<DependencyNode> parents;
++        // 0 indicates that this task is considered "awaiting"
++        private int parents;
 +        // false -> scheduled and not cancelled
 +        // true -> scheduled but cancelled
 +        private boolean purged;
