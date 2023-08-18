@@ -52,8 +52,8 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
      *
      * @param burnTime the burn time for this fuel
      */
-    public void setBurnTime(int burnTime) {
-        this.burnTime = burnTime;
+    public void setBurnTime(@org.jetbrains.annotations.Range(from = Short.MIN_VALUE, to = Short.MAX_VALUE) int burnTime) { // Paper
+        this.burnTime = Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, burnTime)); // Paper
     }
 
     /**
