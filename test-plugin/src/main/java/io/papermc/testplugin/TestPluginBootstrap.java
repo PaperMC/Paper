@@ -20,13 +20,18 @@ public class TestPluginBootstrap implements PluginBootstrap {
             System.out.println("dummy hook: " + cause);
         });
 
-        final LifecycleEventHandler<RegistrarEvent<DummyResourceRegistrar>> handle = this::handle;
-        context.handleLifecycleEvent(LifecycleEvents.DUMMY, handle);
+        context.handleLifecycleEvent(LifecycleEvents.DUMMY, this.handle("dummy FIRST"));
+        context.handleLifecycleEventAsMonitor(LifecycleEvents.DUMMY, this.handle("dummy LAST (monitor)"));
+        context.handleLifecycleEvent(LifecycleEvents.DUMMY, this.handle("dummy SECOND"));
+
 
         context.handleLifecycleEvent(LifecycleEvents.NON_REGISTRAR_RELATED_EVENT, NonRegistrarEvent::someNonRegistrarRelatedThing);
     }
 
-    private void handle(RegistrarEvent<DummyResourceRegistrar> event) {
+    private LifecycleEventHandler<RegistrarEvent<DummyResourceRegistrar>> handle(final String out) {
+        return event -> {
+            System.out.println(out);
+        };
     }
 
 }
