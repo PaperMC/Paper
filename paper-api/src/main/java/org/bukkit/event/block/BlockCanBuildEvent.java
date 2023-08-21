@@ -25,10 +25,11 @@ public class BlockCanBuildEvent extends BlockEvent {
 
     protected BlockData blockData;
     private final Player player;
+    private final org.bukkit.inventory.EquipmentSlot hand; // Paper - expose hand
 
     @Deprecated(since = "1.13.2")
     public BlockCanBuildEvent(@NotNull final Block block, @NotNull final BlockData type, final boolean canBuild) {
-        this(block, null, type, canBuild);
+        this(block, null, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper - expose hand
     }
 
     /**
@@ -37,12 +38,30 @@ public class BlockCanBuildEvent extends BlockEvent {
      * @param type the id of the block to place
      * @param canBuild whether we can build
      */
+    @java.lang.Deprecated // Paper
+    @io.papermc.paper.annotation.DoNotUse // Paper
     public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild) {
+        this(block, player, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper start - expose hand
+    }
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild, @NotNull final org.bukkit.inventory.EquipmentSlot hand) { // Paper end - expose hand
         super(block);
         this.player = player;
         this.buildable = canBuild;
         this.blockData = type;
+        this.hand = hand; // Paper
     }
+    // Paper start
+    /**
+     * Gets the hand the player will use to place the block
+     *
+     * @return the EquipmentSlot representing the players hand.
+     */
+    @NotNull
+    public org.bukkit.inventory.EquipmentSlot getHand() {
+        return hand;
+    }
+    // Paper end
 
     /**
      * Gets whether or not the block can be built here.
