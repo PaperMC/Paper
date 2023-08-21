@@ -44,7 +44,27 @@
  
                  blockposition_mutableblockposition.set(SectionPos.sectionToBlockCoord(chunkcoordintpair.x, 8), 32, SectionPos.sectionToBlockCoord(chunkcoordintpair.z, 8));
                  double d1 = blockposition_mutableblockposition.distSqr(center);
-@@ -312,29 +331,29 @@
+@@ -247,12 +266,15 @@
+         int i1 = placement.spacing();
+ 
+         for (int j1 = -radius; j1 <= radius; ++j1) {
+-            boolean flag1 = j1 == -radius || j1 == radius;
++            // Paper start - Perf: iterate over border chunks instead of entire square chunk area
++            boolean flag1 = j1 == -radius || j1 == radius; final boolean onBorderAlongZAxis = flag1; // Paper - OBFHELPER
+ 
+-            for (int k1 = -radius; k1 <= radius; ++k1) {
+-                boolean flag2 = k1 == -radius || k1 == radius;
++            for (int k1 = -radius; k1 <= radius; k1 += onBorderAlongZAxis ? 1 : radius * 2) {
++                // boolean flag2 = k1 == -radius || k1 == radius;
+ 
+-                if (flag1 || flag2) {
++                // if (flag1 || flag2) {
++                if (true) {
++                    // Paper end - Perf: iterate over border chunks instead of entire square chunk area
+                     int l1 = centerChunkX + i1 * j1;
+                     int i2 = centerChunkZ + i1 * k1;
+                     ChunkPos chunkcoordintpair = placement.getPotentialStructureChunk(seed, l1, i2);
+@@ -312,29 +334,29 @@
          }
      }
  
@@ -81,7 +101,7 @@
  
                      Objects.requireNonNull(set);
                      palettedcontainerro.getAll(set::add);
-@@ -345,7 +364,7 @@
+@@ -345,7 +367,7 @@
              int j = list.size();
  
              try {
@@ -90,7 +110,7 @@
                  int k = Math.max(GenerationStep.Decoration.values().length, j);
  
                  for (int l = 0; l < k; ++l) {
-@@ -353,7 +372,7 @@
+@@ -353,7 +375,7 @@
                      Iterator iterator;
                      CrashReportCategory crashreportsystemdetails;
  
@@ -99,7 +119,7 @@
                          List<Structure> list1 = (List) map.getOrDefault(l, Collections.emptyList());
  
                          for (iterator = list1.iterator(); iterator.hasNext(); ++i1) {
-@@ -368,9 +387,9 @@
+@@ -368,9 +390,9 @@
                              };
  
                              try {
@@ -112,7 +132,7 @@
                                  });
                              } catch (Exception exception) {
                                  CrashReport crashreport = CrashReport.forThrowable(exception, "Feature placement");
-@@ -418,11 +437,18 @@
+@@ -418,11 +440,18 @@
                                  return (String) optional.orElseGet(placedfeature::toString);
                              };
  
@@ -134,7 +154,7 @@
                              } catch (Exception exception1) {
                                  CrashReport crashreport1 = CrashReport.forThrowable(exception1, "Feature placement");
  
-@@ -435,7 +461,7 @@
+@@ -435,15 +464,42 @@
                      }
                  }
  
@@ -143,10 +163,12 @@
              } catch (Exception exception2) {
                  CrashReport crashreport2 = CrashReport.forThrowable(exception2, "Biome decoration");
  
-@@ -445,6 +471,33 @@
-         }
-     }
- 
+                 crashreport2.addCategory("Generation").setDetail("CenterX", (Object) chunkcoordintpair.x).setDetail("CenterZ", (Object) chunkcoordintpair.z).setDetail("Decoration Seed", (Object) i);
+                 throw new ReportedException(crashreport2);
++            }
++        }
++    }
++
 +   // CraftBukkit start
 +    public void applyBiomeDecoration(WorldGenLevel world, ChunkAccess chunk, StructureManager structureAccessor) {
 +        this.applyBiomeDecoration(world, chunk, structureAccessor, true);
@@ -167,17 +189,16 @@
 +                WorldgenRandom seededrandom = new WorldgenRandom(new net.minecraft.world.level.levelgen.LegacyRandomSource(generatoraccessseed.getSeed()));
 +                seededrandom.setDecorationSeed(generatoraccessseed.getSeed(), x, z);
 +                populator.populate(world, new org.bukkit.craftbukkit.util.RandomSourceWrapper.RandomWrapper(seededrandom), x, z, limitedRegion);
-+            }
+             }
 +            limitedRegion.saveEntities();
 +            limitedRegion.breakLink();
-+        }
-+    }
+         }
+     }
 +    // CraftBukkit end
-+
+ 
      private static BoundingBox getWritableArea(ChunkAccess chunk) {
          ChunkPos chunkcoordintpair = chunk.getPos();
-         int i = chunkcoordintpair.getMinBlockX();
-@@ -521,7 +574,7 @@
+@@ -521,7 +577,7 @@
                  }
              }
  
@@ -186,7 +207,7 @@
                  if (list.size() == 1) {
                      this.tryGenerateStructure((StructureSet.StructureSelectionEntry) list.get(0), structureAccessor, registryManager, randomstate, structureTemplateManager, placementCalculator.getLevelSeed(), chunk, chunkcoordintpair, sectionposition, dimension);
                  } else {
-@@ -582,6 +635,14 @@
+@@ -582,6 +638,14 @@
          StructureStart structurestart = structure.generate(weightedEntry.structure(), dimension, dynamicRegistryManager, this, this.biomeSource, noiseConfig, structureManager, seed, pos, j, chunk, predicate);
  
          if (structurestart.isValid()) {
