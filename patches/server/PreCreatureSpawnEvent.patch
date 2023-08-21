@@ -138,11 +138,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -                                    if (NaturalSpawner.isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2) && checker.test(biomesettingsmobs_c.type, blockposition_mutableblockposition, chunk)) {
 +                                    // Paper start
-+                                    Boolean doSpawning = isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
-+                                    if (doSpawning == null) {
++                                    PreSpawnStatus doSpawning = isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
++                                    if (doSpawning == PreSpawnStatus.ABORT) {
 +                                        return;
 +                                    }
-+                                    if (doSpawning && checker.test(biomesettingsmobs_c.type, blockposition_mutableblockposition, chunk)) {
++                                    if (doSpawning == PreSpawnStatus.SUCCESS && checker.test(biomesettingsmobs_c.type, blockposition_mutableblockposition, chunk)) {
 +                                        // Paper end
                                          Mob entityinsentient = NaturalSpawner.getMobForSpawn(world, biomesettingsmobs_c.type);
  
@@ -152,7 +152,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    private static boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
-+    private static Boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) { // Paper
++    // Paper start
++    private enum PreSpawnStatus {
++        FAIL,
++        SUCCESS,
++        CANCELLED,
++        ABORT
++    }
++    private static PreSpawnStatus isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
++        // Paper end
          EntityType<?> entitytypes = spawnEntry.type;
  
 +        // Paper start
@@ -165,12 +173,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            );
 +            if (!event.callEvent()) {
 +                if (event.shouldAbortSpawn()) {
-+                    return null;
++                    return PreSpawnStatus.ABORT; // Paper
 +                }
-+                return false;
++                return PreSpawnStatus.CANCELLED; // Paper
 +            }
 +        }
 +        // Paper end
          if (entitytypes.getCategory() == MobCategory.MISC) {
-             return false;
+-            return false;
++            return PreSpawnStatus.FAIL; // Paper
          } else if (!entitytypes.canSpawnFarFromPlayer() && squaredDistance > (double) (entitytypes.getCategory().getDespawnDistance() * entitytypes.getCategory().getDespawnDistance())) {
+-            return false;
++            return PreSpawnStatus.FAIL; // Paper
+         } else if (entitytypes.canSummon() && NaturalSpawner.canSpawnMobAt(world, structureAccessor, chunkGenerator, group, spawnEntry, pos)) {
+             SpawnPlacements.Type entitypositiontypes_surface = SpawnPlacements.getPlacementType(entitytypes);
+ 
+-            return !NaturalSpawner.isSpawnPositionOk(entitypositiontypes_surface, world, pos, entitytypes) ? false : (!SpawnPlacements.checkSpawnRules(entitytypes, world, MobSpawnType.NATURAL, pos, world.random) ? false : world.noCollision(entitytypes.getAABB((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D)));
++            boolean isValid = !NaturalSpawner.isSpawnPositionOk(entitypositiontypes_surface, world, pos, entitytypes) ? false : (!SpawnPlacements.checkSpawnRules(entitytypes, world, MobSpawnType.NATURAL, pos, world.random) ? false : world.noCollision(entitytypes.getAABB((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D))); // Paper
++            return isValid ? PreSpawnStatus.SUCCESS : PreSpawnStatus.FAIL; // Paper
+         } else {
+-            return false;
++            return PreSpawnStatus.FAIL; // Paper
+         }
+     }
+ 
