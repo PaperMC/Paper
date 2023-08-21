@@ -660,13 +660,13 @@ public class CraftEventFactory {
     /**
      * BlockDamageEvent
      */
-    public static BlockDamageEvent callBlockDamageEvent(ServerPlayer who, BlockPos pos, ItemStack itemstack, boolean instaBreak) {
+    public static BlockDamageEvent callBlockDamageEvent(ServerPlayer who, BlockPos pos, Direction direction, ItemStack itemstack, boolean instaBreak) { // Paper - Add BlockFace to BlockDamageEvent
         Player player = who.getBukkitEntity();
         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
 
         Block blockClicked = CraftBlock.at(who.level(), pos);
 
-        BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, itemInHand, instaBreak);
+        BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, CraftBlock.notchToBlockFace(direction), itemInHand, instaBreak); // Paper - Add BlockFace to BlockDamageEvent
         player.getServer().getPluginManager().callEvent(event);
 
         return event;
