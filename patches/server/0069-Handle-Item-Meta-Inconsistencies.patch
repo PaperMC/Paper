@@ -70,7 +70,7 @@ index 3f18fb61a47dda559a6997af9c6c043423dd206a..c33660718c0ea281d7bcdb15df0568d4
  
      public boolean isEnchanted() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 34a54a99e7484b2934e1d174c1b55f0472ff3812..7fd9a3a7f4cb98d89b7c4cbfda756d581963e5bf 100644
+index 34a54a99e7484b2934e1d174c1b55f0472ff3812..b75c8549e9484a2e6167d0bbb9fd64ae8b422931 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -178,28 +178,11 @@ public final class CraftItemStack extends ItemStack {
@@ -107,7 +107,26 @@ index 34a54a99e7484b2934e1d174c1b55f0472ff3812..7fd9a3a7f4cb98d89b7c4cbfda756d58
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -232,50 +215,22 @@ public final class CraftItemStack extends ItemStack {
+@@ -225,57 +208,40 @@ public final class CraftItemStack extends ItemStack {
+         if (this.handle == null) {
+             return 0;
+         }
+-        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
++        // Paper start - replace to allow custom enchantments
++        final ListTag enchantments = this.handle.getEnchantmentTags();
++        for (int i = 0; i < enchantments.size(); i++) {
++            final CompoundTag tag = enchantments.getCompound(i);
++            final String id = tag.getString(CraftMetaItem.ENCHANTMENTS_ID.NBT);
++            final Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
++            if (ench.equals(enchant)) {
++                return EnchantmentHelper.getEnchantmentLevel(tag);
++            }
++        }
++        return 0;
++        // Paper end - replace to allow custom enchantments
+     }
+ 
+     @Override
      public int removeEnchantment(Enchantment ench) {
          Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
  
