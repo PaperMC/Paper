@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: aerulion <aerulion@gmail.com>
+Date: Mon, 21 Aug 2023 04:36:07 +0200
+Subject: [PATCH] Expose clicked BlockFace during BlockDamageEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index baf3e79489e310f443788bc917c553ae7ea86c89..58d0534af2e9cd2b356d7bd0e631ea3c5aec99ce 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -258,7 +258,7 @@ public class ServerPlayerGameMode {
+                     }
+                     return;
+                 }
+-                org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, pos, this.player.getInventory().getSelected(), f >= 1.0f);
++                org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, pos, direction, this.player.getInventory().getSelected(), f >= 1.0f); // Paper - Expose BlockFace
+ 
+                 if (blockEvent.isCancelled()) {
+                     // Let the client know the block still exists
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 26e1a9002d675245d4cf91e6682605314b078fb2..676c44f688c41df66e304db30a05d6cc967bcf99 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -648,13 +648,13 @@ public class CraftEventFactory {
+     /**
+      * BlockDamageEvent
+      */
+-    public static BlockDamageEvent callBlockDamageEvent(ServerPlayer who, BlockPos pos, ItemStack itemstack, boolean instaBreak) {
++    public static BlockDamageEvent callBlockDamageEvent(ServerPlayer who, BlockPos pos, Direction direction, ItemStack itemstack, boolean instaBreak) { // Paper - Expose BlockFace
+         Player player = who.getBukkitEntity();
+         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
+ 
+         Block blockClicked = CraftBlock.at(who.level(), pos);
+ 
+-        BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, itemInHand, instaBreak);
++        BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, CraftBlock.notchToBlockFace(direction), itemInHand, instaBreak); // Paper - Expose BlockFace
+         player.getServer().getPluginManager().callEvent(event);
+ 
+         return event;
