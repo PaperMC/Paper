@@ -19,9 +19,20 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
     private boolean instaBreak;
     private boolean cancel;
     private final ItemStack itemstack;
+    private final org.bukkit.block.BlockFace blockFace; // Paper - Expose BlockFace
 
+    // Paper start - expose blockface
+    @Deprecated(forRemoval = true)
+    @io.papermc.paper.annotation.DoNotUse
     public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final ItemStack itemInHand, final boolean instaBreak) {
+        this(player, block, null, itemInHand, instaBreak); // Some plugin do bad things...
+    }
+
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final org.bukkit.block.BlockFace blockFace, @NotNull final ItemStack itemInHand, final boolean instaBreak) { // Paper - Expose BlockFace
         super(block);
+        this.blockFace = blockFace;
+        // Paper end - expose blockface
         this.instaBreak = instaBreak;
         this.player = player;
         this.itemstack = itemInHand;
@@ -67,6 +78,20 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
     public ItemStack getItemInHand() {
         return itemstack;
     }
+    // Paper start - Expose BlockFace
+    /**
+     * Gets the BlockFace the player is interacting with.
+     *
+     * @return The BlockFace clicked to damage the block
+     */
+    @NotNull
+    public org.bukkit.block.BlockFace getBlockFace() {
+        if (this.blockFace == null) {
+            throw new IllegalStateException("BlockFace is not available for this event, most likely due to a bad constructor call by a plugin");
+        }
+        return this.blockFace;
+    }
+    //Paper end
 
     @Override
     public boolean isCancelled() {
