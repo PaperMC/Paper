@@ -10,13 +10,13 @@ public net.minecraft.world.level.dimension.end.EndDragonFight respawnCrystals
 public net.minecraft.world.level.dimension.end.EndDragonFight spawnNewGateway(Lnet/minecraft/core/BlockPos;)V
 
 diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
-index e60cfa3413af22015ffe7bb7fc2b2ffa3b328f04..1a53d7b089552fafc129a905094fdb1339088f0f 100644
+index c63f05a3d29146bfb8d5c93df5706145e3eaf716..630971d7a87c12798672af9635535eaf80a3ec9c 100644
 --- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
-@@ -396,6 +396,15 @@ public class EndDragonFight {
-         }
- 
+@@ -439,6 +439,24 @@ public class EndDragonFight {
+         this.gateways.clear();
      }
+ 
 +    // Paper start
 +    public boolean spawnNewGatewayIfPossible() {
 +        if (!this.gateways.isEmpty()) {
@@ -25,31 +25,24 @@ index e60cfa3413af22015ffe7bb7fc2b2ffa3b328f04..1a53d7b089552fafc129a905094fdb13
 +        }
 +        return false;
 +    }
-+    // Paper end
- 
-     private void spawnNewGateway() {
-         if (!this.gateways.isEmpty()) {
-@@ -541,6 +550,15 @@ public class EndDragonFight {
-         }
- 
-     }
-+    // Paper start
++
 +    public List<EndCrystal> getSpikeCrystals() {
-+        List<EndCrystal> endCrystals = new java.util.ArrayList<>();
-+        for(SpikeFeature.EndSpike endSpike : SpikeFeature.getSpikesForLevel(this.level)) {
-+            endCrystals.addAll(this.level.getEntitiesOfClass(EndCrystal.class, endSpike.getTopBoundingBox()));
++        final List<EndCrystal> endCrystals = new java.util.ArrayList<>();
++        for (final SpikeFeature.EndSpike spike : SpikeFeature.getSpikesForLevel(this.level)) {
++            endCrystals.addAll(this.level.getEntitiesOfClass(EndCrystal.class, spike.getTopBoundingBox()));
 +        }
 +        return endCrystals;
 +    }
 +    // Paper end
- 
-     public void resetSpikeCrystals() {
-         for(SpikeFeature.EndSpike endSpike : SpikeFeature.getSpikesForLevel(this.level)) {
++
+     private void spawnNewGateway() {
+         if (!this.gateways.isEmpty()) {
+             int i = (Integer) this.gateways.remove(this.gateways.size() - 1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/boss/CraftDragonBattle.java b/src/main/java/org/bukkit/craftbukkit/boss/CraftDragonBattle.java
-index 9c1dbdffa18107924cdda5f935631c1e0f652455..f79da5c83ba5656b6fbcff5e050874a1d49fb988 100644
+index 9895225593a6b6d22c4c5d3966dd79de1dfa4582..ccc73410ba6938dfdb7c23c2124f9f657b3a7e5d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/boss/CraftDragonBattle.java
 +++ b/src/main/java/org/bukkit/craftbukkit/boss/CraftDragonBattle.java
-@@ -97,4 +97,45 @@ public class CraftDragonBattle implements DragonBattle {
+@@ -132,4 +132,46 @@ public class CraftDragonBattle implements DragonBattle {
      private DragonRespawnAnimation toNMSRespawnPhase(RespawnPhase phase) {
          return (phase != RespawnPhase.NONE) ? DragonRespawnAnimation.values()[phase.ordinal()] : null;
      }
@@ -66,7 +59,7 @@ index 9c1dbdffa18107924cdda5f935631c1e0f652455..f79da5c83ba5656b6fbcff5e050874a1
 +
 +    @Override
 +    public void spawnNewGateway(final io.papermc.paper.math.Position position) {
-+        this.handle.spawnNewGateway(new net.minecraft.core.BlockPos(position.x(), position.y(), position.z()));
++        this.handle.spawnNewGateway(io.papermc.paper.util.MCUtil.toBlockPos(position));
 +    }
 +
 +    @Override
@@ -74,6 +67,7 @@ index 9c1dbdffa18107924cdda5f935631c1e0f652455..f79da5c83ba5656b6fbcff5e050874a1
 +        if (this.handle.respawnCrystals == null) {
 +            return java.util.Collections.emptyList();
 +        }
++
 +        final java.util.List<org.bukkit.entity.EnderCrystal> enderCrystals = new java.util.ArrayList<>();
 +        for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.respawnCrystals) {
 +            if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
