@@ -54,6 +54,9 @@ https://bugs.mojang.com/browse/MC-264285
 https://bugs.mojang.com/browse/MC-84789
   Fix wild wolves not considering bones interesting
 
+https://bugs.mojang.com/browse/MC-225381
+  Fix overfilled bundles duplicating items / being filled with air
+
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
@@ -316,6 +319,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      if (!raid.hasFirstWaveSpawned()) {
                          player.awardStat(Stats.RAID_TRIGGER);
                          CriteriaTriggers.BAD_OMEN.trigger(player);
+diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/BundleItem.java
++++ b/src/main/java/net/minecraft/world/item/BundleItem.java
+@@ -0,0 +0,0 @@ public class BundleItem extends Item {
+                 });
+             } else if (itemStack.getItem().canFitInsideContainerItems()) {
+                 int i = (64 - getContentWeight(stack)) / getWeight(itemStack);
+-                int j = add(stack, slot.safeTake(itemStack.getCount(), i, player));
++                int j = add(stack, slot.safeTake(itemStack.getCount(), Math.max(0, i), player)); // Paper - prevent item addition on overfilled bundles - safeTake will yield EMPTY for amount == 0.
+                 if (j > 0) {
+                     this.playInsertSound(player);
+                 }
+@@ -0,0 +0,0 @@ public class BundleItem extends Item {
+             int i = getContentWeight(bundle);
+             int j = getWeight(stack);
+             int k = Math.min(stack.getCount(), (64 - i) / j);
+-            if (k == 0) {
++            if (k <= 0) { // Paper - prevent item addition on overfilled bundles
+                 return 0;
+             } else {
+                 ListTag listTag = compoundTag.getList("Items", 10);
 diff --git a/src/main/java/net/minecraft/world/item/SaddleItem.java b/src/main/java/net/minecraft/world/item/SaddleItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/SaddleItem.java
