@@ -5,9 +5,18 @@ Subject: [PATCH] Deep clone unhandled nbt tags
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..4a3507143054a8352e513732d1be9da901ddaa88 100644
+index 076e06908a0cf97f86a64a15ca0231c5b0f06fec..3df1822b55358a9bdf41bcacd5b7fecfd8f05dfa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -303,7 +303,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
+ 
+     private CompoundTag internalTag;
+-    final Map<String, Tag> unhandledTags = new TreeMap<String, Tag>(); // Visible for testing only // Paper
++    Map<String, Tag> unhandledTags = new TreeMap<String, Tag>(); // Visible for testing only // Paper // Paper - remove final
+     private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftMetaItem.DATA_TYPE_REGISTRY);
+ 
+     private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
 @@ -344,8 +344,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              this.destroyableKeys = new java.util.HashSet<>(meta.destroyableKeys);
          }
@@ -21,20 +30,21 @@ index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..4a3507143054a8352e513732d1be9da9
  
          this.internalTag = meta.internalTag;
          if (this.internalTag != null) {
-@@ -1388,7 +1390,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1393,7 +1395,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
              }
 -            clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getRaw(), CraftMetaItem.DATA_TYPE_REGISTRY);
 +            // Paper start - Deep clone unhandled nbt tags
 +            clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getTagsCloned(), CraftMetaItem.DATA_TYPE_REGISTRY);
++            clone.unhandledTags = new TreeMap<>(this.unhandledTags);
 +            clone.unhandledTags.replaceAll((key, tag) -> tag.copy());
-+            // Paper end
++            // Paper end - Deep clone unhandled nbt tags
              clone.hideFlag = this.hideFlag;
              clone.unbreakable = this.unbreakable;
              clone.damage = this.damage;
 diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
-index 20c7144307ecf1eb5c600f3b84df7bc15fa941d6..ae94fd71b8ea8cdbf6fb0420d826ae24c246d43b 100644
+index 65013fd2ca24c4bf1cfd67e314927e72542d3e68..b040bd8be5c1803d0b4045990489ae4182f69568 100644
 --- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
 @@ -189,5 +189,11 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
@@ -43,8 +53,8 @@ index 20c7144307ecf1eb5c600f3b84df7bc15fa941d6..ae94fd71b8ea8cdbf6fb0420d826ae24
      }
 +
 +    public Map<String, Tag> getTagsCloned() {
-+        Map<String, Tag> tags = new HashMap<>();
-+        customDataTags.forEach((key, tag) -> tags.put(key, tag.copy()));
++        final Map<String, Tag> tags = new HashMap<>();
++        this.customDataTags.forEach((key, tag) -> tags.put(key, tag.copy()));
 +        return tags;
 +    }
      // Paper end
