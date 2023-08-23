@@ -609,10 +609,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 +import org.jetbrains.annotations.NotNull;
 +
-+public record PluginBootstrapContextImpl(PluginMeta config, Path dataFolder,
-+                                         ComponentLogger logger, Path pluginSource) implements BootstrapContext {
++public final class PluginBootstrapContextImpl implements BootstrapContext {
 +
-+    public static PluginBootstrapContextImpl of(PluginProvider<?> provider, Path pluginFolder) {
++    private final PluginMeta config;
++    private final Path dataFolder;
++    private final ComponentLogger logger;
++    private final Path pluginSource;
++
++    public PluginBootstrapContextImpl(PluginMeta config, Path dataFolder, ComponentLogger logger, Path pluginSource) {
++        this.config = config;
++        this.dataFolder = dataFolder;
++        this.logger = logger;
++        this.pluginSource = pluginSource;
++    }
++
++    public static PluginBootstrapContextImpl create(PluginProvider<?> provider, Path pluginFolder) {
 +        Path dataFolder = pluginFolder.resolve(provider.getMeta().getName());
 +
 +        return new PluginBootstrapContextImpl(provider.getMeta(), dataFolder, provider.getLogger(), provider.getSource());
@@ -653,10 +664,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import java.nio.file.Path;
 +
-+public record PluginProviderContextImpl(PluginMeta config, Path dataFolder,
-+                                        ComponentLogger logger, Path pluginSource) implements PluginProviderContext {
++public final class PluginProviderContextImpl implements PluginProviderContext {
 +
-+    public static PluginProviderContextImpl of(PluginMeta config, ComponentLogger logger, Path pluginSource) {
++    private final PluginMeta config;
++    private final Path dataFolder;
++    private final ComponentLogger logger;
++    private final Path pluginSource;
++
++    public PluginProviderContextImpl(PluginMeta config, Path dataFolder, ComponentLogger logger, Path pluginSource) {
++        this.config = config;
++        this.dataFolder = dataFolder;
++        this.logger = logger;
++        this.pluginSource = pluginSource;
++    }
++
++    public static PluginProviderContextImpl create(PluginMeta config, ComponentLogger logger, Path pluginSource) {
 +        Path dataFolder = PluginInitializerManager.instance().pluginDirectoryPath().resolve(config.getName());
 +
 +        return new PluginProviderContextImpl(config, dataFolder, logger, pluginSource);
@@ -6161,7 +6183,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public PaperPluginParent build(JarFile file, PaperPluginMeta configuration, Path source) throws Exception {
 +        Logger jul = PaperPluginLogger.getLogger(configuration);
 +        ComponentLogger logger = ComponentLogger.logger(jul.getName());
-+        PluginProviderContext context = PluginProviderContextImpl.of(configuration, logger, source);
++        PluginProviderContext context = PluginProviderContextImpl.create(configuration, logger, source);
 +
 +        PaperClasspathBuilder builder = new PaperClasspathBuilder(context);
 +
@@ -6559,7 +6581,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            @Override
 +            public boolean load(PluginProvider<PluginBootstrap> provider, PluginBootstrap provided) {
 +                try {
-+                    BootstrapContext context = PluginBootstrapContextImpl.of(provider, PluginInitializerManager.instance().pluginDirectoryPath());
++                    BootstrapContext context = PluginBootstrapContextImpl.create(provider, PluginInitializerManager.instance().pluginDirectoryPath());
 +                    provided.bootstrap(context);
 +                    return true;
 +                } catch (Throwable e) {
