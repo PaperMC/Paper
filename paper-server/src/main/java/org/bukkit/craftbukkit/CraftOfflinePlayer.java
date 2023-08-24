@@ -54,6 +54,13 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return this.getPlayer() != null;
     }
 
+    // Paper start
+    @Override
+    public boolean isConnected() {
+        return false;
+    }
+    // Paper end
+
     @Override
     public String getName() {
         Player player = this.getPlayer();
