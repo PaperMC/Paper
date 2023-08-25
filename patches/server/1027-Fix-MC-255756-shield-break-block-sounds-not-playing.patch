@@ -5,7 +5,7 @@ Subject: [PATCH] Fix MC-255756 shield break/block sounds not playing
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index e11d7283662834047b2ff81a2fd25a4263792deb..7e02de5ae22abeaad6607c5856e8326538716acb 100644
+index e11d7283662834047b2ff81a2fd25a4263792deb..caa89f4a667615fa6b725dc83f7030af7b10ef08 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -1482,7 +1482,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -13,24 +13,21 @@ index e11d7283662834047b2ff81a2fd25a4263792deb..7e02de5ae22abeaad6607c5856e83265
              if (flag1) {
                  if (flag) {
 -                    this.level().broadcastEntityEvent(this, (byte) 29);
-+                    this.level().playSound(null, this, SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 0.8F, 0.8F + this.level().random.nextFloat() * 0.4F); // Paper - Fixes MC-255756: Play the sound instead of the entity event
++                    this.level().playSound(null, this, SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 1.0F, 0.8F + this.level().random.nextFloat() * 0.4F); // Paper - Fixes MC-255756: Play the sound instead of the entity event. Sound taken from LivingEntity#handleEntityEvent(29)
                  } else {
                      if (!knockbackCancelled) // Paper - Disable explosion knockback
                      this.level().broadcastDamageEvent(this, source);
-@@ -2225,7 +2225,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2225,7 +2225,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
              // Apply blocking code // PAIL: steal from above
              if (event.getDamage(DamageModifier.BLOCKING) < 0) {
 -                this.level().broadcastEntityEvent(this, (byte) 29); // SPIGOT-4635 - shield damage sound
-+                // Paper start - Fixes MC-255756: Play the sound instead of the entity event
-+                net.minecraft.world.entity.player.Player exemptedPlayer = this instanceof net.minecraft.world.entity.player.Player player ? player : null;
-+                this.level().playSound(exemptedPlayer, this, SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 0.8F, 0.8F + this.level().random.nextFloat() * 0.4F);
-+                // Paper end
++                this.level().playSound(null, this, SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 1.0F, 0.8F + this.level().random.nextFloat() * 0.4F); // Paper - Fixes MC-255756: Play the sound instead of the entity event. Sound taken from LivingEntity#handleEntityEvent(29)
                  this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
                  Entity entity = damagesource.getDirectEntity();
  
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index e2a25c29ec74147b3e66aa0b3deb85a8f6ee53a5..5010d680a1558b75f7fec41dad80f0eff2878741 100644
+index e2a25c29ec74147b3e66aa0b3deb85a8f6ee53a5..0d5d13f53a6605e735b88c57d275a3a1e6b1d51f 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -1689,7 +1689,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
@@ -38,12 +35,12 @@ index e2a25c29ec74147b3e66aa0b3deb85a8f6ee53a5..5010d680a1558b75f7fec41dad80f0ef
              if (this.random.nextFloat() < f) {
                  player.getCooldowns().addCooldown(Items.SHIELD, 100);
 -                this.level().broadcastEntityEvent(player, (byte) 30);
-+                this.level().playSound(player, player, net.minecraft.sounds.SoundEvents.SHIELD_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 0.8F, 0.8F + this.level().random.nextFloat() * 0.4F); // Paper - Fixes MC-255756: Play the sound instead of the entity event
++                this.level().playSound(null, player, net.minecraft.sounds.SoundEvents.SHIELD_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 0.8F, 0.8F + this.level().random.nextFloat() * 0.4F); // Paper - Fixes MC-255756: Play the sound instead of the entity event. Sound taken from LivingEntity#handleEntityEvent(30)
              }
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 58152160d609d0e9d105153aeb166a56a7955603..2121c187d62dafd7fd17c12b0c91520ee6dcf044 100644
+index 58152160d609d0e9d105153aeb166a56a7955603..b6d1b16e01892581aa4a73a2923ddb51c5a1ab7a 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -1471,7 +1471,7 @@ public abstract class Player extends LivingEntity {
@@ -51,7 +48,7 @@ index 58152160d609d0e9d105153aeb166a56a7955603..2121c187d62dafd7fd17c12b0c91520e
              this.getCooldowns().addCooldown(Items.SHIELD, 100);
              this.stopUsingItem();
 -            this.level().broadcastEntityEvent(this, (byte) 30);
-+            this.level().playSound(this, this, SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 0.8F, 0.8F + this.level().random.nextFloat() * 0.4F); // Paper - Fixes MC-255756: Play the sound instead of the entity event
++            this.level().playSound(null, this, SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 0.8F, 0.8F + this.level().random.nextFloat() * 0.4F); // Paper - Fixes MC-255756: Play the sound instead of the entity event. Sound taken from LivingEntity#handleEntityEvent(30)
          }
  
      }
