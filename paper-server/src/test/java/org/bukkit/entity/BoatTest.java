@@ -2,9 +2,10 @@ package org.bukkit.entity;
 
 import net.minecraft.world.entity.vehicle.EntityBoat;
 import org.bukkit.craftbukkit.entity.CraftBoat;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
-public class BoatTest {
+public class BoatTest extends AbstractTestingBase {
 
     @Test
     public void testTypes() {

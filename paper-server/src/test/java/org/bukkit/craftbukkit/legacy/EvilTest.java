@@ -1,10 +1,11 @@
 package org.bukkit.craftbukkit.legacy;
 
 import org.bukkit.Material;
+import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class EvilTest {
+public class EvilTest extends AbstractTestingBase {
 
     @Test
     public void testFrom() {
