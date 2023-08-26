@@ -23,7 +23,7 @@ index e2a25c29ec74147b3e66aa0b3deb85a8f6ee53a5..1d00999b511f052671e28f02c7518421
              }
          }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 58152160d609d0e9d105153aeb166a56a7955603..4636ff5a724557a9a196876e0be143c0437c19b1 100644
+index 58152160d609d0e9d105153aeb166a56a7955603..c4a4649771ad6c6c28d18dda7264690d293c66ba 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -978,7 +978,7 @@ public abstract class Player extends LivingEntity {
@@ -50,22 +50,26 @@ index 58152160d609d0e9d105153aeb166a56a7955603..4636ff5a724557a9a196876e0be143c0
          float f = 0.25F + (float) EnchantmentHelper.getBlockEfficiency(this) * 0.05F;
  
          if (sprinting) {
-@@ -1469,7 +1476,12 @@ public abstract class Player extends LivingEntity {
+@@ -1469,7 +1476,16 @@ public abstract class Player extends LivingEntity {
          }
  
          if (this.random.nextFloat() < f) {
 -            this.getCooldowns().addCooldown(Items.SHIELD, 100);
 +            // Paper start - add player shield disable event
 +            final org.bukkit.entity.Entity finalAttacker = attacker != null ? attacker.getBukkitEntity() : null;
-+            final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker, 100);
-+            if (!shieldDisableEvent.callEvent()) return;
-+            this.getCooldowns().addCooldownAndCallEvent(Items.SHIELD, shieldDisableEvent.getCooldown(), false);
++            if (finalAttacker != null) {
++                final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker, 100);
++                if (!shieldDisableEvent.callEvent()) return;
++                this.getCooldowns().addCooldownAndCallEvent(Items.SHIELD, shieldDisableEvent.getCooldown(), false);
++            } else {
++                this.getCooldowns().addCooldownAndCallEvent(Items.SHIELD, 100, true);
++            }
 +            // Paper end - add player shield disable event
              this.stopUsingItem();
              this.level().broadcastEntityEvent(this, (byte) 30);
          }
 diff --git a/src/main/java/net/minecraft/world/item/ItemCooldowns.java b/src/main/java/net/minecraft/world/item/ItemCooldowns.java
-index cf3d8312ab749485f83448181a3300bf007b7381..47a22ca284a5d2bcf5c84b0b1768fd09e33b245b 100644
+index cf3d8312ab749485f83448181a3300bf007b7381..9868f4ce9a16ea2c55dc97b972e4f0b47dfbb08c 100644
 --- a/src/main/java/net/minecraft/world/item/ItemCooldowns.java
 +++ b/src/main/java/net/minecraft/world/item/ItemCooldowns.java
 @@ -40,7 +40,13 @@ public class ItemCooldowns {
@@ -78,7 +82,7 @@ index cf3d8312ab749485f83448181a3300bf007b7381..47a22ca284a5d2bcf5c84b0b1768fd09
 +    }
 +
 +    public void addCooldownAndCallEvent(Item item, int duration, boolean callEvent) {
-+    // Paper false - add player shield disable event
++    // Paper end - add player shield disable event
          this.cooldowns.put(item, new ItemCooldowns.CooldownInstance(this.tickCount, this.tickCount + duration));
          this.onCooldownStarted(item, duration);
      }
