@@ -46,6 +46,22 @@ index 9ca1e9d95e62929c0015d5ca2c2f9c70e421842e..26c7b2f18f21b04529f989b345c38569
          if (!this.level().isClientSide) {
              this.reassessWeaponGoal();
          }
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index b6b6d5af1784963d95843e326abffa3add55ec4f..7d54c79f46f99f5500e9cb1f486037cafb27ee3a 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -1557,7 +1557,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     // Paper start
+     public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final CraftBlockState craftBlockState) {
+-        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) { // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
++        // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
++        // blocks at the same Y level with the same state can be assumed to be saplings which trigger observers regardless of if the
++        // tree grew or not
++        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) {
+             this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
+         }
+     }
 diff --git a/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java b/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..4845f24e291ed8d643e182f3d6c50746a6ca2ded
