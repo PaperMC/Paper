@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.command;
 
+import java.net.SocketAddress;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.server.rcon.RemoteControlCommandListener;
 import org.bukkit.command.RemoteConsoleCommandSender;
@@ -10,6 +11,15 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
 
     public CraftRemoteConsoleCommandSender(RemoteControlCommandListener listener) {
         this.listener = listener;
+    }
+
+    public RemoteControlCommandListener getListener() {
+        return listener;
+    }
+
+    @Override
+    public SocketAddress getAddress() {
+       return listener.socketAddress;
     }
 
     @Override

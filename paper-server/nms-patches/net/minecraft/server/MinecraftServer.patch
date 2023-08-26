@@ -34,7 +34,7 @@
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements ICommandListener, AutoCloseable {
  
      public static final Logger LOGGER = LogUtils.getLogger();
-@@ -249,6 +276,20 @@
+@@ -249,6 +276,19 @@
      protected SaveData worldData;
      private volatile boolean isSaving;
  
@@ -43,7 +43,6 @@
 +    public org.bukkit.craftbukkit.CraftServer server;
 +    public OptionSet options;
 +    public org.bukkit.command.ConsoleCommandSender console;
-+    public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
 +    public ConsoleReader reader;
 +    public static int currentTick = (int) (System.currentTimeMillis() / 50);
 +    public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
@@ -55,7 +54,7 @@
      public static <S extends MinecraftServer> S spin(Function<Thread, S> function) {
          AtomicReference<S> atomicreference = new AtomicReference();
          Thread thread = new Thread(() -> {
-@@ -262,14 +303,14 @@
+@@ -262,14 +302,14 @@
              thread.setPriority(8);
          }
  
@@ -72,7 +71,7 @@
          super("Server");
          this.metricsRecorder = InactiveMetricsRecorder.INSTANCE;
          this.profiler = this.metricsRecorder.getProfiler();
-@@ -289,7 +330,7 @@
+@@ -289,7 +329,7 @@
          this.frameTimer = new CircularTimer();
          this.registries = worldstem.registries();
          this.worldData = worldstem.worldData();
@@ -81,7 +80,7 @@
              throw new IllegalStateException("Missing Overworld dimension data");
          } else {
              this.proxy = proxy;
-@@ -312,13 +353,40 @@
+@@ -312,13 +352,40 @@
              this.serverThread = thread;
              this.executor = SystemUtils.backgroundExecutor();
          }
@@ -123,7 +122,7 @@
          ScoreboardServer scoreboardserver1 = this.getScoreboard();
  
          Objects.requireNonNull(scoreboardserver1);
-@@ -327,7 +395,7 @@
+@@ -327,7 +394,7 @@
  
      protected abstract boolean initServer() throws IOException;
  
@@ -132,7 +131,7 @@
          if (!JvmProfiler.INSTANCE.isRunning()) {
              ;
          }
-@@ -335,12 +403,8 @@
+@@ -335,12 +402,8 @@
          boolean flag = false;
          ProfiledDuration profiledduration = JvmProfiler.INSTANCE.onWorldLoadedStarted();
  
@@ -146,7 +145,7 @@
          if (profiledduration != null) {
              profiledduration.finish();
          }
-@@ -355,25 +419,183 @@
+@@ -355,25 +418,183 @@
  
      }
  
@@ -345,7 +344,7 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -397,30 +619,8 @@
+@@ -397,30 +618,8 @@
              iworlddataserver.setInitialized(true);
          }
  
@@ -377,7 +376,7 @@
  
      private static void setInitialSpawn(WorldServer worldserver, IWorldDataServer iworlddataserver, boolean flag, boolean flag1) {
          if (flag1) {
-@@ -428,6 +628,21 @@
+@@ -428,6 +627,21 @@
          } else {
              ChunkProviderServer chunkproviderserver = worldserver.getChunkSource();
              ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(chunkproviderserver.randomState().sampler().findSpawnPosition());
@@ -399,7 +398,7 @@
              int i = chunkproviderserver.getGenerator().getSpawnHeight(worldserver);
  
              if (i < worldserver.getMinBuildHeight()) {
-@@ -487,8 +702,11 @@
+@@ -487,8 +701,11 @@
          iworlddataserver.setGameType(EnumGamemode.SPECTATOR);
      }
  
@@ -413,7 +412,7 @@
  
          MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.dimension().location());
          BlockPosition blockposition = worldserver.getSharedSpawnPos();
-@@ -497,19 +715,23 @@
+@@ -497,19 +714,23 @@
          ChunkProviderServer chunkproviderserver = worldserver.getChunkSource();
  
          this.nextTickTime = SystemUtils.getMillis();
@@ -446,7 +445,7 @@
              ForcedChunk forcedchunk = (ForcedChunk) worldserver1.getDataStorage().get(ForcedChunk::load, "chunks");
  
              if (forcedchunk != null) {
-@@ -524,10 +746,17 @@
+@@ -524,10 +745,17 @@
              }
          }
  
@@ -467,7 +466,7 @@
      }
  
      public EnumGamemode getDefaultGameType() {
-@@ -557,12 +786,16 @@
+@@ -557,12 +785,16 @@
              worldserver.save((IProgressUpdate) null, flag1, worldserver.noSave && !flag2);
          }
  
@@ -484,7 +483,7 @@
          if (flag1) {
              Iterator iterator1 = this.getAllLevels().iterator();
  
-@@ -597,12 +830,33 @@
+@@ -597,12 +829,33 @@
          this.stopServer();
      }
  
@@ -518,7 +517,7 @@
          if (this.getConnection() != null) {
              this.getConnection().stop();
          }
-@@ -612,6 +866,7 @@
+@@ -612,6 +865,7 @@
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.saveAll();
              this.playerList.removeAll();
@@ -526,7 +525,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -699,15 +954,16 @@
+@@ -699,15 +953,16 @@
              }
  
              this.nextTickTime = SystemUtils.getMillis();
@@ -545,7 +544,7 @@
                      MinecraftServer.LOGGER.warn("Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind", i, j);
                      this.nextTickTime += j * 50L;
                      this.lastOverloadWarning = this.nextTickTime;
-@@ -718,6 +974,7 @@
+@@ -718,6 +973,7 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(SystemUtils.getNanos(), this.tickCount);
                  }
  
@@ -553,7 +552,7 @@
                  this.nextTickTime += 50L;
                  this.startMetricsRecordingTick();
                  this.profiler.push("tick");
-@@ -756,6 +1013,12 @@
+@@ -756,6 +1012,12 @@
                      this.services.profileCache().clearExecutor();
                  }
  
@@ -566,7 +565,7 @@
                  this.onServerExit();
              }
  
-@@ -789,9 +1052,16 @@
+@@ -789,9 +1051,16 @@
      }
  
      private boolean haveTime() {
@@ -584,7 +583,7 @@
      protected void waitUntilNextTick() {
          this.runAllTasks();
          this.managedBlock(() -> {
-@@ -836,7 +1106,7 @@
+@@ -836,7 +1105,7 @@
          }
      }
  
@@ -593,7 +592,7 @@
          this.getProfiler().incrementCounter("runTask");
          super.doRunTask(ticktask);
      }
-@@ -889,7 +1159,7 @@
+@@ -889,7 +1158,7 @@
              this.status = this.buildServerStatus();
          }
  
@@ -602,7 +601,7 @@
              MinecraftServer.LOGGER.debug("Autosave started");
              this.profiler.push("save");
              this.saveEverything(true, false, false);
-@@ -936,22 +1206,39 @@
+@@ -936,22 +1205,39 @@
      }
  
      public void tickChildren(BooleanSupplier booleansupplier) {
@@ -642,7 +641,7 @@
  
              this.profiler.push("tick");
  
-@@ -1031,6 +1318,22 @@
+@@ -1031,6 +1317,22 @@
          return (WorldServer) this.levels.get(resourcekey);
      }
  
@@ -665,7 +664,7 @@
      public Set<ResourceKey<World>> levelKeys() {
          return this.levels.keySet();
      }
-@@ -1057,7 +1360,7 @@
+@@ -1057,7 +1359,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -674,7 +673,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport systemreport) {
-@@ -1398,11 +1701,11 @@
+@@ -1398,11 +1700,11 @@
      public CompletableFuture<Void> reloadResources(Collection<String> collection) {
          IRegistryCustom.Dimension iregistrycustom_dimension = this.registries.getAccessForLoading(RegistryLayer.RELOADABLE);
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -688,7 +687,7 @@
          }, this).thenCompose((immutablelist) -> {
              ResourceManager resourcemanager = new ResourceManager(EnumResourcePackType.SERVER_DATA, immutablelist);
  
-@@ -1417,6 +1720,7 @@
+@@ -1417,6 +1719,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -696,7 +695,7 @@
              this.packRepository.setSelected(collection);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(getSelectedPacks(this.packRepository), this.worldData.enabledFeatures());
  
-@@ -1777,7 +2081,7 @@
+@@ -1777,7 +2080,7 @@
              try {
                  label51:
                  {
@@ -705,7 +704,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -1827,6 +2131,22 @@
+@@ -1827,6 +2130,22 @@
  
      }
  
@@ -728,7 +727,7 @@
      private void startMetricsRecordingTick() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(SystemUtils.timeSource, this.isDedicatedServer()), SystemUtils.timeSource, SystemUtils.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -1953,8 +2273,30 @@
+@@ -1953,8 +2272,30 @@
  
      }
  

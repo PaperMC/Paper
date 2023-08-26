@@ -1,0 +1,77 @@
+--- a/net/minecraft/server/rcon/thread/RemoteControlSession.java
++++ b/net/minecraft/server/rcon/thread/RemoteControlSession.java
+@@ -11,6 +11,10 @@
+ import net.minecraft.server.IMinecraftServer;
+ import net.minecraft.server.rcon.StatusChallengeUtils;
+ import org.slf4j.Logger;
++// CraftBukkit start
++import net.minecraft.server.dedicated.DedicatedServer;
++import net.minecraft.server.rcon.RemoteControlCommandListener;
++// CraftBukkit end
+ 
+ public class RemoteControlSession extends RemoteConnectionThread {
+ 
+@@ -24,11 +28,14 @@
+     private final Socket client;
+     private final byte[] buf = new byte[1460];
+     private final String rconPassword;
+-    private final IMinecraftServer serverInterface;
++    // CraftBukkit start
++    private final DedicatedServer serverInterface;
++    private final RemoteControlCommandListener rconConsoleSource;
++    // CraftBukkit end
+ 
+     RemoteControlSession(IMinecraftServer iminecraftserver, String s, Socket socket) {
+         super("RCON Client " + socket.getInetAddress());
+-        this.serverInterface = iminecraftserver;
++        this.serverInterface = (DedicatedServer) iminecraftserver; // CraftBukkit
+         this.client = socket;
+ 
+         try {
+@@ -38,11 +45,14 @@
+         }
+ 
+         this.rconPassword = s;
++        this.rconConsoleSource = new net.minecraft.server.rcon.RemoteControlCommandListener(this.serverInterface, socket.getRemoteSocketAddress()); // CraftBukkit
+     }
+ 
+     public void run() {
+-        while (true) {
+-            try {
++        // CraftBukkit start - decompile error: switch try / while statement
++        try {
++            while (true) {
++                // CraftBukkit end
+                 if (!this.running) {
+                     return;
+                 }
+@@ -71,7 +81,7 @@
+                                 String s = StatusChallengeUtils.stringFromByteArray(this.buf, k, i);
+ 
+                                 try {
+-                                    this.sendCmdResponse(l, this.serverInterface.runCommand(s));
++                                    this.sendCmdResponse(l, this.serverInterface.runCommand(this.rconConsoleSource, s)); // CraftBukkit
+                                 } catch (Exception exception) {
+                                     this.sendCmdResponse(l, "Error executing: " + s + " (" + exception.getMessage() + ")");
+                                 }
+@@ -98,6 +108,7 @@
+                             continue;
+                     }
+                 }
++        } // CraftBukkit - decompile error: switch try / while statement
+             } catch (IOException ioexception) {
+                 return;
+             } catch (Exception exception1) {
+@@ -109,8 +120,10 @@
+                 this.running = false;
+             }
+ 
+-            return;
+-        }
++            // CraftBukkit start - decompile error: switch try / while statement
++            // return;
++        // }
++        // CraftBukkit end
+     }
+ 
+     private void send(int i, int j, String s) throws IOException {
