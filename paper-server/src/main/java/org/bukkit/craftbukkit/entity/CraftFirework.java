@@ -69,6 +69,10 @@ public class CraftFirework extends CraftProjectile implements Firework {
         }
 
         this.getHandle().attachedToEntity = (entity != null) ? ((CraftLivingEntity) entity).getHandle() : null;
+        // Paper start - update entity data
+        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ATTACHED_TO_TARGET,
+            entity != null ? java.util.OptionalInt.of(entity.getEntityId()) : java.util.OptionalInt.empty());
+        // Paper end - update entity data
         return true;
     }
 
