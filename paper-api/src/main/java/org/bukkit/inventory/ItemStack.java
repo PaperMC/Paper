@@ -1104,5 +1104,24 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     public @NotNull ItemStack damage(int amount, @NotNull org.bukkit.entity.LivingEntity livingEntity) {
         return livingEntity.damageItemStack(this, amount);
     }
+
+    /**
+     * Returns an empty item stack, consists of an air material and a stack size of 0.
+     *
+     * Any item stack with a material of air or a stack size of 0 is seen
+     * as being empty by {@link ItemStack#isEmpty}.
+     */
+    @NotNull
+    public static ItemStack empty() {
+        return new ItemStack();
+    }
+
+    /**
+     * Returns whether this item stack is empty and contains no item. This means
+     * it is either air or the stack has a size of 0.
+     */
+    public boolean isEmpty() {
+        return type.isAir() || amount <= 0;
+    }
     // Paper end
 }
