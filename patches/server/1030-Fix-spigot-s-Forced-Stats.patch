@@ -8,7 +8,7 @@ disables saving any forced stats, so it stays at the same value (without enablin
 fixes stat initialization to not cause a NullPointerException
 
 diff --git a/src/main/java/net/minecraft/stats/ServerStatsCounter.java b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
-index 9501e5f25f5c4d3069e554d4dc82b0e094156682..c5c156b30c70604b6d7d8b73048048abf65a7419 100644
+index 9501e5f25f5c4d3069e554d4dc82b0e094156682..27bb84b23ebccb4a1447ef44edf2c0d6f1341823 100644
 --- a/src/main/java/net/minecraft/stats/ServerStatsCounter.java
 +++ b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
 @@ -48,13 +48,13 @@ public class ServerStatsCounter extends StatsCounter {
@@ -23,33 +23,28 @@ index 9501e5f25f5c4d3069e554d4dc82b0e094156682..c5c156b30c70604b6d7d8b73048048ab
 -        }
 -        // Spigot end
 +        // Spigot start // Paper Start - move down and fix forcedStats
-+        // for ( Map.Entry<ResourceLocation, Integer> entry : org.spigotmc.SpigotConfig.forcedStats.entrySet() )
-+        // {
++        //for ( Map.Entry<ResourceLocation, Integer> entry : org.spigotmc.SpigotConfig.forcedStats.entrySet() )
++        //{
 +        //    Stat<ResourceLocation> wrapper = Stats.CUSTOM.get( entry.getKey() );
 +        //    this.stats.put( wrapper, entry.getValue().intValue() );
-+        // }
++        //}
 +        // Spigot end // Paper end - move down and fix forcedStats
          if (file.isFile()) {
              try {
                  this.parseLocal(server.getFixerUpper(), FileUtils.readFileToString(file));
-@@ -64,7 +64,7 @@ public class ServerStatsCounter extends StatsCounter {
-                 ServerStatsCounter.LOGGER.error("Couldn't parse statistics file {}", file, jsonparseexception);
+@@ -65,6 +65,7 @@ public class ServerStatsCounter extends StatsCounter {
              }
          }
--
+ 
 +        org.spigotmc.SpigotConfig.forcedStats.entrySet().forEach(entry -> BuiltInRegistries.CUSTOM_STAT.getOptional(entry.getKey()).ifPresent(resourceLocation -> this.stats.put(Stats.CUSTOM.get(resourceLocation), entry.getValue().intValue()))); // Paper start - move down and fix forcedStats
      }
  
      public void save() {
-@@ -80,6 +80,11 @@ public class ServerStatsCounter extends StatsCounter {
+@@ -80,6 +81,7 @@ public class ServerStatsCounter extends StatsCounter {
      @Override
      public void setValue(Player player, Stat<?> stat, int value) {
          if ( org.spigotmc.SpigotConfig.disableStatSaving ) return; // Spigot
-+        // Paper start - disable saving forced stats
-+        if (stat.getType() == Stats.CUSTOM && stat.getValue() instanceof ResourceLocation resourceLocation) {
-+            if (org.spigotmc.SpigotConfig.forcedStats.get(resourceLocation) != null) { return; }
-+        }
-+        // Paper end - disable saving forced stats
++        if ((stat.getType() == Stats.CUSTOM) && (stat.getValue() instanceof ResourceLocation resourceLocation) && (org.spigotmc.SpigotConfig.forcedStats.get(resourceLocation) != null)) { return; } // Paper - disable saving forced stats
          super.setValue(player, stat, value);
          this.dirty.add(stat);
      }
