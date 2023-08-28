@@ -5,6 +5,47 @@ Subject: [PATCH] Paper command
 
 Co-authored-by: Zach Brown <zach.brown@destroystokyo.com>
 
+diff --git a/src/main/java/io/papermc/paper/command/CallbackCommand.java b/src/main/java/io/papermc/paper/command/CallbackCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fa4202abd13c1c286bd398938103d1103d5443e7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/CallbackCommand.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.command;
++
++import io.papermc.paper.adventure.providers.ClickCallbackProviderImpl;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import java.util.UUID;
++
++@DefaultQualifier(NonNull.class)
++public class CallbackCommand extends Command {
++
++    protected CallbackCommand(final String name) {
++        super(name);
++        this.description = "ClickEvent callback";
++        this.usageMessage = "/callback <uuid>";
++    }
++
++    @Override
++    public boolean execute(final CommandSender sender, final String commandLabel, final String[] args) {
++        if (args.length != 1) {
++            return false;
++        }
++
++        final UUID id;
++        try {
++            id = UUID.fromString(args[0]);
++        } catch (final IllegalArgumentException ignored) {
++            return false;
++        }
++
++        ClickCallbackProviderImpl.CALLBACK_MANAGER.runCallback(sender, id);
++        return true;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/command/CommandUtil.java b/src/main/java/io/papermc/paper/command/CommandUtil.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..953c30500892e5f0c55b8597bc708ea85bf56d6e
@@ -82,10 +123,10 @@ index 0000000000000000000000000000000000000000..953c30500892e5f0c55b8597bc708ea8
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e7931b6cb2a46d07ac017f620b807e3474dc481e
+index 0000000000000000000000000000000000000000..8ccc59473bac983ced6b9e4a57e0ec4ebd2b0f32
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,143 @@
 +package io.papermc.paper.command;
 +
 +import io.papermc.paper.command.subcommands.*;
@@ -125,7 +166,6 @@ index 0000000000000000000000000000000000000000..e7931b6cb2a46d07ac017f620b807e34
 +        commands.put(Set.of("entity"), new EntityCommand());
 +        commands.put(Set.of("reload"), new ReloadCommand());
 +        commands.put(Set.of("version"), new VersionCommand());
-+        commands.put(Set.of("callback"), new CallbackCommand());
 +
 +        return commands.entrySet().stream()
 +            .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
@@ -232,10 +272,10 @@ index 0000000000000000000000000000000000000000..e7931b6cb2a46d07ac017f620b807e34
 +}
 diff --git a/src/main/java/io/papermc/paper/command/PaperCommands.java b/src/main/java/io/papermc/paper/command/PaperCommands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6a00f3d38da8107825ab1d405f337fd077b09f72
+index 0000000000000000000000000000000000000000..5e5ec700a368cfdaa1ea0b3f0fa82089895d4b92
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/PaperCommands.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.command;
 +
 +import net.minecraft.server.MinecraftServer;
@@ -255,6 +295,7 @@ index 0000000000000000000000000000000000000000..6a00f3d38da8107825ab1d405f337fd0
 +    private static final Map<String, Command> COMMANDS = new HashMap<>();
 +    static {
 +        COMMANDS.put("paper", new PaperCommand("paper"));
++        COMMANDS.put("callback", new CallbackCommand("callback"));
 +    }
 +
 +    public static void registerCommands(final MinecraftServer server) {
@@ -287,45 +328,6 @@ index 0000000000000000000000000000000000000000..7e9e0ff8639be135bf8575e375cbada5
 +
 +    default boolean tabCompletes() {
 +        return true;
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/command/subcommands/CallbackCommand.java b/src/main/java/io/papermc/paper/command/subcommands/CallbackCommand.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..c5111eef4ba85ed96f7496b7db6954106fa05053
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/command/subcommands/CallbackCommand.java
-@@ -0,0 +1,33 @@
-+package io.papermc.paper.command.subcommands;
-+
-+import io.papermc.paper.adventure.providers.ClickCallbackProviderImpl;
-+import io.papermc.paper.command.PaperSubcommand;
-+import java.util.UUID;
-+import org.bukkit.command.CommandSender;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
-+
-+@DefaultQualifier(NonNull.class)
-+public final class CallbackCommand implements PaperSubcommand {
-+    @Override
-+    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-+        if (args.length != 1) {
-+            return false;
-+        }
-+
-+        final UUID id;
-+        try {
-+            id = UUID.fromString(args[0]);
-+        } catch (final IllegalArgumentException ignored) {
-+            return false;
-+        }
-+
-+        ClickCallbackProviderImpl.CALLBACK_MANAGER.runCallback(sender, id);
-+        return true;
-+    }
-+
-+    @Override
-+    public boolean tabCompletes() {
-+        return false;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
