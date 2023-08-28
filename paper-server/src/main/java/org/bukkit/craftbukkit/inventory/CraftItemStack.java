@@ -45,12 +45,19 @@ public final class CraftItemStack extends ItemStack {
     }
     // Paper end - MC Utils
 
+    // Paper start - override isEmpty to use vanilla's impl
+    @Override
+    public boolean isEmpty() {
+        return handle == null || handle.isEmpty();
+    }
+    // Paper end - override isEmpty to use vanilla's impl
+
     public static net.minecraft.world.item.ItemStack asNMSCopy(ItemStack original) {
         if (original instanceof CraftItemStack) {
             CraftItemStack stack = (CraftItemStack) original;
             return stack.handle == null ? net.minecraft.world.item.ItemStack.EMPTY : stack.handle.copy();
         }
-        if (original == null || original.getType() == Material.AIR) {
+        if (original == null || original.isEmpty()) { // Paper - override isEmpty to use vanilla's impl; use isEmpty
             return net.minecraft.world.item.ItemStack.EMPTY;
         }
 
